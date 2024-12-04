@@ -4,20 +4,14 @@ import re
 SYSTEM_PROMPT = """You are Janito, an AI assistant for software development tasks. Be concise.
 """
 
-EMPTY_DIR_PROMPT = """
-This is an empty directory. What files should be created and what should they contain? (one line description)
-Allways provide options using a  header label "=== **Option 1** : ...", "=== **Option 2**: ...", etc.
 
-Request:
-{request}
-"""
-
-NON_EMPTY_DIR_PROMPT = """
+CHANGE_ANALISYS_PROMPT = """
 Current files:
 <files>
 {files_content}
 </files>
 
+Considering the current files content, provide a table of options for the requested change.
 Always provide options using a header label "=== **Option 1** : ...", "=== **Option 2**: ...", etc.
 Provide the header with a short description followed by the file changes on the next line
 What files should be modified and what should they contain? (one line description)
@@ -30,7 +24,7 @@ Request:
 SELECTED_OPTION_PROMPT = """
 Original request: {request}
 
-Please provide detailed implementation using the following instructions as a guide:
+Please provide detailed implementation using the following guide:
 {option_text}
 
 Current files:
@@ -38,34 +32,14 @@ Current files:
 {files_content}
 </files>
 
-Original request: {request}
+After checking the above files and the provided implementation, please provide the following:
 
-Please provide implementation details following these guidelines:
-- Provide only the changes, no additional information
-- The changes must be described as a series of find/replace/delete or create_file operations
+## <uuid4> filename begin "short description of the change" ##
+<entire file content>
+## <uuid4> filename end ##
 
-- Use the following format for each change:
-    ## <uuid> filename:operation ##
-    ## <uuid> find_content ##
-    <oldContent> must be a unique part in the original file
-    ## <uuid> replace_content  ##
-    <newContent> will fully replace the oldContent
-    ## <uuid> delete_content  ##
-    <oldContent> will be removed from the file
-    ## <uuid> end  ##
-
-The supported operations are: 
-    - find_replace, which will find oldContent and replace it newContent
-    - create_file, which creates a new file with newContent
-
-Rules:
-    - Use the same <uuid> for all the blocks
-    - For missing files, respond with: <error>reason</error>
-
-Notes:
-    - Content blocks must match exactly
-    - Indentation and whitespace are significant
-    - File paths must be relative to the root
+ALWAYS provide the entire file content, not just the changes.
+If no changes are needed answer to any worksppace just reply <
 """
 
 def build_selected_option_prompt(option_number: int, request: str, initial_response: str, files_content: str = "") -> str:
@@ -116,9 +90,8 @@ def parse_options(response: str) -> dict[int, str]:
 
 def build_request_analisys_prompt(files_content: str, request: str) -> str:
     """Build prompt for information requests"""
-    if not files_content.strip():
-        return EMPTY_DIR_PROMPT.format(request=request)
-    return NON_EMPTY_DIR_PROMPT.format(
+
+    return CHANGE_ANALISYS_PROMPT.format(
         files_content=files_content,
         request=request
     )

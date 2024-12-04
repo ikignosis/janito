@@ -6,7 +6,8 @@ import shutil  # Add shutil import
 from janito.prompts import (
     build_request_analisys_prompt,
     build_selected_option_prompt,
-    SYSTEM_PROMPT
+    SYSTEM_PROMPT,
+    parse_options  # Add this import
 )
 from rich.console import Console
 from rich.markdown import Markdown
@@ -19,7 +20,7 @@ from janito.contentchange import (
     get_file_type,
     parse_block_changes,
     preview_and_apply_changes,
-    format_parsed_changes  # Add this import
+    format_parsed_changes,
 )
 from rich.table import Table
 from rich.columns import Columns
@@ -27,11 +28,11 @@ from rich.panel import Panel
 from rich.text import Text
 from rich.rule import Rule
 from rich import box
-from datetime import datetime, UTC  # Add UTC import
+from datetime import datetime, timezone  # Change UTC to timezone
 from itertools import chain
 from janito.scan import collect_files_content, is_dir_empty, preview_scan  # Add preview_scan import
 from janito.qa import ask_question, display_answer
-from rich.prompt import Prompt
+from rich.prompt import Prompt, Confirm  # Add Confirm here
 from janito.config import config
 
 def format_analysis(analysis: str, raw: bool = False, claude: Optional[ClaudeAPIAgent] = None) -> None:
@@ -77,7 +78,7 @@ def get_history_path(workdir: Path) -> Path:
 
 def get_timestamp() -> str:
     """Get current UTC timestamp in YMD_HMS format with leading zeros"""
-    return datetime.now(UTC).strftime('%Y%m%d_%H%M%S')
+    return datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
 
 def save_prompt_to_file(prompt: str) -> Path:
     """Save prompt to a named temporary file that won't be deleted"""
@@ -128,8 +129,8 @@ def replay_saved_file(filepath: Path, claude: ClaudeAPIAgent, workdir: Path, raw
     content = filepath.read_text()
     
     if file_type == 'changes':
-        changes = parse_block_changes(content)  # Parse the changes file content
-        preview_and_apply_changes(changes, workdir)  # Show preview and apply changes
+        changes = parse_block_changes(content)
+        preview_and_apply_changes(changes, workdir)
     elif file_type == 'analysis':
         format_analysis(content, raw, claude)
         handle_option_selection(claude, content, content, raw, workdir)
@@ -144,7 +145,7 @@ def replay_saved_file(filepath: Path, claude: ClaudeAPIAgent, workdir: Path, raw
         print(f"\nChanges saved to: {changes_file}")
         
         changes = parse_block_changes(response)
-        preview_and_apply_changes(changes, workdir)
+        preview_and_apply_changes(preview_changes, workdir)
     else:
         response = claude.send_message(content)
         format_analysis(response, raw)
@@ -159,23 +160,25 @@ def process_question(question: str, workdir: Path, include: List[Path], raw: boo
     answer = ask_question(question, files_content, claude)
     display_answer(answer, raw)
 
-def parse_options(response: str) -> dict[int, str]:
-    """Parse options from the response text"""
-    options = {}
-    pattern = r"===\s*\*\*Option (\d+)\*\*\s*:\s*(.+?)(?====\s*\*\*Option|\Z)"
-    matches = re.finditer(pattern, response, re.DOTALL)
-
-    for match in matches:
-        option_num = int(match.group(1))
-        option_text = match.group(2).strip()
-        options[option_num] = option_text
-
-    return options
+def ensure_workdir(workdir: Path) -> Path:
+    """Ensure working directory exists, prompt for creation if it doesn't"""
+    if workdir.exists():
+        return workdir
+        
+    console = Console()
+    console.print(f"\n[yellow]Directory does not exist:[/yellow] {workdir}")
+    if Confirm.ask("Create directory?"):
+        workdir.mkdir(parents=True)
+        console.print(f"[green]Created directory:[/green] {workdir}")
+        return workdir
+    raise typer.Exit(1)
 
 def main(
     request: Optional[str] = typer.Argument(None, help="The modification request"),
     ask: Optional[str] = typer.Option(None, "--ask", help="Ask a question about the codebase"),
-    workdir: Optional[Path] = typer.Option(None, "-w", "--workdir", help="Working directory (defaults to current directory)", exists=True, file_okay=False, dir_okay=True),
+    workdir: Optional[Path] = typer.Option(None, "-w", "--workdir", 
+                                         help="Working directory (defaults to current directory)", 
+                                         file_okay=False, dir_okay=True),  # Remove exists=True
     raw: bool = typer.Option(False, "--raw", help="Print raw response instead of markdown format"),
     play: Optional[Path] = typer.Option(None, "--play", help="Replay a saved prompt file"),
     include: Optional[List[Path]] = typer.Option(None, "-i", "--include", help="Additional paths to include in analysis", exists=True),
@@ -197,6 +200,7 @@ def main(
     # Start console mode if no arguments provided
     if not any([request, ask, play, scan]):
         workdir = workdir or Path.cwd()
+        workdir = ensure_workdir(workdir)  # Add directory check
         from janito.console import start_console_session
         start_console_session(workdir, include)
         return
@@ -205,6 +209,7 @@ def main(
 
     # Use current directory if workdir not specified
     workdir = workdir or Path.cwd()
+    workdir = ensure_workdir(workdir)  # Add directory check
     
     # Convert included paths to absolute if they're relative
     if include:
@@ -233,7 +238,7 @@ def main(
     is_empty = is_dir_empty(workdir)
     if is_empty and not include:
         console = Console()
-        console.print("\n[bold blue]Empty directory - will create new files[/bold blue]")
+        console.print("\n[bold blue]Empty directory - will create new files as needed[/bold blue]")
         files_content = ""
     else:
         files_content = collect_files_content(paths_to_scan, workdir)
@@ -242,7 +247,6 @@ def main(
     initial_prompt = build_request_analisys_prompt(files_content, request)
     initial_response = claude.send_message(initial_prompt)
     analysis_file = save_to_file(initial_response, 'analysis', workdir)
-    print(f"\nAnalysis saved to: {analysis_file}")
     
     # Show initial response
     format_analysis(initial_response, raw, claude)
