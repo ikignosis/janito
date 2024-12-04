@@ -1,0 +1,16 @@
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "janito"
+version = "0.1.0"
+dependencies = [
+    "typer",
+"pathspec",
+
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
