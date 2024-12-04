@@ -1,13 +1,12 @@
 import re
 from pathlib import Path
-from typing import Dict, Tuple, TypedDict
+from typing import Dict, Tuple, TypedDict, List
 from rich.console import Console
 from rich.prompt import Confirm
 import tempfile
 from janito.changeviewer import show_file_changes, FileChange, show_diff_changes
 import ast
 from datetime import datetime
-from typing import List
 import shutil
 
 def get_file_type(filepath: Path) -> str:

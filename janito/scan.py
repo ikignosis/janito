@@ -43,7 +43,7 @@ def _scan_paths(paths: List[Path], workdir: Path = None) -> Tuple[List[str], Lis
         relative_base = workdir
         if path.is_dir():
             relative_path = path.relative_to(relative_base)
-            content_parts.append(f'<directory>{relative_path}</directory>')
+            content_parts.append(f'<directory><path>{relative_path}</path>not sent</directory>')
             file_items.append(f"[blue]•[/blue] {relative_path}/")
             # Check for special files
             special_found = []
@@ -52,6 +52,10 @@ def _scan_paths(paths: List[Path], workdir: Path = None) -> Tuple[List[str], Lis
                     special_found.append(special_file)
             if special_found:
                 file_items[-1] = f"[blue]•[/blue] {relative_path}/ [cyan]({', '.join(special_found)})[/cyan]"
+                for special_file in special_found:
+                    relative_path = (path / special_file).relative_to(relative_base)
+                file_content = relative_path.read_text()
+                content_parts.append(f"<file>\n<path>{relative_path}</path>\n<content>\n{file_content}\n</content>\n</file>")
 
             for item in path.iterdir():
                 # Skip if matches gitignore patterns
