@@ -2,12 +2,12 @@ import typer
 from typing import Optional, Dict, Any, List
 from pathlib import Path
 from janito.claude import ClaudeAPIAgent
-import shutil  # Add shutil import
+import shutil
 from janito.prompts import (
     build_request_analisys_prompt,
     build_selected_option_prompt,
     SYSTEM_PROMPT,
-    parse_options  # Add this import
+    parse_options
 )
 from rich.console import Console
 from rich.markdown import Markdown
@@ -28,12 +28,19 @@ from rich.panel import Panel
 from rich.text import Text
 from rich.rule import Rule
 from rich import box
-from datetime import datetime, timezone  # Change UTC to timezone
+from datetime import datetime, timezone
 from itertools import chain
-from janito.scan import collect_files_content, is_dir_empty, preview_scan  # Add preview_scan import
+from janito.scan import collect_files_content, is_dir_empty, preview_scan
 from janito.qa import ask_question, display_answer
-from rich.prompt import Prompt, Confirm  # Add Confirm here
+from rich.prompt import Prompt, Confirm
 from janito.config import config
+from importlib.metadata import version
+
+def get_version() -> str:
+    try:
+        return version("janito")
+    except:
+        return "dev"
 
 def format_analysis(analysis: str, raw: bool = False, claude: Optional[ClaudeAPIAgent] = None) -> None:
     """Format and display the analysis output"""
@@ -99,7 +106,6 @@ def save_to_file(content: str, prefix: str, workdir: Path) -> Path:
 def handle_option_selection(claude: ClaudeAPIAgent, initial_response: str, request: str, raw: bool = False, workdir: Optional[Path] = None, include: Optional[List[Path]] = None) -> None:
     """Handle option selection and implementation details"""
     option = get_option_selection()
-    # Get current files content with included paths
     paths_to_scan = [workdir] if workdir else []
     if include:
         paths_to_scan.extend(include)
@@ -111,11 +117,9 @@ def handle_option_selection(claude: ClaudeAPIAgent, initial_response: str, reque
         print(f"\nSelected prompt saved to: {prompt_file}")
     
     selected_response = claude.send_message(selected_prompt)
-    # Save response to changes file
     changes_file = save_to_file(selected_response, 'changes', workdir)
     if config.verbose:
         print(f"\nChanges saved to: {changes_file}")
-
     
     changes = parse_block_changes(selected_response)
     preview_and_apply_changes(changes, workdir)
@@ -173,12 +177,12 @@ def ensure_workdir(workdir: Path) -> Path:
         return workdir
     raise typer.Exit(1)
 
-def main(
+def typer_main(
     request: Optional[str] = typer.Argument(None, help="The modification request"),
     ask: Optional[str] = typer.Option(None, "--ask", help="Ask a question about the codebase"),
     workdir: Optional[Path] = typer.Option(None, "-w", "--workdir", 
                                          help="Working directory (defaults to current directory)", 
-                                         file_okay=False, dir_okay=True),  # Remove exists=True
+                                         file_okay=False, dir_okay=True),
     raw: bool = typer.Option(False, "--raw", help="Print raw response instead of markdown format"),
     play: Optional[Path] = typer.Option(None, "--play", help="Replay a saved prompt file"),
     include: Optional[List[Path]] = typer.Option(None, "-i", "--include", help="Additional paths to include in analysis", exists=True),
@@ -186,32 +190,32 @@ def main(
     debug_line: Optional[int] = typer.Option(None, "--debug-line", help="Show debug information only for specific line number"),
     verbose: bool = typer.Option(False, "-v", "--verbose", help="Show verbose output"),
     scan: bool = typer.Option(False, "--scan", help="Preview files that would be analyzed"),
+    version: bool = typer.Option(False, "--version", help="Show version and exit"),
 ) -> None:
-
     """
     Analyze files and provide modification instructions.
     """
+    if version:
+        console = Console()
+        console.print(f"Janito v{get_version()}")
+        raise typer.Exit()
+
     config.set_debug(debug)
     config.set_verbose(verbose)
-    config.set_debug_line(debug_line)  # Move this line after setting debug to ensure proper configuration order
+    config.set_debug_line(debug_line)
 
     claude = ClaudeAPIAgent(system_prompt=SYSTEM_PROMPT)
 
-    # Start console mode if no arguments provided
     if not any([request, ask, play, scan]):
         workdir = workdir or Path.cwd()
-        workdir = ensure_workdir(workdir)  # Add directory check
+        workdir = ensure_workdir(workdir)
         from janito.console import start_console_session
         start_console_session(workdir, include)
         return
 
-
-
-    # Use current directory if workdir not specified
     workdir = workdir or Path.cwd()
-    workdir = ensure_workdir(workdir)  # Add directory check
+    workdir = ensure_workdir(workdir)
     
-    # Convert included paths to absolute if they're relative
     if include:
         include = [
             path if path.is_absolute() else (workdir / path).resolve()
@@ -222,8 +226,7 @@ def main(
         process_question(ask, workdir, include, raw, claude)
         return
 
-    if scan:  # Add scan handling
-        # Only scan included paths if provided, otherwise scan workdir
+    if scan:
         paths_to_scan = include if include else [workdir]
         preview_scan(paths_to_scan, workdir)
         return
@@ -232,7 +235,6 @@ def main(
         replay_saved_file(play, claude, workdir, raw)
         return
 
-    # Regular flow - same logic for scanning
     paths_to_scan = include if include else [workdir]
     
     is_empty = is_dir_empty(workdir)
@@ -243,16 +245,16 @@ def main(
     else:
         files_content = collect_files_content(paths_to_scan, workdir)
     
-    # Get initial analysis and save it
     initial_prompt = build_request_analisys_prompt(files_content, request)
     initial_response = claude.send_message(initial_prompt)
     analysis_file = save_to_file(initial_response, 'analysis', workdir)
     
-    # Show initial response
     format_analysis(initial_response, raw, claude)
     
-    # Always prompt for option selection
-    handle_option_selection(claude, initial_response, request, raw, workdir, include)  # Remove debug parameter
+    handle_option_selection(claude, initial_response, request, raw, workdir, include)
+
+def main():
+    typer.run(typer_main)
 
 if __name__ == "__main__":
-    typer.run(main)
+    main()

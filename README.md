@@ -1,11 +1,10 @@
-# Janito CLI
+# 🤖 Janito CLI
 
 A CLI tool for software development tasks powered by AI.
 
 Janito is an AI-powered assistant that helps automate common software development tasks like refactoring, documentation updates, and code optimization.
 
-
-## Installation
+## 📥 Installation
 
 ```bash
 # Install from PyPI
@@ -17,12 +16,18 @@ cd janito
 pip install -e .
 ```
 
-Note: Requires Python 3.8 or higher.
+## ⚡ Requirements
 
+- Python 3.8+
+- Anthropic API key
+- Required packages (automatically installed):
+  - typer
+  - pathspec
+  - rich
 
-## Configuration
+## ⚙️ Configuration
 
-### API Key Setup
+### 🔑 API Key Setup
 Janito requires an Anthropic API key to function. Set it as an environment variable:
 
 ```bash
@@ -31,77 +36,80 @@ export ANTHROPIC_API_KEY='your-api-key-here'
 
 You can also add this to your shell profile (~/.bashrc, ~/.zshrc, etc.) for persistence.
 
+## 📖 Usage
 
-### Debug Mode
-Enable debug mode for detailed logging:
+Janito can be used in two modes: Command Line or Interactive Console.
 
-```bash
-janito ./myproject "request" --debug
-```
-
-## Usage
+### 💻 Command Line Mode
 
 ```bash
 janito REQUEST [OPTIONS]
 ```
 
-### Arguments
+#### Arguments
+- `REQUEST`: The modification request
 
-- `REQUEST`: The modification request (required)
-
-### Options
-
+#### Options
 - `-w, --workdir PATH`: Working directory (defaults to current directory)
 - `--raw`: Print raw response instead of markdown format
 - `--play PATH`: Replay a saved prompt file
-- `-i, --include PATH`: Additional paths to include in analysis (can be specified multiple times)
+- `-i, --include PATH`: Additional paths to include in analysis
 - `--debug`: Show debug information
+- `-v, --verbose`: Show verbose output
+- `--ask`: Ask a question about the codebase
+- `--scan`: Preview files that would be analyzed
 
-### Examples
+### 🖥️ Interactive Console Mode
+
+Start the interactive console by running `janito` without arguments:
 
 ```bash
-Common use cases:
-
-```bash
-# Generate documentation
-janito "create docstrings for all functions"
-
-# Implement new features
-janito "add input validation to user_login function"
-
-# Code review and improvements
-janito "review code for security issues"
-
-
-# Basic usage (uses current directory)
-janito "add error handling"
-
-# Specify working directory
-janito "add error handling" -w ./myproject
-
-# Include additional paths in analysis
-janito "update tests" -i ./tests -i ./lib
-
-# Show raw output
-janito "refactor code" --raw
-
-# Replay saved prompt
-janito "update docs" --play .janito/history/20240101_123456_selected_.txt
-
-# Enable debug mode
-janito "optimize code" --debug
+janito
 ```
 
-## Features
+In console mode, you can:
+- Enter requests directly
+- Navigate history with up/down arrows
+- Use special commands starting with /
 
-- AI-powered code analysis and modifications
-- Support for multiple file types
-- Syntax validation for Python files
-- Interactive change preview and confirmation
-- History tracking of all changes
-- Debug mode for detailed logging
+### 📝 Examples
 
-## Requirements
+```bash
+# Command Line Mode Examples
+janito "create docstrings for all functions"
+janito "add error handling" -w ./myproject
+janito "update tests" -i ./tests -i ./lib
+janito --ask "explain the authentication flow"
+janito --scan  # Preview files to be analyzed
 
-- Python 3.8+
-- Anthropic API key
+# Console Mode
+janito  # Starts interactive session
+```
+
+## ✨ Features
+
+- 🤖 AI-powered code analysis and modifications
+- 💻 Interactive console mode for continuous interaction
+- 📁 Support for multiple file types
+- ✅ Syntax validation for Python files
+- 👀 Interactive change preview and confirmation
+- 📜 History tracking of all changes
+- 🐛 Debug and verbose output modes
+- ❓ Question-answering about codebase
+- 🔍 File scanning preview
+
+## 📚 History and Debugging
+
+Changes are automatically saved in `.janito/history/` with timestamps:
+- `*_analysis.txt`: Initial analysis
+- `*_selected.txt`: Selected implementation
+- `*_changes.txt`: Actual changes
+
+Enable debug mode for detailed logging:
+```bash
+janito "request" --debug
+```
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

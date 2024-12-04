@@ -3,12 +3,6 @@ from typing import List, Tuple
 from rich.console import Console
 from rich.columns import Columns
 from janito.config import config
-
-from pathlib import Path
-from typing import List, Tuple
-from rich.console import Console
-from rich.columns import Columns
-from janito.config import config
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 
@@ -19,9 +13,10 @@ def _scan_paths(paths: List[Path], workdir: Path = None) -> Tuple[List[str], Lis
     """Common scanning logic used by both preview and content collection"""
     content_parts = []
     file_items = []
+    skipped_files = []
     console = Console()
     
-# Load gitignore if it exists
+    # Load gitignore if it exists
     gitignore_path = workdir / '.gitignore' if workdir else None
     gitignore_spec = None
     if gitignore_path and gitignore_path.exists():
@@ -53,9 +48,14 @@ def _scan_paths(paths: List[Path], workdir: Path = None) -> Tuple[List[str], Lis
             if special_found:
                 file_items[-1] = f"[blue]•[/blue] {relative_path}/ [cyan]({', '.join(special_found)})[/cyan]"
                 for special_file in special_found:
-                    relative_path = (path / special_file).relative_to(relative_base)
-                file_content = relative_path.read_text()
-                content_parts.append(f"<file>\n<path>{relative_path}</path>\n<content>\n{file_content}\n</content>\n</file>")
+                    special_path = path / special_file
+                    try:
+                        relative_path = special_path.relative_to(relative_base)
+                        file_content = special_path.read_text(encoding='utf-8')
+                        content_parts.append(f"<file>\n<path>{relative_path}</path>\n<content>\n{file_content}\n</content>\n</file>")
+                    except UnicodeDecodeError:
+                        skipped_files.append(str(relative_path))
+                        console.print(f"[yellow]Warning: Skipping file due to encoding issues: {relative_path}[/yellow]")
 
             for item in path.iterdir():
                 # Skip if matches gitignore patterns
@@ -65,19 +65,27 @@ def _scan_paths(paths: List[Path], workdir: Path = None) -> Tuple[List[str], Lis
                         continue
                 scan_path(item, level+1)
 
-
         else:
             relative_path = path.relative_to(relative_base)
             # check if file is binary
-            if path.is_file() and path.read_bytes().find(b'\x00') != -1:
-                console.print(f"[red]Skipped binary file found: {relative_path}[/red]")
-                return
-            file_content = path.read_text()
-            content_parts.append(f"<file>\n<path>{relative_path}</path>\n<content>\n{file_content}\n</content>\n</file>")
-            file_items.append(f"[cyan]•[/cyan] {relative_path}")
+            try:
+                if path.is_file() and path.read_bytes().find(b'\x00') != -1:
+                    console.print(f"[red]Skipped binary file found: {relative_path}[/red]")
+                    return
+                file_content = path.read_text(encoding='utf-8')
+                content_parts.append(f"<file>\n<path>{relative_path}</path>\n<content>\n{file_content}\n</content>\n</file>")
+                file_items.append(f"[cyan]•[/cyan] {relative_path}")
+            except UnicodeDecodeError:
+                skipped_files.append(str(relative_path))
+                console.print(f"[yellow]Warning: Skipping file due to encoding issues: {relative_path}[/yellow]")
 
     for path in paths:
         scan_path(path, 0)
+        
+    if skipped_files and config.verbose:
+        console.print("\n[yellow]Files skipped due to encoding issues:[/yellow]")
+        for file in skipped_files:
+            console.print(f"  • {file}")
         
     return content_parts, file_items
 

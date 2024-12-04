@@ -1,16 +1,40 @@
-
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
 name = "janito"
-version = "0.1.0"
+version = "0.3.0"
+description = "A CLI tool for software development tasks powered by AI"
+readme = "README.md"
+authors = [
+    {name = "João Pinto", email = "lamego.pinto@gmail.com"},
+]
+license = {text = "MIT"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "License :: OSI Approved :: MIT License",
+]
 dependencies = [
     "typer",
-"pathspec",
-
+    "pathspec",
+    "rich",
+    "anthropic",
 ]
+requires-python = ">=3.8"
+
+[project.urls]
+Homepage = "https://github.com/joaompinto/janito"
+Repository = "https://github.com/joaompinto/janito.git"
+
+[project.scripts]
+janito = "janito.__main__:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
