@@ -19,7 +19,7 @@ def _scan_paths(paths: List[Path], workdir: Path = None) -> Tuple[List[str], Lis
     # Load gitignore if it exists
     gitignore_path = workdir / '.gitignore' if workdir else None
     gitignore_spec = None
-    if gitignore_path and gitignore_path.exists():
+    if (gitignore_path and gitignore_path.exists()):
         with open(gitignore_path) as f:
             gitignore = f.read()
         gitignore_spec = PathSpec.from_lines(GitWildMatchPattern, gitignore.splitlines())

@@ -2,7 +2,7 @@
 
 A CLI tool for software development tasks powered by AI.
 
-Janito is an AI-powered assistant that helps automate common software development tasks like refactoring, documentation updates, and code optimization.
+Meet Janito, your friendly AI-powered software development buddy! Janito helps you with coding tasks like refactoring, documentation updates, and code optimization while being clear and concise in its responses.
 
 ## 📥 Installation
 
@@ -36,6 +36,15 @@ export ANTHROPIC_API_KEY='your-api-key-here'
 
 You can also add this to your shell profile (~/.bashrc, ~/.zshrc, etc.) for persistence.
 
+### ⚙️ Test Command Setup
+You can configure a test command to run before applying changes:
+
+```bash
+export JANITO_TEST_CMD='your-test-command'
+```
+
+This command will be executed in the preview directory before applying changes to verify they don't break anything.
+
 ## 📖 Usage
 
 Janito can be used in two modes: Command Line or Interactive Console.
@@ -58,6 +67,7 @@ janito REQUEST [OPTIONS]
 - `-v, --verbose`: Show verbose output
 - `--ask`: Ask a question about the codebase
 - `--scan`: Preview files that would be analyzed
+- `-t, --test COMMAND`: Test command to run before applying changes (overrides JANITO_TEST_CMD)
 
 ### 🖥️ Interactive Console Mode
 
@@ -82,6 +92,12 @@ janito "update tests" -i ./tests -i ./lib
 janito --ask "explain the authentication flow"
 janito --scan  # Preview files to be analyzed
 
+# Test Command Examples
+janito "update code" --test "pytest"  # Run pytest before applying changes
+janito "refactor module" -t "make test"  # Run make test before applying
+export JANITO_TEST_CMD="python -m unittest"  # Set default test command
+janito "optimize function"  # Will use JANITO_TEST_CMD
+
 # Console Mode
 janito  # Starts interactive session
 ```
@@ -97,6 +113,7 @@ janito  # Starts interactive session
 - 🐛 Debug and verbose output modes
 - ❓ Question-answering about codebase
 - 🔍 File scanning preview
+- 🧪 Test command execution before applying changes
 
 ## 📚 History and Debugging
 

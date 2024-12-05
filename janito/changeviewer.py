@@ -38,12 +38,13 @@ def show_diff_changes(console: Console, filepath: Path, original: str, new_conte
     console.print(f"\n[bold blue]Changes for {filepath}[/bold blue]")
     console.print(f"[dim]{description}[/dim]\n")
     
-    # Generate diff
+    # Generate diff with file-specific labels
+    filename = filepath.name
     diff = difflib.unified_diff(
         original.splitlines(keepends=True),
         new_content.splitlines(keepends=True),
-        fromfile='old',
-        tofile='new',
+        fromfile=f'{filename}_old',
+        tofile=f'{filename}_new',
         lineterm=''
     )
     
@@ -61,4 +62,3 @@ def show_diff_changes(console: Console, filepath: Path, original: str, new_conte
             console.print(Text(line.rstrip(), style="cyan"))
         else:
             console.print(Text(line.rstrip()))
-

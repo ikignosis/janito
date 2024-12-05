@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - Unreleased
+
+### Added
+
+### Changed
+
+### Fixed
+
 ## [0.3.0] - 2024-01-24
 
 ### Added
@@ -10,6 +18,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - Updated version from 0.1.0 to 0.3.0
+- Removed --debug-line parameter and related functionality
 
 ## [0.1.0] - Initial Release
 

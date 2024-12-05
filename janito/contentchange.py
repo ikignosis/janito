@@ -8,6 +8,7 @@ from janito.changeviewer import show_file_changes, FileChange, show_diff_changes
 import ast
 from datetime import datetime
 import shutil
+import subprocess
 
 def get_file_type(filepath: Path) -> str:
     """Determine the type of saved file based on its name"""
@@ -26,13 +27,33 @@ def parse_block_changes(content: str) -> Dict[Path, FileChange]:
     """Parse file changes from code blocks in the content.
     Returns dict mapping filepath -> FileChange"""
     changes = {}
-    pattern = r'##\s*([\da-f-]+)\s+([^\n]+)\s+begin\s*"([^"]*)"[^\n]*##\n(.*?)##\s*\1\s+\2\s+end\s*##'
+    
+    # Extract the UUID from the first block
+    uuid_pattern = r'##\s*([\da-f]{8})\s+([^\n]+)\s+begin\s*"([^"]*)"[^\n]*##'
+    uuid_match = re.search(uuid_pattern, content)
+    if not uuid_match:
+        return changes  # No UUID found, return empty changes
+    
+    uuid = uuid_match.group(1)
+    
+    # Use the extracted UUID to find all blocks
+    pattern = rf'##\s*{uuid}\s+([^\n]+)\s+begin\s*"([^"]*)"[^\n]*##\n(.*?)##\s*{uuid}\s+\1\s+end\s*##'
     matches = re.finditer(pattern, content, re.DOTALL)
     
+    console = Console()
+    
     for match in matches:
-        filepath = Path(match.group(2))
-        description = match.group(3)
-        file_content = match.group(4).strip()
+        filepath = Path(match.group(1))
+        description = match.group(2)
+        file_content = match.group(3).strip()
+        
+        # Check for incomplete file content marker
+        if '[... rest of the file content remains unchanged ...]' in file_content:
+            console.print(f"\n[red bold]⚠️ Error: File {filepath} contains incomplete content marker[/red bold]")
+            console.print("[yellow]This indicates the file is too large and needs to be split into smaller chunks.[/yellow]")
+            console.print("[yellow]Please modify your request to focus on specific parts of the file.[/yellow]")
+            return {}
+        
         changes[filepath] = FileChange(
             description=description,
             new_content=file_content
@@ -71,8 +92,6 @@ def validate_python_syntax(content: str, filepath: Path) -> Tuple[bool, str]:
         return True, ""
     except SyntaxError as e:
         return False, f"Line {e.lineno}: {e.msg}"
-    except Exception as e:
-        return False, str(e)
 
 def format_parsed_changes(changes: Dict[Path, Tuple[str, str]]) -> str:
     """Format parsed changes to show only file change descriptions"""
@@ -91,7 +110,26 @@ def validate_changes(changes: Dict[Path, FileChange]) -> Tuple[bool, List[Tuple[
                 errors.append((filepath, error))
     return len(errors) == 0, errors
 
-def preview_and_apply_changes(changes: Dict[Path, FileChange], workdir: Path) -> bool:
+def run_test_command(preview_dir: Path, test_cmd: str) -> Tuple[bool, str]:
+    """Run test command in preview directory and return success status and output"""
+    console = Console()
+    console.print(f"\n[cyan]Running test command:[/cyan] {test_cmd}")
+    
+    try:
+        result = subprocess.run(
+            test_cmd,
+            shell=True,
+            cwd=preview_dir,
+            capture_output=True,
+            text=True
+        )
+        success = result.returncode == 0
+        output = result.stdout + result.stderr
+        return success, output
+    except Exception as e:
+        return False, str(e)
+
+def preview_and_apply_changes(changes: Dict[Path, FileChange], workdir: Path, test_cmd: str = None) -> bool:
     """Preview changes in temporary directory and apply if confirmed."""
     console = Console()
 
@@ -117,6 +155,16 @@ def preview_and_apply_changes(changes: Dict[Path, FileChange], workdir: Path) ->
             # Show changes
             show_diff_changes(console, filepath, original, change['new_content'], change['description'])
 
+        # Run test command if provided
+        if test_cmd:
+            test_success, test_output = run_test_command(preview_dir, test_cmd)
+            console.print("\n[bold]Test Results:[/bold]")
+            console.print(test_output)
+            
+            if not test_success:
+                console.print("\n[red]⚠️ Tests failed! Changes will not be applied.[/red]")
+                return False
+
         # Apply changes if confirmed
         if Confirm.ask("\nApply these changes?"):
             for filepath, _ in changes.items():
@@ -129,7 +177,7 @@ def preview_and_apply_changes(changes: Dict[Path, FileChange], workdir: Path) ->
             
     return False
 
-def apply_content_changes(content: str, request: str, workdir: Path) -> Tuple[bool, Path]:
+def apply_content_changes(content: str, request: str, workdir: Path, test_cmd: str = None) -> Tuple[bool, Path]:
     """Regular flow: Parse content, save to history, and apply changes."""
     console = Console()
     changes = parse_block_changes(content)
@@ -148,10 +196,10 @@ def apply_content_changes(content: str, request: str, workdir: Path) -> Tuple[bo
         return False, None
 
     history_file = save_changes_to_history(content, request, workdir)
-    success = preview_and_apply_changes(changes, workdir)
+    success = preview_and_apply_changes(changes, workdir, test_cmd)
     return success, history_file
 
-def handle_changes_file(filepath: Path, workdir: Path) -> Tuple[bool, Path]:
+def handle_changes_file(filepath: Path, workdir: Path, test_cmd: str = None) -> Tuple[bool, Path]:
     """Replay flow: Load changes from file and apply them."""
     content = filepath.read_text()
     changes = parse_block_changes(content)
@@ -161,5 +209,5 @@ def handle_changes_file(filepath: Path, workdir: Path) -> Tuple[bool, Path]:
         console.print("\n[yellow]No file changes were found in the file[/yellow]")
         return False, None
 
-    success = preview_and_apply_changes(changes, workdir)
+    success = preview_and_apply_changes(changes, workdir, test_cmd)
     return success, filepath

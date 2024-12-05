@@ -34,26 +34,9 @@ from janito.scan import collect_files_content, is_dir_empty, preview_scan
 from janito.qa import ask_question, display_answer
 from rich.prompt import Prompt, Confirm
 from janito.config import config
-from importlib.metadata import version
-
-def get_version() -> str:
-    try:
-        return version("janito")
-    except:
-        return "dev"
-
-def format_analysis(analysis: str, raw: bool = False, claude: Optional[ClaudeAPIAgent] = None) -> None:
-    """Format and display the analysis output"""
-    console = Console()
-    if raw and claude:
-        console.print("\n=== Message History ===")
-        for role, content in claude.messages_history:
-            console.print(f"\n[bold cyan]{role.upper()}:[/bold cyan]")
-            console.print(content)
-        console.print("\n=== End Message History ===\n")
-    else:
-        md = Markdown(analysis)
-        console.print(md)
+from janito.version import get_version
+from janito.common import progress_send_message
+from janito.analysis import format_analysis
 
 def prompt_user(message: str, choices: List[str] = None) -> str:
     """Display a prominent user prompt with optional choices"""
@@ -67,15 +50,19 @@ def prompt_user(message: str, choices: List[str] = None) -> str:
     
     return Prompt.ask(f"[bold cyan]> {message}[/bold cyan]")
 
-def get_option_selection() -> int:
-    """Get user input for option selection"""
+def validate_option_letter(letter: str, options: dict) -> bool:
+    """Validate if the given letter is a valid option or 'M' for modify"""
+    return letter.upper() in options or letter.upper() == 'M'
+
+def get_option_selection() -> str:
+    """Get user input for option selection with modify option"""
+    console = Console()
+    console.print("\n[cyan]Enter option letter or 'M' to modify request[/cyan]")
     while True:
-        try:
-            option = int(prompt_user("Select option number"))
-            return option
-        except ValueError:
-            console = Console()
-            console.print("[red]Please enter a valid number[/red]")
+        letter = prompt_user("Select option").strip().upper()
+        if letter == 'M' or (letter.isalpha() and len(letter) == 1):
+            return letter
+        console.print("[red]Please enter a valid letter or 'M'[/red]")
 
 def get_history_path(workdir: Path) -> Path:
     """Create and return the history directory path"""
@@ -105,7 +92,46 @@ def save_to_file(content: str, prefix: str, workdir: Path) -> Path:
 
 def handle_option_selection(claude: ClaudeAPIAgent, initial_response: str, request: str, raw: bool = False, workdir: Optional[Path] = None, include: Optional[List[Path]] = None) -> None:
     """Handle option selection and implementation details"""
-    option = get_option_selection()
+    options = parse_options(initial_response)
+    if not options:
+        console = Console()
+        console.print("[red]No valid options found in the response[/red]")
+        return
+
+    while True:
+        option = get_option_selection()
+        
+        if option == 'M':
+            # Allow user to modify the request
+            console = Console()
+            console.print("\n[cyan]Current request:[/cyan]")
+            console.print(f"[dim]{request}[/dim]")
+            new_request = prompt_user("Enter modified request")
+            
+            # Rerun analysis with new request
+            paths_to_scan = [workdir] if workdir else []
+            if include:
+                paths_to_scan.extend(include)
+            files_content = collect_files_content(paths_to_scan, workdir) if paths_to_scan else ""
+            
+            initial_prompt = build_request_analisys_prompt(files_content, new_request)
+            initial_response = progress_send_message(claude, initial_prompt)
+            save_to_file(initial_response, 'analysis', workdir)
+            
+            format_analysis(initial_response, raw, claude)
+            options = parse_options(initial_response)
+            if not options:
+                console.print("[red]No valid options found in the response[/red]")
+                return
+            continue
+            
+        if not validate_option_letter(option, options):
+            console = Console()
+            console.print(f"[red]Invalid option '{option}'. Valid options are: {', '.join(options.keys())} or 'M' to modify[/red]")
+            continue
+            
+        break
+
     paths_to_scan = [workdir] if workdir else []
     if include:
         paths_to_scan.extend(include)
@@ -116,13 +142,14 @@ def handle_option_selection(claude: ClaudeAPIAgent, initial_response: str, reque
     if config.verbose:
         print(f"\nSelected prompt saved to: {prompt_file}")
     
-    selected_response = claude.send_message(selected_prompt)
+    selected_response = progress_send_message(claude, selected_prompt)
+    
     changes_file = save_to_file(selected_response, 'changes', workdir)
     if config.verbose:
         print(f"\nChanges saved to: {changes_file}")
     
     changes = parse_block_changes(selected_response)
-    preview_and_apply_changes(changes, workdir)
+    preview_and_apply_changes(changes, workdir, config.test_cmd)
 
 def replay_saved_file(filepath: Path, claude: ClaudeAPIAgent, workdir: Path, raw: bool = False) -> None:
     """Process a saved prompt file and display the response"""
@@ -134,7 +161,7 @@ def replay_saved_file(filepath: Path, claude: ClaudeAPIAgent, workdir: Path, raw
     
     if file_type == 'changes':
         changes = parse_block_changes(content)
-        preview_and_apply_changes(changes, workdir)
+        preview_and_apply_changes(changes, workdir, config.test_cmd)
     elif file_type == 'analysis':
         format_analysis(content, raw, claude)
         handle_option_selection(claude, content, content, raw, workdir)
@@ -144,14 +171,15 @@ def replay_saved_file(filepath: Path, claude: ClaudeAPIAgent, workdir: Path, raw
             console.print("\n=== Prompt Content ===")
             console.print(content)
             console.print("=== End Prompt Content ===\n")
-        response = claude.send_message(content)
+        
+        response = progress_send_message(claude, content)
         changes_file = save_to_file(response, 'changes_', workdir)
         print(f"\nChanges saved to: {changes_file}")
         
         changes = parse_block_changes(response)
-        preview_and_apply_changes(preview_changes, workdir)
+        preview_and_apply_changes(changes, workdir, config.test_cmd)
     else:
-        response = claude.send_message(content)
+        response = progress_send_message(claude, content)
         format_analysis(response, raw)
 
 def process_question(question: str, workdir: Path, include: List[Path], raw: bool, claude: ClaudeAPIAgent) -> None:
@@ -160,7 +188,6 @@ def process_question(question: str, workdir: Path, include: List[Path], raw: boo
     if include:
         paths_to_scan.extend(include)
     files_content = collect_files_content(paths_to_scan, workdir)
-
     answer = ask_question(question, files_content, claude)
     display_answer(answer, raw)
 
@@ -187,10 +214,10 @@ def typer_main(
     play: Optional[Path] = typer.Option(None, "--play", help="Replay a saved prompt file"),
     include: Optional[List[Path]] = typer.Option(None, "-i", "--include", help="Additional paths to include in analysis", exists=True),
     debug: bool = typer.Option(False, "--debug", help="Show debug information"),
-    debug_line: Optional[int] = typer.Option(None, "--debug-line", help="Show debug information only for specific line number"),
     verbose: bool = typer.Option(False, "-v", "--verbose", help="Show verbose output"),
     scan: bool = typer.Option(False, "--scan", help="Preview files that would be analyzed"),
     version: bool = typer.Option(False, "--version", help="Show version and exit"),
+    test: Optional[str] = typer.Option(None, "-t", "--test", help="Test command to run before applying changes"),
 ) -> None:
     """
     Analyze files and provide modification instructions.
@@ -202,7 +229,7 @@ def typer_main(
 
     config.set_debug(debug)
     config.set_verbose(verbose)
-    config.set_debug_line(debug_line)
+    config.set_test_cmd(test)
 
     claude = ClaudeAPIAgent(system_prompt=SYSTEM_PROMPT)
 
@@ -246,8 +273,8 @@ def typer_main(
         files_content = collect_files_content(paths_to_scan, workdir)
     
     initial_prompt = build_request_analisys_prompt(files_content, request)
-    initial_response = claude.send_message(initial_prompt)
-    analysis_file = save_to_file(initial_response, 'analysis', workdir)
+    initial_response = progress_send_message(claude, initial_prompt)
+    save_to_file(initial_response, 'analysis', workdir)
     
     format_analysis(initial_response, raw, claude)
     

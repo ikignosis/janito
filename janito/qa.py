@@ -1,6 +1,7 @@
 from rich.console import Console
 from rich.markdown import Markdown
 from janito.claude import ClaudeAPIAgent
+from janito.common import progress_send_message
 
 QA_PROMPT = """Please provide a clear and concise answer to the following question about the codebase:
 
@@ -20,7 +21,7 @@ def ask_question(question: str, files_content: str, claude: ClaudeAPIAgent) -> s
         question=question,
         files_content=files_content
     )
-    return claude.send_message(prompt)
+    return progress_send_message(claude, prompt)
 
 def display_answer(answer: str, raw: bool = False) -> None:
     """Display the answer in markdown or raw format"""
