@@ -7,7 +7,7 @@ from janito.prompts import (
     build_request_analisys_prompt,
     build_selected_option_prompt,
     SYSTEM_PROMPT,
-    parse_options
+    parse_analysis_options
 )
 from rich.console import Console
 from rich.markdown import Markdown
@@ -64,11 +64,11 @@ def get_option_selection() -> str:
             return letter
         console.print("[red]Please enter a valid letter or 'M'[/red]")
 
-def get_history_path(workdir: Path) -> Path:
-    """Create and return the history directory path"""
-    history_dir = workdir / '.janito' / 'history'
-    history_dir.mkdir(parents=True, exist_ok=True)
-    return history_dir
+def get_changes_history_path(workdir: Path) -> Path:
+    """Create and return the changes history directory path"""
+    changes_history_dir = workdir / '.janito' / 'changes_history'
+    changes_history_dir.mkdir(parents=True, exist_ok=True)
+    return changes_history_dir
 
 def get_timestamp() -> str:
     """Get current UTC timestamp in YMD_HMS format with leading zeros"""
@@ -82,17 +82,43 @@ def save_prompt_to_file(prompt: str) -> Path:
     return temp_path
 
 def save_to_file(content: str, prefix: str, workdir: Path) -> Path:
-    """Save content to a timestamped file in history directory"""
-    history_dir = get_history_path(workdir)
+    """Save content to a timestamped file in changes history directory"""
+    changes_history_dir = get_changes_history_path(workdir)
     timestamp = get_timestamp()
     filename = f"{timestamp}_{prefix}.txt"
-    file_path = history_dir / filename
+    file_path = changes_history_dir / filename
     file_path.write_text(content)
     return file_path
 
+def modify_request(request: str) -> str:
+    """Display current request and get modified version with improved formatting"""
+    console = Console()
+    
+    # Display current request in a panel with clear formatting
+    console.print("\n[bold cyan]Current Request:[/bold cyan]")
+    console.print(Panel(
+        Text(request, style="white"),
+        border_style="blue",
+        title="Previous Request",
+        padding=(1, 2)
+    ))
+    
+    # Get modified request with clear prompt
+    console.print("\n[bold cyan]Enter modified request below:[/bold cyan]")
+    console.print("[dim](Press Enter to submit, Ctrl+C to cancel)[/dim]")
+    try:
+        new_request = prompt_user("Modified request")
+        if not new_request.strip():
+            console.print("[yellow]No changes made, keeping original request[/yellow]")
+            return request
+        return new_request
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Modification cancelled, keeping original request[/yellow]")
+        return request
+
 def handle_option_selection(claude: ClaudeAPIAgent, initial_response: str, request: str, raw: bool = False, workdir: Optional[Path] = None, include: Optional[List[Path]] = None) -> None:
     """Handle option selection and implementation details"""
-    options = parse_options(initial_response)
+    options = parse_analysis_options(initial_response)
     if not options:
         console = Console()
         console.print("[red]No valid options found in the response[/red]")
@@ -102,12 +128,11 @@ def handle_option_selection(claude: ClaudeAPIAgent, initial_response: str, reque
         option = get_option_selection()
         
         if option == 'M':
-            # Allow user to modify the request
-            console = Console()
-            console.print("\n[cyan]Current request:[/cyan]")
-            console.print(f"[dim]{request}[/dim]")
-            new_request = prompt_user("Enter modified request")
-            
+            # Use the new modify_request function for better UX
+            new_request = modify_request(request)
+            if new_request == request:
+                continue
+                
             # Rerun analysis with new request
             paths_to_scan = [workdir] if workdir else []
             if include:
@@ -119,8 +144,9 @@ def handle_option_selection(claude: ClaudeAPIAgent, initial_response: str, reque
             save_to_file(initial_response, 'analysis', workdir)
             
             format_analysis(initial_response, raw, claude)
-            options = parse_options(initial_response)
+            options = parse_analysis_options(initial_response)
             if not options:
+                console = Console()
                 console.print("[red]No valid options found in the response[/red]")
                 return
             continue

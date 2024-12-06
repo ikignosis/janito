@@ -1,9 +1,17 @@
 import re
-import uuid  # Add import for uuid
+import uuid
+from typing import List
+from dataclasses import dataclass
 
 # Core system prompt focused on role and purpose
-SYSTEM_PROMPT = """You are Janito, your friendly AI-powered software development buddy. I help you with coding tasks while being clear and concise in my responses."""
+SYSTEM_PROMPT = """I am Janito, your friendly software development buddy. I help you with coding tasks while being clear and concise in my responses."""
 
+@dataclass
+class AnalysisOption:
+    letter: str
+    summary: str
+    affected_files: List[str]
+    description: str  # Changed from description_items to single description
 
 CHANGE_ANALISYS_PROMPT = """
 Current files:
@@ -13,17 +21,21 @@ Current files:
 
 Considering the above current files content, provide options for the requested change in the following format:
 
-FORMAT:
-    A. Keyword summary of the change
-    -----------------
-    Affected files:
-    - file1.py, file2.py,  ...
+A. Keyword summary of the change
+-----------------
+Description:
+A clear and concise description of the proposed changes and their impact.
 
-    Description:
-    - Detailed description of the change
+Affected files:
+- file1.py
+- file2.py (new)
 
 
-Do not provide the content of any of the file suggested to be created or modified.
+RULES:
+- options are split by an empty line
+- do NOT provide the content of the files
+
+
 
 Request:
 {request}
@@ -52,9 +64,7 @@ If no changes are needed answer to any worksppace just reply <
 
 def build_selected_option_prompt(option: str, request: str, initial_response: str, files_content: str = "") -> str:
     """Build prompt for selected option details"""
-    options = parse_options(initial_response)
-    if option not in options:
-        raise ValueError(f"Option {option} not found in response")
+    options = parse_analysis_options(initial_response)  # Update function call
     
     short_uuid = str(uuid.uuid4())[:8]  # Generate a short UUID
     
@@ -65,7 +75,7 @@ def build_selected_option_prompt(option: str, request: str, initial_response: st
         uuid=short_uuid  # Pass the short UUID
     )
 
-def parse_options(response: str) -> dict[str, str]:
+def parse_analysis_options(response: str) -> dict[str, AnalysisOption]:
     """Parse options from the response text using letter-based format"""
     options = {}
     pattern = r'([A-Z])\.\s+([^\n]+)\s+-+\s+(.*?)(?=[A-Z]\.|$)'
@@ -76,9 +86,27 @@ def parse_options(response: str) -> dict[str, str]:
         summary = match.group(2).strip()
         details = match.group(3).strip()
         
-        # Combine summary with details
-        option_text = f"{summary}\n{details}"
-        options[option_letter] = option_text
+        files = []
+        description = ""
+        
+        # Split into sections
+        sections = details.split('Description:')
+        if len(sections) > 1:
+            desc_section = sections[1].split('Affected files:')[0]
+            description = desc_section.strip()  # Keep as single text
+            
+            # Parse affected files if present
+            if 'Affected files:' in sections[1]:
+                files_section = sections[1].split('Affected files:')[1]
+                files = [f.strip(' -\n') for f in files_section.strip().split('\n') if f.strip()]
+        
+        option = AnalysisOption(
+            letter=option_letter,
+            summary=summary,
+            affected_files=files,
+            description=description
+        )
+        options[option_letter] = option
         
     return options
 
