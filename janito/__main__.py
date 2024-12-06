@@ -4,10 +4,8 @@ from pathlib import Path
 from janito.claude import ClaudeAPIAgent
 import shutil
 from janito.prompts import (
-    build_request_analisys_prompt,
     build_selected_option_prompt,
-    SYSTEM_PROMPT,
-    parse_analysis_options
+    SYSTEM_PROMPT,    
 )
 from rich.console import Console
 from rich.markdown import Markdown
@@ -36,7 +34,7 @@ from rich.prompt import Prompt, Confirm
 from janito.config import config
 from janito.version import get_version
 from janito.common import progress_send_message
-from janito.analysis import format_analysis
+from janito.analysis import format_analysis, build_request_analysis_prompt, parse_analysis_options, get_history_file_type
 
 def prompt_user(message: str, choices: List[str] = None) -> str:
     """Display a prominent user prompt with optional choices"""
@@ -139,7 +137,7 @@ def handle_option_selection(claude: ClaudeAPIAgent, initial_response: str, reque
                 paths_to_scan.extend(include)
             files_content = collect_files_content(paths_to_scan, workdir) if paths_to_scan else ""
             
-            initial_prompt = build_request_analisys_prompt(files_content, new_request)
+            initial_prompt = build_request_analysis_prompt(files_content, new_request)
             initial_response = progress_send_message(claude, initial_prompt)
             save_to_file(initial_response, 'analysis', workdir)
             
@@ -182,12 +180,26 @@ def replay_saved_file(filepath: Path, claude: ClaudeAPIAgent, workdir: Path, raw
     if not filepath.exists():
         raise FileNotFoundError(f"File {filepath} not found")
     
-    file_type = get_file_type(filepath)
     content = filepath.read_text()
     
+    # Add debug output of file content
+    if config.debug:
+        console = Console()
+        console.print("\n[bold blue]Debug: File Content[/bold blue]")
+        console.print(Panel(
+            content,
+            title=f"Content of {filepath.name}",
+            border_style="blue",
+            padding=(1, 2)
+        ))
+        console.print()
+
+    file_type = get_history_file_type(filepath)
+    
     if file_type == 'changes':
-        changes = parse_block_changes(content)
-        preview_and_apply_changes(changes, workdir, config.test_cmd)
+        success, _ = handle_changes_file(filepath, workdir, config.test_cmd)
+        if not success:
+            raise typer.Exit(1)
     elif file_type == 'analysis':
         format_analysis(content, raw, claude)
         handle_option_selection(claude, content, content, raw, workdir)
@@ -298,7 +310,7 @@ def typer_main(
     else:
         files_content = collect_files_content(paths_to_scan, workdir)
     
-    initial_prompt = build_request_analisys_prompt(files_content, request)
+    initial_prompt = build_request_analysis_prompt(files_content, request)
     initial_response = progress_send_message(claude, initial_prompt)
     save_to_file(initial_response, 'analysis', workdir)
     

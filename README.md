@@ -68,6 +68,7 @@ janito REQUEST [OPTIONS]
 - `--ask`: Ask a question about the codebase
 - `--scan`: Preview files that would be analyzed
 - `-t, --test COMMAND`: Test command to run before applying changes (overrides JANITO_TEST_CMD)
+- `--version`: Show version and exit
 
 ### 🖥️ Interactive Console Mode
 

@@ -2,44 +2,11 @@ import re
 import uuid
 from typing import List
 from dataclasses import dataclass
+from .analysis import parse_analysis_options
 
 # Core system prompt focused on role and purpose
 SYSTEM_PROMPT = """I am Janito, your friendly software development buddy. I help you with coding tasks while being clear and concise in my responses."""
 
-@dataclass
-class AnalysisOption:
-    letter: str
-    summary: str
-    affected_files: List[str]
-    description: str  # Changed from description_items to single description
-
-CHANGE_ANALISYS_PROMPT = """
-Current files:
-<files>
-{files_content}
-</files>
-
-Considering the above current files content, provide options for the requested change in the following format:
-
-A. Keyword summary of the change
------------------
-Description:
-A clear and concise description of the proposed changes and their impact.
-
-Affected files:
-- file1.py
-- file2.py (new)
-
-
-RULES:
-- options are split by an empty line
-- do NOT provide the content of the files
-
-
-
-Request:
-{request}
-"""
 
 SELECTED_OPTION_PROMPT = """
 Original request: {request}
@@ -52,14 +19,31 @@ Current files:
 {files_content}
 </files>
 
-After checking the above files and the provided implementation, please provide the following:
+After checking the above files and the provided implementation, please provide the changes per the following format:
 
-## {uuid} filename begin "short description of the change" ##
-<entire file content>
-## {uuid} filename end ##
+## {uuid} file <filepath> modify "short description of the changes" ##
+## {uuid} change begin ##
+<change_content>
+## {uuid} change end ##
+## {uuid} file end ##
 
-ALWAYS provide the entire file content, not just the changes.
-If no changes are needed answer to any worksppace just reply <
+RULES:
+- Prefix every line in change_context with one of:
+  "=" for context lines to match location
+  ">" for lines to be added
+  "<" for lines to be deleted
+- Provide enough context lines before and after the change to locate the original content
+- Preserve empty lines exactly as they appear in the file
+- Empty lines should be prefixed with "=" for context or ">" for additions
+
+For file creations use:
+
+## {uuid} file <filepath> create "short description of the new file" ##
+<full_file_content>
+## {uuid} file end ##
+full_file_content should contain the entire content of the new file without any prefixes.
+Preserve all empty lines exactly as they should appear in the file.
+
 """
 
 def build_selected_option_prompt(option: str, request: str, initial_response: str, files_content: str = "") -> str:
@@ -73,47 +57,4 @@ def build_selected_option_prompt(option: str, request: str, initial_response: st
         request=request,
         files_content=files_content,
         uuid=short_uuid  # Pass the short UUID
-    )
-
-def parse_analysis_options(response: str) -> dict[str, AnalysisOption]:
-    """Parse options from the response text using letter-based format"""
-    options = {}
-    pattern = r'([A-Z])\.\s+([^\n]+)\s+-+\s+(.*?)(?=[A-Z]\.|$)'
-    matches = re.finditer(pattern, response, re.DOTALL)
-    
-    for match in matches:
-        option_letter = match.group(1)
-        summary = match.group(2).strip()
-        details = match.group(3).strip()
-        
-        files = []
-        description = ""
-        
-        # Split into sections
-        sections = details.split('Description:')
-        if len(sections) > 1:
-            desc_section = sections[1].split('Affected files:')[0]
-            description = desc_section.strip()  # Keep as single text
-            
-            # Parse affected files if present
-            if 'Affected files:' in sections[1]:
-                files_section = sections[1].split('Affected files:')[1]
-                files = [f.strip(' -\n') for f in files_section.strip().split('\n') if f.strip()]
-        
-        option = AnalysisOption(
-            letter=option_letter,
-            summary=summary,
-            affected_files=files,
-            description=description
-        )
-        options[option_letter] = option
-        
-    return options
-
-def build_request_analisys_prompt(files_content: str, request: str) -> str:
-    """Build prompt for information requests"""
-
-    return CHANGE_ANALISYS_PROMPT.format(
-        files_content=files_content,
-        request=request
     )

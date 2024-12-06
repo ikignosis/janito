@@ -15,15 +15,60 @@ from rich.columns import Columns
 from rich.rule import Rule
 from rich.prompt import Prompt
 from janito.claude import ClaudeAPIAgent
-from janito.prompts import (
-    parse_analysis_options,
-    build_request_analisys_prompt,
-    build_selected_option_prompt,
-    AnalysisOption
-)
 from janito.scan import collect_files_content
 from janito.common import progress_send_message
 from janito.config import config
+from dataclasses import dataclass
+import re
+
+def get_history_file_type(filepath: Path) -> str:
+    """Determine the type of saved file based on its name"""
+    name = filepath.name.lower()
+    if 'changes' in name:
+        return 'changes'
+    elif 'selected' in name:
+        return 'selected'
+    elif 'analysis' in name:
+        return 'analysis'
+    elif 'response' in name:
+        return 'response'
+    return 'unknown'
+
+@dataclass
+class AnalysisOption:
+    letter: str
+    summary: str
+    affected_files: List[str]
+    description: str  # Changed from description_items to single description
+
+CHANGE_ANALYSIS_PROMPT = """
+Current files:
+<files>
+{files_content}
+</files>
+
+Considering the above current files content, provide options for the requested change in the following format:
+
+A. Keyword summary of the change
+-----------------
+Description:
+A clear and concise description of the proposed changes and their impact.
+
+Affected files:
+- file1.py
+- file2.py (new)
+-----------------
+END_OF_OPTIONS (mandatory marker)
+
+RULES:
+- do NOT provide the content of the files
+- do NOT offer to implement the changes
+
+Request:
+{request}
+"""
+
+
 
 # Constants for display modes
 COMPACT_WIDTH_THRESHOLD = 80  # Switch to compact mode below this width
@@ -71,8 +116,13 @@ def _display_options(options: Dict[str, AnalysisOption]) -> None:
     
     # Calculate optimal column width and count based on terminal width
     terminal_width = console.width
-    max_columns = max(1, terminal_width // MIN_COLUMN_WIDTH)
-    column_width = max(MIN_COLUMN_WIDTH, terminal_width // max_columns - 4)  # -4 for padding
+    # Calculate number of columns that will fit
+    max_columns = max(1, min(len(options), terminal_width // MIN_COLUMN_WIDTH))
+    # Calculate column width to fill terminal width evenly
+    column_width = (terminal_width - (4 * (max_columns - 1))) // max_columns
+    
+    # Ensure minimum width
+    column_width = max(MIN_COLUMN_WIDTH, column_width)
     
     # Create panels for each option
     panels = []
@@ -100,10 +150,11 @@ def _display_options(options: Dict[str, AnalysisOption]) -> None:
         panels.append(panel)
     
     # Display panels in columns
+    # Create centered columns display
     columns = Columns(
         panels,
         width=column_width,
-        align="left",
+        align="center",
         padding=(0, 2),
         expand=True
     )
@@ -163,3 +214,49 @@ def save_to_file(content: str, prefix: str, workdir: Path) -> Path:
     file_path = history_dir / filename
     file_path.write_text(content)
     return file_path
+
+
+
+def parse_analysis_options(response: str) -> dict[str, AnalysisOption]:
+    """Parse options from the response text using letter-based format until END_OF_OPTIONS"""
+    options = {}
+    
+    # Extract content up to END_OF_OPTIONS
+    if 'END_OF_OPTIONS' in response:
+        response = response.split('END_OF_OPTIONS')[0]
+        
+    # Pattern to match sections between dashed lines
+    pattern = r'([A-Z])\.\s+([^\n]+?)\s*-+\s*Description:\s*(.*?)\s*Affected files:\s*(.*?)\s*-+\s*(?:[A-Z]\.|$)'
+    matches = re.finditer(pattern, response, re.DOTALL)
+    
+    for match in matches:
+        option_letter = match.group(1)
+        summary = match.group(2).strip()
+        description = (match.group(3) or "").strip()
+        files_section = match.group(4) or ""
+        
+        # Parse affected files, now handling the "- filename (modified)" format
+        files = []
+        for line in files_section.strip().split('\n'):
+            line = line.strip(' -\n')
+            if line:
+                # Strip any (modified) or (new) annotations
+                file_path = re.sub(r'\s*\([^)]+\)\s*$', '', line)
+                files.append(file_path)
+        
+        option = AnalysisOption(
+            letter=option_letter,
+            summary=summary,
+            affected_files=files,
+            description=description
+        )
+        options[option_letter] = option
+        
+    return options
+
+def build_request_analysis_prompt(files_content: str, request: str) -> str:
+    """Build prompt for information requests"""
+    return CHANGE_ANALYSIS_PROMPT.format(
+        files_content=files_content,
+        request=request
+    )

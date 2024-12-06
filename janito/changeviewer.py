@@ -3,46 +3,46 @@ from rich.console import Console
 from rich.text import Text
 from rich.panel import Panel
 from rich.table import Table
-from typing import TypedDict
-import difflib
+from typing import List, Optional
 from rich import box
+from janito.fileparser import FileChange
 
-class FileChange(TypedDict):
-    """Type definition for a file change"""
-    description: str
-    new_content: str
-
-def show_file_changes(console: Console, filepath: Path, original: str, new_content: str, description: str) -> None:
-    """Display side by side comparison of file changes"""
-    half_width = (console.width - 3) // 2
+def format_sequence_preview(lines: List[str]) -> Text:
+    """Format a sequence of prefixed lines into rich text with colors"""
+    text = Text()
+    last_was_empty = False
     
-    # Show header
-    console.print(f"\n[bold blue]Changes for {filepath}[/bold blue]")
-    console.print(f"[dim]{description}[/dim]\n")
-    
-    # Show side by side content
-    console.print(Text("OLD".center(half_width) + "│" + "NEW".center(half_width), style="blue bold"))
-    console.print(Text("─" * half_width + "┼" + "─" * half_width, style="blue"))
-    
-    old_lines = original.splitlines()
-    new_lines = new_content.splitlines()
-    
-    for i in range(max(len(old_lines), len(new_lines))):
-        old = old_lines[i] if i < len(old_lines) else ""
-        new = new_lines[i] if i < len(new_lines) else ""
+    for line in lines:
+        if not line:
+            # Preserve empty lines but don't duplicate them
+            if not last_was_empty:
+                text.append("\n")
+            last_was_empty = True
+            continue
         
-        old_text = Text(f"{old:<{half_width}}", style="red" if old != new else None)
-        new_text = Text(f"{new:<{half_width}}", style="green" if old != new else None)
-        console.print(old_text + Text("│", style="blue") + new_text)
+        last_was_empty = False
+        prefix = line[0] if line[0] in ('=', '>', '<') else ' '
+        content = line[1:] if line[0] in ('=', '>', '<') else line
+        
+        if prefix == '=':
+            text.append(f" {content}\n", style="dim")
+        elif prefix == '>':
+            text.append(f"+{content}\n", style="green")
+        elif prefix == '<':
+            text.append(f"-{content}\n", style="red")
+        else:
+            text.append(f" {content}\n", style="yellow dim")
+    
+    return text
 
-def show_diff_changes(console: Console, filepath: Path, original: str, new_content: str, description: str) -> None:
-    """Display file changes using unified diff format in a rich panel structure with line numbers"""
+def show_change_preview(console: Console, filepath: Path, change: FileChange) -> None:
+    """Display a preview of changes for a single file"""
     # Create file info table
     info_table = Table(show_header=False, box=None, padding=(0, 2))
     info_table.add_row("File:", Text(str(filepath), style="cyan"))
-    info_table.add_row("Type:", Text(filepath.suffix[1:] if filepath.suffix else "unknown", style="yellow"))
-    info_table.add_row("Description:", Text(description, style="italic"))
-
+    info_table.add_row("Type:", Text("New file" if change.is_new_file else "Modified", style="yellow"))
+    info_table.add_row("Description:", Text(change.description, style="italic"))
+    
     # Create file info panel
     info_panel = Panel(
         info_table,
@@ -51,63 +51,27 @@ def show_diff_changes(console: Console, filepath: Path, original: str, new_conte
         border_style="blue",
         box=box.ROUNDED
     )
-
-    # Generate diff with line numbers
-    old_lines = original.splitlines()
-    new_lines = new_content.splitlines()
-    diff_lines = list(difflib.unified_diff(
-        old_lines,
-        new_lines,
-        fromfile=f'{filepath.name}_old',
-        tofile=f'{filepath.name}_new',
-        lineterm=''
-    ))
-
-    # Format diff content with colors and line numbers
-    diff_content = Text()
-    line_num_old = 1
-    line_num_new = 1
     
-    for line in diff_lines:
-        # Skip the header lines
-        if line.startswith('---') or line.startswith('+++'):
-            diff_content.append(f"{line}\n", style="bold red" if line.startswith('---') else "bold green")
-            continue
-            
-        # Handle chunk headers
-        if line.startswith('@@'):
-            diff_content.append(f"{line}\n", style="cyan")
-            # Parse line numbers from chunk header
-            numbers = line[line.find('-'):line.find(' @@')].replace(' ', '').split(',')
-            if len(numbers) >= 2:
-                line_num_old = int(numbers[0].replace('-', ''))
-                line_num_new = int(numbers[1].replace('+', ''))
-            continue
-
-        # Add line numbers and content
-        if line.startswith('-'):
-            diff_content.append(f"{line_num_old:4d} {line}\n", style="red")
-            line_num_old += 1
-        elif line.startswith('+'):
-            diff_content.append(f"{line_num_new:4d} {line}\n", style="green")
-            line_num_new += 1
-        else:
-            diff_content.append(f"{line_num_old:4d} {line}\n")
-            line_num_old += 1
-            line_num_new += 1
-
-    # Create diff content panel
-    diff_panel = Panel(
-        diff_content,
-        title="Changes",
+    # Create changes panel
+    panel_title = "New File Content" if change.is_new_file else "Changes"
+    changes_panel = Panel(
+        format_sequence_preview(change.change_content),
+        title=panel_title,
         title_align="left",
         border_style="blue",
         box=box.ROUNDED
     )
-
+    
     # Print panels with spacing
     console.print("\n")
     console.print(info_panel)
-    console.print()  # Add spacing between panels
-    console.print(diff_panel)
-    console.print()  # Add spacing after panels
+    console.print()
+    console.print(changes_panel)
+    console.print()
+
+def preview_all_changes(console: Console, changes: dict[Path, FileChange]) -> None:
+    """Show preview for all file changes"""
+    console.print("\n[bold blue]Change Preview[/bold blue]")
+    
+    for filepath, change in changes.items():
+        show_change_preview(console, filepath, change)

@@ -6,7 +6,7 @@ from prompt_toolkit.formatted_text import HTML
 from pathlib import Path
 from rich.console import Console
 from janito.claude import ClaudeAPIAgent
-from janito.prompts import build_request_analisys_prompt, SYSTEM_PROMPT
+from janito.prompts import build_request_analysis_prompt, SYSTEM_PROMPT
 from janito.scan import collect_files_content
 from janito.__main__ import handle_option_selection
 from rich.panel import Panel
@@ -163,7 +163,7 @@ def process_command(command: str, args: str, workdir: Path, include: List[Path],
         files_content = collect_files_content(paths_to_scan, workdir)
 
         with console.status("[bold cyan]Analyzing request...[/bold cyan]"):
-            initial_prompt = build_request_analisys_prompt(files_content, args)
+            initial_prompt = build_request_analysis_prompt(files_content, args)
             initial_response = progress_send_message(claude, initial_prompt)
 
         console.print(initial_response)

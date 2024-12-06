@@ -1,6 +1,6 @@
 import pytest
 from janito.prompts import (
-    build_request_analisys_prompt,
+    build_request_analysis_prompt,
     build_selected_option_prompt,
     parse_options,
     SYSTEM_PROMPT
@@ -28,7 +28,7 @@ def test_build_request_analysis_prompt():
     files_content = "test content"
     request = "create tests"
     
-    prompt = build_request_analisys_prompt(files_content, request)
+    prompt = build_request_analysis_prompt(files_content, request)
     
     assert "test content" in prompt
     assert "create tests" in prompt
