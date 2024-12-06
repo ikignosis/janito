@@ -39,7 +39,7 @@ class AnalysisOption:
     letter: str
     summary: str
     affected_files: List[str]
-    description: str  # Changed from description_items to single description
+    description_items: List[str]  # Changed from description to description_items
 
 CHANGE_ANALYSIS_PROMPT = """
 Current files:
@@ -52,7 +52,7 @@ Considering the above current files content, provide options for the requested c
 A. Keyword summary of the change
 -----------------
 Description:
-A clear and concise description of the proposed changes and their impact.
+- Detailed description of the change
 
 Affected files:
 - file1.py
@@ -102,38 +102,33 @@ def get_option_selection() -> str:
         console.print("[red]Please enter a valid letter or 'M'[/red]")
 
 def _display_options(options: Dict[str, AnalysisOption]) -> None:
-    """Display available options in a multi-column layout.
+    """Display available options in a vertical layout.
     
     Args:
         options: Dictionary of option letters to AnalysisOption objects
     """
     console = Console()
     
-    # Display centered title using Rule instead of Panel
+    # Display centered title using Rule
     console.print()
     console.print(Rule(" Available Options ", style="bold cyan", align="center"))
     console.print()
     
-    # Calculate optimal column width and count based on terminal width
+    # Calculate panel width based on terminal width
     terminal_width = console.width
-    # Calculate number of columns that will fit
-    max_columns = max(1, min(len(options), terminal_width // MIN_COLUMN_WIDTH))
-    # Calculate column width to fill terminal width evenly
-    column_width = (terminal_width - (4 * (max_columns - 1))) // max_columns
+    panel_width = min(terminal_width - 4, MIN_PANEL_WIDTH)
     
-    # Ensure minimum width
-    column_width = max(MIN_COLUMN_WIDTH, column_width)
-    
-    # Create panels for each option
-    panels = []
+    # Create and display panels for each option
     for letter, option in options.items():
         content = Text()
         
-        # Display description as paragraph
+        # Display description as bullet points
         content.append("Description:\n", style="bold cyan")
-        content.append(f"{option.description}\n\n", style="white")
+        for item in option.description_items:
+            content.append(f"• {item}\n", style="white")
+        content.append("\n")
         
-        # Then display affected files
+        # Display affected files
         if option.affected_files:
             content.append("Affected files:\n", style="bold cyan")
             for file in option.affected_files:
@@ -141,25 +136,14 @@ def _display_options(options: Dict[str, AnalysisOption]) -> None:
         
         panel = Panel(
             content,
-            width=column_width,
+            width=panel_width,
             box=box.ROUNDED,
             border_style="cyan",
             title=f"Option {letter}: {option.summary}",
             title_align="center"
         )
-        panels.append(panel)
-    
-    # Display panels in columns
-    # Create centered columns display
-    columns = Columns(
-        panels,
-        width=column_width,
-        align="center",
-        padding=(0, 2),
-        expand=True
-    )
-    console.print(columns)
-    console.print()  # Add spacing after options
+        console.print(panel)
+        console.print()  # Add spacing between panels
 
 def _display_markdown(content: str) -> None:
     """Display content in markdown format."""
@@ -177,13 +161,7 @@ def _display_raw_history(claude: ClaudeAPIAgent) -> None:
     console.print("\n=== End Message History ===\n")
 
 def format_analysis(analysis: str, raw: bool = False, claude: Optional[ClaudeAPIAgent] = None) -> None:
-    """Format and display the analysis output with enhanced capabilities.
-    
-    Args:
-        analysis: The analysis text to format and display
-        raw: Whether to show raw message history
-        claude: Optional Claude API agent for message history
-    """
+    """Format and display the analysis output with enhanced capabilities."""
     console = Console()
     
     if raw and claude:
@@ -193,6 +171,7 @@ def format_analysis(analysis: str, raw: bool = False, claude: Optional[ClaudeAPI
         if options:
             _display_options(options)
         else:
+            console.print("\n[yellow]Warning: No valid options found in response. Displaying as markdown.[/yellow]\n")
             _display_markdown(analysis)
 
 def get_history_path(workdir: Path) -> Path:
@@ -232,7 +211,15 @@ def parse_analysis_options(response: str) -> dict[str, AnalysisOption]:
     for match in matches:
         option_letter = match.group(1)
         summary = match.group(2).strip()
-        description = (match.group(3) or "").strip()
+        
+        # Parse description into bullet points
+        description_items = []
+        raw_description = (match.group(3) or "").strip()
+        for line in raw_description.split('\n'):
+            line = line.strip(' -•\n')
+            if line:
+                description_items.append(line)
+        
         files_section = match.group(4) or ""
         
         # Parse affected files, now handling the "- filename (modified)" format
@@ -248,7 +235,7 @@ def parse_analysis_options(response: str) -> dict[str, AnalysisOption]:
             letter=option_letter,
             summary=summary,
             affected_files=files,
-            description=description
+            description_items=description_items
         )
         options[option_letter] = option
         

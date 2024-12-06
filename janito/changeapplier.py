@@ -7,7 +7,7 @@ from rich.console import Console
 from rich.prompt import Confirm
 from rich.panel import Panel
 from rich import box
-from janito.fileparser import FileChange
+from janito.fileparser import FileChange, validate_python_syntax
 from janito.changeviewer import preview_all_changes
 from janito.contextparser import apply_changes, parse_change_block
 from janito.config import config  # Add this import
@@ -53,7 +53,7 @@ def parse_and_apply_changes_sequence(input_text: str, changes_text: str) -> str:
     < Remove line at current position
     > Add line at current position
     """
-    def find_sequence_start(text_lines, sequence):
+    def find_initial_start(text_lines, sequence):
         for i in range(len(text_lines) - len(sequence) + 1):
             matches = True
             for j, seq_line in enumerate(sequence):
@@ -84,7 +84,7 @@ def parse_and_apply_changes_sequence(input_text: str, changes_text: str) -> str:
         else:
             break
     
-    start_pos = find_sequence_start(input_lines, sequence)
+    start_pos = find_initial_start(input_lines, sequence)
     
     if start_pos == -1:
         if config.debug:
@@ -134,34 +134,55 @@ def parse_and_apply_changes_sequence(input_text: str, changes_text: str) -> str:
             
     return '\n'.join(result_lines)
 
+def normalize_content(text: str) -> str:
+    """Normalize text for searching by removing line endings and normalizing whitespace"""
+    # Convert all line endings to \n first
+    text = text.replace('\r\n', '\n').replace('\r', '\n')
+    # Strip line endings for comparison while preserving internal whitespace
+    return text.strip('\n')
+
 def apply_single_change(filepath: Path, change: FileChange, workdir: Path, preview_dir: Path) -> Tuple[bool, Optional[str]]:
-    """Apply a single file change and return (success, error_message)"""
+    """Apply a single file change"""
     preview_path = preview_dir / filepath
     preview_path.parent.mkdir(parents=True, exist_ok=True)
     
     if change.is_new_file:
-        # For new files, extract content without prefixes
-        content = []
-        for line in change.change_content:
-            if line.startswith('>'):
-                content.append(line[1:])
-        new_content = '\n'.join(content)
-        preview_path.write_text(new_content)
+        preview_path.write_text(change.content)
         return True, None
         
-    # For modifications, use context matching
+    # For modifications, read original and apply all search/replace blocks
     orig_path = workdir / filepath
     if not orig_path.exists():
         return False, f"Cannot modify non-existent file {filepath}"
         
-    # Read original content and apply changes
-    original = orig_path.read_text()
-    new_content = parse_and_apply_changes_sequence(original, '\n'.join(change.change_content))
+    content = orig_path.read_text()
+    modified = content
     
-    if new_content == original:
-        return False, "No changes were applied - context matching may have failed"
+    for search, replace in change.search_blocks:
+        # Normalize for searching but keep original for display
+        normalized_search = normalize_content(search)
+        normalized_content = normalize_content(modified)
         
-    preview_path.write_text(new_content)
+        if normalized_search not in normalized_content:
+            # Format both search text and file content to show whitespace
+            debug_search = format_whitespace_debug(search)
+            debug_content = format_whitespace_debug(modified)
+            error_msg = (
+                f"Could not find search text in {filepath}:\n\n"
+                f"[yellow]Search text (with whitespace markers):[/yellow]\n"
+                f"{debug_search}\n\n"
+                f"[yellow]File content (with whitespace markers):[/yellow]\n"
+                f"{debug_content}"
+            )
+            return False, error_msg
+            
+        # Use original text for replacement to preserve line endings
+        modified = modified.replace(normalized_search, "" if replace is None else replace)
+        
+    if modified == content:
+        return False, "No changes were applied"
+        
+    preview_path.write_text(modified)
     return True, None
 
 def preview_and_apply_changes(changes: Dict[Path, FileChange], workdir: Path, test_cmd: str = None) -> bool:
@@ -178,7 +199,6 @@ def preview_and_apply_changes(changes: Dict[Path, FileChange], workdir: Path, te
 
     with tempfile.TemporaryDirectory() as temp_dir:
         preview_dir = Path(temp_dir)
-        console.print("\n[blue]Creating preview in temporary directory...[/blue]")
         console.print("\n[blue]Creating preview in temporary directory...[/blue]")
         
         # Copy existing files
@@ -199,6 +219,16 @@ def preview_and_apply_changes(changes: Dict[Path, FileChange], workdir: Path, te
         if any_errors:
             console.print("\n[red]Some changes could not be previewed. Aborting.[/red]")
             return False
+
+        # Validate Python syntax for all modified Python files
+        python_files = [f for f in changes.keys() if f.suffix == '.py']
+        for filepath in python_files:
+            preview_path = preview_dir / filepath
+            is_valid, error_msg = validate_python_syntax(preview_path.read_text(), preview_path)
+            if not is_valid:
+                console.print(f"\n[red]Python syntax validation failed for {filepath}:[/red]")
+                console.print(f"[red]{error_msg}[/red]")
+                return False
 
         # Run tests if specified
         if test_cmd:
