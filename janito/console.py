@@ -6,7 +6,8 @@ from prompt_toolkit.formatted_text import HTML
 from pathlib import Path
 from rich.console import Console
 from janito.claude import ClaudeAPIAgent
-from janito.prompts import build_request_analysis_prompt, SYSTEM_PROMPT
+from janito.prompts import SYSTEM_PROMPT
+from janito.analysis import build_request_analysis_prompt
 from janito.scan import collect_files_content
 from janito.__main__ import handle_option_selection
 from rich.panel import Panel
