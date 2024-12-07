@@ -3,6 +3,7 @@ from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.syntax import Syntax
 from rich.table import Table
+from rich.rule import Rule
 from janito.claude import ClaudeAPIAgent
 from janito.common import progress_send_message
 from typing import Dict, List

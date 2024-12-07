@@ -1,8 +1,8 @@
 import re
 import uuid
-from typing import List
+from typing import List, Union
 from dataclasses import dataclass
-from .analysis import parse_analysis_options
+from .analysis import parse_analysis_options, AnalysisOption
 
 # Core system prompt focused on role and purpose
 SYSTEM_PROMPT = """I am Janito, your friendly software development buddy. I help you with coding tasks while being clear and concise in my responses."""
@@ -18,6 +18,11 @@ Current files:
 <files>
 {files_content}
 </files>
+
+RULES:
+- When revmoing constants, ensure they are not used elsewhere
+- When adding new features to python files, add the necessary imports
+- Python imports should be inserted at the top of the file
 
 Please provide the changes in this format:
 
@@ -43,15 +48,19 @@ RULES:
 1. search_content MUST preserve the original identation/whitespace 
 """
 
-def build_selected_option_prompt(option: str, request: str, initial_response: str, files_content: str = "") -> str:
-    """Build prompt for selected option details"""
-    options = parse_analysis_options(initial_response)  # Update function call
+def build_selected_option_prompt(option_text: str, request: str, files_content: str = "") -> str:
+    """Build prompt for selected option details
     
-    short_uuid = str(uuid.uuid4())[:8]  # Generate a short UUID
+    Args:
+        option_text: Formatted text describing the selected option
+        request: The original user request
+        files_content: Content of relevant files
+    """
+    short_uuid = str(uuid.uuid4())[:8]
     
     return SELECTED_OPTION_PROMPT.format(
-        option_text=options[option],
+        option_text=option_text,
         request=request,
         files_content=files_content,
-        uuid=short_uuid  # Pass the short UUID
+        uuid=short_uuid
     )

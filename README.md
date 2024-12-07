@@ -56,19 +56,26 @@ janito REQUEST [OPTIONS]
 ```
 
 #### Arguments
-- `REQUEST`: The modification request
+- `REQUEST`: The modification request to process (optional)
 
 #### Options
-- `-w, --workdir PATH`: Working directory (defaults to current directory)
-- `--raw`: Print raw response instead of markdown format
-- `--play PATH`: Replay a saved prompt file
-- `-i, --include PATH`: Additional paths to include in analysis
-- `--debug`: Show debug information
-- `-v, --verbose`: Show verbose output
-- `--ask`: Ask a question about the codebase
-- `--scan`: Preview files that would be analyzed
-- `-t, --test COMMAND`: Test command to run before applying changes (overrides JANITO_TEST_CMD)
+##### General Options
 - `--version`: Show version and exit
+- `-w, --workdir PATH`: Working directory (defaults to current directory)
+- `-i, --include PATH`: Additional paths to include in analysis (can be used multiple times)
+
+##### Operation Modes
+- `--ask TEXT`: Ask a question about the codebase instead of making changes
+- `--scan`: Preview files that would be analyzed without making changes
+- `--play PATH`: Replay a saved prompt file
+
+##### Output Control
+- `--raw`: Print raw response instead of markdown format
+- `-v, --verbose`: Show verbose output
+- `--debug`: Show debug information
+
+##### Testing
+- `-t, --test COMMAND`: Test command to run before applying changes (overrides JANITO_TEST_CMD)
 
 ### 🖥️ Interactive Console Mode
 

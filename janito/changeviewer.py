@@ -10,8 +10,8 @@ from janito.fileparser import FileChange
 from janito.analysis import AnalysisOption  # Add this import
 from rich.columns import Columns  # Add this import at the top with other imports
 
-MIN_COLUMN_WIDTH = 60  # Minimum width for each column
 MIN_PANEL_WIDTH = 40   # Minimum width for each panel
+
 
 def format_sequence_preview(lines: List[str]) -> Text:
     """Format a sequence of prefixed lines into rich text with colors"""
@@ -46,10 +46,9 @@ def format_sequence_preview(lines: List[str]) -> Text:
 
 
 
-def show_color_legend(console: Console) -> None:
+def show_changes_legend(console: Console) -> None:
     """Display a legend explaining the colors and symbols used in change previews in a horizontal layout"""
     # Create a list of colored text objects
-
     legend_items = [
         Text("Unchanged", style="#98C379"),
         Text(" • ", style="dim"),
@@ -75,26 +74,18 @@ def show_color_legend(console: Console) -> None:
         padding=(0, 1)
     )
     
-    console.print(legend_panel)
-    console.print()
+    # Center the legend panel horizontally
+    console.print(Columns([legend_panel], align="center"))
+    console.print()  # Add extra line for spacing
 
 
 def show_change_preview(console: Console, filepath: Path, change: FileChange) -> None:
     """Display a preview of changes for a single file with side-by-side comparison"""
-    # Show color legend first
-    show_color_legend(console)
-    
-    # Create file info table
-    info_table = Table(show_header=False, box=None, padding=(0, 2))
-    info_table.add_row("File:", Text(str(filepath), style="cyan"))
-    info_table.add_row("Type:", Text("New file" if change.is_new_file else "Modified", style="yellow"))
-    info_table.add_row("Description:", Text(change.description, style="italic"))
-    
+    # Show changes legend first
+    show_changes_legend(console)
+      
     # Create main file panel content
     main_content = []
-    main_content.append(info_table)
-
-    
 
     # Handle new file preview
     if change.is_new_file:
@@ -114,9 +105,6 @@ def show_change_preview(console: Console, filepath: Path, change: FileChange) ->
             title_align="left",
             border_style="white",
             box=box.ROUNDED        )
-        console.print("\n")
-        console.print(file_panel)
-        console.print()
         return
 
     
@@ -140,9 +128,6 @@ def show_change_preview(console: Console, filepath: Path, change: FileChange) ->
             main_content.append(change_panel)
         else:
             # For replacements, show side-by-side panels
-            # Calculate panel widths based on terminal width
-            term_width = console.width or 100
-            panel_width = max(MIN_PANEL_WIDTH, (term_width - 4) // 2)
 
             
             # Find common content between search and replace
@@ -181,21 +166,29 @@ def show_change_preview(console: Console, filepath: Path, change: FileChange) ->
             def format_content(lines: List[str], is_search: bool) -> Text:
                 text = Text()
                 
-                # Enhanced color scheme for better readability
                 COLORS = {
                     'unchanged': '#98C379',  # Brighter green for unchanged lines
                     'removed': '#E06C75',    # Clearer red for removed lines
                     'added': '#61AFEF',      # Bright blue for added lines
                     'new': '#C678DD',        # Purple for completely new lines
+                    'relocated': '#61AFEF'    # Use same blue for relocated lines
                 }
                 
                 # Create sets of lines for comparison
                 search_set = set(search_lines)
                 replace_set = set(replace_lines)
-                new_lines = replace_set - search_set if not is_search else set()
+                common_lines = search_set & replace_set
+                new_lines = replace_set - search_set
+                relocated_lines = common_lines - set(common_top) - set(common_bottom)
 
                 def add_line(line: str, style: str, prefix: str = " "):
-                    # Add prefix and content
+                    # Special handling for icons
+                    if style == COLORS['relocated']:
+                        prefix = "⇄"
+                    elif style == COLORS['removed'] and prefix == "-":
+                        prefix = "✕"
+                    elif style == COLORS['new'] or (style == COLORS['added'] and prefix == "+"):
+                        prefix = "✚"
                     text.append(prefix, style=style)
                     text.append(f" {line}\n", style=style)
                 
@@ -205,11 +198,13 @@ def show_change_preview(console: Console, filepath: Path, change: FileChange) ->
                 
                 # Format changed middle section
                 for line in (search_middle if is_search else replace_middle):
-                    prefix = "-" if is_search else "+"
-                    if not is_search and line in new_lines:
-                        add_line(line, COLORS['new'], prefix)
+                    if line in relocated_lines:
+                        add_line(line, COLORS['relocated'], "⇄")
+                    elif not is_search and line in new_lines:
+                        add_line(line, COLORS['new'], "+")
                     else:
                         style = COLORS['removed'] if is_search else COLORS['added']
+                        prefix = "✕" if is_search else "+"
                         add_line(line, style, prefix)
                 
                 # Format common bottom section
@@ -220,26 +215,24 @@ def show_change_preview(console: Console, filepath: Path, change: FileChange) ->
             
 
 
-            # Create panels for old and new content with more visible colors
+            # Create panels for old and new content without width constraints
             old_panel = Panel(
                 format_content(search_lines, True),
                 title="Current Content",
                 title_align="left",
-                border_style="#E06C75",  # Use a brighter red
-                box=box.ROUNDED,
-                width=panel_width
+                border_style="#E06C75",
+                box=box.ROUNDED
             )
             
             new_panel = Panel(
                 format_content(replace_lines, False),
                 title="New Content",
                 title_align="left",
-                border_style="#61AFEF",  # Use a brighter blue
-                box=box.ROUNDED,
-                width=panel_width
+                border_style="#61AFEF",
+                box=box.ROUNDED
             )
 
-            # Add change panels to main content
+            # Add change panels to main content with auto-fitting columns
             change_columns = Columns([old_panel, new_panel], equal=True, align="center")
             change_panel = Panel(
                 change_columns,
@@ -253,12 +246,11 @@ def show_change_preview(console: Console, filepath: Path, change: FileChange) ->
     # Create and display main file panel
     file_panel = Panel(
         Columns(main_content, align="center"),
-        title=str(filepath),
+        title=f"Modifying {filepath}",
         title_align="left",
         border_style="white",
         box=box.ROUNDED
     )
-    console.print("\n")
     console.print(file_panel)
     console.print()
 
@@ -295,9 +287,12 @@ def _display_options(options: Dict[str, AnalysisOption]) -> None:
     min_panels_per_row = 1
     max_panels_per_row = 3
     optimal_panel_width = min(
-        max(MIN_PANEL_WIDTH, available_width // max_panels_per_row),
+        available_width // max_panels_per_row,
         available_width // min_panels_per_row
     )
+    
+    if optimal_panel_width < MIN_PANEL_WIDTH:
+        optimal_panel_width = MIN_PANEL_WIDTH
     
     # Create panels with consistent styling and spacing
     panels = []
@@ -336,16 +331,20 @@ def _display_options(options: Dict[str, AnalysisOption]) -> None:
         max_panels_per_row  # Maximum columns limit
     ))
     
-    # Create responsive columns layout
-    columns = Columns(
-        panels,
-        num_columns=num_columns,
-        equal=True,
-        align="center",
-        padding=(0, 2)  # Consistent spacing between columns
+    # Create a centered container panel for all options
+    container = Panel(
+        Columns(
+            panels,
+            num_columns=num_columns,
+            equal=True,
+            align="center",
+            padding=(0, 2)  # Consistent spacing between columns
+        ),
+        box=box.SIMPLE,
+        padding=(1, 4),  # Add padding around the columns for better centering
+        width=min(terminal_width - 4, num_columns * optimal_panel_width + (num_columns - 1) * 4)
     )
-    
 
-    # Display the layout without text justification
-    console.print(columns)
+    # Display the centered container
+    console.print(Columns([container], align="center"))
     console.print()

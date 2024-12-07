@@ -1,3 +1,4 @@
+import sys
 import typer
 from typing import Optional, Dict, Any, List
 from pathlib import Path
@@ -34,7 +35,7 @@ from rich.prompt import Prompt, Confirm
 from janito.config import config
 from janito.version import get_version
 from janito.common import progress_send_message
-from janito.analysis import format_analysis, build_request_analysis_prompt, parse_analysis_options, get_history_file_type
+from janito.analysis import format_analysis, build_request_analysis_prompt, parse_analysis_options, get_history_file_type, AnalysisOption 
 
 
 def prompt_user(message: str, choices: List[str] = None) -> str:
@@ -124,6 +125,18 @@ def modify_request(request: str) -> str:
         console.print("\n[yellow]Modification cancelled, keeping original request[/yellow]")
         return request
 
+def format_option_text(option: AnalysisOption) -> str:
+    """Format an AnalysisOption into a string representation"""
+    option_text = f"Option {option.letter}:\n"
+    option_text += f"Summary: {option.summary}\n\n"
+    option_text += "Description:\n"
+    for item in option.description_items:
+        option_text += f"- {item}\n"
+    option_text += "\nAffected files:\n"
+    for file in option.affected_files:
+        option_text += f"- {file}\n"
+    return option_text
+
 def handle_option_selection(claude: ClaudeAPIAgent, initial_response: str, request: str, raw: bool = False, workdir: Optional[Path] = None, include: Optional[List[Path]] = None) -> None:
     """Handle option selection and implementation details"""
     options = parse_analysis_options(initial_response)
@@ -171,13 +184,17 @@ def handle_option_selection(claude: ClaudeAPIAgent, initial_response: str, reque
         paths_to_scan.extend(include)
     files_content = collect_files_content(paths_to_scan, workdir) if paths_to_scan else ""
     
-    selected_prompt = build_selected_option_prompt(option, request, initial_response, files_content)
+    # Format the selected option before building prompt
+    selected_option = options[option]
+    option_text = format_option_text(selected_option)
+    
+    # Remove initial_response from the arguments
+    selected_prompt = build_selected_option_prompt(option_text, request, files_content)
     prompt_file = save_to_file(selected_prompt, 'selected', workdir)
     if config.verbose:
         print(f"\nSelected prompt saved to: {prompt_file}")
     
     selected_response = progress_send_message(claude, selected_prompt)
-    
     changes_file = save_to_file(selected_response, 'changes', workdir)
 
     if config.verbose:
@@ -212,7 +229,8 @@ def replay_saved_file(filepath: Path, claude: ClaudeAPIAgent, workdir: Path, raw
     file_type = get_history_file_type(filepath)
     
     if file_type == 'changes':
-        success, _ = handle_changes_file(filepath, workdir, config.test_cmd)
+        changes = parse_block_changes(content)
+        success = preview_and_apply_changes(changes, workdir, config.test_cmd)
         if not success:
             raise typer.Exit(1)
     elif file_type == 'analysis':

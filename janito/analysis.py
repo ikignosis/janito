@@ -21,6 +21,8 @@ from janito.config import config
 from dataclasses import dataclass
 import re
 
+MIN_PANEL_WIDTH = 40   # Minimum width for each panel
+
 def get_history_file_type(filepath: Path) -> str:
     """Determine the type of saved file based on its name"""
     name = filepath.name.lower()
@@ -70,11 +72,6 @@ Request:
 
 
 
-# Constants for display modes
-COMPACT_WIDTH_THRESHOLD = 80  # Switch to compact mode below this width
-MIN_PANEL_WIDTH = 80  # Minimum panel width
-MAX_PANEL_WIDTH = 120  # Maximum panel width
-MIN_COLUMN_WIDTH = 100  # Increased from 50 to 100
 
 def prompt_user(message: str, choices: List[str] = None) -> str:
     """Display a prominent user prompt with optional choices"""
@@ -103,7 +100,7 @@ def get_option_selection() -> str:
         console.print("[red]Please enter a valid letter or 'M'[/red]")
 
 def _display_options(options: Dict[str, AnalysisOption]) -> None:
-    """Display available options with left-aligned content and centered panels."""
+    """Display available options with left-aligned content and horizontally centered panels."""
     console = Console()
     
     # Display centered title using Rule
@@ -113,9 +110,10 @@ def _display_options(options: Dict[str, AnalysisOption]) -> None:
     
     # Calculate optimal width based on terminal
     term_width = console.width or 100
-    panel_width = min(MAX_PANEL_WIDTH, max(MIN_PANEL_WIDTH, term_width - 20))  # Leave margins
+    panel_width = max(MIN_PANEL_WIDTH, (term_width // 2) - 10)  # Width for two columns
     
-    # Create and display panels for each option
+    # Create panels for each option
+    panels = []
     for letter, option in options.items():
         content = Text()
         
@@ -141,10 +139,22 @@ def _display_options(options: Dict[str, AnalysisOption]) -> None:
             padding=(1, 2),
             width=panel_width
         )
-        
-        # Display panel with center justification
-        console.print(panel, justify="center")
-        console.print()  # Add spacing between panels
+        panels.append(panel)
+    
+    # Display panels in columns with center alignment
+    if panels:
+        # Group panels into pairs for two columns
+        for i in range(0, len(panels), 2):
+            pair = panels[i:i+2]
+            columns = Columns(
+                pair,
+                align="center",
+                expand=True,
+                equal=True,
+                padding=(0, 2)
+            )
+            console.print(columns)
+            console.print()  # Add spacing between rows
 
 def _display_markdown(content: str) -> None:
     """Display content in markdown format."""
