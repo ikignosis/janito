@@ -21,16 +21,16 @@ Current files:
 
 Please provide the changes in this format:
 
-## {uuid} file <filepath> modify "short description" ##
-## {uuid} search/replace ##
+## {uuid} file <filepath> modify "short file change description" ##
+## {uuid} search/replace "short change description" ##
 <search_content>
 ## {uuid} replace with ##
 <replace_content>
 ## {uuid} file end ##
 
 Or to delete content:
-## {uuid} file <filepath> modify "short description" ##
-## {uuid} search/delete ##
+## {uuid} file <filepath> modify ##
+## {uuid} search/delete "short change description" ##
 <content_to_delete>
 ## {uuid} file end ##
 
@@ -38,6 +38,9 @@ For new files:
 ## {uuid} file <filepath> create "short description" ##
 <full_file_content>
 ## {uuid} file end ##
+
+RULES:
+1. search_content MUST preserve the original identation/whitespace 
 """
 
 def build_selected_option_prompt(option: str, request: str, initial_response: str, files_content: str = "") -> str:

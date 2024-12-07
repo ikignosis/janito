@@ -72,7 +72,8 @@ Request:
 
 # Constants for display modes
 COMPACT_WIDTH_THRESHOLD = 80  # Switch to compact mode below this width
-MIN_PANEL_WIDTH = 80  # Increased from 40 to 80
+MIN_PANEL_WIDTH = 80  # Minimum panel width
+MAX_PANEL_WIDTH = 120  # Maximum panel width
 MIN_COLUMN_WIDTH = 100  # Increased from 50 to 100
 
 def prompt_user(message: str, choices: List[str] = None) -> str:
@@ -102,11 +103,7 @@ def get_option_selection() -> str:
         console.print("[red]Please enter a valid letter or 'M'[/red]")
 
 def _display_options(options: Dict[str, AnalysisOption]) -> None:
-    """Display available options in a vertical layout.
-    
-    Args:
-        options: Dictionary of option letters to AnalysisOption objects
-    """
+    """Display available options with left-aligned content and centered panels."""
     console = Console()
     
     # Display centered title using Rule
@@ -114,9 +111,9 @@ def _display_options(options: Dict[str, AnalysisOption]) -> None:
     console.print(Rule(" Available Options ", style="bold cyan", align="center"))
     console.print()
     
-    # Calculate panel width based on terminal width
-    terminal_width = console.width
-    panel_width = min(terminal_width - 4, MIN_PANEL_WIDTH)
+    # Calculate optimal width based on terminal
+    term_width = console.width or 100
+    panel_width = min(MAX_PANEL_WIDTH, max(MIN_PANEL_WIDTH, term_width - 20))  # Leave margins
     
     # Create and display panels for each option
     for letter, option in options.items():
@@ -133,16 +130,20 @@ def _display_options(options: Dict[str, AnalysisOption]) -> None:
             content.append("Affected files:\n", style="bold cyan")
             for file in option.affected_files:
                 content.append(f"• {file}\n", style="yellow")
-        
+
+        # Create panel with consistent styling
         panel = Panel(
             content,
-            width=panel_width,
             box=box.ROUNDED,
             border_style="cyan",
             title=f"Option {letter}: {option.summary}",
-            title_align="center"
+            title_align="center",
+            padding=(1, 2),
+            width=panel_width
         )
-        console.print(panel)
+        
+        # Display panel with center justification
+        console.print(panel, justify="center")
         console.print()  # Add spacing between panels
 
 def _display_markdown(content: str) -> None:
@@ -160,7 +161,8 @@ def _display_raw_history(claude: ClaudeAPIAgent) -> None:
         console.print(content)
     console.print("\n=== End Message History ===\n")
 
-def format_analysis(analysis: str, raw: bool = False, claude: Optional[ClaudeAPIAgent] = None) -> None:
+
+def format_analysis(analysis: str, raw: bool = False, claude: Optional[ClaudeAPIAgent] = None, workdir: Optional[Path] = None) -> None:
     """Format and display the analysis output with enhanced capabilities."""
     console = Console()
     
@@ -197,48 +199,68 @@ def save_to_file(content: str, prefix: str, workdir: Path) -> Path:
 
 
 def parse_analysis_options(response: str) -> dict[str, AnalysisOption]:
-    """Parse options from the response text using letter-based format until END_OF_OPTIONS"""
+    """Parse options from the response text using a line-based approach."""
     options = {}
     
     # Extract content up to END_OF_OPTIONS
     if 'END_OF_OPTIONS' in response:
         response = response.split('END_OF_OPTIONS')[0]
-        
-    # Pattern to match sections between dashed lines
-    pattern = r'([A-Z])\.\s+([^\n]+?)\s*-+\s*Description:\s*(.*?)\s*Affected files:\s*(.*?)\s*-+\s*(?:[A-Z]\.|$)'
-    matches = re.finditer(pattern, response, re.DOTALL)
     
-    for match in matches:
-        option_letter = match.group(1)
-        summary = match.group(2).strip()
-        
-        # Parse description into bullet points
-        description_items = []
-        raw_description = (match.group(3) or "").strip()
-        for line in raw_description.split('\n'):
-            line = line.strip(' -•\n')
-            if line:
-                description_items.append(line)
-        
-        files_section = match.group(4) or ""
-        
-        # Parse affected files, now handling the "- filename (modified)" format
-        files = []
-        for line in files_section.strip().split('\n'):
-            line = line.strip(' -\n')
-            if line:
-                # Strip any (modified) or (new) annotations
-                file_path = re.sub(r'\s*\([^)]+\)\s*$', '', line)
-                files.append(file_path)
-        
-        option = AnalysisOption(
-            letter=option_letter,
-            summary=summary,
-            affected_files=files,
-            description_items=description_items
-        )
-        options[option_letter] = option
-        
+    lines = response.splitlines()
+    current_option = None
+    current_section = None
+    
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+            
+        # Check for new option starting with letter
+        if len(line) >= 2 and line[0].isalpha() and line[1] == '.' and line[0].isupper():
+            if current_option:
+                options[current_option.letter] = current_option
+            
+            letter = line[0]
+            summary = line[2:].strip()
+            current_option = AnalysisOption(
+                letter=letter,
+                summary=summary,
+                affected_files=[],
+                description_items=[]
+            )
+            current_section = None
+            continue
+            
+        # Skip separator lines
+        if line.startswith('---'):
+            continue
+            
+        # Check for section headers
+        if line.startswith('Description:'):
+            current_section = 'description'
+            continue
+        elif line.startswith('Affected files:'):
+            current_section = 'files'
+            continue
+            
+        # Process content based on current section
+        if current_option and current_section and line:
+            if current_section == 'description':
+                # Strip bullet points and whitespace
+                item = line.lstrip(' -•').strip()
+                if item:
+                    current_option.description_items.append(item)
+            elif current_section == 'files':
+                # Strip bullet points and (modified)/(new) annotations
+                file_path = line.lstrip(' -')
+                file_path = re.sub(r'\s*\([^)]+\)\s*$', '', file_path)
+                if file_path:
+                    current_option.affected_files.append(file_path)
+    
+    # Add the last option if exists
+    if current_option:
+        options[current_option.letter] = current_option
+    
     return options
 
 def build_request_analysis_prompt(files_content: str, request: str) -> str:

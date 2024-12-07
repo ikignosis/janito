@@ -29,22 +29,34 @@ def ask_question(question: str, files_content: str, claude: ClaudeAPIAgent) -> s
     )
     return progress_send_message(claude, prompt)
 
+
 def display_answer(answer: str, raw: bool = False) -> None:
-    """Display the answer as markdown"""
+    """Display the answer as markdown with consistent colors"""
     console = Console()
+    
+    # Define consistent colors
+    COLORS = {
+        'primary': '#729FCF',    # Soft blue for primary elements
+        'secondary': '#8AE234',  # Bright green for actions/success
+        'accent': '#AD7FA8',     # Purple for accents
+        'muted': '#7F9F7F',      # Muted green for less important text
+    }
     
     if raw:
         console.print(answer)
         return
     
-    # Display markdown answer in a panel
+    # Display markdown answer in a panel with consistent styling
     answer_panel = Panel(
         Markdown(answer),
-        title="Answer",
-        border_style="blue",
+        title="[bold]Answer[/bold]",
+        title_align="center",
+        border_style=COLORS['primary'],
         padding=(1, 2)
     )
     
     console.print("\n")
+    console.print(Rule(style=COLORS['accent']))
     console.print(answer_panel)
+    console.print(Rule(style=COLORS['accent']))
     console.print("\n")

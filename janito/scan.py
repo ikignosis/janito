@@ -100,21 +100,36 @@ def collect_files_content(paths: List[Path], workdir: Path = None) -> str:
     
     return "\n".join(content_parts)
 
+
 def preview_scan(paths: List[Path], workdir: Path = None) -> None:
     """Preview what files and directories would be scanned"""
     console = Console()
     _, file_items = _scan_paths(paths, workdir)
     
-    # Change message based on whether we're scanning included paths or workdir
-    if len(paths) == 1 and paths[0] == workdir:
-        console.print(f"\n[bold blue]Scanning working directory:[/bold blue] {workdir.absolute()}")
+    # Display working directory status
+    console.print("\n[bold blue]Analysis Paths:[/bold blue]")
+    console.print(f"[cyan]Working Directory:[/cyan] {workdir.absolute()}")
+    
+    # Show if working directory is being scanned
+    is_workdir_scanned = any(p.resolve() == workdir.resolve() for p in paths)
+    if is_workdir_scanned:
+        console.print("[green]✓ Working directory will be scanned[/green]")
     else:
-        console.print(f"\n[bold blue]Working directory:[/bold blue] {workdir.absolute()}")
-        console.print("\n[bold blue]Scanning included paths:[/bold blue]")
+        console.print("[yellow]! Working directory will not be scanned[/yellow]")
+    
+    # Show included paths relative to working directory
+    if len(paths) > (1 if is_workdir_scanned else 0):
+        console.print("\n[cyan]Additional Included Paths:[/cyan]")
         for path in paths:
-            console.print(f"  • {path.absolute()}")
-            
-    console.print("\n[bold blue]Files that would be analyzed:[/bold blue]")
+            if path.resolve() != workdir.resolve():
+                try:
+                    rel_path = path.relative_to(workdir)
+                    console.print(f"  • ./{rel_path}")
+                except ValueError:
+                    # Path is outside working directory
+                    console.print(f"  • {path.absolute()}")
+    
+    console.print("\n[bold blue]Files that will be analyzed:[/bold blue]")
     console.print(Columns(file_items, padding=(0, 4), expand=True))
 
 def is_dir_empty(path: Path) -> bool:

@@ -54,20 +54,21 @@ def display_help() -> None:
     commands_table.add_column("Command", style="cyan", width=20)
     commands_table.add_column("Description", style="white")
     
+
     commands_table.add_row(
-        "ask <text>",
+        "/ask <text> (/a)",
         "Ask a question about the codebase without making changes"
     )
     commands_table.add_row(
-        "request <text>",
+        "<text> or /request <text> (/r)",
         "Request code modifications or improvements"
     )
     commands_table.add_row(
-        "help",
+        "/help (/h)",
         "Display this help message"
     )
     commands_table.add_row(
-        "exit",
+        "/quit or /exit (/q)",
         "Exit the console session"
     )
 
@@ -121,13 +122,63 @@ def display_help() -> None:
     
     console.print(layout)
 
+
+
 def process_command(command: str, args: str, workdir: Path, include: List[Path], claude: ClaudeAPIAgent) -> None:
-    """Process console commands with improved output formatting"""
+    """Process console commands using CLI functions for consistent behavior"""
     console = Console()
+    
+    # Parse command options
+    raw = False
+    verbose = False
+    debug = False
+    test_cmd = None
+    
+    # Extract options from args
+    words = args.split()
+    filtered_args = []
+    i = 0
+    while i < len(words):
+        if words[i] == '--raw':
+            raw = True
+        elif words[i] == '--verbose':
+            verbose = True
+        elif words[i] == '--debug':
+            debug = True
+        elif words[i] == '--test' and i + 1 < len(words):
+            test_cmd = words[i + 1]
+            i += 1
+        else:
+            filtered_args.append(words[i])
+        i += 1
+    
+    args = ' '.join(filtered_args)
+    
+    # Update config with command options
+    from janito.config import config
+    config.set_debug(debug)
+    config.set_verbose(verbose)
+    config.set_test_cmd(test_cmd)
+    
+    # Remove leading slash if present
+    command = command.lstrip('/')
+    
+    # Handle command aliases
+    command_aliases = {
+        'h': 'help',
+        'a': 'ask',
+        'r': 'request',
+        'q': 'quit',
+        'exit': 'quit'
+    }
+    command = command_aliases.get(command, command)
     
     if command == "help":
         display_help()
         return
+        
+    if command == "quit":
+        raise EOFError()
         
     if command == "ask":
         if not args:
@@ -138,15 +189,9 @@ def process_command(command: str, args: str, workdir: Path, include: List[Path],
             ))
             return
             
-        paths_to_scan = [workdir] if workdir else []
-        if include:
-            paths_to_scan.extend(include)
-        files_content = collect_files_content(paths_to_scan, workdir)
-        
-        from janito.qa import ask_question, display_answer
-        with console.status("[bold cyan]Processing question...[/bold cyan]"):
-            answer = ask_question(args, files_content, claude)
-        display_answer(answer)
+        # Use CLI question processing function
+        from janito.__main__ import process_question
+        process_question(args, workdir, include, raw, claude)
         return
         
     if command == "request":
@@ -163,16 +208,20 @@ def process_command(command: str, args: str, workdir: Path, include: List[Path],
             paths_to_scan.extend(include)
         files_content = collect_files_content(paths_to_scan, workdir)
 
-        with console.status("[bold cyan]Analyzing request...[/bold cyan]"):
-            initial_prompt = build_request_analysis_prompt(files_content, args)
-            initial_response = progress_send_message(claude, initial_prompt)
-
-        console.print(initial_response)
-        handle_option_selection(claude, initial_response, args, False, workdir, include)
+        # Use CLI request processing functions
+        initial_prompt = build_request_analysis_prompt(files_content, args)
+        initial_response = progress_send_message(claude, initial_prompt)
+        
+        from janito.__main__ import save_to_file
+        save_to_file(initial_response, 'analysis', workdir)
+        
+        from janito.analysis import format_analysis
+        format_analysis(initial_response, raw, claude)
+        handle_option_selection(claude, initial_response, args, raw, workdir, include)
         return
         
     console.print(Panel(
-        f"[red]Unknown command: {command}[/red]\nType 'help' for available commands",
+        f"[red]Unknown command: /{command}[/red]\nType '/help' for available commands",
         title="Error",
         border_style="red"
     ))
@@ -203,20 +252,36 @@ def start_console_session(workdir: Path, include: Optional[List[Path]] = None) -
     
     term_width = shutil.get_terminal_size().columns
     
-    # Create welcome message
+
+
+    # Create welcome message with consistent colors and enhanced information
+    COLORS = {
+        'primary': '#729FCF',    # Soft blue for primary elements
+        'secondary': '#8AE234',  # Bright green for actions/success
+        'accent': '#AD7FA8',     # Purple for accents
+        'muted': '#7F9F7F',      # Muted green for less important text
+    }
+    
     welcome_text = (
-        f"[bold blue]Welcome to Janito v{ver}[/bold blue]\n"
-        "[dim]Your AI-Powered Software Development Buddy[/dim]\n\n"
-        "[cyan]Features:[/cyan]\n"
-        "• Command history (use ↑↓ keys)\n"
-        "• Tab completion for commands\n"
-        "• Auto-suggestions from history\n"
-        "• Rich output formatting\n\n"
-        "[cyan]Quick Start:[/cyan]\n"
-        "• Type 'help' for detailed usage\n"
-        "• Use 'ask' for questions\n"
-        "• Use 'request' for changes\n"
-        "• Press Ctrl+D to exit"
+        f"[bold {COLORS['primary']}]Welcome to Janito v{ver}[/bold {COLORS['primary']}]\n"
+        f"[{COLORS['muted']}]Your AI-Powered Software Development Buddy[/{COLORS['muted']}]\n\n"
+        f"[{COLORS['accent']}]Keyboard Shortcuts:[/{COLORS['accent']}]\n"
+        "• ↑↓ : Navigate command history\n"
+        "• Tab : Complete commands and paths\n"
+        "• Ctrl+D : Exit console\n"
+        "• Ctrl+C : Cancel current operation\n\n"
+        f"[{COLORS['accent']}]Available Commands:[/{COLORS['accent']}]\n"
+        "• /ask (or /a) : Ask questions about code\n"
+        "• /request (or /r) : Request code changes\n"
+        "• /help (or /h) : Show detailed help\n"
+        "• /quit (or /q) : Exit console\n\n"
+        f"[{COLORS['accent']}]Quick Tips:[/{COLORS['accent']}]\n"
+        "• Start typing and press Tab for suggestions\n"
+        "• Use --test to run tests before changes\n"
+        "• Add --verbose for detailed output\n"
+        "• Type a request directly without /request\n\n"
+        f"[{COLORS['secondary']}]Current Version:[/{COLORS['secondary']}] v{ver}\n"
+        f"[{COLORS['muted']}]Working Directory:[/{COLORS['muted']}] {workdir.absolute()}"
     )
     
     welcome_panel = Panel(
@@ -245,12 +310,17 @@ def start_console_session(workdir: Path, include: Optional[List[Path]] = None) -
             if user_input.lower() in ('exit', 'quit'):
                 console.print("\n[cyan]Goodbye! Have a great day![/cyan]\n")
                 break
-                
-            # Split input into command and arguments
+
+            # Split input into command and args
             parts = user_input.split(maxsplit=1)
-            command = parts[0].lower()
+            if parts[0].startswith('/'):  # Handle /command format
+                command = parts[0][1:]  # Remove the / prefix
+            else:
+                command = "request"  # Default to request if no command specified
+                
             args = parts[1] if len(parts) > 1 else ""
             
+            # Process command with separated args
             process_command(command, args, workdir, include, claude)
 
         except KeyboardInterrupt:

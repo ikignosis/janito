@@ -36,17 +36,27 @@ from janito.version import get_version
 from janito.common import progress_send_message
 from janito.analysis import format_analysis, build_request_analysis_prompt, parse_analysis_options, get_history_file_type
 
+
 def prompt_user(message: str, choices: List[str] = None) -> str:
-    """Display a prominent user prompt with optional choices"""
+    """Display a prominent user prompt with optional choices using consistent colors"""
     console = Console()
+    
+    # Define consistent colors
+    COLORS = {
+        'primary': '#729FCF',    # Soft blue for primary elements
+        'secondary': '#8AE234',  # Bright green for actions/success
+        'accent': '#AD7FA8',     # Purple for accents
+        'muted': '#7F9F7F',      # Muted green for less important text
+    }
+    
     console.print()
-    console.print(Rule(" User Input Required ", style="bold cyan"))
+    console.print(Rule(" User Input Required ", style=f"bold {COLORS['primary']}"))
     
     if choices:
-        choice_text = f"[cyan]Options: {', '.join(choices)}[/cyan]"
-        console.print(Panel(choice_text, box=box.ROUNDED))
+        choice_text = f"[{COLORS['accent']}]Options: {', '.join(choices)}[/{COLORS['accent']}]"
+        console.print(Panel(choice_text, box=box.ROUNDED, border_style=COLORS['primary']))
     
-    return Prompt.ask(f"[bold cyan]> {message}[/bold cyan]")
+    return Prompt.ask(f"[bold {COLORS['secondary']}]> {message}[/bold {COLORS['secondary']}]")
 
 def validate_option_letter(letter: str, options: dict) -> bool:
     """Validate if the given letter is a valid option or 'M' for modify"""
@@ -169,8 +179,13 @@ def handle_option_selection(claude: ClaudeAPIAgent, initial_response: str, reque
     selected_response = progress_send_message(claude, selected_prompt)
     
     changes_file = save_to_file(selected_response, 'changes', workdir)
+
     if config.verbose:
-        print(f"\nChanges saved to: {changes_file}")
+        try:
+            rel_path = changes_file.relative_to(workdir)
+            print(f"\nChanges saved to: ./{rel_path}")
+        except ValueError:
+            print(f"\nChanges saved to: {changes_file}")
     
     changes = parse_block_changes(selected_response)
     preview_and_apply_changes(changes, workdir, config.test_cmd)
@@ -260,6 +275,7 @@ def typer_main(
     """
     Analyze files and provide modification instructions.
     """
+
     if version:
         console = Console()
         console.print(f"Janito v{get_version()}")
