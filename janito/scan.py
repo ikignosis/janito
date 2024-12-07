@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Set
 from rich.console import Console
 from rich.columns import Columns
 from janito.config import config
@@ -14,6 +14,7 @@ def _scan_paths(paths: List[Path], workdir: Path = None) -> Tuple[List[str], Lis
     content_parts = []
     file_items = []
     skipped_files = []
+    processed_files: Set[Path] = set()  # Track processed files
     console = Console()
     
     # Load gitignore if it exists
@@ -43,8 +44,10 @@ def _scan_paths(paths: List[Path], workdir: Path = None) -> Tuple[List[str], Lis
             # Check for special files
             special_found = []
             for special_file in SPECIAL_FILES:
-                if (path / special_file).exists():
+                special_path = path / special_file
+                if special_path.exists() and special_path.resolve() not in processed_files:
                     special_found.append(special_file)
+                    processed_files.add(special_path.resolve())
             if special_found:
                 file_items[-1] = f"[blue]•[/blue] {relative_path}/ [cyan]({', '.join(special_found)})[/cyan]"
                 for special_file in special_found:
@@ -63,9 +66,15 @@ def _scan_paths(paths: List[Path], workdir: Path = None) -> Tuple[List[str], Lis
                     rel_path = str(item.relative_to(workdir))
                     if gitignore_spec.match_file(rel_path):
                         continue
-                scan_path(item, level+1)
+                if item.resolve() not in processed_files:  # Skip if already processed
+                    scan_path(item, level+1)
 
         else:
+            resolved_path = path.resolve()
+            if resolved_path in processed_files:  # Skip if already processed
+                return
+                
+            processed_files.add(resolved_path)
             relative_path = path.relative_to(relative_base)
             # check if file is binary
             try:
@@ -97,6 +106,16 @@ def collect_files_content(paths: List[Path], workdir: Path = None) -> str:
     if file_items and config.verbose:
         console.print("\n[bold blue]Contents being analyzed:[/bold blue]")
         console.print(Columns(file_items, padding=(0, 4), expand=True))
+        
+    if config.verbose:
+        for part in content_parts:
+            if part.startswith('<file>'):
+                # Extract filename from XML content
+                path_start = part.find('<path>') + 6
+                path_end = part.find('</path>')
+                if path_start > 5 and path_end > path_start:
+                    filepath = part[path_start:path_end]
+                    console.print(f"[dim]Adding content from:[/dim] {filepath}")
     
     return "\n".join(content_parts)
 

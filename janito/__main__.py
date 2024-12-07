@@ -35,7 +35,8 @@ from rich.prompt import Prompt, Confirm
 from janito.config import config
 from janito.version import get_version
 from janito.common import progress_send_message
-from janito.analysis import format_analysis, build_request_analysis_prompt, parse_analysis_options, get_history_file_type, AnalysisOption 
+from janito.analysis import format_analysis, build_request_analysis_prompt, parse_analysis_options, get_history_file_type, AnalysisOption
+from janito.review import review_text
 
 
 def prompt_user(message: str, choices: List[str] = None) -> str:
@@ -155,11 +156,20 @@ def handle_option_selection(claude: ClaudeAPIAgent, initial_response: str, reque
                 continue
                 
             # Rerun analysis with new request
-            paths_to_scan = [workdir] if workdir else []
-            if include:
-                paths_to_scan.extend(include)
-            files_content = collect_files_content(paths_to_scan, workdir) if paths_to_scan else ""
-            
+            # Only scan files listed in the selected option's affected_files
+            selected_option = options[option]
+            files_to_scan = selected_option.affected_files
+    
+            # Convert relative paths to absolute paths
+            absolute_paths = []
+            for file_path in files_to_scan:
+                # Remove (new) suffix if present
+                clean_path = file_path.split(' (')[0].strip()
+                path = workdir / clean_path if workdir else Path(clean_path)
+                if path.exists():
+                    absolute_paths.append(path)
+    
+            files_content = collect_files_content(absolute_paths, workdir) if absolute_paths else ""            
             initial_prompt = build_request_analysis_prompt(files_content, new_request)
             initial_response = progress_send_message(claude, initial_prompt)
             save_to_file(initial_response, 'analysis', workdir)
@@ -179,16 +189,25 @@ def handle_option_selection(claude: ClaudeAPIAgent, initial_response: str, reque
             
         break
 
-    paths_to_scan = [workdir] if workdir else []
-    if include:
-        paths_to_scan.extend(include)
-    files_content = collect_files_content(paths_to_scan, workdir) if paths_to_scan else ""
+    # Only scan files listed in the selected option's affected_files
+    selected_option = options[option]
+    files_to_scan = selected_option.affected_files
+    
+    # Convert relative paths to absolute paths
+    absolute_paths = []
+    for file_path in files_to_scan:
+        # Remove (new) suffix if present
+        clean_path = file_path.split(' (')[0].strip()
+        path = workdir / clean_path if workdir else Path(clean_path)
+        if path.exists():
+            absolute_paths.append(path)
+    
+    files_content = collect_files_content(absolute_paths, workdir) if absolute_paths else ""
     
     # Format the selected option before building prompt
     selected_option = options[option]
     option_text = format_option_text(selected_option)
     
-    # Remove initial_response from the arguments
     selected_prompt = build_selected_option_prompt(option_text, request, files_content)
     prompt_file = save_to_file(selected_prompt, 'selected', workdir)
     if config.verbose:
@@ -275,9 +294,19 @@ def ensure_workdir(workdir: Path) -> Path:
         return workdir
     raise typer.Exit(1)
 
+def review_text(text: str, claude: ClaudeAPIAgent, raw: bool = False) -> None:
+    """Review the provided text using Claude"""
+    console = Console()
+    response = progress_send_message(claude, f"Please review this text and provide feedback:\n\n{text}")
+    if raw:
+        console.print(response)
+    else:
+        console.print(Markdown(response))
+
 def typer_main(
     request: Optional[str] = typer.Argument(None, help="The modification request"),
     ask: Optional[str] = typer.Option(None, "--ask", help="Ask a question about the codebase"),
+    review: Optional[str] = typer.Option(None, "--review", help="Review the provided text"),
     workdir: Optional[Path] = typer.Option(None, "-w", "--workdir", 
                                          help="Working directory (defaults to current directory)", 
                                          file_okay=False, dir_okay=True),
@@ -304,6 +333,10 @@ def typer_main(
     config.set_test_cmd(test)
 
     claude = ClaudeAPIAgent(system_prompt=SYSTEM_PROMPT)
+
+    if review:
+        review_text(review, claude, raw)
+        return
 
     if not any([request, ask, play, scan]):
         workdir = workdir or Path.cwd()

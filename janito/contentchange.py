@@ -4,6 +4,7 @@ from rich.console import Console
 from datetime import datetime
 from janito.fileparser import FileChange, parse_block_changes
 from janito.changeapplier import preview_and_apply_changes
+from janito.changehistory import save_changes_to_history
 
 def get_file_type(filepath: Path) -> str:
     """Determine the type of saved file based on its name"""
@@ -17,24 +18,6 @@ def get_file_type(filepath: Path) -> str:
     elif 'response' in name:
         return 'response'
     return 'unknown'
-
-def save_changes_to_history(content: str, request: str, workdir: Path) -> Path:
-    """Save change content to history folder with timestamp and request info"""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")  # Already in the correct format
-    history_dir = workdir / '.janito' / 'history'
-    history_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Create history entry with request and changes
-    history_file = history_dir / f"changes_{timestamp}.txt"
-    
-    history_content = f"""Request: {request}
-Timestamp: {timestamp}
-
-Changes:
-{content}
-"""
-    history_file.write_text(history_content)
-    return history_file
 
 def process_and_save_changes(content: str, request: str, workdir: Path) -> Tuple[Dict[Path, Tuple[str, str]], Path]:
     """Parse changes and save to history, returns (changes_dict, history_file)"""

@@ -275,11 +275,6 @@ def start_console_session(workdir: Path, include: Optional[List[Path]] = None) -
         "• /request (or /r) : Request code changes\n"
         "• /help (or /h) : Show detailed help\n"
         "• /quit (or /q) : Exit console\n\n"
-        f"[{COLORS['accent']}]Quick Tips:[/{COLORS['accent']}]\n"
-        "• Start typing and press Tab for suggestions\n"
-        "• Use --test to run tests before changes\n"
-        "• Add --verbose for detailed output\n"
-        "• Type a request directly without /request\n\n"
         f"[{COLORS['secondary']}]Current Version:[/{COLORS['secondary']}] v{ver}\n"
         f"[{COLORS['muted']}]Working Directory:[/{COLORS['muted']}] {workdir.absolute()}"
     )

@@ -40,8 +40,25 @@ def get_history_file_type(filepath: Path) -> str:
 class AnalysisOption:
     letter: str
     summary: str
-    affected_files: List[str]
-    description_items: List[str]  # Changed from description to description_items
+    affected_files: List[str]  # Now preserves (new) markers
+    description_items: List[str]
+
+    def get_clean_path(self, file_path: str) -> str:
+        """Get clean path without (new) marker"""
+        return file_path.split(' (')[0].strip()
+        
+    def is_new_file(self, file_path: str) -> bool:
+        """Check if file is marked as new"""
+        return '(new)' in file_path
+
+    def get_affected_paths(self, workdir: Optional[Path] = None) -> List[Path]:
+        """Get list of affected paths, resolving against workdir if provided"""
+        paths = []
+        for file_path in self.affected_files:
+            clean_path = self.get_clean_path(file_path)
+            path = workdir / clean_path if workdir else Path(clean_path)
+            paths.append(path)
+        return paths
 
 CHANGE_ANALYSIS_PROMPT = """
 Current files:
@@ -54,7 +71,7 @@ Considering the above current files content, provide options for the requested c
 A. Keyword summary of the change
 -----------------
 Description:
-- Detailed description of the change
+- Concise description of the change
 
 Affected files:
 - file1.py
@@ -127,7 +144,9 @@ def _display_options(options: Dict[str, AnalysisOption]) -> None:
         if option.affected_files:
             content.append("Affected files:\n", style="bold cyan")
             for file in option.affected_files:
-                content.append(f"• {file}\n", style="yellow")
+                # Use yellow for existing files, green for new files
+                color = "green" if '(new)' in file else "yellow"
+                content.append(f"• {file}\n", style=color)
 
         # Create panel with consistent styling
         panel = Panel(
@@ -261,9 +280,8 @@ def parse_analysis_options(response: str) -> dict[str, AnalysisOption]:
                 if item:
                     current_option.description_items.append(item)
             elif current_section == 'files':
-                # Strip bullet points and (modified)/(new) annotations
-                file_path = line.lstrip(' -')
-                file_path = re.sub(r'\s*\([^)]+\)\s*$', '', file_path)
+                # Only strip bullet points, preserve (new) marker
+                file_path = line.lstrip(' -').strip()
                 if file_path:
                     current_option.affected_files.append(file_path)
     

@@ -40,7 +40,7 @@ Or to delete content:
 ## {uuid} file end ##
 
 For new files:
-## {uuid} file <filepath> create "short description" ##
+## {uuid} file <filepath> create "short file description" ##
 <full_file_content>
 ## {uuid} file end ##
 

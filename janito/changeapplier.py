@@ -12,6 +12,7 @@ from janito.fileparser import FileChange, validate_python_syntax
 from janito.changeviewer import preview_all_changes
 from janito.contextparser import apply_changes, parse_change_block
 from janito.config import config
+from janito.changehistory import get_history_path, get_history_file_path
 
 def run_test_command(preview_dir: Path, test_cmd: str) -> Tuple[bool, str, Optional[str]]:
     """Run test command in preview directory.
@@ -244,6 +245,8 @@ def apply_single_change(filepath: Path, change: FileChange, workdir: Path, previ
         console.print(f"[dim]Change type: {'new file' if change.is_new_file else 'modification'}[/dim]")
     
     if change.is_new_file:
+        if filepath.exists():
+            return False, "Cannot create file - already exists"
         if config.debug:
             console.print("[cyan]Creating new file with content:[/cyan]")
             console.print(Panel(change.content, title="New File Content"))
@@ -317,7 +320,7 @@ def apply_single_change(filepath: Path, change: FileChange, workdir: Path, previ
     preview_path.write_text(modified)
     return True, None
 
-def preview_and_apply_changes(changes: Dict[Path, FileChange], workdir: Path, test_cmd: str = None) -> bool:
+def preview_and_apply_changes(changes: List[FileChange], workdir: Path, test_cmd: str = None) -> bool:
     """Preview changes and apply if confirmed"""
     console = Console()
     
@@ -325,7 +328,7 @@ def preview_and_apply_changes(changes: Dict[Path, FileChange], workdir: Path, te
         console.print("\n[yellow]No changes were found to apply[/yellow]")
         return False
 
-    # Show change preview before applying
+    # Show change preview
     preview_all_changes(console, changes)
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -342,8 +345,8 @@ def preview_and_apply_changes(changes: Dict[Path, FileChange], workdir: Path, te
             if config.verbose:
                 console.print(f"[blue]Creating backup at:[/blue] {backup_dir}")
             shutil.copytree(workdir, backup_dir, ignore=shutil.ignore_patterns('.janito'))
-            # Copy to preview directory
-            shutil.copytree(workdir, preview_dir, dirs_exist_ok=True)
+            # Copy to preview directory, excluding .janito
+            shutil.copytree(workdir, preview_dir, dirs_exist_ok=True, ignore=shutil.ignore_patterns('.janito'))
             
             # Create restore script
             restore_script = workdir / '.janito' / 'restore.sh'
@@ -376,15 +379,15 @@ echo "Files restored successfully from {backup_dir}"
     
     # Apply changes to preview directory
         any_errors = False
-        for filepath, change in changes.items():
-            console.print(f"[dim]Previewing changes for {filepath}...[/dim]")
-            success, error = apply_single_change(filepath, change, workdir, preview_dir)
+        for change in changes:
+            console.print(f"[dim]Previewing changes for {change.path}...[/dim]")
+            success, error = apply_single_change(change.path, change, workdir, preview_dir)
             if not success:
                 if "file already exists" in str(error):
-                    console.print(f"\n[red]Error: Cannot create {filepath}[/red]")
+                    console.print(f"\n[red]Error: Cannot create {change.path}[/red]")
                     console.print("[red]File already exists and overwriting is not allowed.[/red]")
                 else:
-                    console.print(f"\n[red]Error previewing changes for {filepath}:[/red]")
+                    console.print(f"\n[red]Error previewing changes for {change.path}:[/red]")
                     console.print(f"[red]{error}[/red]")
                 any_errors = True
                 continue
@@ -394,7 +397,7 @@ echo "Files restored successfully from {backup_dir}"
             return False
 
         # Validate Python syntax for all modified Python files
-        python_files = [f for f in changes.keys() if f.suffix == '.py']
+        python_files = {change.path for change in changes if change.path.suffix == '.py'}
         for filepath in python_files:
             preview_path = preview_dir / filepath
             is_valid, error_msg = validate_python_syntax(preview_path.read_text(), preview_path)
@@ -421,14 +424,17 @@ echo "Files restored successfully from {backup_dir}"
         # Final confirmation to apply to working directory
         if not Confirm.ask("\n[cyan bold]Apply previewed changes to working directory?[/cyan bold]"):
             console.print("\n[yellow]Changes were only previewed, not applied to working directory[/yellow]")
+            console.print("[green]Changes are stored in the history directory and can be applied later using:[/green]")
+            changes_file = get_history_file_path(workdir)
+            console.print(f"[cyan]  {changes_file.relative_to(workdir)}[/cyan]")
             return False
 
         # Copy changes to actual files
         console.print("\n[blue]Applying changes to working directory...[/blue]")
-        for filepath, _ in changes.items():
-            console.print(f"[dim]Applying changes to {filepath}...[/dim]")
-            preview_path = preview_dir / filepath
-            target_path = workdir / filepath
+        for change in changes:
+            console.print(f"[dim]Applying changes to {change.path}...[/dim]")
+            preview_path = preview_dir / change.path
+            target_path = workdir / change.path
             target_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(preview_path, target_path)
 

@@ -3,108 +3,62 @@ from rich.console import Console
 from rich.text import Text
 from rich.panel import Panel
 from rich.table import Table
-from rich.rule import Rule  # Add this import
-from typing import List, Optional, Dict
+from rich.rule import Rule
+from typing import List, Optional, Dict, Union, Tuple
 from rich import box
 from janito.fileparser import FileChange
-from janito.analysis import AnalysisOption  # Add this import
-from rich.columns import Columns  # Add this import at the top with other imports
+from janito.analysis import AnalysisOption
+from rich.columns import Columns
+from rich.syntax import Syntax
+from janito.config import config  # Add this import
 
 MIN_PANEL_WIDTH = 40   # Minimum width for each panel
 
 
-def format_sequence_preview(lines: List[str]) -> Text:
-    """Format a sequence of prefixed lines into rich text with colors"""
-    text = Text()
-    last_was_empty = False
-    
-    for line in lines:
-        if not line:
-            # Preserve empty lines but don't duplicate them
-            if not last_was_empty:
-                text.append("\n")
-            last_was_empty = True
-            continue
-        
-        last_was_empty = False
-        prefix = line[0] if line[0] in ('=', '>', '<') else ' '
-        content = line[1:] if line[0] in ('=', '>', '<') else line
-        
-        if prefix == '=':
-            text.append(f" {content}\n", style="dim")
-        elif prefix == '>':
-            text.append(f"+{content}\n", style="green")
-        elif prefix == '<':
-            text.append(f"-{content}\n", style="red")
-        else:
-            text.append(f" {content}\n", style="yellow dim")
-    
-    return text
-
-
-
-
-
-
-def show_changes_legend(console: Console) -> None:
-    """Display a legend explaining the colors and symbols used in change previews in a horizontal layout"""
-    # Create a list of colored text objects
-    legend_items = [
-        Text("Unchanged", style="#98C379"),
-        Text(" • ", style="dim"),
-        Text("Removed", style="#E06C75"),
-        Text(" • ", style="dim"),
-        Text("Relocated", style="#61AFEF"),
-        Text(" • ", style="dim"),
-        Text("New", style="#C678DD")
-    ]
-    
-    # Combine all items into a single text object
-    legend_text = Text()
-    for item in legend_items:
-        legend_text.append_text(item)
-    
-    # Create a simple panel with the horizontal legend
-    legend_panel = Panel(
-        legend_text,
-        title="Changes Legend",
-        title_align="left",
-        border_style="white",
-        box=box.ROUNDED,
-        padding=(0, 1)
-    )
-    
-    # Center the legend panel horizontally
-    console.print(Columns([legend_panel], align="center"))
-    console.print()  # Add extra line for spacing
-
-
 def show_change_preview(console: Console, filepath: Path, change: FileChange) -> None:
     """Display a preview of changes for a single file with side-by-side comparison"""
-    # Show changes legend first
-    show_changes_legend(console)
-      
     # Create main file panel content
     main_content = []
 
-    # Handle new file preview
+    # Handle new file creation with bright green styling
     if change.is_new_file:
+        # Calculate file size and format it
+        size_bytes = len(change.content.encode('utf-8'))
+        if size_bytes < 1024:
+            size_str = f"{size_bytes} bytes"
+        else:
+            size_kb = size_bytes / 1024
+            size_str = f"{size_kb:.1f} KB"
+
+        # Create content panel with syntax highlighting if possible
+        content_display = change.content
+        if filepath.suffix in ['.py', '.js', '.ts', '.java', '.cpp', '.c']:
+            try:
+                content_display = Syntax(change.content, filepath.suffix.lstrip('.'), theme="monokai")
+            except:
+                pass
+
         new_file_panel = Panel(
-            Text(change.content),
-            title="New File Content",
+            content_display,
+            title="[bold]📝 File Content[/bold]",
             title_align="left",
-            border_style="green",
-            box=box.ROUNDED
+            border_style="#8AE234",
+            box=box.ROUNDED,
+            style="bright_green"
         )
         main_content.append(new_file_panel)
         
-        # Create and display main file panel
+        # Create and display main file panel with bright green border
         file_panel = Panel(
-            Columns(main_content),
-            title=str(filepath),
+            Columns(main_content, align="center"),
+            title=f"[bold]✨ Creating {filepath} ({size_str})[/bold]",
             title_align="left",
-            border_style="white",
-            box=box.ROUNDED        )
+            border_style="#8AE234",
+            box=box.ROUNDED,
+            style="bright_green"
+        )
+        console.print(file_panel)
+        console.print()
         return
 
     
@@ -246,7 +200,7 @@ def show_change_preview(console: Console, filepath: Path, change: FileChange) ->
     # Create and display main file panel
     file_panel = Panel(
         Columns(main_content, align="center"),
-        title=f"Modifying {filepath}",
+        title=f"Modifying {filepath} - {change.description}",
         title_align="left",
         border_style="white",
         box=box.ROUNDED
@@ -256,95 +210,71 @@ def show_change_preview(console: Console, filepath: Path, change: FileChange) ->
 
 # Remove or comment out the unused unified panel code since we're using direct column display
 
-def preview_all_changes(console: Console, changes: Dict[Path, FileChange]) -> None:
+def preview_all_changes(console: Console, changes: List[FileChange]) -> None:
     """Show preview for all file changes"""
+    if config.debug:
+        console.print("\n[blue]Debug: File Changes to Preview:[/blue]")
+        for change in changes:
+            console.print(f"\n[cyan]File:[/cyan] {change.path}")
+            console.print(f"  [yellow]Is New File:[/yellow] {change.is_new_file}")
+            console.print(f"  [yellow]Description:[/yellow] {change.description}")
+            if change.search_blocks:
+                console.print("  [yellow]Search Blocks:[/yellow]")
+                for i, (search, replace, desc) in enumerate(change.search_blocks, 1):
+                    console.print(f"    Block {i}:")
+                    console.print(f"      Description: {desc or 'No description'}")
+                    console.print(f"      Operation: {'Replace' if replace else 'Delete'}")
+                    console.print(f"      Search Length: {len(search)} chars")
+                    if replace:
+                        console.print(f"      Replace Length: {len(replace)} chars")
+        console.print("\n[blue]End Debug File Changes[/blue]\n")
+
     console.print("\n[bold blue]Change Preview[/bold blue]")
     
-    for filepath, change in changes.items():
-        show_change_preview(console, filepath, change)
-
-
-def _display_options(options: Dict[str, AnalysisOption]) -> None:
-    """Display available options in a centered, responsive layout with consistent spacing."""
-    console = Console()
-    
-    # Display centered header with decorative rule
-    console.print()
-    console.print(Rule(" Available Options ", style="bold cyan", align="center"))
-    console.print()
-    
-    # Safety check for empty options
-    if not options:
-        console.print(Panel("[yellow]No options available[/yellow]", border_style="yellow"))
-        return
-    
-    # Calculate optimal layout dimensions based on terminal width
-    terminal_width = console.width or 100
-    panel_padding = (1, 2)  # Consistent padding for all panels
-    available_width = terminal_width - 4  # Account for margins
-    
-    # Determine optimal panel width and number of columns
-    min_panels_per_row = 1
-    max_panels_per_row = 3
-    optimal_panel_width = min(
-        available_width // max_panels_per_row,
-        available_width // min_panels_per_row
-    )
-    
-    if optimal_panel_width < MIN_PANEL_WIDTH:
-        optimal_panel_width = MIN_PANEL_WIDTH
-    
-    # Create panels with consistent styling and spacing
-    panels = []
-    for letter, option in options.items():
-        # Build content with consistent formatting
-        content = Text()
+    # Show legend only if there are modified files
+    has_modified_files = any(not change.is_new_file for change in changes)
+    if has_modified_files:
+        # Create a list of colored text objects
+        legend_items = [
+            Text("Unchanged", style="#98C379"),
+            Text(" • ", style="dim"),
+            Text("Removed", style="#E06C75"),
+            Text(" • ", style="dim"),
+            Text("Relocated", style="#61AFEF"),
+            Text(" • ", style="dim"),
+            Text("New", style="#C678DD")
+        ]
         
-        # Add description section
-        content.append("Description:\n", style="bold cyan")
-        for item in option.description_items:
-            content.append(f"• {item}\n", style="white")
-        content.append("\n")
+        # Combine all items into a single text object
+        legend_text = Text()
+        for item in legend_items:
+            legend_text.append_text(item)
         
-        # Add affected files section if present
-        if option.affected_files:
-            content.append("Affected files:\n", style="bold cyan")
-            for file in option.affected_files:
-                content.append(f"• {file}\n", style="yellow")
-        
-        # Create panel with consistent styling
-        panel = Panel(
-            content,
+        # Create a simple panel with the horizontal legend
+        legend_panel = Panel(
+            legend_text,
+            title="Changes Legend",
+            title_align="left",
+            border_style="white",
             box=box.ROUNDED,
-            border_style="cyan",
-            title=f"Option {letter}: {option.summary}",
-            title_align="center",
-            padding=panel_padding,
-            width=optimal_panel_width
+            padding=(0, 1)
         )
-        panels.append(panel)
+        
+        # Center the legend panel horizontally
+        console.print(Columns([legend_panel], align="center"))
+        console.print()  # Add extra line for spacing
     
-    # Calculate optimal number of columns based on available width
-    num_columns = max(1, min(
-        len(panels),  # Don't exceed number of panels
-        available_width // optimal_panel_width,  # Width-based limit
-        max_panels_per_row  # Maximum columns limit
-    ))
+    # Show new files first, then modified files
+    new_files = [change for change in changes if change.is_new_file]
+    modified_files = [change for change in changes if not change.is_new_file]
     
-    # Create a centered container panel for all options
-    container = Panel(
-        Columns(
-            panels,
-            num_columns=num_columns,
-            equal=True,
-            align="center",
-            padding=(0, 2)  # Consistent spacing between columns
-        ),
-        box=box.SIMPLE,
-        padding=(1, 4),  # Add padding around the columns for better centering
-        width=min(terminal_width - 4, num_columns * optimal_panel_width + (num_columns - 1) * 4)
-    )
+    # Display new files first
+    for change in new_files:
+        show_change_preview(console, change.path, change)
+        
+    # Display modified files after
+    for change in modified_files:
+        show_change_preview(console, change.path, change)
 
-    # Display the centered container
-    console.print(Columns([container], align="center"))
-    console.print()
+
+
