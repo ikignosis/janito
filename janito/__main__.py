@@ -40,38 +40,28 @@ from janito.review import review_text
 
 
 def prompt_user(message: str, choices: List[str] = None) -> str:
-    """Display a prominent user prompt with optional choices using consistent colors"""
+    """Display a simple user prompt with optional choices"""
     console = Console()
     
-    # Define consistent colors
-    COLORS = {
-        'primary': '#729FCF',    # Soft blue for primary elements
-        'secondary': '#8AE234',  # Bright green for actions/success
-        'accent': '#AD7FA8',     # Purple for accents
-        'muted': '#7F9F7F',      # Muted green for less important text
-    }
-    
-    console.print()
-    console.print(Rule(" User Input Required ", style=f"bold {COLORS['primary']}"))
-    
     if choices:
-        choice_text = f"[{COLORS['accent']}]Options: {', '.join(choices)}[/{COLORS['accent']}]"
-        console.print(Panel(choice_text, box=box.ROUNDED, border_style=COLORS['primary']))
+        console.print(f"\n[cyan]Options: {', '.join(choices)}[/cyan]")
     
-    return Prompt.ask(f"[bold {COLORS['secondary']}]> {message}[/bold {COLORS['secondary']}]")
+    return Prompt.ask(f"[bold cyan]> {message}[/bold cyan]")
 
 def validate_option_letter(letter: str, options: dict) -> bool:
     """Validate if the given letter is a valid option or 'M' for modify"""
     return letter.upper() in options or letter.upper() == 'M'
 
 def get_option_selection() -> str:
-    """Get user input for option selection with modify option"""
+    """Get user input for option selection"""
     console = Console()
     console.print("\n[cyan]Enter option letter or 'M' to modify request[/cyan]")
+    
     while True:
-        letter = prompt_user("Select option").strip().upper()
+        letter = Prompt.ask("[bold cyan]Select option[/bold cyan]").strip().upper()
         if letter == 'M' or (letter.isalpha() and len(letter) == 1):
             return letter
+        
         console.print("[red]Please enter a valid letter or 'M'[/red]")
 
 def get_changes_history_path(workdir: Path) -> Path:

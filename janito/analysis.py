@@ -30,21 +30,27 @@ Current files:
 {files_content}
 </files>
 
-Considering the above current files content, provide options for the requested change in the following format:
+Considering the above current files content, provide 3 sections, each identified by a keyword and representing an option.
+Each option should include a concise description and a list of affected files.
+1st option should be minimalistic style change, 2nd organized style, 3rd exntensible style.
+Do not use style as keyword, instead focus on the changes summaru
+Use the following format:
 
 A. Keyword summary of the change
 -----------------
 Description:
-- Concise description of the change followed by file operations (creates: file1.py, modifies: file2.py)
+- Concise description of the change
+
+Affected files:
+- path/file1.py (new)
+- path/file2.py (modified)
 
 END_OF_OPTIONS (mandatory marker)
 
 RULES:
-- description lines MUST end with (creates/modifies: filename)
 - do NOT provide the content of the files
 - do NOT offer to implement the changes
 - description items should be 80 chars or less
-- filenames MUST be in the tail of each description item
 
 Request:
 {request}
@@ -137,17 +143,19 @@ def get_option_selection() -> str:
         console.print("[red]Please enter a valid letter or 'M'[/red]")
 
 def _display_options(options: Dict[str, AnalysisOption]) -> None:
-    """Display available options with left-aligned content and horizontally centered panels."""
+    """Display available options in a single horizontal row with equal widths."""
     console = Console()
     
-    # Display centered title using Rule
+    # Display centered title
     console.print()
     console.print(Rule(" Available Options ", style="bold cyan", align="center"))
     console.print()
     
-    # Calculate optimal width based on terminal
+    # Calculate panel width based on terminal and number of options
     term_width = console.width or 100
-    panel_width = max(MIN_PANEL_WIDTH, (term_width // 2) - 10)  # Width for two columns
+    spacing = 4  # Space between panels
+    total_spacing = spacing * (len(options) - 1)
+    panel_width = max(MIN_PANEL_WIDTH, (term_width - total_spacing) // len(options))
     
     # Create panels for each option
     panels = []
@@ -160,21 +168,19 @@ def _display_options(options: Dict[str, AnalysisOption]) -> None:
             content.append(f"• {item}\n", style="white")
         content.append("\n")
         
-        # Display unique affected files
+        # Display affected files
         if option.affected_files:
             content.append("Affected files:\n", style="bold cyan")
-            # Use dict to preserve last status of each file (new/modified)
             unique_files = {}
             for file in option.affected_files:
                 clean_path = option.get_clean_path(file)
                 unique_files[clean_path] = file
                 
             for file in unique_files.values():
-                # Use yellow for existing files, green for new files
                 color = "green" if '(new)' in file else "yellow"
                 content.append(f"• {file}\n", style=color)
 
-        # Create panel with consistent styling
+        # Create panel with fixed width
         panel = Panel(
             content,
             box=box.ROUNDED,
@@ -186,20 +192,17 @@ def _display_options(options: Dict[str, AnalysisOption]) -> None:
         )
         panels.append(panel)
     
-    # Display panels in columns with center alignment
+    # Display all panels in a single row
     if panels:
-        # Group panels into pairs for two columns
-        for i in range(0, len(panels), 2):
-            pair = panels[i:i+2]
-            columns = Columns(
-                pair,
-                align="center",
-                expand=True,
-                equal=True,
-                padding=(0, 2)
-            )
-            console.print(columns)
-            console.print()  # Add spacing between rows
+        columns = Columns(
+            panels,
+            align="center",
+            expand=True,
+            equal=True,
+            padding=(0, spacing // 2)
+        )
+        console.print(columns)
+        console.print()
 
 def _display_markdown(content: str) -> None:
     """Display content in markdown format."""
@@ -262,6 +265,7 @@ def parse_analysis_options(response: str) -> dict[str, AnalysisOption]:
         response = response.split('END_OF_OPTIONS')[0]
     
     current_option = None
+    current_section = None  # Track current section (Description/Affected files)
     
     lines = response.split('\n')
     
@@ -283,6 +287,7 @@ def parse_analysis_options(response: str) -> dict[str, AnalysisOption]:
                 affected_files=[],
                 description_items=[]
             )
+            current_section = None
             continue
             
         # Skip separator lines
@@ -290,24 +295,23 @@ def parse_analysis_options(response: str) -> dict[str, AnalysisOption]:
             continue
         
         if current_option:
-            # Extract file operations from line ending
-            op_match = re.search(r'(?:creates|modifies):\s*(.+)$', line.lower())
-            if op_match:
-                # Remove leading dash/hyphen and whitespace before adding to description
-                content = line.lstrip('- ').rstrip()
-                current_option.description_items.append(content)
-                
-                # Process files
-                files = [f.strip() for f in op_match.group(1).split(',')]
-                is_create = 'creates:' in line.lower()
-                
-                # Add appropriate markers
-                files = [f"{f} (new)" if is_create else f"{f} (modified)" 
-                        for f in files]
-                current_option.affected_files.extend(files)
-            elif not line.lower().startswith('description:'):
-                # Skip lines without file operations - they must have file info at tail
+            # Track sections
+            if line.lower() == 'description:':
+                current_section = 'description'
                 continue
+            elif line.lower() == 'affected files:':
+                current_section = 'files'
+                continue
+            
+            # Process content based on section
+            if line.startswith('- '):
+                content = line[2:].strip()
+                if current_section == 'description':
+                    current_option.description_items.append(content)
+                elif current_section == 'files':
+                    # Check for file markers
+                    if '(new)' in content or '(modified)' in content:
+                        current_option.affected_files.append(content)
     
     # Add final option
     if current_option:
