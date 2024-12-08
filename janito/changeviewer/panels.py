@@ -75,6 +75,16 @@ def create_change_panel(search: str, replace: str | None, description: str, inde
         box=box.ROUNDED
     )
 
+def create_remove_file_panel(filepath: Path) -> Panel:
+    """Create a panel for file removal"""
+    return Panel(
+        Text(f"This file will be deleted", style="red"),
+        title=f"[bold]🗑️ Removing {filepath}[/bold]",
+        title_align="left",
+        border_style="#E06C75",
+        box=box.ROUNDED
+    )
+
 def show_change_preview(console: Console, filepath: Path, change: FileChange) -> None:
     """Display a preview of changes for a single file"""
     if change.remove_file:

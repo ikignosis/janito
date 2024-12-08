@@ -55,19 +55,28 @@ Janito can be used in two modes: Command Line or Interactive Console.
 janito REQUEST [OPTIONS]
 ```
 
-#### Arguments
-- `REQUEST`: The modification request to process (optional)
+#### Core Command Switches
 
-#### Options
-##### General Options
-- `--version`: Show version and exit
-- `-w, --workdir PATH`: Working directory (defaults to current directory)
-- `-i, --include PATH`: Additional paths to include in analysis (can be used multiple times)
+```bash
+janito [REQUEST] [OPTIONS]
 
-##### Operation Modes
-- `--ask TEXT`: Ask a question about the codebase instead of making changes
-- `--scan`: Preview files that would be analyzed without making changes
-- `--play PATH`: Replay a saved prompt file
+# Common Options
+-w, --workdir PATH     Set working directory (default: current)
+-i, --include PATH     Include additional paths (multiple allowed)
+--ask TEXT            Ask questions about the code
+--scan               Preview affected files
+--play PATH          Replay saved prompt
+--raw                Print raw output
+-v, --verbose        Show detailed output
+--debug              Enable debug mode
+-t, --test COMMAND   Run test before applying changes
+
+# Examples
+janito "add docstrings"
+janito "update error handling" -w ./src
+janito --ask "explain this function"
+janito "refactor code" --test "pytest"
+```
 
 ##### Output Control
 - `--raw`: Print raw response instead of markdown format

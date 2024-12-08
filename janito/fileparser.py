@@ -100,8 +100,8 @@ def extract_file_blocks(response_text: str) -> List[Tuple[str, str, str, str]]:
     file_blocks = []
     console = Console()
     
-    # Find file blocks
-    file_start_pattern = r'## ([a-f0-9]{8}) file (.*?) (modify|create)(?:\s+"(.*?)")?\s*##'
+    # Find file blocks - add 'remove' to allowed actions
+    file_start_pattern = r'## ([a-f0-9]{8}) file (.*?) (modify|create|remove)(?:\s+"(.*?)")?\s*##'
     # Find the first UUID to check for duplicates
     first_match = re.search(file_start_pattern, response_text)
     if not first_match:
@@ -222,6 +222,17 @@ def handle_file_block(block: FileBlock) -> FileChange:
     """Process a single file block and return a FileChange object"""
     console = Console()
     
+    # Handle file removal action
+    if block.action == 'remove':
+        return FileChange(
+            path=Path(block.filepath),
+            description=block.description,
+            is_new_file=False,
+            content="",
+            search_blocks=[],
+            remove_file=True
+        )
+    
     # Validate file path
     path = Path(block.filepath)
     is_valid, error = validate_file_path(path)
@@ -289,6 +300,9 @@ def parse_block_changes(response_text: str) -> List[FileChange]:
         )
         
         file_change = handle_file_block(file_block)
+        # For remove action, ensure remove_file flag is set
+        if action == 'remove':
+            file_change.remove_file = True
         file_change.path = path
         changes.append(file_change)
 

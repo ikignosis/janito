@@ -7,6 +7,7 @@ from rich.text import Text
 from rich.markdown import Markdown
 from datetime import datetime, timezone
 import tempfile
+import typer
 
 from janito.claude import ClaudeAPIAgent
 from janito.config import config

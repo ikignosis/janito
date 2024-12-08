@@ -33,13 +33,14 @@ class AnalysisOption:
             paths.append(path)
         return paths
 
-    def process_file_path(self, path: str) -> Tuple[str, bool, bool]:
+    def process_file_path(self, path: str) -> Tuple[str, bool, bool, bool]:
         """Process a file path to extract clean path and modification flags
-        Returns: (clean_path, is_new, is_modified)
+        Returns: (clean_path, is_new, is_modified, is_removed)
         """
         clean_path = path.strip()
         is_new = False
         is_modified = False
+        is_removed = False
         
         if "(new)" in clean_path:
             is_new = True
@@ -47,8 +48,11 @@ class AnalysisOption:
         if "(modified)" in clean_path:
             is_modified = True
             clean_path = clean_path.replace("(modified)", "").strip()
+        if "(removed)" in clean_path:
+            is_removed = True
+            clean_path = clean_path.replace("(removed)", "").strip()
             
-        return clean_path, is_new, is_modified
+        return clean_path, is_new, is_modified, is_removed
 
 def parse_analysis_options(response: str) -> Dict[str, AnalysisOption]:
     """Parse options from the response text."""
@@ -98,7 +102,8 @@ def parse_analysis_options(response: str) -> Dict[str, AnalysisOption]:
                 if current_section == 'description':
                     current_option.description_items.append(content)
                 elif current_section == 'files':
-                    if '(new)' in content or '(modified)' in content:
+                    # Accept any combination of new, modified or removed markers
+                    if any(marker in content for marker in ['(new)', '(modified)', '(removed)']):
                         current_option.affected_files.append(content)
     
     if current_option:

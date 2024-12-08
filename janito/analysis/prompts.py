@@ -7,6 +7,7 @@ from rich.rule import Rule
 from rich.prompt import Prompt
 from rich import box
 
+# Keep only prompt-related functionality
 CHANGE_ANALYSIS_PROMPT = """
 Current files:
 <files>
@@ -27,6 +28,7 @@ Description:
 Affected files:
 - path/file1.py (new)
 - path/file2.py (modified)
+- path/file3.py (removed)
 
 END_OF_OPTIONS (mandatory marker)
 

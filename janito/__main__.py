@@ -6,6 +6,7 @@ from janito.prompts import SYSTEM_PROMPT
 from janito.config import config
 from janito.version import get_version
 from janito.scan import preview_scan, is_dir_empty
+from janito.change.preview import preview_all_changes
 from rich.console import Console
 
 from .cli.functions import (

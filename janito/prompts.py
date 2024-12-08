@@ -58,7 +58,7 @@ For file removal:
 
 RULES:
 1. search_content MUST preserve the original indentation/whitespace
-2. file replacement can only be used for existing files marked as modified
+2. file replacement can only be used for existing files marked as 
 """
 
 def build_selected_option_prompt(option_text: str, request: str, files_content: str = "") -> str:
