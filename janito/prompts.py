@@ -20,12 +20,15 @@ Current files:
 </files>
 
 RULES:
-- When revmoing constants, ensure they are not used elsewhere
+- When removing constants, ensure they are not used elsewhere
 - When adding new features to python files, add the necessary imports
 - Python imports should be inserted at the top of the file
+- For complete file replacements, only use for existing files marked as modified
+- File replacements must preserve the essential functionality
 
 Please provide the changes in this format:
 
+For incremental changes:
 ## {uuid} file <filepath> modify "short file change description" ##
 ## {uuid} search/replace "short change description" ##
 <search_content>
@@ -33,10 +36,9 @@ Please provide the changes in this format:
 <replace_content>
 ## {uuid} file end ##
 
-Or to delete content:
-## {uuid} file <filepath> modify ##
-## {uuid} search/delete "short change description" ##
-<content_to_delete>
+For complete file replacement (only for existing modified files):
+## {uuid} file <filepath> replace "short file description" ##
+<full_file_content>
 ## {uuid} file end ##
 
 For new files:
@@ -44,8 +46,19 @@ For new files:
 <full_file_content>
 ## {uuid} file end ##
 
+For content deletion:
+## {uuid} file <filepath> modify ##
+## {uuid} search/delete "short change description" ##
+<content_to_delete>
+## {uuid} file end ##
+
+For file removal:
+## {uuid} file <filepath> remove "short removal reason" ##
+## {uuid} file end ##
+
 RULES:
-1. search_content MUST preserve the original identation/whitespace 
+1. search_content MUST preserve the original indentation/whitespace
+2. file replacement can only be used for existing files marked as modified
 """
 
 def build_selected_option_prompt(option_text: str, request: str, files_content: str = "") -> str:

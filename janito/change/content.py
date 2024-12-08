@@ -1,10 +1,12 @@
+
 from pathlib import Path
 from typing import Dict, Tuple
 from rich.console import Console
 from datetime import datetime
+
 from janito.fileparser import FileChange, parse_block_changes
-from janito.changeapplier import preview_and_apply_changes
-from janito.changehistory import save_changes_to_history
+from janito.changehistory import save_changes_to_history, get_history_file_path
+from .preview import preview_and_apply_changes
 
 def get_file_type(filepath: Path) -> str:
     """Determine the type of saved file based on its name"""
@@ -24,14 +26,6 @@ def process_and_save_changes(content: str, request: str, workdir: Path) -> Tuple
     changes = parse_block_changes(content)
     history_file = save_changes_to_history(content, request, workdir)
     return changes, history_file
-
-def validate_python_syntax(content: str, filepath: Path) -> Tuple[bool, str]:
-    """Validate Python syntax and return (is_valid, error_message)"""
-    try:
-        ast.parse(content)
-        return True, ""
-    except SyntaxError as e:
-        return False, f"Line {e.lineno}: {e.msg}"
 
 def format_parsed_changes(changes: Dict[Path, Tuple[str, str]]) -> str:
     """Format parsed changes to show only file change descriptions"""

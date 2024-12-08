@@ -3,19 +3,54 @@ from typing import Dict, Tuple, List, Optional, Union
 from dataclasses import dataclass
 import re
 import ast
-import sys  # Add this import
+import sys
+import os  # Add this import
 from rich.console import Console
-from rich.panel import Panel  # Add this import
-from janito.config import config  # Add this import
+from rich.panel import Panel
+from janito.config import config
+
+def validate_file_path(filepath: Path) -> Tuple[bool, str]:
+    """
+    Validate that the file path exists and is readable
+    
+    Args:
+        filepath: Path object to validate
+        
+    Returns:
+        Tuple[bool, str]: (is_valid, error_message)
+    """
+    if not filepath.exists():
+        return False, f"File does not exist: {filepath}"
+    if not os.access(filepath, os.R_OK):
+        return False, f"File is not readable: {filepath}"
+    return True, ""
+
+def validate_file_content(content: str) -> Tuple[bool, str]:
+    """
+    Validate that the content is not empty and contains valid text
+    
+    Args:
+        content: String content to validate
+        
+    Returns:
+        Tuple[bool, str]: (is_valid, error_message)
+    """
+    if not content:
+        return False, "Content cannot be empty"
+    if not isinstance(content, str):
+        return False, "Content must be a string"
+    return True, ""
 
 @dataclass
 class FileChange:
-    """Represents a file change with search/replace, search/delete or create instructions"""
+    """Represents a file change with search/replace, search/delete, create or replace instructions"""
     path: Path
     description: str
     is_new_file: bool
-    content: str = ""  # For new files
+    content: str = ""  # For new files or replace operations
     search_blocks: List[Tuple[str, Optional[str], Optional[str]]] = None  # (search, replace, description)
+    replace_file: bool = False  # Flag for complete file replacement
+    remove_file: bool = False  # Flag for file deletion
 
     def add_search_block(self, search: str, replace: Optional[str], description: Optional[str] = None) -> None:
         """Add a search/replace or search/delete block with optional description"""
@@ -186,6 +221,20 @@ def extract_modification_blocks(uuid: str, content: str) -> List[Tuple[str, str,
 def handle_file_block(block: FileBlock) -> FileChange:
     """Process a single file block and return a FileChange object"""
     console = Console()
+    
+    # Validate file path
+    path = Path(block.filepath)
+    is_valid, error = validate_file_path(path)
+    if block.action == 'replace' and not is_valid:
+        console.print(f"[red]Invalid file path:[/red] {error}")
+        sys.exit(1)
+    
+    # Validate content for new files or replacements
+    if block.action == 'create' or block.action == 'replace':
+        is_valid, error = validate_file_content(block.content)
+        if not is_valid:
+            console.print(f"[red]Invalid file content for {block.filepath}:[/red] {error}")
+            sys.exit(1)
     
     if block.action == 'create':
         return FileChange(

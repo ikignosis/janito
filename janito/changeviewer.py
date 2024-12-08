@@ -10,7 +10,10 @@ from janito.fileparser import FileChange
 from janito.analysis import AnalysisOption
 from rich.columns import Columns
 from rich.syntax import Syntax
-from janito.config import config  # Add this import
+from janito.config import config
+import os
+
+# Remove validate_file_path function - it's now in fileparser.py
 
 MIN_PANEL_WIDTH = 40   # Minimum width for each panel
 
