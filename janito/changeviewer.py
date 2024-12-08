@@ -30,7 +30,7 @@ def show_change_preview(console: Console, filepath: Path, change: FileChange) ->
             size_kb = size_bytes / 1024
             size_str = f"{size_kb:.1f} KB"
 
-        # Create content panel with syntax highlighting if possible
+        # Create content display with syntax highlighting if possible
         content_display = change.content
         if filepath.suffix in ['.py', '.js', '.ts', '.java', '.cpp', '.c']:
             try:
@@ -38,19 +38,9 @@ def show_change_preview(console: Console, filepath: Path, change: FileChange) ->
             except:
                 pass
 
-        new_file_panel = Panel(
-            content_display,
-            title="[bold]📝 File Content[/bold]",
-            title_align="left",
-            border_style="#8AE234",
-            box=box.ROUNDED,
-            style="bright_green"
-        )
-        main_content.append(new_file_panel)
-        
         # Create and display main file panel with bright green border
         file_panel = Panel(
-            Columns(main_content, align="center"),
+            content_display,
             title=f"[bold]✨ Creating {filepath} ({size_str})[/bold]",
             title_align="left",
             border_style="#8AE234",

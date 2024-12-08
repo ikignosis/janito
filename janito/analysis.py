@@ -23,6 +23,35 @@ import re
 
 MIN_PANEL_WIDTH = 40   # Minimum width for each panel
 
+
+CHANGE_ANALYSIS_PROMPT = """
+Current files:
+<files>
+{files_content}
+</files>
+
+Considering the above current files content, provide options for the requested change in the following format:
+
+A. Keyword summary of the change
+-----------------
+Description:
+- Concise description of the change followed by file operations (creates: file1.py, modifies: file2.py)
+
+END_OF_OPTIONS (mandatory marker)
+
+RULES:
+- description lines MUST end with (creates/modifies: filename)
+- do NOT provide the content of the files
+- do NOT offer to implement the changes
+- description items should be 80 chars or less
+- filenames MUST be in the tail of each description item
+
+Request:
+{request}
+"""
+
+
+
 def get_history_file_type(filepath: Path) -> str:
     """Determine the type of saved file based on its name"""
     name = filepath.name.lower()
@@ -60,32 +89,23 @@ class AnalysisOption:
             paths.append(path)
         return paths
 
-CHANGE_ANALYSIS_PROMPT = """
-Current files:
-<files>
-{files_content}
-</files>
-
-Considering the above current files content, provide options for the requested change in the following format:
-
-A. Keyword summary of the change
------------------
-Description:
-- Concise description of the change
-
-Affected files:
-- file1.py
-- file2.py (new)
------------------
-END_OF_OPTIONS (mandatory marker)
-
-RULES:
-- do NOT provide the content of the files
-- do NOT offer to implement the changes
-
-Request:
-{request}
-"""
+    def process_file_path(self, path: str) -> Tuple[str, bool, bool]:
+        """Process a file path to extract clean path and modification flags
+        Returns: (clean_path, is_new, is_modified)
+        """
+        clean_path = path.strip()
+        is_new = False
+        is_modified = False
+        
+        # Extract indicators from path
+        if "(new)" in clean_path:
+            is_new = True
+            clean_path = clean_path.replace("(new)", "").strip()
+        if "(modified)" in clean_path:
+            is_modified = True
+            clean_path = clean_path.replace("(modified)", "").strip()
+            
+        return clean_path, is_new, is_modified
 
 
 
@@ -140,10 +160,16 @@ def _display_options(options: Dict[str, AnalysisOption]) -> None:
             content.append(f"• {item}\n", style="white")
         content.append("\n")
         
-        # Display affected files
+        # Display unique affected files
         if option.affected_files:
             content.append("Affected files:\n", style="bold cyan")
+            # Use dict to preserve last status of each file (new/modified)
+            unique_files = {}
             for file in option.affected_files:
+                clean_path = option.get_clean_path(file)
+                unique_files[clean_path] = file
+                
+            for file in unique_files.values():
                 # Use yellow for existing files, green for new files
                 color = "green" if '(new)' in file else "yellow"
                 content.append(f"• {file}\n", style=color)
@@ -228,64 +254,62 @@ def save_to_file(content: str, prefix: str, workdir: Path) -> Path:
 
 
 def parse_analysis_options(response: str) -> dict[str, AnalysisOption]:
-    """Parse options from the response text using a line-based approach."""
+    """Parse options from the response text."""
     options = {}
     
     # Extract content up to END_OF_OPTIONS
     if 'END_OF_OPTIONS' in response:
         response = response.split('END_OF_OPTIONS')[0]
     
-    lines = response.splitlines()
     current_option = None
-    current_section = None
+    
+    lines = response.split('\n')
     
     for line in lines:
         line = line.strip()
         if not line:
             continue
             
-        # Check for new option starting with letter
-        if len(line) >= 2 and line[0].isalpha() and line[1] == '.' and line[0].isupper():
+        # Match option header (e.g. "A. Summary text")
+        option_match = re.match(r'^([A-Z])\.\s+(.+)$', line)
+        if option_match:
             if current_option:
                 options[current_option.letter] = current_option
-            
-            letter = line[0]
-            summary = line[2:].strip()
+                
+            letter, summary = option_match.groups()
             current_option = AnalysisOption(
                 letter=letter,
                 summary=summary,
                 affected_files=[],
                 description_items=[]
             )
-            current_section = None
             continue
             
         # Skip separator lines
-        if line.startswith('---'):
+        if re.match(r'^-+$', line):
             continue
-            
-        # Check for section headers
-        if line.startswith('Description:'):
-            current_section = 'description'
-            continue
-        elif line.startswith('Affected files:'):
-            current_section = 'files'
-            continue
-            
-        # Process content based on current section
-        if current_option and current_section and line:
-            if current_section == 'description':
-                # Strip bullet points and whitespace
-                item = line.lstrip(' -•').strip()
-                if item:
-                    current_option.description_items.append(item)
-            elif current_section == 'files':
-                # Only strip bullet points, preserve (new) marker
-                file_path = line.lstrip(' -').strip()
-                if file_path:
-                    current_option.affected_files.append(file_path)
+        
+        if current_option:
+            # Extract file operations from line ending
+            op_match = re.search(r'(?:creates|modifies):\s*(.+)$', line.lower())
+            if op_match:
+                # Remove leading dash/hyphen and whitespace before adding to description
+                content = line.lstrip('- ').rstrip()
+                current_option.description_items.append(content)
+                
+                # Process files
+                files = [f.strip() for f in op_match.group(1).split(',')]
+                is_create = 'creates:' in line.lower()
+                
+                # Add appropriate markers
+                files = [f"{f} (new)" if is_create else f"{f} (modified)" 
+                        for f in files]
+                current_option.affected_files.extend(files)
+            elif not line.lower().startswith('description:'):
+                # Skip lines without file operations - they must have file info at tail
+                continue
     
-    # Add the last option if exists
+    # Add final option
     if current_option:
         options[current_option.letter] = current_option
     
