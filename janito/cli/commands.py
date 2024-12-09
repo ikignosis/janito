@@ -3,8 +3,9 @@ from typing import Optional, List
 from rich.console import Console
 
 from janito.agents import AIAgent
-from janito.scan import preview_scan, is_dir_empty
+from janito.scan import preview_scan, is_dir_empty, show_content_stats
 from janito.config import config
+from janito.git.commit import git_commit
 
 from .functions import (
     process_question, replay_saved_file, ensure_workdir,
@@ -14,12 +15,12 @@ from .functions import (
 )
 
 
-def handle_ask(question: str, workdir: Path, include: List[Path], raw: bool, agent: AIAgent):
+def handle_ask(question: str, workdir: Path, include: List[Path], raw: bool):
     """Ask a question about the codebase"""
     workdir = ensure_workdir(workdir)
     if question == ".":
         question = read_stdin()
-    process_question(question, workdir, include, raw, agent)
+    process_question(question, workdir, include, raw)
 
 def handle_scan(paths_to_scan: List[Path], workdir: Path):
     """Preview files that would be analyzed"""
@@ -31,7 +32,7 @@ def handle_play(filepath: Path, workdir: Path, raw: bool):
     workdir = ensure_workdir(workdir)
     replay_saved_file(filepath, workdir, raw)
 
-def handle_request(request: str, workdir: Path, include: List[Path], raw: bool, agent: AIAgent):
+def handle_request(request: str, workdir: Path, include: List[Path], raw: bool):
     """Process modification request"""
     workdir = ensure_workdir(workdir)
     paths_to_scan = include if include else [workdir]
@@ -43,11 +44,15 @@ def handle_request(request: str, workdir: Path, include: List[Path], raw: bool, 
         files_content = ""
     else:
         files_content = collect_files_content(paths_to_scan, workdir)
+        show_content_stats(files_content)
     
     initial_prompt = build_request_analysis_prompt(files_content, request)
     initial_response = progress_send_message(initial_prompt)
     save_to_file(initial_response, 'analysis', workdir)
     
-    format_analysis(initial_response, raw, agent)
+    format_analysis(initial_response, raw)
     
     handle_option_selection(initial_response, request, raw, workdir, include)
+    
+def handle_git_commit():
+    git_commit()

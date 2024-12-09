@@ -11,7 +11,8 @@ DARK_LINE_BACKGROUNDS = {
     'unchanged': '#1A1A1A',        
     'added': '#003300',        
     'deleted': '#660000',          
-    'modified': '#000030'          
+    'modified': '#000030',
+    'highlight': '#004466'  # Highlight color for changed sections
 }
 
 # Light theme colors
@@ -19,7 +20,8 @@ LIGHT_LINE_BACKGROUNDS = {
     'unchanged': 'grey93',         # Light gray for unchanged
     'added': 'light_green',       # Semantic light green for additions
     'deleted': 'light_red',       # Semantic light red for deletions
-    'modified': 'light_blue'      # Semantic light blue for modifications
+    'modified': 'light_blue',     # Semantic light blue for modifications
+    'highlight': '#66CCFF'        # Light blue highlight for changed sections
 }
 
 @dataclass
@@ -45,7 +47,7 @@ DEFAULT_THEME = DARK_THEME
 
 def validate_theme(theme: ColorTheme) -> bool:
     """Validate that a theme contains all required colors"""
-    required_line_backgrounds = {'unchanged', 'added', 'deleted', 'modified'}
+    required_line_backgrounds = {'unchanged', 'added', 'deleted', 'modified', 'highlight'}
     
     if not isinstance(theme, ColorTheme):
         return False

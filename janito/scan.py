@@ -170,7 +170,7 @@ def show_content_stats(content: str) -> None:
             dir_counts[str(path.parent)] += 1
     
     console = Console()
-    stats = [f"{directory} ({count} files)" for directory, count in dir_counts.items()]
+    stats = [f"{directory}/ [{count} file(s)]" for directory, count in dir_counts.items()]
     columns = Columns(stats, equal=True, expand=True)
     panel = Panel(columns, title="Work Context")
     console.print(panel)

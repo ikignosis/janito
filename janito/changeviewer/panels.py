@@ -57,7 +57,7 @@ def create_new_file_panel(filepath: Path, content: str) -> Panel:
     
     content = Table.grid(padding=(1, 0))
     content.add_row(Panel(metadata, title="File Metadata", border_style="white"))
-    content.add_row(Panel(content_table, title="Content Preview", border_style="white"))
+    content.add_row(Panel(content_panel, title="Content Preview", border_style="white"))
 
     return Panel(
         content,
@@ -147,7 +147,7 @@ def create_replace_panel(filepath: Path, change: FileChange) -> Panel:
     
     content = Table.grid(padding=(1, 0))
     content.add_row(Panel(metadata, title="File Metadata", border_style="white"))
-    content.add_row(Panel(content_table, title="Content Preview", border_style="white"))
+    content.add_row(Panel(content_panel, title="Content Preview", border_style="white"))
     
     return Panel(
         content,

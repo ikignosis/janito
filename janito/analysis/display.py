@@ -1,5 +1,7 @@
 """Display formatting for analysis results."""
 
+import re
+import sys
 from typing import Optional, Dict
 from pathlib import Path
 from datetime import datetime, timezone
@@ -11,8 +13,7 @@ from rich import box
 from rich.columns import Columns
 from rich.rule import Rule
 from janito.agents import AIAgent, AgentSingleton
-from .options import AnalysisOption
-from .options import parse_analysis_options
+from .options import AnalysisOption, parse_analysis_options, NO_CHANGES_PATTERN
 
 MIN_PANEL_WIDTH = 40
 
@@ -108,13 +109,22 @@ def format_analysis(analysis: str, raw: bool = False, workdir: Optional[Path] = 
     agent = AgentSingleton.get_agent()
     if raw and agent:
         _display_raw_history(agent)
+        return
+        
+    # Check for no_changes_required pattern
+    no_changes_match = re.match(NO_CHANGES_PATTERN, analysis, re.DOTALL)
+    if no_changes_match:
+        content = no_changes_match.group(1)
+        console.print("\n[yellow]⚠️  WARNING[/yellow]")
+        _display_markdown(content)
+        sys.exit(1)
+        
+    options = parse_analysis_options(analysis)
+    if options:
+        _display_options(options)
     else:
-        options = parse_analysis_options(analysis)
-        if options:
-            _display_options(options)
-        else:
-            console.print("\n[yellow]Warning: No valid options found in response. Displaying as markdown.[/yellow]\n")
-            _display_markdown(analysis)
+        console.print("\n[yellow]Warning: No valid options found in response. Displaying as markdown.[/yellow]\n")
+        _display_markdown(analysis)
 
 def get_history_file_type(filepath: Path) -> str:
     """Determine the type of saved file based on its name"""

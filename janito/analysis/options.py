@@ -2,8 +2,10 @@
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 import re
+
+NO_CHANGES_PATTERN = r'^\<no_changes_required\>\s*(.*?)\s*\<\/no_changes_required\>$' 
 
 @dataclass
 class AnalysisOption:
@@ -54,16 +56,19 @@ class AnalysisOption:
             
         return clean_path, is_new, is_modified, is_removed
 
-def parse_analysis_options(response: str) -> Dict[str, AnalysisOption]:
-    """Parse options from the response text."""
+def parse_analysis_options(response: str) -> Optional[Dict[str, AnalysisOption]]:
+    """Parse options from the response text. Returns None if no_changes_required is found."""
+    # Check for no_changes_required pattern
+    no_changes_match = re.match(NO_CHANGES_PATTERN, response, re.DOTALL)
+    if no_changes_match:
+        return None
+        
     options = {}
-    
     if 'END_OF_OPTIONS' in response:
         response = response.split('END_OF_OPTIONS')[0]
     
     current_option = None
     current_section = None
-    
     lines = response.split('\n')
     
     for line in lines:

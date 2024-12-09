@@ -17,7 +17,10 @@ Current files:
 Considering the above current files content, provide 3 sections, each identified by a keyword and representing an option.
 Each option should include a concise description and a list of affected files.
 1st option should be minimalistic style change, 2nd organized style, 3rd exntensible style.
-Do not use style as keyword, instead focus on the changes summaru
+Do not use style as keyword, instead focus on the changes summaru.
+IMPORTANT: if the request seems already implemented in the provided files answer <no_changes_required>reason in markdown<no_changes_required> instead of options
+
+
 Use the following format:
 
 A. Keyword summary of the change

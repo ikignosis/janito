@@ -19,14 +19,15 @@ Current files:
 {files_content}
 </files>
 
-RULES:
+RULES for analysis:
 - When removing constants, ensure they are not used elsewhere
 - When adding new features to python files, add the necessary imports
 - Python imports should be inserted at the top of the file
 - For complete file replacements, only use for existing files marked as modified
 - File replacements must preserve the essential functionality
+- When multiple changes affect the same file, combine them in a single file block
 - When multiple changes affect the same code block, combine them into a single change
-- if no changes are required answer only the reason in the format: <no_changes_required>reason for no changes<no_changes_required>
+
 
 Please provide the changes in this format:
 

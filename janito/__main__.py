@@ -7,7 +7,7 @@ from .version import get_version
 from janito.agents import AgentSingleton
 from janito.config import config
 
-from .cli.commands import handle_request, handle_ask, handle_play, handle_scan
+from .cli.commands import handle_request, handle_ask, handle_play, handle_scan, handle_git_commit
 
 app = typer.Typer(add_completion=False)
 
@@ -18,6 +18,7 @@ def typer_main(
     verbose: bool = typer.Option(False, "--verbose", help="Show verbose output"),
     include: Optional[List[Path]] = typer.Option(None, "-i", "--include", help="Additional paths to include"),
     ask: Optional[str] = typer.Option(None, "--ask", help="Ask a question about the codebase"),
+    git_commit: Optional[str] = typer.Option(None, "--git-commit", help="Do git commit with auto-generated message"),
     play: Optional[Path] = typer.Option(None, "--play", help="Replay a saved prompt file"),
     version: bool = typer.Option(False, "--version", help="Show version information"),
 ):
@@ -31,17 +32,17 @@ def typer_main(
     config.set_debug(debug)
     config.set_verbose(verbose)
 
-    agent = AgentSingleton.get_agent()
-
     if ask:
-        handle_ask(ask, workdir, include, False, agent)
+        handle_ask(ask, workdir, include, False)
+    elif git_commit:
+        handle_git_commit()
     elif play:
         handle_play(play, workdir, False)
     elif change_request == "scan":
         paths_to_scan = include if include else [workdir]
         handle_scan(paths_to_scan, workdir)
     elif change_request:
-        handle_request(change_request, workdir, include, False, agent)
+        handle_request(change_request, workdir, include, False)
     else:
         console = Console()
         console.print("Error: Please provide a change request or use --ask/--play options")
