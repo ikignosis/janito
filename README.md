@@ -4,78 +4,101 @@ A CLI tool for software development tasks powered by AI. Janito is your friendly
 
 ## 📥 Installation
 
+1. Install using pip:
 ```bash
-pip install janito  # Install from PyPI
+pip install janito
+```
+
+2. Verify installation:
+```bash
+janito --version
 ```
 
 ## ⚙️ Setup
 
-1. Set your Anthropic API key:
+1. Get your Anthropic API key from [Anthropic's website](https://www.anthropic.com/)
+
+2. Set your API key:
 ```bash
+# Linux/macOS
 export ANTHROPIC_API_KEY='your-api-key-here'
+
+# Windows (Command Prompt)
+set ANTHROPIC_API_KEY=your-api-key-here
+
+# Windows (PowerShell)
+$env:ANTHROPIC_API_KEY='your-api-key-here'
 ```
 
-2. (Optional) Configure a test command:
+3. (Optional) Configure default test command:
 ```bash
-export JANITO_TEST_CMD='your-test-command'
+export JANITO_TEST_CMD='pytest'  # or your preferred test command
 ```
 
-## 📖 Command Reference
+## 🚀 Quick Start
 
-### Basic Syntax
+### Basic Usage
 
+```bash
+# Add docstrings to your code
+janito "add docstrings to this file"
+
+# Optimize a function
+janito "optimize the main function"
+
+# Get code explanations
+janito --ask "explain this code"
+```
+
+### Common Scenarios
+
+1. **Code Refactoring**
+```bash
+# Refactor with test validation
+janito "refactor this code to use list comprehension" --test "pytest"
+
+# Refactor specific directory
+janito "update imports" -i ./src
+```
+
+2. **Documentation Updates**
+```bash
+# Add or update docstrings
+janito "add type hints and docstrings"
+
+# Generate README
+janito "create a README for this project"
+```
+
+3. **Code Analysis**
+```bash
+# Get code explanations
+janito --ask "what does this function do?"
+
+# Find potential improvements
+janito --ask "suggest optimizations for this code"
+```
+
+## 🛠️ Command Reference
+
+### Syntax
 ```bash
 janito [OPTIONS] [REQUEST]
 ```
 
-### Command Options
+### Key Options
 
 | Option | Description |
 |--------|-------------|
 | `REQUEST` | The AI request/instruction (in quotes) |
-| `-w, --working-dir PATH` | Specify working directory [default: current directory] |
-| `--ask` | Ask questions about code without making changes |
-| `--test COMMAND` | Run specified test command before applying changes |
-| `--debug` | Enable debug mode for detailed logging |
-| `--help` | Show help message and exit |
-
-### Usage Examples
-
-```bash
-# Basic usage - modify code
-janito "add docstrings"
-janito "optimize this function"
-janito "add error handling"
-
-# Specify working directory
-janito "update imports" -w ./src
-
-# Ask questions without changes
-janito --ask "explain this code"
-janito --ask "what does this function do?"
-
-# Run tests before applying changes
-janito "refactor code" --test "pytest"
-janito "optimize function" --test "python -m unittest"
-
-# Debug mode
-janito "update logging" --debug
-
-# Skip confirmations and syntax checking
-janito "format code" --no-confirm --no-syntax-check
-
-# Check version
-janito --version
-
-# Get help
-janito --help
-```
-
-### Interactive Console Mode
-
-```bash
-janito  # Start interactive session
-```
+| `-w, --working-dir PATH` | Working directory [default: current] |
+| `-i, --include PATH` | Include directory int the working context (can be multiple)|
+| `--ask QUESTION` | Ask questions without making changes |
+| `--test COMMAND` | Run tests before applying changes |
+| `--debug` | Enable debug logging |
+| `--verbose` | Enable verbose mode |
+| `--version` | Show version information |
+| `--help` | Show help message |
 
 ## 🔑 Key Features
 
@@ -88,8 +111,8 @@ janito  # Start interactive session
 
 ## 📚 Additional Information
 
-- Python 3.8+ required
-- Changes saved in `.janito/history/`
+- Requires Python 3.8+
+- Changes are backed up in `.janito/changes_history/`
 - Environment variables:
   - `ANTHROPIC_API_KEY`: Required for API access
   - `JANITO_TEST_CMD`: Default test command (optional)

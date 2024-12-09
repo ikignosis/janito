@@ -15,10 +15,11 @@ print_status() {
 
 echo "Starting release validation pipeline..."
 
-# Phase 1: PyPI Version Check
-echo -e "\nChecking PyPI status..."
-PYPI_VERSION=$(pip index versions janito 2>/dev/null | grep -Po '(?<=janito \()[0-9.]+' | head -n1 || echo "not found")
-echo "Current version on PyPI: $PYPI_VERSION"
+# Phase 1: Version Validation
+echo -e "\nValidating versions..."
+# Get current version from pyproject.toml
+CURRENT_VERSION=$(grep -Po '(?<=version = ")[^"]*' pyproject.toml)
+echo "Current version in pyproject.toml: $CURRENT_VERSION"
 
 # Phase 2: Git Status Checks
 echo -e "\nValidating Git status..."
@@ -30,6 +31,13 @@ else
     print_status "ok" "Git tag found: $CURRENT_TAG"
 fi
 
+# Verify tag matches version in pyproject.toml
+if [ "$CURRENT_TAG" != "v$CURRENT_VERSION" ]; then
+    print_status "error" "Git tag ($CURRENT_TAG) doesn't match version in pyproject.toml (v$CURRENT_VERSION)"
+else
+    print_status "ok" "Version numbers match"
+fi
+
 # Check if working tree is clean
 if [ -n "$(git status --porcelain)" ]; then
     print_status "error" "Working tree is not clean"
@@ -37,18 +45,10 @@ else
     print_status "ok" "Working tree is clean"
 fi
 
-# Phase 3: Version Validation
-echo -e "\nValidating versions..."
-# Get current version from pyproject.toml
-CURRENT_VERSION=$(grep -Po '(?<=version = ")[^"]*' pyproject.toml)
-echo "Current version in pyproject.toml: $CURRENT_VERSION"
-
-# Verify tag matches version in pyproject.toml
-if [ "$CURRENT_TAG" != "v$CURRENT_VERSION" ]; then
-    print_status "error" "Git tag ($CURRENT_TAG) doesn't match version in pyproject.toml (v$CURRENT_VERSION)"
-else
-    print_status "ok" "Version numbers match"
-fi
+# Phase 3: PyPI Version Check
+echo -e "\nChecking PyPI status..."
+PYPI_VERSION=$(pip index versions janito 2>/dev/null | grep -Po '(?<=janito \()[0-9.]+' | head -n1 || echo "not found")
+echo "Current version on PyPI: $PYPI_VERSION"
 
 # Phase 4: Release Confirmation
 echo -e "\nRelease preparation..."

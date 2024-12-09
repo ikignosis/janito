@@ -11,7 +11,7 @@ from .cli.commands import handle_request, handle_ask, handle_play, handle_scan
 
 app = typer.Typer(add_completion=False)
 
-def main(
+def typer_main(
     change_request: str = typer.Argument(None, help="Change request or command"),
     workdir: Optional[Path] = typer.Option(None, "-w", "--workdir", help="Working directory", file_okay=False, dir_okay=True),
     debug: bool = typer.Option(False, "--debug", help="Show debug information"),
@@ -25,7 +25,7 @@ def main(
     if version:
         console = Console()
         console.print(f"Janito version {get_version()}")
-        raise typer.Exit()
+        return
 
     workdir = workdir or Path.cwd()
     config.set_debug(debug)
@@ -47,5 +47,8 @@ def main(
         console.print("Error: Please provide a change request or use --ask/--play options")
         raise typer.Exit(1)
 
+def main():
+    typer.run(typer_main)
+
 if __name__ == "__main__":
-    typer.run(main)
+    main()
