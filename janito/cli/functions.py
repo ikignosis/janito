@@ -20,11 +20,7 @@ from janito.qa import ask_question, display_answer
 from janito.common import progress_send_message
 from janito.prompts import build_selected_option_prompt
 from janito.fileparser import parse_block_changes
-from janito.change import (
-    preview_and_apply_changes,
-    get_file_type,
-    process_and_save_changes
-)
+from janito.change.applier import preview_and_apply_changes
 
 def prompt_user(message: str, choices: List[str] = None) -> str:
     """Display a simple user prompt with optional choices"""
@@ -51,9 +47,9 @@ def get_option_selection() -> str:
         
         console.print("[red]Please enter a valid letter or 'M'[/red]")
 
-def get_changes_history_path(workdir: Path) -> Path:
+def get_change_history_path(workdir: Path) -> Path:
     """Create and return the changes history directory path"""
-    changes_history_dir = workdir / '.janito' / 'changes_history'
+    changes_history_dir = workdir / '.janito' / 'change_history'
     changes_history_dir.mkdir(parents=True, exist_ok=True)
     return changes_history_dir
 
@@ -70,7 +66,7 @@ def save_prompt_to_file(prompt: str) -> Path:
 
 def save_to_file(content: str, prefix: str, workdir: Path) -> Path:
     """Save content to a timestamped file in changes history directory"""
-    changes_history_dir = get_changes_history_path(workdir)
+    changes_history_dir = get_change_history_path(workdir)
     timestamp = get_timestamp()
     filename = f"{timestamp}_{prefix}.txt"
     file_path = changes_history_dir / filename
@@ -261,14 +257,14 @@ def process_question(question: str, workdir: Path, include: List[Path], raw: boo
 def ensure_workdir(workdir: Path) -> Path:
     """Ensure working directory exists, prompt for creation if it doesn't"""
     if workdir.exists():
-        return workdir
+        return workdir.absolute()
         
     console = Console()
     console.print(f"\n[yellow]Directory does not exist:[/yellow] {workdir}")
     if Confirm.ask("Create directory?"):
         workdir.mkdir(parents=True)
         console.print(f"[green]Created directory:[/green] {workdir}")
-        return workdir
+        return workdir.absolute()
     raise typer.Exit(1)
 
 def review_text(text: str, claude: ClaudeAPIAgent, raw: bool = False) -> None:

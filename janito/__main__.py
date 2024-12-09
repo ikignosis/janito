@@ -1,111 +1,107 @@
 import typer
 from typing import Optional, List
 from pathlib import Path
+from rich.console import Console
+
 from janito.claude import ClaudeAPIAgent
 from janito.prompts import SYSTEM_PROMPT
 from janito.config import config
-from janito.version import get_version
-from janito.scan import preview_scan, is_dir_empty
-from janito.change.preview import preview_all_changes
-from rich.console import Console
 
-from .cli.functions import (
-    process_question,
-    replay_saved_file, 
-    ensure_workdir,
-    review_text,
-    save_to_file,
-    collect_files_content,
-    build_request_analysis_prompt,
-    progress_send_message,
-    format_analysis,
-    handle_option_selection
+from .cli.commands import (
+    handle_version,
+    handle_review,
+    handle_ask,
+    handle_scan,
+    handle_play,
+    handle_request
 )
 
-def typer_main(
-    request: Optional[str] = typer.Argument(None, help="The modification request"),
-    ask: Optional[str] = typer.Option(None, "--ask", help="Ask a question about the codebase"),
-    review: Optional[str] = typer.Option(None, "--review", help="Review the provided text"),
-    workdir: Optional[Path] = typer.Option(None, "-w", "--workdir", 
-                                         help="Working directory (defaults to current directory)", 
-                                         file_okay=False, dir_okay=True),
-    raw: bool = typer.Option(False, "--raw", help="Print raw response instead of markdown format"),
-    play: Optional[Path] = typer.Option(None, "--play", help="Replay a saved prompt file"),
-    include: Optional[List[Path]] = typer.Option(None, "-i", "--include", help="Additional paths to include in analysis", exists=True),
-    debug: bool = typer.Option(False, "--debug", help="Show debug information"),
+app = typer.Typer()
+
+# Global options for all commands
+class GlobalOptions:
+    def __init__(
+        self,
+        workdir: Optional[Path] = typer.Option(None, "-w", "--workdir", help="Working directory", file_okay=False, dir_okay=True),
+        include: Optional[List[Path]] = typer.Option(None, "-i", "--include", help="Additional paths to include"),
+        raw: bool = typer.Option(False, "--raw", help="Print raw response"),
+        verbose: bool = typer.Option(False, "-v", "--verbose", help="Show verbose output"),
+        debug: bool = typer.Option(False, "-d", "--debug", help="Show debug information"),
+        test: Optional[str] = typer.Option(None, "-t", "--test", help="Test command to run before changes"),
+    ):
+        self.workdir = workdir or Path.cwd()
+        self.include = include
+        self.raw = raw
+        self.verbose = verbose
+        self.debug = debug
+        self.test = test
+
+@app.callback()
+def global_options(
+    ctx: typer.Context,
+    workdir: Optional[Path] = typer.Option(None, "-w", "--workdir", help="Working directory", file_okay=False, dir_okay=True),
+    include: Optional[List[Path]] = typer.Option(None, "-i", "--include", help="Additional paths to include"),
+    raw: bool = typer.Option(False, "--raw", help="Print raw response"),
     verbose: bool = typer.Option(False, "-v", "--verbose", help="Show verbose output"),
-    scan: bool = typer.Option(False, "--scan", help="Preview files that would be analyzed"),
-    version: bool = typer.Option(False, "--version", help="Show version and exit"),
-    test: Optional[str] = typer.Option(None, "-t", "--test", help="Test command to run before applying changes"),
-) -> None:
-    """
-    Analyze files and provide modification instructions.
-    """
-
-    if version:
-        console = Console()
-        console.print(f"Janito v{get_version()}")
-        raise typer.Exit()
-
+    debug: bool = typer.Option(False, "-d", "--debug", help="Show debug information"),
+    test: Optional[str] = typer.Option(None, "-t", "--test", help="Test command to run before changes"),
+):
+    """Janito - AI-powered code modification assistant"""
+    ctx.obj = GlobalOptions(workdir, include, raw, verbose, debug, test)
     config.set_debug(debug)
     config.set_verbose(verbose)
     config.set_test_cmd(test)
 
+
+@app.command()
+def ask(
+    question: str = typer.Argument(..., help="Question about the codebase"),
+    ctx: typer.Context = typer.Context
+):
+    """Ask a question about the codebase"""
+    opts = ctx.obj
     claude = ClaudeAPIAgent(system_prompt=SYSTEM_PROMPT)
+    handle_ask(question, opts.workdir, opts.include, opts.raw, claude)
 
-    if review:
-        review_text(review, claude, raw)
-        return
+@app.command()
+def request(
+    modification: str = typer.Argument(..., help="The modification request"),
+    ctx: typer.Context = typer.Context
+):
+    """Process a modification request"""
+    opts = ctx.obj
+    claude = ClaudeAPIAgent(system_prompt=SYSTEM_PROMPT)
+    handle_request(modification, opts.workdir, opts.include, opts.raw, claude)
 
-    if not any([request, ask, play, scan]):
-        workdir = workdir or Path.cwd()
-        workdir = ensure_workdir(workdir)
-        from janito.console import start_console_session
-        start_console_session(workdir, include)
-        return
+@app.command()
+def review(
+    text: str = typer.Argument(..., help="Text to review"),
+    ctx: typer.Context = typer.Context
+):
+    """Review the provided text"""
+    opts = ctx.obj
+    claude = ClaudeAPIAgent(system_prompt=SYSTEM_PROMPT)
+    handle_review(text, claude, opts.raw)
 
-    workdir = workdir or Path.cwd()
-    workdir = ensure_workdir(workdir)
-    
-    if include:
-        include = [
-            path if path.is_absolute() else (workdir / path).resolve()
-            for path in include
-        ]
-    
-    if ask:
-        process_question(ask, workdir, include, raw, claude)
-        return
+@app.command()
+def play(
+    filepath: Path = typer.Argument(..., help="Saved prompt file to replay"),
+    ctx: typer.Context = typer.Context
+):
+    """Replay a saved prompt file"""
+    opts = ctx.obj
+    claude = ClaudeAPIAgent(system_prompt=SYSTEM_PROMPT)
+    handle_play(filepath, claude, opts.workdir, opts.raw)
 
-    if scan:
-        paths_to_scan = include if include else [workdir]
-        preview_scan(paths_to_scan, workdir)
-        return
-
-    if play:
-        replay_saved_file(play, claude, workdir, raw)
-        return
-
-    paths_to_scan = include if include else [workdir]
-    
-    is_empty = is_dir_empty(workdir)
-    if is_empty and not include:
-        console = Console()
-        console.print("\n[bold blue]Empty directory - will create new files as needed[/bold blue]")
-        files_content = ""
-    else:
-        files_content = collect_files_content(paths_to_scan, workdir)
-    
-    initial_prompt = build_request_analysis_prompt(files_content, request)
-    initial_response = progress_send_message(claude, initial_prompt)
-    save_to_file(initial_response, 'analysis', workdir)
-    
-    format_analysis(initial_response, raw, claude)
-    
-    handle_option_selection(claude, initial_response, request, raw, workdir, include)
+@app.command()
+def scan(ctx: typer.Context = typer.Context):
+    """Preview files that would be analyzed"""
+    opts = ctx.obj
+    paths_to_scan = opts.include if opts.include else [opts.workdir]
+    handle_scan(paths_to_scan, opts.workdir)
 
 def main():
-    typer.run(typer_main)
+    app()
 
 if __name__ == "__main__":
     main()

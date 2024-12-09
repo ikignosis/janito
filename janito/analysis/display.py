@@ -15,6 +15,17 @@ from .options import AnalysisOption
 
 MIN_PANEL_WIDTH = 40
 
+def get_analysis_summary(options: Dict[str, AnalysisOption]) -> str:
+    """Generate a summary of affected directories and their file counts."""
+    dirs_summary = {}
+    for _, option in options.items():
+        for file in option.affected_files:
+            clean_path = option.get_clean_path(file)
+            dir_path = str(Path(clean_path).parent)
+            dirs_summary[dir_path] = dirs_summary.get(dir_path, 0) + 1
+    
+    return " | ".join([f"{dir}: {count} files" for dir, count in dirs_summary.items()])
+
 def _display_options(options: Dict[str, AnalysisOption]) -> None:
     """Display available options in a single horizontal row with equal widths."""
     console = Console()
@@ -73,7 +84,6 @@ def _display_options(options: Dict[str, AnalysisOption]) -> None:
             padding=(0, spacing // 2)
         )
         console.print(columns)
-        console.print()
 
 def _display_markdown(content: str) -> None:
     """Display content in markdown format."""

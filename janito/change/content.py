@@ -6,7 +6,8 @@ from datetime import datetime
 
 from janito.fileparser import FileChange, parse_block_changes
 from janito.changehistory import save_changes_to_history, get_history_file_path
-from .preview import preview_and_apply_changes
+from janito.changeviewer import preview_all_changes
+from .applier import apply_single_change
 
 def get_file_type(filepath: Path) -> str:
     """Determine the type of saved file based on its name"""

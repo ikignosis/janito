@@ -1,15 +1,16 @@
 from rich.text import Text
-from typing import List, Set
+from rich.console import Console
+from typing import List
+from .themes import DEFAULT_THEME, ColorTheme, ThemeType, get_theme_by_type
 
-COLORS = {
-    'unchanged': '#98C379',  # Brighter green for unchanged lines
-    'removed': '#E06C75',    # Clearer red for removed lines
-    'added': '#61AFEF',      # Bright blue for added lines
-    'new': '#C678DD',        # Purple for completely new lines
-    'relocated': '#61AFEF'   # Use same blue for relocated lines
-}
+current_theme = DEFAULT_THEME
 
-def format_content(lines: List[str], search_lines: List[str], replace_lines: List[str], is_search: bool) -> Text:
+def set_theme(theme: ColorTheme) -> None:
+    """Set the current color theme"""
+    global current_theme
+    current_theme = theme
+
+def format_content(lines: List[str], search_lines: List[str], replace_lines: List[str], is_search: bool, operation: str = 'modify') -> Text:
     """Format content with highlighting using consistent colors and line numbers"""
     text = Text()
     
@@ -19,37 +20,42 @@ def format_content(lines: List[str], search_lines: List[str], replace_lines: Lis
     common_lines = search_set & replace_set
     new_lines = replace_set - search_set
 
-    def add_line(line: str, style: str, prefix: str = " "):
-        # Special handling for icons
-        if style == COLORS['relocated']:
-            prefix = "⇄"
-        elif style == COLORS['removed'] and prefix == "-":
-            prefix = "✕"
-        elif style == COLORS['new'] or (style == COLORS['added'] and prefix == "+"):
-            prefix = "✚"
+    def add_line(line: str, prefix: str = " ", line_type: str = 'unchanged'):
+        # Ensure line_type is one of the valid types
+        valid_types = {'unchanged', 'deleted', 'modified', 'added'}
+        if line_type not in valid_types:
+            line_type = 'unchanged'
+            
+        bg_color = current_theme.line_backgrounds.get(line_type, current_theme.line_backgrounds['unchanged'])
+        style = f"{current_theme.text_color} on {bg_color}"
+        
+        # Add prefix with background
         text.append(prefix, style=style)
-        text.append(f" {line}\n", style=style)
+        # Add line content with background and pad with spaces
+        text.append(" " + line, style=style)
+        # Add newline with same background
+        text.append(" " * 1000 + "\n", style=style)
 
     for line in lines:
         if line in common_lines:
-            add_line(line, COLORS['unchanged'], "=")
+            add_line(line, "=", 'unchanged')
         elif not is_search and line in new_lines:
-            add_line(line, COLORS['new'], "+")
+            add_line(line, "✚", 'added')
         else:
-            style = COLORS['removed'] if is_search else COLORS['added']
-            prefix = "✕" if is_search else "+"
-            add_line(line, style, prefix)
+            prefix = "✕" if is_search else "✚"
+            line_type = 'deleted' if is_search else 'modified'
+            add_line(line, prefix, line_type)
     
     return text
 
-def create_legend_items() -> List[Text]:
-    """Create legend items for the change preview"""
-    return [
-        Text("Unchanged", style=COLORS['unchanged']),
-        Text(" • ", style="dim"),
-        Text("Removed", style=COLORS['removed']),
-        Text(" • ", style="dim"),
-        Text("Relocated", style=COLORS['relocated']),
-        Text(" • ", style="dim"),
-        Text("New", style=COLORS['new'])
-    ]
+def create_legend_items() -> Text:
+    """Create unified legend status bar"""
+    legend = Text()
+    legend.append(" = Unchanged ", style=f"{current_theme.text_color} on {current_theme.line_backgrounds['unchanged']}")
+    legend.append(" │ ", style="dim")
+    legend.append(" - Deleted ", style=f"{current_theme.text_color} on {current_theme.line_backgrounds['deleted']}")
+    legend.append(" │ ", style="dim")
+    legend.append(" ⇄ Modified ", style=f"{current_theme.text_color} on {current_theme.line_backgrounds['modified']}")
+    legend.append(" │ ", style="dim")
+    legend.append(" ✚ Added ", style=f"{current_theme.text_color} on {current_theme.line_backgrounds['added']}")
+    return legend

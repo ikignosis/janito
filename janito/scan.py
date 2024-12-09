@@ -2,9 +2,12 @@ from pathlib import Path
 from typing import List, Tuple, Set
 from rich.console import Console
 from rich.columns import Columns
+from rich.panel import Panel
 from janito.config import config
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
+from collections import defaultdict
+
 
 
 SPECIAL_FILES = ["README.md", "__init__.py", "__main__.py"]
@@ -35,7 +38,8 @@ def _scan_paths(paths: List[Path], workdir: Path = None) -> Tuple[List[str], Lis
         """
         if level > 1:
             return
-
+        
+        path = path.resolve()
         relative_base = workdir
         if path.is_dir():
             relative_path = path.relative_to(relative_base)
@@ -154,3 +158,19 @@ def preview_scan(paths: List[Path], workdir: Path = None) -> None:
 def is_dir_empty(path: Path) -> bool:
     """Check if directory is empty, ignoring hidden files"""
     return not any(item for item in path.iterdir() if not item.name.startswith('.'))
+
+def show_content_stats(content: str) -> None:
+    if not content:
+        return
+        
+    dir_counts = defaultdict(int)
+    for line in content.split('\n'):
+        if line.startswith('<path>'):
+            path = Path(line.replace('<path>', '').replace('</path>', '').strip())
+            dir_counts[str(path.parent)] += 1
+    
+    console = Console()
+    stats = [f"{directory} ({count} files)" for directory, count in dir_counts.items()]
+    columns = Columns(stats, equal=True, expand=True)
+    panel = Panel(columns, title="Content Statistics")
+    console.print(panel)

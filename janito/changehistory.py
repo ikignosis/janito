@@ -7,11 +7,11 @@ APP_TIMESTAMP = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 def get_history_path(workdir: Path) -> Path:
     """Create and return the history directory path"""
-    history_dir = workdir / '.janito' / 'history'
+    history_dir = workdir / '.janito' / 'change_history'
     history_dir.mkdir(parents=True, exist_ok=True)
     return history_dir
 
-def get_file_type(filepath: Path) -> str:
+def determine_history_file_type(filepath: Path) -> str:
     """Determine the type of saved file based on its name"""
     name = filepath.name.lower()
     if 'changes' in name:

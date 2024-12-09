@@ -48,6 +48,7 @@ class FileChange:
     description: str
     is_new_file: bool
     content: str = ""  # For new files or replace operations
+    original_content: str = ""  # Original content for file replacements
     search_blocks: List[Tuple[str, Optional[str], Optional[str]]] = None  # (search, replace, description)
     replace_file: bool = False  # Flag for complete file replacement
     remove_file: bool = False  # Flag for file deletion
@@ -100,8 +101,8 @@ def extract_file_blocks(response_text: str) -> List[Tuple[str, str, str, str]]:
     file_blocks = []
     console = Console()
     
-    # Find file blocks - add 'remove' to allowed actions
-    file_start_pattern = r'## ([a-f0-9]{8}) file (.*?) (modify|create|remove)(?:\s+"(.*?)")?\s*##'
+    # Find file blocks with improved quoted description handling
+    file_start_pattern = r'## ([a-f0-9]{8}) file (.*?) (modify|create|remove|replace)(?:\s+"([^"]*?)")?\s*##'
     # Find the first UUID to check for duplicates
     first_match = re.search(file_start_pattern, response_text)
     if not first_match:
@@ -237,11 +238,32 @@ def handle_file_block(block: FileBlock) -> FileChange:
     path = Path(block.filepath)
     is_valid, error = validate_file_path(path)
     if block.action == 'replace' and not is_valid:
-        console.print(f"[red]Invalid file path:[/red] {error}")
+        console.print(f"[red]Invalid file path for replacement:[/red] {error}")
         sys.exit(1)
     
-    # Validate content for new files or replacements
-    if block.action == 'create' or block.action == 'replace':
+    # Handle file replacement action
+    if block.action == 'replace':
+        # Read original content if file exists
+        original_content = ""
+        if path.exists():
+            try:
+                original_content = path.read_text()
+            except Exception as e:
+                console.print(f"[red]Error reading original file for replacement:[/red] {e}")
+                sys.exit(1)
+                
+        return FileChange(
+            path=Path(block.filepath),
+            description=block.description,
+            is_new_file=False,
+            content=block.content.lstrip('\n'),
+            original_content=original_content,
+            search_blocks=[],
+            replace_file=True
+        )
+    
+    # Validate content for new files
+    if block.action == 'create':
         is_valid, error = validate_file_content(block.content)
         if not is_valid:
             console.print(f"[red]Invalid file content for {block.filepath}:[/red] {error}")
