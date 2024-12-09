@@ -1,7 +1,7 @@
 import pytest
 from pathlib import Path
 from janito.__main__ import typer_main
-from janito.claude import ClaudeAPIAgent
+from janito.agents import AIAgent
 
 class MockClaudeAgent:
     def __init__(self, responses=None):
@@ -28,8 +28,8 @@ def test_example():
 ## abc123 test_sample.py end ##"""
     }
     
-    mock_claude = MockClaudeAgent(mock_responses)
-    monkeypatch.setattr("janito.claude.ClaudeAPIAgent", lambda **kwargs: mock_claude)
+    mock_agent = MockClaudeAgent(mock_responses)
+    monkeypatch.setattr("janito.agent.AIAgent", lambda **kwargs: mock_claude)
     
     # Run command
     typer_main(["create test file"], workdir=temp_workdir)
@@ -53,8 +53,8 @@ def test_scan_workflow(temp_workdir, mock_files, capsys):
 
 def test_history_creation(temp_workdir, mock_claude_response, monkeypatch):
     """Test history file creation during workflow"""
-    mock_claude = MockClaudeAgent({"test": mock_claude_response["analysis"]})
-    monkeypatch.setattr("janito.claude.ClaudeAPIAgent", lambda **kwargs: mock_claude)
+    mock_agent = MockClaudeAgent({"test": mock_claude_response["analysis"]})
+    monkeypatch.setattr("janito.agent.AIAgent", lambda **kwargs: mock_claude)
     
     typer_main(["test"], workdir=temp_workdir)
     

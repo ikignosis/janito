@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 import tempfile
 import typer
 
-from janito.claude import ClaudeAPIAgent
+from janito.agents import AIAgent
 from janito.config import config
 from janito.scan import collect_files_content
 from janito.analysis import (
@@ -111,7 +111,7 @@ def format_option_text(option: AnalysisOption) -> str:
         option_text += f"- {file}\n"
     return option_text
 
-def handle_option_selection(claude: ClaudeAPIAgent, initial_response: str, request: str, raw: bool = False, workdir: Optional[Path] = None, include: Optional[List[Path]] = None) -> None:
+def handle_option_selection(initial_response: str, request: str, raw: bool = False, workdir: Optional[Path] = None, include: Optional[List[Path]] = None) -> None:
     """Handle option selection and implementation details"""
     options = parse_analysis_options(initial_response)
     if not options:
@@ -144,10 +144,10 @@ def handle_option_selection(claude: ClaudeAPIAgent, initial_response: str, reque
     
             files_content = collect_files_content(absolute_paths, workdir) if absolute_paths else ""            
             initial_prompt = build_request_analysis_prompt(files_content, new_request)
-            initial_response = progress_send_message(claude, initial_prompt)
+            initial_response = progress_send_message(initial_prompt)
             save_to_file(initial_response, 'analysis', workdir)
             
-            format_analysis(initial_response, raw, claude)
+            format_analysis(initial_response, raw)
             options = parse_analysis_options(initial_response)
             if not options:
                 console = Console()
@@ -186,7 +186,7 @@ def handle_option_selection(claude: ClaudeAPIAgent, initial_response: str, reque
     if config.verbose:
         print(f"\nSelected prompt saved to: {prompt_file}")
     
-    selected_response = progress_send_message(claude, selected_prompt)
+    selected_response = progress_send_message(selected_prompt)
     changes_file = save_to_file(selected_response, 'changes', workdir)
 
     if config.verbose:
@@ -199,7 +199,7 @@ def handle_option_selection(claude: ClaudeAPIAgent, initial_response: str, reque
     changes = parse_block_changes(selected_response)
     preview_and_apply_changes(changes, workdir, config.test_cmd)
 
-def replay_saved_file(filepath: Path, claude: ClaudeAPIAgent, workdir: Path, raw: bool = False) -> None:
+def replay_saved_file(filepath: Path, workdir: Path, raw: bool = False) -> None:
     """Process a saved prompt file and display the response"""
     if not filepath.exists():
         raise FileNotFoundError(f"File {filepath} not found")
@@ -226,8 +226,8 @@ def replay_saved_file(filepath: Path, claude: ClaudeAPIAgent, workdir: Path, raw
         if not success:
             raise typer.Exit(1)
     elif file_type == 'analysis':
-        format_analysis(content, raw, claude)
-        handle_option_selection(claude, content, content, raw, workdir)
+        format_analysis(content, raw)
+        handle_option_selection(content, content, raw, workdir)
     elif file_type == 'selected':
         if raw:
             console = Console()
@@ -235,23 +235,23 @@ def replay_saved_file(filepath: Path, claude: ClaudeAPIAgent, workdir: Path, raw
             console.print(content)
             console.print("=== End Prompt Content ===\n")
         
-        response = progress_send_message(claude, content)
+        response = progress_send_message(content)
         changes_file = save_to_file(response, 'changes_', workdir)
         print(f"\nChanges saved to: {changes_file}")
         
         changes = parse_block_changes(response)
         preview_and_apply_changes(changes, workdir, config.test_cmd)
     else:
-        response = progress_send_message(claude, content)
+        response = progress_send_message(content)
         format_analysis(response, raw)
 
-def process_question(question: str, workdir: Path, include: List[Path], raw: bool, claude: ClaudeAPIAgent) -> None:
+def process_question(question: str, workdir: Path, include: List[Path], raw: bool, agent: AIAgent) -> None:
     """Process a question about the codebase"""
     paths_to_scan = [workdir] if workdir else []
     if include:
         paths_to_scan.extend(include)
     files_content = collect_files_content(paths_to_scan, workdir)
-    answer = ask_question(question, files_content, claude)
+    answer = ask_question(question, files_content)
     display_answer(answer, raw)
 
 def ensure_workdir(workdir: Path) -> Path:
@@ -267,10 +267,10 @@ def ensure_workdir(workdir: Path) -> Path:
         return workdir.absolute()
     raise typer.Exit(1)
 
-def review_text(text: str, claude: ClaudeAPIAgent, raw: bool = False) -> None:
+def review_text(text: str, raw: bool = False) -> None:
     """Review the provided text using Claude"""
     console = Console()
-    response = progress_send_message(claude, f"Please review this text and provide feedback:\n\n{text}")
+    response = progress_send_message(f"Please review this text and provide feedback:\n\n{text}")
     if raw:
         console.print(response)
     else:

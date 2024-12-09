@@ -9,8 +9,8 @@ class ThemeType(Enum):
 # Dark theme colors
 DARK_LINE_BACKGROUNDS = {
     'unchanged': '#1A1A1A',        
-    'added': '#003000',        
-    'deleted': '#300000',          
+    'added': '#003300',        
+    'deleted': '#660000',          
     'modified': '#000030'          
 }
 

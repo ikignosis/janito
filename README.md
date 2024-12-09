@@ -20,15 +20,55 @@ export ANTHROPIC_API_KEY='your-api-key-here'
 export JANITO_TEST_CMD='your-test-command'
 ```
 
-## 📖 Quick Start
+## 📖 Command Reference
 
-### Command Line Mode
+### Basic Syntax
 
 ```bash
-janito "add docstrings"                    # Basic usage
-janito "update error handling" -w ./src    # Specify working directory
-janito --ask "explain this function"       # Ask questions about code
-janito "refactor code" --test "pytest"     # Run tests before applying changes
+janito [OPTIONS] [REQUEST]
+```
+
+### Command Options
+
+| Option | Description |
+|--------|-------------|
+| `REQUEST` | The AI request/instruction (in quotes) |
+| `-w, --working-dir PATH` | Specify working directory [default: current directory] |
+| `--ask` | Ask questions about code without making changes |
+| `--test COMMAND` | Run specified test command before applying changes |
+| `--debug` | Enable debug mode for detailed logging |
+| `--help` | Show help message and exit |
+
+### Usage Examples
+
+```bash
+# Basic usage - modify code
+janito "add docstrings"
+janito "optimize this function"
+janito "add error handling"
+
+# Specify working directory
+janito "update imports" -w ./src
+
+# Ask questions without changes
+janito --ask "explain this code"
+janito --ask "what does this function do?"
+
+# Run tests before applying changes
+janito "refactor code" --test "pytest"
+janito "optimize function" --test "python -m unittest"
+
+# Debug mode
+janito "update logging" --debug
+
+# Skip confirmations and syntax checking
+janito "format code" --no-confirm --no-syntax-check
+
+# Check version
+janito --version
+
+# Get help
+janito --help
 ```
 
 ### Interactive Console Mode
@@ -50,7 +90,9 @@ janito  # Start interactive session
 
 - Python 3.8+ required
 - Changes saved in `.janito/history/`
-- Debug mode: `janito "request" --debug`
+- Environment variables:
+  - `ANTHROPIC_API_KEY`: Required for API access
+  - `JANITO_TEST_CMD`: Default test command (optional)
 
 ## 📄 License
 

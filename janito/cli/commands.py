@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Optional, List
 from rich.console import Console
 
-from janito.claude import ClaudeAPIAgent
+from janito.agents import AIAgent
 from janito.scan import preview_scan, is_dir_empty
 from janito.config import config
 
@@ -13,31 +13,23 @@ from .functions import (
     format_analysis, handle_option_selection
 )
 
-def handle_version():
-    """Show version and exit"""
-    console = Console()
-    console.print(f"Janito v{get_version()}")
 
-def handle_review(text: str, claude: ClaudeAPIAgent, raw: bool):
-    """Review the provided text"""
-    review_text(text, claude, raw)
-
-def handle_ask(question: str, workdir: Path, include: List[Path], raw: bool, claude: ClaudeAPIAgent):
+def handle_ask(question: str, workdir: Path, include: List[Path], raw: bool, agent: AIAgent):
     """Ask a question about the codebase"""
     workdir = ensure_workdir(workdir)
-    process_question(question, workdir, include, raw, claude)
+    process_question(question, workdir, include, raw, agent)
 
 def handle_scan(paths_to_scan: List[Path], workdir: Path):
     """Preview files that would be analyzed"""
     workdir = ensure_workdir(workdir)
     preview_scan(paths_to_scan, workdir)
 
-def handle_play(filepath: Path, claude: ClaudeAPIAgent, workdir: Path, raw: bool):
+def handle_play(filepath: Path, workdir: Path, raw: bool):
     """Replay a saved prompt file"""
     workdir = ensure_workdir(workdir)
-    replay_saved_file(filepath, claude, workdir, raw)
+    replay_saved_file(filepath, workdir, raw)
 
-def handle_request(request: str, workdir: Path, include: List[Path], raw: bool, claude: ClaudeAPIAgent):
+def handle_request(request: str, workdir: Path, include: List[Path], raw: bool, agent: AIAgent):
     """Process modification request"""
     workdir = ensure_workdir(workdir)
     paths_to_scan = include if include else [workdir]
@@ -51,9 +43,9 @@ def handle_request(request: str, workdir: Path, include: List[Path], raw: bool, 
         files_content = collect_files_content(paths_to_scan, workdir)
     
     initial_prompt = build_request_analysis_prompt(files_content, request)
-    initial_response = progress_send_message(claude, initial_prompt)
+    initial_response = progress_send_message(initial_prompt)
     save_to_file(initial_response, 'analysis', workdir)
     
-    format_analysis(initial_response, raw, claude)
+    format_analysis(initial_response, raw, agent)
     
-    handle_option_selection(claude, initial_response, request, raw, workdir, include)
+    handle_option_selection(initial_response, request, raw, workdir, include)

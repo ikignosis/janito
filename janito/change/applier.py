@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Set
 from rich.console import Console
 from rich import box
 from rich.panel import Panel
@@ -95,12 +95,15 @@ echo "Files restored successfully from {backup_dir}"
             if config.verbose:
                 console.print(f"[blue]Created restore script at:[/blue] {restore_script}")
 
-        # Apply changes to preview directory
+        # Track modified files and apply changes to preview directory
+        modified_files: Set[Path] = set()
         any_errors = False
         for change in changes:
             if config.verbose:
                 console.print(f"[dim]Previewing changes for {change.path}...[/dim]")
             success, error = apply_single_change(change.path, change, workdir, preview_dir)
+            if success and not change.remove_file:
+                modified_files.add(change.path)
             if not success:
                 if "file already exists" in str(error):
                     console.print(f"\n[red]Error: Cannot create {change.path}[/red]")
@@ -148,20 +151,22 @@ echo "Files restored successfully from {backup_dir}"
             console.print(f"[cyan]  {changes_file.relative_to(workdir)}[/cyan]")
             return False
 
-        # Apply changes
+        # Apply changes - copy each modified file only once
         console.print("\n[blue]Applying changes to working directory...[/blue]")
-        for change in changes:
-            console.print(f"[dim]Applying changes to {change.path}...[/dim]")
-            target_path = workdir / change.path
+        for file_path in modified_files:
+            console.print(f"[dim]Applying changes to {file_path}...[/dim]")
+            target_path = workdir / file_path
+            preview_path = preview_dir / file_path
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(preview_path, target_path)
             
+        # Handle file removals separately
+        for change in changes:
             if change.remove_file:
+                target_path = workdir / change.path
                 if target_path.exists():
                     target_path.unlink()
                     console.print(f"[red]Removed {change.path}[/red]")
-            else:
-                preview_path = preview_dir / change.path
-                target_path.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(preview_path, target_path)
 
         console.print("\n[green]Changes successfully applied to working directory![/green]")
         return True

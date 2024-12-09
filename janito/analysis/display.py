@@ -10,7 +10,7 @@ from rich.text import Text
 from rich import box
 from rich.columns import Columns
 from rich.rule import Rule
-from janito.claude import ClaudeAPIAgent
+from janito.agents import AIAgent
 from .options import AnalysisOption
 
 MIN_PANEL_WIDTH = 40
@@ -91,20 +91,20 @@ def _display_markdown(content: str) -> None:
     md = Markdown(content)
     console.print(md)
 
-def _display_raw_history(claude: ClaudeAPIAgent) -> None:
+def _display_raw_history(agent: AIAgent) -> None:
     """Display raw message history from Claude agent."""
     console = Console()
     console.print("\n=== Message History ===")
-    for role, content in claude.messages_history:
+    for role, content in agent.messages_history:
         console.print(f"\n[bold cyan]{role.upper()}:[/bold cyan]")
         console.print(content)
     console.print("\n=== End Message History ===\n")
 
-def format_analysis(analysis: str, raw: bool = False, claude: Optional[ClaudeAPIAgent] = None, workdir: Optional[Path] = None) -> None:
+def format_analysis(analysis: str, raw: bool = False, workdir: Optional[Path] = None) -> None:
     """Format and display the analysis output with enhanced capabilities."""
     console = Console()
     
-    if raw and claude:
+    if raw and agent:
         _display_raw_history(claude)
     else:
         from .options import parse_analysis_options

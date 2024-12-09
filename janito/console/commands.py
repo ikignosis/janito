@@ -2,14 +2,14 @@ from pathlib import Path
 from typing import List
 from rich.console import Console
 from rich.panel import Panel
-from janito.claude import ClaudeAPIAgent
+from janito.agents import AIAgent
 from janito.analysis import build_request_analysis_prompt
 from janito.scan import collect_files_content
 from janito.common import progress_send_message
 from janito.__main__ import handle_option_selection
 from .display import display_help
 
-def process_command(command: str, args: str, workdir: Path, include: List[Path], claude: ClaudeAPIAgent) -> None:
+def process_command(command: str, args: str, workdir: Path, include: List[Path], agent: AIAgent) -> None:
     """Process console commands using CLI functions for consistent behavior"""
     console = Console()
     
@@ -95,14 +95,14 @@ def process_command(command: str, args: str, workdir: Path, include: List[Path],
 
         # Use CLI request processing functions
         initial_prompt = build_request_analysis_prompt(files_content, args)
-        initial_response = progress_send_message(claude, initial_prompt)
+        initial_response = progress_send_message(initial_prompt)
         
         from janito.__main__ import save_to_file
         save_to_file(initial_response, 'analysis', workdir)
         
         from janito.analysis import format_analysis
-        format_analysis(initial_response, raw, claude)
-        handle_option_selection(claude, initial_response, args, raw, workdir, include)
+        format_analysis(initial_response, raw)
+        handle_option_selection(initial_response, args, raw, workdir, include)
         return
         
     console.print(Panel(

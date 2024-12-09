@@ -4,7 +4,7 @@ from rich.panel import Panel
 from rich.syntax import Syntax
 from rich.table import Table
 from rich.rule import Rule
-from janito.claude import ClaudeAPIAgent
+from janito.agents import AIAgent
 from janito.common import progress_send_message
 from janito.scan import show_content_stats
 
@@ -21,7 +21,7 @@ Focus on providing factual information and explanations. Do not suggest code cha
 Format your response using markdown with appropriate headers and code blocks.
 """
 
-def ask_question(question: str, files_content: str, claude: ClaudeAPIAgent) -> str:
+def ask_question(question: str, files_content: str) -> str:
     """Process a question about the codebase and return the answer"""
     # Show content stats before processing
     show_content_stats(files_content)
@@ -30,7 +30,7 @@ def ask_question(question: str, files_content: str, claude: ClaudeAPIAgent) -> s
         question=question,
         files_content=files_content
     )
-    return progress_send_message(claude, prompt)
+    return progress_send_message(prompt)
 
 
 def display_answer(answer: str, raw: bool = False) -> None:

@@ -2,17 +2,21 @@ import anthropic
 import os
 from typing import Optional
 from threading import Event
+from .agent import Agent
 
-class ClaudeAPIAgent:
+class ClaudeAIAgent(Agent):
     """Handles interaction with Claude API, including message handling"""
+    DEFAULT_MODEL = "claude-3-5-sonnet-20241022"
+    
     def __init__(self, api_key: Optional[str] = None, system_prompt: str = None):
+        super().__init__(api_key, system_prompt)
         if not system_prompt:
             raise ValueError("system_prompt is required")
         self.api_key = api_key or os.getenv('ANTHROPIC_API_KEY')
         if not self.api_key:
             raise ValueError("ANTHROPIC_API_KEY environment variable is required")
         self.client = anthropic.Client(api_key=self.api_key)
-        self.model = "claude-3-5-sonnet-20241022"
+        self.model = os.getenv('CLAUDE_MODEL', self.DEFAULT_MODEL)
         self.system_message = system_prompt
         self.last_prompt = None
         self.last_full_message = None
