@@ -4,8 +4,7 @@ from pathlib import Path
 from rich.console import Console
 from .version import get_version
 
-from janito.agents import AIAgent
-from janito.prompts import SYSTEM_PROMPT
+from janito.agents import AgentSingleton
 from janito.config import config
 
 from .cli.commands import handle_request, handle_ask, handle_play, handle_scan
@@ -32,7 +31,7 @@ def main(
     config.set_debug(debug)
     config.set_verbose(verbose)
 
-    agent = AIAgent(system_prompt=SYSTEM_PROMPT)
+    agent = AgentSingleton.get_agent()
 
     if ask:
         handle_ask(ask, workdir, include, False, agent)

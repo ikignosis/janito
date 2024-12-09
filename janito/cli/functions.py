@@ -8,10 +8,11 @@ from rich.markdown import Markdown
 from datetime import datetime, timezone
 import tempfile
 import typer
+import sys
 
 from janito.agents import AIAgent
 from janito.config import config
-from janito.scan import collect_files_content
+from janito.scan import collect_files_content, show_content_stats
 from janito.analysis import (
     format_analysis, build_request_analysis_prompt, 
     parse_analysis_options, get_history_file_type, AnalysisOption
@@ -142,7 +143,8 @@ def handle_option_selection(initial_response: str, request: str, raw: bool = Fal
                 if path.exists():
                     absolute_paths.append(path)
     
-            files_content = collect_files_content(absolute_paths, workdir) if absolute_paths else ""            
+            files_content = collect_files_content(absolute_paths, workdir) if absolute_paths else ""   
+            show_content_stats(files_content)         
             initial_prompt = build_request_analysis_prompt(files_content, new_request)
             initial_response = progress_send_message(initial_prompt)
             save_to_file(initial_response, 'analysis', workdir)
@@ -176,6 +178,7 @@ def handle_option_selection(initial_response: str, request: str, raw: bool = Fal
             absolute_paths.append(path)
     
     files_content = collect_files_content(absolute_paths, workdir) if absolute_paths else ""
+    show_content_stats(files_content)
     
     # Format the selected option before building prompt
     selected_option = options[option]
@@ -198,6 +201,12 @@ def handle_option_selection(initial_response: str, request: str, raw: bool = Fal
     
     changes = parse_block_changes(selected_response)
     preview_and_apply_changes(changes, workdir, config.test_cmd)
+
+def read_stdin() -> str:
+    """Read input from stdin until EOF"""
+    console = Console()
+    console.print("[dim]Enter your input (press Ctrl+D when finished):[/dim]")
+    return sys.stdin.read().strip()
 
 def replay_saved_file(filepath: Path, workdir: Path, raw: bool = False) -> None:
     """Process a saved prompt file and display the response"""

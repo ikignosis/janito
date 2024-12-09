@@ -38,7 +38,7 @@ def format_content(lines: List[str], search_lines: List[str], replace_lines: Lis
 
     for line in lines:
         if line in common_lines:
-            add_line(line, "=", 'unchanged')
+            add_line(line, " ", 'unchanged')
         elif not is_search and line in new_lines:
             add_line(line, "✚", 'added')
         else:
@@ -51,11 +51,9 @@ def format_content(lines: List[str], search_lines: List[str], replace_lines: Lis
 def create_legend_items() -> Text:
     """Create unified legend status bar"""
     legend = Text()
-    legend.append(" = Unchanged ", style=f"{current_theme.text_color} on {current_theme.line_backgrounds['unchanged']}")
+    legend.append(" Unchanged ", style=f"{current_theme.text_color} on {current_theme.line_backgrounds['unchanged']}")
     legend.append(" │ ", style="dim")
-    legend.append(" - Deleted ", style=f"{current_theme.text_color} on {current_theme.line_backgrounds['deleted']}")
-    legend.append(" │ ", style="dim")
-    legend.append(" ⇄ Modified ", style=f"{current_theme.text_color} on {current_theme.line_backgrounds['modified']}")
+    legend.append(" ✕ Deleted ", style=f"{current_theme.text_color} on {current_theme.line_backgrounds['deleted']}")
     legend.append(" │ ", style="dim")
     legend.append(" ✚ Added ", style=f"{current_theme.text_color} on {current_theme.line_backgrounds['added']}")
     return legend

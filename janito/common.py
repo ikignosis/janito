@@ -14,7 +14,7 @@ def progress_send_message(message: str) -> str:
     agent = AgentSingleton.get_agent()
     with Progress(
         SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
+        TextColumn("[progress.description]{task.description}", justify="center"),
         TimeElapsedColumn(),
     ) as progress:
         task = progress.add_task("Waiting for response from AI agent...", total=None)

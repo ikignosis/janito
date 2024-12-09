@@ -88,6 +88,13 @@ def create_change_panel(search: str, replace: str | None, description: str, inde
     content_table.add_column("Current", justify="left", ratio=1)
     content_table.add_column("New", justify="left", ratio=1)
     
+    # Add column headers
+    content_table.add_row(
+        Text("Current Content", style="bold cyan"),
+        Text("New Content", style="bold cyan")
+    )
+    
+    # Add the actual content
     content_table.add_row(
         format_content(search_lines, search_lines, replace_lines, True, operation),
         format_content(replace_lines, search_lines, replace_lines, False, operation)
@@ -122,6 +129,13 @@ def create_replace_panel(filepath: Path, change: FileChange) -> Panel:
     content_table.add_column("Current", justify="left")
     content_table.add_column("New", justify="left")
     
+    # Add column headers
+    content_table.add_row(
+        Text("Current Content", style="bold cyan"),
+        Text("New Content", style="bold cyan")
+    )
+    
+    # Add the actual content
     content_table.add_row(
         format_content(change.original_content.splitlines(),
                       change.original_content.splitlines(),
@@ -230,12 +244,17 @@ def _show_legend(console: Console) -> None:
     """Show the unified legend status bar"""
     legend = create_legend_items()
     
+    # Calculate panel width based on legend content
+    legend_width = len(str(legend)) + 10  # Add padding for borders
+    
     legend_panel = Panel(
-        Columns([legend], align="center"),
+        legend,
+        title="Changes Legend",
+        title_align="center",
         border_style="white",
         box=box.ROUNDED,
-        padding=(0, 1),
-        width=100
+        padding=(0, 2),
+        width=legend_width
     )
     
     # Create a full-width container and center the legend panel

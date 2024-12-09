@@ -10,8 +10,9 @@ from rich.text import Text
 from rich import box
 from rich.columns import Columns
 from rich.rule import Rule
-from janito.agents import AIAgent
+from janito.agents import AIAgent, AgentSingleton
 from .options import AnalysisOption
+from .options import parse_analysis_options
 
 MIN_PANEL_WIDTH = 40
 
@@ -104,10 +105,10 @@ def format_analysis(analysis: str, raw: bool = False, workdir: Optional[Path] = 
     """Format and display the analysis output with enhanced capabilities."""
     console = Console()
     
+    agent = AgentSingleton.get_agent()
     if raw and agent:
-        _display_raw_history(claude)
+        _display_raw_history(agent)
     else:
-        from .options import parse_analysis_options
         options = parse_analysis_options(analysis)
         if options:
             _display_options(options)

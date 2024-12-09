@@ -172,5 +172,5 @@ def show_content_stats(content: str) -> None:
     console = Console()
     stats = [f"{directory} ({count} files)" for directory, count in dir_counts.items()]
     columns = Columns(stats, equal=True, expand=True)
-    panel = Panel(columns, title="Content Statistics")
+    panel = Panel(columns, title="Work Context")
     console.print(panel)

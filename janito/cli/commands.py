@@ -10,13 +10,15 @@ from .functions import (
     process_question, replay_saved_file, ensure_workdir,
     review_text, save_to_file, collect_files_content,
     build_request_analysis_prompt, progress_send_message,
-    format_analysis, handle_option_selection
+    format_analysis, handle_option_selection, read_stdin
 )
 
 
 def handle_ask(question: str, workdir: Path, include: List[Path], raw: bool, agent: AIAgent):
     """Ask a question about the codebase"""
     workdir = ensure_workdir(workdir)
+    if question == ".":
+        question = read_stdin()
     process_question(question, workdir, include, raw, agent)
 
 def handle_scan(paths_to_scan: List[Path], workdir: Path):

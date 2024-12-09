@@ -4,7 +4,7 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from rich.console import Console
-from janito.agents import AIAgent
+from janito.agents import AgentSingleton
 from janito.prompts import SYSTEM_PROMPT
 from .display import create_completer, format_prompt, display_welcome
 from .commands import process_command
@@ -12,7 +12,7 @@ from .commands import process_command
 def start_console_session(workdir: Path, include: Optional[List[Path]] = None) -> None:
     """Start an enhanced interactive console session"""
     console = Console()
-    agent = AIAgent(system_prompt=SYSTEM_PROMPT)
+    agent = AgentSingleton.get_agent()
 
     # Setup history with persistence
     history_file = workdir / '.janito' / 'console_history'

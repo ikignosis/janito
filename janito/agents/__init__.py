@@ -1,5 +1,6 @@
 import os
 
+SYSTEM_PROMPT = """I am Janito, your friendly software development buddy. I help you with coding tasks while being clear and concise in my responses."""
 
 ai_backend = os.getenv('AI_BACKEND', 'claudeai').lower()
 
@@ -16,6 +17,6 @@ class AgentSingleton:
     @classmethod
     def get_agent(cls):
         if cls._instance is None:
-            cls._instance = AIAgent(system_prompt="You are a helpful assistant.")
+            cls._instance = AIAgent(SYSTEM_PROMPT)
         return cls._instance
 
