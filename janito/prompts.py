@@ -25,19 +25,25 @@ RULES for analysis:
 - Python imports should be inserted at the top of the file
 - For complete file replacements, only use for existing files marked as modified
 - File replacements must preserve the essential functionality
-- When multiple changes affect the same file, combine them in a single file block
-- When multiple changes affect the same code block, combine them into a single change
-
 
 Please provide the changes in this format:
 
 For incremental changes:
 ## {uuid} file <filepath> modify "short file change description" ##
-## {uuid} search/replace "short change description" ##
+## {uuid} [re]search/replace "short change description" ##
 <search_content>
 ## {uuid} replace with ##
 <replace_content>
 ## {uuid} file end ##
+NOTE: if re.search is used, search_content should be a regular expression, (python re.search), otherwise will do exact match
+
+For content deletion:
+## {uuid} file <filepath> modify ##
+## {uuid} [re]search/delete "short change description" ##
+<content_to_delete>
+## {uuid} file end ##
+NOTE: if re.search is used, content_to_delete should be a regular expression (python re.search), otherwise will do exact match
+
 
 For complete file replacement (only for existing modified files):
 ## {uuid} file <filepath> replace "short file description" ##
@@ -49,11 +55,6 @@ For new files:
 <full_file_content>
 ## {uuid} file end ##
 
-For content deletion:
-## {uuid} file <filepath> modify ##
-## {uuid} search/delete "short change description" ##
-<content_to_delete>
-## {uuid} file end ##
 
 For file removal:
 ## {uuid} file <filepath> remove "short removal reason" ##
@@ -61,7 +62,9 @@ For file removal:
 
 RULES:
 1. search_content MUST preserve the original indentation/whitespace
-2. file replacement can only be used for existing files marked as 
+2. file replacement can only be used for existing files marked as modified
+3. PREFER "research" instead ti "search" or file replace operations, search should be used when the content boundaries within the original contain the regex reserved symbols
+4. Do not provide any extra feedback or comments in the response
 """
 
 def build_selected_option_prompt(option_text: str, request: str, files_content: str = "") -> str:

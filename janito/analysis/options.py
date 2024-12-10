@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import List, Dict, Tuple, Optional
 import re
 
-NO_CHANGES_PATTERN = r'^\<no_changes_required\>\s*(.*?)\s*\<\/no_changes_required\>$' 
 
 @dataclass
 class AnalysisOption:
@@ -26,7 +25,7 @@ class AnalysisOption:
         """Check if file is marked as removed"""
         return '(removed)' in file_path
 
-    def get_affected_paths(self, workdir: Path = None) -> List[Path]:
+    def get_affected_paths(self = None) -> List[Path]:
         """Get list of affected paths, resolving against workdir if provided"""
         paths = []
         for file_path in self.affected_files:
@@ -56,13 +55,8 @@ class AnalysisOption:
             
         return clean_path, is_new, is_modified, is_removed
 
-def parse_analysis_options(response: str) -> Optional[Dict[str, AnalysisOption]]:
-    """Parse options from the response text. Returns None if no_changes_required is found."""
-    # Check for no_changes_required pattern
-    no_changes_match = re.match(NO_CHANGES_PATTERN, response, re.DOTALL)
-    if no_changes_match:
-        return None
-        
+def parse_analysis_options(response: str) -> Dict[str, AnalysisOption]:
+    """Parse options from the response text."""
     options = {}
     if 'END_OF_OPTIONS' in response:
         response = response.split('END_OF_OPTIONS')[0]

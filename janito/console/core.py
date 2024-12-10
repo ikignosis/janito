@@ -53,7 +53,7 @@ def start_console_session(workdir: Path, include: Optional[List[Path]] = None) -
             args = parts[1] if len(parts) > 1 else ""
             
             # Process command with separated args
-            process_command(command, args, workdir, include, claude)
+            process_command(command, args, include)
 
         except KeyboardInterrupt:
             continue

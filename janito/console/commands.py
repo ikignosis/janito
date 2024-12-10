@@ -9,7 +9,7 @@ from janito.common import progress_send_message
 from janito.__main__ import handle_option_selection
 from .display import display_help
 
-def process_command(command: str, args: str, workdir: Path, include: List[Path], agent: AIAgent) -> None:
+def process_command(command: str, args: str, include: List[Path], agent: AIAgent) -> None:
     """Process console commands using CLI functions for consistent behavior"""
     console = Console()
     
@@ -91,18 +91,18 @@ def process_command(command: str, args: str, workdir: Path, include: List[Path],
         paths_to_scan = [workdir] if workdir else []
         if include:
             paths_to_scan.extend(include)
-        files_content = collect_files_content(paths_to_scan, workdir)
+        files_content = collect_files_content(paths_to_scan)
 
         # Use CLI request processing functions
         initial_prompt = build_request_analysis_prompt(files_content, args)
         initial_response = progress_send_message(initial_prompt)
         
         from janito.__main__ import save_to_file
-        save_to_file(initial_response, 'analysis', workdir)
+        save_to_file(initial_response, 'analysis')
         
         from janito.analysis import format_analysis
         format_analysis(initial_response, raw)
-        handle_option_selection(initial_response, args, raw, workdir, include)
+        handle_option_selection(initial_response, args, raw, include)
         return
         
     console.print(Panel(

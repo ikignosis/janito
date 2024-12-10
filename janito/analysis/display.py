@@ -13,7 +13,7 @@ from rich import box
 from rich.columns import Columns
 from rich.rule import Rule
 from janito.agents import AIAgent, AgentSingleton
-from .options import AnalysisOption, parse_analysis_options, NO_CHANGES_PATTERN
+from .options import AnalysisOption, parse_analysis_options
 
 MIN_PANEL_WIDTH = 40
 
@@ -102,7 +102,7 @@ def _display_raw_history(agent: AIAgent) -> None:
         console.print(content)
     console.print("\n=== End Message History ===\n")
 
-def format_analysis(analysis: str, raw: bool = False, workdir: Optional[Path] = None) -> None:
+def format_analysis(analysis: str, raw: bool = False,) -> None:
     """Format and display the analysis output with enhanced capabilities."""
     console = Console()
     
@@ -110,14 +110,6 @@ def format_analysis(analysis: str, raw: bool = False, workdir: Optional[Path] = 
     if raw and agent:
         _display_raw_history(agent)
         return
-        
-    # Check for no_changes_required pattern
-    no_changes_match = re.match(NO_CHANGES_PATTERN, analysis, re.DOTALL)
-    if no_changes_match:
-        content = no_changes_match.group(1)
-        console.print("\n[yellow]⚠️  WARNING[/yellow]")
-        _display_markdown(content)
-        sys.exit(1)
         
     options = parse_analysis_options(analysis)
     if options:
@@ -149,9 +141,9 @@ def get_timestamp() -> str:
     """Get current UTC timestamp in YMD_HMS format with leading zeros"""
     return datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
 
-def save_to_file(content: str, prefix: str, workdir: Path) -> Path:
+def save_to_file(content: str, prefix: str) -> Path:
     """Save content to a timestamped file in history directory"""
-    history_dir = get_history_path(workdir)
+    history_dir = get_history_path()
     timestamp = get_timestamp()
     filename = f"{timestamp}_{prefix}.txt"
     file_path = history_dir / filename

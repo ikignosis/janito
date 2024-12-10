@@ -1,5 +1,6 @@
 from typing import Optional
 import os
+from pathlib import Path
 
 class ConfigManager:
     _instance = None
@@ -9,6 +10,7 @@ class ConfigManager:
         self.verbose = False
         self.debug_line = None
         self.test_cmd = os.getenv('JANITO_TEST_CMD')
+        self.workdir = Path.cwd()
         
     @classmethod
     def get_instance(cls) -> "ConfigManager":
@@ -32,6 +34,10 @@ class ConfigManager:
     def set_test_cmd(self, cmd: Optional[str]) -> None:
         """Set the test command, overriding environment variable"""
         self.test_cmd = cmd if cmd is not None else os.getenv('JANITO_TEST_CMD')
+
+    def set_workdir(self, path: Optional[Path]) -> None:
+        """Set the working directory"""
+        self.workdir = path if path is not None else Path.cwd()
 
 # Create a singleton instance
 config = ConfigManager.get_instance()

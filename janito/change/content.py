@@ -22,10 +22,10 @@ def get_file_type(filepath: Path) -> str:
         return 'response'
     return 'unknown'
 
-def process_and_save_changes(content: str, request: str, workdir: Path) -> Tuple[Dict[Path, Tuple[str, str]], Path]:
+def process_and_save_changes(content: str, request: str) -> Tuple[Dict[Path, Tuple[str, str]], Path]:
     """Parse changes and save to history, returns (changes_dict, history_file)"""
     changes = parse_block_changes(content)
-    history_file = save_changes_to_history(content, request, workdir)
+    history_file = save_changes_to_history(content, request)
     return changes, history_file
 
 def format_parsed_changes(changes: Dict[Path, Tuple[str, str]]) -> str:
@@ -35,7 +35,7 @@ def format_parsed_changes(changes: Dict[Path, Tuple[str, str]]) -> str:
         result.append(f"=== {filepath} ===\n{description}\n")
     return "\n".join(result)
 
-def apply_content_changes(content: str, request: str, workdir: Path, test_cmd: str = None) -> Tuple[bool, Path]:
+def apply_content_changes(content: str, request: str, test_cmd: str = None) -> Tuple[bool, Path]:
     """Regular flow: Parse content, save to history, and apply changes."""
     console = Console()
     changes = parse_block_changes(content)
@@ -44,11 +44,11 @@ def apply_content_changes(content: str, request: str, workdir: Path, test_cmd: s
         console.print("\n[yellow]No file changes were found in the response[/yellow]")
         return False, None
 
-    history_file = save_changes_to_history(content, request, workdir)
-    success = preview_and_apply_changes(changes, workdir, test_cmd)
+    history_file = save_changes_to_history(content, request)
+    success = preview_and_apply_changes(changes, test_cmd)
     return success, history_file
 
-def handle_changes_file(filepath: Path, workdir: Path, test_cmd: str = None) -> Tuple[bool, Path]:
+def handle_changes_file(filepath: Path, test_cmd: str = None) -> Tuple[bool, Path]:
     """Replay flow: Load changes from file and apply them."""
     content = filepath.read_text()
     changes = parse_block_changes(content)
@@ -58,5 +58,5 @@ def handle_changes_file(filepath: Path, workdir: Path, test_cmd: str = None) -> 
         console.print("\n[yellow]No file changes were found in the file[/yellow]")
         return False, None
 
-    success = preview_and_apply_changes(changes, workdir, test_cmd)
+    success = preview_and_apply_changes(changes, test_cmd)
     return success, filepath

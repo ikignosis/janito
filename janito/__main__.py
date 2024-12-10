@@ -21,6 +21,7 @@ def typer_main(
     git_commit: Optional[str] = typer.Option(None, "--git-commit", help="Do git commit with auto-generated message"),
     play: Optional[Path] = typer.Option(None, "--play", help="Replay a saved prompt file"),
     version: bool = typer.Option(False, "--version", help="Show version information"),
+    save_only: bool = typer.Option(False, "--save-only", help="Only save analysis file and exit"),
 ):
     """Janito - AI-powered code modification assistant"""
     if version:
@@ -28,21 +29,21 @@ def typer_main(
         console.print(f"Janito version {get_version()}")
         return
 
-    workdir = workdir or Path.cwd()
+    config.set_workdir(workdir)
     config.set_debug(debug)
     config.set_verbose(verbose)
 
     if ask:
-        handle_ask(ask, workdir, include, False)
+        handle_ask(ask, config.workdir, include, False)
     elif git_commit:
         handle_git_commit()
     elif play:
-        handle_play(play, workdir, False)
+        handle_play(play, config.workdir, False)
     elif change_request == "scan":
-        paths_to_scan = include if include else [workdir]
-        handle_scan(paths_to_scan, workdir)
+        paths_to_scan = include if include else [config.workdir]
+        handle_scan(paths_to_scan)
     elif change_request:
-        handle_request(change_request, workdir, include, False)
+        handle_request(change_request, include, False, save_only)
     else:
         console = Console()
         console.print("Error: Please provide a change request or use --ask/--play options")

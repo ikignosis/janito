@@ -8,11 +8,17 @@ from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 from collections import defaultdict
 
-
-
 SPECIAL_FILES = ["README.md", "__init__.py", "__main__.py"]
 
-def _scan_paths(paths: List[Path], workdir: Path = None) -> Tuple[List[str], List[str]]:
+def _format_size(size_bytes: int) -> str:
+    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+        if size_bytes < 1024.0:
+            break
+        size_bytes /= 1024.0
+    return f"{size_bytes:.1f} {unit}"
+
+
+def _scan_paths(paths: List[Path] = None) -> Tuple[List[str], List[str]]:
     """Common scanning logic used by both preview and content collection"""
     content_parts = []
     file_items = []
@@ -21,7 +27,7 @@ def _scan_paths(paths: List[Path], workdir: Path = None) -> Tuple[List[str], Lis
     console = Console()
     
     # Load gitignore if it exists
-    gitignore_path = workdir / '.gitignore' if workdir else None
+    gitignore_path = config.workdir / '.gitignore' if config.workdir else None
     gitignore_spec = None
     if (gitignore_path and gitignore_path.exists()):
         with open(gitignore_path) as f:
@@ -40,7 +46,7 @@ def _scan_paths(paths: List[Path], workdir: Path = None) -> Tuple[List[str], Lis
             return
         
         path = path.resolve()
-        relative_base = workdir
+        relative_base = config.workdir
         if path.is_dir():
             relative_path = path.relative_to(relative_base)
             content_parts.append(f'<directory><path>{relative_path}</path>not sent</directory>')
@@ -67,7 +73,7 @@ def _scan_paths(paths: List[Path], workdir: Path = None) -> Tuple[List[str], Lis
             for item in path.iterdir():
                 # Skip if matches gitignore patterns
                 if gitignore_spec:
-                    rel_path = str(item.relative_to(workdir))
+                    rel_path = str(item.relative_to(config.workdir))
                     if gitignore_spec.match_file(rel_path):
                         continue
                 if item.resolve() not in processed_files:  # Skip if already processed
@@ -102,10 +108,10 @@ def _scan_paths(paths: List[Path], workdir: Path = None) -> Tuple[List[str], Lis
         
     return content_parts, file_items
 
-def collect_files_content(paths: List[Path], workdir: Path = None) -> str:
+def collect_files_content(paths: List[Path] = None) -> str:
     """Collect content from all files in XML format"""
     console = Console()
-    content_parts, file_items = _scan_paths(paths, workdir)
+    content_parts, file_items = _scan_paths(paths)
 
     if file_items and config.verbose:
         console.print("\n[bold blue]Contents being analyzed:[/bold blue]")
@@ -124,17 +130,17 @@ def collect_files_content(paths: List[Path], workdir: Path = None) -> str:
     return "\n".join(content_parts)
 
 
-def preview_scan(paths: List[Path], workdir: Path = None) -> None:
+def preview_scan(paths: List[Path] = None) -> None:
     """Preview what files and directories would be scanned"""
     console = Console()
-    _, file_items = _scan_paths(paths, workdir)
+    _, file_items = _scan_paths(paths)
     
     # Display working directory status
     console.print("\n[bold blue]Analysis Paths:[/bold blue]")
-    console.print(f"[cyan]Working Directory:[/cyan] {workdir.absolute()}")
+    console.print(f"[cyan]Working Directory:[/cyan] {config.workdir.absolute()}")
     
     # Show if working directory is being scanned
-    is_workdir_scanned = any(p.resolve() == workdir.resolve() for p in paths)
+    is_workdir_scanned = any(p.resolve() == config.workdir.resolve() for p in paths)
     if is_workdir_scanned:
         console.print("[green]✓ Working directory will be scanned[/green]")
     else:
@@ -163,14 +169,34 @@ def show_content_stats(content: str) -> None:
     if not content:
         return
         
-    dir_counts = defaultdict(int)
+    dir_counts: Dict[str, int] = defaultdict(int)
+    dir_sizes: Dict[str, int] = defaultdict(int)
+    current_path = None
+    current_content = []
+    
     for line in content.split('\n'):
         if line.startswith('<path>'):
             path = Path(line.replace('<path>', '').replace('</path>', '').strip())
-            dir_counts[str(path.parent)] += 1
+            current_path = str(path.parent)
+            dir_counts[current_path] += 1
+        elif line.startswith('<content>'):
+            current_content = []
+        elif line.startswith('</content>'):
+            content_size = sum(len(line.encode('utf-8')) for line in current_content)
+            if current_path:
+                dir_sizes[current_path] += content_size
+            current_content = []
+        elif current_content is not None:
+            current_content.append(line)
     
     console = Console()
-    stats = [f"{directory}/ [{count} file(s)]" for directory, count in dir_counts.items()]
+    stats = [
+        f"{directory}/ [{count} file(s), {_format_size(size)}]"
+        for directory, (count, size) in (
+            (d, (dir_counts[d], dir_sizes[d])) 
+            for d in sorted(dir_counts.keys())
+        )
+    ]
     columns = Columns(stats, equal=True, expand=True)
     panel = Panel(columns, title="Work Context")
     console.print(panel)

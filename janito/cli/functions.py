@@ -48,9 +48,9 @@ def get_option_selection() -> str:
         
         console.print("[red]Please enter a valid letter or 'M'[/red]")
 
-def get_change_history_path(workdir: Path) -> Path:
+def get_change_history_path() -> Path:
     """Create and return the changes history directory path"""
-    changes_history_dir = workdir / '.janito' / 'change_history'
+    changes_history_dir = config.workdir / '.janito' / 'change_history'
     changes_history_dir.mkdir(parents=True, exist_ok=True)
     return changes_history_dir
 
@@ -65,9 +65,9 @@ def save_prompt_to_file(prompt: str) -> Path:
     temp_path.write_text(prompt)
     return temp_path
 
-def save_to_file(content: str, prefix: str, workdir: Path) -> Path:
+def save_to_file(content: str, prefix: str) -> Path:
     """Save content to a timestamped file in changes history directory"""
-    changes_history_dir = get_change_history_path(workdir)
+    changes_history_dir = get_change_history_path()
     timestamp = get_timestamp()
     filename = f"{timestamp}_{prefix}.txt"
     file_path = changes_history_dir / filename
@@ -112,7 +112,7 @@ def format_option_text(option: AnalysisOption) -> str:
         option_text += f"- {file}\n"
     return option_text
 
-def handle_option_selection(initial_response: str, request: str, raw: bool = False, workdir: Optional[Path] = None, include: Optional[List[Path]] = None) -> None:
+def handle_option_selection(initial_response: str, request: str, raw: bool = False, include: Optional[List[Path]] = None) -> None:
     """Handle option selection and implementation details"""
     options = parse_analysis_options(initial_response)
     if not options:
@@ -139,15 +139,15 @@ def handle_option_selection(initial_response: str, request: str, raw: bool = Fal
             for file_path in files_to_scan:
                 # Remove (new) suffix if present
                 clean_path = file_path.split(' (')[0].strip()
-                path = workdir / clean_path if workdir else Path(clean_path)
+                path = config.workdir / clean_path if config.workdir else Path(clean_path)
                 if path.exists():
                     absolute_paths.append(path)
     
-            files_content = collect_files_content(absolute_paths, workdir) if absolute_paths else ""   
+            files_content = collect_files_content(absolute_paths) if absolute_paths else ""   
             show_content_stats(files_content)         
             initial_prompt = build_request_analysis_prompt(files_content, new_request)
             initial_response = progress_send_message(initial_prompt)
-            save_to_file(initial_response, 'analysis', workdir)
+            save_to_file(initial_response, 'analysis')
             
             format_analysis(initial_response, raw)
             options = parse_analysis_options(initial_response)
@@ -173,11 +173,11 @@ def handle_option_selection(initial_response: str, request: str, raw: bool = Fal
     for file_path in files_to_scan:
         # Remove (new) suffix if present
         clean_path = file_path.split(' (')[0].strip()
-        path = workdir / clean_path if workdir else Path(clean_path)
+        path = config.workdir / clean_path if config.workdir else Path(clean_path)
         if path.exists():
             absolute_paths.append(path)
     
-    files_content = collect_files_content(absolute_paths, workdir) if absolute_paths else ""
+    files_content = collect_files_content(absolute_paths) if absolute_paths else ""
     show_content_stats(files_content)
     
     # Format the selected option before building prompt
@@ -185,22 +185,23 @@ def handle_option_selection(initial_response: str, request: str, raw: bool = Fal
     option_text = format_option_text(selected_option)
     
     selected_prompt = build_selected_option_prompt(option_text, request, files_content)
-    prompt_file = save_to_file(selected_prompt, 'selected', workdir)
+    prompt_file = save_to_file(selected_prompt, 'selected')
     if config.verbose:
         print(f"\nSelected prompt saved to: {prompt_file}")
     
     selected_response = progress_send_message(selected_prompt)
-    changes_file = save_to_file(selected_response, 'changes', workdir)
+    changes_file = save_to_file(selected_response, 'changes')
 
     if config.verbose:
         try:
-            rel_path = changes_file.relative_to(workdir)
+            rel_path = changes_file.relative_to(config.workdir)
             print(f"\nChanges saved to: ./{rel_path}")
         except ValueError:
             print(f"\nChanges saved to: {changes_file}")
     
     changes = parse_block_changes(selected_response)
-    preview_and_apply_changes(changes, workdir, config.test_cmd)
+    return changes
+    
 
 def read_stdin() -> str:
     """Read input from stdin until EOF"""
@@ -208,7 +209,7 @@ def read_stdin() -> str:
     console.print("[dim]Enter your input (press Ctrl+D when finished):[/dim]")
     return sys.stdin.read().strip()
 
-def replay_saved_file(filepath: Path, workdir: Path, raw: bool = False) -> None:
+def replay_saved_file(filepath: Path, raw: bool = False) -> None:
     """Process a saved prompt file and display the response"""
     if not filepath.exists():
         raise FileNotFoundError(f"File {filepath} not found")
@@ -231,12 +232,12 @@ def replay_saved_file(filepath: Path, workdir: Path, raw: bool = False) -> None:
     
     if file_type == 'changes':
         changes = parse_block_changes(content)
-        success = preview_and_apply_changes(changes, workdir, config.test_cmd)
+        success = preview_and_apply_changes(changes, config.test_cmd, save_only=False)
         if not success:
             raise typer.Exit(1)
     elif file_type == 'analysis':
         format_analysis(content, raw)
-        handle_option_selection(content, content, raw, workdir)
+        handle_option_selection(content, content, raw)
     elif file_type == 'selected':
         if raw:
             console = Console()
@@ -245,35 +246,35 @@ def replay_saved_file(filepath: Path, workdir: Path, raw: bool = False) -> None:
             console.print("=== End Prompt Content ===\n")
         
         response = progress_send_message(content)
-        changes_file = save_to_file(response, 'changes_', workdir)
+        changes_file = save_to_file(response, 'changes_')
         print(f"\nChanges saved to: {changes_file}")
         
         changes = parse_block_changes(response)
-        preview_and_apply_changes(changes, workdir, config.test_cmd)
+        preview_and_apply_changes(changes, config.test_cmd)
     else:
         response = progress_send_message(content)
         format_analysis(response, raw)
 
-def process_question(question: str, workdir: Path, include: List[Path], raw: bool, agent: AIAgent) -> None:
+def process_question(question: str, include: List[Path], raw: bool) -> None:
     """Process a question about the codebase"""
-    paths_to_scan = [workdir] if workdir else []
+    paths_to_scan = [config.workdir] if config.workdir else []
     if include:
         paths_to_scan.extend(include)
-    files_content = collect_files_content(paths_to_scan, workdir)
+    files_content = collect_files_content(paths_to_scan)
     answer = ask_question(question, files_content)
     display_answer(answer, raw)
 
-def ensure_workdir(workdir: Path) -> Path:
+def ensure_workdir() -> Path:
     """Ensure working directory exists, prompt for creation if it doesn't"""
-    if workdir.exists():
-        return workdir.absolute()
+    if config.workdir.exists():
+        return config.workdir.absolute()
         
     console = Console()
-    console.print(f"\n[yellow]Directory does not exist:[/yellow] {workdir}")
+    console.print(f"\n[yellow]Directory does not exist:[/yellow] {config.workdir}")
     if Confirm.ask("Create directory?"):
-        workdir.mkdir(parents=True)
-        console.print(f"[green]Created directory:[/green] {workdir}")
-        return workdir.absolute()
+        config.workdir.mkdir(parents=True)
+        console.print(f"[green]Created directory:[/green] {config.workdir}")
+        return config.workdir.absolute()
     raise typer.Exit(1)
 
 def review_text(text: str, raw: bool = False) -> None:

@@ -19,6 +19,7 @@ def validate_file_path(filepath: Path) -> Tuple[bool, str]:
     Returns:
         Tuple[bool, str]: (is_valid, error_message)
     """
+    filepath = config.workdir / filepath
     if not filepath.exists():
         return False, f"File does not exist: {filepath}"
     if not os.access(filepath, os.R_OK):
@@ -234,9 +235,10 @@ def handle_file_block(block: FileBlock) -> FileChange:
             remove_file=True
         )
     
+    # check if the file path exiss in workdir
+    is_valid, error = validate_file_path(block.filepath)
+    
     # Validate file path
-    path = Path(block.filepath)
-    is_valid, error = validate_file_path(path)
     if block.action == 'replace' and not is_valid:
         console.print(f"[red]Invalid file path for replacement:[/red] {error}")
         sys.exit(1)
@@ -245,6 +247,7 @@ def handle_file_block(block: FileBlock) -> FileChange:
     if block.action == 'replace':
         # Read original content if file exists
         original_content = ""
+        path = config.workdir / block.filepath
         if path.exists():
             try:
                 original_content = path.read_text()
