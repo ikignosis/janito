@@ -20,24 +20,13 @@ def create_new_file_panel(filepath: Path, content: str) -> Panel:
     size_bytes = len(content.encode('utf-8'))
     size_str = f"{size_bytes} bytes" if size_bytes < 1024 else f"{size_bytes/1024:.1f} KB"
 
-    # Create metadata table
-    metadata = Table.grid(padding=(0, 1))
+    # Create metadata table with just file size
+    metadata = Table.grid(padding=(0, 4))
+    metadata.add_column("File Size", justify="right", style="dim")
+    metadata.add_column(justify="left")
     metadata.add_row("File Size:", size_str)
-    metadata.add_row("Created:", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
-    # Create content preview with empty left panel
-    content_table = Table.grid(padding=(0, 2))
-    content_table.add_column("Before", justify="left")
-    content_table.add_column("After", justify="left")
-
-    empty_panel = Panel(
-        Text("(No previous content)", style="dim"),
-        title="Previous Content",
-        title_align="left",
-        border_style="#E06C75",
-        box=box.ROUNDED
-    )
-
+    # Create content display with syntax highlighting if applicable
     content_display = content
     if filepath.suffix in ['.py', '.js', '.ts', '.java', '.cpp', '.c']:
         try:
@@ -45,19 +34,17 @@ def create_new_file_panel(filepath: Path, content: str) -> Panel:
         except:
             pass
 
-    new_panel = Panel(
+    content_panel = Panel(
         content_display,
         title="New Content",
         title_align="left",
         border_style="#61AFEF",
         box=box.ROUNDED
     )
-
-    content_table.add_row(empty_panel, new_panel)
     
     content = Table.grid(padding=(1, 0))
     content.add_row(Panel(metadata, title="File Metadata", border_style="white"))
-    content.add_row(Panel(content_table, title="Content Preview", border_style="white"))
+    content.add_row(content_panel)
 
     return Panel(
         content,
@@ -75,16 +62,15 @@ def create_change_panel(search: str, replace: str | None, description: str, inde
     if replace is None:
         return Panel(
             Text(search, style="red"),
-            title=f"- Content to Delete [{search_type}]{' - ' + description if description else ''}",
+            title=f"🗑️ Content to Delete [{search_type}]{' - ' + description if description else ''}",
             title_align="left",
             border_style="#E06C75",
             box=box.ROUNDED
         )
 
+    # Split content and find common sections
     search_lines = search.splitlines()
     replace_lines = replace.splitlines()
-    common_top, search_middle, replace_middle, common_bottom, all_search_lines = find_common_sections(search_lines, replace_lines)
-
     content_table = Table.grid(padding=(0, 2))
     content_table.add_column("Current", justify="left", ratio=1)
     content_table.add_column("New", justify="left", ratio=1)
@@ -95,13 +81,14 @@ def create_change_panel(search: str, replace: str | None, description: str, inde
         Text("New Content", style="bold cyan")
     )
     
-    # Add the actual content
+    # Add the actual content with highlighting
     content_table.add_row(
         format_content(search_lines, search_lines, replace_lines, True, operation),
         format_content(replace_lines, search_lines, replace_lines, False, operation)
     )
 
-    header = f"Change {index}"
+    title_emoji = "🔄" if operation == "modify" else "🗑️"
+    header = f"{title_emoji} Change {index}"
     if description:
         header += f": {description}"
 
@@ -118,13 +105,20 @@ def create_replace_panel(filepath: Path, change: FileChange) -> Panel:
     old_size = len(change.original_content.encode('utf-8'))
     new_size = len(change.content.encode('utf-8'))
     
-    # Create metadata table
-    metadata = Table.grid(padding=(0, 1))
-    metadata.add_row("Original Size:", f"{old_size/1024:.1f} KB")
-    metadata.add_row("New Size:", f"{new_size/1024:.1f} KB")
-    metadata.add_row("Size Change:", f"{(new_size - old_size)/1024:+.1f} KB")
-    metadata.add_row("Modified:", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    
+    # Create metadata table with horizontal layout
+    metadata = Table.grid(padding=(0, 4))
+    metadata.add_column("Label", justify="right", style="dim")
+    metadata.add_column(justify="left")
+    metadata.add_column("Label", justify="right", style="dim")
+    metadata.add_column(justify="left")
+    metadata.add_column("Label", justify="right", style="dim")
+    metadata.add_column(justify="left")
+    metadata.add_row(
+        "Original Size:", f"{old_size/1024:.1f} KB",
+        "New Size:", f"{new_size/1024:.1f} KB",
+        "Modified:", datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    )
+
     # Create unified diff preview
     content_table = Table.grid(padding=(0, 2))
     content_table.add_column("Current", justify="left")
@@ -171,37 +165,32 @@ def create_remove_file_panel(filepath: Path) -> Panel:
 
 def show_change_preview(console: Console, filepath: Path, change: FileChange) -> None:
     """Display a preview of changes for a single file"""
-    if change.remove_file:
+    if change.operation == 'remove':
         panel = create_remove_file_panel(filepath)
-        console.print(panel)
-        console.print()
-        return
-        
-    if change.is_new_file:
+    elif change.operation == 'create':
         panel = create_new_file_panel(filepath, change.content)
-        console.print(panel)
-        console.print()
-        return
-
-    if change.replace_file:
+    elif change.operation == 'replace':
         panel = create_replace_panel(filepath, change)
-        console.print(panel)
-        console.print()
-        return
+    elif change.operation == 'modify':
+        main_content = []
+        for i, mod in enumerate(change.modifications, 1):
+            panel = create_change_panel(
+                mod.search_display_content or mod.search_content,
+                mod.replace_content,
+                change.description,
+                i,
+                mod.search_type == 'SearchRegex'
+            )
+            main_content.append(panel)
+        panel = Panel(
+            Columns(main_content, align="center"),
+            title=f"🔧 Modifying {filepath}{' - ' + change.description if change.description else ''}",
+            title_align="left",
+            border_style="white",
+            box=box.ROUNDED
+        )
 
-    main_content = []
-    for i, (search, replace, description, is_regex) in enumerate(change.search_blocks, 1):
-        panel = create_change_panel(search, replace, description, i, is_regex)
-        main_content.append(panel)
-
-    file_panel = Panel(
-        Columns(main_content, align="center"),
-        title=f"Modifying {filepath} - {change.description}",
-        title_align="left",
-        border_style="white",
-        box=box.ROUNDED
-    )
-    console.print(file_panel)
+    console.print(panel)
     console.print()
 
 def preview_all_changes(console: Console, changes: List[FileChange]) -> None:
@@ -209,37 +198,80 @@ def preview_all_changes(console: Console, changes: List[FileChange]) -> None:
     if config.debug:
         _print_debug_info(console, changes)
 
-    console.print("\n[bold blue]Change Preview[/bold blue]")
+    console.print("\n[bold blue]📋 Change Preview[/bold blue]")
     
-    has_modified_files = any(not change.is_new_file for change in changes)
-    if has_modified_files:
-        _show_legend(console)
+    # Group changes by operation type
+    change_groups = {
+        'create': [], 'modify': [], 'replace': [],
+        'remove': [], 'rename': []
+    }
     
-    new_files = [change for change in changes if change.is_new_file]
-    modified_files = [change for change in changes if not change.is_new_file]
+    for change in changes:
+        change_groups[change.operation].append(change)
     
-    for change in new_files:
-        show_change_preview(console, change.path, change)
-    for change in modified_files:
-        show_change_preview(console, change.path, change)
+    # Show changes in logical order: create, modify, replace, rename, remove
+    if change_groups['create']:
+        console.print("\n[green]✨ Created Files:[/green]")
+        for change in change_groups['create']:
+            show_change_preview(console, change.filepath, change)
+            
+    if change_groups['modify']:
+        console.print("\n[yellow]🔧 Modified Files:[/yellow]")
+        for change in change_groups['modify']:
+            show_change_preview(console, change.filepath, change)
+            
+    if change_groups['replace']:
+        console.print("\n[yellow]🔄 Replaced Files:[/yellow]")
+        for change in change_groups['replace']:
+            show_change_preview(console, change.filepath, change)
+            
+    if change_groups['rename']:
+        console.print("\n[blue]📝 Renamed Files:[/blue]")
+        for change in change_groups['rename']:
+            console.print(f"  [dim]{change.filepath}[/dim] → [bold]{change.new_filepath}[/bold]")
+            
+    if change_groups['remove']:
+        console.print("\n[red]🗑️ Removed Files:[/red]")
+        for change in change_groups['remove']:
+            show_change_preview(console, change.filepath, change)
 
 def _print_debug_info(console: Console, changes: List[FileChange]) -> None:
     """Print debug information about file changes"""
-    console.print("\n[blue]Debug: File Changes to Preview:[/blue]")
+    console.print("\n[blue]🔍 Debug: File Changes Analysis[/blue]")
+    
+    # Group changes by operation
+    operations = {'create': [], 'modify': [], 'replace': [], 'remove': [], 'rename': []}
     for change in changes:
-        console.print(f"\n[cyan]File:[/cyan] {change.path}")
-        console.print(f"  [yellow]Is New File:[/yellow] {change.is_new_file}")
-        console.print(f"  [yellow]Description:[/yellow] {change.description}")
-        if change.search_blocks:
-            console.print("  [yellow]Search Blocks:[/yellow]")
-            for i, (search, replace, desc) in enumerate(change.search_blocks, 1):
-                console.print(f"    Block {i}:")
-                console.print(f"      Description: {desc or 'No description'}")
-                console.print(f"      Operation: {'Replace' if replace else 'Delete'}")
-                console.print(f"      Search Length: {len(search)} chars")
-                if replace:
-                    console.print(f"      Replace Length: {len(replace)} chars")
-    console.print("\n[blue]End Debug File Changes[/blue]\n")
+        operations[change.operation].append(change)
+        
+    for op_type, op_changes in operations.items():
+        if not op_changes:
+            continue
+            
+        console.print(f"\n[yellow]Operation: {op_type.title()}[/yellow] ({len(op_changes)} files)")
+        for change in op_changes:
+            console.print(f"\n[cyan]File:[/cyan] {change.filepath}")
+            if change.description:
+                console.print(f"  [dim]Description:[/dim] {change.description}")
+                
+            if op_type == 'rename':
+                console.print(f"  [dim]New Path:[/dim] {change.new_filepath}")
+                
+            elif op_type == 'modify':
+                console.print("  [dim]Modifications:[/dim]")
+                for i, mod in enumerate(change.modifications, 1):
+                    console.print(f"    [white]#{i} ({mod.search_type}):[/white]")
+                    console.print(f"      Search Length: {len(mod.search_content)} chars")
+                    if mod.replace_content is not None:
+                        console.print(f"      Replace Length: {len(mod.replace_content)} chars")
+                    else:
+                        console.print("      Action: Delete")
+                        
+            elif op_type in ['create', 'replace']:
+                size = len(change.content.encode('utf-8'))
+                console.print(f"  [dim]Content Size:[/dim] {size/1024:.1f} KB")
+
+    console.print("\n[blue]End Debug Analysis[/blue]\n")
 
 def _show_legend(console: Console) -> None:
     """Show the unified legend status bar"""

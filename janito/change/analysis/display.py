@@ -118,34 +118,6 @@ def format_analysis(analysis: str, raw: bool = False,) -> None:
         console.print("\n[yellow]Warning: No valid options found in response. Displaying as markdown.[/yellow]\n")
         _display_markdown(analysis)
 
-def get_history_file_type(filepath: Path) -> str:
-    """Determine the type of saved file based on its name"""
-    name = filepath.name.lower()
-    if 'changes' in name:
-        return 'changes'
-    elif 'selected' in name:
-        return 'selected'
-    elif 'analysis' in name:
-        return 'analysis'
-    elif 'response' in name:
-        return 'response'
-    return 'unknown'
 
-def get_history_path() -> Path:
-    """Create and return the history directory path"""
-    history_dir = config.workdir / '.janito' / 'history'
-    history_dir.mkdir(parents=True, exist_ok=True)
-    return history_dir
 
-def get_timestamp() -> str:
-    """Get current UTC timestamp in YMD_HMS format with leading zeros"""
-    return datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
 
-def save_to_file(content: str, prefix: str) -> Path:
-    """Save content to a timestamped file in history directory"""
-    history_dir = get_history_path()
-    timestamp = get_timestamp()
-    filename = f"{timestamp}_{prefix}.txt"
-    file_path = history_dir / filename
-    file_path.write_text(content)
-    return file_path

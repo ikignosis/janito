@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 import os
 from pathlib import Path
 
@@ -12,6 +12,8 @@ class ConfigManager:
         self.test_cmd = os.getenv('JANITO_TEST_CMD')
         self.workdir = Path.cwd()
         self.raw = False
+        self.include: List[Path] = []
+        self.auto_apply: bool = False
         
     @classmethod
     def get_instance(cls) -> "ConfigManager":
@@ -43,6 +45,14 @@ class ConfigManager:
     def set_raw(self, enabled: bool) -> None:
         """Set raw output mode"""
         self.raw = enabled
+
+    def set_include(self, paths: Optional[List[Path]]) -> None:
+        """Set additional paths to include"""
+        self.include = paths if paths is not None else []
+
+    def set_auto_apply(self, enabled: bool) -> None:
+        """Set auto apply mode"""
+        self.auto_apply = enabled
 
 # Create a singleton instance
 config = ConfigManager.get_instance()

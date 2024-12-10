@@ -18,10 +18,9 @@ def typer_main(
     verbose: bool = typer.Option(False, "--verbose", help="Show verbose output"),
     include: Optional[List[Path]] = typer.Option(None, "-i", "--include", help="Additional paths to include"),
     ask: Optional[str] = typer.Option(None, "--ask", help="Ask a question about the codebase"),
-    git_commit: Optional[str] = typer.Option(None, "--git-commit", help="Do git commit with auto-generated message"),
     play: Optional[Path] = typer.Option(None, "--play", help="Replay a saved prompt file"),
+    scan: bool = typer.Option(False, "--scan", help="Preview files that would be analyzed"),
     version: bool = typer.Option(False, "--version", help="Show version information"),
-    save_only: bool = typer.Option(False, "--save-only", help="Only save analysis file and exit"),
     test_cmd: Optional[str] = typer.Option(None, "--test", help="Command to run tests after changes"),
     auto_apply: bool = typer.Option(False, "--auto-apply", help="Apply changes without confirmation"),
 ):
@@ -34,16 +33,20 @@ def typer_main(
     config.set_workdir(workdir)
     config.set_debug(debug)
     config.set_verbose(verbose)
+    config.set_auto_apply(auto_apply)
+    config.set_include(include)
 
     if ask:
-        handle_ask(ask, config.workdir, include, False)
+        handle_ask(ask, config.workdir, False)
     elif play:
-        handle_play(play, False)
-    elif change_request == "scan":
-        paths_to_scan = include if include else [config.workdir]
+        handle_play(play)
+    elif scan:
+        paths_to_scan = include or [config.workdir]
         handle_scan(paths_to_scan)
     elif change_request:
-        handle_request(change_request, include, False)
+        handle_request(change_request)
+    else:
+        typer.echo("No command given")
 
 def main():
     typer.run(typer_main)

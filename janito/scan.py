@@ -35,17 +35,21 @@ def _scan_paths(paths: List[Path] = None) -> Tuple[List[str], List[str]]:
         gitignore_spec = PathSpec.from_lines(GitWildMatchPattern, gitignore.splitlines())
     
 
-    def scan_path(path: Path, level: int) -> None:
+    def scan_path(path: Path, depth: int) -> None:
         """
         Scan a path and add it to the content_parts list
-        level 0 means we are scanning the root directory
-        level 1 we provide both directory directory name and file content
-        level > 1 we just return
+        depth 0 means we are scanning the root directory
+        ledepth 1 we provide both directory directory name and file content
+        depth > 1 we just return
         """
-        if level > 1:
+        if depth > 1:
             return
         
         path = path.resolve()
+        # Skip .janito directory
+        if '.janito' in path.parts:
+            return
+            
         relative_base = config.workdir
         if path.is_dir():
             relative_path = path.relative_to(relative_base)
@@ -77,7 +81,7 @@ def _scan_paths(paths: List[Path] = None) -> Tuple[List[str], List[str]]:
                     if gitignore_spec.match_file(rel_path):
                         continue
                 if item.resolve() not in processed_files:  # Skip if already processed
-                    scan_path(item, level+1)
+                    scan_path(item, depth+1)
 
         else:
             resolved_path = path.resolve()
@@ -111,6 +115,7 @@ def _scan_paths(paths: List[Path] = None) -> Tuple[List[str], List[str]]:
 def collect_files_content(paths: List[Path] = None) -> str:
     """Collect content from all files in XML format"""
     console = Console()
+
     content_parts, file_items = _scan_paths(paths)
 
     if file_items and config.verbose:
@@ -141,18 +146,14 @@ def preview_scan(paths: List[Path] = None) -> None:
     
     # Show if working directory is being scanned
     is_workdir_scanned = any(p.resolve() == config.workdir.resolve() for p in paths)
-    if is_workdir_scanned:
-        console.print("[green]✓ Working directory will be scanned[/green]")
-    else:
-        console.print("[yellow]! Working directory will not be scanned[/yellow]")
     
     # Show included paths relative to working directory
     if len(paths) > (1 if is_workdir_scanned else 0):
         console.print("\n[cyan]Additional Included Paths:[/cyan]")
         for path in paths:
-            if path.resolve() != workdir.resolve():
+            if path.resolve() != config.workdir.resolve():
                 try:
-                    rel_path = path.relative_to(workdir)
+                    rel_path = path.relative_to(config.workdir)
                     console.print(f"  • ./{rel_path}")
                 except ValueError:
                     # Path is outside working directory

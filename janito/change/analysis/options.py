@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import List, Dict, Tuple, Optional
 import re
 
+from janito.config import config
 
 @dataclass
 class AnalysisOption:
@@ -37,12 +38,14 @@ class AnalysisOption:
         """Check if file is marked as removed"""
         return '(removed)' in file_path
 
-    def get_affected_paths(self = None) -> List[Path]:
+    def get_affected_paths(self = None, skip_new: bool = False) -> List[Path]:
         """Get list of affected paths, resolving against workdir if provided"""
         paths = []
         for file_path in self.affected_files:
+            if self.is_new_file(file_path) and skip_new:
+                continue
             clean_path = self.get_clean_path(file_path)
-            path = workdir / clean_path if workdir else Path(clean_path)
+            path = config.workdir / clean_path if config.workdir else Path(clean_path)
             paths.append(path)
         return paths
 

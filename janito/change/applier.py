@@ -17,12 +17,18 @@ from rich.panel import Panel
 from rich import box
 import subprocess
 import re
+import difflib
+from .viewer import show_change_preview, preview_all_changes
+from .parser import FileChange
+from typing import Dict
 
 from janito.config import config
 from .parser import FileChange
 from .parser import Modification
 from .validator import validate_python_syntax
 from .position import find_text_positions
+from .viewer import preview_all_changes
+from .workdir import apply_changes as apply_to_workdir_impl
 
 class ChangeApplier:
     def __init__(self, preview_dir: Path):
@@ -77,7 +83,7 @@ class ChangeApplier:
         except Exception as e:
             return False, "", f"Error running test: {str(e)}"
 
-    def apply_changes(self, changes: List[FileChange], test_cmd: str = None) -> tuple[bool, Set[Path]]:
+    def apply_changes(self, changes: List[FileChange]) -> tuple[bool, Set[Path]]:
         """Apply changes in preview directory, runs tests if specified.
         Returns (success, modified_files)"""
         console = Console()
@@ -113,9 +119,14 @@ class ChangeApplier:
                 console.print(f"[red]{error_msg}[/red]")
                 return False, modified_files
 
+        # Show success message with syntax validation status
+        console.print("\n[cyan]Changes applied successfully.[/cyan]")
+        if python_files:
+            console.print(f"[green]✓ Python syntax validated for {len(python_files)} file(s)[/green]")
+        
         # Run tests if specified
-        if test_cmd:
-            console.print(f"\n[cyan]Testing changes in preview directory:[/cyan] {test_cmd}")
+        if config.test_cmd:
+            console.print(f"\n[cyan]Testing changes in preview directory:[/cyan] {config.test_cmd}")
             success, output, error = self.run_test_command(test_cmd)
             if output:
                 console.print("\n[bold]Test Output:[/bold]")
@@ -207,4 +218,8 @@ class ChangeApplier:
             self.console.print(Panel(mod.replace_content))
         else:
             self.console.print("[yellow]Action:[/yellow] Delete text")
+
+    def apply_to_workdir(self, changes: List[FileChange]) -> bool:
+        """Apply changes from preview to working directory"""
+        return apply_to_workdir_impl(changes, self.preview_dir, Console())
 
