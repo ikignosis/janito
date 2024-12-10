@@ -12,7 +12,8 @@ from rich.text import Text
 from rich import box
 from rich.columns import Columns
 from rich.rule import Rule
-from janito.agents import AIAgent, AgentSingleton
+from janito.agents import agent
+from janito.config import config
 from .options import AnalysisOption, parse_analysis_options
 
 MIN_PANEL_WIDTH = 40
@@ -93,7 +94,7 @@ def _display_markdown(content: str) -> None:
     md = Markdown(content)
     console.print(md)
 
-def _display_raw_history(agent: AIAgent) -> None:
+def _display_raw_history() -> None:
     """Display raw message history from Claude agent."""
     console = Console()
     console.print("\n=== Message History ===")
@@ -106,7 +107,6 @@ def format_analysis(analysis: str, raw: bool = False,) -> None:
     """Format and display the analysis output with enhanced capabilities."""
     console = Console()
     
-    agent = AgentSingleton.get_agent()
     if raw and agent:
         _display_raw_history(agent)
         return
@@ -131,9 +131,9 @@ def get_history_file_type(filepath: Path) -> str:
         return 'response'
     return 'unknown'
 
-def get_history_path(workdir: Path) -> Path:
+def get_history_path() -> Path:
     """Create and return the history directory path"""
-    history_dir = workdir / '.janito' / 'history'
+    history_dir = config.workdir / '.janito' / 'history'
     history_dir.mkdir(parents=True, exist_ok=True)
     return history_dir
 

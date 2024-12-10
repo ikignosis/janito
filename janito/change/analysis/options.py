@@ -13,6 +13,18 @@ class AnalysisOption:
     affected_files: List[str]
     description_items: List[str]
 
+    def format_option_text(self) -> str:
+        """Format the option into a string representation"""
+        option_text = f"Option {self.letter}:\n"
+        option_text += f"Summary: {self.summary}\n\n"
+        option_text += "Description:\n"
+        for item in self.description_items:
+            option_text += f"- {item}\n"
+        option_text += "\nAffected files:\n"
+        for file in self.affected_files:
+            option_text += f"- {file}\n"
+        return option_text
+
     def get_clean_path(self, file_path: str) -> str:
         """Get clean path without markers"""
         return file_path.split(' (')[0].strip()

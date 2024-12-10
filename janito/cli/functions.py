@@ -13,15 +13,9 @@ import sys
 from janito.agents import AIAgent
 from janito.config import config
 from janito.scan import collect_files_content, show_content_stats
-from janito.analysis import (
-    format_analysis, build_request_analysis_prompt, 
-    parse_analysis_options, get_history_file_type, AnalysisOption
-)
 from janito.qa import ask_question, display_answer
 from janito.common import progress_send_message
-from janito.prompts import build_selected_option_prompt
-from janito.fileparser import parse_block_changes
-from janito.change.applier import preview_and_apply_changes
+
 
 def prompt_user(message: str, choices: List[str] = None) -> str:
     """Display a simple user prompt with optional choices"""
@@ -100,18 +94,6 @@ def modify_request(request: str) -> str:
         console.print("\n[yellow]Modification cancelled, keeping original request[/yellow]")
         return request
 
-def format_option_text(option: AnalysisOption) -> str:
-    """Format an AnalysisOption into a string representation"""
-    option_text = f"Option {option.letter}:\n"
-    option_text += f"Summary: {option.summary}\n\n"
-    option_text += "Description:\n"
-    for item in option.description_items:
-        option_text += f"- {item}\n"
-    option_text += "\nAffected files:\n"
-    for file in option.affected_files:
-        option_text += f"- {file}\n"
-    return option_text
-
 def handle_option_selection(initial_response: str, request: str, raw: bool = False, include: Optional[List[Path]] = None) -> None:
     """Handle option selection and implementation details"""
     options = parse_analysis_options(initial_response)
@@ -182,7 +164,7 @@ def handle_option_selection(initial_response: str, request: str, raw: bool = Fal
     
     # Format the selected option before building prompt
     selected_option = options[option]
-    option_text = format_option_text(selected_option)
+    option_text = selected_option.format_option_text()  # Updated to use class method
     
     selected_prompt = build_selected_option_prompt(option_text, request, files_content)
     prompt_file = save_to_file(selected_prompt, 'selected')

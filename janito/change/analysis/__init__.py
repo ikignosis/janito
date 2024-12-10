@@ -17,6 +17,7 @@ from .prompts import (
     prompt_user,
     validate_option_letter
 )
+from .analyze import analyze_request
 
 __all__ = [
     'AnalysisOption',
@@ -29,5 +30,6 @@ __all__ = [
     'build_request_analysis_prompt',
     'get_option_selection',
     'prompt_user',
-    'validate_option_letter'
+    'validate_option_letter',
+    'analyze_request'
 ]

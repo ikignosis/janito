@@ -40,8 +40,3 @@ Changes:
 """
     history_file.write_text(history_content)
     return history_file
-
-def get_history_file_path() -> Path:
-    """Get path for a history file with app timestamp"""
-    history_path = get_history_path()
-    return history_path / f"{APP_TIMESTAMP}_changes.txt"

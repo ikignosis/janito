@@ -8,7 +8,7 @@ from rich import box
 from pathlib import Path
 from typing import List
 from datetime import datetime
-from janito.fileparser import FileChange
+from ...change.parser import FileChange
 from janito.config import config
 from .styling import format_content, create_legend_items, current_theme
 from .themes import ColorTheme
@@ -67,14 +67,15 @@ def create_new_file_panel(filepath: Path, content: str) -> Panel:
         box=box.ROUNDED
     )
 
-def create_change_panel(search: str, replace: str | None, description: str, index: int) -> Panel:
+def create_change_panel(search: str, replace: str | None, description: str, index: int, is_regex: bool = False) -> Panel:
     """Create a panel for file changes"""
     operation = 'delete' if replace is None else 'modify'
+    search_type = "regex" if is_regex else "plain text"
     
     if replace is None:
         return Panel(
             Text(search, style="red"),
-            title=f"- Content to Delete{' - ' + description if description else ''}",
+            title=f"- Content to Delete [{search_type}]{' - ' + description if description else ''}",
             title_align="left",
             border_style="#E06C75",
             box=box.ROUNDED
@@ -88,9 +89,9 @@ def create_change_panel(search: str, replace: str | None, description: str, inde
     content_table.add_column("Current", justify="left", ratio=1)
     content_table.add_column("New", justify="left", ratio=1)
     
-    # Add column headers
+    # Add column headers with search type indicator
     content_table.add_row(
-        Text("Current Content", style="bold cyan"),
+        Text(f"Current Content [{search_type}]", style="bold cyan"),
         Text("New Content", style="bold cyan")
     )
     
@@ -189,8 +190,8 @@ def show_change_preview(console: Console, filepath: Path, change: FileChange) ->
         return
 
     main_content = []
-    for i, (search, replace, description) in enumerate(change.search_blocks, 1):
-        panel = create_change_panel(search, replace, description, i)
+    for i, (search, replace, description, is_regex) in enumerate(change.search_blocks, 1):
+        panel = create_change_panel(search, replace, description, i, is_regex)
         main_content.append(panel)
 
     file_panel = Panel(

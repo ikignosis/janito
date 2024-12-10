@@ -45,14 +45,18 @@ Request:
 def prompt_user(message: str, choices: List[str] = None) -> str:
     """Display a prominent user prompt with optional choices"""
     console = Console()
+    term_width = console.width or 80
     console.print()
-    console.print(Rule(" User Input Required ", style="bold cyan"))
+    console.print(Rule(" User Input Required ", style="bold cyan", align="center"))
     
     if choices:
         choice_text = f"[cyan]Options: {', '.join(choices)}[/cyan]"
-        console.print(Panel(choice_text, box=box.ROUNDED))
+        console.print(Panel(choice_text, box=box.ROUNDED, justify="center"))
     
-    return Prompt.ask(f"[bold cyan]> {message}[/bold cyan]")
+    # Center the prompt with padding
+    padding = (term_width - len(message)) // 2
+    padded_message = " " * padding + message
+    return Prompt.ask(f"[bold cyan]{padded_message}[/bold cyan]")
 
 def validate_option_letter(letter: str, options: dict) -> bool:
     """Validate if the given letter is a valid option or 'M' for modify"""
@@ -61,12 +65,21 @@ def validate_option_letter(letter: str, options: dict) -> bool:
 def get_option_selection() -> str:
     """Get user input for option selection with modify option"""
     console = Console()
-    console.print("\n[cyan]Enter option letter or 'M' to modify request[/cyan]")
+    term_width = console.width or 80
+    message = "Enter option letter or 'M' to modify request"
+    padding = (term_width - len(message)) // 2
+    padded_message = " " * padding + message
+    
+    console.print(f"\n[cyan]{padded_message}[/cyan]")
     while True:
         letter = prompt_user("Select option").strip().upper()
         if letter == 'M' or (letter.isalpha() and len(letter) == 1):
             return letter
-        console.print("[red]Please enter a valid letter or 'M'[/red]")
+        
+        error_msg = "Please enter a valid letter or 'M'"
+        error_padding = (term_width - len(error_msg)) // 2
+        padded_error = " " * error_padding + error_msg
+        console.print(f"[red]{padded_error}[/red]")
 
 def build_request_analysis_prompt(files_content: str, request: str) -> str:
     """Build prompt for information requests"""

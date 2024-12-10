@@ -1,19 +1,32 @@
-from .applier import apply_single_change
-from .position import parse_and_apply_changes_sequence
-from .content import (
-    get_file_type,
-    process_and_save_changes,
-    format_parsed_changes,
-    apply_content_changes,
-    handle_changes_file
-)
+"""
+This package provides the following change flow steps:
+
+- Create a preview directory
+- Build change request prompt
+- Send change request to AI agent
+- Parse the response into changes
+- Save response to history file
+- Preview the changes (applying them to the preview directory)
+- Validate the changes
+- Run tests if specified
+- Show the change view (using janito.changeviewer)
+- Prompt the user to apply the changes to the working directory
+- Apply the changes
+"""
+
+from typing import Tuple
+from pathlib import Path
+from ..agents import agent  # Updated import to use singleton directly
+from .parser import build_change_request_prompt, parse_response
+from .preview import setup_workdir_preview
+from .applier import ChangeApplier
 
 __all__ = [
-    'apply_single_change',
-    'parse_and_apply_changes_sequence',
-    'get_file_type',
-    'process_and_save_changes',
-    'format_parsed_changes',
-    'apply_content_changes',
-    'handle_changes_file'
+    'build_change_request_prompt',
+    'get_change_response',
+    'parse_response',
+    'setup_workdir_preview',
+    'parse_change_response',
+    'save_change_response',
+    'ChangeApplier'
 ]

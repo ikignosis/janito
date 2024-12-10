@@ -4,10 +4,10 @@ from pathlib import Path
 from rich.console import Console
 from .version import get_version
 
-from janito.agents import AgentSingleton
+from janito.agents import agent
 from janito.config import config
 
-from .cli.commands import handle_request, handle_ask, handle_play, handle_scan, handle_git_commit
+from .cli.commands import handle_request, handle_ask, handle_play, handle_scan
 
 app = typer.Typer(add_completion=False)
 
@@ -22,6 +22,8 @@ def typer_main(
     play: Optional[Path] = typer.Option(None, "--play", help="Replay a saved prompt file"),
     version: bool = typer.Option(False, "--version", help="Show version information"),
     save_only: bool = typer.Option(False, "--save-only", help="Only save analysis file and exit"),
+    test_cmd: Optional[str] = typer.Option(None, "--test", help="Command to run tests after changes"),
+    auto_apply: bool = typer.Option(False, "--auto-apply", help="Apply changes without confirmation"),
 ):
     """Janito - AI-powered code modification assistant"""
     if version:
@@ -35,19 +37,13 @@ def typer_main(
 
     if ask:
         handle_ask(ask, config.workdir, include, False)
-    elif git_commit:
-        handle_git_commit()
     elif play:
-        handle_play(play, config.workdir, False)
+        handle_play(play, False)
     elif change_request == "scan":
         paths_to_scan = include if include else [config.workdir]
         handle_scan(paths_to_scan)
     elif change_request:
-        handle_request(change_request, include, False, save_only)
-    else:
-        console = Console()
-        console.print("Error: Please provide a change request or use --ask/--play options")
-        raise typer.Exit(1)
+        handle_request(change_request, include, False)
 
 def main():
     typer.run(typer_main)

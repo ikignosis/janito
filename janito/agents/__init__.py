@@ -11,12 +11,6 @@ elif ai_backend == 'claudeai':
 else:
     raise ValueError(f"Unsupported AI_BACKEND: {ai_backend}")
 
-class AgentSingleton:
-    _instance = None
-
-    @classmethod
-    def get_agent(cls):
-        if cls._instance is None:
-            cls._instance = AIAgent(SYSTEM_PROMPT)
-        return cls._instance
+# Create a singleton instance
+agent = AIAgent(SYSTEM_PROMPT)
 
