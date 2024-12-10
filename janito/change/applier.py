@@ -142,6 +142,11 @@ class ChangeApplier:
     def apply_single_change(self, change: FileChange) -> Tuple[bool, Optional[str]]:
         """Apply a single file change to preview directory"""
         filepath = self.preview_dir / change.filepath
+        
+        # For replace operations, store original content
+        if change.operation == 'replace' and filepath.exists():
+            change.original_content = filepath.read_text()
+            
         # Handle preview-only operations
         if change.operation == 'remove':
             if filepath.exists():

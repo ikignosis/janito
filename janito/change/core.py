@@ -21,7 +21,12 @@ from .analysis import analyze_request
 def process_change_request(
     request: str,
     ) -> Tuple[bool, Optional[Path]]:
-    """Process a change request through the main flow."""
+    """
+    Process a change request through the main flow.
+    Return:
+        success: True if the request was processed successfully
+        history_file: Path to the saved history file
+    """
     console = Console()
     paths_to_scan = config.include if config.include else [config. workdir]
 
@@ -36,14 +41,13 @@ def process_change_request(
     # Build and send request
     prompt = build_change_request_prompt(analysis.format_option_text(), request, content_xml)
     response = progress_send_message(prompt)
-    print(response)
     if not response:
         console.print("[red]Failed to get response from AI[/red]")
         return False, None
     
-    save_changes_to_history(response, request)
-    parse_and_apply_changes(response)
-
+    history_file = save_changes_to_history(response, request)
+    return parse_and_apply_changes(response), history_file
+    
 
 def parse_and_apply_changes(response: str) -> Tuple[bool, Optional[Path]]:
 

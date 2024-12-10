@@ -1,4 +1,3 @@
-
 from typing import List, Tuple
 from janito.config import config
 from rich.console import Console
@@ -36,37 +35,50 @@ def normalize_content(text: str) -> Tuple[str, List[Tuple[int, int, int, int]]]:
     
     return normalized, boundaries
 
-def find_text_positions(text: str, search: str) -> List[Tuple[int, int]]:
-    """Find all non-overlapping positions of search text in content,
-    comparing without leading/trailing whitespace but returning original positions."""
+def find_text_positions(text: str, search: str) -> Tuple[int, int]:
+    """Find the first position of search text in content.
+    
+    This function searches for text while being whitespace-aware:
+    - Leading/trailing whitespace is ignored during comparison
+    - Original position boundaries are preserved in the results
+    - Handles multi-line search patterns
+    - Preserves line-based positioning
+    
+    Args:
+        text: The source text to search in
+        search: The text pattern to search for
+        
+    Returns:
+        Tuple containing (start, end) position in the original text.
+        - start: Beginning of the match including leading whitespace
+        - end: End of the match including trailing whitespace and newline
+        
+    
+    Raises:
+        ValueError: If the search text is not found
+    """
     normalized_text, text_boundaries = normalize_content(text)
     normalized_search, search_boundaries = normalize_content(search)
     
-    positions = []
-    start = 0
-    while True:
-        # Find next occurrence in normalized text
-        pos = normalized_text.find(normalized_search, start)
-        if pos == -1:
-            break
+    # Find first occurrence in normalized text
+    pos = normalized_text.find(normalized_search)
+    if pos == -1:
+        raise ValueError("Search text not found")
             
-        # Find the corresponding original text boundaries
-        search_lines = normalized_search.count('\n') + 1
-        
-        # Get text line number at position
-        line_num = normalized_text.count('\n', 0, pos)
-        
-        if line_num + search_lines <= len(text_boundaries):
-            # Get original start position from first line
-            orig_start = text_boundaries[line_num][2]  # full_start
-            # Get original end position from last line
-            orig_end = text_boundaries[line_num + search_lines - 1][3]  # full_end
-            
-            positions.append((orig_start, orig_end))
-        
-        start = pos + len(normalized_search)
+    # Find the corresponding original text boundaries
+    search_lines = normalized_search.count('\n') + 1
     
-    return positions
+    # Get text line number at position
+    line_num = normalized_text.count('\n', 0, pos)
+    
+    if line_num + search_lines <= len(text_boundaries):
+        # Get original start position from first line
+        orig_start = text_boundaries[line_num][2]  # full_start
+        # Get original end position from last line
+        orig_end = text_boundaries[line_num + search_lines - 1][3]  # full_end
+        return (orig_start, orig_end)
+        
+    raise ValueError("Search text boundaries not found")
 
 def format_whitespace_debug(text: str) -> str:
     """Format text with visible whitespace markers"""
