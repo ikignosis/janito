@@ -1,0 +1,44 @@
+# Command Format Specification
+
+# 1. Basic Syntax Rules
+
+# Line Types:
+1. Comments: Lines starting with "#"
+2. Commands: Lines without ":" or "." (using only alphanumeric chars)
+3. Text blocks: Lines starting with "."
+4. Key/Value pairs: Lines containing ": "
+   - Direct value: Captured after ": " until line end
+   - Multiline value: When value is empty, content is captured from lines below
+     * Can contain: key/value pairs, text blocks, or nested commands
+     * Cannot mix different types in same multiline value
+
+# Value Formatting
+Text blocks must provide each line between dots "."
+Text blocks lines with leading dot but not trailing dot should be treated as an error
+
+# NOTES
+- Commands can be followed by parameters: text block or key/value pairs (not both)
+- Both commands, key and values will be stripped of whitespaces
+- Command parameters terminate when the next command at the same level is found
+- Leading space must be ignored, the parser must rely on the order, not on the indentation of lines
+- Inline comments are not supported (as it not meet line type 1)
+- empty lines will be ignored
+
+# Example:
+
+Create File
+    Path: file1.py
+    Content: 
+        .if true:.
+        .    print("Hello World").
+
+Modify File
+    Path: file2.py
+    Modifications:
+        Search 
+            .def old_function():.
+            .    return 1.
+        Replace
+            .def new_function():.
+            .    return 2.
+

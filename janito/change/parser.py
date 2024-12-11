@@ -1,7 +1,7 @@
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import List, Optional
 from rich.console import Console
 from rich.panel import Panel
 from rich.syntax import Syntax
@@ -29,44 +29,41 @@ RULES for analysis:
 
 Please provide the changes I should apply in the following format:
 
-In order to differentiate content from instructions, prefix all content lines with an extra dot (.) .
-Non dotted lines will be considered as instructions, content must be terminate with a blank line.
-I understand the following changes will be applied to the files listed above:
-
-Create file
+Create File
     Desc: <optional description>
-    Path: <filepath>
-    Content: (dotted content starting below)
+    Path: <path>
+    Content: 
+        .<content lines>.
 
-Replace file
+Replace File
     Desc: <optional description>
-    Path: <filepath>
-    Content: (dotted content starting below)
+    Path: <path>
+    Content: 
+        .<content lines>.
 
-Remove file
+Remove File
     Desc: <optional description>
-    Path: <filepath>
+    Path: <path>
 
-Rename file
+Rename File
     Desc: <optional description>
-    OldPath: <old_filepath>
-    Newpath: <new_filepath>
+    OldPath: <old_path>
+    NewPath: <new_path>
 
-Modify file
+Modify File
     Desc: <optional description>
-    Path: <filepath>
-    Actions:
-        SearchText or SearchRegex (original search content provided below, text or regex)
-<search_content>
-        Replace
-<new_content>
-        Delete (delete previous searched content)
-        ... provide more search/replace/delete actions as needed ...
-
-... provide more file operations as needed ...
+    Path: <path>
+    Modifications: 
+        Select
+            .<search content>.
+        Replace Selected
+            .<replace content>.
+        Select
+            .<search content>.                
+        Delete Selected
 
 RULES:
-1. search content MUST preserve the original indentation/whitespace, while adding the . prefix
+1. search content MUST preserve the original indentation/whitespace, while adding the . prefix and . suffix to each line. eg. .def test():.
 2. consider the effect of previous changes on new modifications (e.g. if a line is removed, it can't be modified later)
 3. if modifications to a file are too big, consider a file replacement instead
 4. ensure the file content is valid and complete after modifications
@@ -78,180 +75,147 @@ RULES:
 @dataclass
 class Modification:
     """Represents a search and replace/delete operation"""
-    search_type: str  # 'SearchText' or 'SearchRegex'
     search_content: str
-    search_display_content: str  # The content as located in the original file (for display, eg. result from regex search)
-    replace_content: Optional[str]  # None for delete operations
+    replace_content: Optional[str] = None
+    is_regex: bool = False
 
 @dataclass
 class FileChange:
     """Represents a file change operation"""
-    operation: str  # 'create', 'replace', 'remove', 'rename', 'modify'
-    description: str
-    filepath: Path
-    new_filepath: Optional[Path]  # Only for rename operations
-    content: Optional[str]  # For create/replace operations
-    modifications: List[Modification]  # For modify operations
-    original_content: Optional[str] = None  # For storing original content in replace operations
+    operation: str
+    path: Path
+    new_path: Optional[Path] = None
+    description: Optional[str] = None
+    content: Optional[str] = None
+    modifications: Optional[List[Modification]] = None
 
-def parse_dotted_content(lines: List[str], start_idx: int) -> tuple[int, str]:
-    """Parse content lines starting with dots, returns (next_line_idx, content)"""
-    if config.debug:
-        console.print(f"[yellow]Parsing dotted content starting at line {start_idx}[/]")
-        
-    content_lines = []
-    idx = start_idx
-    while idx < len(lines) and lines[idx].startswith('.'):
-        content_lines.append(lines[idx][1:])  # Remove the dot
-        idx += 1
-        
-    if config.debug and content_lines:
-        console.print("[dim]Found dotted content:[/]")
-        console.print(Syntax('\n'.join(content_lines), "python", background_color="default"))
-        
-    return idx, '\n'.join(content_lines)
+class CommandParser:
+    def __init__(self, debug=False):
+        self.debug = debug
+        self.console = Console(stderr=True)
+        self.current_line = 0
+        self.lines = []
 
-def parse_modification(lines: List[str], start_idx: int) -> tuple[int, Optional[Modification]]:
-    if config.debug:
-        console.print(f"\n[yellow]Parsing modification at line {start_idx}[/]")
+    def parse_response(self, input_text: str) -> List[FileChange]:
+        if not input_text.strip():
+            return []
         
-    if start_idx >= len(lines):
-        if config.debug:
-            console.print("[red]End of lines reached[/]")
-        return start_idx, None
+        self.lines = [line.rstrip() for line in input_text.splitlines()]
+        self.current_line = 0
+        changes = []
         
-    line = lines[start_idx].strip()
-    if not line or not (line.startswith('SearchText') or line.startswith('SearchRegex')):
-        return start_idx, None
-        
-    search_type = 'SearchText' if line.startswith('SearchText') else 'SearchRegex'
-    idx = start_idx + 1
-    
-    # Parse search content
-    idx, search_content = parse_dotted_content(lines, idx)
-    
-    if idx >= len(lines):
-        raise ValueError("Incomplete modification block")
-        
-    action = lines[idx].strip()
-    idx += 1
-    
-    # Parse replace content if not delete
-    replace_content = None
-    if action == 'Replace':
-        idx, replace_content = parse_dotted_content(lines, idx)
-    elif action != 'Delete':
-        raise ValueError(f"Invalid action: {action}")
-    
-    if config.debug:
-        console.print(f"[green]Found {search_type} operation[/]")
-        if replace_content is not None:
-            console.print("[dim]With replacement content[/]")
-    
-    return idx, Modification(
-        search_type=search_type,
-        search_content=search_content,
-        search_display_content=search_content,
-        replace_content=replace_content
-    )
+        while self.current_line < len(self.lines):
+            command = self.get_next_command()
+            if command:
+                if command in ['Create File', 'Replace File', 'Remove File', 'Rename File', 'Modify File']:
+                    change = self.parse_file_command(command)
+                    if change:
+                        changes.append(change)
+        return changes
 
-def parse_modify_operations(lines: List[str], start_idx: int) -> tuple[int, List[Modification]]:
-    """Parse modification operations, returns (next_line_idx, modifications)"""
-    modifications = []
-    idx = start_idx
-    
-    while idx < len(lines):
-        next_idx, modification = parse_modification(lines, idx)
-        if modification is None:
-            break
-        modifications.append(modification)
-        idx = next_idx
-    
-    return idx, modifications
+    def get_next_command(self) -> Optional[str]:
+        while self.current_line < len(self.lines):
+            line = self.lines[self.current_line].strip()
+            self.current_line += 1
+            if line and not line.startswith('#') and ':' not in line and '.' not in line:
+                return line
+        return None
+
+    def parse_file_command(self, command: str) -> Optional[FileChange]:
+        change = FileChange(operation=command.lower().replace(' ', '_'), path=Path())
+        
+        while self.current_line < len(self.lines):
+            line = self.lines[self.current_line].strip()
+            if not line or line.startswith('#'):
+                self.current_line += 1
+                continue
+            
+            if ':' not in line and '.' not in line:
+                break
+
+            if ':' in line:
+                key, value = [x.strip() for x in line.split(':', 1)]
+                self.current_line += 1
+                
+                if key == 'Modifications':
+                    change.modifications = self.parse_modifications()
+                else:
+                    self.handle_parameter(change, key, value)
+                    
+        return change
+
+    def handle_parameter(self, change: FileChange, key: str, value: str):
+        if key == 'Path':
+            change.path = Path(value) if value else Path(self.get_text_block())
+        elif key == 'NewPath':
+            change.new_path = Path(value) if value else Path(self.get_text_block())
+        elif key == 'OldPath':
+            change.path = Path(value) if value else Path(self.get_text_block())
+        elif key == 'Desc':
+            change.description = value if value else self.get_text_block()
+        elif key == 'Content':
+            change.content = value if value else self.get_text_block()
+
+    def get_text_block(self) -> str:
+        lines = []
+        while self.current_line < len(self.lines):
+            line = self.lines[self.current_line].strip()
+            if not line.startswith('.'):
+                break
+            if not line.endswith('.'):
+                raise ValueError(f"Text block line missing trailing dot: {line}")
+            lines.append(line[1:-1])
+            self.current_line += 1
+        return '\n'.join(lines)
+
+    def parse_modifications(self) -> List[Modification]:
+        modifications = []
+        while self.current_line < len(self.lines):
+            line = self.lines[self.current_line].strip()
+            if not line or line.startswith('#'):
+                self.current_line += 1
+                continue
+                
+            # Stop if we hit a line that doesn't look like part of the modifications block
+            if not line.startswith(('Select', 'SelectRegex')) and ':' not in line and '.' not in line:
+                break
+                
+            if line.startswith(('Select', 'SelectRegex')):
+                is_regex = line.startswith('SelectRegex')
+                self.current_line += 1
+                search_content = self.get_text_block()
+                
+                # Get the next command (Replace/Delete)
+                while self.current_line < len(self.lines):
+                    line = self.lines[self.current_line].strip()
+                    if not line or line.startswith('#'):
+                        self.current_line += 1
+                        continue
+                    break
+                
+                if not line:  # EOF
+                    break
+                    
+                self.current_line += 1
+                
+                if line.startswith(('Delete Selected', 'Delete')):
+                    modifications.append(Modification(search_content=search_content, is_regex=is_regex))
+                elif line.startswith(('Replace Selected', 'Replace')):
+                    replace_content = self.get_text_block()
+                    modifications.append(Modification(
+                        search_content=search_content,
+                        replace_content=replace_content,
+                        is_regex=is_regex
+                    ))
+            else:
+                self.current_line += 1
+                    
+        return modifications
 
 def parse_response(response_text: str) -> List[FileChange]:
-    if config.debug:
-        console.print("\n[yellow]Starting response parsing[/]")
-        
-    lines = response_text.split('\n')
-    changes = []
-    idx = 0
-    
-    while idx < len(lines):
-        line = lines[idx].strip()
-        
-        if not line.startswith(('Create file', 'Replace file', 'Remove file', 'Rename file', 'Modify file')):
-            idx += 1
-            continue
-            
-        if config.debug:
-            console.print(f"\n[blue]Processing {line}[/]")
-            
-        operation = line.lower().split()[0]
-        
-        # Parse common fields
-        desc = ''
-        filepath = None
-        new_filepath = None
-        content = None
-        modifications = []
-        
-        idx += 1
-        while idx < len(lines) and (lines[idx].strip().startswith(('Desc:', 'Path:', 'NewPath:', 'Content:', 'Actions:'))):
-            line = lines[idx].strip()
-            if config.debug:
-                console.print(f"[dim]Processing line: {line}[/]")
-            
-            try:
-                if ':' not in line:
-                    if config.debug:
-                        console.print(f"[red]Invalid line format (missing colon): {line}[/]")
-                    idx += 1
-                    continue
-                    
-                key, value = [x.strip() for x in line.split(':', 1)]
-                
-                if config.debug:
-                    console.print(f"[dim]Key: '{key}', Value: '{value}'[/]")
-                
-                if key == 'Desc':
-                    desc = value
-                elif key == 'Path':
-                    filepath = Path(value)
-                elif key == 'NewPath':
-                    new_filepath = Path(value)
-                elif key == 'Content':
-                    idx += 1
-                    idx, content = parse_dotted_content(lines, idx)
-                    continue
-                elif key == 'Actions':
-                    idx += 1
-                    idx, modifications = parse_modify_operations(lines, idx)
-                    continue
-                
-            except Exception as e:
-                if config.debug:
-                    console.print(f"[red]Error processing line {idx}: {str(e)}[/]")
-                    console.print(f"[red]Line content: {line}[/]")
-            
-            idx += 1
-        
-        if config.debug:
-            console.print(f"[green]Added {operation} change for {filepath}[/]")
-            
-        changes.append(FileChange(
-            operation=operation,
-            description=desc,
-            filepath=filepath,
-            new_filepath=new_filepath,
-            content=content,
-            modifications=modifications
-        ))
-        
-    if config.debug:
-        console.print(f"\n[green]Parsing complete. Found {len(changes)} changes.[/]")
-        
-    return changes
+    """Compatibility wrapper for existing code"""
+    parser = CommandParser(debug=config.debug)
+    return parser.parse_response(response_text)
 
 def build_change_request_prompt(option_text: str, request: str, files_content: str = "") -> str:
     """Build prompt for change request details
