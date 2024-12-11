@@ -49,12 +49,12 @@ Modify File
     Desc: <optional description>
     Path: <path>
     Modifications: 
-        Select
+        Select            
             .def old_function():
             .    return "old"
-        Replace 
+        Replace
             .def new_function():
-            .    return "new"
+            .    return "new"        
         Select
             .def to_be_deleted():
             .    pass
@@ -67,7 +67,10 @@ RULES:
 - ensure the file content is valid and complete after modifications
 - use SearchRegex to reduce search content size when possible, but ensure it is accurate, otherwise use SearchText
 - ensure the search content is unique to avoid unintended modifications
-- do not provide any other feedback or instructions apart from change instructions
+- do not provide any other feedback or instructions after the change instructions
+- comments are allowed with #, but only at the start of the line
+    * comments are ignored during processing but should be provided for context
+    * in the Select commands, comments SHOULD be added to identify the position of the text block in the original files (line number)
 """
 
 @dataclass
@@ -75,7 +78,6 @@ class Modification:
     """Represents a search and replace/delete operation"""
     search_content: str
     replace_content: Optional[str] = None
-    is_regex: bool = False
 
 @dataclass
 class FileChange:
@@ -95,15 +97,24 @@ class CommandParser:
         self.current_line = 0
         self.lines = []
 
+    def format_with_line_numbers(self, content: str) -> str:
+        """Format content with line numbers for debug output."""
+        lines = content.splitlines()
+        max_line_width = len(str(len(lines)))
+        return '\n'.join(f"{i+1:>{max_line_width}}: {line}" for i, line in enumerate(lines))
+
     def parse_response(self, input_text: str) -> List[FileChange]:
         if self.debug:
             self.console.print("[dim]Starting to parse response...[/dim]")
             self.console.print(f"[dim]Total lines to process: {len(input_text.splitlines())}[/dim]")
+            self.console.print("[dim]Content to parse:[/dim]")
+            self.console.print(self.format_with_line_numbers(input_text))
             
         if not input_text.strip():
             return []
         
-        self.lines = [line.rstrip() for line in input_text.splitlines()]
+        # left strip each line to remove leading whitespace
+        self.lines = [line.lstrip() for line in input_text.splitlines()]
         self.current_line = 0
         changes = []
         
@@ -125,7 +136,7 @@ class CommandParser:
         while self.current_line < len(self.lines):
             line = self.lines[self.current_line].strip()
             if self.debug:
-                self.console.print(f"[dim]Line {self.current_line}: Looking for command in: {line}[/dim]")
+                self.console.print(f"[dim]Line {self.current_line + 1}: Looking for command in: {line}[/dim]")
             self.current_line += 1
             if line and not line.startswith('#') and ':' not in line and '.' not in line:
                 return line
@@ -173,17 +184,16 @@ class CommandParser:
             self.console.print(f"[dim]Reading text block starting at line {self.current_line}[/dim]")
         lines = []
         while self.current_line < len(self.lines):
-            # Don't strip the line to preserve trailing spaces
-            line = self.lines[self.current_line]
-            # Only strip left side to check for dot prefix
-            if not line.lstrip().startswith('.'):
-                break
+            line = self.lines[self.current_line].lstrip()
+            if not line or line.startswith('#'):
+                self.current_line += 1
+                continue
+            if not line.startswith('.'):
+                break            
             # Remove only the first dot, preserving all whitespace
-            prefix_len = len(line) - len(line.lstrip())
-            dot_pos = prefix_len + line[prefix_len:].index('.')
-            lines.append(line[:dot_pos] + line[dot_pos + 1:])
+            lines.append(line[1:])
             self.current_line += 1
-        return '\n'.join(lines)
+        return '\n'.join(lines) + '\n'
 
     def parse_modifications(self) -> List[Modification]:
         if self.debug:
@@ -198,13 +208,16 @@ class CommandParser:
                 continue
                 
             # Stop if we hit a line that doesn't look like part of the modifications block
-            if not line.startswith(('Select', 'SelectRegex')) and ':' not in line and '.' not in line:
+            if not line.startswith('Select') and ':' not in line and '.' not in line:
                 break
                 
-            if line.startswith(('Select', 'SelectRegex')):
-                is_regex = line.startswith('SelectRegex')
+            if line.startswith('Select'):
                 self.current_line += 1
                 search_content = self.get_text_block()
+                #print(f"Search content: {search_content}")
+                #for line in search_content.splitlines():
+                #    print(repr(line))
+                #exit(0)
                 
                 # Get the next command (Replace/Delete)
                 while self.current_line < len(self.lines):
@@ -220,13 +233,12 @@ class CommandParser:
                 self.current_line += 1
                 
                 if line.startswith(('Delete Selected', 'Delete')):
-                    modifications.append(Modification(search_content=search_content, is_regex=is_regex))
+                    modifications.append(Modification(search_content=search_content))
                 elif line.startswith(('Replace Selected', 'Replace')):
                     replace_content = self.get_text_block()
                     modifications.append(Modification(
                         search_content=search_content,
-                        replace_content=replace_content,
-                        is_regex=is_regex
+                        replace_content=replace_content
                     ))
             else:
                 self.current_line += 1
