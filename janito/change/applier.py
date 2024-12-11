@@ -206,40 +206,39 @@ class ChangeApplier:
             if self.console:
                 self._print_modification_debug(mod)
 
-            if mod.is_regex:
-                try:
-                    pattern = re.compile(mod.search_content, re.MULTILINE)
-                except re.error as e:
-                    return False, f"Invalid regex pattern: {str(e)}"
-                found_text = pattern.search(modified)
-                if not found_text:
-                    lines = modified.splitlines()
-                    content_with_ws = '\n'.join(f'{i+1:3d} | {line.replace(" ", "·")}↵'
-                                              for i, line in enumerate(lines))
-                    self.console.print(f"\n[yellow]File content ({len(lines)} lines, with whitespace):[/yellow]")
-                    self.console.print(Panel(content_with_ws))
-                    return False, f"Could not find search text in {path}, using regex pattern: {mod.search_content}"
-                found_content = found_text.group(0)
-            else:
-                if mod.search_content not in modified:
-                    lines = modified.splitlines()
-                    content_with_ws = '\n'.join(f'{i+1:3d} | {line.replace(" ", "·")}↵'
-                                              for i, line in enumerate(lines))
-                    self.console.print(f"\n[yellow]File content ({len(lines)} lines, with whitespace):[/yellow]")
-                    self.console.print(Panel(content_with_ws))
-                    return False, f"Could not find search text in {path}"
-                found_content = mod.search_content
+            if mod.search_content not in modified:
+                lines = modified.splitlines()
+                search_lines = mod.search_content.splitlines()
+                # Lets attempt a line by line match starting at modified line: 12 (1 based)
+                for i, line in enumerate(lines):
+                    if i < 12:
+                        continue
+                    match_line = search_lines[i-11]
+                    print(f"Line {i+1}: {repr(line)}\n vs \n{repr(match_line)}\n")
+                    if line == match_line:
+                        self.console.print(f"\n[yellow]Search text found in line {i+1}[/yellow]")
+                    else:
+                        self.console.print(f"\n[yellow]Search text not found in line {i+1}[/yellow]")
+                        exit(0)
+                exit(0)
+
+                content_with_ws = '\n'.join(f'{i+1:3d} | {line.replace(" ", "·")}↵'
+                                          for i, line in enumerate(lines))
+                self.console.print(f"\n[yellow]File content ({len(lines)} lines, with whitespace):[/yellow]")
+                self.console.print(Panel(content_with_ws))
+                return False, f"Could not find search text in {path}"
 
             if mod.replace_content:
                 # Update modified content without rereading from disk
                 start = modified.find(mod.search_content)
                 end = start + len(mod.search_content)                
-                #start, end = find_text_positions(modified, found_content)
                 modified = modified[:start] + mod.replace_content + modified[end:]
             else:
                 # Delete case - Update modified content without rereading from disk
-                start, end = find_text_positions(modified, found_content)
-                modified = modified[:start] + modified[end:]
+                start = modified.find(mod.search_content)
+                end = start + len(mod.search_content)                
+                modified = modified[:start] + mod.replace_content + modified[end:]
+            return True, None
                 
         if modified == current_content:
             if self.console:

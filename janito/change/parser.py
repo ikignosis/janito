@@ -26,6 +26,8 @@ RULES for analysis:
 - Python imports should be inserted at the top of the file
 - For complete file replacements, only use for existing files marked as modified
 - File replacements must preserve the essential functionality
+- When including text for selection, keep the original text intact, eg. (ignore any semantic reference in the text you are elect
+    * eg. even if a line contains the word "optional", keep it in the selection text
 
 Please provide the changes I should apply in the following format:
 

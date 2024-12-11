@@ -33,7 +33,12 @@ def process_change_request(
     
     # Analyze request to get change plan
     content_xml = collect_files_content(paths_to_scan)
+
     analysis = analyze_request(content_xml, request)
+    # handle ctrl-c interrupt
+    if not analysis:
+        console.print("[red]Analysis failed or interrupted[/red]")
+        return False, None
     
     # Get affected files content (new only)
     content_xml = collect_files_content(analysis.get_affected_paths(skip_new=True)) if analysis.affected_files else ""

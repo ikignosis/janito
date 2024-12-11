@@ -54,10 +54,10 @@ def create_new_file_panel(filepath: Path, content: str) -> Panel:
         box=box.ROUNDED
     )
 
-def create_change_panel(search: str, replace: str | None, description: str, index: int, is_regex: bool = False) -> Panel:
+def create_change_panel(search: str, replace: str | None, description: str, index: int) -> Panel:
     """Create a panel for file changes"""
     operation = 'delete' if replace is None else 'modify'
-    search_type = "regex" if is_regex else "plain text"
+    search_type = "plain text"
     
     if replace is None:
         return Panel(
@@ -178,8 +178,7 @@ def show_change_preview(console: Console, filepath: Path, change: FileChange) ->
                 mod.search_content,
                 mod.replace_content,
                 change.description,
-                i,
-                mod.is_regex
+                i
             )
             main_content.append(panel)
         panel = Panel(

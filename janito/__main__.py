@@ -37,7 +37,7 @@ def typer_main(
     config.set_include(include)
 
     if ask:
-        handle_ask(ask, config.workdir, False)
+        handle_ask(ask)
     elif play:
         handle_play(play)
     elif scan:

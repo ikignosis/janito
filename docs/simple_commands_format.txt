@@ -1,0 +1,61 @@
+# Simple Commands Format
+# Version: 1.0
+
+# Overview
+This format provides a structured way to define actionable commands for both LLMs and humans.
+
+# Format Elements
+1. Basic Line Types
+   - Comments: Start with "#"
+   - Commands: Simple lines (no ":", "." or "#"), case insensitive
+   - Text blocks: Start with "."
+   - Key/Value pairs: Contains ": ", keys are case sensitive and must not start with "."
+
+# Command Structure
+- Root level commands must:
+  * Start with "Begin Simple Commands"
+  * End with "End Simple Commands"
+- Commands can have:
+  * Text block parameters
+  * Key/Value parameters
+  * Nested command sequences
+
+# Multiline Values
+- Triggered by empty value after ":"
+- Must contain one type only:
+  * Key/value pairs
+  * Text blocks
+  * Command sequences
+- Content should be indented below parent for easier human reading (not required per Syntax Rules 1)
+
+# Syntax Rules
+- Leading spaces and tabs: trimmed
+- Empty lines: ignored
+- key/values (both trimmed), keys are case sensitive and must not start with "."
+- text block lines, after the "." prefix, whitespaces must be preserved
+- No inline comments
+
+# Command execution order
+- Execution of any command MUST only be performed after a syntax validation of the entire document
+- Commands MUST be executed in the order they are presented in the sequence
+- A command containing nested commands is only considered completed when all the subcommands are completed
+
+# Example Usage
+Begin Simple Commands
+
+Create File
+    Path: example.py
+    Content:
+        .def main():
+        .    print("Hello World")
+
+Modify File
+    Path: existing.py
+    Modifications:
+        Search
+            .old_code()
+        Replace
+            .new_code()
+
+End Simple Commands
+
