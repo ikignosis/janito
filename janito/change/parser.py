@@ -33,7 +33,8 @@ Create File
     Desc: <optional description>
     Path: <path>
     Content: 
-        <content lines> (use . prefix and . suffix for each line)
+        .def new_function():
+        .    return True
 
 Remove File
     Desc: <optional description>
@@ -49,32 +50,19 @@ Modify File
     Path: <path>
     Modifications: 
         Select
-            .<search content>.
-        SelectRegex
-            .<python re earch regex>.
-        Replace Selected
-            .<replace content>.
+            .def old_function():
+            .    return "old"
+        Replace 
+            .def new_function():
+            .    return "new"
         Select
-            .<search content>.                
-        Delete Selected (will delete, prefer it for removing lines)
-
-Replace File
-    Desc: <optional description>
-    Path: <path>
-    Content: 
-        <content lines> (use . prefix and . suffix for each line)
-
-EXAMPLE:
-Create File
-    Desc: Add new function
-    Path: new.py
-    Content:
-        .def new_function():.
-        .   return True.
-
+            .def to_be_deleted():
+            .    pass
+        Delete
 
 RULES:
-- search content MUST preserve the original indentation/whitespace, while adding the . prefix and . suffix to each line. eg. .def test():.
+- content MUST preserve the original indentation/whitespace
+- use . as prefix for text block lines
 - consider the effect of previous changes on new modifications (e.g. if a line is removed, it can't be modified later)
 - ensure the file content is valid and complete after modifications
 - use SearchRegex to reduce search content size when possible, but ensure it is accurate, otherwise use SearchText
@@ -108,6 +96,10 @@ class CommandParser:
         self.lines = []
 
     def parse_response(self, input_text: str) -> List[FileChange]:
+        if self.debug:
+            self.console.print("[dim]Starting to parse response...[/dim]")
+            self.console.print(f"[dim]Total lines to process: {len(input_text.splitlines())}[/dim]")
+            
         if not input_text.strip():
             return []
         
@@ -118,21 +110,30 @@ class CommandParser:
         while self.current_line < len(self.lines):
             command = self.get_next_command()
             if command:
+                if self.debug:
+                    self.console.print(f"[dim]Processing command: {command}[/dim]")
                 if command in ['Create File', 'Replace File', 'Remove File', 'Rename File', 'Modify File']:
                     change = self.parse_file_command(command)
                     if change:
                         changes.append(change)
+
+        if self.debug:
+            self.console.print(f"[dim]Finished parsing, found {len(changes)} changes[/dim]")
         return changes
 
     def get_next_command(self) -> Optional[str]:
         while self.current_line < len(self.lines):
             line = self.lines[self.current_line].strip()
+            if self.debug:
+                self.console.print(f"[dim]Line {self.current_line}: Looking for command in: {line}[/dim]")
             self.current_line += 1
             if line and not line.startswith('#') and ':' not in line and '.' not in line:
                 return line
         return None
 
     def parse_file_command(self, command: str) -> Optional[FileChange]:
+        if self.debug:
+            self.console.print(f"[dim]Parsing file command: {command} at line {self.current_line}[/dim]")
         change = FileChange(operation=command.lower().replace(' ', '_'), path=Path())
         
         while self.current_line < len(self.lines):
@@ -168,21 +169,30 @@ class CommandParser:
             change.content = value if value else self.get_text_block()
 
     def get_text_block(self) -> str:
+        if self.debug:
+            self.console.print(f"[dim]Reading text block starting at line {self.current_line}[/dim]")
         lines = []
         while self.current_line < len(self.lines):
-            line = self.lines[self.current_line].strip()
-            if not line.startswith('.'):
+            # Don't strip the line to preserve trailing spaces
+            line = self.lines[self.current_line]
+            # Only strip left side to check for dot prefix
+            if not line.lstrip().startswith('.'):
                 break
-            if not line.endswith('.'):
-                raise ValueError(f"Text block line missing trailing dot: {line}")
-            lines.append(line[1:-1])
+            # Remove only the first dot, preserving all whitespace
+            prefix_len = len(line) - len(line.lstrip())
+            dot_pos = prefix_len + line[prefix_len:].index('.')
+            lines.append(line[:dot_pos] + line[dot_pos + 1:])
             self.current_line += 1
         return '\n'.join(lines)
 
     def parse_modifications(self) -> List[Modification]:
+        if self.debug:
+            self.console.print(f"[dim]Starting to parse modifications at line {self.current_line}[/dim]")
         modifications = []
         while self.current_line < len(self.lines):
             line = self.lines[self.current_line].strip()
+            if self.debug:
+                self.console.print(f"[dim]Processing modification line {self.current_line}: {line}[/dim]")
             if not line or line.startswith('#'):
                 self.current_line += 1
                 continue
