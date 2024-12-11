@@ -33,13 +33,7 @@ Create File
     Desc: <optional description>
     Path: <path>
     Content: 
-        .<content lines>.
-
-Replace File
-    Desc: <optional description>
-    Path: <path>
-    Content: 
-        .<content lines>.
+        <content lines> (use . prefix and . suffix for each line)
 
 Remove File
     Desc: <optional description>
@@ -56,20 +50,36 @@ Modify File
     Modifications: 
         Select
             .<search content>.
+        SelectRegex
+            .<python re earch regex>.
         Replace Selected
             .<replace content>.
         Select
             .<search content>.                
-        Delete Selected
+        Delete Selected (will delete, prefer it for removing lines)
+
+Replace File
+    Desc: <optional description>
+    Path: <path>
+    Content: 
+        <content lines> (use . prefix and . suffix for each line)
+
+EXAMPLE:
+Create File
+    Desc: Add new function
+    Path: new.py
+    Content:
+        .def new_function():.
+        .   return True.
+
 
 RULES:
-1. search content MUST preserve the original indentation/whitespace, while adding the . prefix and . suffix to each line. eg. .def test():.
-2. consider the effect of previous changes on new modifications (e.g. if a line is removed, it can't be modified later)
-3. if modifications to a file are too big, consider a file replacement instead
-4. ensure the file content is valid and complete after modifications
-5. use SearchRegex to reduce search content size when possible, but ensure it is accurate, otherwise use SearchText
-6. ensure the search content is unique to avoid unintended modifications
-7. do not provide any other feedback or instructions apart from change instructions
+- search content MUST preserve the original indentation/whitespace, while adding the . prefix and . suffix to each line. eg. .def test():.
+- consider the effect of previous changes on new modifications (e.g. if a line is removed, it can't be modified later)
+- ensure the file content is valid and complete after modifications
+- use SearchRegex to reduce search content size when possible, but ensure it is accurate, otherwise use SearchText
+- ensure the search content is unique to avoid unintended modifications
+- do not provide any other feedback or instructions apart from change instructions
 """
 
 @dataclass
@@ -88,6 +98,7 @@ class FileChange:
     description: Optional[str] = None
     content: Optional[str] = None
     modifications: Optional[List[Modification]] = None
+    original_content: Optional[str] = None  # For storing content before replacement
 
 class CommandParser:
     def __init__(self, debug=False):

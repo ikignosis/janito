@@ -90,30 +90,30 @@ class ChangeApplier:
         for change in changes:
             is_valid, error = self.validate_change(change)
             if not is_valid:
-                console.print(f"\n[red]Invalid change for {change.filepath}: {error}[/red]")
+                console.print(f"\n[red]Invalid change for {change.path}: {error}[/red]")
                 return False, set()
         
         # Track modified files and apply changes
         modified_files: Set[Path] = set()
         for change in changes:
             if config.verbose:
-                console.print(f"[dim]Previewing changes for {change.filepath}...[/dim]")
+                console.print(f"[dim]Previewing changes for {change.path}...[/dim]")
             success, error = self.apply_single_change(change)
             if not success:
-                console.print(f"\n[red]Error previewing {change.filepath}: {error}[/red]")
+                console.print(f"\n[red]Error previewing {change.path}: {error}[/red]")
                 return False, modified_files
-            if not change.operation == 'remove':
-                modified_files.add(change.filepath)
-            elif change.operation == 'rename':
-                modified_files.add(change.new_filepath)
+            if not change.operation == 'remove_file':
+                modified_files.add(change.path)
+            elif change.operation == 'rename_file':
+                modified_files.add(change.new_path)
 
         # Validate Python syntax
         python_files = {f for f in modified_files if f.suffix == '.py'}
-        for filepath in python_files:
-            preview_path = self.preview_dir / filepath
+        for path in python_files:
+            preview_path = self.preview_dir / path
             is_valid, error_msg = validate_python_syntax(preview_path.read_text(), preview_path)
             if not is_valid:
-                console.print(f"\n[red]Python syntax validation failed for {filepath}:[/red]")
+                console.print(f"\n[red]Python syntax validation failed for {path}:[/red]")
                 console.print(f"[red]{error_msg}[/red]")
                 return False, modified_files
 
@@ -139,42 +139,43 @@ class ChangeApplier:
 
     def apply_single_change(self, change: FileChange) -> Tuple[bool, Optional[str]]:
         """Apply a single file change to preview directory"""
-        filepath = self.preview_dir / change.path
+        path = self.preview_dir / change.path
         
-        # For replace operations, store original content
-        if change.operation == 'replace_file' and filepath.exists():
-            original_content = filepath.read_text()
+        # For replace operations, get original content before replacing
+        if change.operation == 'replace_file': 
+            if not path.exists():
+                return False, f"Cannot replace non-existent file {path}"
+            # Store original content in the change object for preview purposes
+            change.original_content = path.read_text()
             
         # Handle preview-only operations
         if change.operation == 'remove_file':
-            if filepath.exists():
-                filepath.unlink()
+            if path.exists():
+                path.unlink()
             return True, None
 
         if change.operation in ('create_file', 'replace_file'):
-            filepath.parent.mkdir(parents=True, exist_ok=True)
-            if change.operation == 'create_file' and filepath.exists():
-                return False, f"Cannot create file {filepath} - already exists"
-            if change.operation == 'replace_file' and not filepath.exists():
-                return False, f"Cannot replace non-existent file {filepath}"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            if change.operation == 'create_file' and path.exists():
+                return False, f"Cannot create file {path} - already exists"
             if change.content is not None:
-                filepath.write_text(change.content)
+                path.write_text(change.content)
             return True, None
 
         if change.operation == 'rename_file':
             new_preview_path = self.preview_dir / change.new_path
             new_preview_path.parent.mkdir(parents=True, exist_ok=True)
-            if not filepath.exists():
-                return False, f"Cannot rename non-existent file {filepath}"
-            if filepath.exists():
-                filepath.rename(new_preview_path)
+            if not path.exists():
+                return False, f"Cannot rename non-existent file {path}"
+            if path.exists():
+                path.rename(new_preview_path)
             return True, None
 
         # Handle modify operation
-        if not filepath.exists():
-            return False, f"Cannot modify non-existent file {filepath}"
+        if not path.exists():
+            return False, f"Cannot modify non-existent file {path}"
 
-        content = filepath.read_text()
+        content = path.read_text()
         modified = content
 
         for mod in change.modifications:
@@ -188,11 +189,11 @@ class ChangeApplier:
                     return False, f"Invalid regex pattern: {str(e)}"
                 found_text = pattern.search(modified)
                 if not found_text:
-                    return False, f"Could not find search text in {filepath}, using regex pattern: {mod.search_content}"
+                    return False, f"Could not find search text in {path}, using regex pattern: {mod.search_content}"
                 found_content = found_text.group(0)
             else:
                 if mod.search_content not in modified:
-                    return False, f"Could not find search text in {filepath}"
+                    return False, f"Could not find search text in {path}"
                 found_content = mod.search_content
 
             if mod.replace_content:
@@ -212,7 +213,7 @@ class ChangeApplier:
         if self.console:
             self.console.print("\n[green]Changes applied successfully[/green]")
             
-        filepath.write_text(modified)
+        path.write_text(modified)
         return True, None
 
     def _print_modification_debug(self, mod: Modification) -> None:

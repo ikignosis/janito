@@ -165,21 +165,21 @@ def create_remove_file_panel(filepath: Path) -> Panel:
 
 def show_change_preview(console: Console, filepath: Path, change: FileChange) -> None:
     """Display a preview of changes for a single file"""
-    if change.operation == 'remove':
+    if change.operation == 'remove_file':
         panel = create_remove_file_panel(filepath)
-    elif change.operation == 'create':
+    elif change.operation == 'create_file':
         panel = create_new_file_panel(filepath, change.content)
-    elif change.operation == 'replace':
+    elif change.operation == 'replace_file':
         panel = create_replace_panel(filepath, change)
-    elif change.operation == 'modify':
+    elif change.operation == 'modify_file':
         main_content = []
         for i, mod in enumerate(change.modifications, 1):
             panel = create_change_panel(
-                mod.search_display_content or mod.search_content,
+                mod.search_content,
                 mod.replace_content,
                 change.description,
                 i,
-                mod.search_type == 'SearchRegex'
+                mod.is_regex
             )
             main_content.append(panel)
         panel = Panel(
@@ -202,45 +202,44 @@ def preview_all_changes(console: Console, changes: List[FileChange]) -> None:
     
     # Group changes by operation type
     change_groups = {
-        'create': [], 'modify': [], 'replace': [],
-        'remove': [], 'rename': []
+        'create_file': [], 'modify_file': [], 'replace_file': [],
+        'remove_file': [], 'rename_file': []
     }
     
     for change in changes:
         change_groups[change.operation].append(change)
     
-    # Show changes in logical order: create, modify, replace, rename, remove
-    if change_groups['create']:
+    # Show changes in logical order
+    if change_groups['create_file']:
         console.print("\n[green]✨ Created Files:[/green]")
-        for change in change_groups['create']:
-            show_change_preview(console, change.filepath, change)
+        for change in change_groups['create_file']:
+            show_change_preview(console, change.path, change)
             
-    if change_groups['modify']:
+    if change_groups['modify_file']:
         console.print("\n[yellow]🔧 Modified Files:[/yellow]")
-        for change in change_groups['modify']:
-            show_change_preview(console, change.filepath, change)
+        for change in change_groups['modify_file']:
+            show_change_preview(console, change.path, change)
             
-    if change_groups['replace']:
+    if change_groups['replace_file']:
         console.print("\n[yellow]🔄 Replaced Files:[/yellow]")
-        for change in change_groups['replace']:
-            show_change_preview(console, change.filepath, change)
+        for change in change_groups['replace_file']:
+            show_change_preview(console, change.path, change)
             
-    if change_groups['rename']:
+    if change_groups['rename_file']:
         console.print("\n[blue]📝 Renamed Files:[/blue]")
-        for change in change_groups['rename']:
-            console.print(f"  [dim]{change.filepath}[/dim] → [bold]{change.new_filepath}[/bold]")
+        for change in change_groups['rename_file']:
+            console.print(f"  [dim]{change.path}[/dim] → [bold]{change.new_path}[/bold]")
             
-    if change_groups['remove']:
+    if change_groups['remove_file']:
         console.print("\n[red]🗑️ Removed Files:[/red]")
-        for change in change_groups['remove']:
-            show_change_preview(console, change.filepath, change)
+        for change in change_groups['remove_file']:
+            show_change_preview(console, change.path, change)
 
 def _print_debug_info(console: Console, changes: List[FileChange]) -> None:
     """Print debug information about file changes"""
     console.print("\n[blue]🔍 Debug: File Changes Analysis[/blue]")
     
-    # Group changes by operation
-    operations = {'create': [], 'modify': [], 'replace': [], 'remove': [], 'rename': []}
+    operations = {'create_file': [], 'modify_file': [], 'replace_file': [], 'remove_file': [], 'rename_file': []}
     for change in changes:
         operations[change.operation].append(change)
         
@@ -250,24 +249,24 @@ def _print_debug_info(console: Console, changes: List[FileChange]) -> None:
             
         console.print(f"\n[yellow]Operation: {op_type.title()}[/yellow] ({len(op_changes)} files)")
         for change in op_changes:
-            console.print(f"\n[cyan]File:[/cyan] {change.filepath}")
+            console.print(f"\n[cyan]File:[/cyan] {change.path}")
             if change.description:
                 console.print(f"  [dim]Description:[/dim] {change.description}")
                 
-            if op_type == 'rename':
-                console.print(f"  [dim]New Path:[/dim] {change.new_filepath}")
+            if op_type == 'rename_file':
+                console.print(f"  [dim]New Path:[/dim] {change.new_path}")
                 
-            elif op_type == 'modify':
+            elif op_type == 'modify_file':
                 console.print("  [dim]Modifications:[/dim]")
                 for i, mod in enumerate(change.modifications, 1):
-                    console.print(f"    [white]#{i} ({mod.search_type}):[/white]")
+                    console.print(f"    [white]#{i}:[/white]")
                     console.print(f"      Search Length: {len(mod.search_content)} chars")
                     if mod.replace_content is not None:
                         console.print(f"      Replace Length: {len(mod.replace_content)} chars")
                     else:
                         console.print("      Action: Delete")
                         
-            elif op_type in ['create', 'replace']:
+            elif op_type in ['create_file', 'replace_file']:
                 size = len(change.content.encode('utf-8'))
                 console.print(f"  [dim]Content Size:[/dim] {size/1024:.1f} KB")
 
