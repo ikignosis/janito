@@ -1,7 +1,6 @@
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Any
 from enum import Enum
-from dataclasses import dataclass
-from typing import List, Dict, Any, Callable, Optional, Union
-from pprint import pprint
 
 class LineType(Enum):
     COMMENT = "COMMENT"
@@ -13,339 +12,333 @@ class LineType(Enum):
     EMPTY = "EMPTY"
 
 @dataclass
-class Line:
-    type: LineType
-    content: Union[str, Dict[str, Any]]
-    raw: str
-    line_number: int
-    indentation: int
-
-@dataclass
-class Section:
+class Statement:
     name: str
-    properties: Dict[str, str]
-    content: List[Any]
-    
-    def get_text_content(self) -> str:
-        """Helper method to extract text block content from a section"""
-        return "\n".join(
-            line.content for line in self.content 
-            if isinstance(line, Line) and line.type == LineType.TEXT_BLOCK
-        )
+    text: str = ""
+    key_values: Dict[str, str] = field(default_factory=dict)
+    sections: Dict[str, List['Statement']] = field(default_factory=dict)
+    parent: Optional['Statement'] = None
+    line_number: int = 0
 
-@dataclass
-class StatementContext:
-    """Context object passed to statement handlers"""
-    statement: str
-    parameters: Dict[str, str]
-    sections: Dict[str, Section]
-    line_number: int
-
-class ParserError(Exception):
-    """Custom exception for parser errors"""
-    def __init__(self, message: str, line_number: int):
+class ParsingError(Exception):
+    def __init__(self, message: str, line_number: int, context: Optional[List[str]] = None):
+        self.message = message
         self.line_number = line_number
-        super().__init__(f"Line {line_number}: {message}")
+        self.context = context or []
+        super().__init__(f"Line {line_number}: {message} (Context: {' > '.join(self.context)})")
 
 class SSFParser:
     def __init__(self):
         self.current_line = 0
-        self.statement_handlers: Dict[str, Callable[[StatementContext], None]] = {}
-        self.current_statement_params: Dict[str, str] = {}
+        self.section_stack: List[str] = []
         
-    def register_handler(self, statement_name: str, handler: Callable[[StatementContext], None]):
-        """Register a handler for a specific statement name"""
-        self.statement_handlers[statement_name] = handler
-    
-    def _parse_properties(self, prop_part: str) -> Dict[str, str]:
-        """Helper method to parse section properties"""
-        properties = {}
-        current_key = None
-        current_value = []
+    def identify_line_type(self, line: str) -> LineType:
+        """Identify the type of a line based on the format rules."""
+        stripped_line = line.lstrip()
         
-        # Handle quoted values with spaces
-        in_quotes = False
-        for part in prop_part.split():
-            if '=' in part and not in_quotes:
-                if current_key:
-                    properties[current_key] = " ".join(current_value)
-                key, value = part.split('=', 1)
-                if value.startswith('"'):
-                    if value.endswith('"'):
-                        properties[key] = value[1:-1]
-                    else:
-                        current_key = key
-                        current_value = [value[1:]]
-                        in_quotes = True
-                else:
-                    properties[key] = value
-            elif in_quotes:
-                if part.endswith('"'):
-                    current_value.append(part[:-1])
-                    properties[current_key] = " ".join(current_value)
-                    in_quotes = False
-                else:
-                    current_value.append(part)
-                    
-        return properties
-    
-    def parse_line(self, line: str) -> Line:
-        """Parse a single line and determine its type and content."""
-        self.current_line += 1
-        
-        # Calculate indentation before stripping
-        indentation = len(line) - len(line.lstrip())
-        line = line.strip()
-        
-        if not line:
-            return Line(LineType.EMPTY, "", "", self.current_line, indentation)
-            
-        try:
-            if line.startswith('#'):
-                return Line(LineType.COMMENT, line[1:].strip(), line, self.current_line, indentation)
-                
-            if line.startswith('.'):
-                return Line(LineType.TEXT_BLOCK, line[1:], line, self.current_line, indentation)
-                
-            if line.endswith('/'):
-                section_name = line[:-1].strip()
-                if not section_name:
-                    raise ParserError("Empty section end tag", self.current_line)
-                return Line(LineType.SECTION_END, section_name, line, self.current_line, indentation)
-                
-            if line.startswith('/'):
-                base = line[1:].strip()
-                if not base:
-                    raise ParserError("Empty section start tag", self.current_line)
-                    
-                properties = {}
-                if ' ' in base:
-                    name_part, prop_part = base.split(' ', 1)
-                    properties = self._parse_properties(prop_part)
-                else:
-                    name_part = base
-                    
-                return Line(LineType.SECTION_START, 
-                           {"name": name_part, "properties": properties}, 
-                           line, 
-                           self.current_line,
-                           indentation)
-                
-            if ':' in line:
-                key, value = line.split(':', 1)
-                key = key.strip()
-                if not key:
-                    raise ParserError("Empty key in key-value pair", self.current_line)
-                return Line(LineType.KEY_VALUE, 
-                           {"key": key, "value": value.strip()}, 
-                           line,
-                           self.current_line,
-                           indentation)
-                
-            return Line(LineType.STATEMENT, line, line, self.current_line, indentation)
-            
-        except Exception as e:
-            if not isinstance(e, ParserError):
-                raise ParserError(str(e), self.current_line) from e
-            raise
-            
-    def parse(self, content: str) -> List[Any]:
-        """Parse the entire SSF content."""
-        self.current_line = 0  # Reset line counter
+        if not stripped_line:
+            return LineType.EMPTY
+        if stripped_line.startswith('#'):
+            return LineType.COMMENT
+        if stripped_line.startswith('.'):
+            return LineType.TEXT_BLOCK
+        if ':' in stripped_line:
+            return LineType.KEY_VALUE
+        if stripped_line.startswith('/'):
+            return LineType.SECTION_START
+        if stripped_line.endswith('/'):
+            return LineType.SECTION_END
+        return LineType.STATEMENT
+
+    def get_indentation(self, line: str) -> int:
+        """Get the indentation level of a line."""
+        return len(line) - len(line.lstrip())
+
+    def parse(self, content: str) -> List[Statement]:
+        """Parse the SSF content and return a list of statements."""
         lines = content.splitlines()
-        parsed = []
-        section_stack = []
+        statements: List[Statement] = []
+        current_statement: Optional[Statement] = None
+        text_block_lines: List[str] = []
         
-        current_statement: Optional[Dict[str, Any]] = None
+        self.current_line = 0
+        self.section_stack = []
         
-        def finish_current_statement():
-            nonlocal current_statement
-            if current_statement and current_statement["name"] in self.statement_handlers:
-                context = StatementContext(
-                    statement=current_statement["name"],
-                    parameters=current_statement["parameters"],
-                    sections=current_statement["sections"],
-                    line_number=self.current_line
-                )
-                try:
-                    self.statement_handlers[current_statement["name"]](context)
-                except Exception as e:
-                    raise ParserError(f"Handler error for statement '{current_statement['name']}': {str(e)}", 
-                                    self.current_line) from e
-                parsed.append(current_statement)
-            current_statement = None
-        
-        for line in lines:
-            parsed_line = self.parse_line(line)
+        while self.current_line < len(lines):
+            original_line = lines[self.current_line]
+            line = original_line.rstrip()
+            line_type = self.identify_line_type(line)
             
-            if parsed_line.type == LineType.EMPTY:
-                continue
+            try:
+                if line_type == LineType.EMPTY or line_type == LineType.COMMENT:
+                    self.current_line += 1
+                    continue
                 
-            # Validate section nesting
-            if parsed_line.type == LineType.SECTION_END:
-                if not section_stack:
-                    raise ParserError(f"Unexpected section end '{parsed_line.content}'", parsed_line.line_number)
-                if section_stack[-1].name != parsed_line.content:
-                    raise ParserError(
-                        f"Mismatched section end. Expected '{section_stack[-1].name}/', got '{parsed_line.content}/'",
-                        parsed_line.line_number
+                elif line_type == LineType.STATEMENT:
+                    if text_block_lines:
+                        if current_statement:
+                            current_statement.text = '\n'.join(text_block_lines)
+                        text_block_lines = []
+                    
+                    current_statement = Statement(
+                        name=line.strip(),
+                        line_number=self.current_line + 1
                     )
+                    
+                    if self.section_stack:
+                        parent_statement = statements[-1]
+                        for section in self.section_stack[:-1]:
+                            parent_statement = parent_statement.sections[section][-1]
+                        
+                        current_statement.parent = parent_statement
+                        section_name = self.section_stack[-1]
+                        if section_name not in parent_statement.sections:
+                            parent_statement.sections[section_name] = []
+                        parent_statement.sections[section_name].append(current_statement)
+                    else:
+                        statements.append(current_statement)
+                
+                elif line_type == LineType.TEXT_BLOCK:
+                    if line.lstrip().startswith('.'):
+                        # Find the position of the dot and keep everything after it
+                        dot_pos = line.find('.')
+                        text_content = line[dot_pos + 1:]
+                        text_block_lines.append(text_content)
+                    else:
+                        text_block_lines.append(line)
+                
+                elif line_type == LineType.KEY_VALUE:
+                    if text_block_lines:
+                        if current_statement:
+                            current_statement.text = '\n'.join(text_block_lines)
+                        text_block_lines = []
+                    
+                    key, value = [x.strip() for x in line.split(':', 1)]
+                    if current_statement:
+                        if key in current_statement.key_values:
+                            raise ParsingError(f"Duplicate key '{key}' found", self.current_line + 1)
+                        current_statement.key_values[key] = value
+                
+                elif line_type == LineType.SECTION_START:
+                    section_name = line.lstrip().lstrip('/').strip()
+                    if not section_name.isalnum():
+                        raise ParsingError("Section name must be alphanumeric", self.current_line + 1)
+                    if current_statement and section_name in current_statement.sections:
+                        raise ParsingError(f"Duplicate section '{section_name}' found", self.current_line + 1)
+                    self.section_stack.append(section_name)
+                
+                elif line_type == LineType.SECTION_END:
+                    section_name = line.rstrip().rstrip('/').strip()
+                    if not self.section_stack:
+                        raise ParsingError("Unexpected section end", self.current_line + 1)
+                    if self.section_stack[-1] != section_name:
+                        raise ParsingError(
+                            f"Section end mismatch. Expected '{self.section_stack[-1]}', got '{section_name}'",
+                            self.current_line + 1
+                        )
+                    if current_statement and section_name in current_statement.sections:
+                        if not current_statement.sections[section_name]:
+                            raise ParsingError(f"Empty section '{section_name}' is not allowed", self.current_line + 1)
+                    self.section_stack.pop()
             
-            # Handle statements and their parameters
-            if parsed_line.type == LineType.STATEMENT:
-                finish_current_statement()
-                
-                current_statement = {
-                    "type": "statement",
-                    "name": parsed_line.content,
-                    "parameters": {},
-                    "sections": {},
-                    "line_number": parsed_line.line_number
-                }
-                
-            elif parsed_line.type == LineType.KEY_VALUE:
-                if current_statement:
-                    current_statement["parameters"][parsed_line.content["key"]] = parsed_line.content["value"]
-                else:
-                    raise ParserError("Key-value pair outside of statement", parsed_line.line_number)
-                
-            elif parsed_line.type == LineType.SECTION_START:
-                new_section = Section(
-                    name=parsed_line.content["name"],
-                    properties=parsed_line.content["properties"],
-                    content=[]
-                )
-                
-                if section_stack:
-                    section_stack[-1].content.append(new_section)
-                else:
-                    if current_statement:
-                        current_statement["sections"][new_section.name] = new_section
-                    else:
-                        parsed.append(new_section)
-                    
-                section_stack.append(new_section)
-                
-            elif parsed_line.type == LineType.SECTION_END:
-                section_stack.pop()
-                    
-            else:  # COMMENT or TEXT_BLOCK
-                if section_stack:
-                    section_stack[-1].content.append(parsed_line)
-                else:
-                    if current_statement:
-                        # Store top-level comments/text within current statement
-                        if "content" not in current_statement:
-                            current_statement["content"] = []
-                        current_statement["content"].append(parsed_line)
-                    else:
-                        parsed.append(parsed_line)
+            except Exception as e:
+                if not isinstance(e, ParsingError):
+                    e = ParsingError(str(e), self.current_line + 1, self.section_stack)
+                raise e
+            
+            self.current_line += 1
         
-        # Check for unclosed sections
-        if section_stack:
-            raise ParserError(
-                f"Unclosed section: '{section_stack[-1].name}'", 
-                self.current_line
+        if self.section_stack:
+            raise ParsingError(
+                f"Unclosed sections: {', '.join(self.section_stack)}",
+                self.current_line,
+                self.section_stack
             )
         
-        # Process final statement if exists
-        finish_current_statement()
-            
-        return parsed
+        return statements
+
+class SSFExecutor:
+    def __init__(self):
+        self.handlers: Dict[str, Any] = {}
+        self.section_handlers: Dict[str, Dict[str, Any]] = {}
+        
+    def register_handler(self, statement_name: str, handler, section: Optional[str] = None):
+        """
+        Register a handler function for a specific statement type.
+        If section is provided, registers the handler for that specific section context.
+        """
+        if section:
+            if section not in self.section_handlers:
+                self.section_handlers[section] = {}
+            self.section_handlers[section][statement_name] = handler
+        else:
+            self.handlers[statement_name] = handler
     
+    def execute(self, statements: List[Statement]) -> None:
+        """Execute the parsed statements in order."""
+        try:
+            for statement in statements:
+                self._execute_statement(statement)
+        except Exception as e:
+            context = []
+            current = statement
+            while current:
+                context.insert(0, current.name)
+                current = current.parent
+            raise RuntimeError(f"Error executing statement '{statement.name}' at line {statement.line_number}: {str(e)}\nContext: {' > '.join(context)}")
+    
+    def _execute_statement(self, statement: Statement) -> Any:
+        """Execute a single statement and its sections. Returns the handler's result if any."""
+        # Determine the correct handler based on context
+        handler = None
+        if statement.parent:
+            # Check for section-specific handlers
+            parent_sections = statement.parent.sections.keys()
+            for section_name in parent_sections:
+                if section_name in self.section_handlers and statement.name in self.section_handlers[section_name]:
+                    handler = self.section_handlers[section_name][statement.name]
+                    break
+        
+        # Fall back to global handlers if no section-specific handler found
+        if handler is None:
+            if statement.name not in self.handlers:
+                raise ValueError(f"No handler registered for statement type: {statement.name}")
+            handler = self.handlers[statement.name]
+        
+        # Execute the handler and store result
+        result = handler(statement)
+        
+        # Execute any nested sections
+        for section_statements in statement.sections.values():
+            for section_statement in section_statements:
+                self._execute_statement(section_statement)
+        
+        return result
+
+class FileState:
+    def __init__(self):
+        self.files = {}
+        self.current_selections = {}
+    
+    def create_file(self, filename: str, content: str):
+        self.files[filename] = content
+        print(f"Created file '{filename}' with content:\n{content}")
+    
+    def select_text(self, filename: str, text: str) -> bool:
+        if filename not in self.files:
+            raise ValueError(f"File '{filename}' does not exist")
+        if text not in self.files[filename]:
+            raise ValueError(f"Text '{text}' not found in file '{filename}'")
+        self.current_selections[filename] = text
+        print(f"Selected text in '{filename}': {text}")
+        return True
+    
+    def replace_text(self, filename: str, new_text: str):
+        if filename not in self.files or filename not in self.current_selections:
+            raise ValueError(f"No active selection in file '{filename}'")
+        old_text = self.current_selections[filename]
+        self.files[filename] = self.files[filename].replace(old_text, new_text)
+        print(f"Replaced text in '{filename}':\nOld: {old_text}\nNew: {new_text}")
+    
+    def delete_text(self, filename: str):
+        if filename not in self.files or filename not in self.current_selections:
+            raise ValueError(f"No active selection in file '{filename}'")
+        old_text = self.current_selections[filename]
+        self.files[filename] = self.files[filename].replace(old_text, '')
+        print(f"Deleted text in '{filename}': {old_text}")
 
 def main():
-    """Example usage of the SSF Parser"""
-    
-    # Define some example handlers
-    def create_file_handler(context: StatementContext):
-        print(f"\nProcessing Create File statement:")
-        print(f"  Path: {context.parameters.get('Path')}")
-        print(f"  Mode: {context.parameters.get('Mode', 'default')}")
-        
-        if 'Content' in context.sections:
-            content = context.sections['Content'].get_text_content()
-            print("  Content:")
-            for line in content.split('\n'):
-                print(f"    {line}")
-
-    def modify_file_handler(context: StatementContext):
-        print(f"\nProcessing Modify File statement:")
-        print(f"  Path: {context.parameters.get('Path')}")
-        
-        if 'Modifications' in context.sections:
-            mods = context.sections['Modifications']
-            print("  Modifications:")
-            for item in mods.content:
-                if isinstance(item, Section):
-                    print(f"    - {item.name} modification")
-                    if item.properties:
-                        print(f"      Properties: {item.properties}")
-                    if len(item.content) > 0:
-                        print("      Content:")
-                        for subitem in item.content:
-                            if isinstance(subitem, Section):
-                                content = subitem.get_text_content()
-                                print(f"        {subitem.name}:")
-                                for line in content.split('\n'):
-                                    print(f"          {line}")
-
-    # Create parser instance and register handlers
+    # Initialize parser, executor and file state
     parser = SSFParser()
-    parser.register_handler("Create File", create_file_handler)
-    parser.register_handler("Modify File", modify_file_handler)
+    executor = SSFExecutor()
+    file_state = FileState()
 
-    # Example SSF content demonstrating various features
-    test_content = """
-# This is a comment
+    # Handler implementations
+    def handle_create_file(statement: Statement):
+        filename = statement.key_values['name']
+        content = statement.text
+        file_state.create_file(filename, content)
+
+    def handle_modify_file(statement: Statement):
+        filename = statement.key_values['file']
+        print(f"Starting modifications for file: {filename}")
+
+    def handle_select_text(statement: Statement):
+        parent = statement.parent
+        if not parent or 'file' not in parent.key_values:
+            raise ValueError("Select Text must be within a Modify File statement")
+        filename = parent.key_values['file']
+        return file_state.select_text(filename, statement.text)
+
+    def handle_replace_with(statement: Statement):
+        parent = statement.parent
+        if not parent or 'file' not in parent.key_values:
+            raise ValueError("Replace With must be within a Modify File statement")
+        filename = parent.key_values['file']
+        file_state.replace_text(filename, statement.text)
+
+    def handle_delete(statement: Statement):
+        parent = statement.parent
+        if not parent or 'file' not in parent.key_values:
+            raise ValueError("Delete must be within a Modify File statement")
+        filename = parent.key_values['file']
+        file_state.delete_text(filename)
+
+    # Register the handlers
+    executor.register_handler('Create File', handle_create_file)
+    executor.register_handler('Modify File', handle_modify_file)
+    executor.register_handler('Select Text', handle_select_text, 'Modifications')
+    executor.register_handler('Replace With', handle_replace_with, 'Modifications')
+    executor.register_handler('Delete', handle_delete, 'Modifications')
+
+    # Example SSF content demonstrating indentation preservation
+    ssf_content = """# Create initial file with indented content
 Create File
-    Path: /path/to/test.py
-    Mode: write
-    /Content
-    .def example_function():
-    .    # This is a nested comment
-    .    print("Hello, World!")
-    .    
-    .    for i in range(5):
-    .        print(f"Count: {i}")
-    Content/
+name: example.py
+.def hello():
+.    print("Hello, World!")
+.    if True:
+.        print("Deeply indented!")
+.        for i in range(3):
+.            print(f"Count: {i}")
+.
+.hello()
 
-# Another comment
+# Modify the file
 Modify File
-    Path: /path/to/test.py
-    /Modifications
-        /replace target="function" mode="exact"
-            /text
-                .def old_function():
-                .    return True
-            text/
-            /with
-                .def new_function():
-                .    return False
-            with/
-        replace/
-        
-        /append position="end"
-            /text
-                .# Appended content
-                .print("Done!")
-            text/
-        append/
-    Modifications/
-"""
+    file: example.py
+/Modifications
+Select Text
+.def hello():
+.    print("Hello, World!")
+.    if True:
+.        print("Deeply indented!")
+Replace With
+.def hello():
+.    print("Hello, Universe!")
+.    if True:
+.        print("Still indented!")
+Select Text
+.        for i in range(3):
+.            print(f"Count: {i}")
+Delete
+Modifications/"""
 
     try:
-        # Parse the content
-        print("Parsing SSF content...")
-        result = parser.parse(test_content)
-        
-        print("\nComplete parse tree:")
-        pprint(result, indent=2, width=80, depth=None)
-        
-    except ParserError as e:
-        print(f"Parser error: {e}")
-    except Exception as e:
-        print(f"Unexpected error: {e}")
+        # Parse and execute
+        print("Parsing and executing SSF content...")
+        statements = parser.parse(ssf_content)
+        executor.execute(statements)
+
+        # Show final file state
+        print("\nFinal file contents:")
+        for filename, content in file_state.files.items():
+            print(f"\n{filename}:\n{content}")
+
+    except ParsingError as e:
+        print(f"Parsing error: {e}")
+    except RuntimeError as e:
+        print(f"Execution error: {e}")
 
 if __name__ == "__main__":
     main()
