@@ -3,9 +3,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 from rich.console import Console
-from rich.panel import Panel
-from rich.syntax import Syntax
 from janito.config import config
+from janito.ssfparser.ssfparser import SSFParser, StatementContext, Section, Line, LineType
 
 console = Console(stderr=True)
 
@@ -26,53 +25,50 @@ RULES for analysis:
 - Python imports should be inserted at the top of the file
 - For complete file replacements, only use for existing files marked as modified
 - File replacements must preserve the essential functionality
-- When including text for selection, keep the original text intact, eg. (ignore any semantic reference in the text you are elect
-    * eg. even if a line contains the word "optional", keep it in the selection text
+- When including text for selection, keep the original text intact
 
-Please provide the changes I should apply in the following format:
+Please provide me the changes instructions using the following format:
 
 Create File
-    Desc: <optional description>
-    Path: <path>
-    Content: 
-        .def new_function():
-        .    return True
+    Path:file.py
+    /Content
+    .def new_function():
+    .    return True
+    Content/
 
 Remove File
-    Desc: <optional description>
-    Path: <path>
+    Path: file.py
 
 Rename File
-    Desc: <optional description>
-    OldPath: <old_path>
-    NewPath: <new_path>
+    OldPath: old.py
+    NewPath: new.py
 
 Modify File
-    Desc: <optional description>
-    Path: <path>
-    Modifications: 
-        Select            
-            .def old_function():
-            .    return "old"
-        Replace
-            .def new_function():
-            .    return "new"        
-        Select
-            .def to_be_deleted():
-            .    pass
-        Delete
+    Path: file.py
+    /Modifications
+        /replace
+            /text
+                .def old_function():
+                .    return "old"
+            text/
+            /with
+                .def new_function():
+                .    return "new"        
+            with/
+        replace/
+        /delete
+            /text
+                .def to_be_deleted():
+                .    pass
+            text/
+        delete/
+    Modifications/
 
 RULES:
 - content MUST preserve the original indentation/whitespace
 - use . as prefix for text block lines
-- consider the effect of previous changes on new modifications (e.g. if a line is removed, it can't be modified later)
-- ensure the file content is valid and complete after modifications
-- use SearchRegex to reduce search content size when possible, but ensure it is accurate, otherwise use SearchText
-- ensure the search content is unique to avoid unintended modifications
+- ensure search content is unique to avoid unintended modifications
 - do not provide any other feedback or instructions after the change instructions
-- comments are allowed with #, but only at the start of the line
-    * comments are ignored during processing but should be provided for context
-    * in the Select commands, comments SHOULD be added to identify the position of the text block in the original files (line number)
 """
 
 @dataclass
@@ -96,8 +92,7 @@ class CommandParser:
     def __init__(self, debug=False):
         self.debug = debug
         self.console = Console(stderr=True)
-        self.current_line = 0
-        self.lines = []
+        self.ssf_parser = SSFParser()
 
     def format_with_line_numbers(self, content: str) -> str:
         """Format content with line numbers for debug output."""
@@ -108,143 +103,80 @@ class CommandParser:
     def parse_response(self, input_text: str) -> List[FileChange]:
         if self.debug:
             self.console.print("[dim]Starting to parse response...[/dim]")
-            self.console.print(f"[dim]Total lines to process: {len(input_text.splitlines())}[/dim]")
-            self.console.print("[dim]Content to parse:[/dim]")
-            self.console.print(self.format_with_line_numbers(input_text))
             
         if not input_text.strip():
             return []
-        
-        # left strip each line to remove leading whitespace
-        self.lines = [line.lstrip() for line in input_text.splitlines()]
-        self.current_line = 0
+
+        parsed_items = self.ssf_parser.parse(input_text)
         changes = []
-        
-        while self.current_line < len(self.lines):
-            command = self.get_next_command()
-            if command:
-                if self.debug:
-                    self.console.print(f"[dim]Processing command: {command}[/dim]")
-                if command in ['Create File', 'Replace File', 'Remove File', 'Rename File', 'Modify File']:
-                    change = self.parse_file_command(command)
-                    if change:
-                        changes.append(change)
+
+        for item in parsed_items:
+            if not isinstance(item, dict) or item.get('type') != 'statement':
+                continue
+            
+            if item['name'] in ['Create File', 'Replace File', 'Remove File', 'Rename File', 'Modify File']:
+                change = self.convert_statement_to_filechange(item)
+                if change:
+                    changes.append(change)
 
         if self.debug:
             self.console.print(f"[dim]Finished parsing, found {len(changes)} changes[/dim]")
         return changes
 
-    def get_next_command(self) -> Optional[str]:
-        while self.current_line < len(self.lines):
-            line = self.lines[self.current_line].strip()
-            if self.debug:
-                self.console.print(f"[dim]Line {self.current_line + 1}: Looking for command in: {line}[/dim]")
-            self.current_line += 1
-            if line and not line.startswith('#') and ':' not in line and '.' not in line:
-                return line
-        return None
+    def convert_statement_to_filechange(self, statement: dict) -> Optional[FileChange]:
+        """Convert a SSF Statement to a FileChange object"""
+        if not statement.get('parameters'):
+            return None
 
-    def parse_file_command(self, command: str) -> Optional[FileChange]:
-        if self.debug:
-            self.console.print(f"[dim]Parsing file command: {command} at line {self.current_line}[/dim]")
-        change = FileChange(operation=command.lower().replace(' ', '_'), path=Path())
-        
-        while self.current_line < len(self.lines):
-            line = self.lines[self.current_line].strip()
-            if not line or line.startswith('#'):
-                self.current_line += 1
-                continue
-            
-            if ':' not in line and '.' not in line:
-                break
+        change = FileChange(
+            operation=statement['name'].lower().replace(' ', '_'),
+            path=Path()
+        )
 
-            if ':' in line:
-                key, value = [x.strip() for x in line.split(':', 1)]
-                self.current_line += 1
-                
-                if key == 'Modifications':
-                    change.modifications = self.parse_modifications()
-                else:
-                    self.handle_parameter(change, key, value)
-                    
+        # Handle parameters
+        for key, value in statement['parameters'].items():
+            if key == 'Path':
+                change.path = Path(value)
+            elif key == 'NewPath':
+                change.new_path = Path(value)
+            elif key == 'OldPath':
+                change.path = Path(value)
+            elif key == 'Desc':
+                change.description = value
+
+        # Handle sections
+        if 'Content' in statement.get('sections', {}):
+            content_section = statement['sections']['Content']
+            change.content = content_section.get_text_content()
+
+        if 'Modifications' in statement.get('sections', {}):
+            mods_section = statement['sections']['Modifications']
+            change.modifications = self.parse_modifications_from_list(mods_section.content)
+
         return change
 
-    def handle_parameter(self, change: FileChange, key: str, value: str):
-        if key == 'Path':
-            change.path = Path(value) if value else Path(self.get_text_block())
-        elif key == 'NewPath':
-            change.new_path = Path(value) if value else Path(self.get_text_block())
-        elif key == 'OldPath':
-            change.path = Path(value) if value else Path(self.get_text_block())
-        elif key == 'Desc':
-            change.description = value if value else self.get_text_block()
-        elif key == 'Content':
-            change.content = value if value else self.get_text_block()
-
-    def get_text_block(self) -> str:
-        if self.debug:
-            self.console.print(f"[dim]Reading text block starting at line {self.current_line}[/dim]")
-        lines = []
-        while self.current_line < len(self.lines):
-            line = self.lines[self.current_line].lstrip()
-            if not line or line.startswith('#'):
-                self.current_line += 1
-                continue
-            if not line.startswith('.'):
-                break            
-            # Remove only the first dot, preserving all whitespace
-            lines.append(line[1:])
-            self.current_line += 1
-        return '\n'.join(lines) + '\n'
-
-    def parse_modifications(self) -> List[Modification]:
-        if self.debug:
-            self.console.print(f"[dim]Starting to parse modifications at line {self.current_line}[/dim]")
+    def parse_modifications_from_list(self, mod_list: list) -> List[Modification]:
+        """Convert SSF parsed modifications list to Modification objects"""
         modifications = []
-        while self.current_line < len(self.lines):
-            line = self.lines[self.current_line].strip()
-            if self.debug:
-                self.console.print(f"[dim]Processing modification line {self.current_line}: {line}[/dim]")
-            if not line or line.startswith('#'):
-                self.current_line += 1
+
+        for item in mod_list:
+            if not isinstance(item, Section):
                 continue
                 
-            # Stop if we hit a line that doesn't look like part of the modifications block
-            if not line.startswith('Select') and ':' not in line and '.' not in line:
-                break
+            if item.name == 'replace':
+                text_section = next((s for s in item.content if isinstance(s, Section) and s.name == 'text'), None)
+                with_section = next((s for s in item.content if isinstance(s, Section) and s.name == 'with'), None)
                 
-            if line.startswith('Select'):
-                self.current_line += 1
-                search_content = self.get_text_block()
-                #print(f"Search content: {search_content}")
-                #for line in search_content.splitlines():
-                #    print(repr(line))
-                #exit(0)
-                
-                # Get the next command (Replace/Delete)
-                while self.current_line < len(self.lines):
-                    line = self.lines[self.current_line].strip()
-                    if not line or line.startswith('#'):
-                        self.current_line += 1
-                        continue
-                    break
-                
-                if not line:  # EOF
-                    break
-                    
-                self.current_line += 1
-                
-                if line.startswith(('Delete Selected', 'Delete')):
-                    modifications.append(Modification(search_content=search_content))
-                elif line.startswith(('Replace Selected', 'Replace')):
-                    replace_content = self.get_text_block()
+                if text_section and with_section:
                     modifications.append(Modification(
-                        search_content=search_content,
-                        replace_content=replace_content
+                        search_content=text_section.get_text_content(),
+                        replace_content=with_section.get_text_content()
                     ))
-            else:
-                self.current_line += 1
-                    
+            elif item.name == 'delete':
+                text_section = next((s for s in item.content if isinstance(s, Section) and s.name == 'text'), None)
+                if text_section:
+                    modifications.append(Modification(search_content=text_section.get_text_content()))
+
         return modifications
 
 def parse_response(response_text: str) -> List[FileChange]:

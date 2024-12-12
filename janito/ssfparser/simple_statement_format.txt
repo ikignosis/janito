@@ -1,0 +1,78 @@
+Simple Statement Format
+
+Version: 1.0
+
+Overview
+
+This document provides a format to provide actionable statements that should be easy to interpret by both humans and automation, include in various contexts, such as structured communication files or any scenario requiring standardized documentation.
+
+Format Elements
+
+A. Basic Line Types
+
+The type of line is determined by these rules in order, based on the first character or pattern matched:
+   1. Comment: Line starting with "#" are treated as comments and ignored during execution.
+   2. Statement: Line that only contains alpha numeric chars
+   3. Text blocks: Lines beginning with "." are treated as text blocks. The prefix "." must be followed by the desired text, preserving any whitespace after the prefix.  
+   4. Key/Value pairs: Lines containing ":" are treated as key/value pairs, where keys are case sensitive.
+   5. Section Start: Line start with / mark the start of a section e.g file/
+   6. Section End: Lines ending with / mark the end of a section e.g. /file
+
+B. Simple Statement Block Markers
+
+A simple statement block must start with the line Begin Statements and finish End Statements, this are reserved statements for the unique purpose of location the inner statements (which provide the actual instructions)
+
+C. Statements parameters 
+    
+All lines after a statements should be treated as statement parameters, finishing when a new statement line is found
+
+D. Sections
+    
+Sections can be used to wrap text blocks or key/groups or sequences of commands.
+Secions can provide metadata that might help the reader have a better  undertdating.
+
+
+
+Example:
+
+/text type=python
+.print("Hello World")
+text/
+    
+
+Example:
+
+Create File
+    Path: test.py
+    /Content
+    .def greet():
+    .   print("Hello")
+    Content/
+
+Modify File:
+    Path: test.py
+    /Modifications
+        /replace
+            /text
+                .def new_function():
+                .   return True
+            text/
+            /new_text
+                .def old_function():
+                .   return False
+            new_text/
+        /delete
+            .# bad comment
+        delete/
+    Modifications/
+        
+
+Syntax Rules
+
+- Leading whitespace will be ignored
+- Empty lines are ignored
+- No inline comments
+
+Statement Execution Order
+
+- Execution of any Statement MUST only be performed after successful  syntax validation of the entire document.
