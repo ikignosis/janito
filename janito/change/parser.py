@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List, Optional
 from rich.console import Console
 from janito.config import config
-from janito.ssfparser.ssfparser import SSFParser, StatementContext, Section, Line, LineType
+from janito.clear_statement_parser.csfparser import parse_clear_statement_format, Statement
 
 console = Console(stderr=True)
 
@@ -25,44 +25,57 @@ RULES for analysis:
 - Python imports should be inserted at the top of the file
 - For complete file replacements, only use for existing files marked as modified
 - File replacements must preserve the essential functionality
-- When including text for selection, keep the original text intact
+- When including text from the original, keep the original text intact
+
+Flow:
+1. Analyze the changes required
+2. Translate the changes into a set of instructions (format provided below)
 
 Please provide me the changes instructions using the following format:
 
+# Start of instructions
 Create File
-    Path:file.py
-    /Content
-    .def new_function():
-    .    return True
-    Content/
+    name: hello_world.py
+    content:
+    .# This is a simple Python script
+    .def greet():
+    .    print("Hello, World!")
 
 Remove File
-    Path: file.py
+    name: obsolete_script.py
 
 Rename File
-    OldPath: old.py
-    NewPath: new.py
+    source: old_name.txt
+    target: new_name.txt
 
 Modify File
-    Path: file.py
-    /Modifications
-        /replace
-            /text
-                .def old_function():
-                .    return "old"
-            text/
-            /with
-                .def new_function():
-                .    return "new"        
-            with/
-        replace/
-        /delete
-            /text
-                .def to_be_deleted():
-                .    pass
-            text/
-        delete/
-    Modifications/
+    name: script.py
+    /Changes
+        Replace
+            search:
+            .def old_function():
+            .    print("Deprecated")
+            with:
+            .def new_function():
+            .    print("Updated")
+        Delete
+            search:
+            .# This comment should be removed.
+        # Append to the end of the file
+        Append
+            content:
+            .# End of script
+    Changes/
+
+Replace File
+    name: script.py
+    target: scripts/script.py
+    content:
+    .# Updated Python script
+    .def greet():
+    .    print("Hello, World!")
+
+# End of instructions
 
 RULES:
 - content MUST preserve the original indentation/whitespace
@@ -72,7 +85,7 @@ RULES:
 """
 
 @dataclass
-class Modification:
+class TextChange:
     """Represents a search and replace/delete operation"""
     search_content: str
     replace_content: Optional[str] = None
@@ -81,18 +94,18 @@ class Modification:
 class FileChange:
     """Represents a file change operation"""
     operation: str
-    path: Path
-    new_path: Optional[Path] = None
+    name: Path  # Changed from path
+    target: Optional[Path] = None 
+    source: Optional[Path] = None 
     description: Optional[str] = None
     content: Optional[str] = None
-    modifications: Optional[List[Modification]] = None
-    original_content: Optional[str] = None  # For storing content before replacement
+    text_changes: Optional[List[TextChange]] = None
+    original_content: Optional[str] = None
 
 class CommandParser:
     def __init__(self, debug=False):
         self.debug = debug
         self.console = Console(stderr=True)
-        self.ssf_parser = SSFParser()
 
     def format_with_line_numbers(self, content: str) -> str:
         """Format content with line numbers for debug output."""
@@ -107,15 +120,12 @@ class CommandParser:
         if not input_text.strip():
             return []
 
-        parsed_items = self.ssf_parser.parse(input_text)
+        statements = parse_clear_statement_format(input_text, strict_mode=False)
         changes = []
 
-        for item in parsed_items:
-            if not isinstance(item, dict) or item.get('type') != 'statement':
-                continue
-            
-            if item['name'] in ['Create File', 'Replace File', 'Remove File', 'Rename File', 'Modify File']:
-                change = self.convert_statement_to_filechange(item)
+        for statement in statements:
+            if statement.content in ['Create File', 'Replace File', 'Remove File', 'Rename File', 'Modify File']:
+                change = self.convert_statement_to_filechange(statement)
                 if change:
                     changes.append(change)
 
@@ -123,59 +133,64 @@ class CommandParser:
             self.console.print(f"[dim]Finished parsing, found {len(changes)} changes[/dim]")
         return changes
 
-    def convert_statement_to_filechange(self, statement: dict) -> Optional[FileChange]:
-        """Convert a SSF Statement to a FileChange object"""
-        if not statement.get('parameters'):
+    def convert_statement_to_filechange(self, statement: Statement) -> Optional[FileChange]:
+        """Convert a CSF Statement to a FileChange object"""
+        if not statement.parameters:
             return None
 
+        # Handle single file operations
         change = FileChange(
-            operation=statement['name'].lower().replace(' ', '_'),
-            path=Path()
+            operation=statement.content.lower().replace(' ', '_'),
+            name=Path()
         )
 
         # Handle parameters
-        for key, value in statement['parameters'].items():
-            if key == 'Path':
-                change.path = Path(value)
-            elif key == 'NewPath':
-                change.new_path = Path(value)
-            elif key == 'OldPath':
-                change.path = Path(value)
-            elif key == 'Desc':
+        for key, value in statement.parameters.items():
+            if key.lower() == 'name':
+                change.name = Path(value)
+            elif key.lower() == 'target':
+                change.target = Path(value)
+            elif key.lower() == 'source':
+                change.source = Path(value)
+                change.name = Path(value)
+            elif key.lower() == 'description':
                 change.description = value
+            elif key.lower() == 'content':
+                change.content = value
 
-        # Handle sections
-        if 'Content' in statement.get('sections', {}):
-            content_section = statement['sections']['Content']
-            change.content = content_section.get_text_content()
+        # Handle blocks
+        if 'content' in statement.blocks:
+            content_block = statement.blocks['content']
+            if content_block and len(content_block) > 0:
+                change.content = content_block[0].content
 
-        if 'Modifications' in statement.get('sections', {}):
-            mods_section = statement['sections']['Modifications']
-            change.modifications = self.parse_modifications_from_list(mods_section.content)
-
+        if 'Changes' in statement.blocks:
+            mods_block = statement.blocks['Changes']
+            change.text_changes = self.parse_modifications_from_list(mods_block)
+    
         return change
 
-    def parse_modifications_from_list(self, mod_list: list) -> List[Modification]:
-        """Convert SSF parsed modifications list to Modification objects"""
+    def parse_modifications_from_list(self, mod_statements: List[Statement]) -> List[TextChange]:
+        """Convert CSF parsed modifications list to Modification objects"""
         modifications = []
 
-        for item in mod_list:
-            if not isinstance(item, Section):
-                continue
-                
-            if item.name == 'replace':
-                text_section = next((s for s in item.content if isinstance(s, Section) and s.name == 'text'), None)
-                with_section = next((s for s in item.content if isinstance(s, Section) and s.name == 'with'), None)
-                
-                if text_section and with_section:
-                    modifications.append(Modification(
-                        search_content=text_section.get_text_content(),
-                        replace_content=with_section.get_text_content()
-                    ))
-            elif item.name == 'delete':
-                text_section = next((s for s in item.content if isinstance(s, Section) and s.name == 'text'), None)
-                if text_section:
-                    modifications.append(Modification(search_content=text_section.get_text_content()))
+        for statement in mod_statements:
+            if statement.content == 'Replace':
+                search_content = statement.parameters.get('search', '')
+                replace_content = statement.parameters.get('with', '')
+                modifications.append(TextChange(
+                    search_content=search_content,
+                    replace_content=replace_content
+                ))
+            elif statement.content == 'Delete':
+                search_content = statement.parameters.get('search', '')
+                modifications.append(TextChange(search_content=search_content))
+            elif statement.content == 'Append':
+                content = statement.parameters.get('content', '')
+                modifications.append(TextChange(
+                    search_content='',  # Empty search means append
+                    replace_content=content
+                ))
 
         return modifications
 

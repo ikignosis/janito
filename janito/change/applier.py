@@ -19,18 +19,11 @@ import subprocess
 import re
 import difflib
 from .viewer import show_change_preview, preview_all_changes
-from .parser import FileChange
-from typing import Dict
-import tempfile
-import time
-
-from janito.config import config
-from .parser import FileChange
-from .parser import Modification
+from .parser import FileChange, TextChange
 from .validator import validate_python_syntax
 from .position import find_text_positions
-from .viewer import preview_all_changes
 from .workdir import apply_changes as apply_to_workdir_impl
+from janito.config import config
 
 class ChangeApplier:
     def __init__(self, preview_dir: Path):
@@ -39,25 +32,31 @@ class ChangeApplier:
 
     def validate_change(self, change: FileChange) -> Tuple[bool, Optional[str]]:
         """Validate a FileChange object before applying it"""
-        if not change.path:
-            return False, "File path is required"
-
+        if not change.name:
+            return False, "File name is required"
+    
         if change.operation not in ['create_file', 'replace_file', 'remove_file', 'rename_file', 'modify_file']:
             return False, f"Invalid operation: {change.operation}"
 
-        if change.operation == 'rename_file' and not change.new_path:
-            return False, "New file path is required for rename operation"
+        if change.operation == 'rename_file' and not change.target:
+            return False, "Target file path is required for rename operation"
 
         if change.operation in ['create_file', 'replace_file']:
             if not change.content:
                 return False, f"Content is required for {change.operation} operation"
 
         if change.operation == 'modify_file':
-            if not change.modifications:
+            if not change.text_changes:
                 return False, "Modifications are required for modify operation"
-            for mod in change.modifications:
-                if not mod.search_content:
-                    return False, "Search content is required for modifications"
+            for change in change.text_changes:
+                if not change.search_content and not change.replace_content:
+                    return False, "Search or replace content is required for modification"
+
+                # Validate regex pattern
+                try:
+                    re.compile(change.search_content)
+                except re.error as e:
+                    return False, f"Invalid regex pattern in modification: {str(e)}"
 
         return True, None
 
@@ -92,22 +91,22 @@ class ChangeApplier:
         for change in changes:
             is_valid, error = self.validate_change(change)
             if not is_valid:
-                console.print(f"\n[red]Invalid change for {change.path}: {error}[/red]")
+                console.print(f"\n[red]Invalid change for {change.name}: {error}[/red]")
                 return False, set()
         
         # Track modified files and apply changes
         modified_files: Set[Path] = set()
         for change in changes:
             if config.verbose:
-                console.print(f"[dim]Previewing changes for {change.path}...[/dim]")
+                console.print(f"[dim]Previewing changes for {change.name}...[/dim]")
             success, error = self.apply_single_change(change)
             if not success:
-                console.print(f"\n[red]Error previewing {change.path}: {error}[/red]")
+                console.print(f"\n[red]Error previewing {change.name}: {error}[/red]")
                 return False, modified_files
             if not change.operation == 'remove_file':
-                modified_files.add(change.path)
+                modified_files.add(change.name)
             elif change.operation == 'rename_file':
-                modified_files.add(change.new_path)
+                modified_files.add(change.target)
 
         # Validate Python syntax
         python_files = {f for f in modified_files if f.suffix == '.py'}
@@ -127,7 +126,7 @@ class ChangeApplier:
         # Run tests if specified
         if config.test_cmd:
             console.print(f"\n[cyan]Testing changes in preview directory:[/cyan] {config.test_cmd}")
-            success, output, error = self.run_test_command(test_cmd)
+            success, output, error = self.run_test_command(config.test_cmd)
             if output:
                 console.print("\n[bold]Test Output:[/bold]")
                 console.print(Panel(output, box=box.ROUNDED))
@@ -141,44 +140,27 @@ class ChangeApplier:
 
     def apply_single_change(self, change: FileChange) -> Tuple[bool, Optional[str]]:
         """Apply a single file change to preview directory"""
-        path = self.preview_dir / change.path
+        path = self.preview_dir / change.name
         
-        # Ensure preview directory exists and file is copied before modifications
+        # Ensure preview directory exists
         path.parent.mkdir(parents=True, exist_ok=True)
         
-        # Copy original file to preview directory if it doesn't exist and it's not a create operation
-        if not path.exists() and change.operation != 'create_file':
-            original_path = Path(change.path)
-            if original_path.exists():
-                if self.console:
-                    self.console.print(f"[dim]Copying {original_path} to preview directory {path}[/dim]")
-                path.write_text(original_path.read_text())
-            else:
-                if self.console:
-                    self.console.print(f"[red]Original file not found: {original_path}[/red]")
+        # Handle file existence check first
+        if not path.exists() and change.operation not in ['create_file', 'replace_file']:
+            original_path = Path(change.name)
+            if not original_path.exists():
                 return False, f"Original file not found: {original_path}"
+            if self.console:
+                self.console.print(f"[dim]Copying {original_path} to preview directory {path}[/dim]")
+            path.write_text(original_path.read_text())
 
-        # For replace operations, get original content before replacing
-        if change.operation == 'replace_file': 
-            if not path.exists():
-                return False, f"Cannot replace non-existent file {path}"
-            # Store original content in the change object for preview purposes
-            current_content = path.read_text()
-            change.original_content = current_content
-            if change.content is not None:
-                path.write_text(change.content)
-            return True, None
-            
-        # Handle preview-only operations
+        # Handle operations
         if change.operation == 'remove_file':
             if path.exists():
-                current_content = path.read_text()
-                if self.console:
-                    path.unlink()
+                path.unlink()
             return True, None
 
         if change.operation in ('create_file', 'replace_file'):
-            path.parent.mkdir(parents=True, exist_ok=True)
             if change.operation == 'create_file' and path.exists():
                 return False, f"Cannot create file {path} - already exists"
             if change.content is not None:
@@ -186,73 +168,62 @@ class ChangeApplier:
             return True, None
 
         if change.operation == 'rename_file':
-            new_preview_path = self.preview_dir / change.new_path
-            new_preview_path.parent.mkdir(parents=True, exist_ok=True)
             if not path.exists():
                 return False, f"Cannot rename non-existent file {path}"
-            current_content = path.read_text()
-            if path.exists():
-                path.rename(new_preview_path)
+            new_preview_path = self.preview_dir / change.target
+            new_preview_path.parent.mkdir(parents=True, exist_ok=True)
+            path.rename(new_preview_path)
             return True, None
 
         # Handle modify operation
-        if not path.exists():
-            return False, f"Cannot modify non-existent file {path}"
+        if change.operation == 'modify_file':
+            if not path.exists():
+                return False, f"Cannot modify non-existent file {path}"
 
-        current_content = path.read_text()
-        modified = current_content
+            current_content = path.read_text()
+            modified = current_content
 
-        for mod in change.modifications:
-            if self.console:
-                self._print_modification_debug(mod)
+            for mod in change.text_changes:
+                if self.console:
+                    self._print_modification_debug(mod)
 
-            if mod.search_content not in modified:
-                lines = modified.splitlines()
-                search_lines = mod.search_content.splitlines()
-                # Lets attempt a line by line match starting at modified line: 12 (1 based)
-                for i, line in enumerate(lines):
-                    if i < 12:
-                        continue
-                    match_line = search_lines[i-11]
-                    print(f"Line {i+1}: {repr(line)}\n vs \n{repr(match_line)}\n")
-                    if line == match_line:
-                        self.console.print(f"\n[yellow]Search text found in line {i+1}[/yellow]")
-                    else:
-                        self.console.print(f"\n[yellow]Search text not found in line {i+1}[/yellow]")
-                        exit(0)
-                exit(0)
+                # means append to the end of the file
+                if not mod.search_content:
+                    modified += mod.replace_content
+                    continue
 
-                content_with_ws = '\n'.join(f'{i+1:3d} | {line.replace(" ", "·")}↵'
-                                          for i, line in enumerate(lines))
-                self.console.print(f"\n[yellow]File content ({len(lines)} lines, with whitespace):[/yellow]")
-                self.console.print(Panel(content_with_ws))
-                return False, f"Could not find search text in {path}"
+                if mod.search_content not in modified:
+                    # Debug search content not found
+                    lines = modified.splitlines()
+                    content_with_ws = '\n'.join(f'{i+1:3d} | {line.replace(" ", "·")}↵'
+                                              for i, line in enumerate(lines))
+                    self.console.print(f"\n[yellow]File content ({len(lines)} lines, with whitespace):[/yellow]")
+                    self.console.print(Panel(content_with_ws))
+                    return False, f"Could not find search text in {path}"
 
-            if mod.replace_content:
-                # Update modified content without rereading from disk
-                start = modified.find(mod.search_content)
-                end = start + len(mod.search_content)                
-                modified = modified[:start] + mod.replace_content + modified[end:]
-            else:
-                # Delete case - Update modified content without rereading from disk
-                start = modified.find(mod.search_content)
-                end = start + len(mod.search_content)                
-                modified = modified[:start] + mod.replace_content + modified[end:]
-            return True, None
+                if mod.replace_content is not None:
+                    # Replace case
+                    start = modified.find(mod.search_content)
+                    end = start + len(mod.search_content)                
+                    modified = modified[:start] + mod.replace_content + modified[end:]
+                else:
+                    # Delete case
+                    start = modified.find(mod.search_content)
+                    end = start + len(mod.search_content)                
+                    modified = modified[:start] + modified[end:]
+
+            if modified == current_content:
+                if self.console:
+                    self.console.print("\n[yellow]No changes were applied to the file[/yellow]")
+                return False, "No changes were applied"
                 
-        if modified == current_content:
+            # Write changes and return success
+            path.write_text(modified)
             if self.console:
-                self.console.print("\n[yellow]No changes were applied to the file[/yellow]")
-            return False, "No changes were applied"
-            
-        if self.console:
-            self.console.print("\n[green]Changes applied successfully[/green]")
-            
-        # Write final modified content only once at the end
-        path.write_text(modified)
-        return True, None
+                self.console.print("\n[green]Changes applied successfully[/green]")
+            return True, None
 
-    def _print_modification_debug(self, mod: Modification) -> None:
+    def _print_modification_debug(self, mod: TextChange) -> None:
         """Print debug information for a modification"""
         self.console.print("\n[cyan]Processing modification[/cyan]")
         
@@ -267,7 +238,7 @@ class ChangeApplier:
             # Format replace text with line numbers
             replace_text_lines = mod.replace_content.splitlines()
             formatted_replace = '\n'.join(f'{i+1:3d} | {line.replace(" ", "·")}↵'
-                                        for i, line in enumerate(replace_text_lines))
+                                      for i, line in enumerate(replace_text_lines))
             self.console.print(f"[yellow]Replace with ({len(replace_text_lines)} lines, · for space, ↵ for newline):[/yellow]")
             self.console.print(Panel(formatted_replace))
         else:

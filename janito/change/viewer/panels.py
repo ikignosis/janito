@@ -173,7 +173,7 @@ def show_change_preview(console: Console, filepath: Path, change: FileChange) ->
         panel = create_replace_panel(filepath, change)
     elif change.operation == 'modify_file':
         main_content = []
-        for i, mod in enumerate(change.modifications, 1):
+        for i, mod in enumerate(change.text_changes, 1):
             panel = create_change_panel(
                 mod.search_content,
                 mod.replace_content,
@@ -212,27 +212,27 @@ def preview_all_changes(console: Console, changes: List[FileChange]) -> None:
     if change_groups['create_file']:
         console.print("\n[green]✨ Created Files:[/green]")
         for change in change_groups['create_file']:
-            show_change_preview(console, change.path, change)
+            show_change_preview(console, change.name, change)
             
     if change_groups['modify_file']:
         console.print("\n[yellow]🔧 Modified Files:[/yellow]")
         for change in change_groups['modify_file']:
-            show_change_preview(console, change.path, change)
+            show_change_preview(console, change.name, change)
             
     if change_groups['replace_file']:
         console.print("\n[yellow]🔄 Replaced Files:[/yellow]")
         for change in change_groups['replace_file']:
-            show_change_preview(console, change.path, change)
+            show_change_preview(console, change.name, change)
             
     if change_groups['rename_file']:
         console.print("\n[blue]📝 Renamed Files:[/blue]")
         for change in change_groups['rename_file']:
-            console.print(f"  [dim]{change.path}[/dim] → [bold]{change.new_path}[/bold]")
+            console.print(f"  [dim]{change.name}[/dim] → [bold]{change.new_path}[/bold]")
             
     if change_groups['remove_file']:
         console.print("\n[red]🗑️ Removed Files:[/red]")
         for change in change_groups['remove_file']:
-            show_change_preview(console, change.path, change)
+            show_change_preview(console, change.name, change)
 
 def _print_debug_info(console: Console, changes: List[FileChange]) -> None:
     """Print debug information about file changes"""
@@ -248,7 +248,7 @@ def _print_debug_info(console: Console, changes: List[FileChange]) -> None:
             
         console.print(f"\n[yellow]Operation: {op_type.title()}[/yellow] ({len(op_changes)} files)")
         for change in op_changes:
-            console.print(f"\n[cyan]File:[/cyan] {change.path}")
+            console.print(f"\n[cyan]File:[/cyan] {change.name}")
             if change.description:
                 console.print(f"  [dim]Description:[/dim] {change.description}")
                 
