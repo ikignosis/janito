@@ -47,11 +47,14 @@ class TextChangeApplier:
         self.debugger = TextFindDebugger(self.console)
         self.parser = StatementParser()
 
-    def apply_modifications(self, content: str, changes: List[TextChange], filepath: Path) -> Tuple[bool, str, Optional[str]]:
+    def apply_modifications(self, content: str, changes: List[TextChange], target_path: Path) -> Tuple[bool, str, Optional[str]]:
         """Apply text modifications to content
         Returns: (success, modified_content, error_message)"""
         modified = content
         any_changes = False
+
+        target_path = target_path.resolve()
+        print(f"Applying changes to {target_path}")
 
         for mod in changes:
             try:
@@ -75,8 +78,8 @@ class TextChangeApplier:
 
             except PatternNotFoundException:
                 if config.debug:
-                    self.debug_failed_finds(mod.search_content, modified, str(filepath))
-                return False, content, self._handle_failed_search(filepath, mod.search_content, modified)
+                    self.debug_failed_finds(mod.search_content, modified, str(target_path))
+                return False, content, self._handle_failed_search(target_path, mod.search_content, modified)
 
         if not any_changes:
             return False, content, "No changes were applied"

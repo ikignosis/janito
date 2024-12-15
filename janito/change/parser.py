@@ -5,6 +5,7 @@ from typing import List, Optional
 from rich.console import Console
 from janito.config import config
 from janito.clear_statement_parser.parser import Statement, StatementParser
+from pprint import pprint
 
 console = Console(stderr=True)
 
@@ -130,7 +131,7 @@ class TextChange:
 class FileChange:
     """Represents a file change operation"""
     operation: ChangeOperation
-    name: Path
+    name: Path  # Changed back from path to name
     target: Optional[Path] = None
     source: Optional[Path] = None
     content: Optional[str] = None
@@ -148,7 +149,7 @@ class FileChange:
         operation = ChangeOperation[data['operation'].upper()]
         return cls(
             operation=operation,
-            name=Path(data['name']),
+            name=Path(data['name']),  # Changed back to name
             target=Path(data['target']) if data.get('target') else None,
             source=Path(data.get('source')) if data.get('source') else None,
             content=data.get('content'),
@@ -175,11 +176,9 @@ class CommandParser:
         if self.debug:
             self.console.print("[dim]Starting to parse statements...[/dim]")
             
-        print(statements)
         changes = []
 
         for statement in statements:
-            print(statement.name)
             statement_key = statement.name.upper().replace(' ', '_') 
             supported_opers = [op.name.title().upper() for op in ChangeOperation]
             if statement_key not in supported_opers: 
@@ -199,7 +198,7 @@ class CommandParser:
             operation = ChangeOperation[statement.name.upper().replace(' ', '_')]
             change = FileChange(
                 operation=operation,
-                name=Path(statement.parameters.get('name', '')),
+                name=Path(statement.parameters.get('name', '')),  # Changed back to name
                 reason=statement.parameters.get('reason')
             )
 
@@ -207,7 +206,7 @@ class CommandParser:
                 change.target = Path(statement.parameters['target'])
             if 'source' in statement.parameters:
                 change.source = Path(statement.parameters['source'])
-                change.name = Path(statement.parameters['source'])
+                change.name = Path(statement.parameters['source'])  # Changed back to name
 
             content = statement.parameters.get('content')
             if content:
@@ -215,7 +214,7 @@ class CommandParser:
 
             # Handle multiple Changes blocks
             for block_name, block_statements in statement.blocks:
-                if block_name == 'Changes':
+                if (block_name == 'Changes'):
                     new_changes = self.parse_modifications_from_list(block_statements)
                     change.add_text_changes(new_changes)
 
@@ -312,8 +311,9 @@ def extract_changes_section(response_text: str) -> Optional[str]:
 
 def parse_response(response_text: str) -> List[FileChange]:
     """Parse a response string into FileChange objects"""
-    parser = CommandParser(debug=config.debug)
+    parser = CommandParser()
     statement_parser = StatementParser()
+
     
     # First extract the changes section
     changes_text = extract_changes_section(response_text)
@@ -324,6 +324,9 @@ def parse_response(response_text: str) -> List[FileChange]:
     
     # Then parse the statements
     statements = statement_parser.parse(changes_text)
+    for st in statements:
+       pprint(st.to_dict())
+    exit(0)
     return parser.parse_statements(statements)
 
 def build_change_request_prompt(

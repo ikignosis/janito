@@ -34,7 +34,7 @@ class ChangeApplier:
 
     def validate_change(self, change: FileChange) -> Tuple[bool, Optional[str]]:
         """Validate a FileChange object before applying it"""
-        if not change.name:
+        if not change.name:  # Changed back from path to name
             return False, "File name is required"
 
         operation = change.operation.name.title().lower()
@@ -88,20 +88,20 @@ class ChangeApplier:
         for change in changes:
             is_valid, error = self.validate_change(change)
             if not is_valid:
-                console.print(f"\n[red]Invalid change for {change.name}: {error}[/red]")
+                console.print(f"\n[red]Invalid change for {change.name}: {error}[/red]")  # Changed back from path to name
                 return False, set()
         
         # Track modified files and apply changes
         modified_files: Set[Path] = set()
         for change in changes:
             if config.verbose:
-                console.print(f"[dim]Previewing changes for {change.name}...[/dim]")
+                console.print(f"[dim]Previewing changes for {change.name}...[/dim]")  # Changed back from path to name
             success, error = self.apply_single_change(change)
             if not success:
-                console.print(f"\n[red]Error previewing {change.name}: {error}[/red]")
+                console.print(f"\n[red]Error previewing {change.name}: {error}[/red]")  # Changed back from path to name
                 return False, modified_files
             if not change.operation == 'remove_file':
-                modified_files.add(change.name)
+                modified_files.add(change.name)  # Changed back from path to name
             elif change.operation == 'rename_file':
                 modified_files.add(change.target)
 
@@ -137,7 +137,8 @@ class ChangeApplier:
 
     def apply_single_change(self, change: FileChange) -> Tuple[bool, Optional[str]]:
         """Apply a single file change to preview directory"""
-        path = self.preview_dir / change.name
+        path = self.preview_dir / change.name  # Changed back from path to name
+        print("APPLYING CHANGE", change.name, change.text_changes)  # Changed back from path to name
         
         # Handle file operations first
         if change.operation != ChangeOperation.MODIFY_FILE:
@@ -145,7 +146,7 @@ class ChangeApplier:
 
         # Handle text modifications
         if not path.exists():
-            original_path = Path(change.name)
+            original_path = Path(change.name)  # Changed back from path to name
             if not original_path.exists():
                 return False, f"Original file not found: {original_path}"
             if self.console:
@@ -153,6 +154,7 @@ class ChangeApplier:
             path.write_text(original_path.read_text())
 
         current_content = path.read_text()
+        print("We are applying changes to", path) 
         success, modified_content, error = self.text_applier.apply_modifications(
             current_content, 
             change.text_changes, 

@@ -28,26 +28,81 @@ class Statement:
         self.parameters: Dict[str, Union[str, List, Dict]] = {}
         self.blocks: List[Tuple[str, List[Statement]]] = []
         
-    def __str__(self):
-        parts = [f"Statement(name={self.name}"]
+    def to_dict(self) -> Dict:
+        """Convert the statement to a dictionary representation"""
+        result = {
+            'name': self.name,
+            'parameters': self.parameters.copy(),
+            'blocks': []
+        }
         
-        if self.parameters:
-            params_str = ", ".join(f"{k}: {repr(v)}" for k, v in self.parameters.items())
-            parts.append(f"params={{{params_str}}}")
+        # Convert nested statements in blocks to dicts
+        for block_name, block_statements in self.blocks:
+            block_dicts = [stmt.to_dict() for stmt in block_statements]
+            result['blocks'].append({
+                'name': block_name,
+                'statements': block_dicts
+            })
             
-        if self.blocks:
-            blocks_str = ", ".join(
-                f"{k}: {len(v)} statement(s)" for k, v in self.blocks
-            )
-            parts.append(f"blocks=[{blocks_str}]")
-        else:
-            parts.append("blocks=[]")
-            
-        return ", ".join(parts) + ")"
+        return result
+        
+    def __str__(self):
+        return self.__repr__()
 
     def __repr__(self):
-        return self.__str__()
-
+        indent = 0
+        return self._repr_recursive(indent)
+    
+    def _repr_recursive(self, indent: int, max_line_length: int = 80) -> str:
+        lines = []
+        prefix = "  " * indent
+        
+        # Add statement name
+        lines.append(f"{prefix}{self.name}")
+        
+        # Add parameters with proper indentation
+        for key, value in self.parameters.items():
+            if isinstance(value, str) and '\n' in value:
+                # Handle multiline string values (literal blocks)
+                lines.append(f"{prefix}  {key}:")
+                for line in value.split('\n'):
+                    lines.append(f"{prefix}    .{line}")
+            elif isinstance(value, list):
+                # Handle nested lists with proper indentation
+                lines.append(f"{prefix}  {key}:")
+                lines.extend(self._format_list(value, indent + 2))
+            else:
+                # Handle simple key-value pairs
+                value_str = repr(value) if isinstance(value, str) else str(value)
+                if len(f"{prefix}  {key}: {value_str}") <= max_line_length:
+                    lines.append(f"{prefix}  {key}: {value_str}")
+                else:
+                    lines.append(f"{prefix}  {key}:")
+                    lines.append(f"{prefix}    {value_str}")
+        
+        # Add blocks with proper indentation and block markers
+        for block_name, block_statements in self.blocks:
+            lines.append(f"{prefix}  /{block_name}")
+            for statement in block_statements:
+                lines.append(statement._repr_recursive(indent + 2))
+            lines.append(f"{prefix}  {block_name}/")
+        
+        return "\n".join(lines)
+    
+    def _format_list(self, lst: List, indent: int) -> List[str]:
+        lines = []
+        prefix = "  " * indent
+        
+        def format_nested(items, depth=0):
+            for item in items:
+                if isinstance(item, list):
+                    format_nested(item, depth + 1)
+                else:
+                    lines.append(f"{prefix}{'-' * (depth + 1)} {item}")
+        
+        format_nested(lst)
+        return lines
+    
 class StatementParser:
     def __init__(self):
         self.max_list_depth = 5
@@ -67,6 +122,7 @@ class StatementParser:
         current_statement = None
         parameter_type = None
         line_number = start
+        open_blocks = []  # Stack to track open block names
         
         while line_number < end:
             line = lines[line_number].strip()
@@ -124,10 +180,16 @@ class StatementParser:
                     
                     block_name = self._validate_block_name(line[1:].strip(), line_number)
                     
-                    # Check if block name matches parent block name
-                    if block_name == parent_block_name:
-                        raise ParseError(line_number, current_statement.name, f"Block name '{block_name}' cannot be the same as its parent block")
+                    # Check if block name matches any open block
+                    if block_name in open_blocks:
+                        raise ParseError(line_number, current_statement.name, 
+                                      f"Block '{block_name}' is already open")
                     
+                    if block_name == parent_block_name:
+                        raise ParseError(line_number, current_statement.name, 
+                                      f"Block name '{block_name}' cannot be the same as its parent block")
+                    
+                    open_blocks.append(block_name)
                     nested_statements, new_line_number = self._parse_statements(
                         lines, line_number + 1, end, block_name, depth + 1
                     )
@@ -136,8 +198,25 @@ class StatementParser:
                     
                 elif line_type == LineType.BLOCK_END:
                     block_name = self._validate_block_name(line[:-1].strip(), line_number)
-                    return statements, line_number + 1
-                
+                    
+                    # Check if this matches the parent block - proper exit
+                    if block_name == parent_block_name:
+                        if open_blocks:
+                            # There are still open blocks when trying to close parent
+                            still_open = ", ".join(open_blocks)
+                            raise ParseError(line_number, current_statement.name,
+                                          f"Cannot close block '{block_name}' while blocks are still open: {still_open}")
+                        return statements, line_number + 1
+                    
+                    # Check if we're closing the most recently opened block
+                    if not open_blocks or open_blocks[-1] != block_name:
+                        expected = open_blocks[-1] if open_blocks else "none"
+                        raise ParseError(line_number, current_statement.name,
+                                      f"Unexpected block end '{block_name}', expected: {expected}")
+                    
+                    open_blocks.pop()
+                    line_number += 1
+
                 else:
                     line_number += 1
                     
@@ -145,6 +224,16 @@ class StatementParser:
                 self.errors.append(e)
                 line_number += 1
                 
+        # Check for unclosed blocks at end of input
+        if open_blocks:
+            unclosed = ", ".join(open_blocks)
+            raise ParseError(end, current_statement.name if current_statement else "",
+                           f"Reached end of input with unclosed blocks: {unclosed}")
+            
+        if parent_block_name is not None:
+            raise ParseError(end, current_statement.name if current_statement else "",
+                           f"Reached end of input without closing block: {parent_block_name}")
+            
         return statements, line_number
 
     def print_statements(self, statements: List[Statement], indent: int = 0):

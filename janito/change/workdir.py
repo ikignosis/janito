@@ -3,16 +3,16 @@ from typing import Set, List
 import shutil
 from rich.console import Console
 from ..config import config
-from .parser import FileChange
+from .parser import FileChange, ChangeOperation
 
 def verify_changes(changes: List[FileChange]) -> tuple[bool, str]:
     """Verify changes can be safely applied to workdir.
     Returns (is_safe, error_message)."""
     for change in changes:
         target_path = config.workdir / change.name
-        if change.operation == 'create_file' and target_path.exists():
+        if change.operation == ChangeOperation.CREATE_FILE and target_path.exists():
             return False, f"Cannot create {change.name} - already exists"
-        elif change.operation != 'create_file' and not target_path.exists():
+        elif change.operation != ChangeOperation.CREATE_FILE and not target_path.exists():
             return False, f"Cannot modify non-existent file {change.name}"
     return True, ""
 
@@ -27,10 +27,10 @@ def apply_changes(changes: List[FileChange], preview_dir: Path, console: Console
     console.print("\n[blue]Applying changes to working directory...[/blue]")
     
     for change in changes:
-        if change.operation == 'remove_file':
+        if change.operation == ChangeOperation.REMOVE_FILE:
             remove_from_workdir(change.name, console)
         else:
-            filepath = change.target if change.operation == 'rename_file' else change.name
+            filepath = change.target if change.operation == ChangeOperation.RENAME_FILE else change.name
             target_path = config.workdir / filepath
             preview_path = preview_dir / filepath
             
