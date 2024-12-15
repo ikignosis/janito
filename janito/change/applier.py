@@ -16,7 +16,6 @@ from rich.console import Console
 from rich.panel import Panel
 from rich import box
 import subprocess
-from .viewer import show_change_preview, preview_all_changes
 from .parser import FileChange, TextChange
 from .validator import validate_python_syntax
 from .workdir import apply_changes as apply_to_workdir_impl

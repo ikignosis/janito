@@ -1,6 +1,6 @@
 # CLEAR STATEMENT FORMAT
 
-Version: 1.9.2
+Version: 1.9.5
 
 ## OVERVIEW
 
@@ -130,10 +130,11 @@ Statement blocks are a powerful mechanism for organizing complex, nested instruc
 Key Characteristics:
 - Blocks create a hierarchical, nested structure for organizing instructions
 - Represented by a start marker (/) and an end marker (/`)
-- Block names must be unique within the same statement
+- Block names can be duplicated within the same level to represent parallel or repeated operations
 - Allow nested blocks by providing new blocks within inner statement parameters
 - Maximum nesting depth of 10 levels
 - Enables complex, multi-step processes within a single statement
+- A block cannot have the same name as its immediate parent block
 
 Block Syntax:
 ```
@@ -141,18 +142,30 @@ StatementName
     /BlockName
         SubStatement1
             key1: value1
-            key2: value2
+            /DifferentBlock  # Valid: Different name than parent
+                NestedStatement
+                    key2: value2
+                    /BlockName  # Valid: Same name as grandparent
+                        DeepStatement
+                            key3: value3
+                    BlockName/
+            DifferentBlock/
+    BlockName/
+    /BlockName  # Valid: Duplicate at same level
         SubStatement2
-            list:
-            - Item 1
-            - Item 2
+            key3: value3
+            /BlockName  # Invalid: Same name as immediate parent
+                NestedStatement
+                    key4: value4
+            BlockName/
     BlockName/
 ```
 
 ##### Block Rules:
-- Statement block names must be alphanumeric and unique within the same statement
-  - Block names can be reused in different statements
-  - A statement cannot have multiple blocks with the same name
+- Statement block names must be alphanumeric
+- Multiple blocks with the same name are allowed within the same level to represent parallel or repeated operations
+- A block cannot have the same name as its immediate parent block
+- Block names can be reused at any level except as an immediate child of a block with the same name
 - Start: /blockName
 - End: blockName/
 - Content: Must consist of statements, where each statement can have parameters in the form of key/value pairs, literal blocks, lists, or nested blocks
@@ -210,6 +223,63 @@ Update Menu Items
     -- Cake
 ```
 
+#### Statement with Block Name Constraints:
+```
+Deploy Application
+    /Environment
+        Configure Settings
+            region: us-west-2
+            
+            /Service
+                Deploy Container
+                    name: auth-service
+                    
+                    /Environment  # Valid: Same name as grandparent
+                        Set Parameters
+                            memory: 512Mi
+                    Environment/
+            Service/
+            
+            /Environment  # Invalid: Same name as immediate parent
+                Deploy Container
+                    name: cache-service
+            Environment/
+    Environment/
+```
+
+#### Valid Block Name Reuse Example:
+```
+Configure System
+    /Network
+        Setup Router
+            /Gateway
+                Configure Interface
+                    ip: 192.168.1.1
+                    
+                    /Network  # Valid: Same name as grandparent
+                        Setup Routing
+                            protocol: ospf
+                    Network/
+            Gateway/
+    Network/
+
+    /Service
+        Deploy API
+            /Component
+                Install Dependencies
+                    /Service  # Invalid: Same name as immediate parent
+                        Configure Settings
+                    Service/
+                    
+                    /AnotherService
+                        Install Updates
+                            /Service  # Valid: Not immediate parent
+                            Service/
+                    AnotherService/
+            Component/
+    Service/
+```
+
 #### Statement with Complex Statement Blocks:
 ```
 Deploy Application
@@ -239,6 +309,48 @@ Deploy Application
     Application/
 ```
 
-This specification provides a comprehensive, flexible format for structured communication and instruction representation.
+#### Statement with Duplicate Blocks:
+```
+Deploy Microservices
+    /Service
+        Deploy Container
+            name: auth-service
+            port: 8000
+            image: auth:latest
+    Service/
+    
+    /Service
+        Deploy Container
+            name: payment-service
+            port: 8001
+            image: payments:latest
+    Service/
+    
+    /Service
+        Deploy Container
+            name: user-service
+            port: 8002
+            image: users:latest
+    Service/
+```
 
-
+#### Statement with Mixed Block Types:
+```
+Update System
+    /Backup
+        Create Snapshot
+            type: full
+            destination: s3://backups
+    Backup/
+    
+    /Maintenance
+        Run Cleanup
+            retain_days: 30
+    Maintenance/
+    
+    /Backup
+        Create Snapshot
+            type: incremental
+            destination: s3://incremental
+    Backup/
+```

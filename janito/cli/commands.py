@@ -9,7 +9,7 @@ from janito.change.core import process_change_request, play_saved_changes
 from janito.tui import TuiApp
 
 from .functions import (
-    process_question, 
+    process_question,
     read_stdin
 )
 
@@ -17,7 +17,7 @@ def handle_ask(question: str):
     """Ask a question about the codebase"""
     if question == ".":
         question = read_stdin()
-    
+
     if config.tui:
         from janito.qa import ask_question
         paths_to_scan = [config.workdir] if not config.include else config.include
@@ -37,17 +37,17 @@ def handle_play(filepath: Path):
     """Replay a saved changes or debug file"""
     play_saved_changes(filepath)
 
-def handle_request(request: str):
+def handle_request(request: str, preview_only: bool = False):
     """Process modification request"""
     console = Console()
-    
+
     is_empty = is_dir_empty(config.workdir)
     if is_empty and not config.include:
         console.print("\n[bold blue]Empty directory - will create new files as needed[/bold blue]")
-    
+
     # Process request through core function
-    success, history_file = process_change_request(request)
-    
+    success, history_file = process_change_request(request, preview_only)
+
     if success and history_file and config.verbose:
         try:
             rel_path = history_file.relative_to(config.workdir)

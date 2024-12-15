@@ -28,6 +28,7 @@ def typer_main(
     tui: bool = typer.Option(False, "--tui", help="Use terminal user interface"),
     input_mode: bool = typer.Option(False, "--input", help="Read request from stdin"),
     history: bool = typer.Option(False, "--history", help="Display history of requests"),
+    recursive: bool = typer.Option(False, "-r", "--recursive", help="Scan directories recursively"),
 ):
     """Janito - AI-powered code modification assistant"""
     if version:
@@ -46,6 +47,7 @@ def typer_main(
     config.set_auto_apply(auto_apply)
     config.set_include(include)
     config.set_tui(tui)
+    config.set_recursive(recursive)
 
     if ask:
         handle_ask(ask)

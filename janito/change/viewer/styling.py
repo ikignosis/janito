@@ -30,20 +30,25 @@ def format_content(lines: List[str], search_lines: List[str], replace_lines: Lis
         bg_color = current_theme.line_backgrounds.get(line_type, current_theme.line_backgrounds['unchanged'])
         style = f"{current_theme.text_color} on {bg_color}"
 
+        # Add prefix with consistent spacing
         text.append(f"{prefix} ", style=style)
+
+        # Add line content
         text.append(line, style=style)
-        text.append(" " * 1000 + "\n", style=style)
+
+        # Add padding to ensure full width background
+        padding = " " * max(0, 80 - len(line) - 2)  # -2 for prefix and space
+        text.append(f"{padding}\n", style=style)
 
     for i, line in enumerate(lines):
-        if line in common_lines:
+        if not line.strip():  # Handle empty lines
+            add_line("", " ", 'unchanged')
+        elif line in common_lines:
             add_line(line, " ", 'unchanged')
         elif not is_search:
             add_line(line, "✚", 'added')
         else:
-            if i in similar_deleted:
-                add_line(line, "✕", 'deleted')
-            else:
-                add_line(line, "✕", 'deleted')
+            add_line(line, "✕", 'deleted')
 
     return text
 

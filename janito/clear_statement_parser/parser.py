@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, List, Union, Optional
+from typing import Dict, List, Union, Optional, Tuple
 from enum import Enum
 import re
 
@@ -8,7 +8,7 @@ class LineType(Enum):
     COMMENT = "comment"
     LIST_ITEM = "list_item"
     STATEMENT = "statement"
-    LITERAL_BLOCK = "literal_block" 
+    LITERAL_BLOCK = "literal_block"
     KEY_VALUE = "key_value"
     BLOCK_BEGIN = "block_begin"
     BLOCK_END = "block_end"
@@ -26,7 +26,7 @@ class Statement:
     def __init__(self, name: str):
         self.name = name
         self.parameters: Dict[str, Union[str, List, Dict]] = {}
-        self.blocks: Dict[str, List[Statement]] = {}
+        self.blocks: List[Tuple[str, List[Statement]]] = []
         
     def __str__(self):
         parts = [f"Statement(name={self.name}"]
@@ -37,11 +37,11 @@ class Statement:
             
         if self.blocks:
             blocks_str = ", ".join(
-                f"{k}: {len(v)} statement(s)" for k, v in self.blocks.items()
+                f"{k}: {len(v)} statement(s)" for k, v in self.blocks
             )
-            parts.append(f"blocks={{{blocks_str}}}")
+            parts.append(f"blocks=[{blocks_str}]")
         else:
-            parts.append("blocks={}")
+            parts.append("blocks=[]")
             
         return ", ".join(parts) + ")"
 
@@ -57,9 +57,9 @@ class StatementParser:
     def parse(self, content: str) -> List[Statement]:
         self.errors = []
         lines = content.splitlines()
-        return self._parse_statements(lines, 0, len(lines))[0]
+        return self._parse_statements(lines, 0, len(lines), None)[0]
     
-    def _parse_statements(self, lines: List[str], start: int, end: int, depth: int = 0) -> tuple[List[Statement], int]:
+    def _parse_statements(self, lines: List[str], start: int, end: int, parent_block_name: Optional[str] = None, depth: int = 0) -> tuple[List[Statement], int]:
         if depth > self.max_block_depth:
             raise ParseError(start, "", f"Maximum block nesting depth of {self.max_block_depth} exceeded")
             
@@ -123,11 +123,15 @@ class StatementParser:
                         raise ParseError(line_number, "", "Block begin found outside statement")
                     
                     block_name = self._validate_block_name(line[1:].strip(), line_number)
-                    if block_name in current_statement.blocks:
-                        raise ParseError(line_number, current_statement.name, f"Duplicate block name: {block_name}")
                     
-                    nested_statements, new_line_number = self._parse_statements(lines, line_number + 1, end, depth + 1)
-                    current_statement.blocks[block_name] = nested_statements
+                    # Check if block name matches parent block name
+                    if block_name == parent_block_name:
+                        raise ParseError(line_number, current_statement.name, f"Block name '{block_name}' cannot be the same as its parent block")
+                    
+                    nested_statements, new_line_number = self._parse_statements(
+                        lines, line_number + 1, end, block_name, depth + 1
+                    )
+                    current_statement.blocks.append((block_name, nested_statements))
                     line_number = new_line_number
                     
                 elif line_type == LineType.BLOCK_END:
@@ -147,7 +151,7 @@ class StatementParser:
         """Pretty print the statements with proper indentation for blocks"""
         for statement in statements:
             print("  " * indent + str(statement))
-            for block_name, block_statements in statement.blocks.items():
+            for block_name, block_statements in statement.blocks:
                 print("  " * (indent + 1) + f"{block_name}:")
                 self.print_statements(block_statements, indent + 2)
     
@@ -160,7 +164,7 @@ class StatementParser:
         if line.startswith("-"):
             return LineType.LIST_ITEM
         if line.startswith("."):
-            return LineType.LITERAL_BLOCK  # Changed from TEXT_BLOCK
+            return LineType.LITERAL_BLOCK
         if ":" in line:
             return LineType.KEY_VALUE
         if line.startswith("/"):
@@ -172,7 +176,9 @@ class StatementParser:
         return LineType.STATEMENT
     
     def _validate_block_name(self, name: str, line_number: int) -> str:
-        """Validate block name contains only alphanumeric characters"""
+        """Validate block name contains only alphanumeric characters and no comments"""
+        if '#' in name:
+            raise ParseError(line_number, name, "Comments are not allowed in block names")
         if not name.isalnum():
             raise ParseError(line_number, name, "Block names must contain only alphanumeric characters")
         return name
@@ -188,15 +194,15 @@ class StatementParser:
             
         next_line = lines[start_line].strip()
         if next_line.startswith("."):
-            return self._parse_literal_block_value(lines, start_line)  # Changed method name
+            return self._parse_literal_block_value(lines, start_line)
         elif next_line.startswith("-"):
             return self._parse_list_value(lines, start_line)
         else:
             raise ParseError(start_line, "", "Expected literal block or list after empty value")
     
-    def _parse_literal_block_value(self, lines: List[str], start_line: int) -> tuple[int, str]:  # Changed method name
+    def _parse_literal_block_value(self, lines: List[str], start_line: int) -> tuple[int, str]:
         """Parse a literal block value, preserving content after the leading dot"""
-        literal_lines = []  # Changed variable name
+        literal_lines = []
         current_line = start_line
         
         while current_line < len(lines):
@@ -209,13 +215,13 @@ class StatementParser:
                 break
                 
             content = line[1:]  # Strip only the leading dot
-            literal_lines.append(content)  # Changed variable name
+            literal_lines.append(content)
             current_line += 1
             
-        if not literal_lines:  # Changed variable name
+        if not literal_lines:
             raise ParseError(start_line, "", "Empty literal block")
             
-        return current_line - 1, "\n".join(literal_lines)  # Changed variable name
+        return current_line - 1, "\n".join(literal_lines)
 
     def _parse_list_value(self, lines: List[str], start_line: int) -> tuple[int, List]:
         result = []
@@ -262,13 +268,12 @@ class StatementParser:
         statement.parameters["items"] = items
         return start_line
     
-    def _parse_literal_block(self, lines: List[str], start_line: int, statement: Statement) -> int:  # Changed method name
-        _, text = self._parse_literal_block_value(lines, start_line)  # Changed method name
+    def _parse_literal_block(self, lines: List[str], start_line: int, statement: Statement) -> int:
+        _, text = self._parse_literal_block_value(lines, start_line)
         statement.parameters["text"] = text
         return start_line
 
-# Example usage
-def main():
+def test_basic_features():
     test_input = """
     Create New File
         name: test.py
@@ -301,6 +306,123 @@ def main():
     """
     
     parser = StatementParser()
+    print("\nTesting basic features:")
+    print("=======================")
+    statements = parser.parse(test_input)
+    
+    if parser.errors:
+        print("Parsing errors:")
+        for error in parser.errors:
+            print(error)
+    else:
+        print("Successfully parsed statements:")
+        parser.print_statements(statements)
+
+def test_block_names():
+    # Testing valid block name cases
+    valid_test = """
+    Deploy Application
+        /Service
+            Configure Settings
+                region: us-west-2
+                
+                /Database
+                    Set Parameters
+                        name: main-db
+                Database/
+                
+                /Cache
+                    Set Parameters
+                        type: redis
+                Cache/
+        Service/
+
+        # Valid: Same block name at root level
+        /Service
+            Configure Backup
+                type: daily
+        Service/
+    """
+    
+    # Testing invalid block name cases
+    invalid_test = """
+    Deploy Application
+        /Service
+            Configure Settings
+                /Service  # Invalid: Same as parent
+                    Set Parameters
+                        key: value
+                Service/
+        Service/
+
+        /System#Comment  # Invalid: Contains comment
+            Set Value
+                key: value
+        System/
+    """
+    
+    parser = StatementParser()
+    print("\nTesting valid block names:")
+    print("=========================")
+    statements = parser.parse(valid_test)
+    
+    if parser.errors:
+        print("Unexpected errors in valid cases:")
+        for error in parser.errors:
+            print(error)
+    else:
+        print("Successfully parsed valid blocks:")
+        parser.print_statements(statements)
+
+    print("\nTesting invalid block names:")
+    print("===========================")
+    statements = parser.parse(invalid_test)
+    
+    if parser.errors:
+        print("Expected errors found:")
+        for error in parser.errors:
+            print(error)
+    else:
+        print("ERROR: Invalid cases were accepted without errors")
+
+def test_mixed_blocks():
+    test_input = """
+    Configure System
+        /Network
+            Setup Router
+                interface: eth0
+                /Settings
+                    Set Parameters
+                        mode: auto
+                Settings/
+                /Settings
+                    Set Parameters
+                        speed: 1000
+                Settings/
+            Setup Firewall
+                /Rules
+                    Add Rule
+                        port: 80
+                        allow: true
+                Rules/
+        Network/
+
+        /Storage
+            Setup DNS
+                /Primary
+                    Configure Server
+                        ip: 8.8.8.8
+                Primary/
+                /Backup
+                    Configure Server
+                        ip: 8.8.4.4
+                Backup/
+        Storage/
+    """
+    
+    parser = StatementParser()
+    print("\nTesting mixed block scenarios:")
+    print("==============================")
     statements = parser.parse(test_input)
     
     if parser.errors:
@@ -312,4 +434,6 @@ def main():
         parser.print_statements(statements)
 
 if __name__ == "__main__":
-    main()
+    test_basic_features()
+    test_block_names()
+    test_mixed_blocks()

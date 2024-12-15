@@ -1,128 +1,151 @@
 from rich.console import Console
 from rich.panel import Panel
 from rich.columns import Columns
-from rich.text import Text
-from rich.syntax import Syntax
-from rich.table import Table
 from rich import box
-from pathlib import Path
+from rich.text import Text
 from typing import List
-from datetime import datetime
-from ...change.parser import FileChange, ChangeOperation, TextChange
-from janito.config import config
-from .styling import format_content, create_legend_items, current_theme
-from .themes import ColorTheme
-
-def create_text_modification_panel(change: TextChange) -> Panel:
-    """Create a panel showing search/replace text comparison"""
-    content_table = Table.grid(padding=(0, 2))
-    content_table.add_column("Search Pattern", justify="left")
-    content_table.add_column("Replace With", justify="left")
-
-    # Add headers
-    content_table.add_row(
-        Text("Search Pattern", style="bold cyan"),
-        Text("Replace With", style="bold cyan")
-    )
-
-    # Format search and replace content
-    search_lines = change.search_content.splitlines() if change.search_content else []
-    replace_lines = change.replace_content.splitlines() if change.replace_content else []
-
-    content_table.add_row(
-        format_content(search_lines, search_lines, replace_lines, True, 'modify'),
-        format_content(replace_lines, search_lines, replace_lines, False, 'modify')
-    )
-
-    return Panel(
-        content_table,
-        title=f"Text Modification{' - ' + change.reason if change.reason else ''}",
-        border_style="blue"
-    )
-
-def _show_legend(console: Console) -> None:
-    """Show the unified legend status bar"""
-    legend = create_legend_items()
-    legend_panel = Panel(
-        legend,
-        title="Changes Legend",
-        title_align="center",
-        border_style="white",
-        box=box.ROUNDED,
-        padding=(0, 2)
-    )
-    console.print(Columns([legend_panel], align="center", expand=True))
-    console.print()
-
-def show_change_preview(console: Console, filepath: Path, change: FileChange) -> None:
-    """Display a unified preview of changes for a single file"""
-    operation_icons = {
-        ChangeOperation.CREATE_FILE: "✨",
-        ChangeOperation.REPLACE_FILE: "🔄",
-        ChangeOperation.REMOVE_FILE: "🗑️",
-        ChangeOperation.MODIFY_FILE: "🔧",
-        ChangeOperation.RENAME_FILE: "📝"
-    }
-
-    border_styles = {
-        ChangeOperation.CREATE_FILE: "#8AE234",
-        ChangeOperation.REPLACE_FILE: "#FFB86C",
-        ChangeOperation.REMOVE_FILE: "#F44336",
-        ChangeOperation.MODIFY_FILE: "#61AFEF",
-        ChangeOperation.RENAME_FILE: "#C678DD"
-    }
-
-    icon = operation_icons.get(change.operation, "❓")
-    border_style = border_styles.get(change.operation, "white")
-
-    # Build content based on operation type
-    content = Table.grid(padding=(1, 0))
-
-    if change.operation == ChangeOperation.REMOVE_FILE:
-        content.add_row(Text(f"This file will be deleted", style="red"))
-    elif change.operation == ChangeOperation.RENAME_FILE:
-        content.add_row(Text(f"Renaming from {change.source} to {change.target}"))
-    elif change.operation == ChangeOperation.MODIFY_FILE:
-        # Show text modifications separately
-        for text_change in change.text_changes:
-            content.add_row(create_text_modification_panel(text_change))
-    else:
-        # Add metadata for file operations
-        old_size = len(change.original_content.encode('utf-8')) if change.original_content else None
-        new_size = len(change.content.encode('utf-8')) if change.content else None
-        content.add_row(create_file_metadata_panel(filepath, old_size, new_size))
-
-        # Add content preview for file operations
-        if change.operation == ChangeOperation.CREATE_FILE:
-            content.add_row(create_content_preview(change.content))
-        elif change.operation == ChangeOperation.REPLACE_FILE:
-            content.add_row(create_content_preview(
-                change.original_content or "",
-                change.content,
-                change.operation.name.lower()
-            ))
-
-    # Create main panel
-    operation_name = change.operation.name.title().replace('_', ' ')
-    panel = Panel(
-        content,
-        title=f"[bold]{icon} {operation_name} {filepath}[/bold]",
-        title_align="left",
-        border_style=border_style,
-        box=box.ROUNDED
-    )
-
-    console.print(panel)
-    console.print()
-
-    # Add spacing after preview
-    console.print()
+from ..parser import FileChange, ChangeOperation
+from .styling import format_content, create_legend_items
+from rich.rule import Rule
 
 def preview_all_changes(console: Console, changes: List[FileChange]) -> None:
-    """Show preview of all changes with unified styling"""
-    # Show legend first
-    _show_legend(console)
+    """Show a summary of all changes with side-by-side comparison for replacements"""
+    console.print("\n[bold blue]Change Operations Summary:[/bold blue]")
 
-    # Then show all changes
+    # First show summary
     for change in changes:
-        show_change_preview(console, change.name, change)
+        operation = change.operation.name.replace('_', ' ').title()
+        path = change.target if change.operation == ChangeOperation.RENAME_FILE else change.name
+
+        if change.operation == ChangeOperation.RENAME_FILE:
+            console.print(f"[yellow]• {operation}:[/yellow] {change.name} → {change.target}")
+        else:
+            console.print(f"[yellow]• {operation}:[/yellow] {path}")
+
+    # Then show side-by-side panels for replacements
+    console.print("\n[bold blue]File Replacements:[/bold blue]")
+
+    for change in changes:
+        if change.operation in (ChangeOperation.REPLACE_FILE, ChangeOperation.MODIFY_FILE):
+            show_side_by_side_diff(console, change)
+
+def show_side_by_side_diff(console: Console, change: FileChange) -> None:
+    """Show side-by-side diff panels for a file change"""
+    # Get original and new content
+    original = change.original_content or ""
+    new_content = change.content or ""
+
+    # Split into lines
+    original_lines = original.splitlines()
+    new_lines = new_content.splitlines()
+
+    # Find modified sections with context
+    sections = find_modified_sections(original_lines, new_lines, context_lines=3)
+
+    # Always show the header
+    operation = change.operation.name.replace('_', ' ').title()
+    header = f"[bold blue]{operation}:[/bold blue] {change.name}"
+    console.print(Panel(header, box=box.HEAVY, style="blue"))
+
+    if not sections:
+        # If no differences found, show full content side by side
+        left_panel = format_content(original_lines, original_lines, new_lines, True)
+        right_panel = format_content(new_lines, original_lines, new_lines, False)
+        sections = [(original_lines, new_lines)]
+    
+    # Create panels for each modified section
+    for i, (orig_section, new_section) in enumerate(sections):
+        # Format content with styling
+        left_panel = format_content(orig_section, orig_section, new_section, True)
+        right_panel = format_content(new_section, orig_section, new_section, False)
+
+        # Create panels with enhanced titles
+        # Calculate panel width based on terminal width
+        term_width = console.width or 120
+        panel_width = max(60, (term_width - 10) // 2)  # -10 for padding
+
+        left = Panel(
+            left_panel,
+            title=f"[red]Original Content[/red]",
+            title_align="left",
+            subtitle=str(change.name),
+            subtitle_align="right",
+            width=panel_width,
+            padding=(0, 1)
+        )
+        right = Panel(
+            right_panel,
+            title=f"[green]Modified Content[/green]",
+            title_align="left",
+            subtitle=str(change.name),
+            subtitle_align="right",
+            width=panel_width,
+            padding=(0, 1)
+        )
+
+        # Show panels side by side
+        console.print(Columns([left, right]))
+
+        # Show separator between sections
+        if i < len(sections) - 1:
+            console.print(Rule(style="dim"))
+
+    # Show legend at the end
+    console.print(create_legend_items())
+    console.print()
+
+def find_modified_sections(original: list[str], modified: list[str], context_lines: int = 3) -> list[tuple[list[str], list[str]]]:
+    """
+    Find modified sections between original and modified text with surrounding context.
+    
+    Args:
+        original: List of original lines
+        modified: List of modified lines
+        context_lines: Number of unchanged context lines to include
+        
+    Returns:
+        List of tuples containing (original_section, modified_section) line pairs
+    """
+    # Find different lines
+    different_lines = set()
+    for i in range(max(len(original), len(modified))):
+        if i >= len(original) or i >= len(modified):
+            different_lines.add(i)
+        elif original[i] != modified[i]:
+            different_lines.add(i)
+            
+    if not different_lines:
+        return []
+
+    # Group differences into sections with context
+    sections = []
+    current_section = set()
+    
+    for line_num in sorted(different_lines):
+        # If this line is far from current section, start new section
+        if not current_section or line_num <= max(current_section) + context_lines * 2:
+            current_section.add(line_num)
+        else:
+            # Process current section
+            start = max(0, min(current_section) - context_lines)
+            end = min(max(len(original), len(modified)), 
+                     max(current_section) + context_lines + 1)
+                     
+            orig_section = original[start:end]
+            mod_section = modified[start:end]
+            
+            sections.append((orig_section, mod_section))
+            current_section = {line_num}
+    
+    # Process final section
+    if current_section:
+        start = max(0, min(current_section) - context_lines) 
+        end = min(max(len(original), len(modified)),
+                 max(current_section) + context_lines + 1)
+                 
+        orig_section = original[start:end]
+        mod_section = modified[start:end]
+        
+        sections.append((orig_section, mod_section))
+        
+    return sections

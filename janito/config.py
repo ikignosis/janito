@@ -4,7 +4,7 @@ from pathlib import Path
 
 class ConfigManager:
     _instance = None
-    
+
     def __init__(self):
         self.debug = False
         self.verbose = False
@@ -15,22 +15,23 @@ class ConfigManager:
         self.include: List[Path] = []
         self.auto_apply: bool = False
         self.tui: bool = False
-        
+        self.recursive: bool = False
+
     @classmethod
     def get_instance(cls) -> "ConfigManager":
         if cls._instance is None:
             cls._instance = cls()
         return cls._instance
-    
+
     def set_debug(self, enabled: bool) -> None:
         self.debug = enabled
 
     def set_verbose(self, enabled: bool) -> None:
         self.verbose = enabled
-        
+
     def set_debug_line(self, line: Optional[int]) -> None:
         self.debug_line = line
-        
+
     def should_debug_line(self, line: int) -> bool:
         """Return True if we should show debug for this line number"""
         return self.debug and (self.debug_line is None or self.debug_line == line)
@@ -58,6 +59,10 @@ class ConfigManager:
     def set_tui(self, enabled: bool) -> None:
         """Set TUI mode"""
         self.tui = enabled
+
+    def set_recursive(self, enabled: bool) -> None:
+        """Set recursive scan mode"""
+        self.recursive = enabled
 
 # Create a singleton instance
 config = ConfigManager.get_instance()
