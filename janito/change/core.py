@@ -9,6 +9,7 @@ from janito.config import config
 from janito.scan import collect_files_content
 from .viewer import preview_all_changes
 from .text_applier import TextChangeApplier
+from janito.scan import show_content_stats
 
 from . import (
     build_change_request_prompt,
@@ -33,6 +34,9 @@ def process_change_request(
     paths_to_scan = config.include if config.include else [config.workdir]
 
     content_xml = collect_files_content(paths_to_scan)
+
+    # Show workspace content preview
+    show_content_stats(content_xml)
 
     analysis = analyze_request(request, content_xml)
     if not analysis:

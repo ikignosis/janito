@@ -54,7 +54,6 @@ class TextChangeApplier:
         any_changes = False
 
         target_path = target_path.resolve()
-        print(f"Applying changes to {target_path}")
 
         for mod in changes:
             try:
@@ -117,6 +116,8 @@ class TextChangeApplier:
         """Extract search text and file content from failed change debug info"""
         try:
             statements = self.parser.parse(content)
+            print("STATEMENTS", statements)
+            exit(0)
             if not statements or not statements[0].name == "Failed Find Debug":
                 raise ValueError("Not a valid failed find debug file")
 

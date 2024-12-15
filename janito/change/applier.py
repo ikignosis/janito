@@ -105,8 +105,12 @@ class ChangeApplier:
             elif change.operation == 'rename_file':
                 modified_files.add(change.target)
 
-        # Validate Python syntax
+        # Validate Python syntax (skip deleted files)
         python_files = {f for f in modified_files if f.suffix == '.py'}
+        for change in changes:
+            if change.operation == ChangeOperation.REMOVE_FILE:
+                python_files.discard(change.name)  # Skip validation for deleted files
+
         for path in python_files:
             preview_path = self.preview_dir / path
             is_valid, error_msg = validate_python_syntax(preview_path.read_text(), preview_path)
@@ -138,7 +142,6 @@ class ChangeApplier:
     def apply_single_change(self, change: FileChange) -> Tuple[bool, Optional[str]]:
         """Apply a single file change to preview directory"""
         path = self.preview_dir / change.name  # Changed back from path to name
-        print("APPLYING CHANGE", change.name, change.text_changes)  # Changed back from path to name
         
         # Handle file operations first
         if change.operation != ChangeOperation.MODIFY_FILE:

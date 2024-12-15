@@ -1,36 +1,28 @@
 # Janito
 
+[![PyPI version](https://badge.fury.io/py/janito.svg)](https://badge.fury.io/py/janito)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 AI-powered CLI tool for code modifications and analysis.
 
 ## Installation
 
 ```bash
-# Install package
 pip install janito
+```
 
-# Set API key
+Set your API key:
+```bash
 export ANTHROPIC_API_KEY=your_api_key_here
 ```
 
-## Basic Usage
+## Usage
 
 ```bash
-# Modify code
 janito "add docstrings to this file"
-
-# Ask questions
 janito --ask "explain this code"
-
-# Preview changes
 janito --scan
 ```
-
-## Common Options
-
-- `-w, --workdir`: Set working directory
-- `-i, --include`: Additional paths to include
-- `--test`: Run tests after changes
-- `--auto-apply`: Apply without confirmation
 
 ## Requirements
 

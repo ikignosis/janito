@@ -102,148 +102,141 @@ class Statement:
         
         format_nested(lst)
         return lines
-    
+
+class BlockContext:
+    def __init__(self, name: str, line_number: int, parent: Optional['BlockContext'] = None):
+        self.name = name
+        self.line_number = line_number
+        self.parent = parent
+        self.statements: List[Statement] = []
+        self.current_statement: Optional[Statement] = None
+        self.parameter_type: Optional[LineType] = None
+        self._statement_blocks: List[str] = []  # Track blocks within current statement
+
+    def validate_block_name(self, name: str, line_number: int) -> None:
+        """Validate block name according to spec rules"""
+        # Only validate against blocks in the current statement
+        if name in self._statement_blocks:
+            raise ParseError(line_number, "", 
+                f"Block name '{name}' already used in current statement")
+        self._statement_blocks.append(name)
+
+    def new_statement(self):
+        """Reset statement-specific tracking when starting a new statement"""
+        self._statement_blocks.clear()
+        self.current_statement = None
+        self.parameter_type = None
+
 class StatementParser:
     def __init__(self):
         self.max_list_depth = 5
         self.max_block_depth = 10
         self.errors: List[ParseError] = []
+        self.debug = False
         
-    def parse(self, content: str) -> List[Statement]:
+    def parse(self, content: str, debug: bool = False) -> List[Statement]:
+        self.debug = debug
         self.errors = []
         lines = content.splitlines()
-        return self._parse_statements(lines, 0, len(lines), None)[0]
-    
-    def _parse_statements(self, lines: List[str], start: int, end: int, parent_block_name: Optional[str] = None, depth: int = 0) -> tuple[List[Statement], int]:
-        if depth > self.max_block_depth:
-            raise ParseError(start, "", f"Maximum block nesting depth of {self.max_block_depth} exceeded")
+        
+        if self.debug:
+            print("\nStarting parse with debug mode enabled")
             
-        statements = []
-        current_statement = None
-        parameter_type = None
+        context = BlockContext("root", -1)
+        self._parse_context(lines, 0, len(lines), context)
+        return context.statements
+
+    def _parse_context(self, lines: List[str], start: int, end: int, context: BlockContext) -> int:
+        """Parse statements within the current block context"""
         line_number = start
-        open_blocks = []  # Stack to track open block names
         
         while line_number < end:
             line = lines[line_number].strip()
             line_type = self._determine_line_type(line)
             
+            if self.debug:
+                self._print_debug_info(line_number, line, line_type, context)
+            
             try:
-                if line_type == LineType.EMPTY or line_type == LineType.COMMENT:
+                # Handle each line type according to spec
+                if line_type in (LineType.EMPTY, LineType.COMMENT):
                     line_number += 1
                     continue
                     
                 elif line_type == LineType.STATEMENT:
-                    if parameter_type is not None:
-                        parameter_type = None
-                    current_statement = Statement(line)
-                    statements.append(current_statement)
-                    line_number += 1
-                    
-                elif line_type == LineType.KEY_VALUE:
-                    if not current_statement:
-                        raise ParseError(line_number, "", "Key/value pair found outside statement")
-                    if parameter_type and parameter_type != LineType.KEY_VALUE:
-                        raise ParseError(line_number, current_statement.name, "Cannot mix different parameter types")
-                    parameter_type = LineType.KEY_VALUE
-                    key, value = self._parse_key_value(line)
-                    if key in current_statement.parameters:
-                        raise ParseError(line_number, current_statement.name, f"Duplicate key: {key}")
-                        
-                    if not value:  # Empty value means we expect a literal block or list to follow
-                        line_number, value = self._parse_complex_value(lines, line_number + 1)
-                    
-                    current_statement.parameters[key] = value
-                    line_number += 1
-                    
-                elif line_type == LineType.LIST_ITEM:
-                    if not current_statement:
-                        raise ParseError(line_number, "", "List item found outside statement")
-                    if parameter_type and parameter_type != LineType.LIST_ITEM:
-                        raise ParseError(line_number, current_statement.name, "Cannot mix different parameter types")
-                    parameter_type = LineType.LIST_ITEM
-                    line_number = self._parse_list_items(lines, line_number, current_statement)
-                    line_number += 1
-                    
-                elif line_type == LineType.LITERAL_BLOCK:
-                    if not current_statement:
-                        raise ParseError(line_number, "", "Literal block found outside statement")
-                    if parameter_type and parameter_type != LineType.LITERAL_BLOCK:
-                        raise ParseError(line_number, current_statement.name, "Cannot mix different parameter types")
-                    parameter_type = LineType.LITERAL_BLOCK
-                    line_number = self._parse_literal_block(lines, line_number, current_statement)
+                    context.new_statement()  # Reset statement context
+                    context.current_statement = Statement(line)
+                    context.statements.append(context.current_statement)
+                    context.parameter_type = None
                     line_number += 1
                     
                 elif line_type == LineType.BLOCK_BEGIN:
-                    if not current_statement:
+                    if not context.current_statement:
                         raise ParseError(line_number, "", "Block begin found outside statement")
-                    
+                        
                     block_name = self._validate_block_name(line[1:].strip(), line_number)
+                    new_context = BlockContext(block_name, line_number, context)
+                    context.validate_block_name(block_name, line_number)
                     
-                    # Check if block name matches any open block
-                    if block_name in open_blocks:
-                        raise ParseError(line_number, current_statement.name, 
-                                      f"Block '{block_name}' is already open")
+                    if self.debug:
+                        print(f"  Opening block '{block_name}' at line {line_number + 1}")
                     
-                    if block_name == parent_block_name:
-                        raise ParseError(line_number, current_statement.name, 
-                                      f"Block name '{block_name}' cannot be the same as its parent block")
-                    
-                    open_blocks.append(block_name)
-                    nested_statements, new_line_number = self._parse_statements(
-                        lines, line_number + 1, end, block_name, depth + 1
-                    )
-                    current_statement.blocks.append((block_name, nested_statements))
-                    line_number = new_line_number
+                    # Parse nested block
+                    line_number = self._parse_context(lines, line_number + 1, end, new_context)
+                    context.current_statement.blocks.append((block_name, new_context.statements))
+                    continue
                     
                 elif line_type == LineType.BLOCK_END:
                     block_name = self._validate_block_name(line[:-1].strip(), line_number)
                     
-                    # Check if this matches the parent block - proper exit
-                    if block_name == parent_block_name:
-                        if open_blocks:
-                            # There are still open blocks when trying to close parent
-                            still_open = ", ".join(open_blocks)
-                            raise ParseError(line_number, current_statement.name,
-                                          f"Cannot close block '{block_name}' while blocks are still open: {still_open}")
-                        return statements, line_number + 1
+                    if not context.parent:
+                        raise ParseError(line_number, "", 
+                            f"Unexpected block end '{block_name}', no blocks are currently open")
                     
-                    # Check if we're closing the most recently opened block
-                    if not open_blocks or open_blocks[-1] != block_name:
-                        expected = open_blocks[-1] if open_blocks else "none"
-                        raise ParseError(line_number, current_statement.name,
-                                      f"Unexpected block end '{block_name}', expected: {expected}")
+                    if block_name != context.name:
+                        raise ParseError(line_number, "",
+                            f"Mismatched block end '{block_name}', expected '{context.name}' (opened at line {context.line_number + 1})")
                     
-                    open_blocks.pop()
-                    line_number += 1
-
+                    if self.debug:
+                        print(f"  Closing block '{block_name}' opened at line {context.line_number + 1}")
+                    
+                    return line_number + 1
+                
                 else:
-                    line_number += 1
+                    # Handle parameter types (key/value, list, literal block)
+                    line_number = self._handle_parameter(line_number, lines, line_type, context)
                     
             except ParseError as e:
                 self.errors.append(e)
                 line_number += 1
                 
         # Check for unclosed blocks at end of input
-        if open_blocks:
-            unclosed = ", ".join(open_blocks)
-            raise ParseError(end, current_statement.name if current_statement else "",
-                           f"Reached end of input with unclosed blocks: {unclosed}")
-            
-        if parent_block_name is not None:
-            raise ParseError(end, current_statement.name if current_statement else "",
-                           f"Reached end of input without closing block: {parent_block_name}")
-            
-        return statements, line_number
+        if context.parent is not None:
+            raise ParseError(end, "", 
+                f"Reached end of input without closing block '{context.name}' (opened at line {context.line_number + 1})")
+        
+        return line_number
 
-    def print_statements(self, statements: List[Statement], indent: int = 0):
-        """Pretty print the statements with proper indentation for blocks"""
-        for statement in statements:
-            print("  " * indent + str(statement))
-            for block_name, block_statements in statement.blocks:
-                print("  " * (indent + 1) + f"{block_name}:")
-                self.print_statements(block_statements, indent + 2)
-    
+    def _handle_parameter(self, line_number: int, lines: List, line_type: LineType, context: BlockContext) -> int:
+        """Handle parameter parsing according to spec rules"""
+        if not context.current_statement:
+            raise ParseError(line_number, "", f"{line_type.value} found outside statement")
+            
+        if context.parameter_type and context.parameter_type != line_type:
+            raise ParseError(line_number, context.current_statement.name, 
+                "Cannot mix different parameter types")
+            
+        context.parameter_type = line_type
+        
+        if line_type == LineType.KEY_VALUE:
+            return self._parse_key_value(line_number, lines, context)
+        elif line_type == LineType.LIST_ITEM:
+            return self._parse_list_items(line_number, lines, context)
+        elif line_type == LineType.LITERAL_BLOCK:
+            return self._parse_literal_block(line_number, lines, context)
+        
+        return line_number + 1
+
     def _determine_line_type(self, line: str) -> LineType:
         """Determine the type of a line based on its content"""
         if not line:
@@ -272,10 +265,20 @@ class StatementParser:
             raise ParseError(line_number, name, "Block names must contain only alphanumeric characters")
         return name
     
-    def _parse_key_value(self, line: str) -> tuple[str, str]:
+    def _parse_key_value(self, line_number: int, lines: List[str], context: BlockContext) -> int:
         """Parse a key-value line, stripping whitespace after the colon"""
+        line = lines[line_number].strip()
         key, value = line.split(":", 1)
-        return key.strip(), value.strip()
+        key, value = key.strip(), value.strip()
+        
+        if key in context.current_statement.parameters:
+            raise ParseError(line_number, context.current_statement.name, f"Duplicate key: {key}")
+            
+        if not value:  # Empty value means we expect a literal block or list to follow
+            line_number, value = self._parse_complex_value(lines, line_number + 1)
+        
+        context.current_statement.parameters[key] = value
+        return line_number + 1
     
     def _parse_complex_value(self, lines: List[str], start_line: int) -> tuple[int, Union[str, List]]:
         if start_line >= len(lines):
@@ -352,15 +355,28 @@ class StatementParser:
             
         return current_line - 1, result
 
-    def _parse_list_items(self, lines: List[str], start_line: int, statement: Statement) -> int:
-        _, items = self._parse_list_value(lines, start_line)
-        statement.parameters["items"] = items
-        return start_line
+    def _parse_list_items(self, line_number: int, lines: List[str], context: BlockContext) -> int:
+        _, items = self._parse_list_value(lines, line_number)
+        context.current_statement.parameters["items"] = items
+        return line_number + 1
     
-    def _parse_literal_block(self, lines: List[str], start_line: int, statement: Statement) -> int:
-        _, text = self._parse_literal_block_value(lines, start_line)
-        statement.parameters["text"] = text
-        return start_line
+    def _parse_literal_block(self, line_number: int, lines: List[str], context: BlockContext) -> int:
+        _, text = self._parse_literal_block_value(lines, line_number)
+        context.current_statement.parameters["text"] = text
+        return line_number + 1
+
+    def _print_debug_info(self, line_number: int, line: str, line_type: LineType, context: BlockContext) -> None:
+        """Print debug information about current parsing state"""
+        print(f"\nLine {line_number + 1}: Type={line_type.value}, Content='{line}'")
+        
+        # Print block context chain
+        current = context
+        if current.name != "root":
+            chain = []
+            while current and current.name != "root":
+                chain.append(f"'{current.name}' (line {current.line_number + 1})")
+                current = current.parent
+            print("  Block context:", " -> ".join(reversed(chain)))
 
 def test_basic_features():
     test_input = """
@@ -394,135 +410,37 @@ def test_basic_features():
         Infrastructure/
     """
     
-    parser = StatementParser()
-    print("\nTesting basic features:")
-    print("=======================")
-    statements = parser.parse(test_input)
-    
-    if parser.errors:
-        print("Parsing errors:")
-        for error in parser.errors:
-            print(error)
-    else:
-        print("Successfully parsed statements:")
-        parser.print_statements(statements)
-
-def test_block_names():
-    # Testing valid block name cases
-    valid_test = """
-    Deploy Application
-        /Service
-            Configure Settings
-                region: us-west-2
-                
-                /Database
-                    Set Parameters
-                        name: main-db
-                Database/
-                
-                /Cache
-                    Set Parameters
-                        type: redis
-                Cache/
-        Service/
-
-        # Valid: Same block name at root level
-        /Service
-            Configure Backup
-                type: daily
-        Service/
-    """
-    
-    # Testing invalid block name cases
-    invalid_test = """
-    Deploy Application
-        /Service
-            Configure Settings
-                /Service  # Invalid: Same as parent
-                    Set Parameters
-                        key: value
-                Service/
-        Service/
-
-        /System#Comment  # Invalid: Contains comment
-            Set Value
-                key: value
-        System/
-    """
-    
-    parser = StatementParser()
-    print("\nTesting valid block names:")
-    print("=========================")
-    statements = parser.parse(valid_test)
-    
-    if parser.errors:
-        print("Unexpected errors in valid cases:")
-        for error in parser.errors:
-            print(error)
-    else:
-        print("Successfully parsed valid blocks:")
-        parser.print_statements(statements)
-
-    print("\nTesting invalid block names:")
-    print("===========================")
-    statements = parser.parse(invalid_test)
-    
-    if parser.errors:
-        print("Expected errors found:")
-        for error in parser.errors:
-            print(error)
-    else:
-        print("ERROR: Invalid cases were accepted without errors")
-
-def test_mixed_blocks():
-    test_input = """
-    Configure System
-        /Network
-            Setup Router
-                interface: eth0
-                /Settings
-                    Set Parameters
-                        mode: auto
-                Settings/
-                /Settings
-                    Set Parameters
-                        speed: 1000
-                Settings/
-            Setup Firewall
-                /Rules
-                    Add Rule
-                        port: 80
-                        allow: true
-                Rules/
-        Network/
-
-        /Storage
-            Setup DNS
-                /Primary
-                    Configure Server
-                        ip: 8.8.8.8
-                Primary/
-                /Backup
-                    Configure Server
-                        ip: 8.8.4.4
-                Backup/
-        Storage/
-    """
-    
-    parser = StatementParser()
-    print("\nTesting mixed block scenarios:")
-    print("==============================")
-    statements = parser.parse(test_input)
-    
-    if parser.errors:
-        print("Parsing errors:")
-        for error in parser.errors:
-            print(error)
-    else:
-        print("Successfully parsed statements:")
-        parser.print_statements(statements)
 
 if __name__ == "__main__":
-    test_basic_features()
-    test_block_names()
-    test_mixed_blocks()
+    import sys
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='Parse a clear statement file')
+    parser.add_argument('file_path', help='Path to the input file')
+    parser.add_argument('--debug', '-d', action='store_true', help='Enable debug output')
+    
+    args = parser.parse_args()
+    
+    try:
+        with open(args.file_path, 'r') as f:
+            content = f.read()
+            
+        statement_parser = StatementParser()
+        statements = statement_parser.parse(content, debug=args.debug)
+        
+        if statement_parser.errors:
+            print("\nParsing errors:")
+            for error in statement_parser.errors:
+                print(error)
+            sys.exit(1)
+        else:
+            print(f"\nSuccessfully parsed statements from {args.file_path}:")
+            print("=" * 50)
+            statement_parser.print_statements(statements)
+            
+    except FileNotFoundError:
+        print(f"Error: File '{args.file_path}' not found")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        sys.exit(1)

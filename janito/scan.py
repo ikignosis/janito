@@ -149,6 +149,7 @@ def show_content_stats(content: str) -> None:
 
     dir_counts: Dict[str, int] = defaultdict(int)
     dir_sizes: Dict[str, int] = defaultdict(int)
+    file_types: Dict[str, int] = defaultdict(int)
     current_path = None
     current_content = []
 
@@ -157,6 +158,7 @@ def show_content_stats(content: str) -> None:
             path = Path(line.replace('<path>', '').replace('</path>', '').strip())
             current_path = str(path.parent)
             dir_counts[current_path] += 1
+            file_types[path.suffix.lower() or 'no_ext'] += 1
         elif line.startswith('<content>'):
             current_content = []
         elif line.startswith('</content>'):
@@ -168,14 +170,24 @@ def show_content_stats(content: str) -> None:
             current_content.append(line)
 
     console = Console()
-    stats = [
+    console.print("\n[bold blue]Workspace Analysis[/bold blue]")
+
+    # Directory statistics
+    dir_stats = [
         f"{directory}/ [{count} file(s), {_format_size(size)}]"
         for directory, (count, size) in (
             (d, (dir_counts[d], dir_sizes[d]))
             for d in sorted(dir_counts.keys())
         )
     ]
-    console.print(Panel(Columns(stats, equal=True, expand=True), title="Work Context"))
+    console.print(Panel(Columns(dir_stats, equal=True, expand=True), title="Directory Structure"))
+
+    # File type statistics
+    type_stats = [
+        f"{ext.lstrip('.')} [{count} file(s)]"
+        for ext, count in sorted(file_types.items())
+    ]
+    console.print(Panel(Columns(type_stats, equal=True, expand=True), title="File Types"))
 
 def is_dir_empty(path: Path) -> bool:
     """

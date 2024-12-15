@@ -57,14 +57,17 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
     original_lines = original.splitlines()
     new_lines = new_content.splitlines()
 
-    # Show legend at the top
-    console.print(create_legend_items())
-    console.print()
+    # Show centered legend with padding
+    legend = create_legend_items()
+    term_width = console.width or 120
+    legend_width = len(str(legend))
+    padding = (term_width - legend_width) // 2
+    console.print(" " * padding + str(legend))
 
-    # Show the header with progress
+    # Show the header with minimal spacing after legend
     operation = change.operation.name.replace('_', ' ').title()
     progress = f"Change {change_index + 1}/{total_changes}"
-    header = f"[bold blue]{operation}:[/bold blue] {change.name} [dim]({progress})[/dim]"  # Changed back from path to name
+    header = f"[bold blue]{operation}:[/bold blue] {change.name} [dim]({progress})[/dim]"
     console.print(Panel(header, box=box.HEAVY, style="blue"))
 
     # Handle text changes

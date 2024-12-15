@@ -52,12 +52,32 @@ def format_content(lines: List[str], search_lines: List[str], replace_lines: Lis
 
     return text
 
-def create_legend_items() -> Text:
-    """Create unified legend with consistent styling"""
-    legend = Text()
-    legend.append(" Unchanged ", style=f"{current_theme.text_color} on {current_theme.line_backgrounds['unchanged']}")
-    legend.append(" │ ", style="dim")
-    legend.append(" ✕ Deleted ", style=f"{current_theme.text_color} on {current_theme.line_backgrounds['deleted']}")
-    legend.append(" │ ", style="dim")
-    legend.append(" ✚ Added ", style=f"{current_theme.text_color} on {current_theme.line_backgrounds['added']}")
-    return legend
+from rich.panel import Panel
+from rich.columns import Columns
+
+def create_legend_items() -> Columns:
+    """Create unified legend with themed background panels"""
+    # Create panels for each legend item with themed backgrounds
+    unchanged_panel = Panel(
+        " Unchanged ",
+        style=f"{current_theme.text_color} on {current_theme.line_backgrounds['unchanged']}",
+        padding=(0, 1)
+    )
+    deleted_panel = Panel(
+        " ✕ Deleted ",
+        style=f"{current_theme.text_color} on {current_theme.line_backgrounds['deleted']}",
+        padding=(0, 1)
+    )
+    added_panel = Panel(
+        " ✚ Added ",
+        style=f"{current_theme.text_color} on {current_theme.line_backgrounds['added']}",
+        padding=(0, 1)
+    )
+
+    # Combine panels into columns with spacing
+    return Columns(
+        [unchanged_panel, deleted_panel, added_panel],
+        padding=(0, 2),
+        expand=False,
+        align="center"
+    )

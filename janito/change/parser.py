@@ -74,7 +74,8 @@ Remove File
 # Change some text in a file
 Modify File
     name: script.py
-    /Changes
+    # Block being open
+    /Changes    
         Replace
             reason: Update function name and content
             search:
@@ -88,7 +89,8 @@ Modify File
             content:
             .def additional_function():
             .    print("New feature")
-    Changes/
+    # Open blocks must be closed
+    Changes/  
 
 END_CHANGES (include this marker)
 
@@ -314,19 +316,14 @@ def parse_response(response_text: str) -> List[FileChange]:
     parser = CommandParser()
     statement_parser = StatementParser()
 
-    
     # First extract the changes section
     changes_text = extract_changes_section(response_text)
     if not changes_text:
         if config.debug:
             console.print("[yellow]No changes section found in response[/yellow]")
         return []
-    
-    # Then parse the statements
+
     statements = statement_parser.parse(changes_text)
-    for st in statements:
-       pprint(st.to_dict())
-    exit(0)
     return parser.parse_statements(statements)
 
 def build_change_request_prompt(
