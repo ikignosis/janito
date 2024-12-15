@@ -1,12 +1,14 @@
 from pathlib import Path
 from typing import Optional, Tuple, Optional, List
 from rich.console import Console
+from rich.prompt import Confirm
 
 from janito.common import progress_send_message
 from janito.change.history import save_changes_to_history
 from janito.config import config
 from janito.scan import collect_files_content
-from .viewer import preview_all_changes  # Add this import
+from .viewer import preview_all_changes
+from .text_applier import TextChangeApplier  # Add this import
 
 from . import (
     build_change_request_prompt,
@@ -34,17 +36,17 @@ def process_change_request(
     # Analyze request to get change plan
     content_xml = collect_files_content(paths_to_scan)
 
-    analysis = analyze_request(content_xml, request)
+    analysis = analyze_request(request, content_xml)
     # handle ctrl-c interrupt
     if not analysis:
         console.print("[red]Analysis failed or interrupted[/red]")
         return False, None
     
-    # Get affected files content (new only)
-    content_xml = collect_files_content(analysis.get_affected_paths(skip_new=True)) if analysis.affected_files else ""
-    
+    # TODO: We need a better way of selecting filenames from the original content
+    # For now, we'll just use the first file
+
     # Build and send request
-    prompt = build_change_request_prompt(analysis.format_option_text(), request, content_xml)
+    prompt = build_change_request_prompt(request, analysis.format_option_text(), content_xml)
     response = progress_send_message(prompt)
     if not response:
         console.print("[red]Failed to get response from AI[/red]")
@@ -62,19 +64,31 @@ def parse_and_apply_changes(response: str) -> Tuple[bool, Optional[Path]]:
     
     console = Console()
 
-
     # Parse and save response
     changes = parse_response(response)
     if not changes:
         console.print("[yellow]No changes found in response[/yellow]")
         return False, None       
     
+    # Show change summary
+    from .summary import ChangeSummary
+    summary = ChangeSummary()
+    for change in changes:
+        summary.add_change(change.operation.name.title(), change.name)
+    summary.display()
+    
     # Apply changes to preview
     success, _ = applier.apply_changes(changes)
     if success:
         preview_all_changes(console, changes)  # Use the preview function from viewer module
         # Apply to working dir if requested
-        if console.input("Apply changes to working dir? [y/N] ").lower() == 'y':
+        if not config.auto_apply:
+            apply_changes = Confirm.ask("[cyan]Apply changes to working dir?[/cyan]", default=False)
+        else:
+            apply_changes = True
+            console.print("[cyan]Auto-applying changes to working dir...[/cyan]")
+
+        if apply_changes:
             applier.apply_to_workdir(changes)
             console.print("[green]Changes applied successfully[/green]")
         else:
@@ -85,6 +99,53 @@ def parse_and_apply_changes(response: str) -> Tuple[bool, Optional[Path]]:
 def play_saved_changes(
     filepath: Path,
 ) -> bool:
-    """Process changes from a saved file through the main flow, skipping analysis/request steps."""
-    response = filepath.read_text()
-    return parse_and_apply_changes(response)
+    """Process changes from a saved file - either debug failed finds or apply normal changes."""
+    content = filepath.read_text()
+    console = Console()
+    
+    if '_failed' in filepath.name:
+        # Debug failed finds only
+        applier = TextChangeApplier(console)
+        filepath_str, search_text, file_content = applier.extract_debug_info(content)
+        if not (filepath_str and search_text and file_content):
+            console.print("[red]Could not extract debug information from saved file[/red]")
+            return False
+            
+        applier.debug_failed_finds(search_text, file_content, filepath_str)
+        return True
+        
+    # Regular changes file - process normally
+    _, preview_dir = setup_workdir_preview()
+    applier = ChangeApplier(preview_dir)
+    text_applier = TextChangeApplier(console)  # Create separate applier for failed finds
+    config.debug = True  # Enable debug mode for better feedback
+    
+    try:
+        changes = parse_response(content)
+        if not changes:
+            console.print("[yellow]No changes found in saved file[/yellow]")
+            return False
+            
+        success, error = applier.apply_changes(changes)
+        if not success and error and 'Search text not found' in error:
+            # Extract details from error message for failed find debugging
+            file_path = error.split(': ')[0]
+            search_text = error.split(': ')[1]
+            try:
+                file_content = (preview_dir / file_path).read_text()
+                text_applier._handle_failed_search(Path(file_path), search_text, file_content)
+            except Exception as e:
+                console.print(f"[red]Failed to generate debug file: {e}[/red]")
+            return False
+            
+        if success and not config.auto_apply:
+            apply_changes = Confirm.ask("[cyan]Apply changes to working dir?[/cyan]", default=False)
+            if apply_changes:
+                applier.apply_to_workdir(changes)
+                console.print("[green]Changes applied successfully[/green]")
+            else:
+                console.print("[yellow]Changes were not applied[/yellow]")
+                
+        return success
+    finally:
+        config.debug = False  # Restore debug setting

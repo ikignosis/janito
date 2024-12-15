@@ -81,7 +81,7 @@ def get_option_selection() -> str:
         padded_error = " " * error_padding + error_msg
         console.print(f"[red]{padded_error}[/red]")
 
-def build_request_analysis_prompt(files_content_xml: str, request: str) -> str:
+def build_request_analysis_prompt(request: str, files_content_xml: str) -> str:
     """Build prompt for information requests"""
     return CHANGE_ANALYSIS_PROMPT.format(
         files_content=files_content_xml,

@@ -1,271 +1,244 @@
----
+# CLEAR STATEMENT FORMAT
 
-CLEAR STATEMENT FORMAT
+Version: 1.9.2
 
-Version: 1.3
-
----
-
-OVERVIEW
+## OVERVIEW
 
 This document provides a format for actionable statements that should be easy to interpret by both humans and automation, for use in structured communication files or any scenario requiring standardized documentation.
 
----
+## FORMAT ELEMENTS
 
-FORMAT ELEMENTS
-
-1. Basic Line Types
+### 1. Basic Line Types
 
 The following symbols are special: # . : - /, particularly when wrapping lines.
 
 Line type is determined by these rules in order, once there is a match the type is set:
 
-1. All lines are stripped of leading whitespace and trailing end-of-line symbols (\n, \r, \r\n).
-2. Empty Lines: Lines that are completely empty or consist only of whitespace are skipped.
-3. Comment: Lines starting with # are treated as comments and ignored during execution.
-4. Statement: Lines containing only alphanumeric characters and spaces.
-5. List Item: Lines beginning with one or more - characters.
-6. Text Block: Lines beginning with ., terminating when a non-dotted line is encountered (excluding comments) or when the document ends.
-7. Key/Value: Lines containing : are treated as key/value pairs.
-   - Enhanced Rule: If the value is empty (e.g., key: with no inline value), either a text block or a list must follow.
-8. Statement Block Start: Lines starting with / mark the start of a statement block (e.g., /blockName).
-9. Statement Block End: Lines ending with / mark the end of a statement block (e.g., blockName/).
-10. Statement Block Content: Lines after /blockName and before blockName/ (for the same name).
+1. All lines are stripped of leading whitespace and trailing whitespace/end-of-line symbols (\n, \r, \r\n), parsing is based on line content, not indentation
+2. Empty Lines: Lines that are completely empty or consist only of whitespace are skipped
+3. Comment: Lines starting with # are treated as comments and ignored
+4. List Item: Lines beginning with one or more - characters
+5. Statement: Lines containing only alphanumeric characters and spaces
+6. Literal Block: Lines beginning with ., terminating when a non-dot-prefixed line is encountered (excluding comments) or when the document ends
+7. Key/Value: Lines containing : are treated as key/value pairs
+8. Statement Block Begin: Lines beginning with / are treated as the start of a statement block e.g /Modifications
+9. Statement Block contents: Lines within a statement block are treated as statements, key/value pairs, literal blocks, or lists within the block
+10. Statement Block End: Lines ending with \ are treated as the end of a statement block e.g Modifications/
 
----
+Note: The order of these rules is significant. A line's type is determined by the first matching rule.
 
-2. Statements Format
+### 2. Statements Format
 
-A statement is a single line that represents an action or instruction, optionally followed by parameters that provide additional context or data for the statement.
+A statement is a single line that represents an action or instruction, followed by exactly one type of parameters that provide additional context or data for the statement. Parameters must be either all key-value pairs, all list items, or all literal block lines - mixing parameter types is not allowed.
 
-2.1 Statement Parameters
+#### 2.1 Statement Parameters
 
-Parameters can include:
-- Text Block lines
-- Key/Value lines (with enhanced support for text blocks or lists).
-- List lines
-- Statement Block Lines and Statement Block Content
+Parameters must be one of these types:
+- A series of key/value lines (with enhanced support for literal blocks or lists as values)
+- A sequence of list items, where each item is a single line of text
+- A literal block, where lines are preserved exactly as written including whitespace and formatting
+- A sequence of statement blocks
 
----
+Parameters cannot mix different types. For example, you cannot have both key/value pairs and direct list items in the same statement.
 
-ENHANCED KEY/VALUE LINES
+Valid examples:
 
-- Keys within the sequence must be unique.
+Key/Value Parameters:
+```
+Create File
+    name: test.py
+    type: python
+    content:
+    .print("hello")
+    .# This is actual content, not a comment
+    .print("world")
+```
+
+List Parameters:
+```
+Add Items
+    - First item
+    - Second item
+    -- Subitem A
+    -- Subitem B
+    - Third item
+```
+
+Literal Block Parameters:
+```
+Show Message
+    .This is a message
+    .It can span multiple lines
+    .Each line starts with a dot
+```
+
+Invalid example (mixing types):
+```
+Invalid Statement
+    key: value
+    - list item    # Not allowed: mixing key/value with list
+    .literal block   # Not allowed: mixing with literal block
+```
+
+#### 2.2 Enhanced Key/Value Lines
+
+- Keys within a scope must be unique:
+  - All keys within a single statement's parameters must be unique
+  - All keys within the same nesting level of a list must be unique
+  - Keys can be reused in different scopes (different statements or different list items)
 - Values:
-  - If the value is inline (non-empty), it must remain on a single line.
-  - If the value is empty (e.g., key:), either a text block or a list must follow:
-    - Text Block: Lines starting with . must immediately follow the key and will be treated as the value for the key. The text block terminates when a non-dotted line is encountered (except comments) or when the document finishes. All lines are joined using \n after stripping the leading ..
-    - List: Lines starting with - must immediately follow the key and will be treated as a list for the key. Nesting rules for lists apply (as detailed in Section 2.2.2).
-  - Mixing Error: Mixing text blocks and lists under the same key is not allowed and must result in a syntax error.
+  - If the value is inline (non-empty), it must remain on a single line
+  - If the value is empty (e.g., key:), either a literal block or a list must follow:
+    - Literal Block: Lines starting with . must immediately follow the key and will be treated as the value for the key. The literal block terminates when a non-dot-prefixed line is encountered (except comments) or when the document finishes. All lines are joined using \n after stripping the leading dot.
+    - List: Lines starting with - must immediately follow the key and will be treated as a list for the key. Nesting rules for lists apply.
+  - Mixing Error: Mixing literal blocks and lists under the same key is not allowed and must result in a syntax error.
 
----
+##### 2.2.1 Literal Blocks
 
-2.2.1 TEXT BLOCKS
+- A leading dot is required for each line of a literal block
+- The content after the leading dot is preserved exactly as written
+- The literal block terminates when:
+  - A line without a leading dot (excluding comments) is encountered, or
+  - The document finishes
+- Join all lines with \n to form a single string value
+- Literal blocks are stored as strings
+- All whitespace and characters after the leading dot are preserved exactly as written
+- The dot prefix allows literal blocks to contain content that would otherwise be interpreted as comments or other special line types
 
-- Strip the leading . on each line while retaining all following content.
-- The text block terminates when:
-  - A non-dotted line (excluding comments) is encountered, or
-  - The document finishes.
-- Join all lines with \n to form a single string value.
-- Text blocks are stored as strings.
+##### 2.2.2 Lists
 
-Example 1 (Simple Text Block):
+- List items are marked by one or more leading dash characters (-) to indicate nesting level
+- Nesting Levels: 
+  - Determined by the number of consecutive dash characters (-, --, ---)
+  - Maximum depth of 5 levels
+  - Each level must use exactly one more dash than its parent
+- List Item Content:
+  - Each list item must contain exactly one line of text
+  - The text starts immediately after the dashes and any whitespace
+  - No continuation lines are allowed
+  - No empty items are allowed
+- List Storage: Lists are stored as a list type within the dictionary under the corresponding key they follow
 
-description:
-. This is a multi-line
-. description text block
-. that serves as the value
-Next Statement
+##### 2.2.3 Mixing Rules
 
-Result:
-"key_values": {
-    "description": "This is a multi-line\ndescription text block\nthat serves as the value"
-}
+- A key cannot have both a literal block and a list as its value
 
-Example 2 (Text Block With Comments):
+#### 2.3 Statement Blocks
 
-description:
-. This is a multi-line
-. description text block
-# This comment does not terminate the text block
-. that serves as the value
-Final Statement
+Statement blocks are a powerful mechanism for organizing complex, nested instructions within a single statement. They provide a structured way to group related sub-operations, transformations, or configurations.
 
-Result:
-"key_values": {
-    "description": "This is a multi-line\ndescription text block\nthat serves as the value"
-}
+Key Characteristics:
+- Blocks create a hierarchical, nested structure for organizing instructions
+- Represented by a start marker (/) and an end marker (/`)
+- Block names must be unique within the same statement
+- Allow nested blocks by providing new blocks within inner statement parameters
+- Maximum nesting depth of 10 levels
+- Enables complex, multi-step processes within a single statement
 
----
+Block Syntax:
+```
+StatementName
+    /BlockName
+        SubStatement1
+            key1: value1
+            key2: value2
+        SubStatement2
+            list:
+            - Item 1
+            - Item 2
+    BlockName/
+```
 
-2.2.2 LISTS
-
-- Nesting Levels: Determined by the number of consecutive dash characters (-, --, ---), with a maximum depth of 5.
-- Consistent Types: All items within a single list must have the same value type: strings, key/value pairs, or text blocks.
-- List Storage: Lists are stored as a list type within the dictionary under the corresponding key they follow. Each list item is added as an individual element in the list.
-
-Example:
-
-items:
-- Item 1
-- Item 2
-- Item 3
-
-Result:
-"key_values": {
-    "items": ["Item 1", "Item 2", "Item 3"]
-}
-
-LIST STORAGE WITH NESTED VALUES
-
-When lists contain nested items (e.g., using --, ---), they are stored as sub-lists within the corresponding parent list. Each level of nesting is represented as a sub-list, grouped under its parent item.
-
-menu:
-- Main Dishes
--- Pasta
--- Steak
-- Desserts
--- Cake
--- Ice Cream
-
-Result:
-"key_values": {
-    "menu": [
-        ["Main Dishes", ["Pasta", "Steak"]],
-        ["Desserts", ["Cake", "Ice Cream"]]
-    ]
-}
-
----
-
-2.2.3 MIXING RULES
-
-- A key cannot have both a text block and a list as its value.
-
-Invalid Example:
-
-description:
-. This is a description
-- Item 1
-
-Result:
-Syntax Error: Mixing text block and list under key 'description' is not allowed.
-
----
-
-2.3 STATEMENT BLOCK CONTENT
-
-- Statement block names must be alphanumeric and unique within the same statement.
+##### Block Rules:
+- Statement block names must be alphanumeric and unique within the same statement
+  - Block names can be reused in different statements
+  - A statement cannot have multiple blocks with the same name
 - Start: /blockName
 - End: blockName/
-- Content: Must consist of statements, where each statement can have parameters in the form of key/value pairs, text blocks, lists, or nested blocks. Key/value pairs, text blocks, and lists are only allowed as parameters to statements, not directly at the block level.
-- Syntax Validation: Statement block content will only be validated and managed when explicitly activated by their parent statement.
-- Nesting: Maximum depth of 10.
-- Empty Blocks: Allowed.
----
+- Content: Must consist of statements, where each statement can have parameters in the form of key/value pairs, literal blocks, lists, or nested blocks
+- Key/value pairs, literal blocks, and lists are only allowed as parameters to statements, not directly at the block level
+- Nesting: Maximum depth of 10
+- Empty Blocks: Allowed
+- Scope: Each block creates a new scope for key uniqueness
 
-3. PARSING CONSIDERATIONS
+### 3. Parsing Considerations
 
-- Indentation is recommended for readability but not enforced.
-- Parsers should interpret the format correctly regardless of indentation.
-- Invalid constructs (e.g., skipping list levels, exceeding limits) must be reported as syntax errors.
+- Indentation is recommended for readability but not enforced
+- Parsers should interpret the format correctly regardless of indentation
+- Invalid constructs (e.g., skipping list levels, exceeding limits) must be reported as syntax errors
 
-3.1 WHITESPACE RULES:
+#### 3.1 Whitespace Rules
 - Leading whitespace is stripped for all lines
 - In key/value pairs, whitespace after the colon is stripped
-- In text blocks, whitespace after the dot is preserved exactly as written
+- In literal blocks, whitespace after the leading dot is preserved exactly as written
 - In lists, whitespace after the dashes is stripped
 
----
-
-4. EXECUTION RULES
-
-- Statements execute sequentially in the order they appear.
-- There are two modes for syntax validation and execution of statement blocks:
-  1. **Strict Mode**: The entire document is fully validated before any execution begins. This ensures that all syntax is correct and avoids runtime errors due to invalid content.
-  2. **Lazy Mode**: Syntax validation and execution of statement block content are deferred until activated by their parent statement. This allows flexibility for documents with partially valid content.
-- Statements within a statement block will be executed in sequence when activated by their parent statement. The order of execution of sibling statement blocks is determined by the parent statement.
-
----
-
-5. ERROR HANDLING
+### 4. Error Handling
 
 - Errors must include the following details:
-  - Statement Context: The statement that caused the error.
-  - Line Number: The location of the error.
-  - Error Message: Descriptive message explaining the issue.
-- Errors should be reported in plain text format for simplicity, with one error per line.
+  - Statement Context: The statement that caused the error
+  - Line Number: The location of the error
+  - Error Message: Descriptive message explaining the issue
+- Errors should be reported in plain text format for simplicity, with one error per line
+- Uniqueness violations must be reported with clear scope context
 
-Example:
+### 5. Examples
 
-Line 42: Invalid nesting level under key 'menu'
-Line 57: Mixing text block and list under key 'description'
+#### Statement Without Parameters:
+```
+Clear All Cache
+```
 
----
-
-6. EXAMPLES
-
-STATEMENT WITHOUT PARAMETERS:
-
-Clear Cache
-
-STATEMENT WITH KEY/VALUE AND TEXT BLOCK:
-
-Create File
+#### Statement with Key/Value and Literal Block:
+```
+Create New File
     name: test.py
     content:
     .def greet():
     .    print("Hello")
-Next Statement
+```
 
-STATEMENT WITH LISTS:
-
-Create Menu
-    items:
-    - Main Dishes
+#### Statement with Lists:
+```
+Update Menu Items
+    categories:
+    - Main Course
     -- Pasta
-    -- Steak
+    -- Pizza
     - Desserts
-    -- Cake
     -- Ice Cream
+    -- Cake
+```
 
-STATEMENT WITH STATEMENT BLOCKS:
+#### Statement with Complex Statement Blocks:
+```
+Deploy Application
+    /Infrastructure
+        Provision Servers
+            cloud: aws
+            regions:
+            - us-west-2
+            - eu-central-1
+        Configure Network
+            security_groups:
+            - web_traffic
+            - internal_services
+    Infrastructure/
 
-Modify File
-    name: test.py
-    /Modifications
-        Replace
-            text:
-            .def greet():
-            .    print("Hello")
-            with:
-            .def greet():
-            .    print("Hello World")
-        Delete
-            text:
-            .def old_function():
-            .    print("Banana")
-    Modifications/
+    /Application
+        Install Dependencies
+            package_manager: pip
+            requirements:
+            - django
+            - celery
+            - redis
+        Setup Environment
+            env_vars:
+            - DEBUG: false
+            - LOG_LEVEL: info
+    Application/
+```
 
----
-
-INVALID CONSTRUCTS:
-
-EXCEEDING CHARACTER LIMIT:
-
-This Is An Overly Long Statement Name That Will Fail Validation
-
-SKIPPING NESTING LEVELS:
-
-- Level 1
---- Level 3
-
-MIXING LIST VALUE TYPES:
-
-- String Item
--- key: value
-
----
-
+This specification provides a comprehensive, flexible format for structured communication and instruction representation.
 
 

@@ -5,6 +5,7 @@ from typing import Optional
 from janito.agents import agent
 from janito.common import progress_send_message
 from janito.config import config
+from janito.tui import TuiApp
 from .display import format_analysis
 from .options import AnalysisOption, parse_analysis_options
 from .prompts import (
@@ -14,8 +15,8 @@ from .prompts import (
 )
 
 def analyze_request(
+    request: str,        
     files_content_xml: str,
-    request: str,
     pre_select: str = ""
 ) -> Optional[AnalysisOption]:
     """
@@ -29,23 +30,27 @@ def analyze_request(
         Selected AnalysisOption or None if modified
     """
     # Build and send prompt
-    prompt = build_request_analysis_prompt(files_content_xml, request)
+    prompt = build_request_analysis_prompt(request, files_content_xml)
     response = progress_send_message(prompt)
-    
-    # Display formatted analysis
-    format_analysis(response, config.raw)
     
     # Parse options
     options = parse_analysis_options(response)
     if not options:
         return None
-    
+
     if pre_select:
         return options[pre_select.upper()]
+
+    if config.tui:
+        app = TuiApp(options=options)
+        app.run()
+        return app.selected_option
         
+    # Display formatted analysis in terminal mode
+    format_analysis(response, config.raw)
+    
     # Get user selection
     while True:
-
         selection = get_option_selection()
         
         if selection == 'M':

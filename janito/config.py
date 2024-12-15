@@ -14,6 +14,7 @@ class ConfigManager:
         self.raw = False
         self.include: List[Path] = []
         self.auto_apply: bool = False
+        self.tui: bool = False
         
     @classmethod
     def get_instance(cls) -> "ConfigManager":
@@ -53,6 +54,10 @@ class ConfigManager:
     def set_auto_apply(self, enabled: bool) -> None:
         """Set auto apply mode"""
         self.auto_apply = enabled
+
+    def set_tui(self, enabled: bool) -> None:
+        """Set TUI mode"""
+        self.tui = enabled
 
 # Create a singleton instance
 config = ConfigManager.get_instance()

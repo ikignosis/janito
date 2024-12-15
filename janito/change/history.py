@@ -17,7 +17,9 @@ def get_history_path() -> Path:
 def determine_history_file_type(filepath: Path) -> str:
     """Determine the type of saved file based on its name"""
     name = filepath.name.lower()
-    if 'changes' in name:
+    if '_changes_failed' in name:
+        return 'changes_failed'
+    elif 'changes' in name:
         return 'changes'
     elif 'selected' in name:
         return 'selected'
@@ -55,6 +57,13 @@ def play_changes_file(save_file: Path, preview_dir: Path) -> Tuple[bool, Optiona
         saved_content = save_file.read_text()
         file_type = determine_history_file_type(save_file)
         
+        # Handle failed changes debug file
+        if file_type == 'changes_failed':
+            console = Console()
+            console.print("\n[yellow]Debug information for failed search:[/yellow]")
+            console.print(Panel(saved_content))
+            return True, None
+            
         # Extract changes section if it's a history file
         if file_type == 'changes':
             changes_section = saved_content.split("Changes:\n", 1)

@@ -10,22 +10,22 @@ def find_common_sections(search_lines: List[str], replace_lines: List[str]) -> T
             common_top.append(s)
         else:
             break
-            
+
     # Find common lines from bottom
     search_remaining = search_lines[len(common_top):]
     replace_remaining = replace_lines[len(common_top):]
-    
+
     common_bottom = []
     for s, r in zip(reversed(search_remaining), reversed(replace_remaining)):
         if s == r:
             common_bottom.insert(0, s)
         else:
             break
-            
+
     # Get the unique middle sections
     search_middle = search_remaining[:-len(common_bottom)] if common_bottom else search_remaining
     replace_middle = replace_remaining[:-len(common_bottom)] if common_bottom else replace_remaining
-    
+
     return common_top, search_middle, replace_middle, common_bottom, search_lines
 
 def get_line_similarity(line1: str, line2: str) -> float:

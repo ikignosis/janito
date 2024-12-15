@@ -14,26 +14,46 @@ pip install janito
 janito --version
 ```
 
-## ⚙️ Setup
+## ⚙️ Configuration
 
-1. Get your Anthropic API key from [Anthropic's website](https://www.anthropic.com/)
+### Environment Variables
 
-2. Set your API key:
-```bash
-# Linux/macOS
-export ANTHROPIC_API_KEY='your-api-key-here'
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `ANTHROPIC_API_KEY` | Anthropic API key for Claude AI | Required |
+| `JANITO_TEST_CMD` | Default test command | None |
+| `AI_BACKEND` | AI backend to use (claudeai/openai) | claudeai |
 
-# Windows (Command Prompt)
-set ANTHROPIC_API_KEY=your-api-key-here
+## 🎯 Command Line Options
 
-# Windows (PowerShell)
-$env:ANTHROPIC_API_KEY='your-api-key-here'
-```
+### Core Options
 
-3. (Optional) Configure default test command:
-```bash
-export JANITO_TEST_CMD='pytest'  # or your preferred test command
-```
+| Option | Description |
+|--------|-------------|
+| `REQUEST` | Change request or command to execute |
+| `-w, --workdir` | Set working directory |
+| `-i, --include` | Additional paths to include |
+| `--debug` | Show debug information |
+| `--verbose` | Show verbose output |
+| `--version` | Show version information |
+
+### Operation Modes
+
+| Option | Description |
+|--------|-------------|
+| `--ask` | Ask questions about codebase |
+| `--play` | Replay saved prompt file |
+| `--scan` | Preview files to analyze |
+| `--input` | Read request from stdin |
+| `--history` | Display request history |
+
+### Execution Control
+
+| Option | Description |
+|--------|-------------|
+| `--test` | Command to run tests |
+| `--auto-apply` | Apply changes without confirmation |
+| `--tui` | Use terminal user interface |
 
 ## 🚀 Quick Start
 
@@ -79,27 +99,6 @@ janito --ask "what does this function do?"
 janito --ask "suggest optimizations for this code"
 ```
 
-## 🛠️ Command Reference
-
-### Syntax
-```bash
-janito [OPTIONS] [REQUEST]
-```
-
-### Key Options
-
-| Option | Description |
-|--------|-------------|
-| `REQUEST` | The AI request/instruction (in quotes) |
-| `-w, --working-dir PATH` | Working directory [default: current] |
-| `-i, --include PATH` | Include directory int the working context (can be multiple)|
-| `--ask QUESTION` | Ask questions without making changes |
-| `--test COMMAND` | Run tests before applying changes |
-| `--debug` | Enable debug logging |
-| `--verbose` | Enable verbose mode |
-| `--version` | Show version information |
-| `--help` | Show help message |
-
 ## 🔑 Key Features
 
 - 🤖 AI-powered code analysis and modifications
@@ -113,9 +112,6 @@ janito [OPTIONS] [REQUEST]
 
 - Requires Python 3.8+
 - Changes are backed up in `.janito/changes_history/`
-- Environment variables:
-  - `ANTHROPIC_API_KEY`: Required for API access
-  - `JANITO_TEST_CMD`: Default test command (optional)
 
 ## 📄 License
 
