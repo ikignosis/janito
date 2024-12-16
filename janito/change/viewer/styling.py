@@ -12,7 +12,7 @@ def set_theme(theme: ColorTheme) -> None:
     global current_theme
     current_theme = theme
 
-def format_content(lines: List[str], search_lines: List[str], replace_lines: List[str], is_search: bool) -> Text:
+def format_content(lines: List[str], search_lines: List[str], replace_lines: List[str], is_search: bool, width: int = 80) -> Text:
     """Format content with unified highlighting and indicators"""
     text = Text()
 
@@ -30,15 +30,10 @@ def format_content(lines: List[str], search_lines: List[str], replace_lines: Lis
         bg_color = current_theme.line_backgrounds.get(line_type, current_theme.line_backgrounds['unchanged'])
         style = f"{current_theme.text_color} on {bg_color}"
 
-        # Add prefix with consistent spacing
+        # Add prefix and content with left alignment
         text.append(f"{prefix} ", style=style)
-
-        # Add line content
         text.append(line, style=style)
-
-        # Add padding to ensure full width background
-        padding = " " * max(0, 80 - len(line) - 2)  # -2 for prefix and space
-        text.append(f"{padding}\n", style=style)
+        text.append("\n", style=style)
 
     for i, line in enumerate(lines):
         if not line.strip():  # Handle empty lines

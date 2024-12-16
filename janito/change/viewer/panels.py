@@ -11,27 +11,43 @@ from rich.rule import Rule
 def preview_all_changes(console: Console, changes: List[FileChange]) -> None:
     """Show a summary of all changes with side-by-side comparison and progress tracking"""
     total_changes = len(changes)
-    console.print("\n[bold blue]Change Operations Summary:[/bold blue]")
 
-    # First show summary with operation indicators
+    # Create summary text for the panel
+    summary_text = Text()
+    summary_text.append("Change Operations Summary\n\n", style="bold blue")
+
+    # Add change entries to summary
     for change in changes:
         operation = change.operation.name.replace('_', ' ').title()
-        path = change.target if change.operation == ChangeOperation.RENAME_FILE else change.name  # Changed back from path to name
+        path = change.target if change.operation == ChangeOperation.RENAME_FILE else change.name
 
         # Add colored indicators based on operation type
         if change.operation == ChangeOperation.CREATE_FILE:
-            indicator = "[green]✚[/green]"
+            summary_text.append("✚ ", style="green")
         elif change.operation == ChangeOperation.REMOVE_FILE:
-            indicator = "[red]✕[/red]"
+            summary_text.append("✕ ", style="red")
         elif change.operation == ChangeOperation.RENAME_FILE:
-            indicator = "[yellow]↺[/yellow]"
+            summary_text.append("↺ ", style="yellow")
         else:
-            indicator = "[blue]✎[/blue]"
+            summary_text.append("✎ ", style="blue")
 
+        # Add entry to summary text
         if change.operation == ChangeOperation.RENAME_FILE:
-            console.print(f"{indicator} [yellow]{operation}:[/yellow] {change.name} → {change.target}")  # Changed back from path to name
+            summary_text.append(f"{operation}: ", style="yellow")
+            summary_text.append(f"{change.name} → {change.target}\n")
         else:
-            console.print(f"{indicator} [yellow]{operation}:[/yellow] {path}")
+            summary_text.append(f"{operation}: ", style="yellow")
+            summary_text.append(f"{path}\n")
+
+    # Create and display centered panel
+    summary_panel = Panel(
+        summary_text,
+        title="[bold blue]Change Summary[/bold blue]",
+        box=box.ROUNDED,
+        padding=(1, 2),
+        width=min(console.width - 4, 100)  # Limit max width while keeping padding
+    )
+    console.print(summary_panel, justify="center")
 
     # Then show side-by-side panels for replacements
     console.print("\n[bold blue]File Changes:[/bold blue]")
@@ -89,24 +105,30 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
                 right_panel = format_content(new_section, orig_section, new_section, False)
 
                 term_width = console.width or 120
-                panel_width = max(60, (term_width - 10) // 2)
+                total_padding = 10  # Space for margins and padding between panels
+                panel_width = (term_width - total_padding) // 2
+                content_width = panel_width - 4  # Account for panel borders and padding
+
+                # Format content with calculated width
+                left_panel = format_content(orig_section, orig_section, new_section, True, content_width)
+                right_panel = format_content(new_section, orig_section, new_section, False, content_width)
 
                 panels = [
                     Panel(
                         left_panel,
                         title="[red]Original Content[/red]",
-                        title_align="left",
+                        title_align="center",
                         subtitle=str(change.name),
-                        subtitle_align="right",
+                        subtitle_align="center",
                         width=panel_width,
                         padding=(0, 1)
                     ),
                     Panel(
                         right_panel,
                         title="[green]Modified Content[/green]",
-                        title_align="left",
+                        title_align="center",
                         subtitle=str(change.name),
-                        subtitle_align="right",
+                        subtitle_align="center",
                         width=panel_width,
                         padding=(0, 1)
                     )
@@ -117,6 +139,9 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
                 # Show separator between sections
                 if i < len(sections) - 1:
                     console.print(Rule(style="dim"))
+                else:
+                    # Show final section separator with label
+                    console.print(Rule(title="End Of Changes", style="bold blue"))
     else:
         # For non-text changes, show full content side by side
         sections = find_modified_sections(original_lines, new_lines)
@@ -125,24 +150,30 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
             right_panel = format_content(new_section, orig_section, new_section, False)
 
             term_width = console.width or 120
-            panel_width = max(60, (term_width - 10) // 2)
+            total_padding = 10  # Space for margins and padding between panels
+            panel_width = (term_width - total_padding) // 2
+            content_width = panel_width - 4  # Account for panel borders and padding
+
+            # Format content with calculated width
+            left_panel = format_content(orig_section, orig_section, new_section, True, content_width)
+            right_panel = format_content(new_section, orig_section, new_section, False, content_width)
 
             panels = [
                 Panel(
                     left_panel,
                     title="[red]Original Content[/red]",
-                    title_align="left",
+                    title_align="center",
                     subtitle=str(change.name),
-                    subtitle_align="right",
+                    subtitle_align="center",
                     width=panel_width,
                     padding=(0, 1)
                 ),
                 Panel(
                     right_panel,
                     title="[green]Modified Content[/green]",
-                    title_align="left",
+                    title_align="center",
                     subtitle=str(change.name),
-                    subtitle_align="right",
+                    subtitle_align="center",
                     width=panel_width,
                     padding=(0, 1)
                 )
@@ -153,7 +184,12 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
             # Show separator between sections
             if i < len(sections) - 1:
                 console.print(Rule(style="dim"))
+            else:
+                # Show final section separator with label
+                console.print(Rule(title="End Of Changes", style="bold blue"))
 
+    # Add final separator after all changes
+    console.print(Rule(title="End Of Changes", style="bold blue"))
     console.print()
 
 def find_modified_sections(original: list[str], modified: list[str], context_lines: int = 3) -> list[tuple[list[str], list[str]]]:
