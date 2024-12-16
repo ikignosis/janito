@@ -57,12 +57,8 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
     original_lines = original.splitlines()
     new_lines = new_content.splitlines()
 
-    # Show centered legend with padding
-    legend = create_legend_items()
-    term_width = console.width or 120
-    legend_width = len(str(legend))
-    padding = (term_width - legend_width) // 2
-    console.print(" " * padding + str(legend))
+    # Show compact centered legend
+    console.print(create_legend_items(), justify="center")
 
     # Show the header with minimal spacing after legend
     operation = change.operation.name.replace('_', ' ').title()

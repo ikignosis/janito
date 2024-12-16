@@ -157,7 +157,6 @@ class ChangeApplier:
             path.write_text(original_path.read_text())
 
         current_content = path.read_text()
-        print("We are applying changes to", path) 
         success, modified_content, error = self.text_applier.apply_modifications(
             current_content, 
             change.text_changes, 

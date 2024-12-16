@@ -37,5 +37,12 @@ def handle_play(filepath: Path):
 
 def handle_request(request: str, preview_only: bool = False):
     """Process modification request"""
+    from janito.cli.history import save_to_history
+    from janito.agents import agent
+
     handler = RequestHandler()
     handler.handle(request, preview_only)
+
+    # Save request and response to history
+    if agent.last_response:
+        save_to_history(request, agent.last_response)

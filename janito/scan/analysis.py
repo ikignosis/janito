@@ -47,7 +47,7 @@ def analyze_workspace_content(content: str) -> None:
 
     # File type statistics
     type_stats = [
-        f"📄 {ext.lstrip('.')} [{count} file(s)]"
+        f"📄 .{ext.lstrip('.')} [{count} file(s)]" if ext != 'no_ext' else f"📄 {ext} [{count} file(s)]"
         for ext, count in sorted(file_types.items())
     ]
 

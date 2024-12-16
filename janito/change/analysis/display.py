@@ -30,42 +30,52 @@ def get_analysis_summary(options: Dict[str, AnalysisOption]) -> str:
     return " | ".join([f"{dir}: {count} files" for dir, count in dirs_summary.items()])
 
 def _display_options(options: Dict[str, AnalysisOption]) -> None:
-    """Display available options in a single horizontal row with equal widths."""
+    """Display available options with files organized in columns."""
     console = Console()
-    
+
     console.print()
     console.print(Rule(" Available Options ", style="bold cyan", align="center"))
     console.print()
-    
+
     term_width = console.width or 100
     spacing = 4
     total_spacing = spacing * (len(options) - 1)
     panel_width = max(MIN_PANEL_WIDTH, (term_width - total_spacing) // len(options))
-    
+
     panels = []
     for letter, option in options.items():
         content = Text()
-        
-        content.append("Description:\n", style="bold cyan")
+
+        # Description section
+        content.append(Text("Description:\n", style="bold cyan"))
         for item in option.description_items:
-            content.append(f"• {item}\n", style="white")
-        content.append("\n")
-        
+            content.append(Text(f"• {item}\n", style="white"))
+        content.append(Text("\n"))
+
         if option.affected_files:
-            content.append("Affected files:\n", style="bold cyan")
-            unique_files = {}
+            # Group and display files by type
+            file_groups = {
+                'Modified': {'files': [], 'style': 'yellow'},
+                'New': {'files': [], 'style': 'green'},
+                'Deleted': {'files': [], 'style': 'red'}
+            }
+
+            # Sort files into groups
             for file in option.affected_files:
-                clean_path = option.get_clean_path(file)
-                unique_files[clean_path] = file
-                
-            for file in unique_files.values():
+                clean_path = file.split(' (')[0]
                 if '(new)' in file:
-                    color = "green"
+                    file_groups['New']['files'].append(clean_path)
                 elif '(removed)' in file:
-                    color = "red"
+                    file_groups['Deleted']['files'].append(clean_path)
                 else:
-                    color = "yellow"
-                content.append(f"• {file}\n", style=color)
+                    file_groups['Modified']['files'].append(clean_path)
+
+            # Display each group with header
+            for group_name, group_info in file_groups.items():
+                if group_info['files']:
+                    content.append(Text(f"\n─── {group_name} ───\n", style="cyan"))
+                    for file_path in group_info['files']:
+                        content.append(Text(f"• {file_path}\n", style=group_info['style']))
 
         panel = Panel(
             content,
@@ -77,7 +87,7 @@ def _display_options(options: Dict[str, AnalysisOption]) -> None:
             width=panel_width
         )
         panels.append(panel)
-    
+
     if panels:
         columns = Columns(
             panels,
@@ -117,7 +127,3 @@ def format_analysis(analysis: str, raw: bool = False,) -> None:
     else:
         console.print("\n[yellow]Warning: No valid options found in response. Displaying as markdown.[/yellow]\n")
         _display_markdown(analysis)
-
-
-
-
