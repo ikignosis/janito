@@ -1,6 +1,6 @@
 """Core analysis functionality."""
 
-from typing import Optional
+from typing import Optional, Dict
 
 from janito.agents import agent
 from janito.common import progress_send_message
@@ -24,6 +24,7 @@ def analyze_request(
     Args:
         files_content: Content of files to analyze
         request: User's change request
+        pre_select: Optional pre-selected option letter
         
     Returns:
         Selected AnalysisOption or None if modified
@@ -38,7 +39,7 @@ def analyze_request(
         return None
 
     if pre_select:
-        return options[pre_select.upper()]
+        return options.get(pre_select.upper())
 
     if config.tui:
         from janito.tui import TuiApp
@@ -57,5 +58,4 @@ def analyze_request(
             return None
             
         if validate_option_letter(selection, options):
-            selected_option = options[selection.upper()]
-            return selected_option
+            return options[selection.upper()]

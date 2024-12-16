@@ -46,6 +46,10 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
         change_index: Current change number (0-based)
         total_changes: Total number of changes
     """
+    # Handle delete operations with special formatting
+    if change.operation == ChangeOperation.REMOVE_FILE:
+        show_delete_panel(console, change, change_index, total_changes)
+        return
     # Get terminal width for layout decisions
     term_width = console.width or 120
     min_panel_width = 60  # Minimum width for readable content
@@ -363,3 +367,53 @@ def create_change_panel(search_content: Text, replace_content: Text, description
         title=f"[blue]Modification: {description}[/blue]",
         box=box.HEAVY
     )
+def show_delete_panel(console: Console, change: FileChange, change_index: int = 0, total_changes: int = 1) -> None:
+    """Show a specialized panel for file deletion operations
+
+    Args:
+        console: Rich console instance
+        change: FileChange object containing the changes
+        change_index: Current change number (0-based)
+        total_changes: Total number of changes
+    """
+    # Show compact centered legend
+    console.print(create_legend_items(console), justify="center")
+
+    # Show the header with reason and progress
+    operation = change.operation.name.replace('_', ' ').title()
+    progress = f"Change {change_index + 1}/{total_changes}"
+
+    # Create centered reason text if present
+    reason_text = Text()
+    if change.reason:
+        reason_text.append("\n")
+        reason_text.append(change.reason, style="italic")
+
+    # Build header with operation and progress
+    header = Text()
+    header.append(f"{operation}:", style="bold red")
+    header.append(f" {change.name} ")
+    header.append(f"({progress})", style="dim")
+    header.append(reason_text)
+
+    # Display panel with centered content
+    console.print(Panel(header, box=box.HEAVY, style="red", title_align="center"))
+
+    # Create deletion panel
+    delete_text = Text()
+    delete_text.append("This file will be removed", style="bold red")
+    if change.original_content:
+        delete_text.append("\n\nOriginal file path: ", style="dim")
+        delete_text.append(str(change.name), style="red")
+
+    console.print(Panel(
+        delete_text,
+        title="[red]File Deletion[/red]",
+        title_align="center",
+        border_style="red",
+        padding=(1, 2)
+    ))
+
+    # Add final separator
+    console.print(Rule(title="End Of Changes", style="bold red"))
+    console.print()

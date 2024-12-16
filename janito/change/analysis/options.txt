@@ -1,0 +1,37 @@
+A. Simplify
+-----------------
+Description:
+- Remove duplicate option display code from analysis module
+- Keep core display logic in display.py
+- Minimal changes to maintain current functionality
+
+Affected files:
+- janito/change/analysis/display.py (modified)
+- janito/change/analysis/prompts.py (modified)
+
+B. Consolidate
+-----------------
+Description:
+- Merge option display logic into a single module
+- Create dedicated option formatting functions
+- Improve separation between display and prompt handling
+
+Affected files:
+- janito/change/analysis/display.py (modified)
+- janito/change/analysis/prompts.py (modified)
+- janito/change/analysis/options.py (modified)
+
+C. Modularize
+-----------------
+Description:
+- Create dedicated OptionFormatter class for display logic
+- Add support for custom option display formats
+- Implement option display strategy pattern
+
+Affected files:
+- janito/change/analysis/display.py (modified)
+- janito/change/analysis/prompts.py (modified)
+- janito/change/analysis/options.py (modified)
+- janito/change/analysis/formatters.py (new)
+
+END_OF_OPTIONS

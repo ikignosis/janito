@@ -38,11 +38,35 @@ class TextFindDebugger:
 
         return matches
 
+from .operations import TextOperation
+
 class TextChangeApplier:
     def __init__(self, console: Optional[Console] = None):
         self.console = console or Console()
         self.debugger = TextFindDebugger(self.console)
         self.parser = StatementParser()
+
+    def _validate_operation(self, mod: TextChange) -> Tuple[bool, Optional[str]]:
+        """Validate text operation type and parameters
+        Returns (is_valid, error_message)"""
+        if mod.is_append:
+            if not mod.replace_content:
+                return False, "Append operation requires content"
+            return True, None
+
+        # For delete operations
+        if mod.is_delete:
+            if not mod.search_content:
+                return False, "Delete operation requires search content"
+            return True, None
+
+        # For replace operations
+        if not mod.search_content:
+            return False, "Replace operation requires search content"
+        if mod.replace_content is None:
+            return False, "Replace operation requires replacement content"
+
+        return True, None
 
     def apply_modifications(self, content: str, changes: List[TextChange], target_path: Path) -> Tuple[bool, str, Optional[str]]:
         """Apply text modifications to content"""
@@ -51,12 +75,24 @@ class TextChangeApplier:
         target_path = target_path.resolve()
 
         for mod in changes:
+            # Validate operation
+            is_valid, error = self._validate_operation(mod)
+            if not is_valid:
+                return False, content, f"Invalid operation for {target_path}: {error}"
+
             try:
                 # Handle append operations
                 if not mod.search_content:
                     if mod.replace_content:
                         modified = self._append_content(modified, mod.replace_content)
                         any_changes = True
+                    continue
+
+                # Handle delete operations
+                if mod.is_delete:
+                    replacer = SearchReplacer(modified, mod.search_content, "")
+                    modified = replacer.replace()
+                    any_changes = True
                     continue
 
                 # Handle search and replace

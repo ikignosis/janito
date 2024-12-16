@@ -12,9 +12,22 @@ def set_theme(theme: ColorTheme) -> None:
     global current_theme
     current_theme = theme
 
-def format_content(lines: List[str], search_lines: List[str], replace_lines: List[str], is_search: bool, width: int = 80) -> Text:
+def format_content(lines: List[str], search_lines: List[str], replace_lines: List[str], is_search: bool, width: int = 80, is_delete: bool = False) -> Text:
     """Format content with unified highlighting and indicators"""
     text = Text()
+
+    # For delete operations, show all lines as deleted
+    if is_delete:
+        for line in lines:
+            bg_color = current_theme.line_backgrounds['deleted']
+            style = f"{current_theme.text_color} on {bg_color}"
+            content = f"✕ {line}"
+            padding = " " * max(0, width - len(content))
+            text.append("✕ ", style=style)
+            text.append(line, style=style)
+            text.append(padding, style=style)
+            text.append("\n", style=style)
+        return text
 
     # Find similar lines for better diff visualization
     similar_pairs = find_similar_lines(search_lines, replace_lines)

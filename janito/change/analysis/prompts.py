@@ -1,11 +1,14 @@
 """User prompts and input handling for analysis."""
 
-from typing import List
+from typing import List, Dict
 from rich.console import Console
 from rich.panel import Panel
 from rich.rule import Rule
 from rich.prompt import Prompt
 from rich import box
+
+
+from .options import AnalysisOption
 
 # Keep only prompt-related functionality
 CHANGE_ANALYSIS_PROMPT = """
@@ -58,9 +61,11 @@ def prompt_user(message: str, choices: List[str] = None) -> str:
     padded_message = " " * padding + message
     return Prompt.ask(f"[bold cyan]{padded_message}[/bold cyan]")
 
-def validate_option_letter(letter: str, options: dict) -> bool:
+def validate_option_letter(letter: str, options: Dict[str, AnalysisOption]) -> bool:
     """Validate if the given letter is a valid option or 'M' for modify"""
-    return letter.upper() in options or letter.upper() == 'M'
+    if letter.upper() == 'M':
+        return True
+    return letter.upper() in options
 
 def get_option_selection() -> str:
     """Get user input for option selection with modify option"""

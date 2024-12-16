@@ -1,137 +1,83 @@
-"""Options handling for analysis module."""
-
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Dict, List
 from pathlib import Path
-from typing import List, Dict, Tuple, Optional
-import re
-import os
-
-from janito.config import config
 
 @dataclass
 class AnalysisOption:
+    """Represents an analysis option with letter identifier and details"""
     letter: str
     summary: str
-    affected_files: List[str]
-    description_items: List[str]
+    description_items: List[str] = field(default_factory=list)
+    affected_files: List[str] = field(default_factory=list)
 
     def format_option_text(self) -> str:
-        """Format the option into a string representation"""
-        option_text = f"Option {self.letter}:\n"
-        option_text += f"Summary: {self.summary}\n\n"
-        option_text += "Description:\n"
-        for item in self.description_items:
-            option_text += f"- {item}\n"
-        option_text += "\nAffected files:\n"
-        for file in self.affected_files:
-            option_text += f"- {file}\n"
-        return option_text
+        """Format option details as text for change core"""
+        text = f"Option {self.letter}: {self.summary}\n\n"
+        
+        if self.description_items:
+            text += "Description:\n"
+            for item in self.description_items:
+                text += f"- {item}\n"
+            text += "\n"
+            
+        if self.affected_files:
+            text += "Affected files:\n"
+            for file in self.affected_files:
+                text += f"- {file}\n"
+                
+        return text
+
+    def is_new_directory(self, file_path: str) -> bool:
+        """Check if file path represents a new directory"""
+        parent = str(Path(file_path).parent)
+        if parent == '.':
+            return False
+            
+        for other_file in self.affected_files:
+            if '(new)' not in other_file and parent in other_file:
+                return False
+                
+        return True
 
     def get_clean_path(self, file_path: str) -> str:
-        """Get clean path without markers"""
+        """Remove status markers from file path"""
         return file_path.split(' (')[0].strip()
-        
-    def is_new_file(self, file_path: str) -> bool:
-        """Check if file is marked as new"""
-        return '(new)' in file_path
-        
-    def is_removed_file(self, file_path: str) -> bool:
-        """Check if file is marked as removed"""
-        return '(removed)' in file_path
 
-    def get_affected_paths(self = None, skip_new: bool = False) -> List[Path]:
-        """Get list of affected paths, resolving against workdir if provided"""
-        paths = []
-        for file_path in self.affected_files:
-            if self.is_new_file(file_path) and skip_new:
-                continue
-            clean_path = self.get_clean_path(file_path)
-            path = config.workdir / clean_path if config.workdir else Path(clean_path)
-            paths.append(path)
-        return paths
-
-    def check_path_exists(self, path: str) -> bool:
-        """Check if a file path exists"""
-        clean_path = self.get_clean_path(path)
-        return os.path.exists(clean_path)
-
-    def is_new_directory(self, path: str) -> bool:
-        """Check if file would create a new directory"""
-        clean_path = self.get_clean_path(path)
-        return not os.path.exists(os.path.dirname(clean_path))
-
-    def process_file_path(self, path: str) -> Tuple[str, bool, bool, bool]:
-        """Process a file path to extract clean path and modification flags
-        Returns: (clean_path, is_new, is_modified, is_removed)
-        """
-        clean_path = path.strip()
-        is_new = False
-        is_modified = False
-        is_removed = False
-        
-        if "(new)" in clean_path:
-            is_new = True
-            clean_path = clean_path.replace("(new)", "").strip()
-        if "(modified)" in clean_path:
-            is_modified = True
-            clean_path = clean_path.replace("(modified)", "").strip()
-        if "(removed)" in clean_path:
-            is_removed = True
-            clean_path = clean_path.replace("(removed)", "").strip()
-            
-        return clean_path, is_new, is_modified, is_removed
-
-def parse_analysis_options(response: str) -> Dict[str, AnalysisOption]:
-    """Parse options from the response text."""
+def parse_analysis_options(content: str) -> Dict[str, AnalysisOption]:
+    """Parse analysis options from formatted text file"""
     options = {}
-    if 'END_OF_OPTIONS' in response:
-        response = response.split('END_OF_OPTIONS')[0]
-    
     current_option = None
     current_section = None
-    lines = response.split('\n')
     
-    for line in lines:
+    for line in content.splitlines():
         line = line.strip()
-        if not line:
+        
+        # Skip empty lines and section separators
+        if not line or line.startswith('---') or line == 'END_OF_OPTIONS':
             continue
             
-        option_match = re.match(r'^([A-Z])\.\s+(.+)$', line)
-        if option_match:
-            if current_option:
-                options[current_option.letter] = current_option
-                
-            letter, summary = option_match.groups()
-            current_option = AnalysisOption(
-                letter=letter,
-                summary=summary,
-                affected_files=[],
-                description_items=[]
-            )
+        # New option starts with a letter and period
+        if line[0].isalpha() and line[1:3] == '. ':
+            letter, summary = line.split('. ', 1)
+            current_option = AnalysisOption(letter=letter.upper(), summary=summary)
+            options[letter.upper()] = current_option
             current_section = None
             continue
             
-        if re.match(r'^-+$', line):
+        # Section headers
+        if line.lower() == 'description:':
+            current_section = 'description'
             continue
-        
-        if current_option:
-            if line.lower() == 'description:':
-                current_section = 'description'
-                continue
-            elif line.lower() == 'affected files:':
-                current_section = 'files'
-                continue
+        elif line.lower() == 'affected files:':
+            current_section = 'files'
+            continue
             
-            if line.startswith('- '):
-                content = line[2:].strip()
-                if current_section == 'description':
-                    current_option.description_items.append(content)
-                elif current_section == 'files':
-                    # Accept any combination of new, modified or removed markers
-                    if any(marker in content for marker in ['(new)', '(modified)', '(removed)']):
-                        current_option.affected_files.append(content)
-    
-    if current_option:
-        options[current_option.letter] = current_option
+        # Add items to current section
+        if current_option and line.startswith('- '):
+            content = line[2:].strip()
+            if current_section == 'description':
+                current_option.description_items.append(content)
+            elif current_section == 'files':
+                current_option.affected_files.append(content)
     
     return options

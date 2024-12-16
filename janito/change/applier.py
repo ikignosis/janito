@@ -55,14 +55,16 @@ class ChangeApplier:
             # Validate each text change
             seen_search_texts = set()
             for mod in change.text_changes:
-                if not mod.replace_content and not mod.is_append:
-                    return False, "Replace content is required for non-append modification"
-                if not mod.is_append:
+                if mod.is_append:
+                    if not mod.replace_content:
+                        return False, "Replace content is required for append operation"
+                else:
                     if not mod.search_content:
                         return False, "Search content is required for non-append modification"
-                    # Check for duplicate search patterns that could conflict
-                    if mod.search_content in seen_search_texts:
-                        return False, f"Duplicate search pattern found: {mod.search_content}"
+                    if not mod.is_delete and not mod.replace_content:
+                        return False, "Replace content is required for non-delete modification"
+
+                if mod.search_content:
                     seen_search_texts.add(mod.search_content)
 
         return True, None

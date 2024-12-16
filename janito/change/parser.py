@@ -37,6 +37,8 @@ class TextChange:
         # If there's no search content but there is replace content, it's an append operation
         if not self.search_content and self.replace_content:
             self.is_append = True
+        # If there's search content but no replace content, it's a delete operation
+        self.is_delete = bool(self.search_content and self.replace_content is None)
     
     def validate(self) -> bool:
         """Validate the text change operation"""

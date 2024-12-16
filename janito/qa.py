@@ -6,6 +6,7 @@ from rich.table import Table
 from rich.rule import Rule
 from janito.agents import AIAgent
 from janito.common import progress_send_message
+from janito.scan.analysis import analyze_workspace_content
 
 
 QA_PROMPT = """Please provide a clear and concise answer to the following question about the codebase:
@@ -24,7 +25,7 @@ Format your response using markdown with appropriate headers and code blocks.
 def ask_question(question: str, files_content: str) -> str:
     """Process a question about the codebase and return the answer"""
     # Show content stats before processing
-    show_content_stats(files_content)
+    analyze_workspace_content(files_content)
     
     prompt = QA_PROMPT.format(
         question=question,
