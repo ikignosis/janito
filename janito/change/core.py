@@ -9,7 +9,7 @@ from janito.config import config
 from janito.scan import collect_files_content
 from .viewer import preview_all_changes
 from .text_applier import TextChangeApplier
-from janito.scan import show_content_stats
+from janito.scan.analysis import analyze_workspace_content as show_content_stats
 
 from . import (
     build_change_request_prompt,

@@ -3,10 +3,10 @@ from typing import Optional, List
 from rich.console import Console
 
 from janito.agents import AIAgent
-from janito.scan import preview_scan, is_dir_empty
+from janito.scan.analysis import analyze_workspace_content
 from janito.config import config
 from janito.change.core import process_change_request, play_saved_changes
-from janito.tui import TuiApp
+
 
 from .functions import (
     process_question,
@@ -25,8 +25,11 @@ def handle_ask(question: str):
 
 def handle_scan(paths_to_scan: List[Path]):
     """Preview files that would be analyzed"""
-    handler = ScanHandler()
-    handler.handle(paths_to_scan)
+    from janito.scan import collect_files_content, preview_scan
+    from janito.scan.analysis import analyze_workspace_content
+    preview_scan(paths_to_scan)
+    files_content = collect_files_content(paths_to_scan)
+    analyze_workspace_content(files_content)
 
 def handle_play(filepath: Path):
     """Replay a saved changes or debug file"""

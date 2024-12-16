@@ -13,6 +13,10 @@ class TextFindDebugger:
         self.console = console
         self.find_count = 0
 
+    def _visualize_whitespace(self, text: str) -> str:
+        """Convert whitespace characters to visible markers"""
+        return text.replace(' ', '·').replace('\t', '→')
+
     def debug_find(self, content: str, search: str) -> List[int]:
         """Debug find operation by showing numbered matches"""
         self.find_count += 1
@@ -21,14 +25,14 @@ class TextFindDebugger:
         # Show search pattern
         self.console.print(f"\n[cyan]Find #{self.find_count} search pattern:[/cyan]")
         for i, line in enumerate(search.splitlines()):
-            self.console.print(f"[dim]{i+1:3d} | {line}[/dim]")
+            self.console.print(f"[dim]{i+1:3d} | {self._visualize_whitespace(line)}[/dim]")
 
         # Process content line by line
         lines = content.splitlines()
         for i, line in enumerate(lines):
             if search.strip() in line.strip():
                 matches.append(i + 1)
-                self.console.print(f"[green]Match at line {i+1}[/green]")
+                self.console.print(f"[green]Match at line {i+1}:[/green] {self._visualize_whitespace(line)}")
 
         if not matches:
             self.console.print("[yellow]No matches found[/yellow]")
@@ -90,17 +94,23 @@ class TextChangeApplier:
         failed_file = config.workdir / '.janito' / 'change_history' / f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_changes_failed.txt"
         failed_file.parent.mkdir(parents=True, exist_ok=True)
 
+        # Show search pattern with whitespace markers
+        vis_search = '\n'.join('    .' + self.debugger._visualize_whitespace(line) for line in search_text.splitlines())
+        
         # Use clear statement format
         debug_info = f"""Failed Find Debug
     filepath: {filepath}
     search:
-{chr(10).join('    .' + line for line in search_text.splitlines())}
+{vis_search}
     content:
 {chr(10).join('    .' + line for line in content.splitlines())}
 """
         failed_file.write_text(debug_info)
 
         self.console.print(f"\n[red]Failed search saved to: {failed_file}[/red]")
+        self.console.print("\n[yellow]Search pattern (with whitespace markers):[/yellow]")
+        for line in search_text.splitlines():
+            self.console.print(f"[dim]{self.debugger._visualize_whitespace(line)}[/dim]")
         return f"Could not find search text in {filepath}"
 
     def debug_failed_finds(self, search_content: str, file_content: str, filepath: str) -> None:

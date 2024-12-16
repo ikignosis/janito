@@ -6,7 +6,7 @@ from rich.table import Table
 from rich.rule import Rule
 from janito.agents import AIAgent
 from janito.common import progress_send_message
-from janito.scan import show_content_stats
+
 
 QA_PROMPT = """Please provide a clear and concise answer to the following question about the codebase:
 

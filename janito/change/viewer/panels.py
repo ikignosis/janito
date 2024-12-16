@@ -216,7 +216,7 @@ def find_modified_sections(original: list[str], modified: list[str], context_lin
         
     return sections
 
-def create_new_file_panel(name: str, content: str) -> Panel:
+def create_new_file_panel(name: Text, content: Text) -> Panel:
     """Create a panel for new file creation"""
     return Panel(
         format_content(content.splitlines(), [], content.splitlines(), False),
@@ -225,7 +225,7 @@ def create_new_file_panel(name: str, content: str) -> Panel:
         box=box.HEAVY
     )
 
-def create_replace_panel(name: str, change: FileChange) -> Panel:
+def create_replace_panel(name: Text, change: FileChange) -> Panel:
     """Create a panel for file replacement"""
     original = change.original_content or ""
     new_content = change.content or ""
@@ -250,7 +250,7 @@ def create_replace_panel(name: str, change: FileChange) -> Panel:
     
     return Panel(Columns(panels), title=f"[yellow]Replace: {name}[/yellow]", box=box.HEAVY)
 
-def create_remove_file_panel(name: str) -> Panel:
+def create_remove_file_panel(name: Text) -> Panel:
     """Create a panel for file removal"""
     return Panel(
         "[red]This file will be removed[/red]",
@@ -259,7 +259,7 @@ def create_remove_file_panel(name: str) -> Panel:
         box=box.HEAVY
     )
 
-def create_change_panel(search_content: str, replace_content: str, description: str, width: int) -> Panel:
+def create_change_panel(search_content: Text, replace_content: Text, description: Text, width: int) -> Panel:
     """Create a panel for text modifications"""
     search_lines = search_content.splitlines() if search_content else []
     replace_lines = replace_content.splitlines() if replace_content else []

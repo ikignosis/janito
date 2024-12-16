@@ -1,20 +1,21 @@
-from typing import Optional, List
-from pathlib import Path
-from rich.console import Console
-from rich.prompt import Prompt, Confirm
-from rich.panel import Panel
-from rich.text import Text
-from rich.markdown import Markdown
-from datetime import datetime, timezone
-import tempfile
-import typer
 import sys
+import tempfile
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import List, Optional
+
+import typer
+from rich.console import Console
+from rich.markdown import Markdown
+from rich.panel import Panel
+from rich.prompt import Confirm, Prompt
+from rich.text import Text
 
 from janito.agents import AIAgent
-from janito.config import config
-from janito.scan import collect_files_content, show_content_stats
-from janito.qa import ask_question, display_answer
 from janito.common import progress_send_message
+from janito.config import config
+from janito.qa import ask_question, display_answer
+from janito.scan import collect_files_content
 
 
 def prompt_user(message: str, choices: List[str] = None) -> str:

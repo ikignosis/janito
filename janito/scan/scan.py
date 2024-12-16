@@ -1,12 +1,15 @@
+from collections import defaultdict
 from pathlib import Path
-from typing import List, Tuple, Set, Dict
-from rich.console import Console
-from rich.columns import Columns
-from rich.panel import Panel
-from janito.config import config
+from typing import Dict, List, Set, Tuple
+
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
-from collections import defaultdict
+from rich.columns import Columns
+from rich.console import Console
+from rich.panel import Panel
+
+from janito.config import config
+
 
 SPECIAL_FILES = ["README.md", "__init__.py", "__main__.py"]
 
@@ -54,7 +57,7 @@ def _scan_paths(paths: List[Path] = None) -> Tuple[List[str], List[str]]:
             return
 
         path = path.resolve()
-        if '.janito' in path.parts or '.git' in path.parts:
+        if '.janito' in path.parts or '.git' in path.parts or '.pytest_cache' in path.parts:
             return
 
         relative_base = config.workdir
@@ -142,52 +145,6 @@ def preview_scan(paths: List[Path] = None) -> None:
     console.print("\n[bold blue]Files that will be analyzed:[/bold blue]")
     console.print(Columns(file_items, padding=(0, 4), expand=True))
 
-def show_content_stats(content: str) -> None:
-    """Show statistics about the scanned content"""
-    if not content:
-        return
-
-    dir_counts: Dict[str, int] = defaultdict(int)
-    dir_sizes: Dict[str, int] = defaultdict(int)
-    file_types: Dict[str, int] = defaultdict(int)
-    current_path = None
-    current_content = []
-
-    for line in content.split('\n'):
-        if line.startswith('<path>'):
-            path = Path(line.replace('<path>', '').replace('</path>', '').strip())
-            current_path = str(path.parent)
-            dir_counts[current_path] += 1
-            file_types[path.suffix.lower() or 'no_ext'] += 1
-        elif line.startswith('<content>'):
-            current_content = []
-        elif line.startswith('</content>'):
-            content_size = sum(len(line.encode('utf-8')) for line in current_content)
-            if current_path:
-                dir_sizes[current_path] += content_size
-            current_content = []
-        elif current_content is not None:
-            current_content.append(line)
-
-    console = Console()
-    console.print("\n[bold blue]Workspace Analysis[/bold blue]")
-
-    # Directory statistics
-    dir_stats = [
-        f"{directory}/ [{count} file(s), {_format_size(size)}]"
-        for directory, (count, size) in (
-            (d, (dir_counts[d], dir_sizes[d]))
-            for d in sorted(dir_counts.keys())
-        )
-    ]
-    console.print(Panel(Columns(dir_stats, equal=True, expand=True), title="Directory Structure"))
-
-    # File type statistics
-    type_stats = [
-        f"{ext.lstrip('.')} [{count} file(s)]"
-        for ext, count in sorted(file_types.items())
-    ]
-    console.print(Panel(Columns(type_stats, equal=True, expand=True), title="File Types"))
 
 def is_dir_empty(path: Path) -> bool:
     """

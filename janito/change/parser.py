@@ -24,6 +24,8 @@ RULES for analysis:
 - When removing constants, ensure they are not used elsewhere
 - When adding new features to python files, add the necessary imports
     * should be inserted at the top of the file, not before the new code requiring them
+- When modifying functions, ensure the function signature and docstring are updated
+- When requesting a text to be changed, validate the text  was found in files content (sent above)
 
 
 Flow:

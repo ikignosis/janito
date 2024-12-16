@@ -12,7 +12,7 @@ def set_theme(theme: ColorTheme) -> None:
     global current_theme
     current_theme = theme
 
-def format_content(lines: List[str], search_lines: List[str], replace_lines: List[str], is_search: bool, operation: str = 'modify') -> Text:
+def format_content(lines: List[str], search_lines: List[str], replace_lines: List[str], is_search: bool) -> Text:
     """Format content with unified highlighting and indicators"""
     text = Text()
 
