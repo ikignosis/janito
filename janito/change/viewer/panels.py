@@ -68,7 +68,7 @@ def preview_all_changes(console: Console, changes: List[FileChange]) -> None:
             show_side_by_side_diff(console, change, i, total_changes)
 
 def show_side_by_side_diff(console: Console, change: FileChange, change_index: int = 0, total_changes: int = 1) -> None:
-    """Show side-by-side diff panels for a file change with progress tracking
+    """Show side-by-side diff panels for a file change with progress tracking and reason
 
     Args:
         console: Rich console instance
@@ -92,11 +92,22 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
     # Show compact centered legend
     console.print(create_legend_items(console), justify="center")
 
-    # Show the header with minimal spacing after legend
+    # Show the header with reason and progress
     operation = change.operation.name.replace('_', ' ').title()
     progress = f"Change {change_index + 1}/{total_changes}"
-    header = f"[bold cyan]{operation}:[/bold cyan] {change.name} [dim]({progress})[/dim]"
-    console.print(Panel(header, box=box.HEAVY, style="cyan"))
+    # Create centered reason text if present
+    reason_text = Text()
+    if change.reason:
+        reason_text.append("\n")
+        reason_text.append(change.reason, style="italic")
+    # Build header with operation and progress
+    header = Text()
+    header.append(f"{operation}:", style="bold cyan")
+    header.append(f" {change.name} ")
+    header.append(f"({progress})", style="dim")
+    header.append(reason_text)
+    # Display panel with centered content
+    console.print(Panel(header, box=box.HEAVY, style="cyan", title_align="center"))
 
     # Show layout mode indicator
     if not can_do_side_by_side:
@@ -112,13 +123,14 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
             # Find modified sections
             sections = find_modified_sections(search_lines, replace_lines)
 
-            # Show modification type with rich rule
+            # Show modification type and reason with rich rule
+            reason_text = f" - {text_change.reason}" if text_change.reason else ""
             if text_change.search_content and text_change.replace_content:
-                console.print(Rule(" Replace Changes ", style="bold cyan", align="center"))
+                console.print(Rule(f" Replace Changes{reason_text} ", style="bold cyan", align="center"))
             elif not text_change.search_content:
-                console.print(Rule(" Append Changes ", style="bold green", align="center"))
+                console.print(Rule(f" Append Changes{reason_text} ", style="bold green", align="center"))
             elif not text_change.replace_content:
-                console.print(Rule(" Delete Changes ", style="bold red", align="center"))
+                console.print(Rule(f" Delete Changes{reason_text} ", style="bold red", align="center"))
 
             # Format and display each section
             for i, (orig_section, new_section) in enumerate(sections):

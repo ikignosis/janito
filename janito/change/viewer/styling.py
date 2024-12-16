@@ -30,9 +30,14 @@ def format_content(lines: List[str], search_lines: List[str], replace_lines: Lis
         bg_color = current_theme.line_backgrounds.get(line_type, current_theme.line_backgrounds['unchanged'])
         style = f"{current_theme.text_color} on {bg_color}"
 
-        # Add prefix and content with left alignment
+        # Calculate padding to fill the width
+        content = f"{prefix} {line}"
+        padding = " " * max(0, width - len(content))
+
+        # Add prefix, content and padding with consistent background
         text.append(f"{prefix} ", style=style)
         text.append(line, style=style)
+        text.append(padding, style=style)  # Add padding with same background
         text.append("\n", style=style)
 
     for i, line in enumerate(lines):

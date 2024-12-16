@@ -5,7 +5,6 @@ from typing import Optional
 from janito.agents import agent
 from janito.common import progress_send_message
 from janito.config import config
-from janito.tui import TuiApp
 from .display import format_analysis
 from .options import AnalysisOption, parse_analysis_options
 from .prompts import (
@@ -42,6 +41,7 @@ def analyze_request(
         return options[pre_select.upper()]
 
     if config.tui:
+        from janito.tui import TuiApp
         app = TuiApp(options=options)
         app.run()
         return app.selected_option

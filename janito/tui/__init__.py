@@ -1,4 +1,4 @@
 """Terminal User Interface package for Janito."""
-from .screens import TuiApp
+from .screens.app import TuiApp
 
 __all__ = ['TuiApp']

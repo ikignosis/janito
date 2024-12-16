@@ -4,7 +4,6 @@ from rich.console import Console
 from janito.config import config
 from janito.qa import ask_question, display_answer
 from janito.scan import collect_files_content
-from janito.tui import TuiApp
 from ..base import BaseCLIHandler
 
 class AskHandler(BaseCLIHandler):
@@ -19,7 +18,8 @@ class AskHandler(BaseCLIHandler):
 
         if config.tui:
             answer = ask_question(question, files_content)
-            app = TuiApp(answer)
+            from janito.tui import TuiApp
+            app = TuiApp(content=answer)
             app.run()
         else:
             answer = ask_question(question, files_content)

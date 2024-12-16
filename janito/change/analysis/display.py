@@ -74,21 +74,34 @@ def _display_options(options: Dict[str, AnalysisOption]) -> None:
             for group_name, group_info in file_groups.items():
                 if group_info['files']:
                     content.append(Text(f"\n─── {group_name} ───\n", style="cyan"))
-                    prev_path = None
-                    max_path_len = max(len(str(Path(f).parent)) for f in group_info['files'])
+                    # Group files by directory
+                    files_by_dir = {}
                     for file_path in group_info['files']:
                         path = Path(file_path)
-                        curr_path = str(path.parent)
-                        if prev_path and curr_path == prev_path:
-                            pad_left = (max_path_len - 3) // 2
-                            pad_right = max_path_len - 3 - pad_left
-                            display_path = " " * pad_left + "..." + " " * pad_right
-                        else:
-                            display_path = curr_path + " " * (max_path_len - len(curr_path))
-                        new_dir = option.is_new_directory(file_path)
-                        dir_marker = " [+dir]" if new_dir else ""
-                        content.append(Text(f"• {display_path}{dir_marker}/{path.name}\n", style=group_info['style']))
-                        prev_path = curr_path
+                        dir_path = str(path.parent)
+                        if dir_path not in files_by_dir:
+                            files_by_dir[dir_path] = []
+                        files_by_dir[dir_path].append(file_path)
+
+                    # Process each directory group
+                    for dir_path, dir_files in sorted(files_by_dir.items()):
+                        # Display files in the directory
+                        first_in_dir = True
+                        for file_path in dir_files:
+                            path = Path(file_path)
+                            if first_in_dir:
+                                display_path = dir_path
+                            else:
+                                # Use ellipsis for subsequent files in same directory
+                                pad_left = (len(dir_path) - 3) // 2
+                                pad_right = len(dir_path) - 3 - pad_left
+                                display_path = " " * pad_left + "..." + " " * pad_right
+
+                            new_dir = option.is_new_directory(file_path)
+                            dir_marker = " [📁+]" if new_dir else ""
+                            line_style = "bold magenta" if new_dir else group_info['style']
+                            content.append(Text(f"• {display_path}{dir_marker}/{path.name}\n", style=line_style))
+                            first_in_dir = False
 
         panel = Panel(
             content,
