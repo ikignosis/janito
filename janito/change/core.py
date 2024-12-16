@@ -2,6 +2,9 @@ from pathlib import Path
 from typing import Optional, Tuple, Optional, List
 from rich.console import Console
 from rich.prompt import Confirm
+from rich.panel import Panel
+from rich.columns import Columns
+from rich import box
 
 from janito.common import progress_send_message
 from janito.change.history import save_changes_to_history
@@ -56,6 +59,26 @@ def process_change_request(
     if not changes:
         console.print("[yellow]No changes found in response[/yellow]")
         return False, None
+
+    # Show request and selected option in panel
+    request_panel = Panel(
+        request,
+        title="User Request",
+        border_style="cyan",
+        box=box.ROUNDED
+    )
+    option_panel = Panel(
+        analysis.format_option_text(),
+        title="Selected Option",
+        border_style="green",
+        box=box.ROUNDED
+    )
+
+    # Display panels side by side
+    columns = Columns([request_panel, option_panel], equal=True, expand=True)
+    console.print("\n")
+    console.print(columns)
+    console.print("\n")
 
     if preview_only:
         preview_all_changes(console, changes)

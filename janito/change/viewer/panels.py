@@ -20,45 +20,15 @@ def preview_all_changes(console: Console, changes: List[FileChange]) -> None:
             grouped_changes[change.operation] = []
         grouped_changes[change.operation].append(change)
 
-    # Create compact summary text
-    summary_text = Text()
-
-    # Add grouped changes with compact layout
+    # Show file operations with rule lines
     for operation, group in grouped_changes.items():
-        op_name = operation.name.replace('_', ' ').title()
-        summary_text.append(f"\n{op_name}", style="yellow bold")
-        summary_text.append(f" ({len(group)})", style="dim")
-
-        # Add entries with minimal indentation
         for change in group:
-            path = change.target if operation == ChangeOperation.RENAME_FILE else change.name
-            summary_text.append("\n ")  # Single space indent
-
-            # Add compact operation indicators
             if operation == ChangeOperation.CREATE_FILE:
-                summary_text.append("+", style="green")
+                console.print(Rule(f"[green]Creating new file: {change.name}[/green]", style="green"))
             elif operation == ChangeOperation.REMOVE_FILE:
-                summary_text.append("-", style="red")
+                console.print(Rule(f"[red]Removing file: {change.name}[/red]", style="red"))
             elif operation == ChangeOperation.RENAME_FILE:
-                summary_text.append("→", style="yellow")
-            else:
-                summary_text.append("*", style="blue")
-
-            summary_text.append(" ")
-            if operation == ChangeOperation.RENAME_FILE:
-                summary_text.append(f"{change.name} → {change.target}")
-            else:
-                summary_text.append(str(path))
-
-    # Create compact centered panel
-    summary_panel = Panel(
-        summary_text,
-        title=f"[bold blue]Change Summary ({total_changes} total)[/bold blue]",
-        box=box.ROUNDED,
-        padding=(0, 1),
-        width=min(console.width - 2, 80)  # More compact width
-    )
-    console.print(summary_panel, justify="center")
+                console.print(Rule(f"[yellow]Renaming file: {change.name} → {change.target}[/yellow]", style="yellow"))
 
     # Then show side-by-side panels for replacements
     console.print("\n[bold blue]File Changes:[/bold blue]")

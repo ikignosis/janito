@@ -30,8 +30,83 @@ def get_analysis_summary(options: Dict[str, AnalysisOption]) -> str:
     return " | ".join([f"{dir}: {count} files" for dir, count in dirs_summary.items()])
 
 def _display_options(options: Dict[str, AnalysisOption]) -> None:
-    """Display available options with files organized in columns."""
+    """Display available options with files organized in vertical columns."""
     console = Console()
+    term_width = console.width or 100
+    spacing = 4
+    total_spacing = spacing * (len(options) - 1)
+    column_width = max(MIN_PANEL_WIDTH, (term_width - total_spacing) // len(options))
+
+    # Create columns content
+    columns_content = []
+    for letter, option in options.items():
+        content = Text()
+
+        # Header section
+        content.append(Text(f"Option {letter}\n", style="bold cyan"))
+        content.append(Text("─" * 20 + "\n", style="cyan"))
+        content.append(Text(f"{option.summary}\n\n", style="white"))
+
+        # Description section
+        content.append(Text("Description\n", style="bold cyan"))
+        content.append(Text("─" * 20 + "\n", style="cyan"))
+        for item in option.description_items:
+            content.append(Text(f"• {item}\n", style="white"))
+        content.append(Text("\n"))
+
+        if option.affected_files:
+            content.append(Text("Files\n", style="bold cyan"))
+            content.append(Text("─" * 20 + "\n", style="cyan"))
+
+            # Group files by type
+            file_groups = {
+                'Modified': {'files': [], 'style': 'yellow'},
+                'New': {'files': [], 'style': 'green'},
+                'Deleted': {'files': [], 'style': 'red'}
+            }
+
+            # Sort files into groups
+            for file in option.affected_files:
+                clean_path = file.split(' (')[0]
+                if '(new)' in file:
+                    file_groups['New']['files'].append(clean_path)
+                elif '(removed)' in file:
+                    file_groups['Deleted']['files'].append(clean_path)
+                else:
+                    file_groups['Modified']['files'].append(clean_path)
+
+            # Display each group
+            for group_name, group_info in file_groups.items():
+                if group_info['files']:
+                    content.append(Text(f"\n{group_name}:\n", style=group_info['style']))
+                    for file_path in sorted(group_info['files']):
+                        path = Path(file_path)
+                        new_dir = option.is_new_directory(file_path)
+                        dir_marker = " [📁+]" if new_dir else ""
+                        line_style = "bold magenta" if new_dir else group_info['style']
+                        content.append(Text(f"• {file_path}{dir_marker}\n", style=line_style))
+
+        columns_content.append(content)
+
+    # Create vertical separator
+    separator = Text("│\n" * (max(len(str(c).split('\n')) for c in columns_content)), style="cyan")
+
+    # Combine columns with separator
+    final_columns = []
+    for i, content in enumerate(columns_content):
+        final_columns.append(content)
+        if i < len(columns_content) - 1:
+            final_columns.append(separator)
+
+    # Display columns
+    columns = Columns(
+        final_columns,
+        align="left",
+        expand=True,
+        equal=True,
+        padding=(0, spacing // 2)
+    )
+    console.print(columns)
 
     console.print()
     console.print(Rule(" Available Options ", style="bold cyan", align="center"))
@@ -41,6 +116,80 @@ def _display_options(options: Dict[str, AnalysisOption]) -> None:
     spacing = 4
     total_spacing = spacing * (len(options) - 1)
     panel_width = max(MIN_PANEL_WIDTH, (term_width - total_spacing) // len(options))
+
+    panels = []
+    for letter, option in options.items():
+        # Create vertical header
+        header = Text()
+        header.append(Text(f"Option {letter}\n", style="bold cyan"))
+        header.append(Text("─" * 20 + "\n", style="cyan"))
+        header.append(Text(f"{option.summary}\n\n", style="white"))
+
+        # Create content section
+        content = Text()
+
+        # Description section with header
+        content.append(Text("Description\n", style="bold cyan"))
+        content.append(Text("─" * 20 + "\n", style="cyan"))
+        for item in option.description_items:
+            content.append(Text(f"• {item}\n", style="white"))
+        content.append(Text("\n"))
+
+        if option.affected_files:
+            content.append(Text("Files\n", style="bold cyan"))
+            content.append(Text("─" * 20 + "\n", style="cyan"))
+
+            # Group files by type
+            file_groups = {
+                'Modified': {'files': [], 'style': 'yellow'},
+                'New': {'files': [], 'style': 'green'},
+                'Deleted': {'files': [], 'style': 'red'}
+            }
+
+            # Sort files into groups
+            for file in option.affected_files:
+                clean_path = file.split(' (')[0]
+                if '(new)' in file:
+                    file_groups['New']['files'].append(clean_path)
+                elif '(removed)' in file:
+                    file_groups['Deleted']['files'].append(clean_path)
+                else:
+                    file_groups['Modified']['files'].append(clean_path)
+
+            # Display each group
+            for group_name, group_info in file_groups.items():
+                if group_info['files']:
+                    content.append(Text(f"\n{group_name}:\n", style=group_info['style']))
+                    for file_path in sorted(group_info['files']):
+                        path = Path(file_path)
+                        new_dir = option.is_new_directory(file_path)
+                        dir_marker = " [📁+]" if new_dir else ""
+                        line_style = "bold magenta" if new_dir else group_info['style']
+                        content.append(Text(f"• {file_path}{dir_marker}\n", style=line_style))
+
+        # Combine header and content in a panel
+        combined = Text()
+        combined.append(header)
+        combined.append(content)
+
+        panel = Panel(
+            combined,
+            box=box.ROUNDED,
+            border_style="cyan",
+            padding=(1, 2),
+            width=panel_width
+        )
+        panels.append(panel)
+
+    if panels:
+        columns = Columns(
+            panels,
+            align="center",
+            expand=True,
+            equal=True,
+            padding=(0, spacing // 2)
+        )
+        console.print(columns)
 
     panels = []
     for letter, option in options.items():
