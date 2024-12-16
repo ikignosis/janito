@@ -74,8 +74,19 @@ def _display_options(options: Dict[str, AnalysisOption]) -> None:
             for group_name, group_info in file_groups.items():
                 if group_info['files']:
                     content.append(Text(f"\n─── {group_name} ───\n", style="cyan"))
+                    prev_path = None
+                    max_path_len = max(len(str(Path(f).parent)) for f in group_info['files'])
                     for file_path in group_info['files']:
-                        content.append(Text(f"• {file_path}\n", style=group_info['style']))
+                        path = Path(file_path)
+                        curr_path = str(path.parent)
+                        if prev_path and curr_path == prev_path:
+                            display_path = "..." + " " * (max_path_len - 3)
+                        else:
+                            display_path = curr_path + " " * (max_path_len - len(curr_path))
+                        new_dir = option.is_new_directory(file_path)
+                        dir_marker = " [+dir]" if new_dir else ""
+                        content.append(Text(f"• {display_path}{dir_marker}/{path.name}\n", style=group_info['style']))
+                        prev_path = curr_path
 
         panel = Panel(
             content,

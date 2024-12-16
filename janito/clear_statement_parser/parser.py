@@ -111,19 +111,31 @@ class BlockContext:
         self.statements: List[Statement] = []
         self.current_statement: Optional[Statement] = None
         self.parameter_type: Optional[LineType] = None
-        self._statement_blocks: List[str] = []  # Track blocks within current statement
+        self._block_counters: Dict[str, int] = {}  # Track block counters by base name
 
-    def validate_block_name(self, name: str, line_number: int) -> None:
-        """Validate block name according to spec rules"""
-        # Only validate against blocks in the current statement
-        if name in self._statement_blocks:
-            raise ParseError(line_number, "", 
-                f"Block name '{name}' already used in current statement")
-        self._statement_blocks.append(name)
+    def validate_block_name(self, name: str, line_number: int) -> str:
+        """Generate internal tracking name for blocks"""
+        if name not in self._block_counters:
+            self._block_counters[name] = 0
+            
+        # Increment counter and generate internal name if needed
+        self._block_counters[name] += 1
+        if self._block_counters[name] > 1:
+            return f"{name}#{self._block_counters[name]}"
+            
+        return name
+
+    def get_base_name(self) -> str:
+        """Get the base name without any internal counter"""
+        return self.name.split('#')[0]
+        
+    def validate_block_end(self, name: str, line_number: int) -> bool:
+        """Validate block end name matches current context"""
+        return name == self.get_base_name()
 
     def new_statement(self):
         """Reset statement-specific tracking when starting a new statement"""
-        self._statement_blocks.clear()
+        self._block_counters.clear()
         self.current_statement = None
         self.parameter_type = None
 
@@ -174,31 +186,31 @@ class StatementParser:
                     if not context.current_statement:
                         raise ParseError(line_number, "", "Block begin found outside statement")
                         
-                    block_name = self._validate_block_name(line[1:].strip(), line_number)
-                    new_context = BlockContext(block_name, line_number, context)
-                    context.validate_block_name(block_name, line_number)
+                    base_name = self._validate_block_name(line[1:].strip(), line_number)
+                    tracked_name = context.validate_block_name(base_name, line_number)
+                    new_context = BlockContext(tracked_name, line_number, context)
                     
                     if self.debug:
-                        print(f"  Opening block '{block_name}' at line {line_number + 1}")
+                        print(f"  Opening block '{tracked_name}' at line {line_number + 1}")
                     
                     # Parse nested block
                     line_number = self._parse_context(lines, line_number + 1, end, new_context)
-                    context.current_statement.blocks.append((block_name, new_context.statements))
+                    context.current_statement.blocks.append((tracked_name, new_context.statements))
                     continue
                     
                 elif line_type == LineType.BLOCK_END:
-                    block_name = self._validate_block_name(line[:-1].strip(), line_number)
+                    base_name = line[:-1].strip()  # Remove trailing slash
                     
                     if not context.parent:
                         raise ParseError(line_number, "", 
-                            f"Unexpected block end '{block_name}', no blocks are currently open")
+                            f"Unexpected block end '{base_name}', no blocks are currently open")
                     
-                    if block_name != context.name:
+                    if not context.validate_block_end(base_name, line_number):
                         raise ParseError(line_number, "",
-                            f"Mismatched block end '{block_name}', expected '{context.name}' (opened at line {context.line_number + 1})")
+                            f"Mismatched block end '{base_name}', expected '{context.get_base_name()}' (opened at line {context.line_number + 1})")
                     
                     if self.debug:
-                        print(f"  Closing block '{block_name}' opened at line {context.line_number + 1}")
+                        print(f"  Closing block '{context.name}' opened at line {context.line_number + 1}")
                     
                     return line_number + 1
                 
@@ -258,9 +270,9 @@ class StatementParser:
         return LineType.STATEMENT
     
     def _validate_block_name(self, name: str, line_number: int) -> str:
-        """Validate block name contains only alphanumeric characters and no comments"""
+        """Validate block name contains only alphanumeric characters"""
         if '#' in name:
-            raise ParseError(line_number, name, "Comments are not allowed in block names")
+            raise ParseError(line_number, name, "Block names cannot contain '#' characters")
         if not name.isalnum():
             raise ParseError(line_number, name, "Block names must contain only alphanumeric characters")
         return name
@@ -378,38 +390,34 @@ class StatementParser:
                 current = current.parent
             print("  Block context:", " -> ".join(reversed(chain)))
 
-def test_basic_features():
-    test_input = """
-    Create New File
-        name: test.py
-        content:
-        .def greet():
-        # This comment is between literal block lines but doesn't affect them
-        .    print("Hello")
-        # Another comment that will be ignored
-        .    return None
+    def print_statements(self, statements: List[Statement]) -> None:
+        """Print statements in a hierarchical structure format"""
+        for statement in statements:
+            print(f"\nStatement: {statement.name}")
+            self._print_statement_structure(statement, indent=2)
+
+    def _print_statement_structure(self, statement: Statement, indent: int = 0) -> None:
+        """Recursively print statement structure"""
+        prefix = " " * indent
         
-    Show Documentation
-        description:
-        .First line of documentation
-        .Second line continues normally
-        .Third line shows that comments don't break the block
-        .Final line of the block
+        # Print parameters
+        if statement.parameters:
+            print(f"{prefix}Parameters:")
+            for key, value in statement.parameters.items():
+                if isinstance(value, str) and '\n' in value:
+                    print(f"{prefix}  {key}: <multiline-content>")
+                elif isinstance(value, list):
+                    print(f"{prefix}  {key}: <list-content>")
+                else:
+                    print(f"{prefix}  {key}: {value}")
         
-    Deploy Application
-        /Infrastructure
-            Provision Servers
-                cloud: aws
-                regions:
-                - us-west-2
-                - eu-central-1
-                config:
-                .server_count: 3
-                .instance_type: t2.micro
-                .environment: production
-        Infrastructure/
-    """
-    
+        # Print blocks
+        if statement.blocks:
+            print(f"{prefix}Blocks:")
+            for block_name, block_statements in statement.blocks:
+                print(f"{prefix}  {block_name}:")
+                for nested_stmt in block_statements:
+                    self._print_statement_structure(nested_stmt, indent + 4)
 
 if __name__ == "__main__":
     import sys

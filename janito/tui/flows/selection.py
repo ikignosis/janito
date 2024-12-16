@@ -1,13 +1,22 @@
 from textual.app import ComposeResult
-from textual.containers import Container
+from textual.containers import Container, ScrollableContainer
 from textual.screen import Screen
 from textual.binding import Binding
+from textual.widgets import Header, Footer
 from ..components import SelectionPanel
 from ..navigation import KeyboardNavigator
 
 class SelectionFlow(Screen):
-    """Screen for option selection flow"""
+    """Screen for option selection flow with unified display"""
     CSS = """
+    ScrollableContainer {
+        width: 100%;
+        height: 100%;
+        background: $surface;
+        color: $text;
+        padding: 1;
+    }
+
     Container.panel {
         margin: 1;
         padding: 1;
@@ -50,16 +59,19 @@ class SelectionFlow(Screen):
         self.navigator = None
 
     def compose(self) -> ComposeResult:
-        with Container():
-            for letter, option in self.options.items():
-                panel = SelectionPanel(
-                    letter,
-                    option.summary,
-                    option.description_items,
-                    option.affected_files
-                )
-                self.panels.append(panel)
-                yield panel
+        yield Header()
+        with ScrollableContainer():
+            with Container():
+                for letter, option in self.options.items():
+                    panel = SelectionPanel(
+                        letter,
+                        option.summary,
+                        option.description_items,
+                        option.affected_files
+                    )
+                    self.panels.append(panel)
+                    yield panel
+        yield Footer()
         self.navigator = KeyboardNavigator(self.panels)
 
     def action_next(self):

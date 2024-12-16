@@ -1,6 +1,6 @@
 from rich.text import Text
 from rich.console import Console
-from typing import List
+from typing import List, Optional
 from difflib import SequenceMatcher
 from .diff import find_similar_lines, get_line_similarity
 from .themes import DEFAULT_THEME, ColorTheme, ThemeType, get_theme_by_type
@@ -50,9 +50,14 @@ def format_content(lines: List[str], search_lines: List[str], replace_lines: Lis
 from rich.panel import Panel
 from rich.columns import Columns
 
-def create_legend_items() -> Panel:
-    """Create a compact single panel with all legend items"""
+def create_legend_items(console: Optional[Console] = None) -> Panel:
+    """Create a compact single panel with all legend items
+
+    Args:
+        console: Optional console instance for width calculation
+    """
     text = Text()
+    term_width = console.width if console else 120
 
     # Add unchanged item
     unchanged_style = f"{current_theme.text_color} on {current_theme.line_backgrounds['unchanged']}"

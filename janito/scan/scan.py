@@ -7,6 +7,7 @@ from pathspec.patterns import GitWildMatchPattern
 from rich.columns import Columns
 from rich.console import Console
 from rich.panel import Panel
+from rich.text import Text
 
 from janito.config import config
 
@@ -43,11 +44,12 @@ def _process_file(path: Path, relative_base: Path) -> Tuple[str, str, bool]:
     except UnicodeDecodeError:
         return "", str(relative_path), False
 
-def _scan_paths(paths: List[Path] = None) -> Tuple[List[str], List[str]]:
+def _scan_paths(paths: List[Path] = None) -> Tuple[List[str], List[str], List[str], List[str]]:
     """Common scanning logic for both preview and content collection"""
     content_parts = []
     file_items = []
     skipped_files = []
+    ignored_items = []
     processed_files: Set[Path] = set()
     console = Console()
     gitignore_spec = _get_gitignore_spec()
@@ -84,6 +86,8 @@ def _scan_paths(paths: List[Path] = None) -> Tuple[List[str], List[str]]:
 
             for item in path.iterdir():
                 if gitignore_spec and gitignore_spec.match_file(str(item.relative_to(config.workdir))):
+                    rel_path = item.relative_to(config.workdir)
+                    ignored_items.append(f"[dim red]•[/dim red] {rel_path}")
                     continue
                 if item.resolve() not in processed_files:
                     scan_path(item, depth+1)
@@ -109,12 +113,12 @@ def _scan_paths(paths: List[Path] = None) -> Tuple[List[str], List[str]]:
         for file in skipped_files:
             console.print(f"  • {file}")
 
-    return content_parts, file_items
+    return content_parts, file_items, skipped_files, ignored_items
 
 def collect_files_content(paths: List[Path] = None) -> str:
     """Collect content from all files in XML format"""
     console = Console()
-    content_parts, file_items = _scan_paths(paths)
+    content_parts, file_items, skipped_files, ignored_items = _scan_paths(paths)
 
     if file_items and config.verbose:
         console.print("\n[bold blue]Contents being analyzed:[/bold blue]")
@@ -125,25 +129,65 @@ def collect_files_content(paths: List[Path] = None) -> str:
 def preview_scan(paths: List[Path] = None) -> None:
     """Preview what files and directories would be scanned"""
     console = Console()
-    _, file_items = _scan_paths(paths)
+    _, file_items, skipped_files, ignored_items = _scan_paths(paths)
 
-    console.print("\n[bold blue]Analysis Paths:[/bold blue]")
-    console.print(f"[cyan]Working Directory:[/cyan] {config.workdir.absolute()}")
-    console.print(f"[cyan]Recursive Mode:[/cyan] {'Enabled' if config.recursive else 'Disabled'}")
+    # Create analysis paths panel content
+    paths_content = Text()
+    paths_content.append("Working Directory:\n", style="cyan")
+    paths_content.append(f"  {config.workdir.absolute()}\n\n")
+    paths_content.append(f"Recursive Mode: ", style="cyan")
+    paths_content.append("Enabled\n" if config.recursive else "Disabled\n")
 
+    # Add included paths if any
     is_workdir_scanned = any(p.resolve() == config.workdir.resolve() for p in paths)
     if len(paths) > (1 if is_workdir_scanned else 0):
-        console.print("\n[cyan]Additional Included Paths:[/cyan]")
+        paths_content.append("\nAdditional Included Paths:\n", style="cyan")
         for path in paths:
             if path.resolve() != config.workdir.resolve():
                 try:
                     rel_path = path.relative_to(config.workdir)
-                    console.print(f"  • ./{rel_path}")
+                    paths_content.append(f"  • ./{rel_path}\n")
                 except ValueError:
-                    console.print(f"  • {path.absolute()}")
+                    paths_content.append(f"  • {path.absolute()}\n")
 
-    console.print("\n[bold blue]Files that will be analyzed:[/bold blue]")
-    console.print(Columns(file_items, padding=(0, 4), expand=True))
+    # Create consolidated panel with both sections
+    from rich.console import Group
+    from rich.rule import Rule
+
+    sections = [paths_content, Rule(style="blue")]
+
+    if file_items:
+        sections.extend([
+            Text("\nFiles to be scanned:", style="green bold"),
+            Columns(file_items, padding=(0, 2), expand=True)
+        ])
+
+    if ignored_items:
+        sections.extend([
+            Text("\nIgnored files and directories:", style="red bold"),
+            Columns(ignored_items, padding=(0, 2), expand=True)
+        ])
+
+    if skipped_files and config.verbose:
+        sections.extend([
+            Text("\nSkipped files (encoding issues):", style="yellow bold"),
+            Columns([f"[yellow]•[/yellow] {f}" for f in skipped_files], padding=(0, 2), expand=True)
+        ])
+
+    consolidated_content = Group(*sections)
+
+    # Create single consolidated panel
+    consolidated_panel = Panel(
+        consolidated_content,
+        title="[bold blue]Scan Preview[/bold blue]",
+        title_align="center",
+        border_style="blue",
+        padding=(1, 2)
+    )
+
+    # Display consolidated panel
+    console.print("\n")
+    console.print(consolidated_panel)
 
 
 def is_dir_empty(path: Path) -> bool:

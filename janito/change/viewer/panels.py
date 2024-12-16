@@ -4,6 +4,7 @@ from rich.columns import Columns
 from rich import box
 from rich.text import Text
 from typing import List
+from typing import Optional
 from ..parser import FileChange, ChangeOperation
 from .styling import format_content, create_legend_items
 from rich.rule import Rule
@@ -12,40 +13,50 @@ def preview_all_changes(console: Console, changes: List[FileChange]) -> None:
     """Show a summary of all changes with side-by-side comparison and progress tracking"""
     total_changes = len(changes)
 
-    # Create summary text for the panel
-    summary_text = Text()
-    summary_text.append("Change Operations Summary\n\n", style="bold blue")
-
-    # Add change entries to summary
+    # Group changes by operation type
+    grouped_changes = {}
     for change in changes:
-        operation = change.operation.name.replace('_', ' ').title()
-        path = change.target if change.operation == ChangeOperation.RENAME_FILE else change.name
+        if change.operation not in grouped_changes:
+            grouped_changes[change.operation] = []
+        grouped_changes[change.operation].append(change)
 
-        # Add colored indicators based on operation type
-        if change.operation == ChangeOperation.CREATE_FILE:
-            summary_text.append("✚ ", style="green")
-        elif change.operation == ChangeOperation.REMOVE_FILE:
-            summary_text.append("✕ ", style="red")
-        elif change.operation == ChangeOperation.RENAME_FILE:
-            summary_text.append("↺ ", style="yellow")
-        else:
-            summary_text.append("✎ ", style="blue")
+    # Create compact summary text
+    summary_text = Text()
 
-        # Add entry to summary text
-        if change.operation == ChangeOperation.RENAME_FILE:
-            summary_text.append(f"{operation}: ", style="yellow")
-            summary_text.append(f"{change.name} → {change.target}\n")
-        else:
-            summary_text.append(f"{operation}: ", style="yellow")
-            summary_text.append(f"{path}\n")
+    # Add grouped changes with compact layout
+    for operation, group in grouped_changes.items():
+        op_name = operation.name.replace('_', ' ').title()
+        summary_text.append(f"\n{op_name}", style="yellow bold")
+        summary_text.append(f" ({len(group)})", style="dim")
 
-    # Create and display centered panel
+        # Add entries with minimal indentation
+        for change in group:
+            path = change.target if operation == ChangeOperation.RENAME_FILE else change.name
+            summary_text.append("\n ")  # Single space indent
+
+            # Add compact operation indicators
+            if operation == ChangeOperation.CREATE_FILE:
+                summary_text.append("+", style="green")
+            elif operation == ChangeOperation.REMOVE_FILE:
+                summary_text.append("-", style="red")
+            elif operation == ChangeOperation.RENAME_FILE:
+                summary_text.append("→", style="yellow")
+            else:
+                summary_text.append("*", style="blue")
+
+            summary_text.append(" ")
+            if operation == ChangeOperation.RENAME_FILE:
+                summary_text.append(f"{change.name} → {change.target}")
+            else:
+                summary_text.append(str(path))
+
+    # Create compact centered panel
     summary_panel = Panel(
         summary_text,
-        title="[bold blue]Change Summary[/bold blue]",
+        title=f"[bold blue]Change Summary ({total_changes} total)[/bold blue]",
         box=box.ROUNDED,
-        padding=(1, 2),
-        width=min(console.width - 4, 100)  # Limit max width while keeping padding
+        padding=(0, 1),
+        width=min(console.width - 2, 80)  # More compact width
     )
     console.print(summary_panel, justify="center")
 
@@ -79,8 +90,8 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
     # Show the header with minimal spacing after legend
     operation = change.operation.name.replace('_', ' ').title()
     progress = f"Change {change_index + 1}/{total_changes}"
-    header = f"[bold blue]{operation}:[/bold blue] {change.name} [dim]({progress})[/dim]"
-    console.print(Panel(header, box=box.HEAVY, style="blue"))
+    header = f"[bold cyan]{operation}:[/bold cyan] {change.name} [dim]({progress})[/dim]"
+    console.print(Panel(header, box=box.HEAVY, style="cyan"))
 
     # Handle text changes
     if change.text_changes:
@@ -91,57 +102,56 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
             # Find modified sections
             sections = find_modified_sections(search_lines, replace_lines)
 
-            # Show modification type
+            # Show modification type with rich rule
             if text_change.search_content and text_change.replace_content:
-                console.print("\n[blue]Replace Changes:[/blue]")
+                console.print(Rule(" Replace Changes ", style="bold cyan", align="center"))
             elif not text_change.search_content:
-                console.print("\n[green]Append Changes:[/green]")
+                console.print(Rule(" Append Changes ", style="bold green", align="center"))
             elif not text_change.replace_content:
-                console.print("\n[red]Delete Changes:[/red]")
+                console.print(Rule(" Delete Changes ", style="bold red", align="center"))
 
             # Format and display each section
             for i, (orig_section, new_section) in enumerate(sections):
                 left_panel = format_content(orig_section, orig_section, new_section, True)
                 right_panel = format_content(new_section, orig_section, new_section, False)
 
-                term_width = console.width or 120
-                total_padding = 10  # Space for margins and padding between panels
-                panel_width = (term_width - total_padding) // 2
-                content_width = panel_width - 4  # Account for panel borders and padding
-
-                # Format content with calculated width
-                left_panel = format_content(orig_section, orig_section, new_section, True, content_width)
-                right_panel = format_content(new_section, orig_section, new_section, False, content_width)
-
+                # Create panels with auto-width
                 panels = [
                     Panel(
-                        left_panel,
+                        left_panel or "",  # Ensure non-None content
                         title="[red]Original Content[/red]",
                         title_align="center",
                         subtitle=str(change.name),
                         subtitle_align="center",
-                        width=panel_width,
                         padding=(0, 1)
                     ),
                     Panel(
-                        right_panel,
+                        right_panel or "",  # Ensure non-None content
                         title="[green]Modified Content[/green]",
                         title_align="center",
                         subtitle=str(change.name),
                         subtitle_align="center",
-                        width=panel_width,
                         padding=(0, 1)
                     )
                 ]
 
-                console.print(Columns(panels))
+                # Create columns with safe rendering and centered alignment
+                try:
+                    columns = Columns(panels, equal=True, expand=False)  # Removed justify parameter
+                    console.print()  # Add spacing
+                    console.print(columns, justify="center")  # Center the columns
+                    console.print()  # Add spacing
+                except Exception as e:
+                    # Fallback to simple panel rendering
+                    console.print("\n[red]Original:[/red]")
+                    console.print(panels[0])
+                    console.print("\n[green]Modified:[/green]")
+                    console.print(panels[1])
+                    console.print()
 
-                # Show separator between sections
+                # Show separator between sections if not last section
                 if i < len(sections) - 1:
-                    console.print(Rule(style="dim"))
-                else:
-                    # Show final section separator with label
-                    console.print(Rule(title="End Of Changes", style="bold blue"))
+                    console.print(Rule(" Section Break ", style="cyan dim", align="center"))
     else:
         # For non-text changes, show full content side by side
         sections = find_modified_sections(original_lines, new_lines)
@@ -149,15 +159,22 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
             left_panel = format_content(orig_section, orig_section, new_section, True)
             right_panel = format_content(new_section, orig_section, new_section, False)
 
+            # Format content with appropriate width
+            left_panel = format_content(orig_section, orig_section, new_section, True)
+            right_panel = format_content(new_section, orig_section, new_section, False)
+
+            # Check terminal width for layout decision
             term_width = console.width or 120
-            total_padding = 10  # Space for margins and padding between panels
-            panel_width = (term_width - total_padding) // 2
-            content_width = panel_width - 4  # Account for panel borders and padding
+            min_panel_width = 60  # Minimum width for readable content
 
-            # Format content with calculated width
-            left_panel = format_content(orig_section, orig_section, new_section, True, content_width)
-            right_panel = format_content(new_section, orig_section, new_section, False, content_width)
+            # Determine if we can do side-by-side layout
+            can_do_side_by_side = term_width >= (min_panel_width * 2 + 4)  # +4 for padding
 
+            if not can_do_side_by_side:
+                console.print("[yellow]Terminal width is limited. Using vertical layout for better readability.[/yellow]")
+                console.print(f"[dim]Recommended terminal width: {min_panel_width * 2 + 4} or greater[/dim]")
+
+            # Create panels with adaptive width
             panels = [
                 Panel(
                     left_panel,
@@ -165,8 +182,8 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
                     title_align="center",
                     subtitle=str(change.name),
                     subtitle_align="center",
-                    width=panel_width,
-                    padding=(0, 1)
+                    padding=(0, 1),
+                    width=None if can_do_side_by_side else term_width - 2
                 ),
                 Panel(
                     right_panel,
@@ -174,19 +191,29 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
                     title_align="center",
                     subtitle=str(change.name),
                     subtitle_align="center",
-                    width=panel_width,
-                    padding=(0, 1)
+                    padding=(0, 1),
+                    width=None if can_do_side_by_side else term_width - 2
                 )
             ]
 
-            console.print(Columns(panels))
+            # Render panels based on layout
+            if can_do_side_by_side:
+                # Create centered columns with fixed width
+                available_width = console.width
+                panel_width = (available_width - 4) // 2  # Account for padding
+                for panel in panels:
+                    panel.width = panel_width
 
-            # Show separator between sections
+                columns = Columns(panels, equal=True, expand=False)  # Removed justify parameter
+                console.print(columns, justify="center")
+            else:
+                for panel in panels:
+                    console.print(panel, justify="center")
+                    console.print()  # Add spacing between panels
+
+            # Show separator between sections if not last section
             if i < len(sections) - 1:
                 console.print(Rule(style="dim"))
-            else:
-                # Show final section separator with label
-                console.print(Rule(title="End Of Changes", style="bold blue"))
 
     # Add final separator after all changes
     console.print(Rule(title="End Of Changes", style="bold blue"))

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Dict, Tuple, Optional
 import re
+import os
 
 from janito.config import config
 
@@ -48,6 +49,16 @@ class AnalysisOption:
             path = config.workdir / clean_path if config.workdir else Path(clean_path)
             paths.append(path)
         return paths
+
+    def check_path_exists(self, path: str) -> bool:
+        """Check if a file path exists"""
+        clean_path = self.get_clean_path(path)
+        return os.path.exists(clean_path)
+
+    def is_new_directory(self, path: str) -> bool:
+        """Check if file would create a new directory"""
+        clean_path = self.get_clean_path(path)
+        return not os.path.exists(os.path.dirname(clean_path))
 
     def process_file_path(self, path: str) -> Tuple[str, bool, bool, bool]:
         """Process a file path to extract clean path and modification flags

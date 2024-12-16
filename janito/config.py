@@ -49,8 +49,33 @@ class ConfigManager:
         self.raw = enabled
 
     def set_include(self, paths: Optional[List[Path]]) -> None:
-        """Set additional paths to include"""
-        self.include = paths if paths is not None else []
+        """
+        Set additional paths to include.
+
+        Args:
+            paths: List of paths to include
+
+        Raises:
+            ValueError: If duplicate paths are provided
+        """
+        if paths is None:
+            self.include = []
+            return
+
+        # Convert paths to absolute and resolve symlinks
+        resolved_paths = [p.absolute().resolve() for p in paths]
+
+        # Check for duplicates
+        seen_paths = set()
+        unique_paths = []
+
+        for path in resolved_paths:
+            if path in seen_paths:
+                raise ValueError(f"Duplicate path provided: {path}")
+            seen_paths.add(path)
+            unique_paths.append(path)
+
+        self.include = unique_paths
 
     def set_auto_apply(self, enabled: bool) -> None:
         """Set auto apply mode"""

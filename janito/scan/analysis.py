@@ -53,13 +53,13 @@ def analyze_workspace_content(content: str) -> None:
 
     # Create grouped content with styled separators
     content = Group(
-        "\n[bold magenta]📂 Directory Structure[/bold magenta]",
+        "[bold magenta]📂 Directory Structure[/bold magenta]",
         Rule(style="magenta"),
         Columns(dir_stats, equal=True, expand=True),
-        "\n\n[bold cyan]📑 File Types[/bold cyan]",
+        "\n",
+        "[bold cyan]📑 File Types[/bold cyan]",
         Rule(style="cyan"),
-        Columns(type_stats, equal=True, expand=True),
-        "\n"
+        Columns(type_stats, equal=True, expand=True)
     )
 
     # Display workspace analysis in panel

@@ -1,6 +1,8 @@
 import typer
-from typing import Optional, List
+from typing import Optional, List, Set
 from pathlib import Path
+from rich.text import Text
+from rich import print as rich_print
 from rich.console import Console
 from rich.text import Text
 from .version import get_version
@@ -12,6 +14,33 @@ from .cli.commands import handle_request, handle_ask, handle_play, handle_scan
 from .cli.input import read_input
 
 app = typer.Typer(add_completion=False)
+
+def validate_paths(paths: Optional[List[Path]]) -> Optional[List[Path]]:
+    """Validate include paths for duplicates.
+    
+    Args:
+        paths: List of paths to validate, or None if no paths provided
+        
+    Returns:
+        Validated list of paths or None if no paths provided
+    """
+    if not paths:  # This handles both None and empty list cases
+        return None
+
+    # Convert paths to absolute and resolve symlinks
+    resolved_paths: Set[Path] = set()
+    unique_paths: List[Path] = []
+
+    for path in paths:
+        resolved = path.absolute().resolve()
+        if resolved in resolved_paths:
+            error_text = Text(f"\nError: Duplicate path provided: {path}", style="red")
+            rich_print(error_text)
+            raise typer.Exit(1)
+        resolved_paths.add(resolved)
+        unique_paths.append(path)
+
+    return unique_paths if unique_paths else None
 
 def typer_main(
     change_request: str = typer.Argument(None, help="Change request or command"),
@@ -29,11 +58,18 @@ def typer_main(
     input_mode: bool = typer.Option(False, "--input", help="Read request from stdin"),
     history: bool = typer.Option(False, "--history", help="Display history of requests"),
     recursive: bool = typer.Option(False, "-r", "--recursive", help="Scan directories recursively"),
+    demo: bool = typer.Option(False, "--demo", help="Run demo scenarios"),
 ):
     """Janito - AI-powered code modification assistant"""
     if version:
         console = Console()
         console.print(f"Janito version {get_version()}")
+        return
+
+    if demo:
+        from janito.cli.handlers.demo import DemoHandler
+        handler = DemoHandler()
+        handler.handle()
         return
 
     if history:

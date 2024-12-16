@@ -2,11 +2,10 @@ from typing import Tuple, List, Optional
 from rich.console import Console
 from pathlib import Path
 from datetime import datetime
-from rich.panel import Panel
 from .parser import TextChange
 from janito.config import config
 from ..clear_statement_parser.parser import StatementParser
-from .search_replace import smart_search_replace, PatternNotFoundException
+from .search_replace import SearchReplacer, PatternNotFoundException
 
 class TextFindDebugger:
     def __init__(self, console: Console):
@@ -39,12 +38,6 @@ class TextFindDebugger:
 
         return matches
 
-def verify_replacement(source: str, replacement: str, modified: str) -> bool:
-    """Verify that the replacement text exists in the modified content"""
-    replacement_normalized = '\n'.join(line.strip() for line in replacement.splitlines())
-    modified_normalized = '\n'.join(line.strip() for line in modified.splitlines())
-    return replacement_normalized in modified_normalized
-
 class TextChangeApplier:
     def __init__(self, console: Optional[Console] = None):
         self.console = console or Console()
@@ -52,65 +45,72 @@ class TextChangeApplier:
         self.parser = StatementParser()
 
     def apply_modifications(self, content: str, changes: List[TextChange], target_path: Path) -> Tuple[bool, str, Optional[str]]:
-        """Apply text modifications to content
-        Returns: (success, modified_content, error_message)"""
+        """Apply text modifications to content"""
         modified = content
         any_changes = False
-
         target_path = target_path.resolve()
 
         for mod in changes:
             try:
-                if not mod.search_content:  # Append operation
+                # Handle append operations
+                if not mod.search_content:
                     if mod.replace_content:
-                        if modified and not modified.endswith('\n'):
-                            modified += '\n'
-                        modified += mod.replace_content
+                        modified = self._append_content(modified, mod.replace_content)
                         any_changes = True
                     continue
 
-                # Apply the replacement
-                new_content = smart_search_replace(modified, mod.search_content, mod.replace_content)
-
-                # Verify the replacement was successful
-                if mod.replace_content and not verify_replacement(mod.search_content, mod.replace_content, new_content):
-                    return False, content, f"Replacement verification failed"
-
-                modified = new_content
+                # Handle search and replace
+                replacer = SearchReplacer(modified, mod.search_content, mod.replace_content)
+                modified = replacer.replace()
                 any_changes = True
 
             except PatternNotFoundException:
                 if config.debug:
                     self.debug_failed_finds(mod.search_content, modified, str(target_path))
                 return False, content, self._handle_failed_search(target_path, mod.search_content, modified)
+            except Exception as e:
+                return False, content, f"Error applying changes to {target_path}: {str(e)}"
 
-        if not any_changes:
-            return False, content, "No changes were applied"
+        return (True, modified, None) if any_changes else (False, content, "No changes were applied")
 
-        return True, modified, None
+    def _append_content(self, content: str, new_content: str) -> str:
+        """Append content with proper line ending handling"""
+        if not content.endswith('\n'):
+            content += '\n'
+        return content + new_content
 
     def _handle_failed_search(self, filepath: Path, search_text: str, content: str) -> str:
-        """Handle failed search by logging debug info"""
+        """Handle failed search by logging debug info in a test case format"""
         failed_file = config.workdir / '.janito' / 'change_history' / f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_changes_failed.txt"
         failed_file.parent.mkdir(parents=True, exist_ok=True)
 
-        # Show search pattern with whitespace markers
-        vis_search = '\n'.join('    .' + self.debugger._visualize_whitespace(line) for line in search_text.splitlines())
-        
-        # Use clear statement format
-        debug_info = f"""Failed Find Debug
-    filepath: {filepath}
-    search:
-{vis_search}
-    content:
-{chr(10).join('    .' + line for line in content.splitlines())}
-"""
+        # Create test case format debug info - search only
+        debug_info = f"""Test: Failed search in {filepath.name}
+========================================
+Original:
+{content}
+
+Search pattern:
+{search_text}
+========================================"""
+
         failed_file.write_text(debug_info)
 
         self.console.print(f"\n[red]Failed search saved to: {failed_file}[/red]")
+        
+        # Use SearchReplacer's debug_indentation
+        replacer = SearchReplacer("", "", "")  # Empty instance for using debug method
+        self.console.print("\n[yellow]Indentation Analysis:[/yellow]")
+        with self.console.capture() as capture:
+            replacer.debug_indentation(content, search_text)
+        debug_output = capture.get()
+        self.console.print(debug_output)
+        
+        # Also show whitespace markers for quick visual reference
         self.console.print("\n[yellow]Search pattern (with whitespace markers):[/yellow]")
         for line in search_text.splitlines():
             self.console.print(f"[dim]{self.debugger._visualize_whitespace(line)}[/dim]")
+        
         return f"Could not find search text in {filepath}"
 
     def debug_failed_finds(self, search_content: str, file_content: str, filepath: str) -> None:
@@ -126,9 +126,7 @@ class TextChangeApplier:
         """Extract search text and file content from failed change debug info"""
         try:
             statements = self.parser.parse(content)
-            print("STATEMENTS", statements)
-            exit(0)
-            if not statements or not statements[0].name == "Failed Find Debug":
+            if not statements or statements[0].name != "Failed Find Debug":
                 raise ValueError("Not a valid failed find debug file")
 
             params = statements[0].parameters
