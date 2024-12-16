@@ -1,8 +1,10 @@
 from typing import List, Optional
+from pathlib import Path
 from rich.console import Console
 from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from .scenarios import DemoScenario
+from .operations import MockOperationType
 from ..change.viewer import preview_all_changes
 from ..change.parser import FileChange, ChangeOperation
 
@@ -24,26 +26,34 @@ class DemoRunner:
         ) as progress:
             for scenario in self.scenarios:
                 task = progress.add_task(f"Running scenario: {scenario.name}")
-                self._preview_scenario(scenario)
+                self.preview_changes(scenario)
                 progress.update(task, completed=True)
 
-    def preview_changes(self, scenario: DemoScenario) -> None:
+    def preview_changes(self, scenario: Optional[DemoScenario] = None) -> None:
         """Preview changes for a scenario using change viewer"""
+        if scenario is None:
+            if not self.scenarios:
+                self.console.print("[yellow]No scenarios to preview[/yellow]")
+                return
+            scenario = self.scenarios[0]
+
         # Convert mock changes to FileChange objects
         changes = []
         for mock in scenario.changes:
-            operation = ChangeOperation[mock.operation.upper()]
+            # Map mock operation type to ChangeOperation
+            operation_map = {
+                MockOperationType.CREATE: ChangeOperation.CREATE_FILE,
+                MockOperationType.MODIFY: ChangeOperation.MODIFY_FILE,
+                MockOperationType.REMOVE: ChangeOperation.REMOVE_FILE
+            }
+            operation = operation_map[mock.operation_type]
             change = FileChange(
                 operation=operation,
                 name=Path(mock.name),
-                content=mock.content,
-                original_content=mock.original_content
+                content=mock.content if hasattr(mock, 'content') else None,
+                original_content=mock.original_content if hasattr(mock, 'original_content') else None
             )
             changes.append(change)
 
         # Show changes using change viewer
         preview_all_changes(self.console, changes)
-
-    def _preview_scenario(self, scenario: DemoScenario) -> None:
-        """Preview changes for a scenario using change viewer"""
-        self.preview_changes(scenario)

@@ -1,33 +1,20 @@
-from dataclasses import dataclass
-from typing import List, Dict, Optional
-from pathlib import Path
+from typing import List
+from .operations import CreateOperation, ModifyOperation, RemoveOperation, MockOperation
 
-@dataclass
-class MockFileChange:
-    """Mock file change for demo purposes"""
-    name: str
-    content: str
-    operation: str  # create, modify, remove
-    original_content: Optional[str] = None
-
-def get_mock_changes() -> List[MockFileChange]:
+def get_mock_changes() -> List[MockOperation]:
     """Get predefined mock changes for demo"""
     return [
-        MockFileChange(
+        CreateOperation(
             name="example/hello.py",
-            content="def greet():\n    print('Hello, World!')\n",
-            operation="create"
+            content="def greet():\n    print('Hello, World!')\n"
         ),
-        MockFileChange(
+        ModifyOperation(
             name="example/utils.py",
             content="def process():\n    return 'Processed'\n",
-            operation="modify",
             original_content="def old_process():\n    return 'Old'\n"
         ),
-        MockFileChange(
+        RemoveOperation(
             name="example/obsolete.py",
-            content="",
-            operation="remove",
             original_content="# Obsolete code\n"
         )
     ]

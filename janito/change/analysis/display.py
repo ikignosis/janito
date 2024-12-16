@@ -80,7 +80,9 @@ def _display_options(options: Dict[str, AnalysisOption]) -> None:
                         path = Path(file_path)
                         curr_path = str(path.parent)
                         if prev_path and curr_path == prev_path:
-                            display_path = "..." + " " * (max_path_len - 3)
+                            pad_left = (max_path_len - 3) // 2
+                            pad_right = max_path_len - 3 - pad_left
+                            display_path = " " * pad_left + "..." + " " * pad_right
                         else:
                             display_path = curr_path + " " * (max_path_len - len(curr_path))
                         new_dir = option.is_new_directory(file_path)

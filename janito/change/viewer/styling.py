@@ -50,14 +50,14 @@ def format_content(lines: List[str], search_lines: List[str], replace_lines: Lis
 from rich.panel import Panel
 from rich.columns import Columns
 
-def create_legend_items(console: Optional[Console] = None) -> Panel:
+def create_legend_items(console: Console) -> Panel:
     """Create a compact single panel with all legend items
 
     Args:
-        console: Optional console instance for width calculation
+        console: Console instance for width calculation
     """
     text = Text()
-    term_width = console.width if console else 120
+    term_width = console.width or 120
 
     # Add unchanged item
     unchanged_style = f"{current_theme.text_color} on {current_theme.line_backgrounds['unchanged']}"

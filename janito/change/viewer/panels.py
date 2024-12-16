@@ -76,6 +76,11 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
         change_index: Current change number (0-based)
         total_changes: Total number of changes
     """
+    # Get terminal width for layout decisions
+    term_width = console.width or 120
+    min_panel_width = 60  # Minimum width for readable content
+    can_do_side_by_side = term_width >= (min_panel_width * 2 + 4)  # +4 for padding
+
     # Get original and new content
     original = change.original_content or ""
     new_content = change.content or ""
@@ -85,13 +90,18 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
     new_lines = new_content.splitlines()
 
     # Show compact centered legend
-    console.print(create_legend_items(), justify="center")
+    console.print(create_legend_items(console), justify="center")
 
     # Show the header with minimal spacing after legend
     operation = change.operation.name.replace('_', ' ').title()
     progress = f"Change {change_index + 1}/{total_changes}"
     header = f"[bold cyan]{operation}:[/bold cyan] {change.name} [dim]({progress})[/dim]"
     console.print(Panel(header, box=box.HEAVY, style="cyan"))
+
+    # Show layout mode indicator
+    if not can_do_side_by_side:
+        console.print("[yellow]Terminal width is limited. Using vertical layout for better readability.[/yellow]")
+        console.print(f"[dim]Recommended terminal width: {min_panel_width * 2 + 4} or greater[/dim]")
 
     # Handle text changes
     if change.text_changes:
@@ -115,39 +125,64 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
                 left_panel = format_content(orig_section, orig_section, new_section, True)
                 right_panel = format_content(new_section, orig_section, new_section, False)
 
-                # Create panels with auto-width
-                panels = [
-                    Panel(
-                        left_panel or "",  # Ensure non-None content
-                        title="[red]Original Content[/red]",
-                        title_align="center",
-                        subtitle=str(change.name),
-                        subtitle_align="center",
-                        padding=(0, 1)
-                    ),
-                    Panel(
-                        right_panel or "",  # Ensure non-None content
-                        title="[green]Modified Content[/green]",
-                        title_align="center",
-                        subtitle=str(change.name),
-                        subtitle_align="center",
-                        padding=(0, 1)
-                    )
-                ]
+                # Create panels with adaptive width
+                if can_do_side_by_side:
+                    # Calculate panel width for side-by-side layout
+                    panel_width = (term_width - 4) // 2  # Account for padding
+                    panels = [
+                        Panel(
+                            left_panel or "",
+                            title="[red]Original Content[/red]",
+                            title_align="center",
+                            subtitle=str(change.name),
+                            subtitle_align="center",
+                            padding=(0, 1),
+                            width=panel_width
+                        ),
+                        Panel(
+                            right_panel or "",
+                            title="[green]Modified Content[/green]",
+                            title_align="center",
+                            subtitle=str(change.name),
+                            subtitle_align="center",
+                            padding=(0, 1),
+                            width=panel_width
+                        )
+                    ]
 
-                # Create columns with safe rendering and centered alignment
-                try:
-                    columns = Columns(panels, equal=True, expand=False)  # Removed justify parameter
-                    console.print()  # Add spacing
-                    console.print(columns, justify="center")  # Center the columns
-                    console.print()  # Add spacing
-                except Exception as e:
-                    # Fallback to simple panel rendering
-                    console.print("\n[red]Original:[/red]")
-                    console.print(panels[0])
-                    console.print("\n[green]Modified:[/green]")
-                    console.print(panels[1])
+                    # Create columns with fixed width panels
+                    columns = Columns(panels, equal=True, expand=False)
                     console.print()
+                    console.print(columns, justify="center")
+                    console.print()
+                else:
+                    # Vertical layout for narrow terminals
+                    panels = [
+                        Panel(
+                            left_panel or "",
+                            title="[red]Original Content[/red]",
+                            title_align="center",
+                            subtitle=str(change.name),
+                            subtitle_align="center",
+                            padding=(0, 1),
+                            width=term_width - 2
+                        ),
+                        Panel(
+                            right_panel or "",
+                            title="[green]Modified Content[/green]",
+                            title_align="center",
+                            subtitle=str(change.name),
+                            subtitle_align="center",
+                            padding=(0, 1),
+                            width=term_width - 2
+                        )
+                    ]
+
+                    # Display panels vertically
+                    console.print()
+                    for panel in panels:
+                        console.print(panel, justify="center")
+                        console.print()
 
                 # Show separator between sections if not last section
                 if i < len(sections) - 1:
