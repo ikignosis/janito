@@ -113,16 +113,40 @@ class BlockContext:
         self.parameter_type: Optional[LineType] = None
         self._block_counters: Dict[str, int] = {}  # Track block counters by base name
 
+    def get_current_block_chain(self) -> List[str]:
+        """Get list of all block base names in current chain"""
+        chain = []
+        current = self
+        while current and current.name != "root":
+            chain.append(current.get_base_name())
+            current = current.parent
+        return chain
+    
+    # Fixed implementation:
     def validate_block_name(self, name: str, line_number: int) -> str:
-        """Generate internal tracking name for blocks"""
+        """Generate internal tracking name for blocks with improved validation"""
+        # Convert name to lowercase for case-insensitive comparison
+        normalized_name = name.lower()
+        
+        # Check if this block name exists in the current chain (case-insensitive)
+        current_chain = [block_name.lower() for block_name in self.get_current_block_chain()]
+        if normalized_name in current_chain:
+            raise ParseError(line_number, "", 
+                f"Cannot open block '{name}' inside another block of the same name")
+        
+        # Check if this block name exists in any parent context (case-insensitive)
+        if self.is_name_in_parent_chain(name):
+            raise ParseError(line_number, "",
+                f"Block name '{name}' cannot be used while a block with the same name is still open")
+        
         if name not in self._block_counters:
             self._block_counters[name] = 0
-            
+        
         # Increment counter and generate internal name if needed
         self._block_counters[name] += 1
         if self._block_counters[name] > 1:
             return f"{name}#{self._block_counters[name]}"
-            
+        
         return name
 
     def get_base_name(self) -> str:
@@ -138,6 +162,17 @@ class BlockContext:
         self._block_counters.clear()
         self.current_statement = None
         self.parameter_type = None
+
+    # The issue also requires an update to is_name_in_parent_chain:
+    def is_name_in_parent_chain(self, name: str) -> bool:
+        """Check if a block name exists in the parent chain (case-insensitive)"""
+        normalized_name = name.lower()
+        current = self
+        while current and current.name != "root":
+            if current.get_base_name().lower() == normalized_name:
+                return True
+            current = current.parent
+        return False
 
 class StatementParser:
     def __init__(self):
@@ -187,6 +222,12 @@ class StatementParser:
                         raise ParseError(line_number, "", "Block begin found outside statement")
                         
                     base_name = self._validate_block_name(line[1:].strip(), line_number)
+                    
+                    # Check if block name is used in any parent block
+                    if context.is_name_in_parent_chain(base_name):
+                        raise ParseError(line_number, "", 
+                            f"Block name '{base_name}' cannot be used while a block with the same name is still open")
+                    
                     tracked_name = context.validate_block_name(base_name, line_number)
                     new_context = BlockContext(tracked_name, line_number, context)
                     
@@ -419,6 +460,7 @@ class StatementParser:
                 for nested_stmt in block_statements:
                     self._print_statement_structure(nested_stmt, indent + 4)
 
+# Remove the incorrectly placed CommandParser code section
 if __name__ == "__main__":
     import sys
     import argparse

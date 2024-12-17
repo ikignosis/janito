@@ -49,6 +49,18 @@ def validate_file_operations(changes: List[FileChange], collected_files: Set[Pat
         Tuple of (is_valid, error_message)
     """
     for change in changes:
+        # For modify operations, validate text changes
+        if change.operation == ChangeOperation.MODIFY_FILE:
+            for mod in change.text_changes:
+                # Handle delete operations (either explicit or via empty replacement)
+                if not mod.is_delete and not mod.is_append:
+                    if not mod.search_content:
+                        return False, f"Search content required for modification in {change.name}"
+                    # Empty replacement content is valid (treated as delete)
+                
+                if mod.is_append and not mod.replace_content:
+                    return False, f"Replace content required for append operation in {change.name}"
+
         # Validate file exists for operations requiring it
         if change.operation in (ChangeOperation.MODIFY_FILE, ChangeOperation.REPLACE_FILE, ChangeOperation.REMOVE_FILE):
             if change.name not in collected_files:

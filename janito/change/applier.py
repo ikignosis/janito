@@ -61,8 +61,7 @@ class ChangeApplier:
                 else:
                     if not mod.search_content:
                         return False, "Search content is required for non-append modification"
-                    if not mod.is_delete and not mod.replace_content:
-                        return False, "Replace content is required for non-delete modification"
+                    # Empty replacement content is valid (treated as delete)
 
                 if mod.search_content:
                     seen_search_texts.add(mod.search_content)

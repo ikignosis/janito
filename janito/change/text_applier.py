@@ -88,8 +88,8 @@ class TextChangeApplier:
                         any_changes = True
                     continue
 
-                # Handle delete operations
-                if mod.is_delete:
+                # Handle delete operations (either explicit or via empty replacement)
+                if mod.is_delete or (mod.replace_content == "" and mod.search_content):
                     replacer = SearchReplacer(modified, mod.search_content, "")
                     modified = replacer.replace()
                     any_changes = True

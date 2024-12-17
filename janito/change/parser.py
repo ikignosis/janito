@@ -76,13 +76,21 @@ class FileChange:
         )
 
     def validate_required_parameters(self) -> bool:
-        """Validate the file change operation"""
-        if self.operation == ChangeOperation.RENAME_FILE and not (self.source and self.target):
-            return False
-        if self.operation in (ChangeOperation.CREATE_FILE, ChangeOperation.REPLACE_FILE) and not self.content:
-            return False
-        if self.operation == ChangeOperation.MODIFY_FILE and not self.text_changes:
-            return False
+        """Validate the file change operation and raise detailed errors if parameters are missing"""
+        if self.operation == ChangeOperation.RENAME_FILE:
+            if not self.source:
+                raise ValueError(f"Missing 'source' parameter for {self.operation.name}")
+            if not self.target:
+                raise ValueError(f"Missing 'target' parameter for {self.operation.name}")
+                
+        elif self.operation in (ChangeOperation.CREATE_FILE, ChangeOperation.REPLACE_FILE):
+            if not self.content:
+                raise ValueError(f"Missing 'content' parameter for {self.operation.name}")
+                
+        elif self.operation == ChangeOperation.MODIFY_FILE:
+            if not self.text_changes:
+                raise ValueError(f"No closed text changes found for {self.operation.name}")
+                
         return True
 
 class CommandParser:
@@ -104,11 +112,11 @@ class CommandParser:
                 raise Exception(f"{statement_key} not in supported statements: {supported_opers}")
                 
             change = self.convert_statement_to_filechange(statement)
-            if change and change.validate_required_parameters():
-                changes.append(change)
-            else:
+            if not change:
                 raise Exception(f"Invalid change found: {statement.name}")
-                
+            if not change.validate_required_parameters():
+                raise Exception(f"Missing required parameters for change: {statement.name}")
+            changes.append(change)
         return changes
 
     def convert_statement_to_filechange(self, statement: Statement) -> Optional[FileChange]:

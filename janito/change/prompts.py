@@ -20,12 +20,13 @@ RULES for Analysis:
     * should be inserted at the top of the file, not before the new code requiring them
 - When using python rich components, do not concatenate or append strings with rich components
 - When adding new typing imports, add them at the top of the file (eg. Optional, List, Dict, Tuple, Union)
+- Preserve the indentation of the original content as we will try to do an exact match
 
--  The file/text changes must be enclosed in BEGIN_CHANGES and END_CHANGES markers
+-  The file/text changes must be enclosed in BEGIN_INSTRUCTIONS and END_INSTRUCTIONS markers
 -  All lines in text to be add, deleted or replaces must be prefixed with a dot (.) to mark them literal
 -  Submit the instructions for review
 - The instructions must be submitted in the same format as provided below
-- If you have further information about the changes, provide it after the END_CHANGES 
+- If you have further information about the changes, provide it after the END_INSTRUCTIONS marker 
 - Blocks started in single lines with blockName/ must be closed with /blockName in a single line
 - When all content of a file is moved to others as part of a reorg, delete the original file (instead of keeping it empty)
 
@@ -34,9 +35,6 @@ Available operations:
 - Replace File
 - Rename File
 - Remove File
-
-The slash (/) character is used to mark the beginning and end of a block of changes. It is important to use it as shown in the example.
-
 
 
 BEGIN_INSTRUCTIONS (include this marker)
@@ -49,7 +47,7 @@ Create File
     .def greet():
     .    print("Hello, World!")
 
-  
+
 Replace File
     reason: Update Python script
     name: script.py
@@ -92,8 +90,37 @@ Modify File
             .def additional_function():
             .    print("New feature")
     # !!! IMPORTANT Open blocks must be closed
-    Changes/  
+    Changes/
 
+# Example of what is valid and invalid for block openings
+
+# Eample of an invalid block opening
+Modify File
+    /Changes
+        Append
+            reason: Add new functionality
+            content:
+            .def additional_function():
+            .    print("New feature")
+        # change block
+    /Changes (did not close previous change block)
+
+# Valid example (two consecutive blocks closed)
+    /Changes
+        Append
+            reason: Add new functionality
+            content:
+            .def additional_function():
+            .    print("New feature")
+        # change block
+    Changes/ # / at end meanns close block
+
+    /Changes
+        # change block
+    Changes/
+
+
+    
 END_INSTRUCTIONS (this marker must be included)
 
 

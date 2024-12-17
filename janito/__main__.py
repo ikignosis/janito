@@ -102,6 +102,7 @@ def typer_main(
         config.set_recursive(resolved_paths)
         include = include or []
         include.extend(resolved_paths)
+        config.set_include(include)
 
     if test_cmd:
         config.set_test_cmd(test_cmd)
@@ -116,11 +117,8 @@ def typer_main(
     elif change_request:
         handle_request(change_request)
     else:
-        console = Console()
-        error_text = Text("No command given", style="red")
-        usage_hint = Text("\nUsage: janito <change-request> [OPTIONS]", style="yellow")
-        console.print(error_text)
-        console.print(usage_hint)
+        from janito.shell import start_shell
+        start_shell()
 
 def main():
     typer.run(typer_main)

@@ -6,24 +6,24 @@ from rich.console import Console, Group
 from rich.panel import Panel
 from rich.columns import Columns
 from rich.text import Text
-from rich import box
-from rich.style import Style
 from rich.padding import Padding
+from rich import box
+from janito.change.analysis import AnalysisOption
+from .options import parse_analysis_options
 
-from .options import AnalysisOption, parse_analysis_options
-
-MIN_PANEL_WIDTH = 40
-COLUMN_SPACING = 4  # Increased spacing between columns for better readability
+# Constants for layout configuration
+COLUMN_SPACING = 4  # Spacing between columns in characters
+MIN_PANEL_WIDTH = 40  # Minimum width for each panel in characters
 
 def _create_option_content(option: AnalysisOption) -> Text:
     """Create formatted content for a single option."""
     content = Text()
-    
+
     # Option header
     content.append(f"Option {option.letter}\n", style="bold cyan")
     content.append("═" * 20 + "\n", style="cyan")
     content.append(f"{option.summary}\n\n")
-    
+
     # Description section
     if option.description_items:
         content.append("Description\n", style="bold cyan")
@@ -31,13 +31,13 @@ def _create_option_content(option: AnalysisOption) -> Text:
         for item in option.description_items:
             content.append(f"• {item}\n")
         content.append("\n")
-        
+
     # Affected files section
     if option.affected_files:
         content.append("Affected Files\n", style="bold cyan")
         content.append("─" * 20 + "\n", style="cyan")
-        
-        # Group and sort files by status
+
+        # Group files by status
         files = {status: [] for status in ['Modified', 'New', 'Removed']}
         for file in option.affected_files:
             if '(new)' in file.lower():
@@ -46,9 +46,10 @@ def _create_option_content(option: AnalysisOption) -> Text:
                 files['Removed'].append(file)
             else:
                 files['Modified'].append(file)
-        
+
         # Display with status colors
         styles = {'Modified': 'yellow', 'New': 'green', 'Removed': 'red'}
+        prev_dir = None
         for status, status_files in files.items():
             if status_files:
                 content.append(f"\n{status}:\n", style=styles[status])
@@ -57,7 +58,17 @@ def _create_option_content(option: AnalysisOption) -> Text:
                     new_dir = option.is_new_directory(path)
                     dir_marker = " [📁+]" if new_dir else ""
                     style = "bold magenta" if new_dir else styles[status]
-                    content.append(f"• {path}{dir_marker}\n", style=style)
+
+                    # Handle directory alignment
+                    current_dir = str(Path(path).parent)
+                    if prev_dir and current_dir == prev_dir:
+                        dir_display = "↑".ljust(len(current_dir))
+                    else:
+                        dir_display = current_dir
+                        prev_dir = current_dir
+
+                    file_name = Path(path).name
+                    content.append(f"• {dir_display}/{file_name}{dir_marker}\n", style=style)
                     
     return content
 

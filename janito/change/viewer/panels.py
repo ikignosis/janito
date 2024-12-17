@@ -3,10 +3,10 @@ from rich.panel import Panel
 from rich.columns import Columns
 from rich import box
 from rich.text import Text
-from typing import List
-from typing import Optional
+from typing import List, Optional
 from ..parser import FileChange, ChangeOperation
 from .styling import format_content, create_legend_items
+from .content import create_content_preview
 from rich.rule import Rule
 
 def preview_all_changes(console: Console, changes: List[FileChange]) -> None:
@@ -297,11 +297,15 @@ def find_modified_sections(original: list[str], modified: list[str], context_lin
     return sections
 
 def create_new_file_panel(name: Text, content: Text) -> Panel:
-    """Create a panel for new file creation"""
+    """Create a panel for new file creation with stats"""
+    stats = get_file_stats(content)
+    preview = create_content_preview(Path(str(name)), str(content))
     return Panel(
-        format_content(content.splitlines(), [], content.splitlines(), False),
+        preview,
         title=f"[green]New File: {name}[/green]",
         title_align="left",
+        subtitle=f"[dim]{stats}[/dim]",
+        subtitle_align="right",
         box=box.HEAVY
     )
 
@@ -417,3 +421,23 @@ def show_delete_panel(console: Console, change: FileChange, change_index: int = 
     # Add final separator
     console.print(Rule(title="End Of Changes", style="bold red"))
     console.print()
+import os
+from typing import Union
+
+def get_human_size(size_bytes: int) -> str:
+    """Convert bytes to human readable format"""
+    for unit in ['B', 'KB', 'MB', 'GB']:
+        if size_bytes < 1024.0:
+            return f"{size_bytes:.1f}{unit}"
+        size_bytes /= 1024.0
+    return f"{size_bytes:.1f}TB"
+
+def get_file_stats(content: Union[str, Text]) -> str:
+    """Get file statistics in human readable format"""
+    if isinstance(content, Text):
+        lines = content.plain.splitlines()
+        size = len(content.plain.encode('utf-8'))
+    else:
+        lines = content.splitlines()
+        size = len(content.encode('utf-8'))
+    return f"{len(lines)} lines, {get_human_size(size)}"

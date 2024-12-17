@@ -6,12 +6,9 @@ from janito.agents import AIAgent
 from janito.scan.analysis import analyze_workspace_content
 from janito.config import config
 from janito.change.core import process_change_request, play_saved_changes
+from janito.cli.history import save_to_history
+from janito.agents import agent
 
-
-from .functions import (
-    process_question,
-    read_stdin
-)
 
 from .handlers.ask import AskHandler
 from .handlers.request import RequestHandler
@@ -37,8 +34,7 @@ def handle_play(filepath: Path):
 
 def handle_request(request: str, preview_only: bool = False):
     """Process modification request"""
-    from janito.cli.history import save_to_history
-    from janito.agents import agent
+
 
     handler = RequestHandler()
     handler.handle(request, preview_only)
