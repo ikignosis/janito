@@ -13,9 +13,9 @@ class ConfigManager:
         self.workdir = Path.cwd()
         self.raw = False
         self.include: List[Path] = []
+        self.recursive: List[Path] = []
         self.auto_apply: bool = False
         self.tui: bool = False
-        self.recursive: bool = False
 
     @classmethod
     def get_instance(cls) -> "ConfigManager":
@@ -85,9 +85,13 @@ class ConfigManager:
         """Set TUI mode"""
         self.tui = enabled
 
-    def set_recursive(self, enabled: bool) -> None:
-        """Set recursive scan mode"""
-        self.recursive = enabled
+    def set_recursive(self, paths: Optional[List[Path]]) -> None:
+        """Set paths to scan recursively
+
+        Args:
+            paths: List of directory paths to scan recursively, or None to disable recursive scanning
+        """
+        self.recursive = paths
 
 # Create a singleton instance
 config = ConfigManager.get_instance()

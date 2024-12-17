@@ -11,7 +11,6 @@ from janito.agents import agent
 from janito.config import config
 
 from .cli.commands import handle_request, handle_ask, handle_play, handle_scan
-from .cli.input import read_input
 
 app = typer.Typer(add_completion=False)
 
@@ -55,9 +54,8 @@ def typer_main(
     test_cmd: Optional[str] = typer.Option(None, "--test", help="Command to run tests after changes"),
     auto_apply: bool = typer.Option(False, "--auto-apply", help="Apply changes without confirmation"),
     tui: bool = typer.Option(False, "--tui", help="Use terminal user interface"),
-    input_mode: bool = typer.Option(False, "--input", help="Read request from stdin"),
     history: bool = typer.Option(False, "--history", help="Display history of requests"),
-    recursive: bool = typer.Option(False, "-r", "--recursive", help="Scan directories recursively"),
+    recursive: Optional[List[Path]] = typer.Option(None, "-r", "--recursive", help="Paths to scan recursively (directories only)"),
     demo: bool = typer.Option(False, "--demo", help="Run demo scenarios"),
 ):
     """Janito - AI-powered code modification assistant"""
@@ -83,7 +81,30 @@ def typer_main(
     config.set_auto_apply(auto_apply)
     config.set_include(include)
     config.set_tui(tui)
-    config.set_recursive(recursive)
+
+    if include:
+        resolved_paths = []
+        for path in include:
+            path = config.workdir / path
+            resolved_paths.append(path.resolve())
+        config.set_include(resolved_paths)
+
+    # Validate recursive paths
+    if recursive:
+        resolved_paths = []
+        for path in recursive:
+            final_path = config.workdir / path 
+            if not path.is_dir():
+                error_text = Text(f"\nError: Recursive path must be a directory: {path}", style="red")
+                rich_print(error_text)
+                raise typer.Exit(1)
+            resolved_paths.append(final_path.resolve())
+        config.set_recursive(resolved_paths)
+        include = include or []
+        include.extend(resolved_paths)
+
+    if test_cmd:
+        config.set_test_cmd(test_cmd)
 
     if ask:
         handle_ask(ask)
@@ -92,13 +113,6 @@ def typer_main(
     elif scan:
         paths_to_scan = include or [config.workdir]
         handle_scan(paths_to_scan)
-    elif input_mode:
-        request = read_input()
-        if request:
-            handle_request(request)
-        else:
-            console = Console()
-            console.print("[red]No input provided[/red]")
     elif change_request:
         handle_request(change_request)
     else:

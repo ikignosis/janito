@@ -8,26 +8,22 @@ from rich.columns import Columns
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
-
+from rich.rule import Rule
+from rich.console import Group
 from janito.config import config
 
 
 SPECIAL_FILES = ["README.md", "__init__.py", "__main__.py"]
 
-def _format_size(size_bytes: int) -> str:
-    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
-        if size_bytes < 1024.0:
-            break
-        size_bytes /= 1024.0
-    return f"{size_bytes:.1f} {unit}"
 
 def _get_gitignore_spec() -> PathSpec:
     """Load gitignore patterns if available"""
     gitignore_path = config.workdir / '.gitignore' if config.workdir else None
     if gitignore_path and gitignore_path.exists():
-        with open(gitignore_path) as f:
-            return PathSpec.from_lines(GitWildMatchPattern, f.read().splitlines())
-    return None
+        with gitignore_path.open() as f:
+            lines = f.readlines()
+        return PathSpec.from_lines(GitWildMatchPattern, lines)
+
 
 def _process_file(path: Path, relative_base: Path) -> Tuple[str, str, bool]:
     """Process a single file and return its XML content, display item and success status"""
@@ -54,8 +50,8 @@ def _scan_paths(paths: List[Path] = None) -> Tuple[List[str], List[str], List[st
     console = Console()
     gitignore_spec = _get_gitignore_spec()
 
-    def scan_path(path: Path, depth: int) -> None:
-        if depth > 1 and not config.recursive:
+    def scan_path(path: Path, depth: int, is_recursive: bool) -> None:
+        if depth > 1 and not is_recursive:
             return
 
         path = path.resolve()
@@ -85,12 +81,12 @@ def _scan_paths(paths: List[Path] = None) -> Tuple[List[str], List[str], List[st
                 file_items[-1] = f"[blue]•[/blue] {relative_path}/ [cyan]({', '.join(special_found)})[/cyan]"
 
             for item in path.iterdir():
+                # Skip ignored files/directories
                 if gitignore_spec and gitignore_spec.match_file(str(item.relative_to(config.workdir))):
                     rel_path = item.relative_to(config.workdir)
                     ignored_items.append(f"[dim red]•[/dim red] {rel_path}")
                     continue
-                if item.resolve() not in processed_files:
-                    scan_path(item, depth+1)
+                scan_path(item, depth+1, is_recursive)
         else:
             if path.resolve() in processed_files:
                 return
@@ -106,7 +102,8 @@ def _scan_paths(paths: List[Path] = None) -> Tuple[List[str], List[str], List[st
                     console.print(f"[yellow]Warning: Skipping file due to encoding issues: {display_item}[/yellow]")
 
     for path in paths:
-        scan_path(path, 0)
+        is_recursive = Path(path) in config.recursive
+        scan_path(path, 0, is_recursive)
 
     if skipped_files and config.verbose:
         console.print("\n[yellow]Files skipped due to encoding issues:[/yellow]")
@@ -135,8 +132,6 @@ def preview_scan(paths: List[Path] = None) -> None:
     paths_content = Text()
     paths_content.append("Working Directory:\n", style="cyan")
     paths_content.append(f"  {config.workdir.absolute()}\n\n")
-    paths_content.append(f"Recursive Mode: ", style="cyan")
-    paths_content.append("Enabled\n" if config.recursive else "Disabled\n")
 
     # Add included paths if any
     is_workdir_scanned = any(p.resolve() == config.workdir.resolve() for p in paths)
@@ -151,8 +146,6 @@ def preview_scan(paths: List[Path] = None) -> None:
                     paths_content.append(f"  • {path.absolute()}\n")
 
     # Create consolidated panel with both sections
-    from rich.console import Group
-    from rich.rule import Rule
 
     sections = [paths_content, Rule(style="blue")]
 

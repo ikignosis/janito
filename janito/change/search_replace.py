@@ -10,12 +10,13 @@ class PatternNotFoundException(Exception):
 class SearchReplacer:
     """Handles indentation-aware search and replace operations on Python source code."""
     
-    def __init__(self, source_code: str, search_pattern: str, replacement: Optional[str] = None):
+    def __init__(self, source_code: str, search_pattern: str, replacement: Optional[str] = None, allow_partial: bool = True):
         """Initialize with source code and patterns."""
         self.source_code = source_code.rstrip()
         self.search_pattern = search_pattern.rstrip()
         self.replacement = replacement.rstrip() if replacement else None
         self.pattern_found = False
+        self.allow_partial = allow_partial
         # Build indent map on initialization
         self.source_indent_map = self._build_indent_map(self.source_code)
         self.pattern_base_indent = len(self.get_indentation(self.search_pattern.splitlines()[0])) if self.search_pattern else 0
@@ -99,7 +100,7 @@ class SearchReplacer:
         return indented_replacement
     
     def find_pattern(self) -> bool:
-        """Search for pattern with indentation awareness."""
+        """Search for pattern with indentation awareness, falling back to partial matches."""
         try:
             search_first, _ = self.get_first_non_empty_line(self.search_pattern)
             search_indent = self.get_indentation(search_first)
@@ -107,20 +108,24 @@ class SearchReplacer:
             normalized_pattern = self.normalize_pattern(self.search_pattern, search_indent)
             source_lines = self.source_code.splitlines()
             
-            # Find all potential matches
+            # Try exact matches first
             matches = []
             for i in range(len(source_lines)):
                 if self._try_match_at_position(i, source_lines, normalized_pattern):
                     matches.append(i)
                     
-            # Find best match based on indentation
+            # If no exact matches, try partial matches
+            if not matches:
+                pattern_lines = normalized_pattern.splitlines()
+                matches = self._find_partial_matches(source_lines, pattern_lines)
+                
             return bool(self._find_best_match_position(matches, source_lines))
             
         except Exception:
             return False
 
     def replace(self) -> str:
-        """Perform the search and optional replace operation with indent awareness."""
+        """Perform the search and replace operation, falling back to partial matches."""
         if self.replacement is None:
             if not self.find_pattern():
                 raise PatternNotFoundException(
@@ -134,9 +139,8 @@ class SearchReplacer:
         normalized_pattern = self.normalize_pattern(self.search_pattern, search_indent)
         source_lines = self.source_code.splitlines()
         result_lines = []
-        i = 0
         
-        # Find all potential matches first
+        # Try exact matches first
         matches = []
         pos = 0
         while pos < len(source_lines):
@@ -144,21 +148,27 @@ class SearchReplacer:
                 matches.append(pos)
             pos += 1
             
-        # Use best match position
+        # If no exact matches, try partial matches
+        if not matches:
+            pattern_lines = normalized_pattern.splitlines()
+            matches = self._find_partial_matches(source_lines, pattern_lines)
+            
         best_pos = self._find_best_match_position(matches, source_lines)
         if best_pos is None:
             raise PatternNotFoundException(
                 "The specified search pattern was not found in the source code"
             )
             
-        # Apply replacement at best match position
+        # Apply replacement
+        i = 0
         while i < len(source_lines):
             if i == best_pos:
                 self.pattern_found = True
                 match_indent = self.get_indentation(source_lines[i])
                 indented_replacement = self.create_indented_replacement(match_indent)
                 result_lines.extend(indented_replacement)
-                i += len(normalized_pattern.splitlines())
+                # For partial matches, only skip the matched line
+                i += 1 if not matches else len(normalized_pattern.splitlines())
             else:
                 result_lines.append(source_lines[i])
                 i += 1
@@ -173,17 +183,22 @@ class SearchReplacer:
         if pos + len(pattern_lines) > len(source_lines):
             return False
             
-        # Get indentation from first source line that matches pattern's first non-empty line
         pattern_first_line = next((l for l in pattern_lines if l.strip()), '')
         if not pattern_first_line:
             return False
             
         match_indent = self.get_indentation(source_lines[pos])
-        
-        # Track current indentation level
         current_indent = match_indent
         
-        # Check if pattern matches, allowing for indentation changes
+        if self.allow_partial:
+            # For partial matches, check if any non-empty pattern line is contained in the source
+            return any(
+                p.strip() in source_lines[pos + j].strip()
+                for j, p in enumerate(pattern_lines)
+                if p.strip() and pos + j < len(source_lines)
+            )
+        
+        # Original exact matching logic
         for j, pattern_line in enumerate(pattern_lines):
             source_line = source_lines[pos + j]
             if not pattern_line and not source_line.strip():
@@ -198,7 +213,17 @@ class SearchReplacer:
                 return False
                 
         return True
-    
+
+    def _find_partial_matches(self, source_lines: List[str], pattern_lines: List[str]) -> List[int]:
+        """Find positions of partial matches when no exact match is found."""
+        matches = []
+        pattern_core_lines = [l.strip() for l in pattern_lines if l.strip()]
+        
+        for i, line in enumerate(source_lines):
+            if any(p in line.strip() for p in pattern_core_lines):
+                matches.append(i)
+        return matches
+
     def _handle_match(self, pos: int, source_lines: List[str], 
                      normalized_pattern: str, result_lines: List[str]) -> int:
         """Handle a successful pattern match."""
