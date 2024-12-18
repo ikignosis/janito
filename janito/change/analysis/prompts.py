@@ -92,3 +92,7 @@ def build_request_analysis_prompt(request: str, files_content_xml: str) -> str:
         files_content=files_content_xml,
         request=request
     )
+
+    def build_request_analysis_prompt(request: str, files_content_xml: str) -> str:
+        """Build analysis prompt with minimal formatting."""
+        return f"Current files:\n{files_content_xml}\n\nRequest:\n{request}"

@@ -24,6 +24,7 @@ class ChangeOperation(Enum):
     RENAME_FILE = auto()
     REMOVE_FILE = auto()
     MODIFY_FILE = auto()
+    MOVE_FILE = auto()
 
 @dataclass
 class TextChange:

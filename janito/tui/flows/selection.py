@@ -95,7 +95,7 @@ class SelectionFlow(Screen):
 
             # Build and send change request
             from janito.change import build_change_request_prompt
-            from janito.scan import collect_files_content
+            from janito.workspace import collect_files_content
 
             files_content = collect_files_content([option.get_clean_path(f) for f in option.affected_files])
             prompt = build_change_request_prompt(option.format_option_text(), "", files_content)

@@ -9,11 +9,20 @@ def verify_changes(changes: List[FileChange]) -> tuple[bool, str]:
     """Verify changes can be safely applied to workdir.
     Returns (is_safe, error_message)."""
     for change in changes:
-        target_path = config.workdir / change.name
-        if change.operation == ChangeOperation.CREATE_FILE and target_path.exists():
-            return False, f"Cannot create {change.name} - already exists"
-        elif change.operation != ChangeOperation.CREATE_FILE and not target_path.exists():
-            return False, f"Cannot modify non-existent file {change.name}"
+        source_path = config.workdir / change.name
+        
+        if change.operation == ChangeOperation.CREATE_FILE:
+            if source_path.exists():
+                return False, f"Cannot create {change.name} - already exists"
+                
+        elif change.operation in (ChangeOperation.MOVE_FILE, ChangeOperation.RENAME_FILE):
+            if not source_path.exists():
+                return False, f"Cannot {change.operation.name.lower()} non-existent file {change.name}"
+            target_path = config.workdir / change.target
+            if target_path.exists():
+                return False, f"Cannot {change.operation.name.lower()} {change.name} to {change.target} - target already exists"
+
+            
     return True, ""
 
 def apply_changes(changes: List[FileChange], preview_dir: Path, console: Console) -> bool:

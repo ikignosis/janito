@@ -5,7 +5,7 @@ from typing import Optional, Dict
 from janito.agents import agent
 from janito.common import progress_send_message
 from janito.config import config
-from .display import format_analysis
+from .view import format_analysis
 from .options import AnalysisOption, parse_analysis_options
 from .prompts import (
     build_request_analysis_prompt,

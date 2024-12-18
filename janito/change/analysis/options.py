@@ -12,7 +12,8 @@ class AnalysisOption:
 
     def format_option_text(self) -> str:
         """Format option details as text for change core"""
-        text = f"Option {self.letter}: {self.summary}\n\n"
+        text = f"Option {self.letter} - {self.summary}\n"
+        text += "=" * len(f"Option {self.letter} - {self.summary}") + "\n\n"
         
         if self.description_items:
             text += "Description:\n"

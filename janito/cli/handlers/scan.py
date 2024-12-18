@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import List
-from janito.scan import preview_scan
+from janito.workspace import preview_scan
 from ..base import BaseCLIHandler
 
 class ScanHandler(BaseCLIHandler):

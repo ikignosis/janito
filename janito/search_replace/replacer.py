@@ -4,8 +4,10 @@ from .searcher import Searcher
 class Replacer:
     """Handles replacement operations with proper indentation."""
 
-    def __init__(self):
-        self.searcher = Searcher()
+    def __init__(self, debug: bool = False):
+        """Initialize replacer with debug mode."""
+        self.searcher = Searcher(debug=debug)
+        self.debug_mode = debug
 
     def create_indented_replacement(self, match_indent: str, search_pattern: str, replacement: str) -> List[str]:
         """Create properly indented replacement lines."""

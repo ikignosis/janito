@@ -11,15 +11,15 @@ class PatternNotFoundException(Exception):
 class SearchReplacer:
     """Handles indentation-aware search and replace operations on Python source code."""
 
-    def __init__(self, source_code: str, search_pattern: str, replacement: Optional[str] = None, allow_partial: bool = True):
+    def __init__(self, source_code: str, search_pattern: str, replacement: Optional[str] = None, file_ext: Optional[str] = None, debug: bool = False):
         """Initialize with source code and patterns."""
         self.source_code = source_code.rstrip()
         self.search_pattern = search_pattern.rstrip()
         self.replacement = replacement.rstrip() if replacement else None
-        self.allow_partial = allow_partial
+        self.file_ext = file_ext.lower() if file_ext else None
         self.pattern_found = False
-        self.searcher = Searcher()
-        self.replacer = Replacer()
+        self.searcher = Searcher(debug=debug)
+        self.replacer = Replacer(debug=debug)
 
         # Initialize pattern base indent
         first_line, _ = self.searcher.get_first_non_empty_line(self.search_pattern)
@@ -67,25 +67,32 @@ class SearchReplacer:
         if best_pos is None:
             raise PatternNotFoundException("Pattern not found")
 
-        return self._apply_replacement(source_lines, best_pos, normalized_pattern)
+        if self.searcher.debug_mode:
+            pattern_lines = len(normalized_pattern.splitlines())
+            replacement_lines = len(self.replacement.splitlines()) if self.replacement else 0
+            print(f"\n[DEBUG] Replacing {pattern_lines} lines with {replacement_lines} lines")
+            context_start = max(0, best_pos - 2)
+            context_end = min(len(source_lines), best_pos + len(normalized_pattern.splitlines()) + 2)
+            print("\n[DEBUG] Context before replacement:")
+            for i in range(context_start, context_end):
+                prefix = ">>> " if context_start <= i < best_pos + len(normalized_pattern.splitlines()) else "    "
+                print(f"[DEBUG] {prefix}Line {i + 1}: {source_lines[i]}")
+
+        result = self._apply_replacement(source_lines, best_pos, normalized_pattern)
+
+        if self.searcher.debug_mode:
+            print("\n[DEBUG] Context after replacement:")
+            result_lines = result.splitlines()
+            for i in range(context_start, context_end):
+                prefix = ">>> " if context_start <= i < best_pos + len(self.replacement.splitlines()) else "    "
+                print(f"[DEBUG] {prefix}Line {i + 1}: {result_lines[i]}")
+
+        return result
 
     def _find_matches(self, source_lines, normalized_pattern):
         """Find all possible matches in source."""
-        # Try exact matching first
-        exact_matches = self.searcher.exact_match('\n'.join(source_lines), self.search_pattern)
-        if exact_matches:
-            if self.searcher.debug_mode:
-                print("[DEBUG] Using exact matches for replacement")
-            return exact_matches
-
-        # Fall back to flexible matching
-        if self.searcher.debug_mode:
-            print("[DEBUG] Falling back to flexible matching")
-        matches = []
-        for i in range(len(source_lines)):
-            if self._try_match_at_position(i, source_lines, normalized_pattern):
-                matches.append(i)
-        return matches
+        pattern_lines = normalized_pattern.splitlines()
+        return self.searcher._find_matches(source_lines, pattern_lines, self.file_ext)
 
     def _apply_replacement(self, source_lines, match_pos, normalized_pattern):
         """Apply replacement at the matched position."""
@@ -108,20 +115,7 @@ class SearchReplacer:
     def _try_match_at_position(self, pos, source_lines, normalized_pattern):
         """Check if pattern matches at given position."""
         pattern_lines = normalized_pattern.splitlines()
-        if pos + len(pattern_lines) > len(source_lines):
-            return False
+        strategies = self.searcher.get_strategies(self.file_ext)
+        return self.searcher.try_match_with_strategies(source_lines, pattern_lines, pos, strategies)
 
-        if self.allow_partial:
-            return any(
-                p.strip() in source_lines[pos + j].strip()
-                for j, p in enumerate(pattern_lines)
-                if p.strip() and pos + j < len(source_lines)
-            )
-
-        match_indent = self.searcher.get_indentation(source_lines[pos])
-        for j, pattern_line in enumerate(pattern_lines):
-            if not pattern_line and not source_lines[pos + j].strip():
-                continue
-            if not source_lines[pos + j].startswith(match_indent + pattern_line):
-                return False
-        return True
+__all__ = ['SearchReplacer', 'PatternNotFoundException', 'Searcher', 'Replacer', 'parse_test_file']

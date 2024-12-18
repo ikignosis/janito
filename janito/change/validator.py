@@ -13,146 +13,12 @@ from rich import box
 from janito.common import progress_send_message
 from janito.change.history import save_changes_to_history
 from janito.config import config
-from janito.scan import collect_files_content
+from janito.workspace.scan import collect_files_content
 from .viewer import preview_all_changes
-from janito.scan.analysis import analyze_workspace_content as show_content_stats
+from janito.workspace.analysis import analyze_workspace_content as show_content_stats
 from .parser import FileChange
 
 from .analysis import analyze_request
-
-def process_change_request(
-    request: str,
-    preview_only: bool = False
-    ) -> Tuple[bool, Optional[Path]]:
-    """
-    Process a change request through the main flow.
-    Return:
-        success: True if the request was processed successfully
-        history_file: Path to the saved history file
-    """
-    console = Console()
-    paths_to_scan = config.include if config.include else [config.workdir]
-
-    content_xml = collect_files_content(paths_to_scan)
-
-    # Show workspace content preview
-    show_content_stats(content_xml)
-
-    analysis = analyze_request(request, content_xml)
-    if not analysis:
-        console.print("[red]Analysis failed or interrupted[/red]")
-        return False, None
-
-    prompt = build_change_request_prompt(request, analysis.format_option_text(), content_xml)
-    response = progress_send_message(prompt)
-    if not response:
-        console.print("[red]Failed to get response from AI[/red]")
-        return False, None
-
-    history_file = save_changes_to_history(response, request)
-
-    # Parse changes
-    changes = parse_response(response)
-    if not changes:
-        console.print("[yellow]No changes found in response[/yellow]")
-        return False, None
-
-    # Show request and selected option in panel
-    request_panel = Panel(
-        request,
-        title="User Request",
-        border_style="cyan",
-        box=box.ROUNDED
-    )
-    option_panel = Panel(
-        analysis.format_option_text(),
-        title="Selected Option",
-        border_style="green",
-        box=box.ROUNDED
-    )
-
-    # Display panels side by side
-    columns = Columns([request_panel, option_panel], equal=True, expand=True)
-    console.print("\n")
-    console.print(columns)
-    console.print("\n")
-
-    if preview_only:
-        preview_all_changes(console, changes)
-        return True, history_file
-
-    # Create preview directory and apply changes
-    _, preview_dir = setup_workdir_preview()
-    applier = ChangeApplier(preview_dir)
-
-    success, _ = applier.apply_changes(changes)
-    if success:
-        preview_all_changes(console, changes)
-
-        if not config.auto_apply:
-            apply_changes = Confirm.ask("[cyan]Apply changes to working dir?[/cyan]", default=False)
-        else:
-            apply_changes = True
-            console.print("[cyan]Auto-applying changes to working dir...[/cyan]")
-
-        if apply_changes:
-            applier.apply_to_workdir(changes)
-            console.print("[green]Changes applied successfully[/green]")
-        else:
-            console.print("[yellow]Changes were not applied[/yellow]")
-
-    return success, history_file
-
-def play_saved_changes(history_file: Path, preview_only: bool = False) -> Tuple[bool, Optional[Path]]:
-    """
-    Replay changes from a saved history file
-    Returns:
-        success: True if changes were applied successfully
-        history_file: Path to the history file that was played
-    """
-    console = Console()
-
-    if not history_file.exists():
-        console.print(f"[red]History file not found: {history_file}[/red]")
-        return False, None
-
-    try:
-        content = history_file.read_text()
-        changes = parse_response(content)
-
-        if not changes:
-            console.print("[yellow]No changes found in history file[/yellow]")
-            return False, None
-
-        if preview_only:
-            preview_all_changes(console, changes)
-            return True, history_file
-
-        # Create preview directory and apply changes
-        _, preview_dir = setup_workdir_preview()
-        applier = ChangeApplier(preview_dir)
-
-        success, _ = applier.apply_changes(changes)
-        if success:
-            preview_all_changes(console, changes)
-
-            if not config.auto_apply:
-                apply_changes = Confirm.ask("[cyan]Apply changes to working dir?[/cyan]", default=False)
-            else:
-                apply_changes = True
-                console.print("[cyan]Auto-applying changes to working dir...[/cyan]")
-
-            if apply_changes:
-                applier.apply_to_workdir(changes)
-                console.print("[green]Changes applied successfully[/green]")
-            else:
-                console.print("[yellow]Changes were not applied[/yellow]")
-
-        return success, history_file
-
-    except Exception as e:
-        console.print(f"[red]Error playing changes: {str(e)}[/red]")
-        return False, None
 
 def validate_file_operations(changes: List[FileChange], collected_files: Set[Path]) -> Tuple[bool, str]:
     """Validate file operations against current filesystem state.
@@ -263,11 +129,11 @@ def validate_change(change: FileChange) -> Tuple[bool, Optional[str]]:
         return False, "File name is required"
 
     operation = change.operation.name.title().lower()
-    if operation not in ['create_file', 'replace_file', 'remove_file', 'rename_file', 'modify_file']:
-        return False, f"Invalid operation: {change.operation}"
+    if operation not in ['create_file', 'replace_file', 'remove_file', 'rename_file', 'modify_file', 'move_file']:
+        return False, f"Invalid file operation: {change.operation}"
 
-    if operation == 'rename_file' and not change.target:
-        return False, "Target file path is required for rename operation"
+    if operation in ['rename_file', 'move_file'] and not change.target:
+        return False, "Target file path is required for rename/move operation"
 
     if operation in ['create_file', 'replace_file']:
         if not change.content:
@@ -375,13 +241,11 @@ def validate_file_operations(changes: List[FileChange], collected_files: Set[Pat
                 return False, f"File not found in scanned files: {change.name}"
 
 
-        # Validate rename operations
-        if change.operation == ChangeOperation.RENAME_FILE:
+        # Validate rename/move operations
+        if change.operation in (ChangeOperation.RENAME_FILE, ChangeOperation.MOVE_FILE):
             if not change.source or not change.target:
-                return False, "Rename operation requires both source and target paths"
+                return False, "Rename/move operation requires both source and target paths"
             if change.source not in collected_files and not is_new_file:
-                return False, f"Source file not found for rename: {change.source}"
-            if change.target in collected_files:
-                return False, f"Cannot rename - target file already exists: {change.target}"
+                return False, f"Source file not found for rename/move: {change.source}"
 
     return True, ""

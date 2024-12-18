@@ -3,7 +3,7 @@ from typing import Optional
 from rich.console import Console
 from janito.config import config
 from janito.qa import ask_question, display_answer
-from janito.scan import collect_files_content
+from janito.workspace.scan import collect_files_content
 from ..base import BaseCLIHandler
 
 class AskHandler(BaseCLIHandler):

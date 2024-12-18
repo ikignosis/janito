@@ -8,10 +8,19 @@ from ..parser import FileChange, ChangeOperation
 from .styling import format_content, create_legend_items
 from .content import create_content_preview
 from rich.rule import Rule
+import shutil
+import sys
+from rich.live import Live
+from .pager import check_pager  # Add this import
+
+# Remove clear_last_line, wait_for_space, and check_pager functions since they've been moved
 
 def preview_all_changes(console: Console, changes: List[FileChange]) -> None:
-    """Show a summary of all changes with side-by-side comparison and progress tracking"""
+    """Show a summary of all changes with side-by-side comparison."""
     total_changes = len(changes)
+
+    # Get terminal height
+    term_height = shutil.get_terminal_size().lines
 
     # Group changes by operation type
     grouped_changes = {}
@@ -20,22 +29,43 @@ def preview_all_changes(console: Console, changes: List[FileChange]) -> None:
             grouped_changes[change.operation] = []
         grouped_changes[change.operation].append(change)
 
-    # Show file operations with rule lines
-    for operation, group in grouped_changes.items():
-        for change in group:
-            if operation == ChangeOperation.CREATE_FILE:
-                console.print(Rule(f"[green]Creating new file: {change.name}[/green]", style="green"))
-            elif operation == ChangeOperation.REMOVE_FILE:
-                console.print(Rule(f"[red]Removing file: {change.name}[/red]", style="red"))
-            elif operation == ChangeOperation.RENAME_FILE:
-                console.print(Rule(f"[yellow]Renaming file: {change.name} → {change.target}[/yellow]", style="yellow"))
+    # Track content height
+    current_height = 0
+
+    # Show file operations with rule lines and track height
+    current_height = _show_file_operations(console, grouped_changes)
 
     # Then show side-by-side panels for replacements
     console.print("\n[bold blue]File Changes:[/bold blue]")
+    current_height += 2
 
     for i, change in enumerate(changes):
         if change.operation in (ChangeOperation.REPLACE_FILE, ChangeOperation.MODIFY_FILE):
             show_side_by_side_diff(console, change, i, total_changes)
+
+def _show_file_operations(console: Console, grouped_changes: dict) -> int:
+    """Display file operation summaries with content preview for new files."""
+    height = 0
+    for operation, group in grouped_changes.items():
+        for change in group:
+            if operation == ChangeOperation.CREATE_FILE:
+                console.print(Rule(f"[green]Creating new file: {change.name}[/green]", style="green"))
+                height += 1
+                if change.content:
+                    preview = create_content_preview(change.name, change.content)
+                    console.print(preview)
+                    height += len(change.content.splitlines()) + 4  # Account for panel borders
+            elif operation == ChangeOperation.REMOVE_FILE:
+                console.print(Rule(f"[red]Removing file: {change.name}[/red]", style="red"))
+                height += 1
+            elif operation == ChangeOperation.RENAME_FILE:
+                console.print(Rule(f"[yellow]Renaming file: {change.name} → {change.target}[/yellow]", style="yellow"))
+                height += 1
+            elif operation == ChangeOperation.MOVE_FILE:
+                console.print(Rule(f"[blue]Moving file: {change.name} → {change.target}[/blue]", style="blue"))
+                height += 1
+            height = check_pager(console, height)
+    return height
 
 def show_side_by_side_diff(console: Console, change: FileChange, change_index: int = 0, total_changes: int = 1) -> None:
     """Show side-by-side diff panels for a file change with progress tracking and reason
@@ -63,8 +93,12 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
     original_lines = original.splitlines()
     new_lines = new_content.splitlines()
 
+    # Track accumulated height
+    current_height = 0
+
     # Show compact centered legend
     console.print(create_legend_items(console), justify="center")
+    current_height += 1
 
     # Show the header with reason and progress
     operation = change.operation.name.replace('_', ' ').title()
@@ -82,6 +116,7 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
     header.append(reason_text)
     # Display panel with centered content
     console.print(Panel(header, box=box.HEAVY, style="cyan", title_align="center"))
+    current_height += 3  # Account for panel borders and content
 
     # Show layout mode indicator
     if not can_do_side_by_side:
@@ -110,6 +145,12 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
             for i, (orig_section, new_section) in enumerate(sections):
                 left_panel = format_content(orig_section, orig_section, new_section, True)
                 right_panel = format_content(new_section, orig_section, new_section, False)
+
+                # Calculate upcoming content height
+                content_height = len(orig_section) + len(new_section) + 4  # Account for panel borders and padding
+
+                # Check if we need to page before showing content
+                current_height = check_pager(console, current_height, content_height)
 
                 # Create panels with adaptive width
                 if can_do_side_by_side:
@@ -173,12 +214,19 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
                 # Show separator between sections if not last section
                 if i < len(sections) - 1:
                     console.print(Rule(" Section Break ", style="cyan dim", align="center"))
+
+                # Update height after displaying content
+                current_height += content_height
     else:
         # For non-text changes, show full content side by side
         sections = find_modified_sections(original_lines, new_lines)
         for i, (orig_section, new_section) in enumerate(sections):
             left_panel = format_content(orig_section, orig_section, new_section, True)
             right_panel = format_content(new_section, orig_section, new_section, False)
+
+            # Calculate content height for full file diff
+            content_height = len(orig_section) + len(new_section) + 4  # Account for panels
+            current_height = check_pager(console, current_height, content_height)
 
             # Format content with appropriate width
             left_panel = format_content(orig_section, orig_section, new_section, True)
@@ -236,6 +284,9 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
             if i < len(sections) - 1:
                 console.print(Rule(style="dim"))
 
+            # Update height after displaying content
+            current_height += content_height
+
     # Add final separator after all changes
     console.print(Rule(title="End Of Changes", style="bold blue"))
     console.print()
@@ -243,12 +294,13 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
 def find_modified_sections(original: list[str], modified: list[str], context_lines: int = 3) -> list[tuple[list[str], list[str]]]:
     """
     Find modified sections between original and modified text with surrounding context.
-    
+    Merges sections with separator lines.
+
     Args:
         original: List of original lines
         modified: List of modified lines
         context_lines: Number of unchanged context lines to include
-        
+
     Returns:
         List of tuples containing (original_section, modified_section) line pairs
     """
@@ -259,14 +311,18 @@ def find_modified_sections(original: list[str], modified: list[str], context_lin
             different_lines.add(i)
         elif original[i] != modified[i]:
             different_lines.add(i)
-            
+
     if not different_lines:
         return []
 
     # Group differences into sections with context
     sections = []
     current_section = set()
-    
+
+    # Track original and modified content
+    orig_content = []
+    mod_content = []
+
     for line_num in sorted(different_lines):
         # If this line is far from current section, start new section
         if not current_section or line_num <= max(current_section) + context_lines * 2:
@@ -274,27 +330,37 @@ def find_modified_sections(original: list[str], modified: list[str], context_lin
         else:
             # Process current section
             start = max(0, min(current_section) - context_lines)
-            end = min(max(len(original), len(modified)), 
+            end = min(max(len(original), len(modified)),
                      max(current_section) + context_lines + 1)
-                     
-            orig_section = original[start:end]
-            mod_section = modified[start:end]
-            
-            sections.append((orig_section, mod_section))
+
+            # Add separator if not first section
+            if orig_content:
+                orig_content.append("...")
+                mod_content.append("...")
+
+            # Add section content
+            orig_content.extend(original[start:end])
+            mod_content.extend(modified[start:end])
+
             current_section = {line_num}
-    
+
     # Process final section
     if current_section:
-        start = max(0, min(current_section) - context_lines) 
+        start = max(0, min(current_section) - context_lines)
         end = min(max(len(original), len(modified)),
                  max(current_section) + context_lines + 1)
-                 
-        orig_section = original[start:end]
-        mod_section = modified[start:end]
-        
-        sections.append((orig_section, mod_section))
-        
-    return sections
+
+        # Add separator if needed
+        if orig_content:
+            orig_content.append("...")
+            mod_content.append("...")
+
+        # Add final section content
+        orig_content.extend(original[start:end])
+        mod_content.extend(modified[start:end])
+
+    # Return merged content as single section
+    return [(orig_content, mod_content)] if orig_content else []
 
 def create_new_file_panel(name: Text, content: Text) -> Panel:
     """Create a panel for new file creation with stats"""
@@ -441,3 +507,4 @@ def get_file_stats(content: Union[str, Text]) -> str:
         lines = content.splitlines()
         size = len(content.encode('utf-8'))
     return f"{len(lines)} lines, {get_human_size(size)}"
+

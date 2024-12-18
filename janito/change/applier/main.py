@@ -25,8 +25,11 @@ from ..validator import validate_all_changes
 
 
 class ChangeApplier:
-    def __init__(self, preview_dir: Path):
+    """Handles applying changes to files."""
+
+    def __init__(self, preview_dir: Path, debug: bool = False):
         self.preview_dir = preview_dir
+        self.debug = debug
         self.console = Console()
         self.file_applier = FileChangeApplier(preview_dir, self.console)
         self.text_applier = TextChangeApplier(self.console)
@@ -53,9 +56,10 @@ class ChangeApplier:
         except Exception as e:
             return False, "", f"Error running test: {str(e)}"
 
-    def apply_changes(self, changes: List[FileChange]) -> tuple[bool, Set[Path]]:
+    def apply_changes(self, changes: List[FileChange], debug: bool = None) -> tuple[bool, Set[Path]]:
         """Apply changes in preview directory, runs tests if specified.
         Returns (success, modified_files)"""
+        debug = debug if debug is not None else self.debug
         console = Console()
         
         # Validate all changes using consolidated validator
@@ -69,7 +73,7 @@ class ChangeApplier:
         for change in changes:
             if config.verbose:
                 console.print(f"[dim]Previewing changes for {change.name}...[/dim]")
-            success, error = self.apply_single_change(change)
+            success, error = self.apply_single_change(change, debug)
             if not success:
                 console.print(f"\n[red]Error previewing {change.name}: {error}[/red]")
                 return False, modified_files
@@ -78,11 +82,14 @@ class ChangeApplier:
             elif change.operation == 'rename_file':
                 modified_files.add(change.target)
 
-        # Validate Python syntax (skip deleted files)
+        # Validate Python syntax (skip deleted and moved files)
         python_files = {f for f in modified_files if f.suffix == '.py'}
+
         for change in changes:
             if change.operation == ChangeOperation.REMOVE_FILE:
                 python_files.discard(change.name)  # Skip validation for deleted files
+            elif change.operation in (ChangeOperation.RENAME_FILE, ChangeOperation.MOVE_FILE):
+                python_files.discard(change.source)  # Skip validation for moved/renamed sources
 
         for path in python_files:
             preview_path = self.preview_dir / path
@@ -112,7 +119,7 @@ class ChangeApplier:
 
         return True, modified_files
 
-    def apply_single_change(self, change: FileChange) -> Tuple[bool, Optional[str]]:
+    def apply_single_change(self, change: FileChange, debug: bool) -> Tuple[bool, Optional[str]]:
         """Apply a single file change to preview directory"""
         path = self.preview_dir / change.name  # Changed back from path to name
         
@@ -133,7 +140,8 @@ class ChangeApplier:
         success, modified_content, error = self.text_applier.apply_modifications(
             current_content, 
             change.text_changes, 
-            path
+            path,
+            debug
         )
 
         if not success:
@@ -142,6 +150,7 @@ class ChangeApplier:
         path.write_text(modified_content)
         return True, None
 
-    def apply_to_workdir(self, changes: List[FileChange]) -> bool:
+    def apply_to_workdir(self, changes: List[FileChange], debug: bool = None) -> bool:
         """Apply changes from preview to working directory"""
+        debug = debug if debug is not None else self.debug
         return apply_to_workdir_impl(changes, self.preview_dir, Console())

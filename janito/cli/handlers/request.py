@@ -1,7 +1,7 @@
 from pathlib import Path
 from rich.console import Console
 from janito.config import config
-from janito.scan import is_dir_empty
+from janito.workspace import is_dir_empty
 from janito.change.core import process_change_request
 from ..base import BaseCLIHandler
 

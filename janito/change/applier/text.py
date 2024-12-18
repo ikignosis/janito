@@ -5,7 +5,7 @@ from datetime import datetime
 from ..parser import TextChange
 from janito.config import config
 from ...clear_statement_parser.parser import StatementParser
-from ..search_replace import SearchReplacer, PatternNotFoundException
+from ...search_replace import SearchReplacer, PatternNotFoundException, Searcher
 
 class TextFindDebugger:
     def __init__(self, console: Console):
@@ -43,6 +43,15 @@ class TextChangeApplier:
         self.console = console or Console()
         self.debugger = TextFindDebugger(self.console)
         self.parser = StatementParser()
+        self.searcher = Searcher()
+        
+    def _get_last_line_indent(self, content: str) -> str:
+        """Extract indentation from the last non-empty line."""
+        lines = content.splitlines()
+        for line in reversed(lines):
+            if line.strip():
+                return self.searcher.get_indentation(line)
+        return ""
 
     def _validate_operation(self, mod: TextChange) -> Tuple[bool, Optional[str]]:
         """Validate text operation type and parameters
@@ -66,17 +75,18 @@ class TextChangeApplier:
 
         return True, None
 
-    def apply_modifications(self, content: str, changes: List[TextChange], target_path: Path) -> Tuple[bool, str, Optional[str]]:
+    def apply_modifications(self, content: str, changes: List[TextChange], target_path: Path, debug: bool) -> Tuple[bool, str, Optional[str]]:
         """Apply text modifications to content"""
         modified = content
         any_changes = False
         target_path = target_path.resolve()
+        file_ext = target_path.suffix  # Get file extension including the dot
 
         for mod in changes:
             # Validate operation
             is_valid, error = self._validate_operation(mod)
             if not is_valid:
-                return False, content, f"Invalid operation for {target_path}: {error}"
+                return False, content, f"Invalid text operation for {target_path}: {error}"
 
             try:
                 # Handle append operations
@@ -88,13 +98,13 @@ class TextChangeApplier:
 
                 # Handle delete operations (either explicit or via empty replacement)
                 if mod.is_delete or (mod.replace_content == "" and mod.search_content):
-                    replacer = SearchReplacer(modified, mod.search_content, "")
+                    replacer = SearchReplacer(modified, mod.search_content, "", file_ext, debug=debug)
                     modified = replacer.replace()
                     any_changes = True
                     continue
 
                 # Handle search and replace
-                replacer = SearchReplacer(modified, mod.search_content, mod.replace_content)
+                replacer = SearchReplacer(modified, mod.search_content, mod.replace_content, file_ext, debug=debug)
                 modified = replacer.replace()
                 any_changes = True
 
@@ -102,15 +112,48 @@ class TextChangeApplier:
                 if config.debug:
                     self.debug_failed_finds(mod.search_content, modified, str(target_path))
                 return False, content, self._handle_failed_search(target_path, mod.search_content, modified)
-            except Exception as e:
-                return False, content, f"Error applying changes to {target_path}: {str(e)}"
-
+    
         return (True, modified, None) if any_changes else (False, content, "No changes were applied")
 
     def _append_content(self, content: str, new_content: str) -> str:
-        """Append content with proper line ending handling"""
+        """Append content with proper indentation matching."""
         if not content.endswith('\n'):
             content += '\n'
+        
+        # Add empty line if the last line is not empty
+        if content.rstrip('\n').splitlines()[-1].strip():
+            content += '\n'
+            
+        # Get base indentation from last non-empty line
+        base_indent = self._get_last_line_indent(content)
+        
+        # Get the first non-empty line from new content to calculate relative indentation
+        first_line, _ = self.searcher.get_first_non_empty_line(new_content)
+        if first_line:
+            # Calculate indentation adjustments
+            new_base_indent = self.searcher.get_indentation(first_line)
+            
+            # Calculate the shift needed if we're going into negative indentation
+            indent_delta = len(base_indent) + (len(new_base_indent) - len(new_base_indent))
+            left_shift = abs(min(0, indent_delta))
+            
+            # Process each line of new content
+            result_lines = []
+            for line in new_content.splitlines():
+                if not line.strip():
+                    result_lines.append('')
+                    continue
+                    
+                # Calculate relative indentation considering the left shift
+                line_indent = self.searcher.get_indentation(line)
+                rel_indent = len(line_indent) - len(new_base_indent)
+                # First apply relative indent, then remove left shift if needed
+                final_indent_len = max(0, len(line_indent) - left_shift + (len(base_indent) - len(new_base_indent)))
+                final_indent = ' ' * final_indent_len
+                result_lines.append(final_indent + line.lstrip())
+                
+            new_content = '\n'.join(result_lines)
+            
         return content + new_content
 
     def _handle_failed_search(self, filepath: Path, search_text: str, content: str) -> str:
@@ -118,12 +161,12 @@ class TextChangeApplier:
         failed_file = config.workdir / '.janito' / 'change_history' / f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_changes_failed.txt"
         failed_file.parent.mkdir(parents=True, exist_ok=True)
 
-        # Create test case format debug info - search only
+        # Create test case format debug info
         debug_info = f"""Test: Failed search in {filepath.name}
 ========================================
 Original:
 {content}
-
+========================================
 Search pattern:
 {search_text}
 ========================================"""
@@ -131,19 +174,7 @@ Search pattern:
         failed_file.write_text(debug_info)
 
         self.console.print(f"\n[red]Failed search saved to: {failed_file}[/red]")
-
-        # Use SearchReplacer's debug_indentation
-        replacer = SearchReplacer("", "", "")  # Empty instance for using debug method
-        self.console.print("\n[yellow]Indentation Analysis:[/yellow]")
-        with self.console.capture() as capture:
-            replacer.debug_indentation(content, search_text)
-        debug_output = capture.get()
-        self.console.print(debug_output)
-
-        # Also show whitespace markers for quick visual reference
-        self.console.print("\n[yellow]Search pattern (with whitespace markers):[/yellow]")
-        for line in search_text.splitlines():
-            self.console.print(f"[dim]{self.debugger._visualize_whitespace(line)}[/dim]")
+        self.console.print("[yellow]Run with 'python -m janito.search_replace {failed_file}' to debug[/yellow]")
 
         return f"Could not find search text in {filepath}"
 

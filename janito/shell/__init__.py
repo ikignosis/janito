@@ -5,8 +5,7 @@ from prompt_toolkit.history import FileHistory
 from pathlib import Path
 from rich.console import Console
 from janito.config import config
-from janito.scan import collect_files_content
-from janito.scan.analysis import analyze_workspace_content
+from janito.workspace import workspace
 from .processor import CommandProcessor
 
 def start_shell() -> None:
@@ -20,11 +19,11 @@ def start_shell() -> None:
 
     # Use configured paths or default to workdir
     scan_paths = config.include if config.include else [config.workdir]
-    content = collect_files_content(scan_paths)
-    analyze_workspace_content(content)
+    workspace.collect_content(scan_paths)
+    workspace.analyze()
 
-    # Store analysis results in processor for session
-    processor.workspace_content = content
+    # Store workspace content in processor for session
+    processor.workspace_content = workspace.get_content()
 
     while True:
         try:

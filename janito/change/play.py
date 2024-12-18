@@ -1,49 +1,54 @@
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Tuple, Optional
 from rich.console import Console
-from rich.panel import Panel
-
+from rich.prompt import Confirm
 from .parser import parse_response
+from .preview import setup_workdir_preview
 from .applier.main import ChangeApplier
+from .viewer import preview_all_changes  # Add this import
+from ..config import config  # Add this import
 
-def play_changes_file(save_file: Path, preview_dir: Path) -> Tuple[bool, Optional[str]]:
+
+def play_saved_changes(history_file: Path) -> Tuple[bool, Optional[Path]]:
     """
-    Load and apply changes from a saved file.
+    Replay changes from a saved history file
+    Returns:
+        success: True if changes were applied successfully
+        history_file: Path to the history file that was played
     """
-    try:
-        if not save_file.exists():
-            return False, f"Save file not found: {save_file}"
-            
-        saved_content = save_file.read_text()
-        file_type = determine_history_file_type(save_file)
-        
-        # Handle failed changes debug file
-        if file_type == 'changes_failed':
-            console = Console()
-            console.print("\n[yellow]Debug information for failed search:[/yellow]")
-            console.print(Panel(saved_content))
-            return True, None
-            
-        # Extract changes section if it's a history file
-        if file_type == 'changes':
-            changes_section = saved_content.split("Changes:\n", 1)
-            if len(changes_section) > 1:
-                saved_content = changes_section[1].strip()
-        
-        # Parse the changes using the parser module
-        changes = parse_response(saved_content)
-            
-        if not changes:
-            return False, "No valid changes found in file"
-            
-        # Apply changes using ChangeApplier
-        applier = ChangeApplier(preview_dir)
-        success, modified_files = applier.apply_changes(changes)
-        
-        if not success:
-            return False, "Failed to apply changes"
-            
-        return True, None
-        
-    except Exception as e:
-        return False, f"Error playing changes: {str(e)}"
+    console = Console()
+
+    if not history_file.exists():
+        console.print(f"[red]History file not found: {history_file}[/red]")
+        return False, None
+
+    content = history_file.read_text()
+    changes = parse_response(content)
+
+    if not changes:
+        console.print("[yellow]No changes found in history file[/yellow]")
+        return False, None
+
+
+    # Create preview directory and apply changes
+    _, preview_dir = setup_workdir_preview()
+    applier = ChangeApplier(preview_dir)
+
+    success, _ = applier.apply_changes(changes, debug=True)
+    if success:
+        preview_all_changes(console, changes)
+
+        if not config.auto_apply:
+            apply_changes = Confirm.ask("[cyan]Apply changes to working dir?[/cyan]", default=False)
+        else:
+            apply_changes = True
+            console.print("[cyan]Auto-applying changes to working dir...[/cyan]")
+
+        if apply_changes:
+            applier.apply_to_workdir(changes)
+            console.print("[green]Changes applied successfully[/green]")
+        else:
+            console.print("[yellow]Changes were not applied[/yellow]")
+            return False, history_file
+
+        return success, history_file

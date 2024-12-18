@@ -22,18 +22,19 @@ RULES for Analysis:
 - When adding new typing imports, add them at the top of the file (eg. Optional, List, Dict, Tuple, Union)
 - Preserve the indentation of the original content as we will try to do an exact match
 
--  The file/text changes must be enclosed in BEGIN_INSTRUCTIONS and END_INSTRUCTIONS markers
--  All lines in text to be add, deleted or replaces must be prefixed with a dot (.) to mark them literal
--  Submit the instructions for review
 - The instructions must be submitted in the same format as provided below
-- If you have further information about the changes, provide it after the END_INSTRUCTIONS marker 
-- Blocks started in single lines with blockName/ must be closed with /blockName in a single line
+    - Multiple changes affecting the same lines should be grouped together to avoid conflicts
+    - The file/text changes must be enclosed in BEGIN_INSTRUCTIONS and END_INSTRUCTIONS markers
+    - All lines in text to be add, deleted or replaces must be prefixed with a dot (.) to mark them literal
+    - If you have further information about the changes, provide it after the END_INSTRUCTIONS marker 
+    - Blocks started in single lines with blockName/ must be closed with /blockName in a single line
 
 
 Available operations:
 - Create File
 - Replace File
 - Rename File
+- Move File
 - Remove File
 
 
@@ -84,7 +85,7 @@ Modify File
             search:
             .def deprecated_function():
             .    print("To be removed")
-        Append # Append content to the end of the file (the only attributes are reason and content)
+        Append # Append content to the bottom of the file (the only attributes are reason and content)
             reason: Add new functionality
             content:
             .def additional_function():
@@ -92,6 +93,15 @@ Modify File
     # !!! IMPORTANT Open blocks must be closed
     Changes/
 
+- Remarks about the Append operation:    
+    Append ONLY appends to the bottom of the file
+    Bad Example:
+        # WRONG: Imports should be added to the existing imports on the top level of the file
+        Append
+            reason: Add imports for terminal functionality
+            content:
+            .from rich.live import Live
+    Changes/
 # Example of what is valid and invalid for block openings
 
 # Eample of an invalid block opening

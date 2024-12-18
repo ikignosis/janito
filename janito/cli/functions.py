@@ -15,7 +15,7 @@ from janito.agents import AIAgent
 from janito.common import progress_send_message
 from janito.config import config
 from janito.qa import ask_question, display_answer
-from janito.scan import collect_files_content
+from janito.workspace import collect_files_content
 
 
 def prompt_user(message: str, choices: List[str] = None) -> str:
