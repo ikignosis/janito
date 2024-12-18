@@ -16,7 +16,7 @@ from rich.panel import Panel
 from rich import box
 import subprocess
 from ..validator import validate_python_syntax
-from .workdir import apply_changes as apply_to_workdir_impl
+from .workspace_dir import apply_changes as apply_to_workspace_dir_impl
 from janito.config import config
 from .file import FileChangeApplier
 from .text import TextChangeApplier
@@ -150,7 +150,7 @@ class ChangeApplier:
         path.write_text(modified_content)
         return True, None
 
-    def apply_to_workdir(self, changes: List[FileChange], debug: bool = None) -> bool:
+    def apply_to_workspace_dir(self, changes: List[FileChange], debug: bool = None) -> bool:
         """Apply changes from preview to working directory"""
         debug = debug if debug is not None else self.debug
-        return apply_to_workdir_impl(changes, self.preview_dir, Console())
+        return apply_to_workspace_dir_impl(changes, self.preview_dir, Console())

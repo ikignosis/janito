@@ -45,7 +45,7 @@ def get_option_selection() -> str:
 
 def get_change_history_path() -> Path:
     """Create and return the changes history directory path"""
-    changes_history_dir = config.workdir / '.janito' / 'change_history'
+    changes_history_dir = config.workspace_dir / '.janito' / 'change_history'
     changes_history_dir.mkdir(parents=True, exist_ok=True)
     return changes_history_dir
 
@@ -104,7 +104,7 @@ def read_stdin() -> str:
 
 def process_question(question: str) -> None:
     """Process a question about the codebase"""
-    paths_to_scan = [config.workdir] if not config.include else config.include
+    paths_to_scan = [config.workspace_dir] if not config.include else config.include
     files_content = collect_files_content(paths_to_scan)
     answer = ask_question(question, files_content)
     display_answer(answer)

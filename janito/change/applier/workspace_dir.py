@@ -6,10 +6,10 @@ from janito.config import config
 from ..parser import FileChange, ChangeOperation
 
 def verify_changes(changes: List[FileChange]) -> tuple[bool, str]:
-    """Verify changes can be safely applied to workdir.
+    """Verify changes can be safely applied to workspace_dir.
     Returns (is_safe, error_message)."""
     for change in changes:
-        source_path = config.workdir / change.name
+        source_path = config.workspace_dir / change.name
         
         if change.operation == ChangeOperation.CREATE_FILE:
             if source_path.exists():
@@ -18,7 +18,7 @@ def verify_changes(changes: List[FileChange]) -> tuple[bool, str]:
         elif change.operation in (ChangeOperation.MOVE_FILE, ChangeOperation.RENAME_FILE):
             if not source_path.exists():
                 return False, f"Cannot {change.operation.name.lower()} non-existent file {change.name}"
-            target_path = config.workdir / change.target
+            target_path = config.workspace_dir / change.target
             if target_path.exists():
                 return False, f"Cannot {change.operation.name.lower()} {change.name} to {change.target} - target already exists"
 
@@ -26,7 +26,7 @@ def verify_changes(changes: List[FileChange]) -> tuple[bool, str]:
     return True, ""
 
 def apply_changes(changes: List[FileChange], preview_dir: Path, console: Console) -> bool:
-    """Apply all changes from preview to workdir.
+    """Apply all changes from preview to workspace_dir.
     Returns success status."""
     is_safe, error = verify_changes(changes)
     if not is_safe:
@@ -37,10 +37,10 @@ def apply_changes(changes: List[FileChange], preview_dir: Path, console: Console
 
     for change in changes:
         if change.operation == ChangeOperation.REMOVE_FILE:
-            remove_from_workdir(change.name, console)
+            remove_from_workspace_dir(change.name, console)
         else:
             filepath = change.target if change.operation == ChangeOperation.RENAME_FILE else change.name
-            target_path = config.workdir / filepath
+            target_path = config.workspace_dir / filepath
             preview_path = preview_dir / filepath
 
             target_path.parent.mkdir(parents=True, exist_ok=True)
@@ -50,9 +50,9 @@ def apply_changes(changes: List[FileChange], preview_dir: Path, console: Console
 
     return True
 
-def remove_from_workdir(filepath: Path, console: Console) -> None:
+def remove_from_workspace_dir(filepath: Path, console: Console) -> None:
     """Remove file from working directory"""
-    target_path = config.workdir / filepath
+    target_path = config.workspace_dir / filepath
     if target_path.exists():
         target_path.unlink()
         console.print(f"[red]Removed {filepath}[/red]")

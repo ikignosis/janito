@@ -43,7 +43,7 @@ def validate_paths(paths: Optional[List[Path]]) -> Optional[List[Path]]:
 
 def typer_main(
     change_request: str = typer.Argument(None, help="Change request or command"),
-    workdir: Optional[Path] = typer.Option(None, "-w", "--workdir", help="Working directory", file_okay=False, dir_okay=True),
+    workspace_dir: Optional[Path] = typer.Option(None, "-w", "--workspace_dir", help="Working directory", file_okay=False, dir_okay=True),
     debug: bool = typer.Option(False, "--debug", help="Show debug information"),
     verbose: bool = typer.Option(False, "--verbose", help="Show verbose output"),
     include: Optional[List[Path]] = typer.Option(None, "-i", "--include", help="Additional paths to include"),
@@ -57,7 +57,7 @@ def typer_main(
     history: bool = typer.Option(False, "--history", help="Display history of requests"),
     recursive: Optional[List[Path]] = typer.Option(None, "-r", "--recursive", help="Paths to scan recursively (directories only)"),
     demo: bool = typer.Option(False, "--demo", help="Run demo scenarios"),
-    skipwork: bool = typer.Option(False, "--skipwork", help="Skip scanning workdir when using include paths"),
+    skipwork: bool = typer.Option(False, "--skipwork", help="Skip scanning workspace_dir when using include paths"),
 ):
     """Janito - AI-powered code modification assistant"""
     if version:
@@ -76,7 +76,7 @@ def typer_main(
         display_history()
         return
 
-    config.set_workdir(workdir)
+    config.set_workspace_dir(workspace_dir)
     config.set_debug(debug)
     config.set_verbose(verbose)
     config.set_auto_apply(auto_apply)
@@ -93,7 +93,7 @@ def typer_main(
     if include:
         resolved_paths = []
         for path in include:
-            path = config.workdir / path
+            path = config.workspace_dir / path
             resolved_paths.append(path.resolve())
         config.set_include(resolved_paths)
 
@@ -101,7 +101,7 @@ def typer_main(
     if recursive:
         resolved_paths = []
         for path in recursive:
-            final_path = config.workdir / path 
+            final_path = config.workspace_dir / path
             if not path.is_dir():
                 error_text = Text(f"\nError: Recursive path must be a directory: {path}", style="red")
                 rich_print(error_text)
@@ -120,7 +120,7 @@ def typer_main(
     elif play:
         handle_play(play)
     elif scan:
-        paths_to_scan = include or [config.workdir]
+        paths_to_scan = include or [config.workspace_dir]
         handle_scan(paths_to_scan)
     elif change_request:
         handle_request(change_request)

@@ -18,7 +18,7 @@ SPECIAL_FILES = ["README.md", "__init__.py", "__main__.py"]
 
 def _get_gitignore_spec() -> PathSpec:
     """Load gitignore patterns if available"""
-    gitignore_path = config.workdir / '.gitignore' if config.workdir else None
+    gitignore_path = config.workspace_dir / '.gitignore' if config.workspace_dir else None
     if gitignore_path and gitignore_path.exists():
         with gitignore_path.open() as f:
             lines = f.readlines()
@@ -58,7 +58,7 @@ def _scan_paths(paths: List[Path] = None) -> Tuple[List[str], List[str], List[st
         if '.janito' in path.parts or '.git' in path.parts or '.pytest_cache' in path.parts:
             return
 
-        relative_base = config.workdir
+        relative_base = config.workspace_dir
         if path.is_dir():
             relative_path = path.relative_to(relative_base)
             content_parts.append(f'<directory><path>{relative_path}</path>not sent</directory>')
@@ -82,8 +82,8 @@ def _scan_paths(paths: List[Path] = None) -> Tuple[List[str], List[str], List[st
 
             for item in path.iterdir():
                 # Skip ignored files/directories
-                if gitignore_spec and gitignore_spec.match_file(str(item.relative_to(config.workdir))):
-                    rel_path = item.relative_to(config.workdir)
+                if gitignore_spec and gitignore_spec.match_file(str(item.relative_to(config.workspace_dir))):
+                    rel_path = item.relative_to(config.workspace_dir)
                     ignored_items.append(f"[dim red]•[/dim red] {rel_path}")
                     continue
                 scan_path(item, depth+1, is_recursive)
@@ -116,12 +116,12 @@ def collect_files_content(paths: List[Path] = None) -> str:
     """Collect content from all files in XML format"""
     console = Console()
 
-    # If no paths specified and skipwork not set, use workdir
+    # If no paths specified and skipwork not set, use workspace_dir
     if not paths and not config.skipwork:
-        paths = [config.workdir]
-    # If paths specified and skipwork not set, include workdir
+        paths = [config.workspace_dir]
+    # If paths specified and skipwork not set, include workspace_dir
     elif paths and not config.skipwork:
-        paths = [config.workdir] + paths
+        paths = [config.workspace_dir] + paths
     # If skipwork set, use only specified paths
     elif not paths and config.skipwork:
         console.print("[yellow]Warning: No paths to scan - skipwork enabled but no include paths specified[/yellow]")
@@ -146,12 +146,12 @@ def preview_scan(paths: List[Path] = None) -> None:
 
     # Section 1: Paths Information
     paths_section = []
-    is_workdir_scanned = any(p.resolve() == config.workdir.resolve() for p in paths)
+    is_workspace_dir_scanned = any(p.resolve() == config.workspace_dir.resolve() for p in paths)
 
-    # Show workdir unless skipwork is set
+    # Show workspace_dir unless skipwork is set
     if not config.skipwork:
         paths_section.append(Panel(
-            f"📂 {config.workdir.absolute()}",
+            f"📂 {config.workspace_dir.absolute()}",
             title="[bold cyan]Working Directory[/bold cyan]",
             border_style="cyan",
             padding=(1, 2)
@@ -162,7 +162,7 @@ def preview_scan(paths: List[Path] = None) -> None:
         included_paths = []
         for path in paths:
             try:
-                rel_path = path.relative_to(config.workdir)
+                rel_path = path.relative_to(config.workspace_dir)
                 is_recursive = path in config.recursive
                 included_paths.append(f"📁 ./{rel_path}" + ("/*" if is_recursive else "/"))
             except ValueError:

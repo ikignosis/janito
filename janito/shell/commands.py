@@ -113,7 +113,7 @@ def handle_include(args: str) -> None:
     for path_str in paths:
         path = Path(path_str)
         if not path.is_absolute():
-            path = config.workdir / path
+            path = config.workspace_dir / path
         resolved_paths.append(path.resolve())
 
     config.set_include(resolved_paths)
@@ -162,7 +162,7 @@ def handle_rinclude(args: str) -> None:
     for path_str in paths:
         path = Path(path_str)
         if not path.is_absolute():
-            path = config.workdir / path
+            path = config.workspace_dir / path
         resolved_paths.append(path.resolve())
 
     config.set_recursive(resolved_paths)

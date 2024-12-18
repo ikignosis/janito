@@ -18,14 +18,14 @@ from typing import Tuple
 from pathlib import Path
 from ..agents import agent  # Updated import to use singleton directly
 from .parser import build_change_request_prompt, parse_response
-from .preview import setup_workdir_preview
+from .preview import setup_workspace_dir_preview
 from .applier.main import ChangeApplier
 
 __all__ = [
     'build_change_request_prompt',
     'get_change_response',
     'parse_response',
-    'setup_workdir_preview',
+    'setup_workspace_dir_preview',
     'parse_change_response',
     'save_change_response',
     'ChangeApplier'

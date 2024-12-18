@@ -22,9 +22,7 @@ class ClaudeAIAgent(Agent):
         self.last_prompt = None
         self.last_full_message = None
         self.last_response = None
-        self.messages_history = []
-        if system_prompt:
-            self.messages_history.append(("system", system_prompt))
+
 
     def send_message(self, message: str, stop_event: Event = None) -> str:
         """Send message to Claude API and return response"""
@@ -47,16 +45,9 @@ class ClaudeAIAgent(Agent):
                 temperature=0,
             )
             
-            # Handle response
-            response_text = response.content[0].text
-            
-            # Only store and process response if not cancelled
-            if not (stop_event and stop_event.is_set()):
-                self.last_response = response_text
-                self.messages_history.append(("assistant", response_text))
-            
+
             # Always return the response, let caller handle cancellation
-            return response_text
+            return response
             
         except KeyboardInterrupt:
             if stop_event:

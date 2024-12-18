@@ -9,7 +9,7 @@ from ..base import BaseCLIHandler
 class AskHandler(BaseCLIHandler):
     def handle(self, question: str):
         """Process a question about the codebase"""
-        paths_to_scan = [config.workdir] if not config.include else config.include
+        paths_to_scan = [config.workspace_dir] if not config.include else config.include
         files_content = collect_files_content(paths_to_scan)
 
         if config.tui:

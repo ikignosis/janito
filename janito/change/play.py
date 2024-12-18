@@ -3,7 +3,7 @@ from typing import Tuple, Optional
 from rich.console import Console
 from rich.prompt import Confirm
 from .parser import parse_response
-from .preview import setup_workdir_preview
+from .preview import setup_workspace_dir_preview
 from .applier.main import ChangeApplier
 from .viewer import preview_all_changes  # Add this import
 from ..config import config  # Add this import
@@ -31,7 +31,7 @@ def play_saved_changes(history_file: Path) -> Tuple[bool, Optional[Path]]:
 
 
     # Create preview directory and apply changes
-    _, preview_dir = setup_workdir_preview()
+    _, preview_dir = setup_workspace_dir_preview()
     applier = ChangeApplier(preview_dir)
 
     success, _ = applier.apply_changes(changes, debug=True)
@@ -45,7 +45,7 @@ def play_saved_changes(history_file: Path) -> Tuple[bool, Optional[Path]]:
             console.print("[cyan]Auto-applying changes to working dir...[/cyan]")
 
         if apply_changes:
-            applier.apply_to_workdir(changes)
+            applier.apply_to_workspace_dir(changes)
             console.print("[green]Changes applied successfully[/green]")
         else:
             console.print("[yellow]Changes were not applied[/yellow]")

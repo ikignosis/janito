@@ -10,7 +10,7 @@ class ConfigManager:
         self.verbose = False
         self.debug_line = None
         self.test_cmd = os.getenv('JANITO_TEST_CMD')
-        self.workdir = Path.cwd()
+        self.workspace_dir = Path.cwd()
         self.raw = False
         self.include: List[Path] = []
         self.recursive: List[Path] = []
@@ -41,9 +41,9 @@ class ConfigManager:
         """Set the test command, overriding environment variable"""
         self.test_cmd = cmd if cmd is not None else os.getenv('JANITO_TEST_CMD')
 
-    def set_workdir(self, path: Optional[Path]) -> None:
-        """Set the working directory"""
-        self.workdir = path if path is not None else Path.cwd()
+    def set_workspace_dir(self, path: Optional[Path]) -> None:
+        """Set the workspace directory"""
+        self.workspace_dir = path if path is not None else Path.cwd()
 
     def set_raw(self, enabled: bool) -> None:
         """Set raw output mode"""
@@ -95,7 +95,7 @@ class ConfigManager:
         self.recursive = paths
 
     def set_skipwork(self, enabled: bool) -> None:
-        """Set skipwork flag to skip scanning workdir"""
+        """Set skipwork flag to skip scanning workspace_dir"""
         self.skipwork = enabled
 
 # Create a singleton instance

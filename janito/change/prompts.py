@@ -29,6 +29,7 @@ RULES for Analysis:
     - If you have further information about the changes, provide it after the END_INSTRUCTIONS marker 
     - Blocks started in single lines with blockName/ must be closed with /blockName in a single line
     - If the conte of the changes to a single file is too large, consider requesting a file replacement instead of multiple changes
+    - Do not use generic instructions like "replace all occurrences of X with Y", always identify the context of the change
 
 
 Available operations:
@@ -74,6 +75,7 @@ Modify File
     /Changes   # This block must be closed later with Changes/
         # reason for the changes block 
         Replace
+            # <line nr where the text was found in the file content sent in the beginning>
             reason: Update function name and content
             search:
             .def old_function():

@@ -17,8 +17,8 @@ def start_shell() -> None:
     # Perform workspace analysis
     console = Console()
 
-    # Use configured paths or default to workdir
-    scan_paths = config.include if config.include else [config.workdir]
+    # Use configured paths or default to workspace_dir
+    scan_paths = config.include if config.include else [config.workspace_dir]
     workspace.collect_content(scan_paths)
     workspace.analyze()
 

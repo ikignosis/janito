@@ -108,7 +108,7 @@ janito "split this large function into smaller ones"
 
 ### Command Line Options
 
-- `-w, --workdir`: Set working directory
+- `-w, --workspace_dir`: Set working directory
 - `-i, --include`: Additional paths to include
 - `--debug`: Show debug information
 - `--verbose`: Show verbose output

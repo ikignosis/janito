@@ -21,7 +21,7 @@ class BaseCLIHandler:
     def save_to_history(self, content: str, prefix: str) -> Path:
         """Save content to history with timestamp"""
         from janito.config import config
-        history_dir = config.workdir / '.janito' / 'history'
+        history_dir = config.workspace_dir / '.janito' / 'history'
         history_dir.mkdir(parents=True, exist_ok=True)
         timestamp = self.get_timestamp()
         filename = f"{timestamp}_{prefix}.txt"

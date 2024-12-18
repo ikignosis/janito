@@ -16,7 +16,7 @@ from janito.workspace.analysis import analyze_workspace_content as show_content_
 from . import (
     build_change_request_prompt,
     parse_response,
-    setup_workdir_preview,
+    setup_workspace_dir_preview,
     ChangeApplier
 )
 
@@ -34,7 +34,7 @@ def process_change_request(
         history_file: Path to the saved history file
     """
     console = Console()
-    paths_to_scan = config.include if config.include else [config.workdir]
+    paths_to_scan = config.include if config.include else [config.workspace_dir]
 
     content_xml = collect_files_content(paths_to_scan)
 
@@ -88,7 +88,7 @@ def process_change_request(
         return True, history_file
 
     # Create preview directory and apply changes
-    _, preview_dir = setup_workdir_preview()
+    _, preview_dir = setup_workspace_dir_preview()
     applier = ChangeApplier(preview_dir, debug=debug)
 
     success, _ = applier.apply_changes(changes)
@@ -102,7 +102,7 @@ def process_change_request(
             console.print("[cyan]Auto-applying changes to working dir...[/cyan]")
 
         if apply_changes:
-            applier.apply_to_workdir(changes)
+            applier.apply_to_workspace_dir(changes)
             console.print("[green]Changes applied successfully[/green]")
         else:
             console.print("[yellow]Changes were not applied[/yellow]")

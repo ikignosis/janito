@@ -7,7 +7,7 @@ from janito.config import config
 
 def get_history_path() -> Path:
     """Get the path to the history directory"""
-    history_dir = config.workdir / '.janito' / 'history'
+    history_dir = config.workspace_dir / '.janito' / 'history'
     history_dir.mkdir(parents=True, exist_ok=True)
     return history_dir
 

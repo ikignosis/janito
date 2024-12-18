@@ -181,7 +181,7 @@ class TextChangeApplier:
 
     def _handle_failed_search(self, filepath: Path, search_text: str, content: str) -> str:
         """Handle failed search by logging debug info in a test case format"""
-        failed_file = config.workdir / '.janito' / 'change_history' / f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_changes_failed.txt"
+        failed_file = config.workspace_dir / '.janito' / 'change_history' / f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_changes_failed.txt"
         failed_file.parent.mkdir(parents=True, exist_ok=True)
 
         # Create test case format debug info

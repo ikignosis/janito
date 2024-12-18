@@ -8,7 +8,7 @@ APP_TIMESTAMP = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 def get_history_path() -> Path:
     """Create and return the history directory path"""
-    history_dir = config.workdir / '.janito' / 'change_history'
+    history_dir = config.workspace_dir / '.janito' / 'change_history'
     history_dir.mkdir(parents=True, exist_ok=True)
     return history_dir
 
