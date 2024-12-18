@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e  # Exit on error
 
-# Helper function for status indicators
+# Helper functions
 print_status() {
     local status=$1
     local message=$2
@@ -13,7 +13,17 @@ print_status() {
     fi
 }
 
+check_pypi_version() {
+    local package=$1
+    pip index versions "$package" 2>/dev/null | grep -Po '(?<='"$package"' \()[0-9.]+' | head -n1 || echo "not found"
+}
+
 echo "Starting release validation pipeline..."
+
+# Check PyPI version first
+echo -e "\nChecking current PyPI version..."
+PYPI_VERSION=$(check_pypi_version "janito")
+echo "Current version on PyPI: $PYPI_VERSION"
 
 # Phase 1: Version Validation
 echo -e "\nValidating versions..."
