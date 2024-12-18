@@ -5,7 +5,11 @@ from threading import Event
 from .agent import Agent
 
 class OpenAIAgent(Agent):
-    """Handles interaction with OpenAI API, including message handling"""
+    """[DEPRECATED] Handles interaction with OpenAI API, including message handling.
+
+    This backend is no longer actively maintained. Please use the Claude AI backend instead.
+    The code is kept for backward compatibility but may be removed in future versions.
+    """
     DEFAULT_MODEL = "o1-mini-2024-09-12"
     
     def __init__(self, api_key: Optional[str] = None, system_prompt: str = None):

@@ -1,5 +1,8 @@
 from typing import Optional, List
 from pathlib import Path
+import os
+from datetime import datetime
+from .logger import log_match, log_failure
 from .searcher import Searcher
 from .replacer import Replacer
 
@@ -28,23 +31,11 @@ class SearchReplacer:
     def find_pattern(self) -> bool:
         """Search for pattern with indentation awareness."""
         try:
-            # Try exact matching first
-            exact_matches = self.searcher.exact_match(self.source_code, self.search_pattern)
-            if exact_matches:
-                if self.searcher.debug_mode:
-                    print("[DEBUG] Found pattern using exact match")
-                return True
-
-            # Fall back to flexible matching
-            if self.searcher.debug_mode:
-                print("[DEBUG] No exact match found, trying flexible matching")
+            source_lines = self.source_code.splitlines()
             search_first, _ = self.searcher.get_first_non_empty_line(self.search_pattern)
             search_indent = self.searcher.get_indentation(search_first)
             normalized_pattern = self.searcher.normalize_pattern(self.search_pattern, search_indent)
-
-            source_lines = self.source_code.splitlines()
             matches = self._find_matches(source_lines, normalized_pattern)
-
             return bool(self.searcher._find_best_match_position(matches, source_lines, self.pattern_base_indent))
         except Exception:
             return False
@@ -65,6 +56,9 @@ class SearchReplacer:
         best_pos = self.searcher._find_best_match_position(matches, source_lines, self.pattern_base_indent)
 
         if best_pos is None:
+            # Log failed match if not in debug mode
+            if not self.searcher.debug_mode:
+                log_failure(self.file_ext)
             raise PatternNotFoundException("Pattern not found")
 
         if self.searcher.debug_mode:
@@ -101,6 +95,9 @@ class SearchReplacer:
         while i < len(source_lines):
             if i == match_pos:
                 self.pattern_found = True
+                # Log successful match if not in debug mode
+                if not self.searcher.debug_mode:
+                    log_match("Strategy", self.file_ext)
                 match_indent = self.searcher.get_indentation(source_lines[i])
                 replacement_lines = self.replacer.create_indented_replacement(
                     match_indent, self.search_pattern, self.replacement
@@ -116,4 +113,7 @@ class SearchReplacer:
         """Check if pattern matches at given position."""
         pattern_lines = normalized_pattern.splitlines()
         strategies = self.searcher.get_strategies(self.file_ext)
-        return self.searcher.try_match_with_strategies(source_lines, pattern_lines, pos, strategies)
+        result = self.searcher.try_match_with_strategies(source_lines, pattern_lines, pos, strategies)
+        if result.success and not self.searcher.debug_mode:
+            log_match(result.strategy_name, self.file_ext)
+        return result.success

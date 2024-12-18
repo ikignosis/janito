@@ -35,20 +35,28 @@ def progress_send_message(message: str) -> str:
         console.print("[yellow]======= Received response[/yellow]")
         print(response)
         console.print("[yellow]======= End of response[/yellow]")
-    response_text = response.content[0].text
+    
+    # Handle canceled requests or string responses
+    if isinstance(response, str):
+        console.print("[red]Request was canceled or failed[/red]")
+        return response
+    
+    response_text = response.content[0].text if hasattr(response, 'content') else str(response)
     
     # Add token usage summary with detailed cache info
-    usage = response.usage
-    
-    # Format cache info
-    cache_str = "(no cache used)"
-    if usage.cache_creation_input_tokens or usage.cache_read_input_tokens:
-        create_pct = (usage.cache_creation_input_tokens / usage.input_tokens) * 100
-        read_pct = (usage.cache_read_input_tokens / usage.input_tokens) * 100
-        cache_str = f"(cached in/out: {usage.cache_creation_input_tokens}[{create_pct:.1f}%]/{usage.cache_read_input_tokens}[{read_pct:.1f}%])"
-    
-    percentage = (usage.output_tokens / usage.input_tokens) * 100
-    usage_text = f"Tokens: {usage.input_tokens} sent {cache_str}, {usage.output_tokens} received ({percentage:.1f}% ratio)"
-    console.print(Rule(usage_text, style="blue", align="center"))
+    if hasattr(response, 'usage'):
+        usage = response.usage
+        # Format cache info
+        cache_str = "(no cache used)"
+        if usage.cache_creation_input_tokens or usage.cache_read_input_tokens:
+            create_pct = (usage.cache_creation_input_tokens / usage.input_tokens) * 100
+            read_pct = (usage.cache_read_input_tokens / usage.input_tokens) * 100
+            cache_str = f"(cached in/out: {usage.cache_creation_input_tokens}[{create_pct:.1f}%]/{usage.cache_read_input_tokens}[{read_pct:.1f}%])"
+        
+        percentage = (usage.output_tokens / usage.input_tokens) * 100
+        usage_text = f"Tokens: {usage.input_tokens} sent {cache_str}, {usage.output_tokens} received ({percentage:.1f}% ratio)"
+        console.print(Rule(usage_text, style="blue", align="center"))
+    else:
+        console.print(Rule("Token usage unavailable", style="red", align="center"))
     
     return response_text

@@ -16,7 +16,7 @@ class ConfigManager:
         self.recursive: List[Path] = []
         self.auto_apply: bool = False
         self.tui: bool = False
-        self.skipwork: bool = False
+        self.skip_work: bool = False
 
     @classmethod
     def get_instance(cls) -> "ConfigManager":
@@ -94,9 +94,9 @@ class ConfigManager:
         """
         self.recursive = paths
 
-    def set_skipwork(self, enabled: bool) -> None:
-        """Set skipwork flag to skip scanning workspace_dir"""
-        self.skipwork = enabled
+    def set_skip_work(self, enabled: bool) -> None:
+        """Set skip_work flag to skip scanning workspace_dir"""
+        self.skip_work = enabled
 
 # Create a singleton instance
 config = ConfigManager.get_instance()

@@ -39,7 +39,7 @@ AI-powered CLI tool for code modifications and analysis. Janito helps you modify
 
 - Python 3.8 or higher
 - pip package manager
-- An Anthropic API key (default) or OpenAI API key
+- An Anthropic API key for Claude AI
 
 ### Steps
 
@@ -50,15 +50,8 @@ pip install janito
 
 2. Configure your API key:
 
-For Anthropic Claude (default):
 ```bash
 export ANTHROPIC_API_KEY=your_api_key_here
-```
-
-For OpenAI:
-```bash
-export OPENAI_API_KEY=your_api_key_here
-export AI_BACKEND=openai
 ```
 
 ## 💡 Usage
@@ -103,9 +96,7 @@ janito "split this large function into smaller ones"
 
 ### Environment Variables
 
-- `ANTHROPIC_API_KEY`: Anthropic API key
-- `OPENAI_API_KEY`: OpenAI API key (if using OpenAI backend)
-- `AI_BACKEND`: AI provider ('claudeai' or 'openai')
+- `ANTHROPIC_API_KEY`: Anthropic API key for Claude AI
 - `JANITO_TEST_CMD`: Default test command to run after changes
 
 ### Command Line Options
@@ -136,7 +127,7 @@ ANTHROPIC_API_KEY=your_key janito "your request"
 janito -w /full/path/to/project "your request"
 
 # Specify additional paths explicitly
-janito -i ./src -i ./tests "your request"
+janito -i ./src -i ./tests --skip-work "your request"
 ```
 
 3. Debug Mode:

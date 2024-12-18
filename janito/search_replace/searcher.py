@@ -1,11 +1,16 @@
 from typing import List, Optional, Dict, Type
 from abc import ABC, abstractmethod
 import re
+from .strategy_result import StrategyResult
 
 LINE_OVER_LINE_DEBUG = False
 
 class SearchStrategy(ABC):
     """Base class for search strategies."""
+    def __init__(self):
+        """Initialize strategy with name derived from class"""
+        self.name = self.__class__.__name__.replace('Strategy', '')
+
     @abstractmethod
     def match(self, source_lines: List[str], pattern_lines: List[str], pos: int, searcher: 'Searcher') -> bool:
         pass
@@ -231,69 +236,60 @@ class Searcher:
             print(f"[DEBUG] Selected match at line {best_pos + 1}")  # Show 1-based line number
         return best_pos
 
-    def try_match_with_strategies(self, source_lines: List[str], pattern_lines: List[str], 
-                                pos: int, strategies: List[SearchStrategy]) -> bool:
+    def try_match_with_strategies(self, source_lines: List[str], pattern_lines: List[str],
+                                pos: int, strategies: List[SearchStrategy]) -> StrategyResult:
         """Try matching using multiple strategies in order."""
         if self.debug_mode and LINE_OVER_LINE_DEBUG:
             print(f"\n[DEBUG] Trying to match at line {pos + 1}")
-            
+
         for strategy in strategies:
             if strategy.match(source_lines, pattern_lines, pos, self):
                 if self.debug_mode:
                     print(f"[DEBUG] Match found with {strategy.__class__.__name__}")
                     print(f"[DEBUG] Stopping strategy chain at line {pos + 1}")
-                return True
-        return False
+                return StrategyResult(success=True, strategy_name=strategy.name, match_position=pos)
+        return StrategyResult(success=False)
 
-    def _find_matches(self, source_lines: List[str], pattern_lines: List[str], 
+    def _find_matches(self, source_lines: List[str], pattern_lines: List[str],
                      file_ext: Optional[str] = None) -> List[int]:
         """Find all matches using configured strategies."""
         strategies = self.get_strategies(file_ext)
-        
+
         if self.debug_mode:
             print("\nTrying search strategies:")
             print("-" * 50)
-            
-        # Try each strategy in order of preference
+
+        # Track positions already matched to avoid redundant attempts
+        matched_positions = set()
+        all_matches = []
+
         for strategy in strategies:
-            matches = []
             strategy_name = strategy.__class__.__name__.replace('Strategy', '')
-            
+
             if self.debug_mode:
                 print(f"\n→ {strategy_name}...")
-                
+
             for i in range(len(source_lines)):
+                if i in matched_positions:
+                    continue
+
                 if strategy.match(source_lines, pattern_lines, i, self):
-                    matches.append(i)
+                    matched_positions.add(i)
+                    all_matches.append(i)
+                    if self.debug_mode:
+                        print(f"✓ Match found at line {i+1} using {strategy_name}")
 
-            if matches:
-                if self.debug_mode:
-                    # Show 1-based line numbers consistently
-                    print(f"✓ {strategy_name}: Found {len(matches)} match(es) at line(s) {[m+1 for m in matches]}")
-                return matches
-            elif self.debug_mode:
-                print(f"✗ {strategy_name}: No matches found")
-                
-        return []
+            if all_matches and isinstance(strategy, ExactMatchStrategy):
+                # If we found exact matches, no need to try other strategies
+                break
 
-    def exact_match(self, source: str, pattern: str) -> List[int]:
-        """Perform exact line-by-line matching, preserving all whitespace except newlines."""
-        source_lines = source.splitlines()
-        pattern_lines = pattern.splitlines()
-        pattern_len = len(pattern_lines)
-        matches = []
+        if self.debug_mode and all_matches:
+            print(f"\nFound {len(all_matches)} total match(es) at line(s) {[m+1 for m in sorted(all_matches)]}")
 
-        for i in range(len(source_lines) - pattern_len + 1):
-            is_match = True
-            for j in range(pattern_len):
-                if source_lines[i + j] != pattern_lines[j]:
-                    is_match = False
-                    break
+        return sorted(all_matches)
 
-            if is_match:
-                matches.append(i)
-
-        if self.debug_mode and matches:
-            print(f"[DEBUG] Found {len(matches)} exact matches")
-            
-        return matches
+    def _check_exact_match(self, source_lines: List[str], pattern_lines: List[str], pos: int) -> bool:
+        """Helper method to check for exact matches."""
+        if pos + len(pattern_lines) > len(source_lines):
+            return False
+        return all(source_lines[pos + j] == pattern_lines[j] for j in range(len(pattern_lines)))

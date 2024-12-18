@@ -62,80 +62,126 @@ Search pattern:
 
 ## Search Strategies
 
-The module uses multiple search strategies in a fallback chain to find the best match:
+The module employs multiple search strategies in a fallback chain to find the best match. Each strategy has specific behaviors and use cases:
 
 ### ExactMatch Strategy
 - Matches content exactly, including all whitespace and indentation
 - Strictest matching strategy
+- Best for precise replacements where indentation matters
 - Example:
   ```python
   # Pattern:
       def hello():
           print("Hi")
-  
+
   # Will only match exact indentation:
       def hello():
           print("Hi")
+
+  # Won't match different indentation:
+  def hello():
+      print("Hi")
   ```
 
 ### IndentAware Strategy
 - Preserves relative indentation between lines
 - Allows different base indentation levels
+- Ideal for matching code blocks inside functions/classes
 - Example:
   ```python
   # Pattern:
       print("Hello")
       print("World")
-  
+
   # Matches with different base indentation:
   def test():
       print("Hello")
       print("World")
-  
+
   def other():
           print("Hello")
+          print("World")
+
+  # Won't match if relative indentation differs:
+  def wrong():
+      print("Hello")
           print("World")
   ```
 
 ### ExactContent Strategy
 - Ignores all indentation
 - Matches content after stripping whitespace
-- Most flexible strategy
+- Useful for matching code regardless of formatting
 - Example:
   ```python
   # Pattern:
   print("Hello")
       print("World")
-  
-  # Matches regardless of indentation:
+
+  # Matches any indentation:
         print("Hello")
     print("World")
+
+  # Also matches:
+  print("Hello")
+print("World")
   ```
 
 ### ExactContentNoComments Strategy
 - Ignores indentation, comments, and empty lines
 - Most flexible strategy
+- Perfect for matching code with varying comments/formatting
 - Example:
   ```python
   # Pattern:
   print("Hello")  # greeting
-  
+
   print("World")  # message
 
-  # Matches:
+  # Matches all these variations:
   def test():
         print("Hello")   # different comment
         # some comment
         print("World")
+
+  # Or:
+  print("Hello")  # no comment
+  print("World")  # different note
   ```
 
-### Strategy Selection
-- Strategies are tried in order: ExactMatch → IndentAware → ExactContent → ExactContentNoComments
-- File extension specific behavior:
-  - Python files (.py): All strategies
-  - Java files (.java): All strategies
-  - JavaScript/TypeScript (.js/.ts): All strategies
-  - Other files: ExactMatch, ExactContent, and ExactContentNoComments
+### ExactContentNoCommentsFirstLinePartial Strategy
+- Matches first line partially, ignoring comments
+- Useful for finding code fragments or partial matches
+- Example:
+  ```python
+  # Pattern:
+  print("Hello")
+
+  # Matches partial content:
+  message = print("Hello") + "extra"
+  result = print("Hello, World")
+  ```
+
+### Strategy Selection and File Types
+
+Strategies are tried in the following order:
+1. ExactMatch
+2. IndentAware
+3. ExactContent
+4. ExactContentNoComments
+5. ExactContentNoCommentsFirstLinePartial
+
+File extension specific behavior:
+
+| File Type | Available Strategies |
+|-----------|---------------------|
+| Python (.py) | All strategies |
+| Java (.java) | All strategies |
+| JavaScript (.js) | All strategies |
+| TypeScript (.ts) | All strategies |
+| Other files | ExactMatch, ExactContent, ExactContentNoComments, ExactContentNoCommentsFirstLinePartial |
+
+The module automatically selects the appropriate strategies based on the file type and tries them in order until a match is found.
 
 ## Debug Output
 

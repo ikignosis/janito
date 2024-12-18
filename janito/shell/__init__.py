@@ -1,18 +1,25 @@
 """Shell package initialization for Janito."""
 from typing import Optional
 from prompt_toolkit import PromptSession
-from prompt_toolkit.history import FileHistory
-from pathlib import Path
 from rich.console import Console
 from janito.config import config
 from janito.workspace import workspace
 from .processor import CommandProcessor
+from .commands import register_commands
+from .registry import CommandRegistry
 
 def start_shell() -> None:
     """Start the Janito interactive shell."""
-    history_file = Path.home() / ".janito_history"
-    session = PromptSession(history=FileHistory(str(history_file)))
-    processor = CommandProcessor()
+    # Create single registry instance
+    registry = CommandRegistry()
+    
+    # Register commands with registry
+    register_commands(registry)
+    
+    # Create shell components with shared registry
+    from .prompt import create_shell_session
+    session = create_shell_session(registry)
+    processor = CommandProcessor(registry)
 
     # Perform workspace analysis
     console = Console()

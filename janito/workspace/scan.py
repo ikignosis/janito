@@ -116,15 +116,15 @@ def collect_files_content(paths: List[Path] = None) -> str:
     """Collect content from all files in XML format"""
     console = Console()
 
-    # If no paths specified and skipwork not set, use workspace_dir
-    if not paths and not config.skipwork:
+    # If no paths specified and skip_work not set, use workspace_dir
+    if not paths and not config.skip_work:
         paths = [config.workspace_dir]
-    # If paths specified and skipwork not set, include workspace_dir
-    elif paths and not config.skipwork:
+    # If paths specified and skip_work not set, include workspace_dir
+    elif paths and not config.skip_work:
         paths = [config.workspace_dir] + paths
-    # If skipwork set, use only specified paths
-    elif not paths and config.skipwork:
-        console.print("[yellow]Warning: No paths to scan - skipwork enabled but no include paths specified[/yellow]")
+    # If skip_work set, use only specified paths
+    elif not paths and config.skip_work:
+        console.print("[yellow]Warning: No paths to scan - skip_work enabled but no include paths specified[/yellow]")
         return ""
 
     content_parts, file_items, skipped_files, ignored_items = _scan_paths(paths)
@@ -148,8 +148,8 @@ def preview_scan(paths: List[Path] = None) -> None:
     paths_section = []
     is_workspace_dir_scanned = any(p.resolve() == config.workspace_dir.resolve() for p in paths)
 
-    # Show workspace_dir unless skipwork is set
-    if not config.skipwork:
+    # Show workspace_dir unless skip_work is set
+    if not config.skip_work:
         paths_section.append(Panel(
             f"📂 {config.workspace_dir.absolute()}",
             title="[bold cyan]Working Directory[/bold cyan]",
