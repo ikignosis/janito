@@ -15,10 +15,14 @@ def analyze_workspace_content(content: str) -> None:
 
     # Collect include paths
     paths = []
-    for path in config.include:
-        is_recursive = path in config.recursive
-        path_str = str(path.relative_to(config.workdir))
-        paths.append(f"{path_str}/*" if is_recursive else f"{path_str}/")
+    if config.include:
+        for path in config.include:
+            is_recursive = path in config.recursive
+            path_str = str(path.relative_to(config.workdir))
+            paths.append(f"{path_str}/*" if is_recursive else f"{path_str}/")
+    else:
+        # Use workdir as fallback when no include paths specified
+        paths.append("./")
 
     console = Console()
 

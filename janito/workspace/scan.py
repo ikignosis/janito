@@ -120,6 +120,7 @@ def collect_files_content(paths: List[Path] = None) -> str:
     if file_items and config.verbose:
         console.print("\n[bold blue]Contents being analyzed:[/bold blue]")
         console.print(Columns(file_items, padding=(0, 4), expand=True))
+        console.print("\n[bold green]Scan completed successfully[/bold green]")
 
     return "\n".join(content_parts)
 
@@ -128,22 +129,23 @@ def preview_scan(paths: List[Path] = None) -> None:
     console = Console()
     _, file_items, skipped_files, ignored_items = _scan_paths(paths)
 
-    # Create analysis paths panel content
+    # Create paths display content
     paths_content = Text()
-    paths_content.append("Working Directory:\n", style="cyan")
-    paths_content.append(f"  {config.workdir.absolute()}\n\n")
-
-    # Add included paths if any
     is_workdir_scanned = any(p.resolve() == config.workdir.resolve() for p in paths)
-    if len(paths) > (1 if is_workdir_scanned else 0):
-        paths_content.append("\nAdditional Included Paths:\n", style="cyan")
+
+    if paths and not is_workdir_scanned:
+        paths_content.append("Working Directory:\n", style="cyan")
+        paths_content.append(f"  {config.workdir.absolute()}\n\n")
+
+    if paths:
+        paths_content.append("Scan Paths:\n", style="cyan")
         for path in paths:
-            if path.resolve() != config.workdir.resolve():
-                try:
-                    rel_path = path.relative_to(config.workdir)
-                    paths_content.append(f"  • ./{rel_path}\n")
-                except ValueError:
-                    paths_content.append(f"  • {path.absolute()}\n")
+            try:
+                rel_path = path.relative_to(config.workdir)
+                is_recursive = path in config.recursive
+                paths_content.append(f"  • ./{rel_path}" + ("/*\n" if is_recursive else "/\n"))
+            except ValueError:
+                paths_content.append(f"  • {path.absolute()}\n")
 
     # Create consolidated panel with both sections
 

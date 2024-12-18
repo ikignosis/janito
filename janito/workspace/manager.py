@@ -6,10 +6,9 @@ class WorkspaceManager:
     _instance = None
 
     def __init__(self):
-        self.content: Dict[Path, str] = {}
-        self.file_stats: Dict[str, int] = defaultdict(int)
-        self.dir_stats: Dict[Path, int] = defaultdict(int)
-        self._analyzed = False
+        self.content: str = ""
+        self.scan_completed: bool = False
+        self._analyzed: bool = False
 
     @classmethod
     def get_instance(cls) -> "WorkspaceManager":
@@ -22,11 +21,14 @@ class WorkspaceManager:
         from .scan import _scan_paths
         content_parts, _, _, _ = _scan_paths(paths)
         self.content = "\n".join(content_parts)
+        self.scan_completed = True
         self._analyzed = False
 
     def analyze(self) -> None:
         """Analyze workspace content and update statistics"""
         from .analysis import analyze_workspace_content
+        if not self.scan_completed:
+            return
         if not self._analyzed and self.content:
             analyze_workspace_content(self.content)
             self._analyzed = True
@@ -37,7 +39,6 @@ class WorkspaceManager:
 
     def clear(self) -> None:
         """Clear workspace content and stats"""
-        self.content = {}
-        self.file_stats.clear()
-        self.dir_stats.clear()
+        self.content = ""
+        self.scan_completed = False
         self._analyzed = False

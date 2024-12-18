@@ -62,7 +62,7 @@ def _create_option_content(option: AnalysisOption) -> Text:
 
     header = create_header(f"Option {option.letter} - {option.summary}")
     content.append(header)
-    content.append("\n\n")
+    content.append("\n")
 
     if option.description_items:
         for item in option.description_items:

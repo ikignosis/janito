@@ -22,6 +22,10 @@ def preview_all_changes(console: Console, changes: List[FileChange]) -> None:
     # Get terminal height
     term_height = shutil.get_terminal_size().lines
 
+    # Show unified legend at the start
+    console.print(create_legend_items(console), justify="center")
+    console.print()
+
     # Group changes by operation type
     grouped_changes = {}
     for change in changes:
@@ -30,7 +34,7 @@ def preview_all_changes(console: Console, changes: List[FileChange]) -> None:
         grouped_changes[change.operation].append(change)
 
     # Track content height
-    current_height = 0
+    current_height = 2  # Account for legend and newline
 
     # Show file operations with rule lines and track height
     current_height = _show_file_operations(console, grouped_changes)
@@ -76,6 +80,14 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
         change_index: Current change number (0-based)
         total_changes: Total number of changes
     """
+    # Track current file name to prevent unnecessary paging
+    from .pager import set_current_file, get_current_file
+    current_file = get_current_file()
+    new_file = str(change.name)
+
+    # Only update paging state for different files
+    if current_file != new_file:
+        set_current_file(new_file)
     # Handle delete operations with special formatting
     if change.operation == ChangeOperation.REMOVE_FILE:
         show_delete_panel(console, change, change_index, total_changes)
@@ -96,8 +108,7 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
     # Track accumulated height
     current_height = 0
 
-    # Show compact centered legend
-    console.print(create_legend_items(console), justify="center")
+    # Track content height
     current_height += 1
 
     # Show the header with reason and progress
@@ -446,8 +457,8 @@ def show_delete_panel(console: Console, change: FileChange, change_index: int = 
         change_index: Current change number (0-based)
         total_changes: Total number of changes
     """
-    # Show compact centered legend
-    console.print(create_legend_items(console), justify="center")
+    # Track content height for panel display
+    current_height = 0
 
     # Show the header with reason and progress
     operation = change.operation.name.replace('_', ' ').title()
@@ -507,4 +518,3 @@ def get_file_stats(content: Union[str, Text]) -> str:
         lines = content.splitlines()
         size = len(content.encode('utf-8'))
     return f"{len(lines)} lines, {get_human_size(size)}"
-
