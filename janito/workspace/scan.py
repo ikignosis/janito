@@ -115,6 +115,18 @@ def _scan_paths(paths: List[Path] = None) -> Tuple[List[str], List[str], List[st
 def collect_files_content(paths: List[Path] = None) -> str:
     """Collect content from all files in XML format"""
     console = Console()
+
+    # If no paths specified and skipwork not set, use workdir
+    if not paths and not config.skipwork:
+        paths = [config.workdir]
+    # If paths specified and skipwork not set, include workdir
+    elif paths and not config.skipwork:
+        paths = [config.workdir] + paths
+    # If skipwork set, use only specified paths
+    elif not paths and config.skipwork:
+        console.print("[yellow]Warning: No paths to scan - skipwork enabled but no include paths specified[/yellow]")
+        return ""
+
     content_parts, file_items, skipped_files, ignored_items = _scan_paths(paths)
 
     if file_items and config.verbose:
@@ -125,64 +137,79 @@ def collect_files_content(paths: List[Path] = None) -> str:
     return "\n".join(content_parts)
 
 def preview_scan(paths: List[Path] = None) -> None:
-    """Preview what files and directories would be scanned"""
+    """Preview what files and directories would be scanned with structured output."""
     console = Console()
     _, file_items, skipped_files, ignored_items = _scan_paths(paths)
 
-    # Create paths display content
-    paths_content = Text()
+    # Create sections list for structured output
+    sections = []
+
+    # Section 1: Paths Information
+    paths_section = []
     is_workdir_scanned = any(p.resolve() == config.workdir.resolve() for p in paths)
 
-    if paths and not is_workdir_scanned:
-        paths_content.append("Working Directory:\n", style="cyan")
-        paths_content.append(f"  {config.workdir.absolute()}\n\n")
+    # Show workdir unless skipwork is set
+    if not config.skipwork:
+        paths_section.append(Panel(
+            f"📂 {config.workdir.absolute()}",
+            title="[bold cyan]Working Directory[/bold cyan]",
+            border_style="cyan",
+            padding=(1, 2)
+        ))
 
+    # Show included paths
     if paths:
-        paths_content.append("Scan Paths:\n", style="cyan")
+        included_paths = []
         for path in paths:
             try:
                 rel_path = path.relative_to(config.workdir)
                 is_recursive = path in config.recursive
-                paths_content.append(f"  • ./{rel_path}" + ("/*\n" if is_recursive else "/\n"))
+                included_paths.append(f"📁 ./{rel_path}" + ("/*" if is_recursive else "/"))
             except ValueError:
-                paths_content.append(f"  • {path.absolute()}\n")
+                included_paths.append(f"📁 {path.absolute()}")
 
-    # Create consolidated panel with both sections
+        paths_section.append(Panel(
+            Group(*[Text(p) for p in included_paths]),
+            title="[bold green]Included Paths[/bold green]",
+            border_style="green",
+            padding=(1, 2)
+        ))
 
-    sections = [paths_content, Rule(style="blue")]
+    sections.extend(paths_section)
+    sections.append(Rule(style="blue"))
 
+    # Section 2: Files to be scanned
     if file_items:
-        sections.extend([
-            Text("\nFiles to be scanned:", style="green bold"),
-            Columns(file_items, padding=(0, 2), expand=True)
-        ])
+        sections.append(Panel(
+            Columns(file_items, padding=(0, 2), expand=True),
+            title="[bold blue]Files to be Scanned[/bold blue]",
+            border_style="blue",
+            padding=(1, 2)
+        ))
 
+    # Section 3: Ignored items
     if ignored_items:
-        sections.extend([
-            Text("\nIgnored files and directories:", style="red bold"),
-            Columns(ignored_items, padding=(0, 2), expand=True)
-        ])
+        sections.append(Panel(
+            Columns(ignored_items, padding=(0, 2), expand=True),
+            title="[bold red]Ignored Items[/bold red]",
+            border_style="red",
+            padding=(1, 2)
+        ))
 
+    # Section 4: Skipped files (only in verbose mode)
     if skipped_files and config.verbose:
-        sections.extend([
-            Text("\nSkipped files (encoding issues):", style="yellow bold"),
-            Columns([f"[yellow]•[/yellow] {f}" for f in skipped_files], padding=(0, 2), expand=True)
-        ])
+        sections.append(Panel(
+            Columns([f"[yellow]•[/yellow] {f}" for f in skipped_files], padding=(0, 2), expand=True),
+            title="[bold yellow]Skipped Files[/bold yellow]",
+            border_style="yellow",
+            padding=(1, 2)
+        ))
 
-    consolidated_content = Group(*sections)
-
-    # Create single consolidated panel
-    consolidated_panel = Panel(
-        consolidated_content,
-        title="[bold blue]Scan Preview[/bold blue]",
-        title_align="center",
-        border_style="blue",
-        padding=(1, 2)
-    )
-
-    # Display consolidated panel
+    # Display all sections with separators
     console.print("\n")
-    console.print(consolidated_panel)
+    for section in sections:
+        console.print(section)
+        console.print("\n")
 
 
 def is_dir_empty(path: Path) -> bool:

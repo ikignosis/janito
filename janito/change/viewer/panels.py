@@ -26,6 +26,10 @@ def preview_all_changes(console: Console, changes: List[FileChange]) -> None:
     console.print(create_legend_items(console), justify="center")
     console.print()
 
+    # Show progress indicator
+    with Live(console=console, refresh_per_second=4) as live:
+        live.update("[yellow]Processing changes...[/yellow]")
+
     # Group changes by operation type
     grouped_changes = {}
     for change in changes:
@@ -254,27 +258,36 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
                 console.print("[yellow]Terminal width is limited. Using vertical layout for better readability.[/yellow]")
                 console.print(f"[dim]Recommended terminal width: {min_panel_width * 2 + 4} or greater[/dim]")
 
-            # Create panels with adaptive width
+            # Create unified header panel
+            header_text = Text()
+            header_text.append("[red]Original[/red]", style="bold")
+            header_text.append(" vs ")
+            header_text.append("[green]Modified[/green]", style="bold")
+            header_text.append(f" - {change.name}")
+
+            header_panel = Panel(
+                header_text,
+                box=box.HEAVY,
+                style="cyan",
+                padding=(0, 1)
+            )
+
+            # Create content panels without individual titles
             panels = [
                 Panel(
                     left_panel,
-                    title="[red]Original Content[/red]",
-                    title_align="center",
-                    subtitle=str(change.name),
-                    subtitle_align="center",
                     padding=(0, 1),
                     width=None if can_do_side_by_side else term_width - 2
                 ),
                 Panel(
                     right_panel,
-                    title="[green]Modified Content[/green]",
-                    title_align="center",
-                    subtitle=str(change.name),
-                    subtitle_align="center",
                     padding=(0, 1),
                     width=None if can_do_side_by_side else term_width - 2
                 )
             ]
+
+            # Display unified header
+            console.print(header_panel, justify="center")
 
             # Render panels based on layout
             if can_do_side_by_side:
@@ -284,7 +297,7 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
                 for panel in panels:
                     panel.width = panel_width
 
-                columns = Columns(panels, equal=True, expand=False)  # Removed justify parameter
+                columns = Columns(panels, equal=True, expand=False)
                 console.print(columns, justify="center")
             else:
                 for panel in panels:
@@ -298,8 +311,13 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
             # Update height after displaying content
             current_height += content_height
 
-    # Add final separator after all changes
+    # Add final separator and success message
     console.print(Rule(title="End Of Changes", style="bold blue"))
+    console.print()
+    console.print(Panel("[yellow]You're the best! All changes have been previewed successfully![/yellow]",
+                       style="yellow",
+                       title="Success",
+                       title_align="center"))
     console.print()
 
 def find_modified_sections(original: list[str], modified: list[str], context_lines: int = 3) -> list[tuple[list[str], list[str]]]:

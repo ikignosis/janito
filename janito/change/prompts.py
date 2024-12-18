@@ -28,6 +28,7 @@ RULES for Analysis:
     - All lines in text to be add, deleted or replaces must be prefixed with a dot (.) to mark them literal
     - If you have further information about the changes, provide it after the END_INSTRUCTIONS marker 
     - Blocks started in single lines with blockName/ must be closed with /blockName in a single line
+    - If the conte of the changes to a single file is too large, consider requesting a file replacement instead of multiple changes
 
 
 Available operations:
@@ -85,23 +86,9 @@ Modify File
             search:
             .def deprecated_function():
             .    print("To be removed")
-        Append # Append content to the bottom of the file (the only attributes are reason and content)
-            reason: Add new functionality
-            content:
-            .def additional_function():
-            .    print("New feature")
     # !!! IMPORTANT Open blocks must be closed
     Changes/
 
-- Remarks about the Append operation:    
-    Append ONLY appends to the bottom of the file
-    Bad Example:
-        # WRONG: Imports should be added to the existing imports on the top level of the file
-        Append
-            reason: Add imports for terminal functionality
-            content:
-            .from rich.live import Live
-    Changes/
 # Example of what is valid and invalid for block openings
 
 # Eample of an invalid block opening

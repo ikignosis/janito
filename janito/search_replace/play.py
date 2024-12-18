@@ -1,7 +1,7 @@
 from pathlib import Path
-from .searcher import Searcher
 from typing import Optional
-from . import SearchReplacer
+from .parser import parse_test_file
+from .core import SearchReplacer
 import re
 
 def _extract_file_ext(test_info: str) -> Optional[str]:
@@ -25,68 +25,37 @@ def _extract_file_ext(test_info: str) -> Optional[str]:
             
     return None
 
-def play_file(test_file: Optional[Path] = None):
-    """Run search/replace tests from file"""
-    searcher = Searcher()
-    Searcher.set_debug(True)  # Enable debug mode for test runs
-
-    if not test_file:
-        print("No test file provided")
-        return
-
-    content = test_file.read_text()
-    sections = content.split("========================================")
+def play_file(filepath: Path):
+    """Play back a test file and show detailed debugging info."""
+    test_cases = parse_test_file(filepath)
     
-    if len(sections) < 3:
-        print("Invalid test file format")
-        return
-
-    # Parse test file
-    test_info = sections[0].strip()
-    original = sections[1].replace("Original:", "").strip()
-    search_pattern = sections[2].replace("Search pattern:", "").strip()
-
-    # Determine file extension from test info
-    file_ext = _extract_file_ext(test_info)
-
-    # Display test file contents with clear separation
-    print("\n" + "="*80)
-    print("TEST FILE CONTENTS")
-    print("="*80)
-    print(f"Test description: {test_info}")
-    print(f"Detected file extension: {file_ext or 'none'}")
-    print("\nOriginal content:")
-    print("-"*40)
-    print(original)
-    print("\nSearch pattern:")
-    print("-"*40)
-    print(search_pattern)
-    
-    # Display analysis with clear separation
-    print("\n" + "="*80)
-    print("PATTERN ANALYSIS")
-    print("="*80)
-
-    # Show available strategies
-    strategies = searcher.get_strategies(file_ext)
-    print("\nStrategies that will be tried in order:")
-    for i, strategy in enumerate(strategies, 1):
-        print(f"{i}. {strategy.__class__.__name__}")
-
-    # Try to find pattern and show results
-    print("\nMATCH ATTEMPTS")
-    print("-"*40)
-    
-    searcher.debug_mode = True
-    matches = searcher.exact_match(original, search_pattern)
-    
-    if matches:
-        print(f"\nFound matches at lines: {matches}")
-    else:
-        print("\nNo exact matches found, trying flexible matching...")
-        sr = SearchReplacer(original, search_pattern, file_ext=file_ext)
-        if sr.find_pattern():
-            print("Pattern found with flexible matching")
-        else:
-            print("\nRESULT: Pattern not found with any matching strategy")
-            print("="*80)
+    for test in test_cases:
+        print(f"\nTest: {test['name']}")
+        print("=" * 50)
+        
+        if 'source' not in test or 'search' not in test:
+            print("Invalid test case - missing source or search pattern")
+            continue
+            
+        file_ext = _extract_file_ext(test['name'])
+        print(f"\nFile type: {file_ext or 'unknown'}")
+        
+        replacer = SearchReplacer(
+            source_code=test['source'],
+            search_pattern=test['search'],
+            replacement=test.get('replacement'),
+            file_ext=file_ext,
+            debug=True
+        )
+        
+        try:
+            print("\nAttempting search/replace...")
+            result = replacer.replace()
+            print("\nResult:")
+            print("-" * 50)
+            print(result)
+            
+        except Exception as e:
+            print(f"\nError: {str(e)}")
+        
+        print("\n" + "="*50)

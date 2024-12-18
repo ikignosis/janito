@@ -60,22 +60,25 @@ def process_change_request(
         console.print("[yellow]No changes found in response[/yellow]")
         return False, None
 
-    # Show request and selected option in panel
+    # Extract response info after END_OF_INSTRUCTIONS
+    response_info = extract_response_info(response)
+
+    # Show request and response info in panels
     request_panel = Panel(
         request,
         title="User Request",
         border_style="cyan",
         box=box.ROUNDED
     )
-    option_panel = Panel(
-        analysis.format_option_text(),
-        title="Selected Option",
+    response_panel = Panel(
+        response_info if response_info else "No additional information provided",
+        title="Response Information",
         border_style="green",
         box=box.ROUNDED
     )
 
     # Display panels side by side
-    columns = Columns([request_panel, option_panel], equal=True, expand=True)
+    columns = Columns([request_panel, response_panel], equal=True, expand=True)
     console.print("\n")
     console.print(columns)
     console.print("\n")
@@ -93,7 +96,7 @@ def process_change_request(
         preview_all_changes(console, changes)
 
         if not config.auto_apply:
-            apply_changes = Confirm.ask("[cyan]Apply changes to working dir?[/cyan]", default=False)
+            apply_changes = Confirm.ask("[cyan]Apply changes to working dir?[/cyan]")
         else:
             apply_changes = True
             console.print("[cyan]Auto-applying changes to working dir...[/cyan]")
@@ -106,3 +109,23 @@ def process_change_request(
 
     return success, history_file
 
+
+def extract_response_info(response: str) -> str:
+    """Extract information after END_OF_INSTRUCTIONS marker"""
+    if not response:
+        return ""
+
+    # Find the marker
+    marker = "END_INSTRUCTIONS"
+    marker_pos = response.find(marker)
+
+    if marker_pos == -1:
+        return ""
+
+    # Get text after marker, skipping the marker itself
+    info = response[marker_pos + len(marker):].strip()
+
+    # Remove any XML-style tags
+    info = info.replace("<Extra info about what was implemented/changed goes here>", "")
+
+    return info.strip()

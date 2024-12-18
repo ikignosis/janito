@@ -5,13 +5,17 @@ import sys
 import argparse
 from .play import play_file
 
+def main():
+    parser = argparse.ArgumentParser(description="Debug search/replace patterns")
+    parser.add_argument('file', type=Path, help='Test file to analyze')
+    
+    args = parser.parse_args()
+    
+    if not args.file.exists():
+        print(f"Error: Test file not found: {args.file}")
+        sys.exit(1)
+        
+    play_file(args.file)
+
 if __name__ == "__main__":
-        print("Usage: python -m janito.search_replace <test_file>")
-        sys.exit(1)
-
-    test_file = Path(sys.argv[1])
-    if not test_file.exists():
-        print(f"Test file not found: {test_file}")
-        sys.exit(1)
-
-    play_file(test_file)
+    main()

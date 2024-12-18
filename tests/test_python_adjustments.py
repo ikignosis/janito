@@ -1,5 +1,5 @@
 import pytest
-from janito.search_replace import SearchReplacer
+from janito.search_replace.core import SearchReplacer
 
 def test_function_definition_adjustment():
     source = '''def old_function(a, b):
@@ -244,3 +244,28 @@ def test_multiline_string_handling():
     docstring
     content
     """'''
+
+def test_partial_first_line_match():
+    source = '''def outer():
+    if condition:
+        process()
+    elif scan:
+        scan()
+    else:
+        skip()'''
+    
+    pattern = '''    if scan:
+        scan()'''
+    
+    replacement = '''    if scan:
+        advanced_scan()'''
+    
+    replacer = SearchReplacer(source, pattern, replacement, '.py')
+    result = replacer.replace()
+    assert result == '''def outer():
+    if condition:
+        process()
+    elif scan:
+        advanced_scan()
+    else:
+        skip()'''

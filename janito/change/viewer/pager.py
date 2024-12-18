@@ -7,10 +7,12 @@ def clear_last_line(console: Console):
     console.print("\r\033[1A\033[2K", end="")
 
 def wait_for_enter(console: Console):
-    """Wait for ENTER key press to continue"""
-    console.print("\n[dim]Press ENTER to continue...[/dim]")
+    """Wait for ENTER key press to continue with progress indicator"""
+    console.print("\n[yellow]More content to show[/yellow]")
+    console.print("[dim]Press ENTER to continue...[/dim]")
     try:
         input()
+        clear_last_line(console)
         clear_last_line(console)
     except KeyboardInterrupt:
         raise KeyboardInterrupt

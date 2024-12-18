@@ -91,6 +91,39 @@ class ExactContentNoComments(SearchStrategy):
                 
         return False
 
+class ExactContentNoCommentsFirstLinePartial(SearchStrategy):
+    """Match first line partially, ignoring comments."""
+    def _strip_comments(self, line: str) -> str:
+        """Remove comments from line."""
+        if '#' in line:
+            line = line.split('#')[0]
+        if '//' in line:
+            line = line.split('//')[0]
+        return line.strip()
+
+    def match(self, source_lines: List[str], pattern_lines: List[str], pos: int, searcher: 'Searcher') -> bool:
+        if pos >= len(source_lines):
+            return False
+
+        # Get first non-empty pattern line
+        pattern_content = []
+        for line in pattern_lines:
+            stripped = self._strip_comments(line)
+            if stripped:
+                pattern_content.append(stripped)
+                break
+
+        if not pattern_content:
+            return False
+
+        # Get source line content
+        source_line = self._strip_comments(source_lines[pos])
+        if not source_line:
+            return False
+
+        # Check if pattern content is part of source line
+        return pattern_content[0] in source_line
+
 class Searcher:
     """Handles pattern searching in source code with configurable strategies."""
     
@@ -106,11 +139,11 @@ class Searcher:
 
     # Updated extension to strategy mapping to include ExactContentNoComments
     EXTENSION_STRATEGIES = {
-        '.py': [ExactMatchStrategy(), IndentAwareStrategy(), ExactContentStrategy(), ExactContentNoComments()],
-        '.java': [ExactMatchStrategy(), IndentAwareStrategy(), ExactContentStrategy(), ExactContentNoComments()],
-        '.js': [ExactMatchStrategy(), IndentAwareStrategy(), ExactContentStrategy(), ExactContentNoComments()],
-        '.ts': [ExactMatchStrategy(), IndentAwareStrategy(), ExactContentStrategy(), ExactContentNoComments()],
-        '*': [ExactMatchStrategy(), ExactContentStrategy(), ExactContentNoComments()]  # updated default fallback
+        '.py': [ExactMatchStrategy(), IndentAwareStrategy(), ExactContentStrategy(), ExactContentNoComments(), ExactContentNoCommentsFirstLinePartial()],
+        '.java': [ExactMatchStrategy(), IndentAwareStrategy(), ExactContentStrategy(), ExactContentNoComments(), ExactContentNoCommentsFirstLinePartial()],
+        '.js': [ExactMatchStrategy(), IndentAwareStrategy(), ExactContentStrategy(), ExactContentNoComments(), ExactContentNoCommentsFirstLinePartial()],
+        '.ts': [ExactMatchStrategy(), IndentAwareStrategy(), ExactContentStrategy(), ExactContentNoComments(), ExactContentNoCommentsFirstLinePartial()],
+        '*': [ExactMatchStrategy(), ExactContentStrategy(), ExactContentNoComments(), ExactContentNoCommentsFirstLinePartial()]  # updated default fallback
     }
 
     def get_strategies(self, file_ext: Optional[str]) -> List[SearchStrategy]:
@@ -188,14 +221,14 @@ class Searcher:
     def _find_best_match_position(self, positions: List[int], source_lines: List[str], pattern_base_indent: int) -> Optional[int]:
         """Find the best matching position based on line number (earliest match)."""
         if self.debug_mode:
-            print(f"[DEBUG] Finding best match among positions: {positions}")
+            print(f"[DEBUG] Finding best match among positions: {[p+1 for p in positions]}")  # Show 1-based line numbers
 
         if not positions:
             return None
 
         best_pos = min(positions)  # Simply take the earliest match
         if self.debug_mode:
-            print(f"[DEBUG] Selected match at line {best_pos + 1}")
+            print(f"[DEBUG] Selected match at line {best_pos + 1}")  # Show 1-based line number
         return best_pos
 
     def try_match_with_strategies(self, source_lines: List[str], pattern_lines: List[str], 
@@ -218,21 +251,28 @@ class Searcher:
         strategies = self.get_strategies(file_ext)
         
         if self.debug_mode:
-            print(f"\n[DEBUG] Starting search with {len(strategies)} strategies:")
-            for i, strategy in enumerate(strategies):
-                print(f"[DEBUG] {i+1}. {strategy.__class__.__name__}")
-
+            print("\nTrying search strategies:")
+            print("-" * 50)
+            
         # Try each strategy in order of preference
         for strategy in strategies:
             matches = []
+            strategy_name = strategy.__class__.__name__.replace('Strategy', '')
+            
+            if self.debug_mode:
+                print(f"\n→ {strategy_name}...")
+                
             for i in range(len(source_lines)):
                 if strategy.match(source_lines, pattern_lines, i, self):
                     matches.append(i)
 
             if matches:
                 if self.debug_mode:
-                    print(f"[DEBUG] Found {len(matches)} matches with {strategy.__class__.__name__}")
+                    # Show 1-based line numbers consistently
+                    print(f"✓ {strategy_name}: Found {len(matches)} match(es) at line(s) {[m+1 for m in matches]}")
                 return matches
+            elif self.debug_mode:
+                print(f"✗ {strategy_name}: No matches found")
                 
         return []
 

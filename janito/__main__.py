@@ -57,6 +57,7 @@ def typer_main(
     history: bool = typer.Option(False, "--history", help="Display history of requests"),
     recursive: Optional[List[Path]] = typer.Option(None, "-r", "--recursive", help="Paths to scan recursively (directories only)"),
     demo: bool = typer.Option(False, "--demo", help="Run demo scenarios"),
+    skipwork: bool = typer.Option(False, "--skipwork", help="Skip scanning workdir when using include paths"),
 ):
     """Janito - AI-powered code modification assistant"""
     if version:
@@ -81,6 +82,13 @@ def typer_main(
     config.set_auto_apply(auto_apply)
     config.set_include(include)
     config.set_tui(tui)
+    config.set_skipwork(skipwork)
+
+    # Validate skipwork usage
+    if skipwork and not include and not recursive:
+        error_text = Text("\nError: --skipwork requires at least one include path (-i or -r)", style="red")
+        rich_print(error_text)
+        raise typer.Exit(1)
 
     if include:
         resolved_paths = []

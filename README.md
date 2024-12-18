@@ -5,7 +5,25 @@
 
 AI-powered CLI tool for code modifications and analysis. Janito helps you modify, analyze, and understand your codebase using natural language commands.
 
-## Features
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+  - [Prerequisites](#prerequisites)
+  - [Steps](#steps)
+- [Usage](#usage)
+  - [Basic Commands](#basic-commands)
+  - [Common Use Cases](#common-use-cases)
+- [Configuration](#configuration)
+  - [Environment Variables](#environment-variables)
+  - [Command Line Options](#command-line-options)
+- [Troubleshooting](#troubleshooting)
+  - [Common Issues](#common-issues)
+  - [Error Messages](#error-messages)
+- [Contributing](#contributing)
+- [License](#license)
+
+## ✨ Features
 
 - Code modifications using natural language requests
 - Codebase analysis and question answering
@@ -13,7 +31,7 @@ AI-powered CLI tool for code modifications and analysis. Janito helps you modify
 - File scanning and preview capabilities
 - Git-aware operations
 
-## Installation
+## 🚀 Installation
 
 ### Prerequisites
 
@@ -41,7 +59,7 @@ export OPENAI_API_KEY=your_api_key_here
 export AI_BACKEND=openai
 ```
 
-## Usage Examples
+## 💡 Usage
 
 ### Basic Commands
 
@@ -79,7 +97,7 @@ janito "convert this class to use dataclasses"
 janito "split this large function into smaller ones"
 ```
 
-## Configuration
+## ⚙️ Configuration
 
 ### Environment Variables
 
@@ -97,7 +115,7 @@ janito "split this large function into smaller ones"
 - `--tui`: Use terminal user interface
 - `--auto-apply`: Apply changes without confirmation
 
-## Troubleshooting
+## 🔧 Troubleshooting
 
 ### Common Issues
 
@@ -131,10 +149,10 @@ janito --debug "your request"
 - "No input provided": Check if using --input mode correctly
 - "Duplicate path provided": Remove duplicate paths from includes
 
-## License
-
-MIT License - see [LICENSE](LICENSE)
-
-## Contributing
+## 👥 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE)
