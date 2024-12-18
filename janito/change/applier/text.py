@@ -2,10 +2,10 @@ from typing import Tuple, List, Optional
 from rich.console import Console
 from pathlib import Path
 from datetime import datetime
-from .parser import TextChange
+from ..parser import TextChange
 from janito.config import config
-from ..clear_statement_parser.parser import StatementParser
-from .search_replace import SearchReplacer, PatternNotFoundException
+from ...clear_statement_parser.parser import StatementParser
+from ..search_replace import SearchReplacer, PatternNotFoundException
 
 class TextFindDebugger:
     def __init__(self, console: Console):
@@ -37,8 +37,6 @@ class TextFindDebugger:
             self.console.print("[yellow]No matches found[/yellow]")
 
         return matches
-
-from .operations import TextOperation
 
 class TextChangeApplier:
     def __init__(self, console: Optional[Console] = None):
@@ -133,7 +131,7 @@ Search pattern:
         failed_file.write_text(debug_info)
 
         self.console.print(f"\n[red]Failed search saved to: {failed_file}[/red]")
-        
+
         # Use SearchReplacer's debug_indentation
         replacer = SearchReplacer("", "", "")  # Empty instance for using debug method
         self.console.print("\n[yellow]Indentation Analysis:[/yellow]")
@@ -141,12 +139,12 @@ Search pattern:
             replacer.debug_indentation(content, search_text)
         debug_output = capture.get()
         self.console.print(debug_output)
-        
+
         # Also show whitespace markers for quick visual reference
         self.console.print("\n[yellow]Search pattern (with whitespace markers):[/yellow]")
         for line in search_text.splitlines():
             self.console.print(f"[dim]{self.debugger._visualize_whitespace(line)}[/dim]")
-        
+
         return f"Could not find search text in {filepath}"
 
     def debug_failed_finds(self, search_content: str, file_content: str, filepath: str) -> None:

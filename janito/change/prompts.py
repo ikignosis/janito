@@ -28,7 +28,7 @@ RULES for Analysis:
 - The instructions must be submitted in the same format as provided below
 - If you have further information about the changes, provide it after the END_INSTRUCTIONS marker 
 - Blocks started in single lines with blockName/ must be closed with /blockName in a single line
-- When all content of a file is moved to others as part of a reorg, delete the original file (instead of keeping it empty)
+
 
 Available operations:
 - Create File
@@ -58,9 +58,9 @@ Replace File
     .    print("Hello, World!").
 
 Rename File
-    reason: Update script name
+    reason: Move file to new location
     source: old_name.txt
-    target: new_name.txt
+    target: new_package/new_name.txt
 
 Remove File
     reason: All functions moved to other files
@@ -118,7 +118,6 @@ Modify File
     /Changes
         # change block
     Changes/
-
 
     
 END_INSTRUCTIONS (this marker must be included)

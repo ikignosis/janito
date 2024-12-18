@@ -31,14 +31,15 @@ class TextChange:
     search_content: Optional[str] = None
     replace_content: Optional[str] = None
     reason: Optional[str] = None
-    is_append: bool = False
+    operation: Optional[str] = None
 
-    def __post_init__(self):
-        # If there's no search content but there is replace content, it's an append operation
-        if not self.search_content and self.replace_content:
-            self.is_append = True
-        # If there's search content but no replace content, it's a delete operation
-        self.is_delete = bool(self.search_content and self.replace_content is None)
+    @property
+    def is_append(self) -> bool:
+        return self.operation == 'Append'
+
+    @property
+    def is_delete(self) -> bool:
+        return self.operation == 'Delete' or (self.search_content and not self.replace_content)
     
     def validate(self) -> bool:
         """Validate the text change operation"""
@@ -169,18 +170,21 @@ class CommandParser:
                     mod = TextChange(
                         search_content=self._clean_content(statement.parameters.get('search', '')),
                         replace_content=self._clean_content(statement.parameters.get('with', '')),
-                        reason=statement.parameters.get('reason')
+                        reason=statement.parameters.get('reason'),
+                        operation='Replace'
                     )
                 elif statement.name == 'Delete':
                     mod = TextChange(
                         search_content=self._clean_content(statement.parameters.get('search', '')),
-                        reason=statement.parameters.get('reason')
+                        reason=statement.parameters.get('reason'),
+                        operation='Delete'
                     )
                 elif statement.name == 'Append':
                     mod = TextChange(
                         search_content='',
                         replace_content=self._clean_content(statement.parameters.get('content', '')),
-                        reason=statement.parameters.get('reason')
+                        reason=statement.parameters.get('reason'),
+                        operation='Append'
                     )
                 else:
                     continue

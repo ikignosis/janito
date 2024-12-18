@@ -6,7 +6,6 @@ The following situations should result in error:
 - Replace operation on a non-existent file
 - Rename operation on a non-existent file
 - Modify operation with search text not found
-- Invalid regex pattern in modification
 - No changes applied to a file
 """
 
@@ -16,13 +15,13 @@ from rich.console import Console
 from rich.panel import Panel
 from rich import box
 import subprocess
-from .parser import FileChange, TextChange
-from .validator import validate_python_syntax
+from ..validator import validate_python_syntax
 from .workdir import apply_changes as apply_to_workdir_impl
 from janito.config import config
-from .file_applier import FileChangeApplier
-from .text_applier import TextChangeApplier
-from .parser import FileChange, ChangeOperation
+from .file import FileChangeApplier
+from .text import TextChangeApplier
+from ..parser import FileChange, ChangeOperation
+from ..validator import validate_all_changes
 
 
 class ChangeApplier:
@@ -31,42 +30,6 @@ class ChangeApplier:
         self.console = Console()
         self.file_applier = FileChangeApplier(preview_dir, self.console)
         self.text_applier = TextChangeApplier(self.console)
-
-    def validate_change(self, change: FileChange) -> Tuple[bool, Optional[str]]:
-        """Validate a FileChange object before applying it"""
-        if not change.name:  # Changed back from path to name
-            return False, "File name is required"
-
-        operation = change.operation.name.title().lower()
-        if operation not in ['create_file', 'replace_file', 'remove_file', 'rename_file', 'modify_file']:
-            return False, f"Invalid operation: {change.operation}"
-
-        if operation == 'rename_file' and not change.target:
-            return False, "Target file path is required for rename operation"
-
-        if operation in ['create_file', 'replace_file']:
-            if not change.content:
-                return False, f"Content is required for {change.operation} operation"
-
-        if operation == 'modify_file':
-            if not change.text_changes:
-                return False, "At least one modification is required for modify operation"
-                
-            # Validate each text change
-            seen_search_texts = set()
-            for mod in change.text_changes:
-                if mod.is_append:
-                    if not mod.replace_content:
-                        return False, "Replace content is required for append operation"
-                else:
-                    if not mod.search_content:
-                        return False, "Search content is required for non-append modification"
-                    # Empty replacement content is valid (treated as delete)
-
-                if mod.search_content:
-                    seen_search_texts.add(mod.search_content)
-
-        return True, None
 
     def run_test_command(self, test_cmd: str) -> Tuple[bool, str, Optional[str]]:
         """Run test command in preview directory.
@@ -95,24 +58,23 @@ class ChangeApplier:
         Returns (success, modified_files)"""
         console = Console()
         
-        # Validate all changes first
-        for change in changes:
-            is_valid, error = self.validate_change(change)
-            if not is_valid:
-                console.print(f"\n[red]Invalid change for {change.name}: {error}[/red]")  # Changed back from path to name
-                return False, set()
+        # Validate all changes using consolidated validator
+        is_valid, error = validate_all_changes(changes, set(Path(c.name) for c in changes))
+        if not is_valid:
+            console.print(f"\n[red]{error}[/red]")
+            return False, set()
         
         # Track modified files and apply changes
         modified_files: Set[Path] = set()
         for change in changes:
             if config.verbose:
-                console.print(f"[dim]Previewing changes for {change.name}...[/dim]")  # Changed back from path to name
+                console.print(f"[dim]Previewing changes for {change.name}...[/dim]")
             success, error = self.apply_single_change(change)
             if not success:
-                console.print(f"\n[red]Error previewing {change.name}: {error}[/red]")  # Changed back from path to name
+                console.print(f"\n[red]Error previewing {change.name}: {error}[/red]")
                 return False, modified_files
             if not change.operation == 'remove_file':
-                modified_files.add(change.name)  # Changed back from path to name
+                modified_files.add(change.name)
             elif change.operation == 'rename_file':
                 modified_files.add(change.target)
 

@@ -19,7 +19,7 @@ from pathlib import Path
 from ..agents import agent  # Updated import to use singleton directly
 from .parser import build_change_request_prompt, parse_response
 from .preview import setup_workdir_preview
-from .applier import ChangeApplier
+from .applier.main import ChangeApplier
 
 __all__ = [
     'build_change_request_prompt',

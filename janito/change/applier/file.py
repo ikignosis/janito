@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Tuple, Optional
 from rich.console import Console
-from .parser import FileChange, ChangeOperation
+from ..parser import FileChange, ChangeOperation
 
 class FileChangeApplier:
     def __init__(self, preview_dir: Path, console: Console = None):

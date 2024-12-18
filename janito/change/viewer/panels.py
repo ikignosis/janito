@@ -100,11 +100,11 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
             # Show modification type and reason with rich rule
             reason_text = f" - {text_change.reason}" if text_change.reason else ""
             if text_change.search_content and text_change.replace_content:
-                console.print(Rule(f" Replace Changes{reason_text} ", style="bold cyan", align="center"))
+                console.print(Rule(f" Replace Text{reason_text} ", style="bold cyan", align="center"))
             elif not text_change.search_content:
-                console.print(Rule(f" Append Changes{reason_text} ", style="bold green", align="center"))
+                console.print(Rule(f" Append Text{reason_text} ", style="bold green", align="center"))
             elif not text_change.replace_content:
-                console.print(Rule(f" Delete Changes{reason_text} ", style="bold red", align="center"))
+                console.print(Rule(f" Delete Text{reason_text} ", style="bold red", align="center"))
 
             # Format and display each section
             for i, (orig_section, new_section) in enumerate(sections):

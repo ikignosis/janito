@@ -11,7 +11,6 @@ from janito.change.history import save_changes_to_history
 from janito.config import config
 from janito.scan import collect_files_content
 from .viewer import preview_all_changes
-from .text_applier import TextChangeApplier
 from janito.scan.analysis import analyze_workspace_content as show_content_stats
 
 from . import (
@@ -114,45 +113,45 @@ def play_saved_changes(history_file: Path, preview_only: bool = False) -> Tuple[
         history_file: Path to the history file that was played
     """
     console = Console()
-    
+
     if not history_file.exists():
         console.print(f"[red]History file not found: {history_file}[/red]")
         return False, None
-        
+
     try:
         content = history_file.read_text()
         changes = parse_response(content)
-        
+
         if not changes:
             console.print("[yellow]No changes found in history file[/yellow]")
             return False, None
-            
+
         if preview_only:
             preview_all_changes(console, changes)
             return True, history_file
-            
+
         # Create preview directory and apply changes
         _, preview_dir = setup_workdir_preview()
         applier = ChangeApplier(preview_dir)
-        
+
         success, _ = applier.apply_changes(changes)
         if success:
             preview_all_changes(console, changes)
-            
+
             if not config.auto_apply:
                 apply_changes = Confirm.ask("[cyan]Apply changes to working dir?[/cyan]", default=False)
             else:
                 apply_changes = True
                 console.print("[cyan]Auto-applying changes to working dir...[/cyan]")
-                
+
             if apply_changes:
                 applier.apply_to_workdir(changes)
                 console.print("[green]Changes applied successfully[/green]")
             else:
                 console.print("[yellow]Changes were not applied[/yellow]")
-                
+
         return success, history_file
-        
+
     except Exception as e:
         console.print(f"[red]Error playing changes: {str(e)}[/red]")
         return False, None

@@ -65,18 +65,34 @@ def analyze_workspace_content(content: str) -> None:
     content_sections = []
 
     if paths:
+        # Group paths with their stats
+        path_stats = []
+        for path in sorted(set(paths)):
+            base_path = Path(path.rstrip("/*"))
+            total_files = sum(1 for d, count in dir_counts.items()
+                             if Path(d).is_relative_to(base_path))
+            total_size = sum(size for d, size in dir_sizes.items()
+                            if Path(d).is_relative_to(base_path))
+            path_stats.append(f"{path} [{total_files} file(s), {_format_size(total_size)}]")
+
         content_sections.extend([
             "[bold yellow]📌 Included Paths[/bold yellow]",
             Rule(style="yellow"),
-            " ".join(sorted(set(paths))),
+            Columns(path_stats, equal=True, expand=True),
             "\n"
         ])
 
+    # Add directory structure section only in verbose mode
+    if config.verbose:
+        content_sections.extend([
+            "[bold magenta]📂 Directory Structure[/bold magenta]",
+            Rule(style="magenta"),
+            Columns(dir_stats, equal=True, expand=True),
+            "\n"
+        ])
+
+    # Always show file types section
     content_sections.extend([
-        "[bold magenta]📂 Directory Structure[/bold magenta]",
-        Rule(style="magenta"),
-        Columns(dir_stats, equal=True, expand=True),
-        "\n",
         "[bold cyan]📑 File Types[/bold cyan]",
         Rule(style="cyan"),
         Columns(type_stats, equal=True, expand=True)

@@ -19,23 +19,70 @@ def _create_option_content(option: AnalysisOption) -> Text:
     """Create formatted content for a single option."""
     content = Text()
 
-    # Option header
-    content.append(f"Option {option.letter}\n", style="bold cyan")
-    content.append("═" * 20 + "\n", style="cyan")
-    content.append(f"{option.summary}\n\n")
+    # Option header with fixed width for consistent centering
+    header_text = f"Option {option.letter}"
+    header = Text()
+    header.append(" " * ((20 - len(header_text)) // 2))
+    header.append(header_text, style="bold cyan")
+    content.append(header)
+    content.append("\n")
 
-    # Description section
+    # Centered separator
+    separator = Text()
+    separator.append("═" * 20, style="cyan")
+    content.append(separator)
+    content.append("\n")
+
+    # Summary with proper centering
+    summary_lines = option.summary.split()
+    current_line = []
+    line_length = 0
+
+    # Word wrap summary to fit width
+    for word in summary_lines:
+        if line_length + len(word) + 1 <= 20:
+            current_line.append(word)
+            line_length += len(word) + 1
+        else:
+            if current_line:
+                line_text = " ".join(current_line)
+                padding = (20 - len(line_text)) // 2
+                content.append(" " * padding + line_text + "\n")
+            current_line = [word]
+            line_length = len(word)
+
+    if current_line:
+        line_text = " ".join(current_line)
+        padding = (20 - len(line_text)) // 2
+        content.append(" " * padding + line_text)
+    content.append("\n\n")
+
+    # Description section with fixed-width centering
     if option.description_items:
-        content.append("Description\n", style="bold cyan")
-        content.append("─" * 20 + "\n", style="cyan")
+        desc_text = "Description"
+        padding = (20 - len(desc_text)) // 2
+        desc_header = Text()
+        desc_header.append(" " * padding + desc_text, style="bold cyan")
+        content.append(desc_header)
+        content.append("\n")
+        desc_separator = Text("─" * 20, style="cyan")
+        content.append(desc_separator)
+        content.append("\n")
         for item in option.description_items:
             content.append(f"• {item}\n")
         content.append("\n")
 
-    # Affected files section
+    # Affected files section with fixed-width centering
     if option.affected_files:
-        content.append("Affected Files\n", style="bold cyan")
-        content.append("─" * 20 + "\n", style="cyan")
+        files_text = "Affected Files"
+        padding = (20 - len(files_text)) // 2
+        files_header = Text()
+        files_header.append(" " * padding + files_text, style="bold cyan")
+        content.append(files_header)
+        content.append("\n")
+        files_separator = Text("─" * 20, style="cyan")
+        content.append(files_separator)
+        content.append("\n")
 
         # Group files by status
         files = {status: [] for status in ['Modified', 'New', 'Removed']}
@@ -62,7 +109,11 @@ def _create_option_content(option: AnalysisOption) -> Text:
                     # Handle directory alignment
                     current_dir = str(Path(path).parent)
                     if prev_dir and current_dir == prev_dir:
-                        dir_display = "↑".ljust(len(current_dir))
+                        # Center the arrow in the space
+                        padding = len(current_dir)
+                        left_pad = (padding - 1) // 2  # -1 for arrow width
+                        right_pad = padding - left_pad - 1
+                        dir_display = " " * left_pad + "↑" + " " * right_pad
                     else:
                         dir_display = current_dir
                         prev_dir = current_dir
