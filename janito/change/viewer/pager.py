@@ -2,19 +2,15 @@ from rich.console import Console
 import shutil
 from typing import Optional
 
-def clear_last_line(console: Console):
-    """Clear the last line in the terminal"""
-    console.print("\r\033[1A\033[2K", end="")
-
 def wait_for_enter(console: Console):
     """Wait for ENTER key press to continue with progress indicator"""
     console.print("\n[yellow]More content to show[/yellow]")
-    console.print("[dim]Press ENTER to continue...[/dim]")
+    console.print("[dim]Press ENTER to continue...[/dim]", end="")
     try:
         input()
-        clear_last_line(console)
-        clear_last_line(console)
+        console.print()  # Just add a newline
     except KeyboardInterrupt:
+        console.print()  # Just add a newline
         raise KeyboardInterrupt
 
 # Track current file being displayed
@@ -40,18 +36,20 @@ def check_pager(console: Console, height: int, content_height: Optional[int] = N
     Returns:
         New accumulated height
     """
+    # Get current file being displayed
+    current_file = get_current_file()
+    if not current_file:
+        return height
+
     term_height = shutil.get_terminal_size().lines
     margin = 5  # Add margin to prevent too early paging
-    available_height = term_height - margin  # Leave more room at start
+    available_height = term_height - margin
 
-    # If we know the upcoming content height and it won't fit, page now
-    if content_height and (height + content_height > available_height):
-        wait_for_enter(console)
-        return 0
+    # Calculate total height including upcoming content
+    total_height = height + (content_height or 0)
 
-    # Otherwise check if current height exceeds threshold
-    # Add extra room for first page
-    if height >= available_height - (3 if height < term_height else 0):
+    # Only page if we're at a file boundary or content won't fit
+    if total_height > available_height:
         wait_for_enter(console)
         return 0
 

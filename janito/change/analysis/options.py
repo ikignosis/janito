@@ -29,16 +29,13 @@ class AnalysisOption:
         return text
 
     def is_new_directory(self, file_path: str) -> bool:
-        """Check if file path represents a new directory"""
+        """Check if file path represents the first occurrence of a directory"""
         parent = str(Path(file_path).parent)
-        if parent == '.':
-            return False
-            
-        for other_file in self.affected_files:
-            if '(new)' not in other_file and parent in other_file:
-                return False
-                
-        return True
+        return parent != '.' and not any(
+            parent in self.get_clean_path(file)
+            for file in self.affected_files
+            if self.get_clean_path(file) != file_path
+        )
 
     def get_clean_path(self, file_path: str) -> str:
         """Remove status markers from file path"""

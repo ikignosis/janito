@@ -16,6 +16,7 @@ from .pager import check_pager  # Add this import
 # Remove clear_last_line, wait_for_space, and check_pager functions since they've been moved
 
 def preview_all_changes(console: Console, changes: List[FileChange]) -> None:
+    """Show a summary of all changes with side-by-side comparison and continuous flow."""
     """Show a summary of all changes with side-by-side comparison."""
     total_changes = len(changes)
 
@@ -52,6 +53,10 @@ def preview_all_changes(console: Console, changes: List[FileChange]) -> None:
             show_side_by_side_diff(console, change, i, total_changes)
 
 def _show_file_operations(console: Console, grouped_changes: dict) -> int:
+    """Display file operation summaries with content preview for new files.
+
+    Tracks current file being displayed and manages continuous flow.
+    """
     """Display file operation summaries with content preview for new files."""
     height = 0
     for operation, group in grouped_changes.items():
@@ -76,6 +81,14 @@ def _show_file_operations(console: Console, grouped_changes: dict) -> int:
     return height
 
 def show_side_by_side_diff(console: Console, change: FileChange, change_index: int = 0, total_changes: int = 1) -> None:
+    """Show side-by-side diff panels for a file change with continuous flow.
+
+    Args:
+        console: Rich console instance
+        change: FileChange object containing the changes
+        change_index: Current change number (0-based)
+        total_changes: Total number of changes
+    """
     """Show side-by-side diff panels for a file change with progress tracking and reason
 
     Args:
@@ -115,6 +128,10 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
     # Track content height
     current_height += 1
 
+    # Check if we need to page before showing header
+    header_height = 3  # Account for panel borders and content
+    current_height = check_pager(console, current_height, header_height)
+
     # Show the header with reason and progress
     operation = change.operation.name.replace('_', ' ').title()
     progress = f"Change {change_index + 1}/{total_changes}"
@@ -131,7 +148,7 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
     header.append(reason_text)
     # Display panel with centered content
     console.print(Panel(header, box=box.HEAVY, style="cyan", title_align="center"))
-    current_height += 3  # Account for panel borders and content
+    current_height += header_height
 
     # Show layout mode indicator
     if not can_do_side_by_side:

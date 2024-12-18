@@ -25,11 +25,13 @@ AI-powered CLI tool for code modifications and analysis. Janito helps you modify
 
 ## ✨ Features
 
-- Code modifications using natural language requests
+- Natural language code modifications
 - Codebase analysis and question answering
-- Interactive TUI mode for better visualization
-- File scanning and preview capabilities
+- Smart search and replace with indentation awareness
 - Git-aware operations
+- Interactive shell mode
+- Change preview and validation
+- Automatic backup and restore
 
 ## 🚀 Installation
 
@@ -73,8 +75,8 @@ janito --ask "explain the main function in this file"
 # Preview files that would be analyzed
 janito --scan
 
-# Use interactive TUI mode
-janito "refactor this code" --tui
+# Start interactive shell
+janito
 ```
 
 ### Common Use Cases
@@ -112,8 +114,8 @@ janito "split this large function into smaller ones"
 - `-i, --include`: Additional paths to include
 - `--debug`: Show debug information
 - `--verbose`: Show verbose output
-- `--tui`: Use terminal user interface
 - `--auto-apply`: Apply changes without confirmation
+- `--history`: Display history of requests
 
 ## 🔧 Troubleshooting
 

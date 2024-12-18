@@ -33,7 +33,7 @@ def validate_paths(paths: Optional[List[Path]]) -> Optional[List[Path]]:
     for path in paths:
         resolved = path.absolute().resolve()
         if resolved in resolved_paths:
-            error_text = Text(f"\nError: Duplicate path provided: {path}", style="red")
+            error_text = Text(f"\nError: Duplicate path provided: {path} ", style="red")
             rich_print(error_text)
             raise typer.Exit(1)
         resolved_paths.add(resolved)
@@ -103,7 +103,7 @@ def typer_main(
         for path in recursive:
             final_path = config.workspace_dir / path
             if not path.is_dir():
-                error_text = Text(f"\nError: Recursive path must be a directory: {path}", style="red")
+                error_text = Text(f"\nError: Recursive path must be a directory: {path} ", style="red")
                 rich_print(error_text)
                 raise typer.Exit(1)
             resolved_paths.append(final_path.resolve())

@@ -16,6 +16,8 @@ from ..formatting import (
     COLUMN_SPACING,
     MIN_PANEL_WIDTH,
     SECTION_PADDING,
+    STATUS_COLORS,
+    STRUCTURAL_COLORS,
     create_header,
     create_section_header,
     format_file_path
@@ -70,6 +72,9 @@ def _create_option_content(option: AnalysisOption) -> Text:
             content.append(f"{item}\n")
         content.append("\n")
 
+    # Add consistent padding before file list
+    content.append("\n" * 2)
+
     if option.affected_files:
         files = {status: [] for status in ['New', 'Modified', 'Removed']}
         for file in option.affected_files:
@@ -84,12 +89,30 @@ def _create_option_content(option: AnalysisOption) -> Text:
             if status_files:
                 content.append(create_section_header(f"{status} Files"))
                 content.append("\n")
-                for file in sorted(status_files):
+                sorted_files = sorted(status_files)
+                prev_path = None
+                seen_dirs = {}
+                for file in sorted_files:
                     path = option.get_clean_path(file)
-                    is_new_dir = option.is_new_directory(path)
-                    content.append(format_file_path(path, status, is_new_dir))
+                    current_parts = Path(path).parts
+                    parent_dir = str(Path(path).parent)
+
+                    if parent_dir != '.':
+                        is_repeated = parent_dir in seen_dirs
+                        if not is_repeated:
+                            content.append(parent_dir, style=STRUCTURAL_COLORS['directory'])
+                            content.append("/", style=STRUCTURAL_COLORS['separator'])
+                            seen_dirs[parent_dir] = True
+                        else:
+                            padding = " " * (len(parent_dir) - 1)
+                            content.append(padding)
+                            content.append("↑ ", style=STRUCTURAL_COLORS['repeat'])
+                            content.append("/", style=STRUCTURAL_COLORS['separator'])
+                        content.append(current_parts[-1], style=STATUS_COLORS[status.lower()])
+                    else:
+                        content.append(current_parts[-1], style=STATUS_COLORS[status.lower()])
                     content.append("\n")
-                content.append("\n")
+            content.append("\n")
 
         content.append("\n")
 
