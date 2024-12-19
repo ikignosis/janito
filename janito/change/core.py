@@ -41,13 +41,13 @@ def process_change_request(
     workset.show()
 
     # Get analysis of the request using workset content
-    analysis = analyze_request(request, workset.content)
+    analysis = analyze_request(request)
     if not analysis:
         console.print("[red]Analysis failed or interrupted[/red]")
         return False, None
 
     # Build and send prompt
-    prompt = build_change_request_prompt(request, analysis.format_option_text(), workset.content)
+    prompt = build_change_request_prompt(request, analysis.format_option_text())
     response = progress_send_message(prompt)
     if not response:
         console.print("[red]Failed to get response from AI[/red]")

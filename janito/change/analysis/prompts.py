@@ -12,12 +12,9 @@ from .options import AnalysisOption
 
 # Keep only prompt-related functionality
 CHANGE_ANALYSIS_PROMPT = """
-Current files:
-<files>
-{files_content}
-</files>
 
-Considering the above current files content, provide 3 sections, each identified by a keyword and representing an option.
+
+Considering the above workset content, provide 3 sections, each identified by a keyword and representing an option.
 Each option should include a concise description and a list of affected files.
 1st option should be basic style change, 2nd organized style, 3rd exntensible style.
 Do not use style as keyword, instead focus on the changes summary.
@@ -86,13 +83,8 @@ def get_option_selection() -> str:
         padded_error = " " * error_padding + error_msg
         console.print(f"[red]{padded_error}[/red]")
 
-def build_request_analysis_prompt(request: str, files_content_xml: str) -> str:
+def build_request_analysis_prompt(request: str) -> str:
     """Build prompt for information requests"""
     return CHANGE_ANALYSIS_PROMPT.format(
-        files_content=files_content_xml,
         request=request
     )
-
-    def build_request_analysis_prompt(request: str, files_content_xml: str) -> str:
-        """Build analysis prompt with minimal formatting."""
-        return f"Current files:\n{files_content_xml}\n\nRequest:\n{request}"

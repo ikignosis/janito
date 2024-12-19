@@ -15,7 +15,6 @@ from .prompts import (
 
 def analyze_request(
     request: str,        
-    files_content_xml: str = None,  # Made optional since we get from workset
     pre_select: str = ""
 ) -> Optional[AnalysisOption]:
     """
@@ -32,7 +31,7 @@ def analyze_request(
     workset = Workset()  # Create workset instance
        
     # Build and send prompt using workset content directly
-    prompt = build_request_analysis_prompt(request, workset.content)
+    prompt = build_request_analysis_prompt(request)
     response = progress_send_message(prompt)
     
     # Parse and handle options

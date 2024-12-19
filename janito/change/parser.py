@@ -267,7 +267,6 @@ def parse_response(response_text: str) -> List[FileChange]:
 def build_change_request_prompt(
     option_text: str,
     request: str,
-    files_content_xml: str = ""
 ) -> str:
     """Build prompt for change request details
     
@@ -284,6 +283,5 @@ def build_change_request_prompt(
     return CHANGE_REQUEST_PROMPT.format(
         option_text=option_text,
         request=request,
-        files_content=files_content_xml,
         uuid=short_uuid
     )
