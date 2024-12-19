@@ -7,17 +7,41 @@ LINE_OVER_LINE_DEBUG = False
 
 class SearchStrategy(ABC):
     """Base class for search strategies."""
+
     def __init__(self):
-        """Initialize strategy with name derived from class"""
+        """Initialize strategy with name derived from class name."""
         self.name = self.__class__.__name__.replace('Strategy', '')
 
     @abstractmethod
     def match(self, source_lines: List[str], pattern_lines: List[str], pos: int, searcher: 'Searcher') -> bool:
+        """Check if pattern matches source at given position.
+        
+        Args:
+            source_lines: List of source code lines to search in
+            pattern_lines: List of pattern lines to match
+            pos: Position in source_lines to start matching
+            searcher: Searcher instance for utility methods
+            
+        Returns:
+            bool: True if pattern matches at position, False otherwise
+        """
         pass
 
 class ExactMatchStrategy(SearchStrategy):
-    """Exact match including indentation."""
+    """Strategy for exact match including indentation."""
+
     def match(self, source_lines: List[str], pattern_lines: List[str], pos: int, searcher: 'Searcher') -> bool:
+        """Match pattern exactly with indentation.
+        
+        Args:
+            source_lines: List of source code lines to search in
+            pattern_lines: List of pattern lines to match
+            pos: Position in source_lines to start matching
+            searcher: Searcher instance for utility methods
+            
+        Returns:
+            bool: True if pattern matches exactly at position, False otherwise
+        """
         if pos + len(pattern_lines) > len(source_lines):
             return False
         return all(source_lines[pos + i] == pattern_line 
@@ -25,7 +49,19 @@ class ExactMatchStrategy(SearchStrategy):
 
 class ExactContentStrategy(SearchStrategy):
     """Exact content match ignoring all indentation."""
+
     def match(self, source_lines: List[str], pattern_lines: List[str], pos: int, searcher: 'Searcher') -> bool:
+        """Match pattern exactly ignoring indentation.
+        
+        Args:
+            source_lines: List of source code lines to search in
+            pattern_lines: List of pattern lines to match
+            pos: Position in source_lines to start matching
+            searcher: Searcher instance for utility methods
+            
+        Returns:
+            bool: True if pattern matches exactly at position, False otherwise
+        """
         if pos + len(pattern_lines) > len(source_lines):
             return False
         return all(source_lines[pos + i].strip() == pattern_line.strip()
@@ -34,7 +70,19 @@ class ExactContentStrategy(SearchStrategy):
 
 class IndentAwareStrategy(SearchStrategy):
     """Indentation-aware matching preserving relative indentation."""
+
     def match(self, source_lines: List[str], pattern_lines: List[str], pos: int, searcher: 'Searcher') -> bool:
+        """Match pattern preserving relative indentation.
+        
+        Args:
+            source_lines: List of source code lines to search in
+            pattern_lines: List of pattern lines to match
+            pos: Position in source_lines to start matching
+            searcher: Searcher instance for utility methods
+            
+        Returns:
+            bool: True if pattern matches preserving indentation at position, False otherwise
+        """
         if pos + len(pattern_lines) > len(source_lines):
             return False
         match_indent = searcher.get_indentation(source_lines[pos])
@@ -44,6 +92,7 @@ class IndentAwareStrategy(SearchStrategy):
 
 class ExactContentNoComments(SearchStrategy):
     """Exact content match ignoring indentation, comments, and empty lines."""
+
     def _strip_comments(self, line: str) -> str:
         """Remove comments from line."""
         if '#' in line:
@@ -53,6 +102,17 @@ class ExactContentNoComments(SearchStrategy):
         return line.strip()
 
     def match(self, source_lines: List[str], pattern_lines: List[str], pos: int, searcher: 'Searcher') -> bool:
+        """Match pattern ignoring comments and empty lines.
+        
+        Args:
+            source_lines: List of source code lines to search in
+            pattern_lines: List of pattern lines to match
+            pos: Position in source_lines to start matching
+            searcher: Searcher instance for utility methods
+            
+        Returns:
+            bool: True if pattern matches ignoring comments at position, False otherwise
+        """
         if pos + len(pattern_lines) > len(source_lines):
             return False
 
@@ -98,6 +158,7 @@ class ExactContentNoComments(SearchStrategy):
 
 class ExactContentNoCommentsFirstLinePartial(SearchStrategy):
     """Match first line partially, ignoring comments."""
+
     def _strip_comments(self, line: str) -> str:
         """Remove comments from line."""
         if '#' in line:
@@ -107,6 +168,17 @@ class ExactContentNoCommentsFirstLinePartial(SearchStrategy):
         return line.strip()
 
     def match(self, source_lines: List[str], pattern_lines: List[str], pos: int, searcher: 'Searcher') -> bool:
+        """Match first line of pattern partially ignoring comments.
+        
+        Args:
+            source_lines: List of source code lines to search in
+            pattern_lines: List of pattern lines to match
+            pos: Position in source_lines to start matching
+            searcher: Searcher instance for utility methods
+            
+        Returns:
+            bool: True if first line of pattern matches partially at position, False otherwise
+        """
         if pos >= len(source_lines):
             return False
 
@@ -181,7 +253,14 @@ class Searcher:
         return '', 0
 
     def _build_indent_map(self, text: str) -> dict[int, int]:
-        """Build a map of line numbers to indentation levels."""
+        """Build a map of line numbers to their indentation levels.
+        
+        Args:
+            text: Source text to analyze
+            
+        Returns:
+            dict[int, int]: Mapping of line numbers to indentation levels
+        """
         indent_map = {}
         for i, line in enumerate(text.splitlines()):
             if line.strip():  # Only track non-empty lines
@@ -224,7 +303,16 @@ class Searcher:
         return '\n'.join(normalized)
 
     def _find_best_match_position(self, positions: List[int], source_lines: List[str], pattern_base_indent: int) -> Optional[int]:
-        """Find the best matching position based on line number (earliest match)."""
+        """Find the best matching position among candidates.
+        
+        Args:
+            positions: List of candidate line positions
+            source_lines: List of source code lines
+            pattern_base_indent: Base indentation level of pattern
+            
+        Returns:
+            Optional[int]: Best matching position or None if no matches
+        """
         if self.debug_mode:
             print(f"[DEBUG] Finding best match among positions: {[p+1 for p in positions]}")  # Show 1-based line numbers
 
@@ -238,7 +326,17 @@ class Searcher:
 
     def try_match_with_strategies(self, source_lines: List[str], pattern_lines: List[str],
                                 pos: int, strategies: List[SearchStrategy]) -> StrategyResult:
-        """Try matching using multiple strategies in order."""
+        """Try matching using multiple strategies in sequence.
+        
+        Args:
+            source_lines: List of source code lines
+            pattern_lines: List of pattern lines to match
+            pos: Position to start matching
+            strategies: List of strategies to try
+            
+        Returns:
+            StrategyResult: Result containing match success and strategy used
+        """
         if self.debug_mode and LINE_OVER_LINE_DEBUG:
             print(f"\n[DEBUG] Trying to match at line {pos + 1}")
 
@@ -252,7 +350,16 @@ class Searcher:
 
     def _find_matches(self, source_lines: List[str], pattern_lines: List[str],
                      file_ext: Optional[str] = None) -> List[int]:
-        """Find all matches using configured strategies."""
+        """Find all matching positions using available strategies.
+        
+        Args:
+            source_lines: List of source code lines
+            pattern_lines: List of pattern lines to match
+            file_ext: Optional file extension to determine strategies
+            
+        Returns:
+            List[int]: List of matching line positions
+        """
         strategies = self.get_strategies(file_ext)
 
         if self.debug_mode:
@@ -289,7 +396,16 @@ class Searcher:
         return sorted(all_matches)
 
     def _check_exact_match(self, source_lines: List[str], pattern_lines: List[str], pos: int) -> bool:
-        """Helper method to check for exact matches."""
+        """Check for exact line-by-line match at position.
+        
+        Args:
+            source_lines: List of source code lines
+            pattern_lines: List of pattern lines to match
+            pos: Position to check for match
+            
+        Returns:
+            bool: True if exact match found, False otherwise
+        """
         if pos + len(pattern_lines) > len(source_lines):
             return False
         return all(source_lines[pos + j] == pattern_lines[j] for j in range(len(pattern_lines)))

@@ -3,7 +3,7 @@ from typing import Optional
 from prompt_toolkit import PromptSession
 from rich.console import Console
 from janito.config import config
-from janito.workspace import workspace
+from janito.workspace.workset import Workset
 from .processor import CommandProcessor
 from .commands import register_commands
 from .registry import CommandRegistry
@@ -12,8 +12,6 @@ def start_shell() -> None:
     """Start the Janito interactive shell."""
     # Create single registry instance
     registry = CommandRegistry()
-    
-    # Register commands with registry
     register_commands(registry)
     
     # Create shell components with shared registry
@@ -21,16 +19,14 @@ def start_shell() -> None:
     session = create_shell_session(registry)
     processor = CommandProcessor(registry)
 
-    # Perform workspace analysis
+    # Initialize workset content
     console = Console()
+    workset = Workset()
+    workset.refresh()
+    workset.analyze()
 
-    # Use configured paths or default to workspace_dir
-    scan_paths = config.include if config.include else [config.workspace_dir]
-    workspace.collect_content(scan_paths)
-    workspace.analyze()
-
-    # Store workspace content in processor for session
-    processor.workspace_content = workspace.get_content()
+    # Store workset content in processor for session
+    processor.workspace_content = workset.content
 
     while True:
         try:

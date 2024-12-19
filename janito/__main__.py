@@ -9,7 +9,7 @@ from .version import get_version
 
 from janito.agents import agent
 from janito.config import config
-
+from janito.workspace import workspace, workset
 from .cli.commands import handle_request, handle_ask, handle_play, handle_scan
 
 app = typer.Typer(add_completion=False)
@@ -76,26 +76,21 @@ def typer_main(
         display_history()
         return
 
+    # Configure workspace
     config.set_workspace_dir(workspace_dir)
     config.set_debug(debug)
     config.set_verbose(verbose)
     config.set_auto_apply(auto_apply)
-    config.set_include(include)
     config.set_tui(tui)
-    config.set_skip_work(skip_work)
 
-    # Validate skip_work usage
-    if skip_work and not include and not recursive:
-        error_text = Text("\nError: --skip-work requires at least one include path (-i or -r)", style="red")
-        rich_print(error_text)
-        raise typer.Exit(1)
-
+    # Configure workset
+    workset.skip_workspace(skip_work)
     if include:
         resolved_paths = []
         for path in include:
             path = config.workspace_dir / path
             resolved_paths.append(path.resolve())
-        config.set_include(resolved_paths)
+        workset.include(resolved_paths)
 
     # Validate recursive paths
     if recursive:
@@ -107,21 +102,29 @@ def typer_main(
                 rich_print(error_text)
                 raise typer.Exit(1)
             resolved_paths.append(final_path.resolve())
-        config.set_recursive(resolved_paths)
-        include = include or []
-        include.extend(resolved_paths)
-        config.set_include(include)
+        workset.recursive(resolved_paths)
+        # Add recursive paths to include paths
+        all_paths = list(workset.paths) + resolved_paths
+        workset.include(all_paths)
+
+    # Validate skip_work usage
+    if skip_work and not workset.paths:
+        error_text = Text("\nError: --skip-work requires at least one include path (-i or -r)", style="red")
+        rich_print(error_text)
+        raise typer.Exit(1)
 
     if test_cmd:
         config.set_test_cmd(test_cmd)
+
+    # Refresh workset content before handling commands
+    workset.refresh()
 
     if ask:
         handle_ask(ask)
     elif play:
         handle_play(play)
     elif scan:
-        paths_to_scan = include or [config.workspace_dir]
-        handle_scan(paths_to_scan)
+        handle_scan(workset.get_scan_paths())
     elif change_request:
         handle_request(change_request)
     else:

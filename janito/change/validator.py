@@ -3,7 +3,7 @@ import ast
 # Remove the process_change_request function if it exists in this file
 # Keep all other existing code
 from pathlib import Path
-from typing import Optional, Tuple, Optional, List, Set
+from typing import Optional, Tuple, List, Set
 from rich.console import Console
 from rich.prompt import Confirm
 from rich.panel import Panel
@@ -13,10 +13,9 @@ from rich import box
 from janito.common import progress_send_message
 from janito.change.history import save_changes_to_history
 from janito.config import config
-from janito.workspace.scan import collect_files_content
+from janito.workspace import workset  # Updated import
 from .viewer import preview_all_changes
-from janito.workspace.analysis import analyze_workspace_content as show_content_stats
-from .parser import FileChange
+from .parser import FileChange, ChangeOperation
 
 from .analysis import analyze_request
 
@@ -249,3 +248,27 @@ def validate_file_operations(changes: List[FileChange], collected_files: Set[Pat
                 return False, f"Source file not found for rename/move: {change.source}"
 
     return True, ""
+
+def process_change_request(request: str) -> None:
+    """Process a change request by analyzing, validating and applying changes."""
+    # Ensure workset is refreshed before processing changes
+    workset.refresh()
+    
+    # Analyze the request and get proposed changes
+    changes = analyze_request(request, workset._workspace.content)
+    if not changes:
+        return
+
+    # Collect the set of scanned files from workspace content
+    collected_files = {Path(line.replace('<path>', '').replace('</path>', '').strip()) 
+                      for line in workset._workspace.content.split('\n') 
+                      if line.startswith('<path>')}
+
+    # Validate changes
+    is_valid, error = validate_all_changes(changes, collected_files)
+    if not is_valid:
+        console = Console()
+        console.print(f"\n[red]Error:[/red] {error}")
+        return
+
+    # ...rest of existing function code...

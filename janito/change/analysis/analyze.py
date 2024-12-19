@@ -1,10 +1,10 @@
 """Core analysis functionality."""
 
-from typing import Optional, Dict
-
+from typing import Optional
 from janito.agents import agent
 from janito.common import progress_send_message
 from janito.config import config
+from janito.workspace.workset import Workset
 from .view import format_analysis
 from .options import AnalysisOption, parse_analysis_options
 from .prompts import (
@@ -15,25 +15,30 @@ from .prompts import (
 
 def analyze_request(
     request: str,        
-    files_content_xml: str,
+    files_content_xml: str = None,  # Made optional since we get from workset
     pre_select: str = ""
 ) -> Optional[AnalysisOption]:
     """
     Analyze changes and get user selection.
     
     Args:
-        files_content: Content of files to analyze
         request: User's change request
+        files_content_xml: Optional content of files to analyze
         pre_select: Optional pre-selected option letter
         
     Returns:
         Selected AnalysisOption or None if modified
     """
-    # Build and send prompt
-    prompt = build_request_analysis_prompt(request, files_content_xml)
+    workset = Workset()  # Create workset instance
+    
+    # Ensure content is refreshed
+    workset.refresh()
+    
+    # Build and send prompt using workset content directly
+    prompt = build_request_analysis_prompt(request, workset.content)
     response = progress_send_message(prompt)
     
-    # Parse options
+    # Parse and handle options
     options = parse_analysis_options(response)
     if not options:
         return None

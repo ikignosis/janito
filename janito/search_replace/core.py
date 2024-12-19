@@ -96,6 +96,7 @@ class SearchReplacer:
             if i == match_pos:
                 self.pattern_found = True
                 # Log successful match if not in debug mode
+                # get the 
                 if not self.searcher.debug_mode:
                     log_match("Strategy", self.file_ext)
                 match_indent = self.searcher.get_indentation(source_lines[i])

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Tuple, Optional, List
+from typing import Optional, Tuple, List
 from rich.console import Console
 from rich.prompt import Confirm
 from rich.panel import Panel
@@ -9,7 +9,7 @@ from rich import box
 from janito.common import progress_send_message
 from janito.change.history import save_changes_to_history
 from janito.config import config
-from janito.workspace.scan import collect_files_content
+from janito.workspace.workset import Workset  # Update import to use Workset directly
 from .viewer import preview_all_changes
 from janito.workspace.analysis import analyze_workspace_content as show_content_stats
 
@@ -34,24 +34,28 @@ def process_change_request(
         history_file: Path to the saved history file
     """
     console = Console()
-    paths_to_scan = config.include if config.include else [config.workspace_dir]
+    workset = Workset()  # Create workset instance
+    
+    # Refresh workset content
+    workset.refresh()
+    
+    # Analyze workspace content
+    workset.analyze()
 
-    content_xml = collect_files_content(paths_to_scan)
-
-    # Show workspace content preview
-    show_content_stats(content_xml)
-
-    analysis = analyze_request(request, content_xml)
+    # Get analysis of the request using workset content
+    analysis = analyze_request(request, workset.content)
     if not analysis:
         console.print("[red]Analysis failed or interrupted[/red]")
         return False, None
 
-    prompt = build_change_request_prompt(request, analysis.format_option_text(), content_xml)
+    # Build and send prompt
+    prompt = build_change_request_prompt(request, analysis.format_option_text(), workset.content)
     response = progress_send_message(prompt)
     if not response:
         console.print("[red]Failed to get response from AI[/red]")
         return False, None
 
+    # Save to history and process response
     history_file = save_changes_to_history(response, request)
 
     # Parse changes
@@ -60,34 +64,25 @@ def process_change_request(
         console.print("[yellow]No changes found in response[/yellow]")
         return False, None
 
-    # Extract response info after END_OF_INSTRUCTIONS
+    # Show request and response info
     response_info = extract_response_info(response)
-
-    # Show request and response info in panels
-    request_panel = Panel(
-        request,
-        title="User Request",
-        border_style="cyan",
-        box=box.ROUNDED
-    )
-    response_panel = Panel(
-        response_info if response_info else "No additional information provided",
-        title="Response Information",
-        border_style="green",
-        box=box.ROUNDED
-    )
-
-    # Display panels side by side
-    columns = Columns([request_panel, response_panel], equal=True, expand=True)
     console.print("\n")
-    console.print(columns)
+    console.print(Columns([
+        Panel(request, title="User Request", border_style="cyan", box=box.ROUNDED),
+        Panel(
+            response_info if response_info else "No additional information provided",
+            title="Response Information",
+            border_style="green",
+            box=box.ROUNDED
+        )
+    ], equal=True, expand=True))
     console.print("\n")
 
     if preview_only:
         preview_all_changes(console, changes)
         return True, history_file
 
-    # Create preview directory and apply changes
+    # Apply changes
     _, preview_dir = setup_workspace_dir_preview()
     applier = ChangeApplier(preview_dir, debug=debug)
 

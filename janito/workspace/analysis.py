@@ -104,11 +104,11 @@ def analyze_workspace_content(content: str) -> None:
 
     content = Group(*content_sections)
 
-    # Display workspace analysis in panel
+    # Display workset analysis in panel
     console.print("\n")
     console.print(Panel(
         content,
-        title="[bold blue]Workspace Analysis[/bold blue]",
+        title="[bold blue]Workset Analysis[/bold blue]",
         title_align="center"
     ))
 

@@ -1,12 +1,9 @@
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
-from rich.syntax import Syntax
-from rich.table import Table
 from rich.rule import Rule
-from janito.agents import AIAgent
 from janito.common import progress_send_message
-from janito.workspace import workspace
+from janito.workspace import workset  # Updated import
 
 
 QA_PROMPT = """Please provide a clear and concise answer to the following question about the codebase:
@@ -22,14 +19,15 @@ Focus on providing factual information and explanations. Do not suggest code cha
 Format your response using markdown with appropriate headers and code blocks.
 """
 
-def ask_question(question: str, files_content: str) -> str:
+def ask_question(question: str, files_content: str = None) -> str:
     """Process a question about the codebase and return the answer"""
-    # Analyze workspace content if needed
-    workspace.analyze()
+    # Ensure content is refreshed and analyzed
+    workset.refresh()
+    workset.analyze()
     
     prompt = QA_PROMPT.format(
         question=question,
-        files_content=files_content
+        files_content=workset._workspace.content
     )
     return progress_send_message(prompt)
 

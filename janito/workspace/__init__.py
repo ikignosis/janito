@@ -1,7 +1,7 @@
-from .manager import WorkspaceManager
-from .scan import preview_scan, collect_files_content, is_dir_empty
+from .workset import Workset
+from .scan import preview_scan, is_dir_empty
 
 # Create singleton instance
-workspace = WorkspaceManager.get_instance()
+workset = Workset()
 
-__all__ = ['workspace', 'preview_scan', 'collect_files_content', 'is_dir_empty']
+__all__ = ['workset', 'preview_scan', 'is_dir_empty']

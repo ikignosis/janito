@@ -8,14 +8,19 @@ from rich import print
 console = Console()
 
 def progress_send_message(message: str) -> str:
-    """
-    Send a message to the AI agent with a progress indicator and elapsed time.
+    """Send a message to the AI agent with progress indication.
+    
+    Displays a progress spinner while waiting for the agent's response and shows
+    token usage statistics after receiving the response.
     
     Args:
-        message: The message to send
+        message: The message to send to the AI agent
         
     Returns:
-        The response from the AI agent
+        str: The response text from the AI agent
+        
+    Note:
+        If the request fails or is canceled, returns the error message as a string
     """
     if config.debug:
         console.print("[yellow]======= Sending message[/yellow]")

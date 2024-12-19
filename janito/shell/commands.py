@@ -7,7 +7,7 @@ from prompt_toolkit.completion import PathCompleter
 from prompt_toolkit.document import Document
 from pathlib import Path
 from janito.config import config
-from janito.workspace import collect_files_content
+from janito.workspace import workset  # Updated import
 from janito.workspace.analysis import analyze_workspace_content
 from .registry import CommandRegistry, Command, get_path_completer
 
@@ -77,9 +77,9 @@ def handle_include(args: str) -> None:
             path = config.workspace_dir / path
         resolved_paths.append(path.resolve())
 
-    config.set_include(resolved_paths)
-    content = collect_files_content(resolved_paths)
-    analyze_workspace_content(content)
+    workset.include(resolved_paths)
+    workset.refresh()
+    workset.analyze()
 
     console.print("[green]Updated include paths:[/green]")
     for path in resolved_paths:
@@ -109,9 +109,10 @@ def handle_rinclude(args: str) -> None:
             path = config.workspace_dir / path
         resolved_paths.append(path.resolve())
 
-    config.set_recursive(resolved_paths)
-    content = collect_files_content(resolved_paths)
-    analyze_workspace_content(content)
+    workset.recursive(resolved_paths)
+    workset.include(resolved_paths)  # Add recursive paths to include paths
+    workset.refresh()
+    workset.analyze()
 
     console.print("[green]Updated recursive include paths:[/green]")
     for path in resolved_paths:
