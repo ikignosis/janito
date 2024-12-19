@@ -13,16 +13,27 @@ def set_theme(theme: ColorTheme) -> None:
     current_theme = theme
 
 def format_content(lines: List[str], search_lines: List[str], replace_lines: List[str], is_search: bool, width: int = 80, is_delete: bool = False) -> Text:
-    """Format content with unified highlighting and indicators"""
+    """Format content with unified highlighting and indicators with full-width padding
+
+    Args:
+        lines: Lines to format
+        search_lines: Original content lines for comparison
+        replace_lines: New content lines for comparison
+        is_search: Whether this is search content (vs replace content)
+        width: Target width for padding
+        is_delete: Whether this is a deletion operation
+    """
     text = Text()
 
-    # For delete operations, show all lines as deleted
+    # For delete operations, show all lines as deleted with full-width padding
     if is_delete:
         for line in lines:
             bg_color = current_theme.line_backgrounds['deleted']
             style = f"{current_theme.text_color} on {bg_color}"
-            content = f"✕ {line}"
-            padding = " " * max(0, width - len(content))
+            # Calculate padding to fill width
+            content_width = len(f"✕ {line}")
+            padding = " " * max(0, width - content_width)
+            # Add content with consistent background
             text.append("✕ ", style=style)
             text.append(line, style=style)
             text.append(padding, style=style)

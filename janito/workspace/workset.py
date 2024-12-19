@@ -23,6 +23,8 @@ class Workset:
         self._scan_paths: List[ScanPath] = []
         self._content = WorksetContent()
         self._workspace = Workspace()
+        if not config.skip_work:
+            self._scan_paths.append(ScanPath(Path("."), ScanType.PLAIN))
 
     def add_scan_path(self, path: Path, scan_type: ScanType) -> None:
         """Add a path with specific scan type."""
@@ -48,7 +50,7 @@ class Workset:
 
     def get_scan_paths(self) -> List[Path]:
         """Get effective scan paths based on configuration"""
-        paths = {Path(".")} if not config.skip_work else set()
+        paths = set()
         paths.update(p.path for p in self._scan_paths)
         return sorted(paths)
 

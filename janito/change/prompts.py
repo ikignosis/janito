@@ -93,26 +93,24 @@ Modify File
 # Eample of an invalid block opening
 Modify File
     /Changes
-        Append
-            reason: Add new functionality
-            content:
-            .def additional_function():
-            .    print("New feature")
-        # change block
-    /Changes (did not close previous change block)
+        Delete
+            reason: Remove deprecated function
+            search:
+            .def deprecated_function():
+            .    print("To be removed")
+    /Changes (invalid bhere because did not close previous change block)
 
 # Valid example (two consecutive blocks closed)
     /Changes
-        Append
-            reason: Add new functionality
-            content:
-            .def additional_function():
-            .    print("New feature")
-        # change block
-    Changes/ # / at end meanns close block
+        Delete
+            reason: Remove deprecated function
+            search:
+            .def deprecated_function():
+            .    print("To be removed")
+    Changes/ # the / at end means close block
 
     /Changes
-        # change block
+        # another change block
     Changes/
 
     

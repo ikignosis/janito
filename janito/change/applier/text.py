@@ -83,11 +83,11 @@ class TextChangeApplier:
         file_ext = target_path.suffix  # Get file extension including the dot
 
         for mod in changes:
-
             # Validate operation
             is_valid, error = self._validate_operation(mod)
             if not is_valid:
-                return False, content, f"Invalid text operation for {target_path}: {error}"
+                self.console.print(f"[yellow]Warning: Invalid text operation for {target_path}: {error}[/yellow]")
+                continue
 
             try:
                 # Handle append operations
@@ -121,7 +121,9 @@ class TextChangeApplier:
             except PatternNotFoundException:
                 if config.debug:
                     self.debug_failed_finds(mod.search_content, modified, str(target_path))
-                return False, content, self._handle_failed_search(target_path, mod.search_content, modified)
+                warning_msg = self._handle_failed_search(target_path, mod.search_content, modified)
+                self.console.print(f"[yellow]Warning: {warning_msg}[/yellow]")
+                continue
     
         return (True, modified, None) if any_changes else (False, content, "No changes were applied")
 
@@ -196,10 +198,10 @@ Search pattern:
 
         failed_file.write_text(debug_info)
 
-        self.console.print(f"\n[red]Failed search saved to: {failed_file}[/red]")
+        self.console.print(f"[yellow]Changes failed saved to: {failed_file}[/yellow]")
         self.console.print("[yellow]Run with 'python -m janito.search_replace {failed_file}' to debug[/yellow]")
 
-        return f"Could not find search text in {filepath}"
+        return f"Could not apply change to {filepath} - pattern not found"
 
     def debug_failed_finds(self, search_content: str, file_content: str, filepath: str) -> None:
         """Debug find operations without applying changes"""

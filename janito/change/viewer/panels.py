@@ -3,7 +3,8 @@ from rich.panel import Panel
 from rich.columns import Columns
 from rich import box
 from rich.text import Text
-from typing import List, Optional
+from rich.syntax import Syntax
+from typing import List, Union
 from ..parser import FileChange, ChangeOperation
 from .styling import format_content, create_legend_items
 from .content import create_content_preview
@@ -11,9 +12,8 @@ from rich.rule import Rule
 import shutil
 import sys
 from rich.live import Live
-from .pager import check_pager  # Add this import
+from pathlib import Path
 
-# Remove clear_last_line, wait_for_space, and check_pager functions since they've been moved
 
 def preview_all_changes(console: Console, changes: List[FileChange]) -> None:
     """Show a summary of all changes with side-by-side comparison and continuous flow."""
@@ -38,47 +38,28 @@ def preview_all_changes(console: Console, changes: List[FileChange]) -> None:
             grouped_changes[change.operation] = []
         grouped_changes[change.operation].append(change)
 
-    # Track content height
-    current_height = 2  # Account for legend and newline
-
-    # Show file operations with rule lines and track height
-    current_height = _show_file_operations(console, grouped_changes)
-
     # Then show side-by-side panels for replacements
     console.print("\n[bold blue]File Changes:[/bold blue]")
-    current_height += 2
 
     for i, change in enumerate(changes):
         if change.operation in (ChangeOperation.REPLACE_FILE, ChangeOperation.MODIFY_FILE):
             show_side_by_side_diff(console, change, i, total_changes)
 
-def _show_file_operations(console: Console, grouped_changes: dict) -> int:
-    """Display file operation summaries with content preview for new files.
-
-    Tracks current file being displayed and manages continuous flow.
-    """
+def _show_file_operations(console: Console, grouped_changes: dict) -> None:
     """Display file operation summaries with content preview for new files."""
-    height = 0
     for operation, group in grouped_changes.items():
         for change in group:
             if operation == ChangeOperation.CREATE_FILE:
                 console.print(Rule(f"[green]Creating new file: {change.name}[/green]", style="green"))
-                height += 1
                 if change.content:
-                    preview = create_content_preview(change.name, change.content)
+                    preview = create_content_preview(Path(change.name), change.content)
                     console.print(preview)
-                    height += len(change.content.splitlines()) + 4  # Account for panel borders
             elif operation == ChangeOperation.REMOVE_FILE:
                 console.print(Rule(f"[red]Removing file: {change.name}[/red]", style="red"))
-                height += 1
             elif operation == ChangeOperation.RENAME_FILE:
                 console.print(Rule(f"[yellow]Renaming file: {change.name} → {change.target}[/yellow]", style="yellow"))
-                height += 1
             elif operation == ChangeOperation.MOVE_FILE:
                 console.print(Rule(f"[blue]Moving file: {change.name} → {change.target}[/blue]", style="blue"))
-                height += 1
-            height = check_pager(console, height)
-    return height
 
 def show_side_by_side_diff(console: Console, change: FileChange, change_index: int = 0, total_changes: int = 1) -> None:
     """Show side-by-side diff panels for a file change with continuous flow.
@@ -98,14 +79,9 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
         total_changes: Total number of changes
     """
     # Track current file name to prevent unnecessary paging
-    from .pager import set_current_file, get_current_file
-    current_file = get_current_file()
-    new_file = str(change.name)
-
-    # Only update paging state for different files
-    if current_file != new_file:
-        set_current_file(new_file)
-    # Handle delete operations with special formatting
+    # Get terminal dimensions for layout
+    term_width = console.width or 120
+    min_panel_width = 60  # Minimum width for readable content
     if change.operation == ChangeOperation.REMOVE_FILE:
         show_delete_panel(console, change, change_index, total_changes)
         return
@@ -122,33 +98,30 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
     original_lines = original.splitlines()
     new_lines = new_content.splitlines()
 
-    # Track accumulated height
-    current_height = 0
-
-    # Track content height
-    current_height += 1
-
-    # Check if we need to page before showing header
-    header_height = 3  # Account for panel borders and content
-    current_height = check_pager(console, current_height, header_height)
-
+    # Show the header with reason and progress
     # Show the header with reason and progress
     operation = change.operation.name.replace('_', ' ').title()
-    progress = f"Change {change_index + 1}/{total_changes}"
-    # Create centered reason text if present
-    reason_text = Text()
-    if change.reason:
-        reason_text.append("\n")
-        reason_text.append(change.reason, style="italic")
-    # Build header with operation and progress
+
+    # Create centered header with file info and progress
     header = Text()
     header.append(f"{operation}:", style="bold cyan")
-    header.append(f" {change.name} ")
-    header.append(f"({progress})", style="dim")
-    header.append(reason_text)
+    header.append(f" {change.name}\n\n", style="white")
+
+    # Create centered progress indicator
+    progress_text = Text()
+    progress_text.append("Change ", style="bold blue")
+    progress_text.append(f"{change_index + 1}", style="bold yellow")
+    progress_text.append("/", style="white")
+    progress_text.append(f"{total_changes}", style="bold white")
+
+    # Add reason if present
+    if change.reason:
+        header.append(f"{progress_text}\n\n", style="white")
+        header.append(change.reason, style="italic")
+    else:
+        header.append(progress_text)
     # Display panel with centered content
     console.print(Panel(header, box=box.HEAVY, style="cyan", title_align="center"))
-    current_height += header_height
 
     # Show layout mode indicator
     if not can_do_side_by_side:
@@ -178,34 +151,41 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
                 left_panel = format_content(orig_section, orig_section, new_section, True)
                 right_panel = format_content(new_section, orig_section, new_section, False)
 
-                # Calculate upcoming content height
-                content_height = len(orig_section) + len(new_section) + 4  # Account for panel borders and padding
 
-                # Check if we need to page before showing content
-                current_height = check_pager(console, current_height, content_height)
-
-                # Create panels with adaptive width
+                # Calculate optimal panel widths based on content
                 if can_do_side_by_side:
-                    # Calculate panel width for side-by-side layout
-                    panel_width = (term_width - 4) // 2  # Account for padding
+                    # Get max line lengths for each panel
+                    left_max_width = max((len(line) for line in str(left_panel).splitlines()), default=0)
+                    right_max_width = max((len(line) for line in str(right_panel).splitlines()), default=0)
+
+                    # Add padding and margins
+                    left_width = min(left_max_width + 4, (term_width - 4) // 2)
+                    right_width = min(right_max_width + 4, (term_width - 4) // 2)
+
+                    # Ensure minimum width
+                    min_width = 30
+                    left_width = max(left_width, min_width)
+                    right_width = max(right_width, min_width)
+
+                    # Create panels with content-aware widths
                     panels = [
                         Panel(
                             left_panel or "",
-                            title="[red]Original Content[/red]",
+                            title="[red]Original[/red]",
                             title_align="center",
                             subtitle=str(change.name),
                             subtitle_align="center",
                             padding=(0, 1),
-                            width=panel_width
+                            width=left_width
                         ),
                         Panel(
                             right_panel or "",
-                            title="[green]Modified Content[/green]",
+                            title="[green]Modified[/green]",
                             title_align="center",
                             subtitle=str(change.name),
                             subtitle_align="center",
                             padding=(0, 1),
-                            width=panel_width
+                            width=right_width
                         )
                     ]
 
@@ -248,17 +228,12 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
                     console.print(Rule(" Section Break ", style="cyan dim", align="center"))
 
                 # Update height after displaying content
-                current_height += content_height
     else:
         # For non-text changes, show full content side by side
         sections = find_modified_sections(original_lines, new_lines)
         for i, (orig_section, new_section) in enumerate(sections):
             left_panel = format_content(orig_section, orig_section, new_section, True)
             right_panel = format_content(new_section, orig_section, new_section, False)
-
-            # Calculate content height for full file diff
-            content_height = len(orig_section) + len(new_section) + 4  # Account for panels
-            current_height = check_pager(console, current_height, content_height)
 
             # Format content with appropriate width
             left_panel = format_content(orig_section, orig_section, new_section, True)
@@ -275,36 +250,27 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
                 console.print("[yellow]Terminal width is limited. Using vertical layout for better readability.[/yellow]")
                 console.print(f"[dim]Recommended terminal width: {min_panel_width * 2 + 4} or greater[/dim]")
 
-            # Create unified header panel
-            header_text = Text()
-            header_text.append("[red]Original[/red]", style="bold")
-            header_text.append(" vs ")
-            header_text.append("[green]Modified[/green]", style="bold")
-            header_text.append(f" - {change.name}")
-
-            header_panel = Panel(
-                header_text,
-                box=box.HEAVY,
-                style="cyan",
-                padding=(0, 1)
-            )
-
-            # Create content panels without individual titles
+            # Create content panels with consistent titles
             panels = [
                 Panel(
                     left_panel,
+                    title="[red]Original[/red]",
+                    title_align="center",
+                    subtitle=str(change.name),
+                    subtitle_align="center",
                     padding=(0, 1),
                     width=None if can_do_side_by_side else term_width - 2
                 ),
                 Panel(
                     right_panel,
+                    title="[green]Modified[/green]",
+                    title_align="center",
+                    subtitle=str(change.name),
+                    subtitle_align="center",
                     padding=(0, 1),
                     width=None if can_do_side_by_side else term_width - 2
                 )
             ]
-
-            # Display unified header
-            console.print(header_panel, justify="center")
 
             # Render panels based on layout
             if can_do_side_by_side:
@@ -326,7 +292,6 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
                 console.print(Rule(style="dim"))
 
             # Update height after displaying content
-            current_height += content_height
 
     # Add final separator and success message
     console.print(Rule(title="End Of Changes", style="bold blue"))
@@ -427,7 +392,18 @@ def create_replace_panel(name: Text, change: FileChange) -> Panel:
     new_content = change.content or ""
     
     term_width = Console().width or 120
-    panel_width = max(60, (term_width - 10) // 2)
+
+    # Calculate content-based widths
+    orig_lines = original.splitlines()
+    new_lines = new_content.splitlines()
+
+    orig_width = max((len(line) for line in orig_lines), default=0)
+    new_width = max((len(line) for line in new_lines), default=0)
+
+    # Add padding and ensure minimum width
+    min_width = 30
+    left_width = max(min_width, min(orig_width + 4, (term_width - 10) // 2))
+    right_width = max(min_width, min(new_width + 4, (term_width - 10) // 2))
     
     panels = [
         Panel(
@@ -484,7 +460,7 @@ def create_change_panel(search_content: Text, replace_content: Text, description
         box=box.HEAVY
     )
 def show_delete_panel(console: Console, change: FileChange, change_index: int = 0, total_changes: int = 1) -> None:
-    """Show a specialized panel for file deletion operations
+    """Show a simplified panel for file deletion operations
 
     Args:
         console: Rich console instance
@@ -492,49 +468,51 @@ def show_delete_panel(console: Console, change: FileChange, change_index: int = 
         change_index: Current change number (0-based)
         total_changes: Total number of changes
     """
-    # Track content height for panel display
-    current_height = 0
-
     # Show the header with reason and progress
     operation = change.operation.name.replace('_', ' ').title()
     progress = f"Change {change_index + 1}/{total_changes}"
 
-    # Create centered reason text if present
-    reason_text = Text()
-    if change.reason:
-        reason_text.append("\n")
-        reason_text.append(change.reason, style="italic")
-
-    # Build header with operation and progress
+    # Create header text
     header = Text()
     header.append(f"{operation}:", style="bold red")
     header.append(f" {change.name} ")
     header.append(f"({progress})", style="dim")
-    header.append(reason_text)
 
-    # Display panel with centered content
-    console.print(Panel(header, box=box.HEAVY, style="red", title_align="center"))
+    # Add reason if present
+    if change.reason:
+        header.append("\n")
+        header.append(change.reason, style="italic")
 
-    # Create deletion panel
-    delete_text = Text()
-    delete_text.append("This file will be removed", style="bold red")
+    # Create content text
+    content = Text()
+    content.append("This file will be removed", style="bold red")
+
+    # Show file preview if content exists
     if change.original_content:
-        delete_text.append("\n\nOriginal file path: ", style="dim")
-        delete_text.append(str(change.name), style="red")
+        content.append("\n\n")
+        content.append("Original Content:", style="dim red")
+        content.append("\n")
+        syntax = Syntax(
+            change.original_content,
+            "python",
+            theme="monokai",
+            line_numbers=True,
+            word_wrap=True,
+            background_color="red"
+        )
+        content.append(syntax)
 
+    # Display panels
+    console.print(Panel(header, box=box.HEAVY, style="red", title_align="center"))
     console.print(Panel(
-        delete_text,
-        title="[red]File Deletion[/red]",
+        content,
+        title="[red]File Deletion Preview[/red]",
         title_align="center",
         border_style="red",
         padding=(1, 2)
     ))
-
-    # Add final separator
     console.print(Rule(title="End Of Changes", style="bold red"))
     console.print()
-import os
-from typing import Union
 
 def get_human_size(size_bytes: int) -> str:
     """Convert bytes to human readable format"""

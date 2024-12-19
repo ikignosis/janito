@@ -9,6 +9,9 @@ from rich.rule import Rule
 from rich.padding import Padding
 from rich.prompt import Prompt
 from rich import box
+from rich.style import Style
+from rich.segment import Segment
+from rich.containers import Renderables
 from pathlib import Path
 
 from ..options import AnalysisOption
@@ -34,9 +37,10 @@ def prompt_user(message: str, choices: List[str] = None) -> str:
         choice_text = f"[cyan]Options: {', '.join(choices)}[/cyan]"
         console.print(Panel(choice_text, box=box.ROUNDED, justify="center"))
 
-    padding = (term_width - len(message)) // 2
-    padded_message = " " * padding + message
-    return Prompt.ask(f"[bold cyan]{padded_message}[/bold cyan]")
+    message_text = Text(message, style="bold cyan")
+    padded_message = Padding(message_text, pad=(0, "center"))
+    console.print(padded_message)
+    return Prompt.ask("")
 
 def get_option_selection() -> str:
     """Get user input for option selection with modify option"""
@@ -53,9 +57,9 @@ def get_option_selection() -> str:
             return letter
 
         error_msg = "Please enter a valid letter or 'M'"
-        error_padding = (term_width - len(error_msg)) // 2
-        padded_error = " " * error_padding + error_msg
-        console.print(f"[red]{padded_error}[/red]")
+        error_text = Text(error_msg, style="red")
+        padded_error = Padding(error_text, pad=(0, "center"))
+        console.print(padded_error)
 
 def _create_option_content(option: AnalysisOption) -> Text:
     """Create rich formatted content for a single option."""
@@ -104,9 +108,14 @@ def _create_option_content(option: AnalysisOption) -> Text:
                             content.append("/", style=STRUCTURAL_COLORS['separator'])
                             seen_dirs[parent_dir] = True
                         else:
-                            padding = " " * (len(parent_dir) - 1)
-                            content.append(padding)
-                            content.append("↑ ", style=STRUCTURAL_COLORS['repeat'])
+                            dir_width = len(parent_dir)
+                            # Calculate padding to match full directory width
+                            arrow = "↑"
+                            total_padding = dir_width - len(arrow)
+                            left_padding = total_padding // 2
+                            right_padding = total_padding - left_padding
+                            content.append(" " * left_padding + arrow + " " * right_padding, 
+                                         style=STRUCTURAL_COLORS['repeat'])
                             content.append("/", style=STRUCTURAL_COLORS['separator'])
                         content.append(current_parts[-1], style=STATUS_COLORS[status.lower()])
                     else:
@@ -127,13 +136,14 @@ def create_columns_layout(options_content: List[Text], term_width: int) -> Colum
     usable_width = term_width - spacing - safety_margin
     column_width = max((usable_width // num_columns), MIN_PANEL_WIDTH)
 
-    rendered_columns = [
+    # Create padded content items
+    rendered_items: List[Renderables] = [
         Padding(content, (0, COLUMN_SPACING // 2))
         for content in options_content
     ]
 
     return Columns(
-        rendered_columns,
+        rendered_items,
         equal=True,
         expand=True,
         width=column_width,

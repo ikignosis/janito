@@ -10,7 +10,7 @@ from rich.rule import Rule
 from rich.text import Text
 from janito.config import config
 from .types import FileInfo, ScanPath
-from .stats import collect_file_stats, _format_size  # Add this import
+from .stats import collect_file_stats, _format_size 
 
 
 def show_workset_analysis(
@@ -19,8 +19,6 @@ def show_workset_analysis(
     cache_blocks: List[List[FileInfo]] = None
 ) -> None:
     """Display analysis of workspace content and configuration."""
-    if not files:
-        return
 
     console = Console()
     content_sections = []
@@ -33,18 +31,21 @@ def show_workset_analysis(
     total_files = 0
     total_size = 0
 
+  
+    # Process all paths uniformly
     for scan_path in sorted(scan_paths, key=lambda p: p.path):
-        rel_path = scan_path.path
-        is_recursive = scan_path.is_recursive
 
+        path = scan_path.path
+        is_recursive = scan_path.is_recursive
+        path_str = str(path)
+
+        # Calculate stats based on scan type
         if is_recursive:
             path_files = sum(count for d, [count, _] in dir_counts.items()
-                           if Path(d).is_relative_to(rel_path))
+                           if Path(d) == path or Path(d).is_relative_to(path))
             path_size = sum(size for d, [_, size] in dir_counts.items()
-                          if Path(d).is_relative_to(rel_path))
+                          if Path(d) == path or Path(d).is_relative_to(path))
         else:
-            # Handle non-recursive paths
-            path_str = str(rel_path)
             path_files = dir_counts.get(path_str, [0, 0])[0]
             path_size = dir_counts.get(path_str, [0, 0])[1]
 
@@ -52,41 +53,25 @@ def show_workset_analysis(
         total_size += path_size
 
         paths_stats.append(
-            f"[bold cyan]{rel_path}[/bold cyan]"
+            f"[bold cyan]{path}[/bold cyan]"
             f"[yellow]{'/**' if is_recursive else '/'}[/yellow] "
             f"[[green]{path_files}[/green] "
             f"{'total ' if is_recursive else ''}file(s), "
             f"[blue]{_format_size(path_size)}[/blue]]"
         )
 
-    # Add cache block statistics and content preview in debug mode
-    if config.debug and cache_blocks:
-        blocks = cache_blocks
-        if any(blocks):
-            content_sections.extend([
-                "\n",
-                "[bold blue]🕒 Cache Blocks[/bold blue]",
-                Rule(style="blue"),
-            ])
-            
-            # Show each block's files with preview
-            block_names = ["Last 5 minutes", "Last hour", "Last 24 hours", "Older"]
-            for name, block in zip(block_names, blocks):
-                if block:  # Only show non-empty blocks
-                    content_sections.extend([
-                        f"[blue]{name}[/blue]: [green]{len(block)}[/green] files",
-                        *[f"  [dim]→[/dim] [cyan]{f.name}[/cyan]: [dim]{f.content.split('\n')[0][:60]}...[/dim]"
-                          for f in block],
-                        ""
-                    ])
-
-    # Build sections - Show paths horizontally with /** for recursive
-    if paths_stats:
+    # Build sections - Show paths first
+    if paths_stats or current_dir_stats:
         content_sections.extend([
             "[bold yellow]📌 Included Paths[/bold yellow]",
             Rule(style="yellow"),
-            Text(" | ").join(Text.from_markup(path) for path in paths_stats),
         ])
+
+        # All paths are now handled in the main loop
+
+        content_sections.append(
+            Text(" | ").join(Text.from_markup(path) for path in paths_stats)
+        )
 
         # Add total summary if there are multiple paths
         if len(paths_stats) > 1:
@@ -97,8 +82,8 @@ def show_workset_analysis(
             ])
         content_sections.append("\n")
 
+    # Then show directory structure if verbose
     if config.verbose:
-        # Convert paths to relative for directory stats
         dir_stats = [
             f"📁 {directory}/ [{count} file(s), {_format_size(size)}]"
             for directory, (count, size) in sorted(dir_counts.items())
@@ -121,6 +106,31 @@ def show_workset_analysis(
         Rule(style="cyan"),
         Text(" | ").join(Text.from_markup(stat) for stat in type_stats)
     ])
+
+    # Finally show cache blocks if in debug mode
+    if config.debug and cache_blocks:
+        blocks = cache_blocks
+        if any(blocks):
+            content_sections.extend([
+                "\n",
+                "[bold blue]🕒 Cache Blocks[/bold blue]",
+                Rule(style="blue"),
+            ])
+            
+            block_names = ["Last 5 minutes", "Last hour", "Last 24 hours", "Older"]
+            for name, block in zip(block_names, blocks):
+                if block:  # Only show non-empty blocks
+                    content_sections.extend([
+                        f"\n[bold]{name}[/bold] ({len(block)} files):",
+                        Columns([
+                            Text.assemble(
+                                f"{f.name} - ",
+                                (f"{f.content.splitlines()[0][:50]}...", "dim")
+                            )
+                            for f in block[:5]  # Show first 5 files only
+                        ], padding=(0, 2)),
+                        "" if block == blocks[-1] else Rule(style="dim")
+                    ])
 
     # Display analysis
     console.print("\n")

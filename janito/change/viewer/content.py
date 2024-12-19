@@ -41,7 +41,7 @@ def create_content_preview(filepath: Path, content: str, is_new: bool = False) -
             theme="monokai",
             line_numbers=True,
             word_wrap=True,
-            code_width=100,
+            code_width=min(100, Console().width - 4),
             tab_size=4
         )
         preview = syntax

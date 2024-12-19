@@ -110,7 +110,6 @@ def validate_change(change: FileChange) -> Tuple[bool, Optional[str]]:
         - Rename: target path is required
         - Modify: at least one text change required
     - Text change validations:
-        - Append: replace_content is required
         - Delete: search_content is required
         - Replace: both search_content and replace_content required
         - Prevents duplicate search patterns
