@@ -6,6 +6,13 @@ from .config import config
 from rich import print
 from threading import Event
 
+""" CACHE USAGE SUMMARY
+https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
+cache_creation_input_tokens: Number of tokens written to the cache when creating a new entry.
+cache_read_input_tokens: Number of tokens retrieved from the cache for this request.
+input_tokens: Number of input tokens which were not read from or used to create a cache.
+"""
+
 from janito.prompt import build_system_prompt
 
 console = Console()
@@ -51,15 +58,23 @@ def progress_send_message(message: str) -> str:
     # Add token usage summary with detailed cache info
     if hasattr(response, 'usage'):
         usage = response.usage
-        # Format cache info
-        cache_str = "(no cache used)"
-        if usage.cache_creation_input_tokens or usage.cache_read_input_tokens:
-            create_pct = (usage.cache_creation_input_tokens / usage.input_tokens) * 100
-            read_pct = (usage.cache_read_input_tokens / usage.input_tokens) * 100
-            cache_str = f"(cached in/out: {usage.cache_creation_input_tokens}[{create_pct:.1f}%]/{usage.cache_read_input_tokens}[{read_pct:.1f}%])"
-        
-        percentage = (usage.output_tokens / usage.input_tokens) * 100
-        usage_text = f"Tokens: {usage.input_tokens} sent {cache_str}, {usage.output_tokens} received ({percentage:.1f}% ratio)"
-        console.print(Rule(usage_text, style="blue", align="center"))
+
+        direct_input = usage.input_tokens
+        cache_create = usage.cache_creation_input_tokens or 0
+        cache_read = usage.cache_read_input_tokens or 0
+        total_input = direct_input + cache_create + cache_read
+
+        # Calculate percentages relative to total input
+        create_pct = (cache_create / total_input * 100) if cache_create else 0
+        read_pct = (cache_read / total_input * 100) if cache_read else 0
+        direct_pct = (direct_input / total_input * 100) if direct_input else 0
+        output_ratio = (usage.output_tokens / total_input * 100)
+
+        # Compact single-line token usage summary
+        usage_text = f"[cyan]In: [/][bold green]{total_input:,} - direct: {direct_input} ({direct_pct:.1f}%))[/] [cyan]Out:[/] [bold yellow]{usage.output_tokens:,}[/][dim]({output_ratio:.1f}%)[/]"
+        if cache_create or cache_read:
+            cache_text = f" [magenta]Input Cache:[/] [blue]Write:{cache_create:,}[/][dim]({create_pct:.1f}%)[/] [green]Read:{cache_read:,}[/][dim]({read_pct:.1f}%)[/]"
+            usage_text += cache_text
+        console.print(Rule(usage_text, style="cyan"))
     
     return response_text
