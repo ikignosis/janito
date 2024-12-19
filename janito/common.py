@@ -4,6 +4,9 @@ from rich.rule import Rule
 from janito.agents import agent
 from .config import config
 from rich import print
+from threading import Event
+
+from janito.prompt import build_system_prompt
 
 console = Console()
 
@@ -22,8 +25,10 @@ def progress_send_message(message: str) -> str:
     Note:
         If the request fails or is canceled, returns the error message as a string
     """
+    system_message = build_system_prompt()
     if config.debug:
         console.print("[yellow]======= Sending message[/yellow]")
+        print(system_message)
         print(message)
         console.print("[yellow]======= End of message[/yellow]")
 
@@ -33,18 +38,13 @@ def progress_send_message(message: str) -> str:
         TimeElapsedColumn(),
     ) as progress:
         task = progress.add_task("Waiting for response from AI agent...", total=None)
-        response = agent.send_message(message)
+        response = agent.send_message(message, system_message=system_message)
         progress.update(task, completed=True)
 
     if config.debug:
         console.print("[yellow]======= Received response[/yellow]")
         print(response)
         console.print("[yellow]======= End of response[/yellow]")
-    
-    # Handle canceled requests or string responses
-    if isinstance(response, str):
-        console.print("[red]Request was canceled or failed[/red]")
-        return response
     
     response_text = response.content[0].text if hasattr(response, 'content') else str(response)
     
@@ -61,7 +61,5 @@ def progress_send_message(message: str) -> str:
         percentage = (usage.output_tokens / usage.input_tokens) * 100
         usage_text = f"Tokens: {usage.input_tokens} sent {cache_str}, {usage.output_tokens} received ({percentage:.1f}% ratio)"
         console.print(Rule(usage_text, style="blue", align="center"))
-    else:
-        console.print(Rule("Token usage unavailable", style="red", align="center"))
     
     return response_text

@@ -19,14 +19,10 @@ def start_shell() -> None:
     session = create_shell_session(registry)
     processor = CommandProcessor(registry)
 
-    # Initialize workset content
-    console = Console()
+    # Initialize and show workset content
     workset = Workset()
     workset.refresh()
-    workset.analyze()
-
-    # Store workset content in processor for session
-    processor.workspace_content = workset.content
+    workset.show()
 
     while True:
         try:

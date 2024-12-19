@@ -30,10 +30,7 @@ def analyze_request(
         Selected AnalysisOption or None if modified
     """
     workset = Workset()  # Create workset instance
-    
-    # Ensure content is refreshed
-    workset.refresh()
-    
+       
     # Build and send prompt using workset content directly
     prompt = build_request_analysis_prompt(request, workset.content)
     response = progress_send_message(prompt)

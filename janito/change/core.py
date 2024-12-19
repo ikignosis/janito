@@ -35,12 +35,10 @@ def process_change_request(
     """
     console = Console()
     workset = Workset()  # Create workset instance
-    
-    # Refresh workset content
-    workset.refresh()
+
     
     # Analyze workspace content
-    workset.analyze()
+    workset.show()
 
     # Get analysis of the request using workset content
     analysis = analyze_request(request, workset.content)

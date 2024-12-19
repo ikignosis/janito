@@ -1,7 +1,4 @@
 import ast
-# ...existing code...
-# Remove the process_change_request function if it exists in this file
-# Keep all other existing code
 from pathlib import Path
 from typing import Optional, Tuple, List, Set
 from rich.console import Console
@@ -252,7 +249,6 @@ def validate_file_operations(changes: List[FileChange], collected_files: Set[Pat
 def process_change_request(request: str) -> None:
     """Process a change request by analyzing, validating and applying changes."""
     # Ensure workset is refreshed before processing changes
-    workset.refresh()
     
     # Analyze the request and get proposed changes
     changes = analyze_request(request, workset._workspace.content)

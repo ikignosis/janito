@@ -6,28 +6,21 @@ from janito.common import progress_send_message
 from janito.workspace import workset  # Updated import
 
 
-QA_PROMPT = """Please provide a clear and concise answer to the following question about the codebase:
+QA_PROMPT = """Please provide a clear and concise answer to the following question about the workset you received above.
 
 Question: {question}
-
-Current files:
-<files>
-{files_content}
-</files>
 
 Focus on providing factual information and explanations. Do not suggest code changes.
 Format your response using markdown with appropriate headers and code blocks.
 """
 
-def ask_question(question: str, files_content: str = None) -> str:
+def ask_question(question: str) -> str:
     """Process a question about the codebase and return the answer"""
     # Ensure content is refreshed and analyzed
-    workset.refresh()
-    workset.analyze()
+    workset.show()
     
     prompt = QA_PROMPT.format(
         question=question,
-        files_content=workset._workspace.content
     )
     return progress_send_message(prompt)
 

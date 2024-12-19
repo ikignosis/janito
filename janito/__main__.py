@@ -7,12 +7,15 @@ from rich.console import Console
 from rich.text import Text
 from .version import get_version
 
-from janito.agents import agent
 from janito.config import config
-from janito.workspace import workspace, workset
-from .cli.commands import handle_request, handle_ask, handle_play, handle_scan
+from janito.workspace import workset
+from janito.workspace.types import ScanType  # Add this import
+from .cli.commands import (
+    handle_request, handle_ask, handle_play, 
+    handle_scan, handle_demo
+)
 
-app = typer.Typer(add_completion=False)
+app = typer.Typer(pretty_exceptions_enable=False)
 
 def validate_paths(paths: Optional[List[Path]]) -> Optional[List[Path]]:
     """Validate include paths for duplicates.
@@ -66,9 +69,7 @@ def typer_main(
         return
 
     if demo:
-        from janito.cli.handlers.demo import DemoHandler
-        handler = DemoHandler()
-        handler.handle()
+        handle_demo()
         return
 
     if history:
@@ -83,29 +84,32 @@ def typer_main(
     config.set_auto_apply(auto_apply)
     config.set_tui(tui)
 
-    # Configure workset
-    workset.skip_workspace(skip_work)
+    # Configure workset with scan paths
     if include:
-        resolved_paths = []
+        if config.debug:
+            Console(stderr=True).print("[cyan]Debug: Processing include paths...[/cyan]")
         for path in include:
-            path = config.workspace_dir / path
-            resolved_paths.append(path.resolve())
-        workset.include(resolved_paths)
+            full_path = config.workspace_dir / path
+            if not full_path.resolve().is_relative_to(config.workspace_dir):
+                error_text = Text(f"\nError: Path must be within workspace: {path}", style="red")
+                rich_print(error_text)
+                raise typer.Exit(1)
+            workset.add_scan_path(path, ScanType.PLAIN)
 
-    # Validate recursive paths
     if recursive:
-        resolved_paths = []
+        if config.debug:
+            Console(stderr=True).print("[cyan]Debug: Processing recursive paths...[/cyan]")
         for path in recursive:
-            final_path = config.workspace_dir / path
+            full_path = config.workspace_dir / path
             if not path.is_dir():
                 error_text = Text(f"\nError: Recursive path must be a directory: {path} ", style="red")
                 rich_print(error_text)
                 raise typer.Exit(1)
-            resolved_paths.append(final_path.resolve())
-        workset.recursive(resolved_paths)
-        # Add recursive paths to include paths
-        all_paths = list(workset.paths) + resolved_paths
-        workset.include(all_paths)
+            if not full_path.resolve().is_relative_to(config.workspace_dir):
+                error_text = Text(f"\nError: Path must be within workspace: {path}", style="red")
+                rich_print(error_text)
+                raise typer.Exit(1)
+            workset.add_scan_path(path, ScanType.RECURSIVE)
 
     # Validate skip_work usage
     if skip_work and not workset.paths:
@@ -124,7 +128,7 @@ def typer_main(
     elif play:
         handle_play(play)
     elif scan:
-        handle_scan(workset.get_scan_paths())
+        handle_scan()
     elif change_request:
         handle_request(change_request)
     else:

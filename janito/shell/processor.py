@@ -10,7 +10,6 @@ class CommandProcessor:
         """Initialize command processor with registry."""
         super().__init__()
         self.console = Console()
-        self.workspace_content: Optional[str] = None
         self.registry = registry
 
     def process_command(self, command_line: str) -> None:

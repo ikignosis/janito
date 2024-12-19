@@ -78,8 +78,7 @@ def handle_include(args: str) -> None:
         resolved_paths.append(path.resolve())
 
     workset.include(resolved_paths)
-    workset.refresh()
-    workset.analyze()
+    workset.show()
 
     console.print("[green]Updated include paths:[/green]")
     for path in resolved_paths:
@@ -112,7 +111,7 @@ def handle_rinclude(args: str) -> None:
     workset.recursive(resolved_paths)
     workset.include(resolved_paths)  # Add recursive paths to include paths
     workset.refresh()
-    workset.analyze()
+    workset.show()
 
     console.print("[green]Updated recursive include paths:[/green]")
     for path in resolved_paths:

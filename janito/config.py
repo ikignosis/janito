@@ -1,10 +1,10 @@
-from typing import Optional, List
+from typing import Optional
 import os
 from pathlib import Path
 
 class ConfigManager:
     """Singleton configuration manager for the application."""
-
+    
     _instance = None
 
     def __init__(self):
@@ -15,8 +15,6 @@ class ConfigManager:
         self.test_cmd = os.getenv('JANITO_TEST_CMD')
         self.workspace_dir = Path.cwd()
         self.raw = False
-        self.include: List[Path] = []
-        self.recursive: List[Path] = []
         self.auto_apply: bool = False
         self.tui: bool = False
         self.skip_work: bool = False
@@ -76,35 +74,6 @@ class ConfigManager:
         """
         self.raw = enabled
 
-    def set_include(self, paths: Optional[List[Path]]) -> None:
-        """
-        Set additional paths to include.
-
-        Args:
-            paths: List of paths to include
-
-        Raises:
-            ValueError: If duplicate paths are provided
-        """
-        if paths is None:
-            self.include = []
-            return
-
-        # Convert paths to absolute and resolve symlinks
-        resolved_paths = [p.absolute().resolve() for p in paths]
-
-        # Check for duplicates
-        seen_paths = set()
-        unique_paths = []
-
-        for path in resolved_paths:
-            if path in seen_paths:
-                raise ValueError(f"Duplicate path provided: {path}")
-            seen_paths.add(path)
-            unique_paths.append(path)
-
-        self.include = unique_paths
-
     def set_auto_apply(self, enabled: bool) -> None:
         """Set auto apply mode for changes.
         
@@ -120,14 +89,6 @@ class ConfigManager:
             enabled: True to enable TUI mode, False to disable
         """
         self.tui = enabled
-
-    def set_recursive(self, paths: Optional[List[Path]]) -> None:
-        """Set paths to scan recursively
-
-        Args:
-            paths: List of directory paths to scan recursively, or None to disable recursive scanning
-        """
-        self.recursive = paths
 
     def set_skip_work(self, enabled: bool) -> None:
         """Set whether to skip scanning the workspace directory.

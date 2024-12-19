@@ -1,4 +1,3 @@
-
 from abc import ABC, abstractmethod
 from threading import Event
 from typing import Optional, List, Tuple
@@ -16,6 +15,14 @@ class Agent(ABC):
             self.messages_history.append(("system", system_prompt))
 
     @abstractmethod
-    def send_message(self, message: str, stop_event: Event = None) -> str:
-        """Send message to AI service and return response"""
+    def send_message(self, message: str, system: str) -> str:
+        """Send message to the AI agent
+        
+        Args:
+            message: The message to send
+            stop_event: Optional event to signal cancellation
+            
+        Returns:
+            The response from the AI agent
+        """
         pass

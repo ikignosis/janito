@@ -1,7 +1,6 @@
 from .workset import Workset
-from .scan import preview_scan, is_dir_empty
 
-# Create singleton instance
+# Create and export singleton instance
 workset = Workset()
 
-__all__ = ['workset', 'preview_scan', 'is_dir_empty']
+__all__ = ['workset']
