@@ -4,7 +4,7 @@ from pathlib import Path
 from rich.text import Text
 from rich import print as rich_print
 from rich.console import Console
-from rich.text import Text
+from janito.view import view_manager
 from .version import get_version
 
 from janito.config import config

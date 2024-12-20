@@ -24,14 +24,25 @@ class Workset:
         self._content = WorksetContent()
         self._workspace = Workspace()
         if not config.skip_work:
-            self._scan_paths.append(ScanPath(Path("."), ScanType.PLAIN))
+            self.add_scan_path(Path("."))
 
-    def add_scan_path(self, path: Path, scan_type: ScanType) -> None:
-        """Add a path with specific scan type."""
+    def add_scan_path(self, path: Path, scan_type: ScanType = ScanType.PLAIN) -> None:
+        """Add a path with specific scan type.
+
+        Args:
+            path: Relative path to add for scanning
+            scan_type: Type of scanning (PLAIN or RECURSIVE)
+
+        Raises:
+            PathNotRelativeError: If path is absolute
+        """
         if path.is_absolute():
             raise PathNotRelativeError(f"Path must be relative: {path}")
-        self._scan_paths.append(ScanPath(path, scan_type))
-        
+
+        scan_path = ScanPath(path, scan_type)
+        ScanPath.validate(path)
+        self._scan_paths.append(scan_path)
+
         if config.debug:
             Console(stderr=True).print(
                 f"[cyan]Debug: Added {scan_type.name.lower()} scan path: {path}[/cyan]"

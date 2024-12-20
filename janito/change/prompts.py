@@ -19,14 +19,14 @@ RULES for Analysis:
 - When adding new typing imports, add them at the top of the file (eg. Optional, List, Dict, Tuple, Union)
 - Preserve the indentation of the original content as we will try to do an exact match
 
-- The instructions must be submitted in the same format as provided below
+- The instructions must be submitted in the same format as provided below:
     - Multiple changes affecting the same lines should be grouped together to avoid conflicts
     - The file/text changes must be enclosed in BEGIN_INSTRUCTIONS and END_INSTRUCTIONS markers
     - All lines in text to be add, deleted or replaces must be prefixed with a dot (.) to mark them literal
     - If you have further information about the changes, provide it after the END_INSTRUCTIONS marker 
     - Blocks started in single lines with blockName/ must be closed with /blockName in a single line
     - If the conte of the changes to a single file is too large, consider requesting a file replacement instead of multiple changes
-    - Do not use generic instructions like "replace all occurrences of X with Y", always identify the context of the change
+    - Be specific about the changes, avoid generic instructions like "update function" or "update variable", or replace all occurences of "X" with "Y"
 
 
 Available operations:
@@ -40,7 +40,7 @@ Available operations:
 BEGIN_INSTRUCTIONS (include this marker)
 
 Create File
-    reason: Add a new Python script
+    reason: Create a new Python script
     name: hello_world.py
     content:
     .# This is a simple Python script
@@ -68,12 +68,12 @@ Remove File
 
 # Change some text in a file
 Modify File
+    reason: We were asked for a new script
     name: script.py
     /Changes   # This block must be closed later with Changes/
-        # reason for the changes block 
         Replace
-            # <line nr where the text was found in the file content sent in the beginning>
             reason: Update function name and content
+            # <line nr> where the search content was found in the workspace
             search:
             .def old_function():
             .    print("Deprecated")
@@ -113,6 +113,14 @@ Modify File
         # another change block
     Changes/
 
+    # Support Changes operations
+    /Changes
+        Replace # valid, we support Replace
+        ...
+        Delete # valid, we support Delete
+        ...
+        Add # NOT valid, we do not support Add, will cause an error
+    Changes/
     
 END_INSTRUCTIONS (this marker must be included)
 

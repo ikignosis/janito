@@ -27,6 +27,14 @@ class ScanPath:
     def is_recursive(self) -> bool:
         return self.scan_type == ScanType.RECURSIVE
 
+    @classmethod
+    def validate(cls, path: Path) -> None:
+        """Validate path is relative and exists"""
+        if path.is_absolute():
+            raise ValueError(f"Path must be relative: {path}")
+        if not path.exists():
+            raise ValueError(f"Path does not exist: {path}")
+
 @dataclass
 class WorksetContent:
     """Represents workset content and statistics."""

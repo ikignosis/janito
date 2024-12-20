@@ -8,16 +8,18 @@ class ThemeType(Enum):
 
 # Dark theme colors
 DARK_LINE_BACKGROUNDS = {
-    'unchanged': '#1A1A1A',        
-    'added': '#003300',        
-    'deleted': '#660000'          
+    'unchanged': '#1A1A1A',
+    'added': '#003300',
+    'deleted': '#660000',
+    'removed': '#4A0000'
 }
 
 # Light theme colors
 LIGHT_LINE_BACKGROUNDS = {
     'unchanged': 'grey93',         # Light gray for unchanged
     'added': 'light_green',       # Semantic light green for additions
-    'deleted': 'light_red'        # Semantic light red for deletions
+    'deleted': 'light_red',       # Semantic light red for deletions
+    'removed': 'red_1'            # Darker red for file removals
 }
 
 @dataclass

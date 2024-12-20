@@ -302,28 +302,6 @@ class Searcher:
 
         return '\n'.join(normalized)
 
-    def _find_best_match_position(self, positions: List[int], source_lines: List[str], pattern_base_indent: int) -> Optional[int]:
-        """Find the best matching position among candidates.
-        
-        Args:
-            positions: List of candidate line positions
-            source_lines: List of source code lines
-            pattern_base_indent: Base indentation level of pattern
-            
-        Returns:
-            Optional[int]: Best matching position or None if no matches
-        """
-        if self.debug_mode:
-            print(f"[DEBUG] Finding best match among positions: {[p+1 for p in positions]}")  # Show 1-based line numbers
-
-        if not positions:
-            return None
-
-        best_pos = min(positions)  # Simply take the earliest match
-        if self.debug_mode:
-            print(f"[DEBUG] Selected match at line {best_pos + 1}")  # Show 1-based line number
-        return best_pos
-
     def try_match_with_strategies(self, source_lines: List[str], pattern_lines: List[str],
                                 pos: int, strategies: List[SearchStrategy]) -> StrategyResult:
         """Try matching using multiple strategies in sequence.
@@ -350,7 +328,7 @@ class Searcher:
 
     def _find_matches(self, source_lines: List[str], pattern_lines: List[str],
                      file_ext: Optional[str] = None) -> List[int]:
-        """Find all matching positions using available strategies.
+        """Find first matching position using available strategies.
         
         Args:
             source_lines: List of source code lines
@@ -358,17 +336,13 @@ class Searcher:
             file_ext: Optional file extension to determine strategies
             
         Returns:
-            List[int]: List of matching line positions
+            List[int]: List containing single match position or empty list if no match
         """
         strategies = self.get_strategies(file_ext)
 
         if self.debug_mode:
             print("\nTrying search strategies:")
             print("-" * 50)
-
-        # Track positions already matched to avoid redundant attempts
-        matched_positions = set()
-        all_matches = []
 
         for strategy in strategies:
             strategy_name = strategy.__class__.__name__.replace('Strategy', '')
@@ -377,23 +351,15 @@ class Searcher:
                 print(f"\n→ {strategy_name}...")
 
             for i in range(len(source_lines)):
-                if i in matched_positions:
-                    continue
-
                 if strategy.match(source_lines, pattern_lines, i, self):
-                    matched_positions.add(i)
-                    all_matches.append(i)
                     if self.debug_mode:
                         print(f"✓ Match found at line {i+1} using {strategy_name}")
+                    return [i]  # Return immediately when first match is found
 
-            if all_matches and isinstance(strategy, ExactMatchStrategy):
-                # If we found exact matches, no need to try other strategies
-                break
+            if self.debug_mode and isinstance(strategy, (ExactMatchStrategy, IndentAwareStrategy)):
+                print("No match found with precise strategy")
 
-        if self.debug_mode and all_matches:
-            print(f"\nFound {len(all_matches)} total match(es) at line(s) {[m+1 for m in sorted(all_matches)]}")
-
-        return sorted(all_matches)
+        return []  # Return empty list if no match found
 
     def _check_exact_match(self, source_lines: List[str], pattern_lines: List[str], pos: int) -> bool:
         """Check for exact line-by-line match at position.

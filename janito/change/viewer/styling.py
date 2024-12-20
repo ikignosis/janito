@@ -12,7 +12,7 @@ def set_theme(theme: ColorTheme) -> None:
     global current_theme
     current_theme = theme
 
-def format_content(lines: List[str], search_lines: List[str], replace_lines: List[str], is_search: bool, width: int = 80, is_delete: bool = False) -> Text:
+def format_content(lines: List[str], search_lines: List[str], replace_lines: List[str], is_search: bool, width: int = 80, is_delete: bool = False, is_removal: bool = False) -> Text:
     """Format content with unified highlighting and indicators with full-width padding
 
     Args:
@@ -25,16 +25,19 @@ def format_content(lines: List[str], search_lines: List[str], replace_lines: Lis
     """
     text = Text()
 
-    # For delete operations, show all lines as deleted with full-width padding
-    if is_delete:
+    # For delete or removal operations, show lines with appropriate styling
+    if is_delete or is_removal:
+        bg_color = current_theme.line_backgrounds['removed' if is_removal else 'deleted']
+        prefix = "🗑️ " if is_removal else "✕ "
+        style = f"{current_theme.text_color} on {bg_color}"
+
         for line in lines:
-            bg_color = current_theme.line_backgrounds['deleted']
-            style = f"{current_theme.text_color} on {bg_color}"
             # Calculate padding to fill width
-            content_width = len(f"✕ {line}")
+            content_width = len(prefix + line)
             padding = " " * max(0, width - content_width)
+
             # Add content with consistent background
-            text.append("✕ ", style=style)
+            text.append(prefix, style=style)
             text.append(line, style=style)
             text.append(padding, style=style)
             text.append("\n", style=style)

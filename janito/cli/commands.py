@@ -17,15 +17,9 @@ console = Console()
 
 def handle_ask(question: str):
     """Process a question about the codebase"""
-    
-    if config.tui:
-        answer = ask_question(question)
-        from janito.tui import TuiApp
-        app = TuiApp(content=answer)
-        app.run()
-    else:
-        answer = ask_question(question)
-        display_answer(answer)
+    answer = ask_question(question)
+
+    display_answer(answer)
 
 def handle_scan():
     """Preview files that would be analyzed"""

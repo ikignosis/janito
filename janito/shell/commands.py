@@ -7,7 +7,9 @@ from prompt_toolkit.completion import PathCompleter
 from prompt_toolkit.document import Document
 from pathlib import Path
 from janito.config import config
-from janito.workspace import workset  # Updated import
+from janito.workspace import workset
+from janito.workspace.types import ScanType
+from janito.workspace.workset import PathNotRelativeError
 from janito.workspace.analysis import analyze_workspace_content
 from .registry import CommandRegistry, Command, get_path_completer
 
@@ -55,7 +57,7 @@ def handle_help(args: str) -> None:
         console.print(table)
 
 def handle_include(args: str) -> None:
-    """Handle include command."""
+    """Handle include command for plain path scanning."""
     console = Console()
     session = PromptSession()
 
@@ -70,22 +72,17 @@ def handle_include(args: str) -> None:
         console.print("[red]Error: At least one path required[/red]")
         return
 
-    resolved_paths = []
     for path_str in paths:
-        path = Path(path_str)
-        if not path.is_absolute():
-            path = config.workspace_dir / path
-        resolved_paths.append(path.resolve())
+        try:
+            path = Path(path_str)
+            workset.add_scan_path(path, ScanType.PLAIN)
+        except (ValueError, PathNotRelativeError) as e:
+            console.print(f"[red]Error: {str(e)}[/red]")
 
-    workset.include(resolved_paths)
     workset.show()
 
-    console.print("[green]Updated include paths:[/green]")
-    for path in resolved_paths:
-        console.print(f"  {path}")
-
 def handle_rinclude(args: str) -> None:
-    """Handle recursive include command."""
+    """Handle recursive include command for directory scanning."""
     console = Console()
     session = PromptSession()
     completer = get_path_completer(only_directories=True)
@@ -101,21 +98,14 @@ def handle_rinclude(args: str) -> None:
         console.print("[red]Error: At least one path required[/red]")
         return
 
-    resolved_paths = []
     for path_str in paths:
-        path = Path(path_str)
-        if not path.is_absolute():
-            path = config.workspace_dir / path
-        resolved_paths.append(path.resolve())
+        try:
+            path = Path(path_str)
+            workset.add_scan_path(path, ScanType.RECURSIVE)
+        except (ValueError, PathNotRelativeError) as e:
+            console.print(f"[red]Error: {str(e)}[/red]")
 
-    workset.recursive(resolved_paths)
-    workset.include(resolved_paths)  # Add recursive paths to include paths
-    workset.refresh()
     workset.show()
-
-    console.print("[green]Updated recursive include paths:[/green]")
-    for path in resolved_paths:
-        console.print(f"  {path}")
 
 def register_commands(registry: CommandRegistry) -> None:
     """Register all available commands."""

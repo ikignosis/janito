@@ -24,7 +24,8 @@ def get_file_syntax(filepath: Path) -> Optional[str]:
     return ext_map.get(filepath.suffix.lower())
 
 def create_content_preview(filepath: Path, content: str, is_new: bool = False) -> Panel:
-    """Create a preview panel with syntax highlighting and metadata"""
+    """Create a preview panel with syntax highlighting and metadata, centered on screen"""
+    console = Console()
     syntax_type = get_file_syntax(filepath)
     file_size = len(content.encode('utf-8'))
     line_count = len(content.splitlines())
@@ -32,6 +33,14 @@ def create_content_preview(filepath: Path, content: str, is_new: bool = False) -
     # Format file metadata
     size_str = f"{file_size:,} bytes"
     stats = f"[dim]{line_count:,} lines | {size_str}[/dim]"
+
+    # Calculate optimal width based on content
+    content_lines = content.splitlines()
+    max_line_length = max((len(line) for line in content_lines), default=0)
+
+    # Add margin for syntax elements and padding
+    margin = 10 if syntax_type else 4
+    optimal_width = min(max_line_length + margin, console.width - 4)
 
     if syntax_type:
         # Use syntax highlighting for known file types
@@ -41,7 +50,7 @@ def create_content_preview(filepath: Path, content: str, is_new: bool = False) -
             theme="monokai",
             line_numbers=True,
             word_wrap=True,
-            code_width=min(100, Console().width - 4),
+            code_width=optimal_width,
             tab_size=4
         )
         preview = syntax
@@ -58,9 +67,10 @@ def create_content_preview(filepath: Path, content: str, is_new: bool = False) -
     return Panel(
         preview,
         title=title,
-        title_align="left",
+        title_align="center",
         subtitle=stats,
-        subtitle_align="right",
+        subtitle_align="center",
         border_style="green" if is_new else "cyan",
-        padding=(1, 2)
+        padding=(1, 2),
+        width=optimal_width
     )

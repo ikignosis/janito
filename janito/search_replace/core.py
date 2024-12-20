@@ -36,7 +36,7 @@ class SearchReplacer:
             search_indent = self.searcher.get_indentation(search_first)
             normalized_pattern = self.searcher.normalize_pattern(self.search_pattern, search_indent)
             matches = self._find_matches(source_lines, normalized_pattern)
-            return bool(self.searcher._find_best_match_position(matches, source_lines, self.pattern_base_indent))
+            return bool(matches)  # Just check if we got any match
         except Exception:
             return False
 
@@ -53,32 +53,32 @@ class SearchReplacer:
         normalized_pattern = self.searcher.normalize_pattern(self.search_pattern, search_indent)
 
         matches = self._find_matches(source_lines, normalized_pattern)
-        best_pos = self.searcher._find_best_match_position(matches, source_lines, self.pattern_base_indent)
-
-        if best_pos is None:
+        if not matches:
             # Log failed match if not in debug mode
             if not self.searcher.debug_mode:
                 log_failure(self.file_ext)
             raise PatternNotFoundException("Pattern not found")
 
+        match_pos = matches[0]  # We know there's exactly one match if we get here
+
         if self.searcher.debug_mode:
             pattern_lines = len(normalized_pattern.splitlines())
             replacement_lines = len(self.replacement.splitlines()) if self.replacement else 0
             print(f"\n[DEBUG] Replacing {pattern_lines} lines with {replacement_lines} lines")
-            context_start = max(0, best_pos - 2)
-            context_end = min(len(source_lines), best_pos + len(normalized_pattern.splitlines()) + 2)
+            context_start = max(0, match_pos - 2)
+            context_end = min(len(source_lines), match_pos + len(normalized_pattern.splitlines()) + 2)
             print("\n[DEBUG] Context before replacement:")
             for i in range(context_start, context_end):
-                prefix = ">>> " if context_start <= i < best_pos + len(normalized_pattern.splitlines()) else "    "
+                prefix = ">>> " if context_start <= i < match_pos + len(normalized_pattern.splitlines()) else "    "
                 print(f"[DEBUG] {prefix}Line {i + 1}: {source_lines[i]}")
 
-        result = self._apply_replacement(source_lines, best_pos, normalized_pattern)
+        result = self._apply_replacement(source_lines, match_pos, normalized_pattern)
 
         if self.searcher.debug_mode:
             print("\n[DEBUG] Context after replacement:")
             result_lines = result.splitlines()
             for i in range(context_start, context_end):
-                prefix = ">>> " if context_start <= i < best_pos + len(self.replacement.splitlines()) else "    "
+                prefix = ">>> " if context_start <= i < match_pos + len(self.replacement.splitlines()) else "    "
                 print(f"[DEBUG] {prefix}Line {i + 1}: {result_lines[i]}")
 
         return result
@@ -95,8 +95,6 @@ class SearchReplacer:
         while i < len(source_lines):
             if i == match_pos:
                 self.pattern_found = True
-                # Log successful match if not in debug mode
-                # get the 
                 if not self.searcher.debug_mode:
                     log_match("Strategy", self.file_ext)
                 match_indent = self.searcher.get_indentation(source_lines[i])
@@ -110,11 +108,4 @@ class SearchReplacer:
                 i += 1
         return '\n'.join(result_lines)
 
-    def _try_match_at_position(self, pos, source_lines, normalized_pattern):
-        """Check if pattern matches at given position."""
-        pattern_lines = normalized_pattern.splitlines()
-        strategies = self.searcher.get_strategies(self.file_ext)
-        result = self.searcher.try_match_with_strategies(source_lines, pattern_lines, pos, strategies)
-        if result.success and not self.searcher.debug_mode:
-            log_match(result.strategy_name, self.file_ext)
-        return result.success
+    # Remove _try_match_at_position method as it's redundant
