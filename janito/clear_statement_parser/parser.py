@@ -124,20 +124,20 @@ class BlockContext:
     
     # Fixed implementation:
     def validate_block_name(self, name: str, line_number: int) -> str:
-        """Generate internal tracking name for blocks with improved validation"""
+        """Generate internal tracking name for blocks with implicit closure support"""
+        # Handle end of input case
+        if line_number == -1:
+            return name
+
         # Convert name to lowercase for case-insensitive comparison
         normalized_name = name.lower()
         
-        # Check if this block name exists in the current chain (case-insensitive)
+        # Find the most recently opened block with the same name (if any)
         current_chain = [block_name.lower() for block_name in self.get_current_block_chain()]
         if normalized_name in current_chain:
-            raise ParseError(line_number, "", 
-                f"Cannot open block '{name}' inside another block of the same name")
-        
-        # Check if this block name exists in any parent context (case-insensitive)
-        if self.is_name_in_parent_chain(name):
-            raise ParseError(line_number, "",
-                f"Block name '{name}' cannot be used while a block with the same name is still open")
+            # Implicitly close the previous block with the same name
+            # This is handled in _parse_context by returning to the appropriate level
+            return name
         
         if name not in self._block_counters:
             self._block_counters[name] = 0
@@ -154,7 +154,11 @@ class BlockContext:
         return self.name.split('#')[0]
         
     def validate_block_end(self, name: str, line_number: int) -> bool:
-        """Validate block end name matches current context"""
+        """Validate block end name matches current context, allowing implicit closure"""
+        # Always valid at end of input (implicit closure)
+        if line_number == -1:
+            return True
+        # Otherwise check name matches
         return name == self.get_base_name()
 
     def new_statement(self):
@@ -184,17 +188,37 @@ class StatementParser:
     def parse(self, content: str, debug: bool = False) -> List[Statement]:
         self.debug = debug
         self.errors = []
+
+        # Extract content between markers
         lines = content.splitlines()
-        
+        start_idx = -1
+        end_idx = -1
+
+        for i, line in enumerate(lines):
+            if line.strip() == "BEGIN_INSTRUCTIONS":
+                start_idx = i + 1
+            elif line.strip() == "END_INSTRUCTIONS":
+                end_idx = i
+                break
+
+        if start_idx == -1 or end_idx == -1:
+            raise ParseError(0, "", "Missing BEGIN_INSTRUCTIONS or END_INSTRUCTIONS markers")
+        if start_idx >= end_idx:
+            raise ParseError(start_idx, "", "BEGIN_INSTRUCTIONS must come before END_INSTRUCTIONS")
+
+        # Process only content between markers
+        instruction_lines = lines[start_idx:end_idx]
+
         if self.debug:
             print("\nStarting parse with debug mode enabled")
-            
+            print(f"Processing content between lines {start_idx + 1} and {end_idx}")
+
         context = BlockContext("root", -1)
-        self._parse_context(lines, 0, len(lines), context)
+        self._parse_context(instruction_lines, 0, len(instruction_lines), context)
         return context.statements
 
     def _parse_context(self, lines: List[str], start: int, end: int, context: BlockContext) -> int:
-        """Parse statements within the current block context"""
+        """Parse statements within the current block context with implicit block closure"""
         line_number = start
         
         while line_number < end:
@@ -211,6 +235,12 @@ class StatementParser:
                     continue
                     
                 elif line_type == LineType.STATEMENT:
+                    # Check if this statement name matches the statement containing current block
+                    if context.parent and context.parent.current_statement:
+                        if line == context.parent.current_statement.name:
+                            # Implicitly close the current block
+                            return line_number
+
                     context.new_statement()  # Reset statement context
                     context.current_statement = Statement(line)
                     context.statements.append(context.current_statement)
@@ -223,10 +253,14 @@ class StatementParser:
                         
                     base_name = self._validate_block_name(line[1:].strip(), line_number)
                     
-                    # Check if block name is used in any parent block
-                    if context.is_name_in_parent_chain(base_name):
-                        raise ParseError(line_number, "", 
-                            f"Block name '{base_name}' cannot be used while a block with the same name is still open")
+                    # Check if this block name exists in the current chain
+                    current = context
+                    while current and current.name != "root":
+                        if current.get_base_name().lower() == base_name.lower():
+                            # Return to the level just above the matching block
+                            if current.parent:
+                                return line_number
+                        current = current.parent
                     
                     tracked_name = context.validate_block_name(base_name, line_number)
                     new_context = BlockContext(tracked_name, line_number, context)
@@ -263,11 +297,12 @@ class StatementParser:
                 self.errors.append(e)
                 line_number += 1
                 
-        # Check for unclosed blocks at end of input
-        if context.parent is not None:
-            raise ParseError(end, "", 
-                f"Reached end of input without closing block '{context.name}' (opened at line {context.line_number + 1})")
-        
+        # Handle end of input - implicitly close any remaining blocks
+        if line_number >= end and context.parent is not None:
+            if self.debug:
+                print(f"  Implicitly closing block '{context.name}' at end of input (opened at line {context.line_number + 1})")
+            return line_number
+
         return line_number
 
     def _handle_parameter(self, line_number: int, lines: List, line_type: LineType, context: BlockContext) -> int:

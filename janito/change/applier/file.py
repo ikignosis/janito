@@ -14,10 +14,6 @@ class FileChangeApplier:
         path = self.preview_dir / change.name
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Store original content before any changes
-        if path.exists():
-            change.original_content = path.read_text()
-
         if change.operation == ChangeOperation.REMOVE_FILE:
             return self._handle_remove(path)
         elif change.operation in (ChangeOperation.CREATE_FILE, ChangeOperation.REPLACE_FILE):

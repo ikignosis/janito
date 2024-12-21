@@ -254,14 +254,7 @@ def parse_response(response_text: str) -> List[FileChange]:
     parser = CommandParser()
     statement_parser = StatementParser()
 
-    # First extract the changes section
-    instructions = extract_instructions_section(response_text)
-    if not instructions:
-        if config.debug:
-            console.print("[yellow]No changes section found in response[/yellow]")
-        return []
-
-    statements = statement_parser.parse(instructions)
+    statements = statement_parser.parse(response_text)
     return parser.parse_statements(statements)
 
 def build_change_request_prompt(

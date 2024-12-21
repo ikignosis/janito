@@ -5,7 +5,7 @@ from datetime import datetime
 from ..parser import TextChange
 from janito.config import config
 from ...clear_statement_parser.parser import StatementParser
-from ...search_replace import SearchReplacer, PatternNotFoundException, Searcher
+from ...text_finder.finder import FindReplacer, PatternNotFoundException
 
 class TextFindDebugger:
     def __init__(self, console: Console):
@@ -43,16 +43,7 @@ class TextChangeApplier:
         self.console = console or Console()
         self.debugger = TextFindDebugger(self.console)
         self.parser = StatementParser()
-        self.searcher = Searcher()
         
-    def _get_last_line_indent(self, content: str) -> str:
-        """Extract indentation from the last non-empty line."""
-        lines = content.splitlines()
-        for line in reversed(lines):
-            if line.strip():
-                return self.searcher.get_indentation(line)
-        return ""
-
     def _validate_operation(self, mod: TextChange) -> Tuple[bool, Optional[str]]:
         """Validate text operation type and parameters
         Returns (is_valid, error_message)"""
@@ -80,7 +71,8 @@ class TextChangeApplier:
         modified = content
         any_changes = False
         target_path = target_path.resolve()
-        file_ext = target_path.suffix  # Get file extension including the dot
+        file_ext = target_path.suffix  # No longer need to strip the dot
+        find_replacer = FindReplacer(file_type=file_ext)
 
         for mod in changes:
             # Validate operation
@@ -90,32 +82,20 @@ class TextChangeApplier:
                 continue
 
             try:
-                # Handle append operations
-                if not mod.search_content:
-                    if mod.replace_content:
-                        modified = self._append_content(modified, mod.replace_content)
-                        any_changes = True
+                if mod.is_append:
+                    # For append, we'll do a replace at the end of the file
+                    modified = find_replacer.replace(modified + "\n", "$", mod.replace_content, debug=debug)
+                    any_changes = True
                     continue
 
                 # Handle delete operations (either explicit or via empty replacement)
                 if mod.is_delete or (mod.replace_content == "" and mod.search_content):
-                    replacer = SearchReplacer(modified, mod.search_content, "", file_ext, debug=debug)
-
-                    modified = replacer.replace()
+                    modified = find_replacer.replace(modified, mod.search_content, "", debug=debug)
                     any_changes = True
                     continue
 
-                # Handle search and replace
-                if debug:
-                    print("************************** before replace")
-                    print(modified)
-                    print("****************************")
-                replacer = SearchReplacer(modified, mod.search_content, mod.replace_content, file_ext, debug=debug)
-                modified = replacer.replace()
-                if debug:
-                    print("************************** after replace")
-                    print(modified)
-                    print("****************************")
+                # Handle regular replace operations
+                modified = find_replacer.replace(modified, mod.search_content, mod.replace_content, debug=debug)
                 any_changes = True
 
             except PatternNotFoundException:
@@ -125,61 +105,7 @@ class TextChangeApplier:
                 self.console.print(f"[yellow]Warning: {warning_msg}[/yellow]")
                 continue
     
-        return (True, modified, None) if any_changes else (False, content, "No changes were applied")
-
-    def _append_content(self, content: str, new_content: str) -> str:
-        """Append content with proper indentation matching.
-        
-        The indentation rules are:
-        1. If new content starts with empty lines, preserve original indentation
-        2. Otherwise, use indentation from the last non-empty line of existing content as base
-        3. Preserves relative indentation between lines in new content
-        4. Adjusts indentation if new content would go into negative space
-        """
-        if not content.endswith('\n'):
-            content += '\n'
-        
-        # Add empty line if the last line is not empty
-        if content.rstrip('\n').splitlines()[-1].strip():
-            content += '\n'
-
-        # If new content starts with empty lines, preserve original indentation
-        lines = new_content.splitlines()
-        if not lines or not lines[0].strip():
-            return content + new_content
-            
-        # Get base indentation from last non-empty line
-        base_indent = self._get_last_line_indent(content)
-        
-        # Get the first non-empty line from new content
-        first_line, _ = self.searcher.get_first_non_empty_line(new_content)
-        if first_line:
-            # Get the indentation of the first line of new content
-            new_base_indent = self.searcher.get_indentation(first_line)
-            
-            # Calculate how much we need to shift if new content would go into negative space
-            indent_delta = len(base_indent) + (len(new_base_indent) - len(new_base_indent))
-            left_shift = abs(min(0, indent_delta))
-            
-            result_lines = []
-            for line in new_content.splitlines():
-                if not line.strip():
-                    result_lines.append('')
-                    continue
-                    
-                # Calculate final indentation:
-                # 1. Get current line's indentation
-                line_indent = self.searcher.get_indentation(line)
-                # 2. Calculate relative indent compared to new content's first line
-                rel_indent = len(line_indent) - len(new_base_indent)
-                # 3. Apply base indent + relative indent, adjusting for negative space
-                final_indent_len = max(0, len(line_indent) - left_shift + (len(base_indent) - len(new_base_indent)))
-                final_indent = ' ' * final_indent_len
-                result_lines.append(final_indent + line.lstrip())
-                
-            new_content = '\n'.join(result_lines)
-            
-        return content + new_content
+        return (True, modified, None)
 
     def _handle_failed_search(self, filepath: Path, search_text: str, content: str) -> str:
         """Handle failed search by logging debug info in a test case format"""

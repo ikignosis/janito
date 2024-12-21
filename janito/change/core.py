@@ -5,11 +5,10 @@ from rich.prompt import Confirm
 from rich.panel import Panel
 from rich.columns import Columns
 from rich import box
-
 from janito.common import progress_send_message
 from janito.change.history import save_changes_to_history
 from janito.config import config
-from janito.workspace.workset import Workset  # Update import to use Workset directly
+from janito.workspace.workset import Workset
 from .viewer import preview_all_changes
 from janito.workspace.analysis import analyze_workspace_content as show_content_stats
 
@@ -27,17 +26,9 @@ def process_change_request(
     preview_only: bool = False,
     debug: bool = False
     ) -> Tuple[bool, Optional[Path]]:
-    """
-    Process a change request through the main flow.
-    Return:
-        success: True if the request was processed successfully
-        history_file: Path to the saved history file
-    """
+    """Process a change request through the main flow."""
     console = Console()
-    workset = Workset()  # Create workset instance
-
-    
-    # Analyze workspace content
+    workset = Workset()
     workset.show()
 
     # Get analysis of the request using workset content
@@ -81,7 +72,7 @@ def process_change_request(
         return True, history_file
 
     # Apply changes
-    _, preview_dir = setup_workspace_dir_preview()
+    preview_dir = setup_workspace_dir_preview()
     applier = ChangeApplier(preview_dir, debug=debug)
 
     success, _ = applier.apply_changes(changes)

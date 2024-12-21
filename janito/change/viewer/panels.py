@@ -76,6 +76,17 @@ def preview_all_changes(console: Console, changes: List[FileChange]) -> None:
         if change.operation in (ChangeOperation.REPLACE_FILE, ChangeOperation.MODIFY_FILE):
             show_side_by_side_diff(console, change, i, total_changes)
 
+    # Show final success message
+    console.print()
+    console.print(Panel(
+        "[yellow]All changes have been previewed successfully![/yellow]",
+        style="green",
+        title="[green]Success[/green]",
+        title_align="center",
+        border_style="green"
+    ))
+    console.print()
+
 def _show_file_operations(console: Console, grouped_changes: dict) -> None:
     """Display file operation summaries with content preview for new files."""
     # Show file creations first
@@ -88,7 +99,7 @@ def _show_file_operations(console: Console, grouped_changes: dict) -> None:
                 console.print(preview, justify="center")
             console.print()
 
-    # Show file removals
+    # Show file and directory removals
     if ChangeOperation.REMOVE_FILE in grouped_changes:
         console.print("\n[bold red]File Removals:[/bold red]")
         for change in grouped_changes[ChangeOperation.REMOVE_FILE]:
@@ -157,47 +168,63 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
         console.print(f"[dim]Recommended terminal width: {min_panel_width * 2 + 4} or greater[/dim]")
 
     def create_diff_panels(orig_section: List[str], new_section: List[str],
-                          change_name: str, can_do_side_by_side: bool, term_width: int) -> List[Panel]:
-        """Create unified diff panels for both text and file changes"""
-        left_panel = format_content(orig_section, orig_section, new_section, True)
-        right_panel = format_content(new_section, orig_section, new_section, False)
+                              change_name: str, can_do_side_by_side: bool, term_width: int) -> List[Panel]:
+            """Create unified diff panels for both text and file changes"""
+            left_panel = format_content(orig_section, orig_section, new_section, True)
+            right_panel = format_content(new_section, orig_section, new_section, False)
 
-        # Calculate optimal panel widths based on content
-        if can_do_side_by_side:
-            left_max_width = max((len(line) for line in str(left_panel).splitlines()), default=0)
-            right_max_width = max((len(line) for line in str(right_panel).splitlines()), default=0)
+            # Skip empty modified panel
+            if not any(new_section):
+                # Use full width for single panel
+                panel_width = term_width - 4  # Account for margins
+                return [
+                    Panel(
+                        left_panel or "",
+                        title="[red]Original[/red]",
+                        title_align="center",
+                        subtitle=str(change_name),
+                        subtitle_align="center",
+                        padding=(0, 1),
+                        width=panel_width
+                    )
+                ]
 
-            # Add padding and margins
-            left_width = min(left_max_width + 4, (term_width - 4) // 2)
-            right_width = min(right_max_width + 4, (term_width - 4) // 2)
+            # Calculate optimal panel widths based on content
+            if can_do_side_by_side:
+                left_max_width = max((len(line) for line in str(left_panel).splitlines()), default=0)
+                right_max_width = max((len(line) for line in str(right_panel).splitlines()), default=0)
 
-            # Ensure minimum width
-            min_width = 30
-            left_width = max(left_width, min_width)
-            right_width = max(right_width, min_width)
-        else:
-            left_width = right_width = term_width - 2
+                # Add padding and margins
+                left_width = min(left_max_width + 4, (term_width - 4) // 2)
+                right_width = min(right_max_width + 4, (term_width - 4) // 2)
 
-        return [
-            Panel(
-                left_panel or "",
-                title="[red]Original[/red]",
-                title_align="center",
-                subtitle=str(change_name),
-                subtitle_align="center",
-                padding=(0, 1),
-                width=left_width
-            ),
-            Panel(
-                right_panel or "",
-                title="[green]Modified[/green]",
-                title_align="center",
-                subtitle=str(change_name),
-                subtitle_align="center",
-                padding=(0, 1),
-                width=right_width
-            )
-        ]
+                # Ensure minimum width
+                min_width = 30
+                left_width = max(left_width, min_width)
+                right_width = max(right_width, min_width)
+            else:
+                left_width = right_width = term_width - 2
+
+            return [
+                Panel(
+                    left_panel or "",
+                    title="[red]Original[/red]",
+                    title_align="center",
+                    subtitle=str(change_name),
+                    subtitle_align="center",
+                    padding=(0, 1),
+                    width=left_width
+                ),
+                Panel(
+                    right_panel or "",
+                    title="[green]Modified[/green]",
+                    title_align="center",
+                    subtitle=str(change_name),
+                    subtitle_align="center",
+                    padding=(0, 1),
+                    width=right_width
+                )
+            ]
 
     # Handle text changes
     if change.text_changes:
@@ -264,13 +291,8 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
 
             # Update height after displaying content
 
-    # Add final separator and success message
+    # Add final separator
     console.print(Rule(title="End Of Changes", style="bold blue"))
-    console.print()
-    console.print(Panel("[yellow]You're the best! All changes have been previewed successfully![/yellow]",
-                       style="yellow",
-                       title="Success",
-                       title_align="center"))
     console.print()
 
 def show_delete_panel(console: Console, change: FileChange, change_index: int = 0, total_changes: int = 1) -> None:

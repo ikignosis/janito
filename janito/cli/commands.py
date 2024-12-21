@@ -45,6 +45,10 @@ def is_dir_empty(path: Path) -> bool:
 
 def handle_request(request: str, preview_only: bool = False):
     """Process modification request"""
+    if not request:
+        console.print("[red]Error: Change request required[/red]")
+        return
+
     is_empty = is_dir_empty(config.workspace_dir)
     if is_empty and not config.include:
         console.print("\n[bold blue]Empty directory - will create new files as needed[/bold blue]")

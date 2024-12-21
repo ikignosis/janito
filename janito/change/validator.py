@@ -158,12 +158,14 @@ def validate_change(change: FileChange) -> Tuple[bool, Optional[str]]:
 def validate_all_changes(changes: List[FileChange], collected_files: Set[Path]) -> Tuple[bool, Optional[str]]:
     """Validates all aspects of the requested changes.
 
-    Performs complete validation in two phases:
+    Performs complete validation in three phases:
     1. Individual change validation:
         - Structure and content requirements
         - Operation-specific validations
         - Text modification validations
-    2. Filesystem state validation:
+    2. Operation order validation:
+        - Directory removals must come after file operations
+    3. Filesystem state validation:
         - File existence checks
         - Path conflict checks
         - Python module conflict checks
@@ -182,12 +184,12 @@ def validate_all_changes(changes: List[FileChange], collected_files: Set[Path]) 
         is_valid, error = validate_change(change)
         if not is_valid:
             return False, f"Invalid change for {change.name}: {error}"
-    
+
     # Then validate file operations against filesystem
     is_valid, error = validate_file_operations(changes, collected_files)
     if not is_valid:
         return False, error
-        
+
     return True, None
 
 def validate_file_operations(changes: List[FileChange], collected_files: Set[Path]) -> Tuple[bool, str]:

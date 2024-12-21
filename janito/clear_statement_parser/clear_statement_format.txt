@@ -39,7 +39,7 @@ Line type is determined by these rules in order, once there is a match the type 
 7. Key/Value: Lines containing : are treated as key/value pairs
 8. Block Marker: Lines matching one of these patterns:
    - Block Start: Line begins with / followed immediately by an alphanumeric block name (e.g., /BlockName)
-   - Block End: Line consists of an alphanumeric block name followed immediately by / (e.g., BlockName/)
+   - Block End: Line consists of an alphanumeric block name followed immediately by a forward slash (e.g., BlockName/)
 
 Note: The order of these rules is significant. A line's type is determined by the first matching rule.
 
@@ -232,9 +232,12 @@ Key Characteristics:
 
 Block Rules:
 - Statement block names must be alphanumeric
-- Multiple blocks with the same name are allowed within the same level to represent parallel or repeated operations
-- A block name cannot be the same as its direct parent block name
-- Block names can be reused at any level except as a direct child of a block with the same name
+- Blocks are implicitly closed in three situations:
+  1. When a new block is opened with the same name as a currently open block
+  2. When a new statement is encountered with the same name as the statement containing the current block
+  3. When reaching the end of content (all remaining open blocks are implicitly closed)
+- These implicit closure rules enable more concise representation of repeated operations
+- Block names can be reused at any level
 - Content: Must consist of statements, where each statement can have parameters in the form of key/value pairs, literal blocks, lists, or nested blocks
 - Nesting: Maximum depth of 10 levels (not counting the initial statement level)
 - Empty Blocks: Allowed
@@ -324,5 +327,63 @@ Deploy Microservices
             port: 8002
             image: users:latest
     Service/
+
+#### Statement with Implicit Block Closure:
+Deploy Microservices
+    /Service
+        Deploy Container
+            name: auth-service
+            /Environment
+                Set Parameters
+                    memory: 512Mi
+                    
+            /Environment  # Implicitly closes previous Environment block, no Environment/ needed
+                Set Parameters
+                    cpu: 1
+    
+    /Service  # Implicitly closes previous Service block, no Service/ needed
+        Deploy Container
+            name: payment-service
+            /Environment
+                Set Parameters
+                    memory: 1024Mi
+            Environment/
+    Service/
+
+#### Statement with Implicit Block Closure via Statement Name:
+Deploy Container
+    name: auth-service
+    /Environment
+        Set Parameters
+            memory: 512Mi
+
+Deploy Container  # This new statement implicitly closes all blocks in previous Deploy Container
+    name: payment-service
+    /Environment
+        Set Parameters
+            memory: 1024Mi
+    Environment/
+
+# Note: Statements are not blocks and cannot be explicitly closed.
+# A new statement with the same name implicitly closes all blocks 
+# in the previous statement with that name.
+
+#### Statement with End of Content Implicit Closure:
+Deploy Container
+    name: api-service
+    /Environment
+        Set Parameters
+            memory: 512Mi
+            
+        Configure Network
+            port: 8080
+            
+        /Logging
+            Enable Metrics
+                format: json
+
+# End of file - all open blocks (Logging, Environment) are implicitly closed
+# No need for Logging/ and Environment/ markers
+```
 
 

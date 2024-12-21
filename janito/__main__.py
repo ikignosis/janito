@@ -56,7 +56,7 @@ def typer_main(
     version: bool = typer.Option(False, "--version", help="Show version information"),
     test_cmd: Optional[str] = typer.Option(None, "--test", help="Command to run tests after changes"),
     auto_apply: bool = typer.Option(False, "--auto-apply", help="Apply changes without confirmation"),
-    tui: bool = typer.Option(False, "--tui", help="Use terminal user interface"),
+    # Removed TUI option
     history: bool = typer.Option(False, "--history", help="Display history of requests"),
     recursive: Optional[List[Path]] = typer.Option(None, "-r", "--recursive", help="Paths to scan recursively (directories only)"),
     demo: bool = typer.Option(False, "--demo", help="Run demo scenarios"),
@@ -82,7 +82,7 @@ def typer_main(
     config.set_debug(debug)
     config.set_verbose(verbose)
     config.set_auto_apply(auto_apply)
-    config.set_tui(tui)
+    # Removed TUI configuration
 
     # Configure workset with scan paths
     if include:
@@ -132,8 +132,10 @@ def typer_main(
     elif change_request:
         handle_request(change_request)
     else:
-        from janito.shell import start_shell
-        start_shell()
+        console.print("\n[cyan]Usage:[/cyan]")
+        console.print("  janito <request>     Process a change request")
+        console.print("  janito --ask <text>  Ask a question about the codebase")
+        console.print("  janito --help        Show this help message")
 
 def main():
     typer.run(typer_main)
