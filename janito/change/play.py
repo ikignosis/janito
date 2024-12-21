@@ -31,7 +31,7 @@ def play_saved_changes(history_file: Path) -> Tuple[bool, Optional[Path]]:
 
 
     # Create preview directory and apply changes
-    _, preview_dir = setup_workspace_dir_preview()
+    preview_dir = setup_workspace_dir_preview()
     applier = ChangeApplier(preview_dir)
 
     success, _ = applier.apply_changes(changes, debug=True)

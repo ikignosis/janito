@@ -36,7 +36,8 @@ END_OF_OPTIONS (mandatory marker)
 RULES:
 - do NOT provide the content of the files
 - do NOT offer to implement the changes
-- description items should be 80 chars or less
+- description items should be 80 chars or 
+- when removing packages do not mention the directory removal itself in the affected files
 
 Request:
 {request}

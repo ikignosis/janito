@@ -4,6 +4,9 @@ from rich.console import Console
 from rich.text import Text
 
 from janito.agents import AIAgent, agent
+
+# Initialize console for command handlers
+console = Console()
 from janito.workspace import workset
 from janito.config import config
 from janito.change.core import process_change_request
@@ -43,8 +46,16 @@ def is_dir_empty(path: Path) -> bool:
             return False
     return True
 
-def handle_request(request: str, preview_only: bool = False):
+def handle_request(request: str = None, preview_only: bool = False):
     """Process modification request"""
+    if not request:
+        try:
+            console.print("[cyan]Enter your request (Ctrl+C to cancel):[/cyan]")
+            request = prompt_user("")
+        except (KeyboardInterrupt, EOFError):
+            console.print("\n[yellow]Operation cancelled[/yellow]")
+            return
+
     if not request:
         console.print("[red]Error: Change request required[/red]")
         return
@@ -70,6 +81,7 @@ def handle_request(request: str, preview_only: bool = False):
 
 def handle_demo():
     """Run demo scenarios"""
+    global console
     runner = DemoRunner()
 
     # Add predefined scenarios

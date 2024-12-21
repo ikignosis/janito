@@ -16,7 +16,6 @@ class ConfigManager:
         self.workspace_dir = Path.cwd()
         self.raw = False
         self.auto_apply: bool = False
-        self.tui: bool = False
         self.skip_work: bool = False
 
     @classmethod

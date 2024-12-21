@@ -95,8 +95,10 @@ class TextChangeApplier:
                     continue
 
                 # Handle regular replace operations
-                modified = find_replacer.replace(modified, mod.search_content, mod.replace_content, debug=debug)
-                any_changes = True
+                new_content = find_replacer.replace(modified, mod.search_content, mod.replace_content, debug=debug)
+                if new_content != modified:
+                    modified = new_content
+                    any_changes = True
 
             except PatternNotFoundException:
                 if config.debug:

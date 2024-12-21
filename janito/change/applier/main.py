@@ -73,14 +73,15 @@ class ChangeApplier:
         for change in changes:
             if config.verbose:
                 console.print(f"[dim]Previewing changes for {change.name}...[/dim]")
-            success, error = self.apply_single_change(change, debug)
+            success, changed, error = self.apply_single_change(change, debug)
             if not success:
                 console.print(f"\n[red]Error previewing {change.name}: {error}[/red]")
                 return False, modified_files
-            if not change.operation == 'remove_file':
-                modified_files.add(change.name)
-            elif change.operation == 'rename_file':
-                modified_files.add(change.target)
+            if changed:
+                if not change.operation == ChangeOperation.REMOVE_FILE:
+                    modified_files.add(change.name)
+                elif change.operation == ChangeOperation.RENAME_FILE:
+                    modified_files.add(change.target)
 
         # Validate Python syntax (skip deleted and moved files)
         python_files = {f for f in modified_files if f.suffix == '.py'}
@@ -99,8 +100,6 @@ class ChangeApplier:
                 console.print(f"[red]{error_msg}[/red]")
                 return False, modified_files
 
-        # Show success message with syntax validation status
-        console.print("\n[cyan]Changes applied successfully.[/cyan]")
         if python_files:
             console.print(f"[green]✓ Python syntax validated for {len(python_files)} file(s)[/green]")
         
@@ -119,13 +118,21 @@ class ChangeApplier:
 
         return True, modified_files
 
-    def apply_single_change(self, change: FileChange, debug: bool) -> Tuple[bool, Optional[str]]:
-        """Apply a single file change to preview directory"""
+    def apply_single_change(self, change: FileChange, debug: bool) -> Tuple[bool, bool, Optional[str]]:
+        """Apply a single file change to preview directory
+
+        Returns:
+            Tuple containing:
+            - success: Whether operation completed without errors
+            - changed: Whether any actual changes were made
+            - error: Optional error message
+        """
         path = self.preview_dir / change.name  # Changed back from path to name
         
         # Handle file operations first
         if change.operation != ChangeOperation.MODIFY_FILE:
-            return self.file_applier.apply_file_operation(change)
+            success, error = self.file_applier.apply_file_operation(change)
+            return success, True, error  # File operations always count as changes
 
         # Handle text modifications
         if not path.exists():
@@ -138,17 +145,21 @@ class ChangeApplier:
 
         current_content = path.read_text()
         success, modified_content, error = self.text_applier.apply_modifications(
-            current_content, 
-            change.text_changes, 
+            current_content,
+            change.text_changes,
             path,
             debug
         )
 
         if not success:
-            return False, error
+            return False, False, error
 
-        path.write_text(modified_content)
-        return True, None
+        # Check if content actually changed
+        content_changed = modified_content != current_content
+        if content_changed:
+            path.write_text(modified_content)
+
+        return True, content_changed, None
 
     def apply_to_workspace_dir(self, changes: List[FileChange], debug: bool = None) -> bool:
         """Apply changes from preview to working directory"""

@@ -71,7 +71,7 @@ def _cleanup_pycache(path: Path) -> None:
     if pycache.exists():
         shutil.rmtree(pycache)
 
-def _cleanup_empty_dirs(path: Path) -> None:
+def _cleanup_empty_dirs(path: Path, console: Console) -> None:
     """Recursively remove empty parent directories"""
     current = path
     while current != config.workspace_dir:
@@ -79,6 +79,7 @@ def _cleanup_empty_dirs(path: Path) -> None:
             _cleanup_pycache(current)
             try:
                 current.rmdir()
+                console.print(f"[dim]Removed empty directory {current.relative_to(config.workspace_dir)}[/dim]")
             except OSError:
                 break
         current = current.parent
@@ -90,4 +91,4 @@ def remove_from_workspace_dir(filepath: Path, console: Console) -> None:
         target_path.unlink()
         console.print(f"[red]Removed {filepath}[/red]")
         # Clean up parent directories if empty
-        _cleanup_empty_dirs(target_path.parent)
+        _cleanup_empty_dirs(target_path.parent, console)

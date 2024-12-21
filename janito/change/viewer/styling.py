@@ -30,14 +30,15 @@ def format_content(lines: List[str], search_lines: List[str], replace_lines: Lis
         bg_color = current_theme.line_backgrounds['removed' if is_removal else 'deleted']
         style = f"{current_theme.text_color} on {bg_color}"
 
-        for line in lines:
-            # Calculate padding to fill width
-            content_width = len(line)
-            padding = " " * max(0, width - content_width)
+        # Find max content width
+        max_content_width = max((len(line) for line in lines), default=0)
+        # Use content width or minimum width, whichever is larger
+        content_width = max(max_content_width, 40)  # 40 chars minimum width
 
-            # Add content with consistent background
-            text.append(line, style=style)
-            text.append(padding, style=style)
+        for line in lines:
+            # Center the line within content width
+            line_padding = " " * ((content_width - len(line)) // 2)
+            text.append(line_padding + line, style=style)
             text.append("\n", style=style)
         return text
 

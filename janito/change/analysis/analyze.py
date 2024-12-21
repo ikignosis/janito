@@ -41,12 +41,6 @@ def analyze_request(
 
     if pre_select:
         return options.get(pre_select.upper())
-
-    if config.tui:
-        from janito.tui import TuiApp
-        app = TuiApp(options=options)
-        app.run()
-        return app.selected_option
         
     # Display formatted analysis in terminal mode
     format_analysis(response, config.raw)

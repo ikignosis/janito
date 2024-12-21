@@ -4,7 +4,6 @@ from pathlib import Path
 from rich.text import Text
 from rich import print as rich_print
 from rich.console import Console
-from janito.view import view_manager
 from .version import get_version
 
 from janito.config import config
@@ -44,8 +43,11 @@ def validate_paths(paths: Optional[List[Path]]) -> Optional[List[Path]]:
 
     return unique_paths if unique_paths else None
 
+# Initialize console for CLI output
+console = Console()
+
 def typer_main(
-    change_request: str = typer.Argument(None, help="Change request or command"),
+    change_request: Optional[str] = typer.Argument(None, help="Change request or command"),
     workspace_dir: Optional[Path] = typer.Option(None, "-w", "--workspace_dir", help="Working directory", file_okay=False, dir_okay=True),
     debug: bool = typer.Option(False, "--debug", help="Show debug information"),
     verbose: bool = typer.Option(False, "--verbose", help="Show verbose output"),
@@ -56,7 +58,6 @@ def typer_main(
     version: bool = typer.Option(False, "--version", help="Show version information"),
     test_cmd: Optional[str] = typer.Option(None, "--test", help="Command to run tests after changes"),
     auto_apply: bool = typer.Option(False, "--auto-apply", help="Apply changes without confirmation"),
-    # Removed TUI option
     history: bool = typer.Option(False, "--history", help="Display history of requests"),
     recursive: Optional[List[Path]] = typer.Option(None, "-r", "--recursive", help="Paths to scan recursively (directories only)"),
     demo: bool = typer.Option(False, "--demo", help="Run demo scenarios"),
@@ -64,7 +65,6 @@ def typer_main(
 ):
     """Janito - AI-powered code modification assistant"""
     if version:
-        console = Console()
         console.print(f"Janito version {get_version()}")
         return
 
@@ -82,7 +82,6 @@ def typer_main(
     config.set_debug(debug)
     config.set_verbose(verbose)
     config.set_auto_apply(auto_apply)
-    # Removed TUI configuration
 
     # Configure workset with scan paths
     if include:

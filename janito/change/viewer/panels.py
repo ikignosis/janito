@@ -12,8 +12,7 @@ from .sections import find_modified_sections
 from rich.rule import Rule
 import shutil
 import sys
-from rich.live import Live
-from pathlib import Path
+
 
 def create_progress_header(operation: str, filename: str, current: int, total: int, reason: str = None) -> Text:
     """Create a compact single-line header with balanced layout.
@@ -44,20 +43,15 @@ def create_progress_header(operation: str, filename: str, current: int, total: i
     return header
 
 def preview_all_changes(console: Console, changes: List[FileChange]) -> None:
-    """Show a summary of all changes with side-by-side comparison and continuous flow."""
+    """Show a summary of all changes with side-by-side comparison."""
     total_changes = len(changes)
 
     # Show unified legend at the start
     console.print(create_legend_items(console), justify="center")
     console.print()
 
-    # Show initial progress
     console.print("[yellow]Starting changes preview...[/yellow]", justify="center")
     console.print()
-
-    # Show progress indicator
-    with Live(console=console, refresh_per_second=4) as live:
-        live.update("[yellow]Processing changes...[/yellow]")
 
     # Group changes by operation type
     grouped_changes = {}
@@ -152,6 +146,9 @@ def show_side_by_side_diff(console: Console, change: FileChange, change_index: i
     # Get original and new content
     original = change.original_content or ""
     new_content = change.content or ""
+
+    if original and original == new_content:
+        print("Unexpected empty change", change)
 
     # Split into lines
     original_lines = original.splitlines()
@@ -326,13 +323,20 @@ def show_delete_panel(console: Console, change: FileChange, change_index: int = 
         content.append("\n\n")
         content.append("Original Content Preview:", style="dim red")
         content.append("\n")
+
+        # Calculate optimal width based on content
+        content_lines = change.original_content.splitlines()
+        max_line_length = max((len(line) for line in content_lines), default=0)
+        optimal_width = max(max_line_length + 4, 40)  # 4 chars padding, 40 chars minimum
+
         syntax = Syntax(
             change.original_content,
             "python",
             theme="monokai",
             line_numbers=True,
             word_wrap=True,
-            background_color="red_1"
+            background_color="red_1",
+            code_width=optimal_width
         )
         content.append(syntax)
 
