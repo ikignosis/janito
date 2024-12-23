@@ -1,6 +1,7 @@
 import ast
 from pathlib import Path
-from typing import Optional, Tuple, List, Set
+from typing import Optional, Tuple, List, Set, Union
+from .validation_result import ValidationResult, SyntaxError
 from rich.console import Console
 from rich.prompt import Confirm
 from rich.panel import Panel

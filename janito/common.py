@@ -3,11 +3,11 @@ from rich.live import Live
 from rich.text import Text
 from rich.console import Console
 from rich.rule import Rule
-from janito.agents import agent
-from .config import config
 from rich import print
 from threading import Event, Thread
 from time import sleep
+from janito.agents import agent
+from .config import config
 
 """ CACHE USAGE SUMMARY
 https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching

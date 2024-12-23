@@ -1,22 +1,19 @@
-import sys
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Optional
-
-import typer
+from typing import List
 from rich.console import Console
-from rich.markdown import Markdown
+from rich.prompt import Prompt
 from rich.panel import Panel
-from rich.prompt import Confirm
-from janito.user_prompt import prompt_user
 from rich.text import Text
 
-from janito.agents import AIAgent
+console = Console()
+
+import readline
+
+from janito.user_prompt import prompt_user, show_shortcuts
 from janito.common import progress_send_message
 from janito.config import config
-from janito.qa import ask_question, display_answer
-from janito.workspace import collect_files_content
 
 
 def prompt_user(message: str, choices: List[str] = None) -> str:
@@ -95,17 +92,3 @@ def modify_request(request: str) -> str:
     except KeyboardInterrupt:
         console.print("\n[yellow]Modification cancelled, keeping original request[/yellow]")
         return request
-
-
-def read_stdin() -> str:
-    """Read input from stdin until EOF"""
-    console = Console()
-    console.print("[dim]Enter your input (press Ctrl+D when finished):[/dim]")
-    return sys.stdin.read().strip()
-
-def process_question(question: str) -> None:
-    """Process a question about the codebase"""
-    paths_to_scan = [config.workspace_dir] if not config.include else config.include
-    files_content = collect_files_content(paths_to_scan)
-    answer = ask_question(question, files_content)
-    display_answer(answer)

@@ -29,6 +29,13 @@ COLORS = {
     'option_summary': 'white'
 }
 
+# File status indicators
+STATUS_EMOJI = {
+    'new': '✨ ',
+    'modified': '🔄 ',
+    'removed': '🗑️ '
+}
+
 
 def _create_option_content(option: AnalysisOption) -> Text:
     """Create rich formatted content for a single option."""
@@ -70,13 +77,15 @@ def _create_option_content(option: AnalysisOption) -> Text:
             if not status_files:
                 continue
 
-            icon = "📄 " if status == "New" else ""
-            content.append(f"{icon}{status} Files\n", style=COLORS['header'])
+            content.append(f"{status} Files\n", style=COLORS['header'])
             content.append("─" * MIN_PANEL_WIDTH + "\n", style=COLORS['rule'])
 
             seen_dirs = set()
             for file in sorted(status_files):
                 path = Path(option.get_clean_path(file))
+                status_emoji = STATUS_EMOJI[status.lower()]
+                # Add status emoji at the start of the line
+                content.append(status_emoji, style=COLORS[status.lower()])
                 if path.parent != Path('.'):
                     if str(path.parent) in seen_dirs:
                         content.append("↑".center(len(str(path.parent))), style=COLORS['repeat'])
@@ -84,7 +93,7 @@ def _create_option_content(option: AnalysisOption) -> Text:
                         content.append(str(path.parent), style=COLORS['directory'])
                         seen_dirs.add(str(path.parent))
                     content.append("/", style=COLORS['separator'])
-                content.append(path.name + "\n", style=COLORS[status.lower()])
+                content.append(f"{path.name}\n", style=COLORS[status.lower()])
             content.append("\n")
 
     return content
@@ -134,7 +143,7 @@ def format_analysis(analysis: str, raw: bool = False) -> None:
     columns = create_columns_layout(columns_content, term_width)
 
     console.print("\n")
-    console.print(Text("Analysis Options", style=COLORS['header']))
+    console.print(Text("Available Options", style=COLORS['header']), justify="center")
     console.print(Text("─" * term_width, style=COLORS['rule']))
     console.print(columns)
     console.print(Text("─" * term_width, style=COLORS['rule']))

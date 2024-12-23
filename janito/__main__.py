@@ -1,11 +1,9 @@
 import typer
-import readline
 from typing import Optional, List, Set
 from pathlib import Path
 from rich.text import Text
 from rich import print as rich_print
 from rich.console import Console
-from rich.prompt import Prompt
 from .version import get_version
 
 from janito.config import config
@@ -52,6 +50,7 @@ def typer_main(
     change_request: Optional[str] = typer.Argument(None, help="Change request or command"),
     workspace_dir: Optional[Path] = typer.Option(None, "-w", "--workspace_dir", help="Working directory", file_okay=False, dir_okay=True),
     debug: bool = typer.Option(False, "--debug", help="Show debug information"),
+    single: bool = typer.Option(False, "--single", help="Skip analysis and apply changes directly"),
     verbose: bool = typer.Option(False, "--verbose", help="Show verbose output"),
     include: Optional[List[Path]] = typer.Option(None, "-i", "--include", help="Additional paths to include"),
     ask: Optional[str] = typer.Option(None, "--ask", help="Ask a question about the codebase"),
@@ -133,10 +132,8 @@ def typer_main(
     elif change_request:
         handle_request(change_request)
     else:
-        console.print("\n[cyan]Usage:[/cyan]")
-        console.print("  janito <request>     Process a change request")
-        console.print("  janito --ask <text>  Ask a question about the codebase")
-        console.print("  janito --help        Show this help message")
+        # Enter interactive mode when no arguments provided
+        handle_request(None, single=single)
 
 def main():
     typer.run(typer_main)

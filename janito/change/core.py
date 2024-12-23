@@ -1,12 +1,12 @@
 from pathlib import Path
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Set
+from .validation_result import ValidationResult
 from rich.console import Console
 from rich.prompt import Confirm
 from rich.panel import Panel
 from rich.columns import Columns
 from rich import box
 from janito.common import progress_send_message
-from janito.change.history import save_changes_to_history
 from janito.config import config
 from janito.workspace.workset import Workset
 from .viewer import preview_all_changes
@@ -18,27 +18,33 @@ from . import (
     setup_workspace_dir_preview,
     ChangeApplier
 )
+from .history import save_changes_to_history
 
 from .analysis import analyze_request
 
 def process_change_request(
     request: str,
     preview_only: bool = False,
-    debug: bool = False
+    debug: bool = False,
+    single: bool = False
     ) -> Tuple[bool, Optional[Path]]:
     """Process a change request through the main flow."""
     console = Console()
     workset = Workset()
     workset.show()
 
-    # Get analysis of the request using workset content
-    analysis = analyze_request(request)
-    if not analysis:
-        console.print("[red]Analysis failed or interrupted[/red]")
-        return False, None
+    # Skip analysis in single mode
+    if single:
+        analysis = None
+    else:
+        analysis = analyze_request(request)
+        if not analysis:
+            console.print("[red]Analysis failed or interrupted[/red]")
+            return False, None
 
     # Build and send prompt
-    prompt = build_change_request_prompt(request, analysis.format_option_text())
+    option_text = analysis.format_option_text() if analysis else ""
+    prompt = build_change_request_prompt(request, option_text)
     response = progress_send_message(prompt)
     if not response:
         console.print("[red]Failed to get response from AI[/red]")
@@ -78,12 +84,22 @@ def process_change_request(
     success, _ = applier.apply_changes(changes)
     if success:
         preview_all_changes(console, changes)
+        console.print()  # Add spacing before prompt
 
-        if not config.auto_apply:
-            apply_changes = Confirm.ask("[cyan]Apply changes to working dir?[/cyan]")
-        else:
-            apply_changes = True
+        # Ensure console is flushed before prompt
+        console.file.flush()
+
+        # Handle auto-apply configuration
+        if config.auto_apply:
             console.print("[cyan]Auto-applying changes to working dir...[/cyan]")
+            apply_changes = True
+        else:
+            # Use explicit prompt with proper styling
+            apply_changes = Confirm.ask(
+                "[cyan]Apply changes to working directory?[/cyan]",
+                default=False,
+                show_default=True
+            )
 
         if apply_changes:
             applier.apply_to_workspace_dir(changes)

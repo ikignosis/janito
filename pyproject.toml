@@ -24,7 +24,6 @@ classifiers = [
 dependencies = [
     "typer",
     "pathspec",
-    "rich",
     "anthropic",
     "tomli"
 ]

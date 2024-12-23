@@ -1,12 +1,8 @@
 from pathlib import Path
-from typing import Optional, List
 from rich.console import Console
-from rich.text import Text
+from janito.agents import agent
+from janito.cli.user_prompt import prompt_user
 
-from janito.agents import AIAgent, agent
-
-# Initialize console for command handlers
-console = Console()
 from janito.workspace import workset
 from janito.config import config
 from janito.change.core import process_change_request
@@ -46,14 +42,13 @@ def is_dir_empty(path: Path) -> bool:
             return False
     return True
 
-def handle_request(request: str = None, preview_only: bool = False):
+def handle_request(request: str = None, preview_only: bool = False, single: bool = False):
     """Process modification request"""
     if not request:
         try:
-            console.print("[cyan]Enter your request (Ctrl+C to cancel):[/cyan]")
-            request = prompt_user("")
+            request = prompt_user("Enter change request").strip()
         except (KeyboardInterrupt, EOFError):
-            console.print("\n[yellow]Operation cancelled[/yellow]")
+            console.print("[yellow]Operation cancelled[/yellow]")
             return
 
     if not request:
@@ -64,7 +59,7 @@ def handle_request(request: str = None, preview_only: bool = False):
     if is_empty and not config.include:
         console.print("\n[bold blue]Empty directory - will create new files as needed[/bold blue]")
 
-    success, history_file = process_change_request(request, preview_only)
+    success, history_file = process_change_request(request, preview_only, single=single)
 
     if success and history_file and config.verbose:
         try:

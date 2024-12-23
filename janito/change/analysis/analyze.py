@@ -14,8 +14,9 @@ from .prompts import (
 )
 
 def analyze_request(
-    request: str,        
-    pre_select: str = ""
+    request: str,
+    pre_select: str = "",
+    single: bool = False
 ) -> Optional[AnalysisOption]:
     """
     Analyze changes and get user selection.
@@ -28,6 +29,9 @@ def analyze_request(
     Returns:
         Selected AnalysisOption or None if modified
     """
+    if single:
+        return None
+
     workset = Workset()  # Create workset instance
        
     # Build and send prompt using workset content directly

@@ -1,9 +1,8 @@
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
-from rich.rule import Rule
 from janito.common import progress_send_message
-from janito.workspace import workset  # Updated import
+from janito.workspace import workset
 
 
 QA_PROMPT = """Please provide a clear and concise answer to the following question about the workset you received above.
