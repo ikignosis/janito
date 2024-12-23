@@ -20,6 +20,13 @@ def get_file_syntax(filepath: Path) -> Optional[str]:
         '.bash': 'bash',
         '.sql': 'sql',
         '.xml': 'xml',
+        '.cpp': 'cpp',
+        '.c': 'c',
+        '.h': 'cpp',
+        '.hpp': 'cpp',
+        '.java': 'java',
+        '.go': 'go',
+        '.rs': 'rust',
     }
     return ext_map.get(filepath.suffix.lower())
 

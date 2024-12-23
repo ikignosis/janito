@@ -1,32 +1,27 @@
 """User prompts and input handling for analysis."""
 
 from typing import List, Dict
+from .options import AnalysisOption
 from rich.console import Console
-from rich.panel import Panel
 from rich.rule import Rule
 from rich.prompt import Prompt
-from rich import box
-
-
-from .options import AnalysisOption
 
 # Keep only prompt-related functionality
 CHANGE_ANALYSIS_PROMPT = """
 
 
 Considering the above workset content, provide 3 sections, each identified by a keyword and representing an option.
-Each option should include a concise description and a list of affected files.
+Each option should include a concise action plan and a list of affected files.
 1st option should be basic style change, 2nd organized style, 3rd exntensible style.
 Do not use style as keyword, instead focus on the changes summary.
 
 Use the following format:
 
 A. Keyword summary of the change
------------------
 Description:
-- Concise description of the change
+- Concise steps to implement the change
 
-Affected files:
+Affected Files:
 - path/file1.py (new)
 - path/file2.py (modified)
 - path/file3.py (removed)

@@ -1,9 +1,11 @@
 import typer
+import readline
 from typing import Optional, List, Set
 from pathlib import Path
 from rich.text import Text
 from rich import print as rich_print
 from rich.console import Console
+from rich.prompt import Prompt
 from .version import get_version
 
 from janito.config import config

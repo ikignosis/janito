@@ -10,16 +10,18 @@ class ThemeType(Enum):
 DARK_LINE_BACKGROUNDS = {
     'unchanged': '#1A1A1A',
     'added': '#003300',
-    'deleted': '#660000',
-    'removed': '#4A0000'
+    'deleted': '#330000',
+    'removed': '#4A0000',
+    'success': '#004400'  # Dark green for success messages
 }
 
 # Light theme colors
 LIGHT_LINE_BACKGROUNDS = {
     'unchanged': 'grey93',         # Light gray for unchanged
     'added': 'light_green',       # Semantic light green for additions
-    'deleted': 'light_red',       # Semantic light red for deletions
-    'removed': 'red_1'            # Darker red for file removals
+    'deleted': '#FFE6E6',         # Soft light red for deletions
+    'removed': 'red_1',           # Darker red for file removals
+    'success': '#E6FFE6'          # Light green for success messages
 }
 
 @dataclass
@@ -27,18 +29,21 @@ class ColorTheme:
     text_color: str
     line_backgrounds: Dict[str, str]
     theme_type: ThemeType
+    success_color: str = "green"
 
 # Predefined themes
 DARK_THEME = ColorTheme(
     text_color="white",
     line_backgrounds=DARK_LINE_BACKGROUNDS,
-    theme_type=ThemeType.DARK
+    theme_type=ThemeType.DARK,
+    success_color="green"
 )
 
 LIGHT_THEME = ColorTheme(
     text_color="black",
     line_backgrounds=LIGHT_LINE_BACKGROUNDS,
-    theme_type=ThemeType.LIGHT
+    theme_type=ThemeType.LIGHT,
+    success_color="dark_green"
 )
 
 DEFAULT_THEME = DARK_THEME

@@ -8,7 +8,8 @@ import typer
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
-from rich.prompt import Confirm, Prompt
+from rich.prompt import Confirm
+from janito.user_prompt import prompt_user
 from rich.text import Text
 
 from janito.agents import AIAgent
@@ -108,4 +109,3 @@ def process_question(question: str) -> None:
     files_content = collect_files_content(paths_to_scan)
     answer = ask_question(question, files_content)
     display_answer(answer)
-

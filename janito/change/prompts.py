@@ -20,7 +20,7 @@ RULES for Analysis:
 
 
 - The instructions must be submitted in the same format as provided below:
-    - On replace operations the search content indentation must be kept the same as the original content, since I will do an exact match
+    - In replace operations, always provide both heading and tailing lines, not just the search line
     - Multiple changes affecting the same lines should be grouped together to avoid conflicts
     - The file/text changes must be enclosed in BEGIN_INSTRUCTIONS and END_INSTRUCTIONS markers
     - All lines in text to be add, deleted or replaces must be prefixed with a dot (.) to mark them literal

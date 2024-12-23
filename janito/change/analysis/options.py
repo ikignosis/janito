@@ -4,26 +4,32 @@ from pathlib import Path
 
 @dataclass
 class AnalysisOption:
-    """Represents an analysis option with letter identifier and details"""
+    """Represents an analysis option with letter identifier and action plan"""
     letter: str
     summary: str
-    description_items: List[str] = field(default_factory=list)
-    affected_files: List[str] = field(default_factory=list)
+    action_plan: List[str] = field(default_factory=list)
+    modified_files: List[str] = field(default_factory=list)
+
+    def add_action_item(self, item: str) -> None:
+        """Add an action plan item, cleaning up any formatting"""
+        cleaned = item.strip('- ').strip()
+        if cleaned:
+            self.action_plan.append(cleaned)
 
     def format_option_text(self) -> str:
         """Format option details as text for change core"""
         text = f"Option {self.letter} - {self.summary}\n"
         text += "=" * len(f"Option {self.letter} - {self.summary}") + "\n\n"
         
-        if self.description_items:
+        if self.action_plan:
             text += "Description:\n"
-            for item in self.description_items:
+            for item in self.action_plan:
                 text += f"- {item}\n"
             text += "\n"
             
-        if self.affected_files:
-            text += "Affected files:\n"
-            for file in self.affected_files:
+        if self.modified_files:
+            text += "Modified files:\n"
+            for file in self.modified_files:
                 text += f"- {file}\n"
                 
         return text
@@ -33,7 +39,7 @@ class AnalysisOption:
         parent = str(Path(file_path).parent)
         return parent != '.' and not any(
             parent in self.get_clean_path(file)
-            for file in self.affected_files
+            for file in self.modified_files
             if self.get_clean_path(file) != file_path
         )
 
@@ -63,10 +69,10 @@ def parse_analysis_options(content: str) -> Dict[str, AnalysisOption]:
             continue
             
         # Section headers
-        if line.lower() == 'description:':
+        if line.lower() in ['description:', 'action plan:']:
             current_section = 'description'
             continue
-        elif line.lower() == 'affected files:':
+        elif line.lower() in ['affected files:', 'modified files:']:
             current_section = 'files'
             continue
             
@@ -74,8 +80,8 @@ def parse_analysis_options(content: str) -> Dict[str, AnalysisOption]:
         if current_option and line.startswith('- '):
             content = line[2:].strip()
             if current_section == 'description':
-                current_option.description_items.append(content)
+                current_option.action_plan.append(content)
             elif current_section == 'files':
-                current_option.affected_files.append(content)
+                current_option.modified_files.append(content)
     
     return options

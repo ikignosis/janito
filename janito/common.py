@@ -1,10 +1,13 @@
-from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
+from datetime import datetime, timezone
+from rich.live import Live
+from rich.text import Text
 from rich.console import Console
 from rich.rule import Rule
 from janito.agents import agent
 from .config import config
 from rich import print
-from threading import Event
+from threading import Event, Thread
+from time import sleep
 
 """ CACHE USAGE SUMMARY
 https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
@@ -19,6 +22,10 @@ console = Console()
 
 def progress_send_message(message: str) -> str:
     """Send a message to the AI agent with progress indication.
+
+    Displays a progress spinner while waiting for the agent's response and shows
+    token usage statistics after receiving the response. Uses a background thread
+    to update the elapsed time display.
     
     Displays a progress spinner while waiting for the agent's response and shows
     token usage statistics after receiving the response.
@@ -39,14 +46,31 @@ def progress_send_message(message: str) -> str:
         print(message)
         console.print("[yellow]======= End of message[/yellow]")
 
-    with Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}", justify="center"),
-        TimeElapsedColumn(),
-    ) as progress:
-        task = progress.add_task("Waiting for response from AI agent...", total=None)
-        response = agent.send_message(message, system_message=system_message)
-        progress.update(task, completed=True)
+    start_time = datetime.now()
+    stop_event = Event()
+
+    def update_display_thread(live_display):
+        while not stop_event.is_set():
+            elapsed = datetime.now() - start_time
+            live_display.update(Text.assemble(
+                "Waiting for response from AI agent... (",
+                (f"{elapsed.seconds}s", "magenta"),
+                ")",
+                justify="center"
+            ))
+            sleep(0.25)  # Update 4 times per second
+
+    with Live(Text("Waiting for response from AI agent...", justify="center"), refresh_per_second=4) as live:
+        display_thread = Thread(target=update_display_thread, args=(live,), daemon=True)
+        display_thread.start()
+
+        try:
+            response = agent.send_message(message, system_message=system_message)
+        finally:
+            stop_event.set()
+            display_thread.join()
+
+        live.update(Text("Response received!", justify="center"))
 
     if config.debug:
         console.print("[yellow]======= Received response[/yellow]")
