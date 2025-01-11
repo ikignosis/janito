@@ -10,7 +10,7 @@ from janito.config import config
 
 SHORTCUTS_INFO = """
 Available keyboard shortcuts:
-  ↑/↓     : Navigate command history
+  Up/Down : Navigate command history
   Ctrl+R  : Reverse search in history
   Tab     : Auto-complete (when choices available)
   Ctrl+A  : Move cursor to start of line
@@ -55,10 +55,6 @@ def prompt_user(message: str, choices: List[str] = None, show_help: bool = True)
     Returns:
         str: The user's input response
     """
-    # Setup history file if not already done
-    if not hasattr(prompt_user, '_history_setup'):
-        setup_history()
-        prompt_user._history_setup = True
 
     if choices:
         console.print(f"\n[cyan]Options: {', '.join(choices)}[/cyan]")
@@ -74,16 +70,16 @@ def prompt_user(message: str, choices: List[str] = None, show_help: bool = True)
         readline.set_completer(completer)
 
     # Enable emacs-style key bindings
-    readline.parse_and_bind('"\e[A": previous-history')      # Up arrow
-    readline.parse_and_bind('"\e[B": next-history')         # Down arrow
-    readline.parse_and_bind('"\C-r": reverse-search-history') # Ctrl+R
-    readline.parse_and_bind('"\C-a": beginning-of-line')    # Ctrl+A
-    readline.parse_and_bind('"\C-e": end-of-line')         # Ctrl+E
-    readline.parse_and_bind('"\C-k": kill-line')           # Ctrl+K
-    readline.parse_and_bind('"\C-u": unix-line-discard')   # Ctrl+U
+    readline.parse_and_bind('"up": previous-history')      # Up arrow
+    readline.parse_and_bind('"down": next-history')        # Down arrow
+    readline.parse_and_bind('"ctrl-r": reverse-search-history') # Ctrl+R
+    readline.parse_and_bind('"ctrl-a": beginning-of-line') # Ctrl+A
+    readline.parse_and_bind('"ctrl-e": end-of-line')       # Ctrl+E
+    readline.parse_and_bind('"ctrl-k": kill-line')         # Ctrl+K
+    readline.parse_and_bind('"ctrl-u": unix-line-discard') # Ctrl+U
 
     try:
-        response = Prompt.ask(f"[bold cyan]> {message}[/bold cyan]")
+        response = Prompt.ask(f"[bold cyan]> {message}[/bold cyan]\n")
         if response.strip():
             readline.add_history(response)
         return response

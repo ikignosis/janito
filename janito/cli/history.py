@@ -23,7 +23,7 @@ Timestamp: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}
 Response:
 {response}
 """
-    history_file.write_text(content)
+    history_file.write_text(content, encoding='utf-8')
 
 def display_history() -> None:
     """Display the history of requests"""
@@ -47,7 +47,7 @@ def display_history() -> None:
 
     for history_file in history_files:
         try:
-            content = history_file.read_text()
+            content = history_file.read_text(encoding='utf-8')
             request_line = next(line for line in content.splitlines() if line.startswith("Request:"))
             timestamp_line = next(line for line in content.splitlines() if line.startswith("Timestamp:"))
 

@@ -111,9 +111,9 @@ def validate_change(change: FileChange) -> Tuple[bool, Optional[str]]:
         - Rename: target path is required
         - Modify: at least one text change required
     - Text change validations:
-        - Delete: search_content is required
-        - Replace: both search_content and replace_content required
-        - Prevents duplicate search patterns
+        - Delete/Replace: start_context and end_context are required
+        - Replace: replace_content is required
+        - Prevents duplicate context patterns
 
     Args:
         change: FileChange object to validate
@@ -139,20 +139,24 @@ def validate_change(change: FileChange) -> Tuple[bool, Optional[str]]:
         if not change.text_changes:
             return False, "At least one modification is required for modify operation"
             
-        # Track search texts to avoid duplicates
-        seen_search_texts = set()
+        # Track context patterns to avoid duplicates
+        seen_contexts = set()
         for mod in change.text_changes:
-            # Validate append operations
-            if mod.is_append:
-                if not mod.replace_content:
-                    return False, "Replace content required for append operation"
-            # Validate other operations
-            elif not mod.is_delete:
-                if not mod.search_content:
-                    return False, "Search content required for non-append modification"
+            # All operations require both contexts
+            if not mod.start_context:
+                return False, "Start context is required for text modification"
+            if not mod.end_context:
+                return False, "End context is required for text modification"
+                
+            # Replace operations require replacement content
+            if not mod.is_delete and not mod.replace_content:
+                return False, "Replace content required for replace operation"
                     
-            if mod.search_content:
-                seen_search_texts.add(mod.search_content)
+            # Check for duplicate context patterns
+            context_key = (mod.start_context, mod.end_context)
+            if context_key in seen_contexts:
+                return False, "Duplicate context pattern found in modifications"
+            seen_contexts.add(context_key)
 
     return True, None
 
@@ -222,12 +226,15 @@ def validate_file_operations(changes: List[FileChange], collected_files: Set[Pat
         # For modify operations, validate text changes
         if change.operation == ChangeOperation.MODIFY_FILE:
             for mod in change.text_changes:
-                if not mod.is_delete and not mod.is_append:
-                    if not mod.search_content:
-                        return False, f"Search content required for modification in {change.name}"
+                # All operations require both contexts
+                if not mod.start_context:
+                    return False, f"Start context required for modification in {change.name}"
+                if not mod.end_context:
+                    return False, f"End context required for modification in {change.name}"
                 
-                if mod.is_append and not mod.replace_content:
-                    return False, f"Replace content required for append operation in {change.name}"
+                # Replace operations require replacement content
+                if not mod.is_delete and not mod.replace_content:
+                    return False, f"Replace content required for replace operation in {change.name}"
 
         # Get file state if available
         file_state = change.name.name.split(' (')[-1].rstrip(')') if ' (' in str(change.name) else None

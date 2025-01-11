@@ -11,7 +11,7 @@ console = Console()
 
 import readline
 
-from janito.user_prompt import prompt_user, show_shortcuts
+from janito.shell.user_prompt import prompt_user, show_shortcuts
 from janito.common import progress_send_message
 from janito.config import config
 
@@ -55,7 +55,7 @@ def save_prompt_to_file(prompt: str) -> Path:
     """Save prompt to a named temporary file that won't be deleted"""
     temp_file = tempfile.NamedTemporaryFile(prefix='selected_', suffix='.txt', delete=False)
     temp_path = Path(temp_file.name)
-    temp_path.write_text(prompt)
+    temp_path.write_text(prompt, encoding='utf-8')
     return temp_path
 
 def save_to_file(content: str, prefix: str) -> Path:

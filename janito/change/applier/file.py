@@ -35,7 +35,7 @@ class FileChangeApplier:
             return False, f"Cannot create file {path} - already exists"
 
         if change.content is not None:
-            path.write_text(change.content)
+            path.write_text(change.content, encoding='utf-8')
             return True, None
 
         return False, "No content provided for create/replace operation"

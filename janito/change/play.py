@@ -22,7 +22,7 @@ def play_saved_changes(history_file: Path) -> Tuple[bool, Optional[Path]]:
         console.print(f"[red]History file not found: {history_file}[/red]")
         return False, None
 
-    content = history_file.read_text()
+    content = history_file.read_text(encoding='utf-8')
     changes = parse_response(content)
 
     if not changes:

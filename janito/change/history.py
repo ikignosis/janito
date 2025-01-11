@@ -40,5 +40,5 @@ Timestamp: {APP_TIMESTAMP}
 Changes:
 {content}
 """
-    history_file.write_text(history_content)
+    history_file.write_text(history_content, encoding='utf-8')
     return history_file

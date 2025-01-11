@@ -46,6 +46,8 @@ def validate_paths(paths: Optional[List[Path]]) -> Optional[List[Path]]:
 # Initialize console for CLI output
 console = Console()
 
+from janito.shell.loop import shell_loop
+
 def typer_main(
     change_request: Optional[str] = typer.Argument(None, help="Change request or command"),
     workspace_dir: Optional[Path] = typer.Option(None, "-w", "--workspace_dir", help="Working directory", file_okay=False, dir_okay=True),
@@ -132,8 +134,8 @@ def typer_main(
     elif change_request:
         handle_request(change_request)
     else:
-        # Enter interactive mode when no arguments provided
-        handle_request(None, single=single)
+        # Enter interactive shell mode
+        shell_loop()
 
 def main():
     typer.run(typer_main)

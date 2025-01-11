@@ -96,10 +96,59 @@ class IndentationMatchStrategy:
         return None
 
 
+class BetweenContextsStrategy:
+    """Strategy for finding content between two contexts."""
+    
+    @staticmethod
+    def find(source_lines: List[str], find_lines: List[str], debug: bool = False) -> MatchResult:
+        if debug:
+            print("\nAttempting between-contexts match...")
+            
+        # Split the find pattern into start context, placeholder, and end context
+        try:
+            placeholder_idx = find_lines.index("    # ... any content between contexts ...")
+            start_context = find_lines[:placeholder_idx]
+            end_context = find_lines[placeholder_idx + 1:]
+        except ValueError:
+            return None
+            
+        # Find start context
+        start_match = None
+        for i in range(len(source_lines)):
+            if all(line.strip() == start.strip() for line, start in zip(source_lines[i:], start_context)):
+                start_match = i
+                break
+                
+        if start_match is None:
+            return None
+            
+        # Find end context after start match
+        end_match = None
+        for i in range(start_match + len(start_context), len(source_lines)):
+            if all(line.strip() == end.strip() for line, end in zip(source_lines[i:], end_context)):
+                end_match = i
+                break
+                
+        if end_match is None:
+            return None
+            
+        if debug:
+            print(f"\nFound start context at line {start_match + 1}")
+            print(f"Found end context at line {end_match + 1}")
+            
+        # Return match including both contexts and everything between them
+        return MatchResult(
+            find_lines=find_lines,
+            start=start_match,
+            end=end_match + len(end_context),
+            strategy='between_contexts'
+        )
+
+
 class Finder:
 
     file_type_matchers = { 
-        ".py": [ExactMatchStrategy, IndentationMatchStrategy],
+        ".py": [BetweenContextsStrategy, ExactMatchStrategy, IndentationMatchStrategy],
     }
 
     def find(self, text_lines: List[str], find_lines: List[str], file_type: str, debug: bool = False) -> MatchResult:
@@ -175,6 +224,31 @@ class FindReplacer:
     Wraps Finder and Replacer into a single interface for common find-and-replace operations.
     Handles the typical pattern matching and replacement workflow.
     """
+
+    @classmethod
+    def replay(cls, file_path: str) -> None:
+        """Replay a search/replace operation from a saved diagnostic file.
+
+        Args:
+            file_path: Path to the diagnostic file containing the operation details
+        """
+        from pathlib import Path
+        from rich.console import Console
+
+        console = Console()
+
+        try:
+            content = Path(file_path).read_text(encoding='utf-8')
+            source, find_pattern, replacement = content.split('---')
+
+            find_replacer = cls()
+            result = find_replacer.replace(source, find_pattern, replacement, debug=True)
+
+            console.print("\n[green]Replay completed successfully![/green]")
+            console.print("\n[bold]Result:[/bold]")
+            console.print(result)
+        except Exception as e:
+            console.print(f"[red]Error during replay: {str(e)}[/red]")
     
     def __init__(self, file_type: str = ".py"):
         self.finder = Finder()
@@ -289,3 +363,27 @@ class FindReplacer:
         # Return as string
         return '\n'.join(result)
 
+    def create_pattern_between_contexts(self, start_context: str, end_context: str) -> str:
+        """Create a pattern that matches content between two contexts.
+        
+        Args:
+            start_context: The starting context to match
+            end_context: The ending context to match
+            
+        Returns:
+            A pattern string that includes both contexts and everything between them
+        """
+        # Split contexts into lines and strip any trailing whitespace
+        start_lines = [line.rstrip() for line in start_context.splitlines()]
+        end_lines = [line.rstrip() for line in end_context.splitlines()]
+        
+        if not start_lines or not end_lines:
+            raise ValueError("Both start and end contexts must not be empty")
+            
+        # Create a pattern that includes both contexts and everything between them
+        pattern = []
+        pattern.extend(start_lines)
+        pattern.append("    # ... any content between contexts ...")
+        pattern.extend(end_lines)
+        
+        return "\n".join(pattern)

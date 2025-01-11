@@ -16,25 +16,36 @@ class TextFindDebugger:
         """Convert whitespace characters to visible markers"""
         return text.replace(' ', '·').replace('\t', '→')
 
-    def debug_find(self, content: str, search: str) -> List[int]:
-        """Debug find operation by showing numbered matches"""
+    def debug_find(self, content: str, start_context: str, end_context: str) -> List[int]:
+        """Debug find operation by showing numbered matches between contexts"""
         self.find_count += 1
         matches = []
 
-        # Show search pattern
-        self.console.print(f"\n[cyan]Find #{self.find_count} search pattern:[/cyan]")
-        for i, line in enumerate(search.splitlines()):
+        # Show search patterns
+        self.console.print(f"\n[cyan]Find #{self.find_count} context patterns:[/cyan]")
+        self.console.print("[cyan]Start context:[/cyan]")
+        for i, line in enumerate(start_context.splitlines()):
+            self.console.print(f"[dim]{i+1:3d} | {self._visualize_whitespace(line)}[/dim]")
+        
+        self.console.print("[cyan]End context:[/cyan]")
+        for i, line in enumerate(end_context.splitlines()):
             self.console.print(f"[dim]{i+1:3d} | {self._visualize_whitespace(line)}[/dim]")
 
-        # Process content line by line
+        # Process content line by line to find matches
         lines = content.splitlines()
+        start_found = False
         for i, line in enumerate(lines):
-            if search.strip() in line.strip():
+            if not start_found and start_context.strip() in line.strip():
+                start_found = True
                 matches.append(i + 1)
-                self.console.print(f"[green]Match at line {i+1}:[/green] {self._visualize_whitespace(line)}")
+                self.console.print(f"[green]Start match at line {i+1}:[/green] {self._visualize_whitespace(line)}")
+            elif start_found and end_context.strip() in line.strip():
+                matches.append(i + 1)
+                self.console.print(f"[green]End match at line {i+1}:[/green] {self._visualize_whitespace(line)}")
+                break
 
         if not matches:
-            self.console.print("[yellow]No matches found[/yellow]")
+            self.console.print("[yellow]No complete matches found[/yellow]")
 
         return matches
 
@@ -47,21 +58,13 @@ class TextChangeApplier:
     def _validate_operation(self, mod: TextChange) -> Tuple[bool, Optional[str]]:
         """Validate text operation type and parameters
         Returns (is_valid, error_message)"""
-        if mod.is_append:
-            if not mod.replace_content:
-                return False, "Append operation requires content"
-            return True, None
-
-        # For delete operations
-        if mod.is_delete:
-            if not mod.search_content:
-                return False, "Delete operation requires search content"
-            return True, None
+        if not mod.start_context:
+            return False, "Operation requires start_context"
+        if not mod.end_context:
+            return False, "Operation requires end_context"
 
         # For replace operations
-        if not mod.search_content:
-            return False, "Replace operation requires search content"
-        if mod.replace_content is None:
+        if not mod.is_delete and mod.replace_content is None:
             return False, "Replace operation requires replacement content"
 
         return True, None
@@ -71,7 +74,7 @@ class TextChangeApplier:
         modified = content
         any_changes = False
         target_path = target_path.resolve()
-        file_ext = target_path.suffix  # No longer need to strip the dot
+        file_ext = target_path.suffix
         find_replacer = FindReplacer(file_type=file_ext)
 
         for mod in changes:
@@ -82,94 +85,86 @@ class TextChangeApplier:
                 continue
 
             try:
-                if mod.is_append:
-                    # For append, we'll do a replace at the end of the file
-                    modified = find_replacer.replace(modified + "\n", "$", mod.replace_content, debug=debug)
-                    any_changes = True
-                    continue
-
-                # Handle delete operations (either explicit or via empty replacement)
-                if mod.is_delete or (mod.replace_content == "" and mod.search_content):
-                    modified = find_replacer.replace(modified, mod.search_content, "", debug=debug)
-                    any_changes = True
-                    continue
-
-                # Handle regular replace operations
-                new_content = find_replacer.replace(modified, mod.search_content, mod.replace_content, debug=debug)
-                if new_content != modified:
-                    modified = new_content
-                    any_changes = True
+                # Find content between contexts
+                pattern = find_replacer.create_pattern_between_contexts(mod.start_context, mod.end_context)
+                
+                if mod.is_delete:
+                    modified = find_replacer.replace(modified, pattern, "", debug=debug)
+                else:
+                    modified = find_replacer.replace(modified, pattern, mod.replace_content, debug=debug)
+                any_changes = True
 
             except PatternNotFoundException:
                 if config.debug:
-                    self.debug_failed_finds(mod.search_content, modified, str(target_path))
-                warning_msg = self._handle_failed_search(target_path, mod.search_content, modified)
+                    self.debug_failed_finds(mod.start_context, mod.end_context, modified, str(target_path))
+                warning_msg = self._handle_failed_search(target_path, mod.start_context, mod.end_context, modified)
                 self.console.print(f"[yellow]Warning: {warning_msg}[/yellow]")
                 continue
     
         return (True, modified, None)
 
-    def _handle_failed_search(self, filepath: Path, search_text: str, content: str) -> str:
+    def _handle_failed_search(self, filepath: Path, start_context: str, end_context: str, content: str) -> str:
         """Handle failed search by logging debug info in a test case format"""
         failed_file = config.workspace_dir / '.janito' / 'change_history' / f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_changes_failed.txt"
         failed_file.parent.mkdir(parents=True, exist_ok=True)
 
-        # Create test case format debug info
         debug_info = f"""Test: Failed search in {filepath.name}
 ========================================
 Original:
 {content}
 ========================================
-Search pattern:
-{search_text}
+Start context:
+{start_context}
+========================================
+End context:
+{end_context}
 ========================================"""
 
-        failed_file.write_text(debug_info)
+        failed_file.write_text(debug_info, encoding='utf-8')
 
         self.console.print(f"[yellow]Changes failed saved to: {failed_file}[/yellow]")
         self.console.print("[yellow]Run with 'python -m janito.search_replace {failed_file}' to debug[/yellow]")
 
         return f"Could not apply change to {filepath} - pattern not found"
 
-    def debug_failed_finds(self, search_content: str, file_content: str, filepath: str) -> None:
+    def debug_failed_finds(self, start_context: str, end_context: str, file_content: str, filepath: str) -> None:
         """Debug find operations without applying changes"""
-        if not search_content or not file_content:
-            self.console.print("[yellow]Missing search or file content for debugging[/yellow]")
+        if not start_context or not end_context or not file_content:
+            self.console.print("[yellow]Missing context or file content for debugging[/yellow]")
             return
 
         self.console.print(f"\n[cyan]Debugging finds for {filepath}:[/cyan]")
-        self.debugger.debug_find(file_content, search_content)
+        self.debugger.debug_find(file_content, start_context, end_context)
 
-    def extract_debug_info(self, content: str) -> tuple[Optional[str], Optional[str], Optional[str]]:
-        """Extract search text and file content from failed change debug info.
-        
-        Only matches section markers ("========================================")
-        when they appear alone on a line.
-        """
+    def extract_debug_info(self, content: str) -> tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
+        """Extract contexts and file content from failed change debug info."""
         try:
             marker = "=" * 40
             lines = content.splitlines()
             section_starts = [i for i, line in enumerate(lines) if line.strip() == marker]
             
-            if len(section_starts) < 3:
+            if len(section_starts) < 4:
                 raise ValueError("Missing section markers in debug file")
                 
             # Extract content between markers
-            original_start = section_starts[0] + 2  # +1 for section header, +1 for marker
-            search_start = section_starts[1] + 2
+            original_start = section_starts[0] + 2
+            start_context_start = section_starts[1] + 2
+            end_context_start = section_starts[2] + 2
+            
             original_content = "\n".join(lines[original_start:section_starts[1]])
-            search_content = "\n".join(lines[search_start:section_starts[2]])
+            start_context = "\n".join(lines[start_context_start:section_starts[2]])
+            end_context = "\n".join(lines[end_context_start:section_starts[3]])
 
             # Extract filename from first line
             if not lines[0].startswith("Test: Failed search in "):
                 raise ValueError("Invalid debug file format")
             filepath = lines[0].replace("Test: Failed search in ", "").strip()
 
-            if not all([filepath, search_content, original_content]):
+            if not all([filepath, start_context, end_context, original_content]):
                 raise ValueError("Missing required sections in debug file")
 
-            return filepath, search_content, original_content
+            return filepath, start_context, end_context, original_content
 
         except Exception as e:
             self.console.print(f"[red]Error parsing debug info: {e}[/red]")
-            return None, None, None
+            return None, None, None, None

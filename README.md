@@ -18,7 +18,7 @@ AI-powered CLI tool for code modifications and analysis. Janito helps you modify
 
 ## Features
 
-- 🤖 AI-powered code analysis and modifications
+- 🤖 AI-powered code analysis and modifications (Claude AI and experimental DeepSeek AI support)
 - 🔄 Incremental code changes with search/replace operations
 - 🎯 Precise text modifications with context matching
 - 💬 Natural language interface for code operations
@@ -44,6 +44,7 @@ pip install janito
 
 ```bash
 export ANTHROPIC_API_KEY=your_api_key_here
+export DEEPSEEK_API_KEY=your_deepseek_api_key_here
 ```
 
 ## Usage

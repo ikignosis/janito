@@ -10,9 +10,6 @@ class Agent(ABC):
         self.last_prompt = None
         self.last_full_message = None
         self.last_response = None
-        self.messages_history: List[Tuple[str, str]] = []
-        if system_prompt:
-            self.messages_history.append(("system", system_prompt))
 
     @abstractmethod
     def send_message(self, message: str, system: str) -> str:

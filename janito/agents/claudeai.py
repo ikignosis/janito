@@ -26,7 +26,6 @@ class ClaudeAIAgent(Agent):
 
     def send_message(self, message: str, system_message: str = None) -> str:
         """Send message to Claude API and return response"""
-        self.messages_history.append(("user", message))
         # Store the full message
         self.last_full_message = message
         

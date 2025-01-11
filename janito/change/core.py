@@ -1,100 +1,57 @@
 from pathlib import Path
-from typing import Optional, Tuple, List, Set
-from .validation_result import ValidationResult
+from typing import Optional, Tuple, List, Union
 from rich.console import Console
 from rich.prompt import Confirm
 from rich.panel import Panel
 from rich.columns import Columns
 from rich import box
-from janito.common import progress_send_message
 from janito.config import config
 from janito.workspace.workset import Workset
-from .viewer import preview_all_changes
-from janito.workspace.analysis import analyze_workspace_content as show_content_stats
-
-from . import (
-    build_change_request_prompt,
-    parse_response,
-    setup_workspace_dir_preview,
-    ChangeApplier
-)
-from .history import save_changes_to_history
-
-from .analysis import analyze_request
+from simple_format_parser.file_operations import CreateFile, DeleteFile, RenameFile
+from simple_format_parser.modify_file import ModifyFile
+from .executor import execute_operations, Operation
 
 def process_change_request(
     request: str,
     preview_only: bool = False,
     debug: bool = False,
     single: bool = False
-    ) -> Tuple[bool, Optional[Path]]:
+) -> Tuple[bool, Optional[Path]]:
     """Process a change request through the main flow."""
     console = Console()
     workset = Workset()
     workset.show()
 
-    # Skip analysis in single mode
-    if single:
-        analysis = None
-    else:
-        analysis = analyze_request(request)
-        if not analysis:
-            console.print("[red]Analysis failed or interrupted[/red]")
-            return False, None
+    # Setup preview directory
+    preview_dir = config.workspace_dir / '.preview'
+    preview_dir.mkdir(parents=True, exist_ok=True)
 
-    # Build and send prompt
-    option_text = analysis.format_option_text() if analysis else ""
-    prompt = build_change_request_prompt(request, option_text)
-    response = progress_send_message(prompt)
-    if not response:
-        console.print("[red]Failed to get response from AI[/red]")
-        return False, None
+    # Create list to hold operations
+    preview_operations: List[Operation] = []
 
-    # Save to history and process response
-    history_file = save_changes_to_history(response, request)
-
-    # Parse changes
-    changes = parse_response(response)
-    if not changes:
-        console.print("[yellow]No changes found in response[/yellow]")
-        return False, None
-
-    # Show request and response info
-    response_info = extract_response_info(response)
-    console.print("\n")
-    console.print(Columns([
-        Panel(request, title="User Request", border_style="cyan", box=box.ROUNDED),
-        Panel(
-            response_info if response_info else "No additional information provided",
-            title="Response Information",
-            border_style="green",
-            box=box.ROUNDED
-        )
-    ], equal=True, expand=True))
-    console.print("\n")
+    # TODO: Parse the request and create operations
+    # Example:
+    # preview_operations.append(CreateFile(str(preview_dir / "new_file.txt"), "content"))
+    # modifier = ModifyFile(str(preview_dir / "existing.py"))
+    # modifier.prepare()
+    # modifier.ReplaceBlock(...)
+    # preview_operations.append(modifier)
 
     if preview_only:
-        preview_all_changes(console, changes)
-        return True, history_file
+        # TODO: Show preview of changes
+        return True, None
 
-    # Apply changes
-    preview_dir = setup_workspace_dir_preview()
-    applier = ChangeApplier(preview_dir, debug=debug)
+    # Execute changes in preview dir
+    try:
+        execute_operations(preview_operations)
+        
+        # Show preview and confirm
+        # TODO: Implement preview display
 
-    success, _ = applier.apply_changes(changes)
-    if success:
-        preview_all_changes(console, changes)
-        console.print()  # Add spacing before prompt
-
-        # Ensure console is flushed before prompt
-        console.file.flush()
-
-        # Handle auto-apply configuration
         if config.auto_apply:
             console.print("[cyan]Auto-applying changes to working dir...[/cyan]")
             apply_changes = True
         else:
-            # Use explicit prompt with proper styling
             apply_changes = Confirm.ask(
                 "[cyan]Apply changes to working directory?[/cyan]",
                 default=False,
@@ -102,30 +59,32 @@ def process_change_request(
             )
 
         if apply_changes:
-            applier.apply_to_workspace_dir(changes)
+            # Create workspace operations with updated paths
+            workspace_operations: List[Operation] = []
+            for op in preview_operations:
+                rel_path = Path(op.name).relative_to(preview_dir)
+                workspace_path = config.workspace_dir / rel_path
+                
+                if isinstance(op, CreateFile):
+                    workspace_operations.append(CreateFile(str(workspace_path), op.content))
+                elif isinstance(op, DeleteFile):
+                    workspace_operations.append(DeleteFile(str(workspace_path)))
+                elif isinstance(op, RenameFile):
+                    rel_target = Path(op.new_name).relative_to(preview_dir)
+                    workspace_target = config.workspace_dir / rel_target
+                    workspace_operations.append(RenameFile(str(workspace_path), str(workspace_target)))
+                elif isinstance(op, ModifyFile):
+                    modifier = ModifyFile(str(workspace_path))
+                    modifier.modifications = op.modifications
+                    workspace_operations.append(modifier)
+
+            execute_operations(workspace_operations)
             console.print("[green]Changes applied successfully[/green]")
         else:
             console.print("[yellow]Changes were not applied[/yellow]")
 
-    return success, history_file
+        return True, None
 
-
-def extract_response_info(response: str) -> str:
-    """Extract information after END_OF_INSTRUCTIONS marker"""
-    if not response:
-        return ""
-
-    # Find the marker
-    marker = "END_INSTRUCTIONS"
-    marker_pos = response.find(marker)
-
-    if marker_pos == -1:
-        return ""
-
-    # Get text after marker, skipping the marker itself
-    info = response[marker_pos + len(marker):].strip()
-
-    # Remove any XML-style tags
-    info = info.replace("<Extra info about what was implemented/changed goes here>", "")
-
-    return info.strip()
+    except Exception as e:
+        console.print(f"[red]Error applying changes: {e}[/red]")
+        return False, None

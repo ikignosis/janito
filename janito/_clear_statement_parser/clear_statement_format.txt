@@ -1,0 +1,428 @@
+CLEAR STATEMENT FORMAT SPECIFICATION
+Version: 2.4.3
+
+1. Fundamental Principles
+
+1.1 Leading whitespace provides clarity, does not change meaning
+    - Whitespace (spaces, tabs) is used only for readability
+    - Leading and trailing whitespace should be stripped/ignored by parsers
+    - Relationships are determined by the order of lines
+    - Empty lines (containing only whitespace) are ignored
+    - Lines are split by end of line characters
+
+1.2 What You See Is What You Get
+    - No escape sequences are used in the format
+    - Special characters (#, ., -, /, :) have meaning only by their position at start of line or after first word
+    - Content in literal lines (after the dot) is always taken verbatim
+    - The format avoids hidden or transformed characters
+    - Line endings are normalized to \n when joining literal lines
+
+Example of these principles:
+
+    # Indentation is for readability only
+    /System Settings
+        key: value
+    /
+
+    Configure Service
+        name: my:service
+        script:
+        # Everything after . is verbatim
+        .#!/bin/bash
+        # Quotes are just content
+        .echo "no escaping"
+        # . and / are just content
+        ./bin/start.sh
+        
+        # / at start means scope
+        /Settings
+            # Indentation doesn't matter
+            key: value
+        # / alone means scope end
+        /
+
+2. Line Types and Syntax
+
+2.1 Empty Lines
+    Ignored
+    <blank line>
+
+2.2 Comments
+    Lines starting with #
+    # This is a comment
+
+2.3 List Items
+    Lines starting with -
+    List items within the same scope/statement will be appended to the same list, available as property: slist
+
+2.4 Literal Lines
+    Lines starting with .
+    Used to preserve verbatim content, retaining all indentation and symbols after the leading dot
+    Ideal for config files, scripts, or any content that must be preserved exactly as written
+    When multiple literal lines are joined:
+    - Each line's content (after the dot) is taken verbatim
+    - A newline character (\n) is added after each line
+    - The final line also gets a newline
+
+    Example showing newlines:
+    script:
+    .line one
+    .line two
+    .line three
+
+    Results in the string:
+    "line one\nline two\nline three\n"
+
+    Example preserving indentation:
+    .    indented text
+    .        more indented
+    .            deepest indent
+
+    Results in the string:
+    "    indented text\n        more indented\n            deepest indent\n"
+
+    Example preserving special characters:
+    .#!/bin/bash
+    .if [ "$1" == "--help" ]; then
+    .    echo "Usage: $0 [options]"
+    .fi
+
+    Results in the string:
+    "#!/bin/bash\nif [ \"$1\" == \"--help\" ]; then\n    echo \"Usage: $0 [options]\"\nfi\n"
+
+    Note: Literal blocks lines within the same scope/statement will be joined together with each line followed by a newline character (\n), including the last line. The resulting string is available as property: literal
+
+2.5 Scope Markers
+    - Start: /ScopeName
+    - End: /
+    
+    Scope names:
+    - Can contain spaces and alphanumeric characters
+    - Follow the same rules as statements (only spaces and alphanumeric characters allowed)
+    - Examples:
+      /Network
+      /Network Settings
+      /System Configuration
+      /Security Rules
+    
+    Note: The scope end marker is always just a forward slash (/) on its own line
+
+2.6 Key/Value Pairs
+    Lines containing : after first word
+
+    2.6.1 Same line value
+        key: value
+        Empty values are allowed, but they MUST be followed by a multiline list or literal lines, becoming a multline value, otherwise an error must be raised
+
+    2.6.2 Multiline value
+        key:
+         value
+        Where value is a multiline list or literal lines
+
+    Multi-line literal value:
+    config:
+    .server {
+    .    listen 80;
+    .}
+    
+    Multi-line list value:
+    packages:
+    - nginx
+    - openssl
+    - curl
+
+    Note: Key/Value pairs in the same scope/statement will be assigned to the same dictionary, available as property: kv
+
+2.7 Statements
+    Lines containing only alphanumeric and spaces
+    Example: Configure Service
+
+3. Container Types
+
+3.1 Document
+    The root container that can hold:
+    - Key/Value pairs
+    - Lists
+    - Literal blocks
+    - Root-level scopes (must appear before any statements)
+    - Top-level statements
+
+    Note: Once a statement appears in the document, subsequent scopes must be owned by statements.
+
+    Example:
+    version: 1.0
+    allowed_ports:
+    - 80
+    - 443
+
+    /Settings
+        timeout: 30
+    /
+
+    Configure Service
+        name: nginx
+
+3.2 Scope
+    A named container that can hold:
+    - Key/Value pairs
+    - Lists
+    - Literal blocks
+    - Inner scopes
+    - Statements
+
+    Scopes can appear in two contexts:
+    1. Root-level scopes: Must appear before any statements in the document
+    2. Statement-owned scopes: Must appear within a statement's content
+
+    When a scope ends (/), all content ownership returns to the parent container.
+
+    Example:
+    /Network
+        interface: eth0
+        routes:
+        - 192.168.1.0/24
+        
+        /Firewall
+            enabled: true
+        /
+    /
+
+3.3 Statement
+    A named action or configuration that can hold:
+    - Key/Value pairs
+    - Lists
+    - Literal blocks
+    - Scopes
+
+    Statement Parsing Rules:
+    - When a new statement is encountered, it is always created in the current container (Document or Scope)
+    - If the parser is currently inside a statement when it encounters a new statement:
+        a) The parser pops back to the parent container
+        b) The new statement is created as a sibling in that container
+    - The only way to have statements associated with another statement is through scopes:
+        a) A statement can own scopes
+        b) Those scopes can contain their own statements
+        c) This creates an indirect relationship between statements
+
+    Statement Structure Examples:
+    # Two sibling statements in document
+    Statement1
+        param1: value1
+    # Creates sibling statement
+    Statement2
+        param2: value2
+
+    # Statements related through scope
+    Statement1
+        param1: value1
+        /Scope
+            # Belongs to Scope (which belongs to Statement1)
+            Statement2
+            # Also belongs to Scope
+            Statement3
+        /
+
+4. Content Ownership and Relationships
+
+4.1 Basic Ownership Rules
+    - Content belongs to the closest containing element (Document, Scope, or Statement)
+    - Within any container (Document, Scope, Statement), elements must appear in this order:
+      1. Literal blocks (property: literal)
+      2. List items (property: slist)
+      3. Key/Value pairs (property: kv)
+      4. Scopes
+      5. Statements
+    - Any literal/list/kv/scope appearing after a statement belongs to that statement
+    - When a scope ends, ownership returns to the parent container
+    - For lists and literal blocks, ownership is determined by the preceding non-comment line:
+      - If preceded by a key with no inline value (orphan key), they belong to that key
+      - If not preceded by an orphan key, they belong to the current container (Document, Scope, or Statement)
+
+Example of element ordering:
+```
+# Document level
+.literal content     # Document's literal property
+- list item 1       # Document's slist property
+- list item 2
+name: value         # Document's kv property
+config:             # Document's kv property
+.config content     # Value for config key
+
+/Scope             # Document-owned scope
+    .scope content  # Scope's literal property
+    - scope item    # Scope's slist property
+    key: value      # Scope's kv property
+    
+    /Inner         # Scope-owned scope
+    /
+    
+    Statement      # Scope-owned statement
+        .stmt content  # Statement's literal property
+        - stmt item    # Statement's slist property
+        key: value     # Statement's kv property
+        /Inner        # Statement-owned scope
+        /
+/
+
+Statement          # Document-owned statement
+    .content       # Statement's literal property
+    - item         # Statement's slist property
+    key: value     # Statement's kv property
+    /Scope        # Statement-owned scope
+    /
+```
+
+4.2 Container Relationships
+
+    4.2.1 Statements
+        - When a new statement is encountered while parsing another statement:
+            a) The parser exits the current statement
+            b) Returns to the parent container (Document or Scope)
+            c) Creates the new statement in that container
+        - Direct statement nesting is not allowed; encountering a new statement always creates it as a sibling in the parent container
+        - Statements can be indirectly related through scopes:
+            a) A statement can own scopes
+            b) Those scopes can contain their own statements
+        - Within a scope or document, statements must immediately follow any scope-level or document-level parameters/scopes
+        - Any content (parameters, lists, literals) after a statement belongs to that statement until:
+            a) Another statement is encountered (creating a new sibling statement)
+            b) The current scope ends
+
+    4.2.2 Scopes
+        - A scope is root-level only if it appears before any statement in the document
+        - A scope started after a statement belongs to that statement
+        - When a scope ends (/), ownership returns to its parent container (Document, Statement)
+        - Scopes can contain other scopes, statements, and any other content type
+
+4.3 Sequence Analysis
+    The order of elements determines ownership and level. 
+    Indentation shown below is for readability only - parser uses sequence:
+
+    Document Start (current=document)
+      parameters/lists/literals -> belong to document
+      
+      /Scope1 -> new root level scope, make current
+         parameters/lists/literals -> belong to Scope1
+         
+         Statement1 -> add to Scope1, make current
+            parameters/lists/literals -> belong to Statement1
+         
+         # Pop to Scope1, add as sibling to Statement1
+         Statement2
+            # Parameters/lists/literals belong to Statement2
+            parameters/lists/literals
+            
+         # Add scope to Scope1
+         /Inner
+            # Add to Inner scope
+            Statement3
+            # Pop to Inner scope, add as sibling to Statement3
+            Statement4
+         # Pop to Scope1
+         /
+         
+      # Pop to document
+      /
+      
+      # Add to document
+      Statement5
+         # Parameters/lists/literals belong to Statement5
+         parameters/lists/literals
+         # Add scope to Statement5
+         /ScopeA
+            # Add to ScopeA
+            Statement6
+            # Pop to ScopeA, add as sibling to Statement6
+            Statement7
+         # Pop to Statement5
+         /
+         
+         # Pop to document, add as sibling to Statement5
+         Statement8
+            # Parameters/lists/literals belong to Statement8
+            parameters/lists/literals
+
+5. Reference Implementation
+
+5.1 Complete Example
+    version: 1.0
+    environment: production
+    allowed_ports:
+    - 80
+    - 443
+    startup_script:
+    .#!/bin/bash
+    .echo "Starting..."
+
+    /System Settings
+        timezone: UTC
+        locale: en_US.UTF-8
+        
+        Configure Service
+            name: nginx
+            state: enabled
+        
+        Configure Service
+            name: docker
+            state: enabled
+        
+        /Security
+            rules:
+            - disable root login
+            - enforce password policy
+        /
+    /
+
+    /Network Settings
+        interface: eth0
+        
+        Configure IP
+            address: 192.168.1.100
+            netmask: 255.255.255.0
+        
+        /Firewall
+            rules:
+            - allow 80/tcp
+            - allow 443/tcp
+        /
+    /
+
+    Configure User
+        username: admin
+        shell: /bin/bash
+        groups:
+        - sudo
+        - docker
+
+    Configure User
+        username: deploy
+        shell: /bin/bash
+        groups:
+        - deploy
+        - docker
+
+    Install Dependencies
+        packages:
+        - nginx
+        - openssl
+        
+        /Post Install
+            - enable nginx
+            - start nginx
+        /
+
+6. Implementation Guidelines
+
+6.1 Parser Design
+    - Use object-oriented design with clear separation of concerns
+    - Keep parsing state separate from the parsed data model
+    - Strip all whitespace from the input before parsing
+    - Follow the line type rules strictly based on sequence
+    - Follow the ownership rules strictly based on sequence
+    - For list and literal blocks after a key/value pair, ensure the key is already present in the dictionary with the correct type before adding the list or literal block line
+    - All container elements should have a name property, the default being root, for scopes and statements it should be the name of the line that created the element
+    - Do not use regex to find elements, only use it if required to report invalid lines
+    - Be mindful that a container can have multiple statements and scopes with the same name, they should be treated as separate elements
+
+6.2 Testing Requirements
+    - Provide models, parser and the complete example test in a single file, use assert statements to verify the parser is working correctly

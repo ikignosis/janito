@@ -138,12 +138,12 @@ class ChangeApplier:
         if not path.exists():
             original_path = Path(change.name)  # Changed back from path to name
             if not original_path.exists():
-                return False, f"Original file not found: {original_path}"
+                return False, False, f"Original file not found: {original_path}"
             if self.console:
                 self.console.print(f"[dim]Copying {original_path} to preview directory {path}[/dim]")
-            path.write_text(original_path.read_text())
+            path.write_text(original_path.read_text(encoding='utf-8'), encoding='utf-8')
 
-        current_content = path.read_text()
+        current_content = path.read_text(encoding='utf-8')
         success, modified_content, error = self.text_applier.apply_modifications(
             current_content,
             change.text_changes,
@@ -157,7 +157,7 @@ class ChangeApplier:
         # Check if content actually changed
         content_changed = modified_content != current_content
         if content_changed:
-            path.write_text(modified_content)
+            path.write_text(modified_content, encoding='utf-8')
 
         return True, content_changed, None
 

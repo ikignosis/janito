@@ -1,7 +1,7 @@
 from pathlib import Path
 from rich.console import Console
 from janito.agents import agent
-from janito.cli.user_prompt import prompt_user
+from janito.shell.user_prompt import prompt_user
 
 from janito.workspace import workset
 from janito.config import config
@@ -45,14 +45,6 @@ def is_dir_empty(path: Path) -> bool:
 def handle_request(request: str = None, preview_only: bool = False, single: bool = False):
     """Process modification request"""
     if not request:
-        try:
-            request = prompt_user("Enter change request").strip()
-        except (KeyboardInterrupt, EOFError):
-            console.print("[yellow]Operation cancelled[/yellow]")
-            return
-
-    if not request:
-        console.print("[red]Error: Change request required[/red]")
         return
 
     is_empty = is_dir_empty(config.workspace_dir)
