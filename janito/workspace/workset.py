@@ -5,6 +5,7 @@ from rich.console import Console
 from janito.config import config
 from .types import WorksetContent, FileInfo, ScanPath, ScanType
 from .workspace import Workspace
+from janito.change.preview import setup_preview_directory
 
 class PathNotRelativeError(Exception):
     """Raised when a path is not relative."""
@@ -85,6 +86,14 @@ class Workset:
     def clear(self) -> None:
         """Clear workspace settings while maintaining current directory in scan paths"""
         self._content = WorksetContent()
+
+    def setup_preview_dir(self) -> Path:
+        """Creates and sets up a preview directory with current workspace contents.
+        
+        Returns:
+            Path: The path to the preview directory
+        """
+        return setup_preview_directory()
 
     def show(self) -> None:
         """Display analysis of current workset content."""
