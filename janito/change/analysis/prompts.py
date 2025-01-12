@@ -8,17 +8,17 @@ from rich.prompt import Prompt
 
 # Keep only prompt-related functionality
 CHANGE_ANALYSIS_PROMPT = """
-
-
-Considering the above workset content, provide 3 sections, each identified by a keyword and representing an option.
+Considering the above workset content, provide 2 sections, each identified by a keyword and representing an option.
 Each option should include a concise action plan and a list of affected files.
-1st option should be basic style change, 2nd organized style, 3rd exntensible style.
+1st option should be baseline, following established patterns and core functionality requirements"
+2nd option should be flexible, allowing for greater flexibility and adaptability
+
 Do not use style as keyword, instead focus on the changes summary.
 
 Use the following format:
 
 A. Keyword summary of the change
-Description:
+Action Plan:
 - Concise steps to implement the change
 
 Affected Files:
@@ -31,7 +31,7 @@ END_OF_OPTIONS (mandatory marker)
 RULES:
 - do NOT provide the content of the files
 - do NOT offer to implement the changes
-- description items should be 80 chars or 
+- description items should be 80 chars
 - when removing packages do not mention the directory removal itself in the affected files
 
 Request:

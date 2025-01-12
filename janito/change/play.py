@@ -2,11 +2,13 @@ from pathlib import Path
 from typing import Tuple, Optional
 from rich.console import Console
 from rich.prompt import Confirm
-from .parser import parse_response
 from .preview import setup_workspace_dir_preview
 from .applier.main import ChangeApplier
 from .viewer import preview_all_changes  # Add this import
 from ..config import config  # Add this import
+from ..simple_format_parser.executor import Executor
+from ..simple_format_parser.file_operations import CreateFile, DeleteFile, RenameFile
+from ..simple_format_parser.modify_file_content import ModifyFileContent
 
 
 def play_saved_changes(history_file: Path) -> Tuple[bool, Optional[Path]]:
@@ -22,8 +24,19 @@ def play_saved_changes(history_file: Path) -> Tuple[bool, Optional[Path]]:
         console.print(f"[red]History file not found: {history_file}[/red]")
         return False, None
 
-    content = history_file.read_text(encoding='utf-8')
-    changes = parse_response(content)
+    response = history_file.read_text(encoding='utf-8')
+    preview_dir = setup_workspace_dir_preview()
+    executor = Executor([CreateFile, DeleteFile, RenameFile, ModifyFileContent], target_dir=preview_dir)
+    for i, line in enumerate(response.splitlines()):
+        if "CHANGES_START_HERE" in line:
+            changes_start = i
+        if "END_OF_CHANGES" in line:
+            changes_end = i
+    reponse_lines = response.splitlines()
+    changes_content = reponse_lines[changes_start:changes_end]
+    executor.execute('\n'.join(changes_content))
+    print(changes_content)
+    exit(0)
 
     if not changes:
         console.print("[yellow]No changes found in history file[/yellow]")

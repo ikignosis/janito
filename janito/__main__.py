@@ -10,8 +10,8 @@ from janito.config import config
 from janito.workspace import workset
 from janito.workspace.types import ScanType  # Add this import
 from .cli.commands import (
-    handle_request, handle_ask, handle_play, 
-    handle_scan, handle_demo
+    handle_request, handle_ask, handle_play,
+    handle_scan
 )
 
 app = typer.Typer(pretty_exceptions_enable=False)

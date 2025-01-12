@@ -9,8 +9,6 @@ from janito.change.core import process_change_request
 from janito.change.play import play_saved_changes
 from janito.cli.history import save_to_history
 from janito.qa import ask_question, display_answer
-from janito.demo import DemoRunner
-from janito.demo.data import get_demo_scenarios
 
 console = Console()
 
@@ -65,21 +63,3 @@ def handle_request(request: str = None, preview_only: bool = False, single: bool
     # Save request and response to history
     if agent.last_response:
         save_to_history(request, agent.last_response)
-
-def handle_demo():
-    """Run demo scenarios"""
-    global console
-    runner = DemoRunner()
-
-    # Add predefined scenarios
-    for scenario in get_demo_scenarios():
-        runner.add_scenario(scenario)
-
-    # Preview and run scenarios
-    console.print("\n[bold cyan]Demo Scenarios Preview:[/bold cyan]")
-    runner.preview_changes()
-
-    console.print("\n[bold cyan]Running Demo Scenarios:[/bold cyan]")
-    runner.run_all()
-
-    console.print("\n[green]Demo completed successfully![/green]")

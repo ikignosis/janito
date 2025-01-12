@@ -1,13 +1,41 @@
 """Prompts module for change operations."""
 
 CHANGE_REQUEST_PROMPT = """
-Original request: {request}
 
-Please provide implementation instructions using the following format:
+Considerng the above workset content, the developer has provided the following request:
+{request}
+
+The developer has selected the following action plan:
+{action_plan}
+
+Please provide implementation instructions in two formats:
+
+1. Changes described in your own format (between OWN_FORMAT_START and OWN_FORMAT_END)
+1.1 be concise identifying the files and the changes to be made
+1.2 be specific to the workset content
+
+2. Describe the changes in relation to the workset content in the format described below (between CHANGES_START_HERE and CHANGES_END_HERE)
+2.1 be concise identifying the files and the changes to be made
+2.2 be specific to the workset content
+
+Rules:
+- Each statement must be separated with "===", sub-statements are prefixed with "-"
+- For Create File: content must be prefixed with dots (.)
+- For Modify File Content:
+  * Delete Block: removes the block and its before/after lines
+  * All multiline content must be prefixed with dots (.)
+  * new_indent: number of spaces for indentation (only required if the indent is different from the original indent)
+  * Empty lines in content should also be prefixed with a dot (.)
+  * Consolidate all changes into a single Modify File Content statement with multiple Replace Block and Delete Block substatements
+- When adding imports, place them at the top of the file
+- When modifying Python files, maintain correct indentation
+- Comments should be included to explain the changes
+- Any additional feedback about the changes should be provided after END_OF_CHANGES
+
 
 CHANGES_START_HERE
 
-# File operations should be in this format:
+# Example of a Create File statement
 Create File
 name: path/to/file.py
 content:
@@ -17,78 +45,68 @@ content:
 .    if not value:
 .        return None
 .    return value.upper()
+===
 
+# Example of a Delete File statement
 Delete File
 name: path/to/delete.py
+===
 
-Rename File
-source: old/path.py
-target: new/path.py
+# Example of a Rename File statement
+name: old/path.py
+new_name: new/path.py
+===
 
-# Modify operations use substatements for changes:
-Modify File
+# Modify file content
+Modify File Content
 name: path/to/modify.py
-- Replace  # Example 1: Replace entire function with validation
-    start_context:
-    .def validate(data: str):
-    .    return data.strip() != ""
-    end_context:
-    new_content:
+
+
+# The modify file content supports the substatements: Replace Block and Delete Block
+
+- Replace Block # Replace entire block including before and after lines
+    before_lines:
     .def validate(data: str) -> bool:
-    .    if not isinstance(data, str):
-    .        raise TypeError("data must be a string")
-    .    return data.strip() != ""
-    preserve_context: false
-
-- Replace  # Example 2: Replace function body while preserving definition
-    start_context:
-    .def process_item(self, item: dict) -> dict:
-    .    # Basic processing
-    .    return {"id": item["id"], "value": item["value"]}
-    end_context:
+    .    result = data.strip() != ""
+    # ... existing content ...
+    after_lines:
+    .    return result
     new_content:
-    .    # Enhanced processing with validation
-    .    if not isinstance(item, dict):
-    .        raise TypeError("item must be a dictionary")
-    .    return {
-    .        "id": item["id"],
-    .        "value": item["value"],
-    .        "processed": True
-    .    }
-    preserve_context: true
-    indent: 4
+    # Replace before_lines + <existing content> + after_lines -> <new content>
+    .def validate(data: int):
+    .    result = data > 0
+    .    return result
+    # new_indent: 4 # number of spaces for indentation (only required if the indent is different from the original indent)
 
-- Replace  # Example 3: Replace nested method with proper indentation
-    start_context:
-    .    def nested_method(self):
-    .        pass
-    end_context:
-    new_content:
-    .        # Properly indented nested method
-    .        result = self.process()
-    .        if result:
-    .            return result.value
-    .        return None
-    preserve_context: true
-    indent: 8  # Indented for class method
+NOTE: the before_lines and after_lines are removed from the original content, if you want to keep them, add them in the new_content !
+
+- Delete Block  # Delete block including before and after lines
+    before_lines:
+    .    # Deprecated code start
+    after_lines:
+    .    # Deprecated code end
+===
 
 END_OF_CHANGES
 
-Rules:
-- Each operation must be separated by a blank line
-- For Create File: content must be prefixed with dots (.)
-- For Modify File:
-  * Uses substatements starting with "- Replace"
-  * Each substatement has its own context and content fields
-  * All multiline content must be prefixed with dots (.)
-  * preserve_context: true - keeps the function definition, replaces only the body
-  * preserve_context: false - replaces the entire block including the definition
-  * indent: number of spaces to indent new content (e.g., 4 for functions, 8 for class methods)
-  * Empty lines in content should also be prefixed with a dot (.)
-- When adding imports, place them at the top of the file
-- When modifying Python files, maintain correct indentation
-- Comments should be included to explain the changes
-- Any additional feedback about the changes should be provided after END_OF_CHANGES
-
-{option_text}
 """
+
+from pathlib import Path
+from typing import Optional, List
+from janito.workspace import workset
+from janito.config import config
+from janito.common import progress_send_message
+
+def build_change_request_prompt(request: str, action_plan: str) -> str:
+    """Build a prompt for the change request that includes workspace metadata.
+
+    Args:
+        request: The original change request from the user
+
+    Returns:
+        str: A complete prompt including the request and workspace metadata
+    """
+    return CHANGE_REQUEST_PROMPT.format(
+        request=request,
+        action_plan=action_plan
+    )

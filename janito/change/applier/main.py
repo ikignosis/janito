@@ -15,24 +15,19 @@ from rich.console import Console
 from rich.panel import Panel
 from rich import box
 import subprocess
-from ..validator import validate_python_syntax
 from .workspace_dir import apply_changes as apply_to_workspace_dir_impl
 from janito.config import config
-from .file import FileChangeApplier
-from .text import TextChangeApplier
-from ..parser import FileChange, ChangeOperation
-from ..validator import validate_all_changes
+from ..models import FileChange, ChangeOperation
 
 
 class ChangeApplier:
     """Handles applying changes to files."""
 
-    def __init__(self, preview_dir: Path, debug: bool = False):
+    def __init__(self, preview_dir: Path, changes_text: str, debug: bool = False):
         self.preview_dir = preview_dir
+        self.changes_text = changes_text
         self.debug = debug
         self.console = Console()
-        self.file_applier = FileChangeApplier(preview_dir, self.console)
-        self.text_applier = TextChangeApplier(self.console)
 
     def run_test_command(self, test_cmd: str) -> Tuple[bool, str, Optional[str]]:
         """Run test command in preview directory.
@@ -56,53 +51,16 @@ class ChangeApplier:
         except Exception as e:
             return False, "", f"Error running test: {str(e)}"
 
-    def apply_changes(self, changes: List[FileChange], debug: bool = None) -> tuple[bool, Set[Path]]:
+    def apply_changes(self, debug: bool = None) -> tuple[bool, Set[Path]]:
         """Apply changes in preview directory, runs tests if specified.
         Returns (success, modified_files)"""
-        debug = debug if debug is not None else self.debug
         console = Console()
-        
-        # Validate all changes using consolidated validator
-        is_valid, error = validate_all_changes(changes, set(Path(c.name) for c in changes))
-        if not is_valid:
-            console.print(f"\n[red]{error}[/red]")
-            return False, set()
-        
-        # Track modified files and apply changes
-        modified_files: Set[Path] = set()
-        for change in changes:
-            if config.verbose:
-                console.print(f"[dim]Previewing changes for {change.name}...[/dim]")
-            success, changed, error = self.apply_single_change(change, debug)
-            if not success:
-                console.print(f"\n[red]Error previewing {change.name}: {error}[/red]")
-                return False, modified_files
-            if changed:
-                if not change.operation == ChangeOperation.REMOVE_FILE:
-                    modified_files.add(change.name)
-                elif change.operation == ChangeOperation.RENAME_FILE:
-                    modified_files.add(change.target)
+        from janito.simple_parser.executor import Executor
+        from janito.simple_parser.file_operations import RenameFile, CreateFile, DeleteFile
+        from janito.simple_parser.modify_file_content import ModifyFileContent
+        executor = Executor([RenameFile, CreateFile, DeleteFile, ModifyFileContent], target_dir=self.preview_dir)
+        executor.execute(self.changes_text)
 
-        # Validate Python syntax (skip deleted and moved files)
-        python_files = {f for f in modified_files if f.suffix == '.py'}
-
-        for change in changes:
-            if change.operation == ChangeOperation.REMOVE_FILE:
-                python_files.discard(change.name)  # Skip validation for deleted files
-            elif change.operation in (ChangeOperation.RENAME_FILE, ChangeOperation.MOVE_FILE):
-                python_files.discard(change.source)  # Skip validation for moved/renamed sources
-
-        for path in python_files:
-            preview_path = self.preview_dir / path
-            is_valid, error_msg = validate_python_syntax(preview_path.read_text(), preview_path)
-            if not is_valid:
-                console.print(f"\n[red]Python syntax validation failed for {path}:[/red]")
-                console.print(f"[red]{error_msg}[/red]")
-                return False, modified_files
-
-        if python_files:
-            console.print(f"[green]✓ Python syntax validated for {len(python_files)} file(s)[/green]")
-        
         # Run tests if specified
         if config.test_cmd:
             console.print(f"\n[cyan]Testing changes in preview directory:[/cyan] {config.test_cmd}")
@@ -118,48 +76,6 @@ class ChangeApplier:
 
         return True, modified_files
 
-    def apply_single_change(self, change: FileChange, debug: bool) -> Tuple[bool, bool, Optional[str]]:
-        """Apply a single file change to preview directory
-
-        Returns:
-            Tuple containing:
-            - success: Whether operation completed without errors
-            - changed: Whether any actual changes were made
-            - error: Optional error message
-        """
-        path = self.preview_dir / change.name  # Changed back from path to name
-        
-        # Handle file operations first
-        if change.operation != ChangeOperation.MODIFY_FILE:
-            success, error = self.file_applier.apply_file_operation(change)
-            return success, True, error  # File operations always count as changes
-
-        # Handle text modifications
-        if not path.exists():
-            original_path = Path(change.name)  # Changed back from path to name
-            if not original_path.exists():
-                return False, False, f"Original file not found: {original_path}"
-            if self.console:
-                self.console.print(f"[dim]Copying {original_path} to preview directory {path}[/dim]")
-            path.write_text(original_path.read_text(encoding='utf-8'), encoding='utf-8')
-
-        current_content = path.read_text(encoding='utf-8')
-        success, modified_content, error = self.text_applier.apply_modifications(
-            current_content,
-            change.text_changes,
-            path,
-            debug
-        )
-
-        if not success:
-            return False, False, error
-
-        # Check if content actually changed
-        content_changed = modified_content != current_content
-        if content_changed:
-            path.write_text(modified_content, encoding='utf-8')
-
-        return True, content_changed, None
 
     def apply_to_workspace_dir(self, changes: List[FileChange], debug: bool = None) -> bool:
         """Apply changes from preview to working directory"""

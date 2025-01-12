@@ -4,38 +4,12 @@ import shutil
 import os
 from rich.console import Console
 from janito.config import config
-from ..parser import FileChange, ChangeOperation
+from ..models import FileChange, ChangeOperation
 
-def verify_changes(changes: List[FileChange]) -> tuple[bool, str]:
-    """Verify changes can be safely applied to workspace_dir.
-    Returns (is_safe, error_message)."""
-    # Validate operation order
-    last_operation = None
-    for change in changes:
-        last_operation = change.operation
-
-        source_path = config.workspace_dir / change.name
-
-        if change.operation == ChangeOperation.CREATE_FILE:
-            if source_path.exists():
-                return False, f"Cannot create {change.name} - already exists"
-
-        elif change.operation in (ChangeOperation.MOVE_FILE, ChangeOperation.RENAME_FILE):
-            if not source_path.exists():
-                return False, f"Cannot {change.operation.name.lower()} non-existent file {change.name}"
-            target_path = config.workspace_dir / change.target
-            if target_path.exists():
-                return False, f"Cannot {change.operation.name.lower()} {change.name} to {change.target} - target already exists"
-
-    return True, ""
 
 def apply_changes(changes: List[FileChange], preview_dir: Path, console: Console) -> bool:
     """Apply all changes from preview to workspace_dir in the correct order.
     Returns success status."""
-    is_safe, error = verify_changes(changes)
-    if not is_safe:
-        console.print(f"[red]Error: {error}[/red]")
-        return False
 
     console.print("\n[blue]Applying changes to working directory...[/blue]")
 

@@ -1,7 +1,7 @@
 """
 This module provides an executor class that can be used to associated classes with simpler parser statements.
 """
-from parser import parse_document, Statement
+from .parser import parse_document, Statement
 from typing import Optional
 
 # Example class to be passed to our executor

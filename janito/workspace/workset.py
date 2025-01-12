@@ -6,6 +6,9 @@ from janito.config import config
 from .types import WorksetContent, FileInfo, ScanPath, ScanType
 from .workspace import Workspace
 from janito.change.preview import setup_preview_directory
+import tempfile
+import shutil
+import pathspec
 
 class PathNotRelativeError(Exception):
     """Raised when a path is not relative."""
@@ -124,5 +127,64 @@ class Workset:
             
         return tuple(blocks)
 
-# Create and export singleton instance at module level
-workset = Workset()
+    def setup_preview_directory(self) -> Path:
+        """Create a temporary directory with a copy of the workspace contents.
+        
+        Creates a named temporary directory and copies the current workspace
+        contents into it for preview purposes. Respects .gitignore patterns
+        and excludes .git directory.
+        
+        Returns:
+            Path: The path to the temporary preview directory
+        """
+        # Create a named temporary directory
+        preview_dir = Path(tempfile.mkdtemp(prefix='janito_preview_'))
+        
+        try:
+            # Read .gitignore if it exists
+            gitignore_path = config.workspace_dir / '.gitignore'
+            if gitignore_path.exists():
+                gitignore = gitignore_path.read_text().splitlines()
+                # Always ignore .git directory
+                gitignore.append('.git')
+                spec = pathspec.PathSpec.from_lines('gitwildmatch', gitignore)
+            else:
+                # If no .gitignore exists, only ignore .git
+                spec = pathspec.PathSpec.from_lines('gitwildmatch', ['.git'])
+
+            # Copy workspace contents to preview directory
+            for item in config.workspace_dir.iterdir():
+                # Get relative path for gitignore matching
+                rel_path = item.relative_to(config.workspace_dir)
+                
+                # Skip if matches gitignore patterns
+                if spec.match_file(str(rel_path)):
+                    continue
+                
+                # Skip hidden files/directories except .gitignore
+                if item.name.startswith('.') and item.name != '.gitignore':
+                    continue
+                    
+                if item.is_dir():
+                    # For directories, we need to filter contents based on gitignore
+                    def copy_filtered(src, dst):
+                        shutil.copytree(
+                            src, 
+                            dst,
+                            ignore=lambda d, files: [
+                                f for f in files 
+                                if spec.match_file(str(Path(d).relative_to(config.workspace_dir) / f))
+                            ]
+                        )
+                    
+                    copy_filtered(item, preview_dir / item.name)
+                else:
+                    shutil.copy2(item, preview_dir / item.name)
+                    
+            return preview_dir
+            
+        except Exception as e:
+            # Clean up the temporary directory if something goes wrong
+            shutil.rmtree(preview_dir, ignore_errors=True)
+            raise RuntimeError(f"Failed to setup preview directory: {e}")
+

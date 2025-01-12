@@ -13,7 +13,7 @@ from rich import box
 from rich.text import Text
 from rich.syntax import Syntax
 from typing import List, Union, Tuple
-from ..parser import FileChange, ChangeOperation
+from ..models import FileChange, ChangeOperation
 from .styling import format_content, create_legend_items
 from .content import create_content_preview, get_file_syntax
 from .sections import find_modified_sections
