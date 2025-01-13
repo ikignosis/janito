@@ -4,16 +4,22 @@ This module provides an executor class that can be used to associated classes wi
 from .parser import parse_document, Statement
 from typing import Optional
 
-# Example class to be passed to our executor
-class DeleteFile:
-    """
-    This class is used to delete a file, it's a simple class to be passed to our executor
-    """
-    def __init__(self, name: str):
-        self.name = name
 
-    def execute(self):
-        print(f"Deleting file {self.name}")
+class ExecutorError(Exception):
+    """Base class for executor errors"""
+    pass
+
+
+class UnknownStatementError(ExecutorError):
+    """Raised when a statement has no matching handler class"""
+    def __init__(self, statement_name: str, available_handlers: list[str]):
+        self.statement_name = statement_name
+        self.available_handlers = available_handlers
+        message = (
+            f"No handler class found for statement '{statement_name}'. "
+            f"Available handlers: {', '.join(available_handlers)}"
+        )
+        super().__init__(message)
 
 
 def to_pascal_case(statement_name: str) -> str:
@@ -26,6 +32,9 @@ class Executor:
         self.classes = classes
         self.instances = []  # Track created instances
         self.global_kwargs = kwargs  # Store global kwargs to pass to handlers
+        
+        # Store available handler names for error messages
+        self.available_handlers = [cls.__name__ for cls in classes]
 
     def execute(self, content: str):
         document = parse_document(content)
@@ -36,28 +45,33 @@ class Executor:
 
     def execute_statement(self, statement: Statement) -> Optional[object]:
         pascal_case_name = to_pascal_case(statement.name)
-        for class_ in self.classes:
-            if class_.__name__ == pascal_case_name:
-                # Merge global kwargs with statement fields, statement fields take precedence
-                init_kwargs = {**self.global_kwargs, **statement.fields}
-                instance = class_(**init_kwargs)
-                
-                # Call prepare if available
-                if hasattr(instance, 'prepare'):
-                    instance.prepare()
-                
-                # Execute substatements before main execution
-                for substatement in statement.substatements:
-                    method_name = to_pascal_case(substatement.name)
-                    if hasattr(instance, method_name):
-                        method = getattr(instance, method_name)
-                        method(**substatement.fields)
-                    else:
-                        raise AttributeError(f"Class {class_.__name__} has no method {method_name}")
-                
-                instance.execute()
-                return instance
-        return None
+        
+        # Check if we have a handler for this statement
+        matching_classes = [cls for cls in self.classes if cls.__name__ == pascal_case_name]
+        
+        if not matching_classes:
+            raise UnknownStatementError(statement.name, self.available_handlers)
+            
+        class_ = matching_classes[0]
+        # Merge global kwargs with statement fields, statement fields take precedence
+        init_kwargs = {**self.global_kwargs, **statement.fields}
+        instance = class_(**init_kwargs)
+        
+        # Call prepare if available
+        if hasattr(instance, 'prepare'):
+            instance.prepare()
+        
+        # Execute substatements before main execution
+        for substatement in statement.substatements:
+            method_name = to_pascal_case(substatement.name)
+            if hasattr(instance, method_name):
+                method = getattr(instance, method_name)
+                method(**substatement.fields)
+            else:
+                raise AttributeError(f"Class {class_.__name__} has no method {method_name}")
+        
+        instance.execute()
+        return instance
 
 
 def test_executor():

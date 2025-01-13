@@ -1,7 +1,7 @@
 import os
 import tempfile
 from executor import Executor
-from modify_file_content import ModifyFileContent
+from modify_file import ModifyFile
 
 def test_modify_content():
     # Create a temporary test file
@@ -23,9 +23,9 @@ Last line
 
         # Test ReplaceBlock
         reset_file()
-        executor = Executor([ModifyFileContent], target_dir=temp_dir)
+        executor = Executor([ModifyFile], target_dir=temp_dir)
         replace_statement = """
-        Modify File Content
+        Modify File
             name: test.txt
         - Replace Block
             before_lines:
@@ -58,9 +58,9 @@ Last line
 
         # Test AdaptBlock
         reset_file()
-        executor = Executor([ModifyFileContent], target_dir=temp_dir)
+        executor = Executor([ModifyFile], target_dir=temp_dir)
         adapt_statement = """
-        Modify File Content
+        Modify File
             name: test.txt
         - Adapt Block
             before_lines:
@@ -87,9 +87,9 @@ Last line
 
         # Test DeleteBlock
         reset_file()
-        executor = Executor([ModifyFileContent], target_dir=temp_dir)
+        executor = Executor([ModifyFile], target_dir=temp_dir)
         delete_statement = """
-        Modify File Content
+        Modify File
             name: test.txt
         - Delete Block
             before_lines:
@@ -109,9 +109,9 @@ Last line
 
         # Test AdaptBlock with only before_lines
         reset_file()
-        executor = Executor([ModifyFileContent], target_dir=temp_dir)
+        executor = Executor([ModifyFile], target_dir=temp_dir)
         adapt_before_only_statement = """
-        Modify File Content
+        Modify File
             name: test.txt
         - Adapt Block
             before_lines:
@@ -139,9 +139,9 @@ Last line
 
         # Test DeleteBlock with only before_lines
         reset_file()
-        executor = Executor([ModifyFileContent], target_dir=temp_dir)
+        executor = Executor([ModifyFile], target_dir=temp_dir)
         delete_before_only_statement = """
-        Modify File Content
+        Modify File
             name: test.txt
         - Delete Block
             before_lines:
@@ -158,9 +158,9 @@ Last line
 
         # Test DeleteBlock with only after_lines
         reset_file()
-        executor = Executor([ModifyFileContent], target_dir=temp_dir)
+        executor = Executor([ModifyFile], target_dir=temp_dir)
         delete_after_only_statement = """
-        Modify File Content
+        Modify File
             name: test.txt
         - Delete Block
             after_lines:
@@ -197,9 +197,9 @@ Last line
 
         # Test ReplaceBlock
         reset_file()
-        executor = Executor([ModifyFileContent], target_dir=temp_dir)
+        executor = Executor([ModifyFile], target_dir=temp_dir)
         modify_statement = """
-        Modify File Content
+        Modify File
             name: test.txt
         - Replace Block
             before_lines:
@@ -228,9 +228,9 @@ Last line
 
         # Test DeleteBlock
         reset_file()
-        executor = Executor([ModifyFileContent], target_dir=temp_dir)
+        executor = Executor([ModifyFile], target_dir=temp_dir)
         delete_statement = """
-        Modify File Content
+        Modify File
             name: test.txt
         - Delete Block
             before_lines:

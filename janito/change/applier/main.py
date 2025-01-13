@@ -10,14 +10,15 @@ The following situations should result in error:
 """
 
 from pathlib import Path
-from typing import Tuple, Optional, List, Set
+from typing import Tuple, Optional, List, Set, Union
 from rich.console import Console
 from rich.panel import Panel
 from rich import box
 import subprocess
 from .workspace_dir import apply_changes as apply_to_workspace_dir_impl
 from janito.config import config
-from ..models import FileChange, ChangeOperation
+from janito.file_operations import CreateFile, DeleteFile, RenameFile, ReplaceFile, ModifyFile
+from janito.file_operations import FileOperationExecutor
 
 
 class ChangeApplier:
@@ -28,10 +29,12 @@ class ChangeApplier:
         self.changes_text = changes_text
         self.debug = debug
         self.console = Console()
+        self.file_oper_exec = FileOperationExecutor(target_dir=self.preview_dir)
 
     def run_test_command(self, test_cmd: str) -> Tuple[bool, str, Optional[str]]:
         """Run test command in preview directory.
-        Returns (success, output, error)"""
+        Returns (success, output, error)
+        """
         try:
             result = subprocess.run(
                 test_cmd,
@@ -51,15 +54,14 @@ class ChangeApplier:
         except Exception as e:
             return False, "", f"Error running test: {str(e)}"
 
-    def apply_changes(self, debug: bool = None) -> tuple[bool, Set[Path]]:
+    def apply_changes(self) -> tuple[bool, Set[Path]]:
         """Apply changes in preview directory, runs tests if specified.
         Returns (success, modified_files)"""
         console = Console()
-        from janito.simple_parser.executor import Executor
-        from janito.simple_parser.file_operations import RenameFile, CreateFile, DeleteFile
-        from janito.simple_parser.modify_file_content import ModifyFileContent
-        executor = Executor([RenameFile, CreateFile, DeleteFile, ModifyFileContent], target_dir=self.preview_dir)
-        executor.execute(self.changes_text)
+        self.file_oper_exec.execute(self.changes_text)
+        
+        # Track modified files
+        modified_files = {Path(op.name) for op in self.file_oper_exec.instances}
 
         # Run tests if specified
         if config.test_cmd:
@@ -76,8 +78,9 @@ class ChangeApplier:
 
         return True, modified_files
 
-
-    def apply_to_workspace_dir(self, changes: List[FileChange], debug: bool = None) -> bool:
+    def apply_to_workspace_dir(
+        self, 
+    ) -> bool:
         """Apply changes from preview to working directory"""
-        debug = debug if debug is not None else self.debug
+        changes = self.file_oper_exec.instances
         return apply_to_workspace_dir_impl(changes, self.preview_dir, Console())

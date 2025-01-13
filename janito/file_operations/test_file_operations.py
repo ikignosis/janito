@@ -1,7 +1,7 @@
 import os
 import tempfile
 from executor import Executor
-from file_operations import CreateFile, DeleteFile, RenameFile
+from file_operations import CreateFile, DeleteFile, RenameFile, ReplaceFile
 
 def test_file_operations():
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -11,7 +11,7 @@ def test_file_operations():
         
         # Create executor with file operation classes and target directory
         executor = Executor(
-            [CreateFile, DeleteFile, RenameFile],
+            [CreateFile, DeleteFile, RenameFile, ReplaceFile],
             target_dir=src_dir
         )
         
@@ -60,6 +60,35 @@ def test_file_operations():
         
         # Verify deletion
         assert not os.path.exists(new_path), "File was not deleted"
+        
+        # Test replacing file contents
+        executor.execute("""
+        Create File
+        name: config/test.txt
+        content:
+.Original content
+        ===
+        """)
+        
+        # Verify original content
+        test_path = os.path.join(config_dir, "test.txt")
+        with open(test_path, 'r') as f:
+            content = f.read().strip()
+            assert content == "Original content", f"Expected: Original content, Got: {content}"
+        
+        # Replace the content
+        executor.execute("""
+        Replace File
+        name: config/test.txt
+        content:
+.New content
+        ===
+        """)
+        
+        # Verify replaced content
+        with open(test_path, 'r') as f:
+            content = f.read().strip()
+            assert content == "New content", f"Expected: New content, Got: {content}"
         
         print("All file operations tests passed!")
 

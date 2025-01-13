@@ -1,32 +1,66 @@
 from pathlib import Path
-from typing import Set, List
+from typing import List, Union
 import shutil
 import os
 from rich.console import Console
 from janito.config import config
-from ..models import FileChange, ChangeOperation
+from janito.file_operations import CreateFile, DeleteFile, RenameFile, ReplaceFile, ModifyFile
 
 
-def apply_changes(changes: List[FileChange], preview_dir: Path, console: Console) -> bool:
+def apply_changes(changes: List[Union[CreateFile, DeleteFile, RenameFile, ReplaceFile, ModifyFile]], 
+                 preview_dir: Path, console: Console) -> bool:
     """Apply all changes from preview to workspace_dir in the correct order.
     Returns success status."""
 
     console.print("\n[blue]Applying changes to working directory...[/blue]")
 
-    # Apply file operations
+    # Process changes in order: Delete -> Rename -> Create/Replace/Modify
+    changes_by_type = {
+        DeleteFile: [],
+        RenameFile: [],
+        'other': []  # CreateFile, ReplaceFile, ModifyFile
+    }
+
+    # Group changes by type for ordered processing
     for change in changes:
-        if change.operation == ChangeOperation.REMOVE_FILE:
-            remove_from_workspace_dir(change.name, console)
+        if isinstance(change, DeleteFile):
+            changes_by_type[DeleteFile].append(change)
+        elif isinstance(change, RenameFile):
+            changes_by_type[RenameFile].append(change)
         else:
-            filepath = change.target if change.operation == ChangeOperation.RENAME_FILE else change.name
-            target_path = config.workspace_dir / filepath
-            preview_path = preview_dir / filepath
+            changes_by_type['other'].append(change)
 
-            target_path.parent.mkdir(parents=True, exist_ok=True)
-            if preview_path.exists():
-                shutil.copy2(preview_path, target_path)
-                console.print(f"[dim]Applied changes to {filepath}[/dim]")
+    # Process deletes first
+    for change in changes_by_type[DeleteFile]:
+        remove_from_workspace_dir(change.name, console)
 
+    # Process renames second
+    for change in changes_by_type[RenameFile]:
+        target_path = config.workspace_dir / change.new_name
+        preview_path = preview_dir / change.new_name
+        
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        if preview_path.exists():
+            shutil.copy2(preview_path, target_path)
+            console.print(f"[dim]Renamed {change.name} to {change.new_name}[/dim]")
+            
+        # Remove the old file if it exists
+        old_path = config.workspace_dir / change.name
+        if old_path.exists():
+            old_path.unlink()
+
+    # Process creates/replaces/modifies last
+    for change in changes_by_type['other']:
+        target_path = config.workspace_dir / change.name
+        preview_path = preview_dir / change.name
+
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        if preview_path.exists():
+            shutil.copy2(preview_path, target_path)
+            if isinstance(change, CreateFile):
+                console.print(f"[green]Created {change.name}[/green]")
+            else:
+                console.print(f"[dim]Applied changes to {change.name}[/dim]")
 
     return True
 
@@ -58,7 +92,7 @@ def _cleanup_empty_dirs(path: Path, console: Console) -> None:
                 break
         current = current.parent
 
-def remove_from_workspace_dir(filepath: Path, console: Console) -> None:
+def remove_from_workspace_dir(filepath: str, console: Console) -> None:
     """Remove file from working directory and cleanup empty parent directories"""
     target_path = config.workspace_dir / filepath
     if target_path.exists():

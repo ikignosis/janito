@@ -21,17 +21,16 @@ Please provide implementation instructions in two formats:
 Rules:
 - Each statement must be separated with "===", sub-statements are prefixed with "-"
 - For Create File: content must be prefixed with dots (.)
-- For Modify File Content:
+- For Modify File:
   * Delete Block: removes the block and its before/after lines
   * All multiline content must be prefixed with dots (.)
   * new_indent: number of spaces for indentation (only required if the indent is different from the original indent)
   * Empty lines in content should also be prefixed with a dot (.)
-  * Consolidate all changes into a single Modify File Content statement with multiple Replace Block and Delete Block substatements
+  * Consolidate all changes into a single Modify File statement with multiple Replace Block and Delete Block substatements
 - When adding imports, place them at the top of the file
 - When modifying Python files, maintain correct indentation
 - Comments should be included to explain the changes
 - Any additional feedback about the changes should be provided after END_OF_CHANGES
-
 
 CHANGES_START_HERE
 
@@ -57,12 +56,12 @@ name: old/path.py
 new_name: new/path.py
 ===
 
-# Modify file content
-Modify File Content
+# Modify File
+Modify File
 name: path/to/modify.py
 
 
-# The modify file content supports the substatements: Replace Block and Delete Block
+# The Modify File supports the substatements: Replace Block and Delete Block
 
 - Replace Block # Replace entire block including before and after lines
     before_lines:
@@ -75,7 +74,7 @@ name: path/to/modify.py
     # Replace before_lines + <existing content> + after_lines -> <new content>
     .def validate(data: int):
     .    result = data > 0
-    .    return result
+    .    return result # if you want to keep the original after_lines, add them to the bottom of the new_content
     # new_indent: 4 # number of spaces for indentation (only required if the indent is different from the original indent)
 
 NOTE: the before_lines and after_lines are removed from the original content, if you want to keep them, add them in the new_content !
