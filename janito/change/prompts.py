@@ -10,27 +10,22 @@ The developer has selected the following action plan:
 
 Please provide implementation instructions in two formats:
 
-1. Changes described in your own format (between OWN_FORMAT_START and OWN_FORMAT_END)
+1. Describe the changes in relation to the workset files in the format described below (between CHANGES_START_HERE and CHANGES_END_HERE)
 1.1 be concise identifying the files and the changes to be made
-1.2 be specific to the workset content
 
-2. Describe the changes in relation to the workset content in the format described below (between CHANGES_START_HERE and CHANGES_END_HERE)
-2.1 be concise identifying the files and the changes to be made
-2.2 be specific to the workset content
 
 Rules:
 - Each statement must be separated with "===", sub-statements are prefixed with "-"
 - For Create File: content must be prefixed with dots (.)
 - For Modify File:
-  * Delete Block: removes the block and its before/after lines
   * All multiline content must be prefixed with dots (.)
   * new_indent: number of spaces for indentation (only required if the indent is different from the original indent)
   * Empty lines in content should also be prefixed with a dot (.)
-  * Consolidate all changes into a single Modify File statement with multiple Replace Block and Delete Block substatements
+  * Consolidate all changes into a single Modify File statement with multiple substatements
 - When adding imports, place them at the top of the file
 - When modifying Python files, maintain correct indentation
 - Comments should be included to explain the changes
-- Any additional feedback about the changes should be provided after END_OF_CHANGES
+- Any additional feedback about the changes should be provided after CHANGES_END_HERE
 
 CHANGES_START_HERE
 
@@ -60,33 +55,58 @@ new_name: new/path.py
 Modify File
 name: path/to/modify.py
 
+# The Modify File supports these selection operations:
+# - Select Over: Select lines between and including start and end lines
+# - Select Exact: Select lines from source matching exact lines: content
 
-# The Modify File supports the substatements: Replace Block and Delete Block
+# Each selection can be followed by:
+# - Delete: Remove selected lines
+# - Replace: Replace selected lines with new content
+# - Insert: Insert new content before selected lines
+# - Append: Append new content after selected lines
 
-- Replace Block # Replace entire block including before and after lines
-    before_lines:
-    .def validate(data: str) -> bool:
-    .    result = data.strip() != ""
-    # ... existing content ...
-    after_lines:
-    .    return result
+# Example: Replace a function implementation
+- Select Over
+    start_lines:
+    .def old_function():
+    end_lines:
+    .    return False
+- Replace
     new_content:
-    # Replace before_lines + <existing content> + after_lines -> <new content>
-    .def validate(data: int):
-    .    result = data > 0
-    .    return result # if you want to keep the original after_lines, add them to the bottom of the new_content
-    # new_indent: 4 # number of spaces for indentation (only required if the indent is different from the original indent)
+    .def new_function():
+    .    print("New implementation")
+    .    return True
+    new_indent: 4
 
-NOTE: the before_lines and after_lines are removed from the original content, if you want to keep them, add them in the new_content !
+# Example: Delete specific lines
+- Select Exact
+    lines:
+    .    print("Debug statement")
+- Delete
 
-- Delete Block  # Delete block including before and after lines
-    before_lines:
-    .    # Deprecated code start
-    after_lines:
-    .    # Deprecated code end
+# Example: Insert comments before a function
+- Select Exact
+    lines:
+    .def process_data():
+- Insert
+    new_content:
+    .# Process the input data
+    .# Returns: processed result
+
+# Example: Append comments after a block
+- Select Over
+    start_lines:
+    .def validate():
+    end_lines:
+    .    return True
+- Append
+    new_content:
+    .# End of validation function
+    .# Consider adding more checks
+
 ===
 
-END_OF_CHANGES
+CHANGES_END_HERE
 
 """
 

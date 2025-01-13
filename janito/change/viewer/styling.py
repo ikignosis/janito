@@ -1,6 +1,7 @@
 from rich.text import Text
 from .content import get_file_syntax
 from rich.style import Style
+from rich.syntax import Syntax
 from rich.console import Console
 from rich.console import Console
 from typing import List, Optional
@@ -30,10 +31,11 @@ def apply_line_style(line: str, style: str, width: int, full_width: bool = False
         padded_line = line.ljust(width)
         text.append(padded_line, style=style)
     else:
-        # Standard padding after content
+        # Left align the content and pad to width
         text.append(line, style=style)
         padding = " " * max(0, width - len(line))
         text.append(padding, style=style)
+    
     text.append("\n", style=style)
     return text
 
@@ -72,30 +74,17 @@ def format_content(lines: List[str], search_lines: List[str], replace_lines: Lis
         style = f"{current_theme.text_color} on {bg_color}"
 
         if syntax_type == 'python':
-            # Use Syntax for Python highlighting
-            syntax = Syntax(line, "python", theme="monokai", background_color=bg_color)
-            text.append(syntax)
-            # Add padding after syntax highlighted content
-            padding = " " * max(0, width - len(line))
-            text.append(padding, style=style)
-            text.append("\n", style=style)
+            # Just use the background color without syntax highlighting
+            text.append(apply_line_style(line, style, width))
             return
 
         # Wrap long lines
         if len(line) > width:
             wrapped_lines = wrap(line, width=width, break_long_words=True, break_on_hyphens=False)
             for wrapped in wrapped_lines:
-                padding = " " * max(0, width - len(wrapped))
-                text.append(wrapped, style=style)
-                text.append(padding, style=style)
-                text.append("\n", style=style)
+                text.append(apply_line_style(wrapped, style, width))
         else:
-            # Calculate padding to fill the width
-            padding = " " * max(0, width - len(line))
-            # Add content and padding with consistent background
-            text.append(line, style=style)
-            text.append(padding, style=style)
-            text.append("\n", style=style)
+            text.append(apply_line_style(line, style, width))
 
     for i, line in enumerate(lines):
         if not line.strip():  # Handle empty lines

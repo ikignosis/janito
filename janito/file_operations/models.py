@@ -5,6 +5,8 @@ from typing import List, Optional
 class ChangeType(Enum):
     REPLACE = auto()
     DELETE = auto()
+    INSERT = auto()
+    APPEND = auto()
     MOVE = auto()
 
 @dataclass

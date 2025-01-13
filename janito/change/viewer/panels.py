@@ -16,6 +16,7 @@ import sys
 from rich.columns import Columns
 from rich import box
 from rich.text import Text
+from rich.layout import Layout
 
 # Constants for panel layout
 PANEL_MIN_WIDTH = 40
@@ -23,20 +24,22 @@ PANEL_MAX_WIDTH = 120  # Maximum width for a single column
 PANEL_PADDING = 4
 COLUMN_SPACING = 2
 
-def create_progress_header(operation: str, filename: str, current: int, total: int, reason: str = None) -> Text:
+def create_progress_header(operation: str, filename: str, current: int, total: int,
+                          file_ops: int = 0, reason: str = None) -> Text:
     """Create a compact single-line header with balanced layout.
 
     Args:
-        operation: Type of operation being performed (not displayed)
+        operation: Type of operation being performed
         filename: Name of the file being modified
         current: Current change number
         total: Total number of changes
+        file_ops: Number of file operations (if any)
         reason: Optional reason for the change
     """
     header = Text()
 
-    # Left-aligned change number
-    progress = f"Change {current}/{total}"
+    # Left-aligned change number with file ops if present
+    progress = format_change_progress(current, total, file_ops)
     header.append(progress, style="bold blue")
 
     # Center-aligned filename
@@ -54,11 +57,14 @@ FileOperationType = Union[CreateFile, DeleteFile, RenameFile, ReplaceFile, Modif
 
 def preview_all_changes(changes: List[FileOperationType]) -> None:
     """Show a summary of all changes with side-by-side comparison."""
-    total_changes = len(changes)
-    legend_shown = False
     console = Console()
+    file_ops, content_changes = count_total_changes(changes)
+    total_changes = content_changes
+    legend_shown = False
 
     console.print("[yellow]Starting changes preview...[/yellow]", justify="center")
+    if file_ops:
+        console.print(f"[yellow]Total changes: {content_changes} content changes + {file_ops} file operations[/yellow]", justify="center")
     console.print()
 
     # Group changes by type
@@ -115,20 +121,21 @@ def preview_all_changes(changes: List[FileOperationType]) -> None:
 
     # Show content modifications
     change_index = 0
+    total_changes = len(modify_files)
     for modify_change in modify_files:
         # Show header for the file being modified
         console.print(Rule(f"[cyan]Modifying file: {modify_change.name}[/cyan]", style="cyan"))
         
         for content_change in modify_change.get_changes():
             # Get the content based on change type
-            if content_change.change_type == ChangeType.REPLACE:
+            if content_change.change_type in (ChangeType.REPLACE, ChangeType.APPEND, ChangeType.INSERT):
                 orig_lines = content_change.original_content
                 new_lines = content_change.new_content
             elif content_change.change_type == ChangeType.DELETE:
                 orig_lines = content_change.original_content
                 new_lines = []  # Empty list for deletions
             else:
-                continue  # Skip other change types for now
+                raise NotImplementedError(f"Unsupported change type: {content_change.change_type}")
 
             # Show the diff
             legend_shown = show_side_by_side_diff(
@@ -139,7 +146,8 @@ def preview_all_changes(changes: List[FileOperationType]) -> None:
                 change_index,
                 total_changes,
                 legend_shown,
-                f"Lines {content_change.start_line + 1}-{content_change.end_line}"
+                f"Lines {content_change.start_line + 1}-{content_change.end_line}",
+                file_ops
             )
             change_index += 1
             console.print()  # Add spacing between changes
@@ -228,57 +236,85 @@ def calculate_panel_widths(left_content: str, right_content: str, term_width: in
 
     return left_width, right_width
 
-def create_diff_panels(orig_section: List[str], new_section: List[str], filename: str,
-                      can_do_side_by_side: bool, term_width: int) -> List[Panel]:
-    # Detect if file is Python
-    is_python = filename.endswith('.py')
-    syntax_type = 'python' if is_python else None
-
-    # Calculate optimal widths
-    left_width, right_width = calculate_panel_widths(
-        '\n'.join(orig_section), '\n'.join(new_section), term_width
-    )
-    """Create panels for side-by-side diff view with optimal widths and syntax highlighting"""
+def create_side_by_side_columns(orig_section: List[str], new_section: List[str], filename: str,
+                           can_do_side_by_side: bool, term_width: int) -> Columns:
+    """Create side-by-side diff view using Columns with consistent styling"""
     # Get syntax type using centralized function
     syntax_type = get_file_syntax(Path(filename))
 
-    # Format content with or without syntax highlighting and enforce word wrapping
-    if syntax_type:
-        left_content = Syntax('\n'.join(orig_section), syntax_type, theme="monokai",
-                             line_numbers=True, word_wrap=True, code_width=left_width)
-        right_content = Syntax('\n'.join(new_section), syntax_type, theme="monokai",
-                              line_numbers=True, word_wrap=True, code_width=right_width)
-    else:
-        left_content = format_content(orig_section, orig_section, new_section, True,
-                                     syntax_type=syntax_type)
-        right_content = format_content(new_section, orig_section, new_section, False,
-                                      syntax_type=syntax_type)
+    # Calculate max line widths for each section
+    left_max_width = max((len(line) for line in orig_section), default=0)
+    right_max_width = max((len(line) for line in new_section), default=0)
 
-    # Calculate optimal widths using dedicated function
-    left_width, right_width = calculate_panel_widths(
-        str(left_content), str(right_content), term_width
+    # Add some padding for the titles
+    left_max_width = max(left_max_width, len("Original") + 2)
+    right_max_width = max(right_max_width, len("Modified") + 2)
+
+    # Calculate optimal widths while respecting max line widths
+    total_width = term_width - 4  # Account for padding
+    if can_do_side_by_side:
+        # Use actual content widths, but ensure they fit in available space
+        available_width = total_width - 2  # Account for column spacing
+        if (left_max_width + right_max_width) > available_width:
+            # Scale proportionally if content is too wide
+            ratio = left_max_width / (left_max_width + right_max_width)
+            left_width = min(left_max_width, int(available_width * ratio))
+            right_width = min(right_max_width, available_width - left_width)
+        else:
+            left_width = left_max_width
+            right_width = right_max_width
+    else:
+        left_width = right_width = total_width
+
+    # Format content with calculated widths
+    left_content = format_content(orig_section, orig_section, new_section, True,
+                                width=left_width, syntax_type=syntax_type)
+    right_content = format_content(new_section, orig_section, new_section, False,
+                                width=right_width, syntax_type=syntax_type)
+
+    # Create text containers with centered titles
+    left_text = Text()
+    title_padding = (left_width - len("Original")) // 2
+    left_text.append(" " * title_padding + "Original" + " " * title_padding, style="red bold")
+    left_text.append("\n")
+    left_text.append(left_content)
+
+    right_text = Text()
+    title_padding = (right_width - len("Modified")) // 2
+    right_text.append(" " * title_padding + "Modified" + " " * title_padding, style="green bold")
+    right_text.append("\n")
+    right_text.append(right_content)
+
+    # Calculate padding for centering the entire columns
+    content_width = left_width + right_width + 2  # +2 for column spacing
+    side_padding = " " * ((term_width - content_width) // 2)
+
+    # Create centered columns
+    return Columns(
+        [
+            Text(side_padding),
+            left_text,
+            right_text,
+            Text(side_padding)
+        ],
+        equal=False,
+        expand=False,
+        padding=(0, 1)
     )
 
-    # Create panels with calculated widths
-    panels = [
-        Panel(left_content, title="[red]Original[/red]", title_align="center", width=left_width),
-        Panel(right_content, title="[green]Modified[/green]", title_align="center", width=right_width)
-    ]
-
-    return panels
-
 def show_side_by_side_diff(
-    console: Console, 
+    console: Console,
     filename: str,
     original_content: List[str],
     new_content: List[str],
     change_index: int = 0,
     total_changes: int = 1,
     legend_shown: bool = False,
-    reason: str = None
+    reason: str = None,
+    file_ops: int = 0
 ) -> bool:
-    """Show side-by-side diff panels for content changes with progress tracking and reason
-    
+    """Show side-by-side diff using Columns for better alignment
+
     Args:
         console: Rich console instance
         filename: Name of the file being modified
@@ -288,7 +324,8 @@ def show_side_by_side_diff(
         total_changes: Total number of changes
         legend_shown: Whether the legend has been shown
         reason: Optional reason for the change
-    
+        file_ops: Number of file operations (default: 0)
+
     Returns:
         bool: Whether the legend was shown during this call
     """
@@ -297,7 +334,8 @@ def show_side_by_side_diff(
     can_do_side_by_side = term_width >= (min_panel_width * 2 + 4)
 
     # Create and display header
-    header = create_progress_header("Modify", filename, change_index + 1, total_changes, reason)
+    header = create_progress_header("Modify", filename, change_index + 1, total_changes,
+                                   file_ops=file_ops, reason=reason)
     console.print(Panel(Text.assemble(header, justify="center"), box=box.HEAVY, style="cyan", title_align="center"))
 
     # Show legend before first text operation if not shown yet
@@ -312,7 +350,8 @@ def show_side_by_side_diff(
 
     # Format and display each section
     for i, (orig_section, new_section) in enumerate(sections):
-        panels = create_diff_panels(
+        # Create side-by-side view using columns
+        layout = create_side_by_side_columns(
             orig_section,
             new_section,
             filename,
@@ -320,14 +359,7 @@ def show_side_by_side_diff(
             term_width
         )
 
-        # Render panels based on layout
-        if can_do_side_by_side:
-            columns = Columns(panels, equal=True, expand=False)
-            console.print(columns, justify="center")
-        else:
-            for panel in panels:
-                console.print(panel, justify="center")
-                console.print()  # Add spacing between panels
+        console.print(layout)
 
         # Show separator between sections if not last section
         if i < len(sections) - 1:
@@ -410,6 +442,35 @@ def show_delete_panel(
         border_style="red",
         padding=(1, 2)
     ))
+
+def count_total_changes(changes: List[FileOperationType]) -> Tuple[int, int]:
+    """Count total file operations and content changes
+
+    Returns:
+        Tuple of (file_operations, content_changes)
+    """
+    file_ops = 0
+    content_changes = 0
+
+    for change in changes:
+        if isinstance(change, ModifyFile):
+            content_changes += len(change.get_changes())
+        else:
+            file_ops += 1
+
+    return file_ops, content_changes
+
+def format_change_progress(current: int, total: int, file_ops: int = 0) -> str:
+    """Format change progress with optional file operations count
+
+    Args:
+        current: Current change number
+        total: Total number of changes
+        file_ops: Number of file operations (if any)
+    """
+    if file_ops:
+        return f"Change {current}/{total} (+ {file_ops} file operations)"
+    return f"Change {current}/{total}"
 
 def get_human_size(size_bytes: int) -> str:
     """Convert bytes to human readable format"""

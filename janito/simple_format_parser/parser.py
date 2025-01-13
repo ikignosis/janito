@@ -136,14 +136,14 @@ class Parser:
             if not stripped:
                 self.current_line += 1
                 continue
-                
+            
             if stripped.startswith('#'):
                 self.current_line += 1
                 continue
-                
+            
             if not stripped.startswith('.'):
                 break
-                
+            
             content_lines.append(stripped[1:])
             self.current_line += 1
             

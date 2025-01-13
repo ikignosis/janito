@@ -27,7 +27,7 @@ def play_saved_changes(history_file: Path) -> Tuple[bool, Optional[Path]]:
     for i, line in enumerate(response.splitlines()):
         if "CHANGES_START_HERE" in line:
             changes_start = i + 1
-        if "END_OF_CHANGES" in line:
+        if "CHANGES_END_HERE" in line:
             changes_end = i - 1
     reponse_lines = response.splitlines()
     changes_content = reponse_lines[changes_start:changes_end]
@@ -47,7 +47,7 @@ def play_saved_changes(history_file: Path) -> Tuple[bool, Optional[Path]]:
             console.print("[cyan]Auto-applying changes to working dir...[/cyan]")
 
         if apply_changes:
-            applier.apply_to_workspace_dir(changes)
+            applier.apply_to_workspace_dir()
             console.print("[green]Changes applied successfully[/green]")
         else:
             console.print("[yellow]Changes were not applied[/yellow]")

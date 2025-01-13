@@ -62,6 +62,7 @@ class ReplaceFile(FileOperation):
 
 class FileOperationExecutor(Executor):
     def __init__(self, target_dir: Path):
+        self.target_dir = target_dir
         super().__init__([CreateFile, DeleteFile, RenameFile, ReplaceFile, ModifyFile], target_dir=target_dir)
     
     def get_changes(self):

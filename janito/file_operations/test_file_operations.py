@@ -1,7 +1,7 @@
 import os
 import tempfile
-from executor import Executor
-from file_operations import CreateFile, DeleteFile, RenameFile, ReplaceFile
+from . import FileOperationExecutor
+from . import CreateFile, DeleteFile, RenameFile, ReplaceFile
 
 def test_file_operations():
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -9,11 +9,8 @@ def test_file_operations():
         src_dir = os.path.join(temp_dir, "src")
         config_dir = os.path.join(src_dir, "config")
         
-        # Create executor with file operation classes and target directory
-        executor = Executor(
-            [CreateFile, DeleteFile, RenameFile, ReplaceFile],
-            target_dir=src_dir
-        )
+        # Create executor with target directory
+        executor = FileOperationExecutor(target_dir=src_dir)
         
         # Test creating a file in a subdirectory
         executor.execute("""

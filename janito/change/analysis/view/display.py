@@ -146,5 +146,4 @@ def format_analysis(analysis: str, raw: bool = False) -> None:
     console.print(Text("Available Options", style=COLORS['header']), justify="center")
     console.print(Text("─" * term_width, style=COLORS['rule']))
     console.print(columns)
-    console.print(Text("─" * term_width, style=COLORS['rule']))
     console.print("\n")

@@ -36,7 +36,7 @@ def process_change_request(
     for i, line in enumerate(response.splitlines()):
         if "CHANGES_START_HERE" in line:
             changes_start = i + 1
-        if "END_OF_CHANGES" in line:
+        if "CHANGES_END_HERE" in line:
             changes_end = i - 1
     response_lines = response.splitlines()
     changes_content = '\n'.join(response_lines[changes_start:changes_end])

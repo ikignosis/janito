@@ -17,6 +17,7 @@ Available keyboard shortcuts:
   Ctrl+E  : Move cursor to end of line
   Ctrl+K  : Clear line after cursor
   Ctrl+U  : Clear line before cursor
+  Ctrl+D  : Exit shell
 """
 
 def show_shortcuts():
@@ -83,6 +84,9 @@ def prompt_user(message: str, choices: List[str] = None, show_help: bool = True)
         if response.strip():
             readline.add_history(response)
         return response
-    except (KeyboardInterrupt, EOFError):
+    except KeyboardInterrupt:
         console.print("\n[yellow]Operation cancelled[/yellow]")
         return ""
+    except EOFError:  # Ctrl+D
+        console.print("\n[yellow]Exiting shell[/yellow]")
+        return "/exit"
