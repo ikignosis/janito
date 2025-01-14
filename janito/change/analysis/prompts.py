@@ -10,8 +10,8 @@ from rich.prompt import Prompt
 CHANGE_ANALYSIS_PROMPT = """
 Considering the above workset content, provide 2 sections, each identified by a keyword and representing an option.
 Each option should include a concise action plan and a list of affected files.
-1st option should be baseline, following established patterns and core functionality requirements"
-2nd option should be flexible, allowing for greater flexibility and adaptability
+1st option should be simple, minimalistic, and straightforward
+2nd option should be standard, allowing for greater flexibility and adaptability
 
 Do not use style as keyword, instead focus on the changes summary.
 

@@ -1,6 +1,28 @@
 from typing import List, Optional
 import readline
 from rich.console import Console
+from rich.table import Table
+
+def display_history(limit: int = 20):
+    """Display the command history with the specified limit.
+
+    Args:
+        limit: Maximum number of history entries to show
+    """
+    table = Table(title="Command History")
+    table.add_column("ID", justify="right", style="cyan")
+    table.add_column("Command", style="white")
+
+    # Get history items (most recent first)
+    history_length = readline.get_current_history_length()
+    start = max(1, history_length - limit + 1)
+
+    for i in range(start, history_length + 1):
+        cmd = readline.get_history_item(i)
+        if cmd:
+            table.add_row(str(i), cmd)
+
+    console.print(table)
 from rich.prompt import Prompt
 
 console = Console()
@@ -8,24 +30,6 @@ import atexit
 from pathlib import Path
 from janito.config import config
 
-SHORTCUTS_INFO = """
-Available keyboard shortcuts:
-  Up/Down : Navigate command history
-  Ctrl+R  : Reverse search in history
-  Tab     : Auto-complete (when choices available)
-  Ctrl+A  : Move cursor to start of line
-  Ctrl+E  : Move cursor to end of line
-  Ctrl+K  : Clear line after cursor
-  Ctrl+U  : Clear line before cursor
-  Ctrl+D  : Exit shell
-"""
-
-def show_shortcuts():
-    """Display available keyboard shortcuts."""
-    print("\nKeyboard Shortcuts:")
-    print("-" * 20)
-    print(SHORTCUTS_INFO)
-    print("-" * 20)
 
 def setup_history():
     """Setup readline history file persistence."""

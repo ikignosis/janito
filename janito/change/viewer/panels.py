@@ -25,7 +25,7 @@ PANEL_PADDING = 4
 COLUMN_SPACING = 2
 
 def create_progress_header(operation: str, filename: str, current: int, total: int,
-                          file_ops: int = 0, reason: str = None) -> Text:
+                          reason: str = None) -> Text:
     """Create a compact single-line header with balanced layout.
 
     Args:
@@ -33,14 +33,12 @@ def create_progress_header(operation: str, filename: str, current: int, total: i
         filename: Name of the file being modified
         current: Current change number
         total: Total number of changes
-        file_ops: Number of file operations (if any)
         reason: Optional reason for the change
     """
     header = Text()
 
-    # Left-aligned change number with file ops if present
-    progress = format_change_progress(current, total, file_ops)
-    header.append(progress, style="bold blue")
+    # Left-aligned change counter
+    header.append(f"Change {current}/{total}", style="bold blue")
 
     # Center-aligned filename
     header.append(" │ ", style="dim")
@@ -58,13 +56,16 @@ FileOperationType = Union[CreateFile, DeleteFile, RenameFile, ReplaceFile, Modif
 def preview_all_changes(changes: List[FileOperationType]) -> None:
     """Show a summary of all changes with side-by-side comparison."""
     console = Console()
-    file_ops, content_changes = count_total_changes(changes)
-    total_changes = content_changes
-    legend_shown = False
+
+    # Calculate total changes at start
+    total_changes = sum(
+        len(change.get_changes()) if isinstance(change, ModifyFile) else 1
+        for change in changes
+    )
+    current_change = 0
 
     console.print("[yellow]Starting changes preview...[/yellow]", justify="center")
-    if file_ops:
-        console.print(f"[yellow]Total changes: {content_changes} content changes + {file_ops} file operations[/yellow]", justify="center")
+    console.print(f"[yellow]Total changes to process: {total_changes}[/yellow]", justify="center")
     console.print()
 
     # Group changes by type
@@ -145,9 +146,7 @@ def preview_all_changes(changes: List[FileOperationType]) -> None:
                 new_lines,
                 change_index,
                 total_changes,
-                legend_shown,
                 f"Lines {content_change.start_line + 1}-{content_change.end_line}",
-                file_ops
             )
             change_index += 1
             console.print()  # Add spacing between changes
@@ -334,8 +333,7 @@ def show_side_by_side_diff(
     can_do_side_by_side = term_width >= (min_panel_width * 2 + 4)
 
     # Create and display header
-    header = create_progress_header("Modify", filename, change_index + 1, total_changes,
-                                   file_ops=file_ops, reason=reason)
+    header = create_progress_header("Modify", filename, change_index + 1, total_changes, reason=reason)
     console.print(Panel(Text.assemble(header, justify="center"), box=box.HEAVY, style="cyan", title_align="center"))
 
     # Show legend before first text operation if not shown yet
@@ -443,33 +441,24 @@ def show_delete_panel(
         padding=(1, 2)
     ))
 
-def count_total_changes(changes: List[FileOperationType]) -> Tuple[int, int]:
-    """Count total file operations and content changes
+def count_total_changes(changes: List[FileOperationType]) -> int:
+    """Count total number of changes (file operations + content changes)
 
     Returns:
-        Tuple of (file_operations, content_changes)
+        Total number of changes
     """
-    file_ops = 0
-    content_changes = 0
+    return sum(
+        len(change.get_changes()) if isinstance(change, ModifyFile) else 1
+        for change in changes
+    )
 
-    for change in changes:
-        if isinstance(change, ModifyFile):
-            content_changes += len(change.get_changes())
-        else:
-            file_ops += 1
-
-    return file_ops, content_changes
-
-def format_change_progress(current: int, total: int, file_ops: int = 0) -> str:
-    """Format change progress with optional file operations count
+def format_change_progress(current: int, total: int) -> str:
+    """Format change progress counter
 
     Args:
         current: Current change number
         total: Total number of changes
-        file_ops: Number of file operations (if any)
     """
-    if file_ops:
-        return f"Change {current}/{total} (+ {file_ops} file operations)"
     return f"Change {current}/{total}"
 
 def get_human_size(size_bytes: int) -> str:

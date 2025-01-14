@@ -25,6 +25,7 @@ Rules:
 - When adding imports, place them at the top of the file
 - When modifying Python files, maintain correct indentation
 - Comments should be included to explain the changes
+- Remove code which is obsolete by the change, keep compatibility only when explicited stated in the request
 - Any additional feedback about the changes should be provided after CHANGES_END_HERE
 
 CHANGES_START_HERE

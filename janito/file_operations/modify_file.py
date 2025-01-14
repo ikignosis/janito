@@ -97,9 +97,10 @@ class ModifyFile:
         while True:
             start_pos = self._find_lines(start_lines_list, start_pos)
             if start_pos == -1:
-                raise ValueError("Start lines not found")
+                raise ValueError(f"Start lines not found:\n{start_lines}")
             
-            end_pos = self._find_lines(end_lines_list, start_pos + len(start_lines_list))
+            # Search for end_lines from the start position, not after it
+            end_pos = self._find_lines(end_lines_list, start_pos)
             if end_pos != -1:
                 # Found a valid combination
                 self.selected_range = (start_pos + len(start_lines_list), end_pos)
@@ -107,6 +108,8 @@ class ModifyFile:
             
             # Try next occurrence of start_lines
             start_pos += 1
+            if start_pos >= len(self.content):
+                raise ValueError(f"End lines not found after start lines:\nStart lines:\n{start_lines}\nEnd lines:\n{end_lines}")
 
     def SelectOver(self, start_lines: str, end_lines: str = None):
         """Select lines between and including start_lines and end_lines.
@@ -116,18 +119,18 @@ class ModifyFile:
         # Find start position
         start_pos = self._find_lines(start_lines_list)
         if start_pos == -1:
-            raise ValueError("Start lines not found")
+            raise ValueError(f"Start lines not found:\n{start_lines}")
             
         if not end_lines:
             # If no end_lines provided, select only the start_lines
             self.selected_range = (start_pos, start_pos + len(start_lines_list))
             return
             
-        # Try to find a valid end position
+        # Try to find a valid end position from the start position
         end_lines_list = end_lines.splitlines()
-        end_pos = self._find_lines(end_lines_list, start_pos + len(start_lines_list))
+        end_pos = self._find_lines(end_lines_list, start_pos)
         if end_pos == -1:
-            raise ValueError("End lines not found")
+            raise ValueError(f"End lines not found after start lines:\nStart lines:\n{start_lines}\nEnd lines:\n{end_lines}")
             
         # Found a valid combination
         self.selected_range = (start_pos, end_pos + len(end_lines_list))
@@ -137,7 +140,7 @@ class ModifyFile:
         lines_list = lines.splitlines() if lines else []
         pos = self._find_lines(lines_list)
         if pos == -1:
-            raise ValueError("Exact lines not found")
+            raise ValueError(f"Exact lines not found:\n{lines}")
         self.selected_range = (pos, pos + len(lines_list))
 
     def Delete(self):

@@ -10,6 +10,7 @@ The following situations should result in error:
 """
 
 from pathlib import Path
+from .validator import validate_python_syntax, validation_count, validation_success
 from typing import Tuple, Optional, List, Set, Union
 from rich.console import Console
 from rich.panel import Panel
@@ -59,9 +60,20 @@ class ChangeApplier:
         Returns (success, modified_files)"""
         console = Console()
         self.file_oper_exec.execute(self.changes_text)
-        
-        # Track modified files
+
+        # Track modified files and validate Python syntax
         modified_files = {Path(op.name) for op in self.file_oper_exec.instances}
+
+        # Validate Python files syntax
+        for file_path in modified_files:
+            if file_path.suffix == '.py':
+                is_valid, error = validate_python_syntax(self.preview_dir / file_path)
+                if not is_valid:
+                    console.print(f"\n[red]Syntax error in {file_path}:[/red] {error}")
+                    return False, modified_files
+
+        if validation_count > 0:
+            console.print(f"\n[green]Syntax validation successful for {validation_success}/{validation_count} Python files[/green]")
 
         # Run tests if specified
         if config.test_cmd:
