@@ -82,7 +82,12 @@ class Workspace:
     def _process_file(self, path: Path, scan_time: float) -> None:
         """Process a single file and add it to the content."""
         try:
-            if path.suffix.lower() in {'.py', '.md', '.txt', '.json', '.yaml', '.yml', '.toml'} or not path.suffix:
+            # Check if file has supported extension or no extension
+            supported_extensions = {
+            '.py', '.md', '.txt', '.json', '.yaml', '.yml', '.toml',
+            '.html', '.htm', '.css', '.js'
+            }
+            if path.suffix.lower() in supported_extensions or not path.suffix:
                 content = path.read_text(encoding='utf-8')
                 rel_path = path.relative_to(config.workspace_dir)
                 seconds_ago = int(scan_time - path.stat().st_mtime)

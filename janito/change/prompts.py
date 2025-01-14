@@ -13,9 +13,13 @@ Please provide implementation instructions in two formats:
 1. Describe the changes in relation to the workset files in the format described below (between CHANGES_START_HERE and CHANGES_END_HERE)
 1.1 be concise identifying the files and the changes to be made
 
-
 Rules:
-- Each statement must be separated with "===", sub-statements are prefixed with "-"
+- The formar uses statements and sub-statements to describe the change
+e.g:
+    Modify File # this is a statement
+    - Select Exact # this is a sub-statement (starts with dash)
+    ###
+- Use "===" to separate statements, sub-statements beloging to the same statement must NOT be separated
 - For Create File: content must be prefixed with dots (.)
 - For Modify File:
   * All multiline content must be prefixed with dots (.)
@@ -90,7 +94,7 @@ name: path/to/modify.py
     lines:
     .def process_data():
 - Insert
-    new_content:
+    lines:
     .# Process the input data
     .# Returns: processed result
 

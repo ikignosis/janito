@@ -14,7 +14,9 @@ from .validator import validate_python_syntax, validation_count, validation_succ
 from typing import Tuple, Optional, List, Set, Union
 from rich.console import Console
 from rich.panel import Panel
+from rich.prompt import Confirm
 from rich import box
+from shutil import get_terminal_size
 import subprocess
 from .workspace_dir import apply_changes as apply_to_workspace_dir_impl
 from janito.config import config
@@ -96,3 +98,30 @@ class ChangeApplier:
         """Apply changes from preview to working directory"""
         changes = self.file_oper_exec.instances
         return apply_to_workspace_dir_impl(changes, self.preview_dir, Console())
+
+    def confirm_and_apply_to_workspace(self) -> bool:
+        """Handles confirmation and application of changes to workspace directory.
+        Returns True if changes were applied successfully."""
+        
+        if not config.auto_apply:
+            # Get terminal width and calculate padding
+            term_width = get_terminal_size().columns
+            prompt_text = "[cyan]Apply changes to working directory?[/cyan]"
+            padding = (term_width - len(prompt_text) + 20) // 2  # +20 to account for color codes
+            apply_changes = Confirm.ask(
+                "\n" + " " * max(0, padding) + prompt_text,
+                default=False,
+                show_default=True
+            )
+        else:
+            apply_changes = True
+            self.console.print("[cyan]Auto-applying changes to working dir...[/cyan]", justify="center")
+
+        if apply_changes:
+            success = self.apply_to_workspace_dir()
+            if success:
+                self.console.print("[green]Changes applied successfully[/green]", justify="center")
+            return success
+        else:
+            self.console.print("[yellow]Changes were not applied[/yellow]", justify="center")
+            return False

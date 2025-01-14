@@ -46,7 +46,7 @@ def handle_request(request: str = None, preview_only: bool = False, single: bool
         return
 
     is_empty = is_dir_empty(config.workspace_dir)
-    if is_empty and not config.include:
+    if is_empty:
         console.print("\n[bold blue]Empty directory - will create new files as needed[/bold blue]")
 
     success, history_file = process_change_request(request, preview_only, single=single)

@@ -152,10 +152,10 @@ def test_insert_operation(sample_file):
     Modify File
         name: {sample_file}
         - Select Exact
-            content:
+            lines:
                 .def another_function():
         - Insert
-            new_content:
+            lines:
                 .# New function below
                 .# Important stuff
     """)
@@ -191,3 +191,93 @@ def test_append_operation(sample_file):
     # Read the modified file
     result = Path(executor.target_dir / sample_file.name).read_text()
     assert "return False\n# End of first function\n# More comments\n\ndef another_function()" in result 
+
+def test_replace_then_append(sample_file):
+    """Test replacing content and then appending without a new selection.
+    
+    Verifies that append operation uses the range from the replaced content."""
+    
+    # Create executor
+    executor = FileOperationExecutor(sample_file.parent)
+    
+    # Execute modifications
+    executor.execute(f"""
+    Modify File
+        name: {sample_file}
+        - Select Over
+            start_lines:
+                .def old_function():
+            end_lines:
+                .    return False
+        - Replace
+            new_content:
+                .def new_function():
+                .    print("New")
+        - Append
+            new_content:
+                .    return True
+    """)
+    
+    # Read the modified file
+    result = Path(executor.target_dir / sample_file.name).read_text()
+    assert "def new_function():" in result
+    assert "    print(\"New\")" in result
+    assert "    return True" in result
+    # Verify order
+    assert "print(\"New\")\n    return True\n\ndef another_function()" in result 
+
+def test_selection_after_operations(sample_file):
+    """Test that selected range is properly updated after each operation."""
+    
+    # Create executor
+    executor = FileOperationExecutor(sample_file.parent)
+    modify_file = executor.ModifyFile(sample_file)
+    modify_file.prepare()
+    
+    # Test Replace
+    modify_file.SelectOver("def old_function():", "    return False")
+    modify_file.Replace("def new_function():\n    return True")
+    assert modify_file.selected_range == (0, 2)  # Should cover new content
+    
+    # Test Append without new selection
+    modify_file.Append("    print('Extra')")
+    assert modify_file.selected_range == (0, 3)  # Should include appended line
+    
+    # Test Insert
+    modify_file.SelectExact("def another_function():")
+    modify_file.Insert("# Comment\n# Another")
+    assert modify_file.selected_range == (4, 7)  # Should include inserted lines and selection
+    
+    # Test Delete
+    modify_file.SelectExact("    print('Extra')")
+    modify_file.Delete()
+    assert modify_file.selected_range is None  # Should clear selection after delete 
+
+def test_append_to_end_of_file(sample_file):
+    """Test appending content when no lines are selected.
+    
+    Should append to the end of the file."""
+    
+    # Create executor
+    executor = FileOperationExecutor(sample_file.parent)
+    
+    # Execute modification
+    executor.execute(f"""
+    Modify File
+        name: {sample_file}
+        - Append
+            new_content:
+                .# Added at the end
+                .# More content
+    """)
+    
+    # Read the modified file
+    result = Path(executor.target_dir / sample_file.name).read_text()
+    
+    # Original content should be unchanged
+    assert "def old_function():" in result
+    assert "def another_function():" in result
+    assert "def last_function():" in result
+    
+    # New content should be at the end
+    assert result.endswith("# Added at the end\n# More content\n") 

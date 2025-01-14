@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Optional, Tuple, List, Union
+from shutil import get_terminal_size
 from rich.console import Console
 from rich.prompt import Confirm
 from rich.panel import Panel
@@ -13,7 +14,7 @@ from .prompts import build_change_request_prompt
 from .analysis.analyze import analyze_request
 from ..common import progress_send_message
 from .history import save_changes_to_history
-from .viewer.panels import preview_all_changes
+from .viewer.panels import show_all_changes
 from .applier.main import ChangeApplier
 
 def process_change_request(
@@ -46,24 +47,10 @@ def process_change_request(
     success, _ = applier.apply_changes()
     
     if success:
-        preview_all_changes(applier.file_oper_exec.instances)
+        show_all_changes(applier.file_oper_exec.instances)
 
         if not preview_only:
-            if not config.auto_apply:
-                apply_changes = Confirm.ask(
-                    "[cyan]Apply changes to working directory?[/cyan]",
-                    default=False,
-                    show_default=True
-                )
-            else:
-                apply_changes = True
-                console.print("[cyan]Auto-applying changes to working dir...[/cyan]")
-
-            if apply_changes:
-                applier.apply_to_workspace_dir()
-                console.print("[green]Changes applied successfully[/green]")
-            else:
-                console.print("[yellow]Changes were not applied[/yellow]")
+            success = applier.confirm_and_apply_to_workspace()
 
     return success, None
 
