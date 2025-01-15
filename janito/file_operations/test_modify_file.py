@@ -5,8 +5,12 @@ from pathlib import Path
 from .file_operations import FileOperationExecutor
 
 @pytest.fixture
-def sample_file():
-    """Fixture to create a sample file for testing."""
+def sample_file() -> Path:
+    """Fixture to create a sample file for testing.
+    
+    Returns:
+        Path: Path to the created sample file
+    """
     with tempfile.TemporaryDirectory() as input_dir:
         sample_file = Path(input_dir) / "sample.py"
         sample_file.write_text("""def old_function():
@@ -23,11 +27,12 @@ def last_function():
 """)
         yield sample_file
 
-def test_select_between(sample_file):
-    """Test selecting and replacing content between two functions.
+def test_replace_operation(sample_file: Path):
+    """Test replacing old lines with new lines.
     
-    Uses '- Select Between' to select the empty line between functions,
-    followed by '- Replace' to add comments."""
+    Args:
+        sample_file (Path): Path to the test file
+    """
     
     # Create executor
     executor = FileOperationExecutor(sample_file.parent)
@@ -36,113 +41,30 @@ def test_select_between(sample_file):
     executor.execute(f"""
     Modify File
         name: {sample_file}
-        - Select Between
-            start_lines:
-                .    return False
-            end_lines:
-                .def another_function():
         - Replace
-            new_content:
-                .# Separating functions with a comment
-                .# This is the next function below
-    """)
-    
-    # Read the modified file
-    result = Path(executor.target_dir / sample_file.name).read_text()
-    # Check that functions are intact
-    assert "def old_function():" in result
-    assert "    return False" in result
-    assert "def another_function():" in result
-    # Check that new content was inserted between them
-    assert "return False\n# Separating functions with a comment\n# This is the next function below\ndef another_function()" in result 
-
-def test_select_over(sample_file):
-    """Test selecting and deleting an entire function.
-    
-    Uses '- Select Over' to select the complete 'old_function' including its definition 
-    and body, followed by '- Delete' to remove it."""
-    
-    # Create executor
-    executor = FileOperationExecutor(sample_file.parent)
-    
-    # Execute modification
-    executor.execute(f"""
-    Modify File
-        name: {sample_file}
-        - Select Over
-            start_lines:
+            old_lines:
                 .def old_function():
-            end_lines:
-                .    return False
-        - Delete
-    """)
-    
-    # Read the modified file
-    result = Path(executor.target_dir / sample_file.name).read_text()
-    assert "def old_function():" not in result
-    assert "return False" not in result
-    assert "def another_function():" in result
-
-def test_select_exact(sample_file):
-    """Test selecting and deleting a specific line within a function.
-    
-    Uses '- Select Exact' to select a specific print statement,
-    followed by '- Delete' to remove just that line."""
-    
-    # Create executor
-    executor = FileOperationExecutor(sample_file.parent)
-    
-    # Execute modification
-    executor.execute(f"""
-    Modify File
-        name: {sample_file}
-        - Select Exact
-            lines:
                 .    print("Hello")
-        - Delete
-    """)
-    
-    # Read the modified file
-    result = Path(executor.target_dir / sample_file.name).read_text()
-    assert "print(\"Hello\")" not in result
-    assert "def old_function():" in result
-    assert "return False" in result
-
-def test_replace_operation(sample_file):
-    """Test replacing an entire function with a new implementation.
-    
-    Replaces 'old_function' that returns False with 'new_function' that
-    prints 'New' and returns True."""
-    
-    # Create executor
-    executor = FileOperationExecutor(sample_file.parent)
-    
-    # Execute modification
-    executor.execute(f"""
-    Modify File
-        name: {sample_file}
-        - Select Over
-            start_lines:
-                .def old_function():
-            end_lines:
                 .    return False
-        - Replace
-            new_content:
+            new_lines:
                 .def new_function():
                 .    print("New")
                 .    return True
     """)
     
     # Read the modified file
-    result = Path(executor.target_dir / sample_file.name).read_text()
+    result = (executor.target_dir / sample_file.name).read_text()
     assert "def new_function():" in result
     assert "print(\"New\")" in result
     assert "def old_function():" not in result
+    assert "print(\"Hello\")" not in result
 
-def test_insert_operation(sample_file):
-    """Test inserting comments before a function definition.
+def test_delete_operation(sample_file: Path):
+    """Test deleting a sequence of lines.
     
-    Adds two comment lines immediately before the 'another_function' definition."""
+    Args:
+        sample_file (Path): Path to the test file
+    """
     
     # Create executor
     executor = FileOperationExecutor(sample_file.parent)
@@ -151,51 +73,88 @@ def test_insert_operation(sample_file):
     executor.execute(f"""
     Modify File
         name: {sample_file}
-        - Select Exact
-            lines:
-                .def another_function():
-        - Insert
-            lines:
-                .# New function below
-                .# Important stuff
-    """)
-    
-    # Read the modified file
-    result = Path(executor.target_dir / sample_file.name).read_text()
-    assert "# New function below\n# Important stuff\ndef another_function():" in result
-
-def test_append_operation(sample_file):
-    """Test appending comments after a function implementation.
-    
-    Adds two comment lines after the 'old_function' implementation,
-    before the next function begins."""
-    
-    # Create executor
-    executor = FileOperationExecutor(sample_file.parent)
-    
-    # Execute modification
-    executor.execute(f"""
-    Modify File
-        name: {sample_file}
-        - Select Over
-            start_lines:
+        - Delete
+            old_lines:
                 .def old_function():
-            end_lines:
+                .    print("Hello")
                 .    return False
-        - Append
-            new_content:
-                .# End of first function
-                .# More comments
     """)
     
     # Read the modified file
-    result = Path(executor.target_dir / sample_file.name).read_text()
-    assert "return False\n# End of first function\n# More comments\n\ndef another_function()" in result 
+    result = (executor.target_dir / sample_file.name).read_text()
+    assert "def old_function():" not in result
+    assert "print(\"Hello\")" not in result
+    assert "def another_function():" in result
+    assert "def last_function():" in result
 
-def test_replace_then_append(sample_file):
-    """Test replacing content and then appending without a new selection.
+def test_add_after_lines(sample_file: Path):
+    """Test adding new lines after specified current lines.
     
-    Verifies that append operation uses the range from the replaced content."""
+    Adds new function implementation after 'old_function'."""
+    
+    # Create executor
+    executor = FileOperationExecutor(sample_file.parent)
+    
+    # Execute modification
+    executor.execute(f"""
+    Modify File
+        name: {sample_file}
+        - Add
+            current_lines:
+                .def old_function():
+                .    print("Hello")
+                .    return False
+            new_lines:
+                .
+                .def new_function():
+                .    print("New")
+                .    return True
+    """)
+    
+    # Read the modified file
+    result = (executor.target_dir / sample_file.name).read_text()
+    # Verify both functions exist
+    assert "def old_function():" in result
+    assert "def new_function():" in result
+    # Verify order
+    assert result.index("def old_function()") < result.index("def new_function()")
+
+def test_add_to_end(sample_file: Path):
+    """Test adding new lines at the end of file when no current_lines specified."""
+    
+    # Create executor
+    executor = FileOperationExecutor(sample_file.parent)
+    
+    # Execute modification
+    executor.execute(f"""
+    Modify File
+        name: {sample_file}
+        - Add
+            new_lines:
+                .# Added at the end
+                .def final_function():
+                .    print("Final")
+                .    return None
+    """)
+    
+    # Read the modified file
+    result = (executor.target_dir / sample_file.name).read_text()
+    
+    # Original content should be unchanged
+    assert "def old_function():" in result
+    assert "def another_function():" in result
+    assert "def last_function():" in result
+    
+    # New content should be at the end
+    assert result.endswith("def final_function():\n    print(\"Final\")\n    return None\n")
+
+def test_multiple_operations(sample_file: Path):
+    """Test multiple operations in sequence.
+    
+    1. Replace old_function
+    2. Delete another_function
+    3. Add new content after last_function
+    """
     
     # Create executor
     executor = FileOperationExecutor(sample_file.parent)
@@ -204,80 +163,43 @@ def test_replace_then_append(sample_file):
     executor.execute(f"""
     Modify File
         name: {sample_file}
-        - Select Over
-            start_lines:
-                .def old_function():
-            end_lines:
-                .    return False
         - Replace
-            new_content:
+            old_lines:
+                .def old_function():
+                .    print("Hello")
+                .    return False
+            new_lines:
                 .def new_function():
                 .    print("New")
-        - Append
-            new_content:
+                .    return True
+        - Delete
+            old_lines:
+                .def another_function():
+                .    print("World")
+                .    return True
+        - Add
+            current_lines:
+                .def last_function():
+                .    print("!")
+                .    return None
+            new_lines:
+                .
+                .def added_function():
+                .    print("Added")
                 .    return True
     """)
     
     # Read the modified file
-    result = Path(executor.target_dir / sample_file.name).read_text()
+    result = (executor.target_dir / sample_file.name).read_text()
+    
+    # Verify replacements
     assert "def new_function():" in result
-    assert "    print(\"New\")" in result
-    assert "    return True" in result
-    # Verify order
-    assert "print(\"New\")\n    return True\n\ndef another_function()" in result 
-
-def test_selection_after_operations(sample_file):
-    """Test that selected range is properly updated after each operation."""
+    assert "def old_function():" not in result
     
-    # Create executor
-    executor = FileOperationExecutor(sample_file.parent)
-    modify_file = executor.ModifyFile(sample_file)
-    modify_file.prepare()
+    # Verify deletion
+    assert "def another_function():" not in result
     
-    # Test Replace
-    modify_file.SelectOver("def old_function():", "    return False")
-    modify_file.Replace("def new_function():\n    return True")
-    assert modify_file.selected_range == (0, 2)  # Should cover new content
-    
-    # Test Append without new selection
-    modify_file.Append("    print('Extra')")
-    assert modify_file.selected_range == (0, 3)  # Should include appended line
-    
-    # Test Insert
-    modify_file.SelectExact("def another_function():")
-    modify_file.Insert("# Comment\n# Another")
-    assert modify_file.selected_range == (4, 7)  # Should include inserted lines and selection
-    
-    # Test Delete
-    modify_file.SelectExact("    print('Extra')")
-    modify_file.Delete()
-    assert modify_file.selected_range is None  # Should clear selection after delete 
-
-def test_append_to_end_of_file(sample_file):
-    """Test appending content when no lines are selected.
-    
-    Should append to the end of the file."""
-    
-    # Create executor
-    executor = FileOperationExecutor(sample_file.parent)
-    
-    # Execute modification
-    executor.execute(f"""
-    Modify File
-        name: {sample_file}
-        - Append
-            new_content:
-                .# Added at the end
-                .# More content
-    """)
-    
-    # Read the modified file
-    result = Path(executor.target_dir / sample_file.name).read_text()
-    
-    # Original content should be unchanged
-    assert "def old_function():" in result
-    assert "def another_function():" in result
+    # Verify addition and order
     assert "def last_function():" in result
-    
-    # New content should be at the end
-    assert result.endswith("# Added at the end\n# More content\n") 
+    assert "def added_function():" in result
+    assert result.index("def last_function()") < result.index("def added_function()") 

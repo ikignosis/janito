@@ -14,6 +14,18 @@ key: # The values in the following lines will be collected literally, preserving
 .  line2
 Note: all the lines will be stripped of the leading dot and concatenated with "\n", the last line will also have a "\n" appended
 
+Important: Fields must be properly indented to be associated with their statement or substatement.
+For statements, fields start at the same indentation level as the statement.
+For substatements (starting with -), fields must be indented one level more than the substatement.
+
+Example:
+
+Change File
+path: test.txt  # statement field (no indent)
+- Replace Block # substatement
+    old: abc    # substatement field (indented)
+new: xyz        # statement field (no indent)
+
 4. Substatements as list items after the statement or it's fields
 Example:
 

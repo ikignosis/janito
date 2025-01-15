@@ -1,42 +1,30 @@
 # File Operations
 Modify File
-
+name: file_name
 # Should support the follow substatements:
 
-1. Identify the content that should be affected by the change:
-- Select Between
-# Selects lines between start_lines and end_lines
-	start_lines:
-        .line1
-        .line2
-	end_lines:
-        .line3
-        .line4
-- Select Over:
-# Select lines between and including start_lines and end_lines
-	start_lines:
-        .line1
-        .line2
-	end_lines:
-        .line3
-        .line4
-- Select Exact:
-# Select lines matching the exact content
-	content:
-        .line1
+# Replace old lines with new lines
+- Replace
+  old_lines: 
+    .line1
+    .line2
+  new_lines:
+    .line3
+    .line4
 
-# A Select operation must be followed by one of the following operations
-- Delete # Deletes the selected lines
-- Replace # Replaces the selected lines with the new content
-    new_content:
-        .line1
-        .line2
-- Insert # Inserts the new content before the selected lines
-    new_content:
-        .line1
-        .line2
-- Append # Appends the new content after the selected lines
-    new_content:
-        .line1
-        .line2
+# Delete sequence of lines matching "old_lines"
+- Delete
+  old_lines:
+    .line1
+    .line2
+
+# Add sequence of "new_lines" after "current_lines"
+# If current_lines is not specified, adds to end of file
+- Add
+  current_lines: # Optional - if not specified, adds to end of file
+    .line1
+    .line2
+  new_lines:
+    .line1
+    .line2
 

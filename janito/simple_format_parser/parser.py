@@ -51,6 +51,10 @@ class Parser:
         if not line or line.startswith('#'):
             return None
 
+        # Don't treat lines starting with '.' as statements
+        if line.startswith('.'):
+            return None
+
         name = line.split('#')[0].strip()
         self.current_line += 1
 
@@ -80,7 +84,11 @@ class Parser:
                 fields[key] = value
                 continue
 
-            break
+            # Don't break on lines starting with '.' - they're part of multiline fields
+            if not stripped.startswith('.'):
+                break
+
+            self.current_line += 1
 
         return Statement(name=name, fields=fields, substatements=substatements)
 
@@ -110,7 +118,11 @@ class Parser:
                 fields[key] = value
                 continue
 
-            break
+            # Don't break on lines starting with '.' - they're part of multiline fields
+            if not stripped.startswith('.'):
+                break
+
+            self.current_line += 1
 
         return Statement(name=name, fields=fields, substatements=[])
 

@@ -1,29 +1,33 @@
 """
-This module provides File modification operations based on line selection and modification.
+This module provides File modification operations based on line matching and modification.
 
 Operations are performed on the in-memory File and written back to disk if successful.
 
 Supported Operations:
-1. Select Between: Select lines between (but not including) start and end lines
-2. Select Over: Select lines between and including start and end lines  
-3. Select Exact: Select lines matching exact content
-
-Each selection can be followed by:
-- Delete: Remove selected lines
-- Replace: Replace selected lines with new content
-- Insert: Insert new content before selected lines  
-- Append: Append new content after selected lines
+1. Replace: Replace old lines with new lines
+2. Delete: Delete sequence of lines matching old_lines
+3. Add: Add sequence of new_lines after current_lines
 """
 import os
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Optional, Any
 from .models import ChangeType, Change
 from .line_finder import LineFinder
+from rich.console import Console
+from rich.table import Table
+from dataclasses import dataclass
+
+@dataclass
+class QueuedOperation:
+    """Represents an operation queued for execution"""
+    type: ChangeType
+    args: Tuple[Any, ...]
+    kwargs: dict
 
 class ModifyFile:
-    """Provides methods to modify file content using line selection and modification operations.
+    """Provides methods to modify file content using line matching and modification operations.
     
-    The class reads a file into memory, allows modifications through select and modify operations,
+    The class reads a file into memory, allows modifications through matching and modify operations,
     and can write the changes back to disk.
 
     Attributes:
@@ -32,18 +36,26 @@ class ModifyFile:
         debug (bool): Whether to print debug information
         changelog (List[Change]): List of changes made to the file
         content (List[str]): Current content of the file as lines
-        selected_range: Tuple[int, int]: Currently selected line range (start, end)
         line_finder: LineFinder: LineFinder instance for line finding operations
+        console: Console: Rich console instance for side-by-side diff visualization
+        queued_operations: List[QueuedOperation]: List of queued operations
     """
 
     def __init__(self, name: Path, target_dir: Path):
-        self.name = Path(name)
-        self.target_dir = Path(target_dir) if target_dir else None
+        """Initialize ModifyFile.
+        
+        Args:
+            name (Path): Path to the file to modify
+            target_dir (Path): Target directory for output file
+        """
+        self.name = Path(name)  # Ensure name is a Path
+        self.target_dir = Path(target_dir)  # Ensure target_dir is a Path
         self.debug = os.environ.get('DEBUG', '').lower() in ('true', '1', 't')
         self.changelog: List[Change] = []
         self.content: List[str] = []
-        self.selected_range: Tuple[int, int] = None
         self.line_finder = None  # Will be initialized in prepare()
+        self.console = Console()
+        self.queued_operations: List[QueuedOperation] = []
 
     def _debug_print(self, *args, **kwargs):
         """Print debug information only if DEBUG environment variable is set"""
@@ -54,104 +66,48 @@ class ModifyFile:
         """Delegate line finding to LineFinder."""
         return self.line_finder.find_first(search_lines, start_pos)
 
-    def _update_selected_range(self, new_range: Tuple[int, int], operation: str):
-        """Update selected range and log the change if in debug mode."""
-        old_range = self.selected_range
-        self.selected_range = new_range
+    def Replace(self, old_lines: str, new_lines: str, new_indent: int = None):
+        """Queue a replace operation."""
+        self.queued_operations.append(QueuedOperation(
+            type=ChangeType.REPLACE,
+            args=(old_lines, new_lines),
+            kwargs={'new_indent': new_indent}
+        ))
+
+    def Delete(self, old_lines: str):
+        """Queue a delete operation."""
+        self.queued_operations.append(QueuedOperation(
+            type=ChangeType.DELETE,
+            args=(old_lines,),
+            kwargs={}
+        ))
+
+    def Add(self, new_lines: str, current_lines: str = None, new_indent: int = None):
+        """Queue an add operation."""
+        self.queued_operations.append(QueuedOperation(
+            type=ChangeType.ADD,
+            args=(new_lines,),
+            kwargs={'current_lines': current_lines, 'new_indent': new_indent}
+        ))
+
+    def _execute_delete(self, old_lines: str):
+        """Execute a delete operation."""
+        old_lines_list = old_lines.splitlines() if old_lines else []
+        
+        start_pos = self._find_lines(old_lines_list)
+        if start_pos == -1:
+            raise ValueError(f"Lines to delete not found:\n{old_lines}")
+            
+        start = start_pos
+        end = start + len(old_lines_list)
+        original = self.content[start:end]
         
         if self.debug:
-            if new_range is None:
-                self._debug_print(f"\nSelection cleared by {operation}")
-                if old_range:
-                    self._debug_print(f"Previous selection was lines {old_range[0] + 1} to {old_range[1]}")
-            else:
-                self._debug_print(f"\nSelection changed by {operation}")
-                if old_range:
-                    self._debug_print(f"Previous: lines {old_range[0] + 1} to {old_range[1]}")
-                self._debug_print(f"New: lines {new_range[0] + 1} to {new_range[1]}")
-                self._debug_print("Selected content:")
-                for i in range(new_range[0], new_range[1]):
-                    self._debug_print(f"  {i+1:4d}: {self.content[i]}")
-
-    def SelectBetween(self, start_lines: str, end_lines: str):
-        """Select lines between (not including) start_lines and end_lines."""
-        start_lines_list = start_lines.splitlines() if start_lines else []
-        end_lines_list = end_lines.splitlines() if end_lines else []
+            self._debug_print("\nDeleting lines:")
+            for i, line in enumerate(original):
+                self._debug_print(f"  {start+i+1:4d}: {line}")
         
-        # Try to find a valid start/end combination
-        start_pos = 0
-        while True:
-            start_pos = self._find_lines(start_lines_list, start_pos)
-            if start_pos == -1:
-                raise ValueError(f"Start lines not found:\n{start_lines}")
-            
-            # Search for end_lines from the start position, not after it
-            end_pos = self._find_lines(end_lines_list, start_pos)
-            if end_pos != -1:
-                # Found a valid combination
-                self._update_selected_range(
-                    (start_pos + len(start_lines_list), end_pos),
-                    "SelectBetween"
-                )
-                return
-            
-            # Try next occurrence of start_lines
-            start_pos += 1
-            if start_pos >= len(self.content):
-                raise ValueError(f"End lines not found after start lines:\nStart lines:\n{start_lines}\nEnd lines:\n{end_lines}")
-
-    def SelectOver(self, start_lines: str, end_lines: str = None):
-        """Select lines between and including start_lines and end_lines.
-        If end_lines is not provided, selects only the start_lines."""
-        start_lines_list = start_lines.splitlines() if start_lines else []
-        
-        # Find start position
-        start_pos = self._find_lines(start_lines_list)
-        if start_pos == -1:
-            raise ValueError(f"Start lines not found:\n{start_lines}")
-            
-        if not end_lines:
-            # If no end_lines provided, select only the start_lines
-            self._update_selected_range(
-                (start_pos, start_pos + len(start_lines_list)),
-                "SelectOver"
-            )
-            return
-            
-        # Try to find a valid end position from the start position
-        end_lines_list = end_lines.splitlines()
-        end_pos = self._find_lines(end_lines_list, start_pos)
-        if end_pos == -1:
-            raise ValueError(f"End lines not found after start lines:\nStart lines:\n{start_lines}\nEnd lines:\n{end_lines}")
-            
-        # Found a valid combination
-        self._update_selected_range(
-            (start_pos, end_pos + len(end_lines_list)),
-            "SelectOver"
-        )
-
-    def SelectExact(self, lines: str):
-        """Select lines matching exact content."""
-        lines_list = lines.splitlines() if lines else []
-        pos = self._find_lines(lines_list)
-        if pos == -1:
-            raise ValueError(f"Exact lines not found:\n{lines}")
-        self._update_selected_range(
-            (pos, pos + len(lines_list)),
-            "SelectExact"
-        )
-
-    def Delete(self):
-        """Delete the currently selected lines."""
-        if not self.selected_range:
-            raise ValueError("No lines selected for Delete operation. Call a Select method first.")
-            
-        start, end = self.selected_range
-        original = self.content[start:end]
         self.content[start:end] = []
-        
-        # Clear selection after delete since content no longer exists
-        self._update_selected_range(None, "Delete")
         
         self.changelog.append(Change(
             change_type=ChangeType.DELETE,
@@ -161,111 +117,103 @@ class ModifyFile:
             end_line=end
         ))
 
-    def Replace(self, new_content: str, new_indent: int = None):
-        """Replace the currently selected lines with new content."""
-        if not self.selected_range:
-            raise ValueError(f"No lines selected for Replace operation. Call a Select method first.\nNew content that would be used:\n{new_content}")
+    def _execute_replace(self, old_lines: str, new_lines: str, new_indent: int = None):
+        """Execute a replace operation."""
+        old_lines_list = old_lines.splitlines() if old_lines else []
+        new_lines_list = new_lines.splitlines() if new_lines else []
+        
+        # Find the old lines
+        start_pos = self._find_lines(old_lines_list)
+        if start_pos == -1:
+            raise ValueError(f"Old lines not found:\n{old_lines}")
             
-        start, end = self.selected_range
+        # Get the range to replace
+        start = start_pos
+        end = start + len(old_lines_list)
         original = self.content[start:end]
         
-        # Split and optionally indent the new content
-        content_list = new_content.splitlines() if new_content else []
+        # Apply indentation if specified
         if new_indent is not None:
-            # Convert new_indent to int if it's a string
             indent = int(new_indent) if isinstance(new_indent, str) else new_indent
-            content_list = [' ' * indent + line.lstrip() for line in content_list]
+            new_lines_list = [' ' * indent + line.lstrip() for line in new_lines_list]
         
-        self.content[start:end] = content_list
+        if self.debug:
+            # Create table for side-by-side comparison
+            table = Table(show_header=True, header_style="bold")
+            table.add_column("Before", style="red")
+            table.add_column("After", style="green")
+            
+            # Get the maximum number of lines to show
+            max_lines = max(len(original), len(new_lines_list))
+            
+            # Add rows with line numbers and content
+            for i in range(max_lines):
+                before = f"{start+i+1:4d}: {original[i]}" if i < len(original) else ""
+                after = f"{start+i+1:4d}: {new_lines_list[i]}" if i < len(new_lines_list) else ""
+                table.add_row(before, after)
+            
+            self._debug_print("\nReplacing content:")
+            self.console.print(table)
         
-        # Update selected range to cover the new content
-        self._update_selected_range(
-            (start, start + len(content_list)),
-            "Replace"
-        )
-
+        # Perform the replacement
+        self.content[start:end] = new_lines_list
+        
         self.changelog.append(Change(
             change_type=ChangeType.REPLACE,
             original_content=original,
-            new_content=content_list,
+            new_content=new_lines_list,
             start_line=start,
-            end_line=start + len(content_list)  # Use new end position
+            end_line=start + len(new_lines_list)
         ))
 
-    def Insert(self, lines: str, new_indent: int = None):
-        """Insert lines before the currently selected lines."""
-        if not self.selected_range:
-            raise ValueError(f"No lines selected for Insert operation. Call a Select method first.\nLines that would be inserted:\n{lines}")
-            
-        start, end = self.selected_range
-        original = self.content[start:end]  # Get the selected text
+    def _execute_add(self, new_lines: str, current_lines: str = None, new_indent: int = None):
+        """Execute an add operation."""
+        new_lines_list = new_lines.splitlines() if new_lines else []
         
-        # Split and optionally indent the new content
-        content_list = lines.splitlines() if lines else []
+        # Apply indentation if specified
         if new_indent is not None:
-            # Convert new_indent to int if it's a string
             indent = int(new_indent) if isinstance(new_indent, str) else new_indent
-            content_list = [' ' * indent + line.lstrip() for line in content_list]
+            new_lines_list = [' ' * indent + line.lstrip() for line in new_lines_list]
         
-        # Insert lines before selected range
-        self.content[start:start] = content_list
-        
-        # Update selected range to include both inserted content and original selection
-        self._update_selected_range(
-            (start, start + len(content_list) + len(original)),
-            "Insert"
-        )
-        
-        self.changelog.append(Change(
-            change_type=ChangeType.INSERT,
-            original_content=original,  # Selected text becomes original content
-            new_content=content_list + original,  # New content includes both inserted lines and selected text
-            start_line=start,
-            end_line=start + len(content_list) + len(original)  # Update end line to include both
-        ))
-
-    def Append(self, new_content: str, new_indent: int = None):
-        """Append new content after the currently selected lines.
-        If no lines are selected, appends to the end of the file."""
-        
-        # Split and optionally indent the new content
-        content_list = new_content.splitlines() if new_content else []
-        if new_indent is not None:
-            # Convert new_indent to int if it's a string
-            indent = int(new_indent) if isinstance(new_indent, str) else new_indent
-            content_list = [' ' * indent + line.lstrip() for line in content_list]
-        
-        if not self.selected_range:
-            # Append to end of file
+        if not current_lines:
+            # Add to end of file
             start = end = len(self.content)
             original = []
-            self.content.extend(content_list)
             
-            # Update selected range to cover the appended content
-            self._update_selected_range(
-                (start, end + len(content_list)),
-                "Append to end"
-            )
+            if self.debug:
+                self._debug_print("\nAdding to end of file:")
+                for i, line in enumerate(new_lines_list):
+                    self._debug_print(f"  {start+i+1:4d}: {line}")
+            
+            self.content.extend(new_lines_list)
         else:
-            # Append after selected range
-            start, end = self.selected_range
-            original = self.content[start:end]  # Get the selected text
+            # Find the current lines
+            current_lines_list = current_lines.splitlines()
+            start_pos = self._find_lines(current_lines_list)
+            if start_pos == -1:
+                raise ValueError(f"Current lines not found:\n{current_lines}")
             
-            # Append new content after selected range
-            self.content[end:end] = content_list
+            # Add after the current lines
+            start = start_pos
+            end = start + len(current_lines_list)
+            original = self.content[start:end]
             
-            # Update selected range to include both original selection and appended content
-            self._update_selected_range(
-                (start, end + len(content_list)),
-                "Append"
-            )
+            if self.debug:
+                self._debug_print("\nAdding after lines:")
+                for i, line in enumerate(original):
+                    self._debug_print(f"  {start+i+1:4d}: {line}")
+                self._debug_print("\nNew content:")
+                for i, line in enumerate(new_lines_list):
+                    self._debug_print(f"  {end+i+1:4d}: {line}")
+            
+            self.content[end:end] = new_lines_list
         
         self.changelog.append(Change(
-            change_type=ChangeType.APPEND,
+            change_type=ChangeType.ADD,
             original_content=original,
-            new_content=original + content_list,
+            new_content=original + new_lines_list,
             start_line=start,
-            end_line=end + len(content_list)
+            end_line=end + len(new_lines_list)
         ))
 
     def prepare(self):
@@ -276,15 +224,46 @@ class ModifyFile:
         self.line_finder = LineFinder(self.content, self.debug)
 
     def _get_full_path(self, filename: Path) -> Path:
-        """Get the full path to a file, considering target_dir if set"""
-        if self.target_dir:
-            return self.target_dir / filename
-        return filename
+        """Get the full path to a file in the target directory"""
+        return self.target_dir / filename
 
     def execute(self):
-        """Execute the modification by writing back to the same file that was read"""
+        """Execute all queued operations in the correct order.
+        
+        Operations are executed in this order:
+        1. Deletes - Remove content first
+        2. Adds - Add new content
+        3. Replaces - Replace existing content
+        """
+        # Sort operations by type
+        operations_by_type = {
+            ChangeType.DELETE: [],
+            ChangeType.ADD: [],
+            ChangeType.REPLACE: []
+        }
+        
+        # Group operations by type
+        for op in self.queued_operations:
+            operations_by_type[op.type].append(op)
+        
+        # Execute in specific order
+        # 1. Deletes
+        for op in operations_by_type[ChangeType.DELETE]:
+            self._execute_delete(*op.args, **op.kwargs)
+            
+        # 2. Adds
+        for op in operations_by_type[ChangeType.ADD]:
+            self._execute_add(*op.args, **op.kwargs)
+            
+        # 3. Replaces
+        for op in operations_by_type[ChangeType.REPLACE]:
+            self._execute_replace(*op.args, **op.kwargs)
+        
+        # Clear the queue
+        self.queued_operations = []
+        
+        # Write changes to file
         full_path = self._get_full_path(self.name)
-        # Ensure the target directory exists
         full_path.parent.mkdir(parents=True, exist_ok=True)
         self.write_back(full_path)
 

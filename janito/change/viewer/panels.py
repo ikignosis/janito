@@ -8,12 +8,10 @@ from janito.file_operations import (
     CreateFile, DeleteFile, RenameFile, ReplaceFile, ModifyFile,
     ChangeType
 )
-from .styling import format_content, create_legend_items
+from .styling import format_content
 from .content import create_content_preview, get_file_syntax
 from .sections import find_modified_sections
 from rich.rule import Rule
-import shutil
-import sys
 from rich.columns import Columns
 from rich import box
 from rich.text import Text
@@ -129,7 +127,7 @@ def show_all_changes(changes: List[FileOperationType]) -> None:
 
         for content_change in modify_change.get_changes():
             # Get the content based on change type
-            if content_change.change_type in (ChangeType.REPLACE, ChangeType.APPEND, ChangeType.INSERT):
+            if content_change.change_type in (ChangeType.REPLACE, ChangeType.ADD):
                 orig_lines = content_change.original_content
                 new_lines = content_change.new_content
             elif content_change.change_type == ChangeType.DELETE:
@@ -142,14 +140,13 @@ def show_all_changes(changes: List[FileOperationType]) -> None:
             global_current += 1
 
             # Show the diff without operation header
-            legend_shown = show_side_by_side_diff(
+            show_side_by_side_diff(
                 console,
                 modify_change.name,
                 orig_lines,
                 new_lines,
                 global_current,
                 global_total,
-                legend_shown,
                 f"Lines {content_change.start_line + 1}-{content_change.end_line}",
                 show_header=False
             )
@@ -316,37 +313,27 @@ def show_side_by_side_diff(
     new_content: List[str],
     change_index: int = 0,
     total_changes: int = 1,
-    legend_shown: bool = False,
     reason: str = None,
-    file_ops: int = 0,
-    is_append: bool = False,
     show_header: bool = True
 ) -> bool:
     """Show side-by-side diff using Columns for better alignment"""
     term_width = console.width or 120
     min_panel_width = 40
-    can_do_side_by_side = term_width >= (min_panel_width * 2 + 4) and not is_append
+    can_do_side_by_side = term_width >= (min_panel_width * 2 + 4)
 
     # Only show header if explicitly requested
     if show_header:
         header = create_progress_header("Modify", filename, change_index + 1, total_changes, reason=reason)
         console.print(Rule(title=header, style="cyan", align="center"))
 
-    # Show legend before first text operation if not shown yet
-    if not legend_shown:
-        console.print()
-        console.print(create_legend_items(console), justify="center")
-        console.print()
-        legend_shown = True
-
-    if is_append:
-        # For append operations, show only the new content in a single panel
+    # For add operations where original_content is empty, show only the new content
+    if not original_content:
         syntax_type = get_file_syntax(Path(filename))
         content = format_content(new_content, [], new_content, False,
                                width=term_width - 4, syntax_type=syntax_type)
         console.print(Panel(
             content,
-            title="[green]Appended Content[/green]",
+            title="[green]Added Content[/green]",
             title_align="center",
             border_style="green",
             padding=(1, 2)
@@ -365,8 +352,6 @@ def show_side_by_side_diff(
             console.print(layout)
             if i < len(sections) - 1:
                 console.print(Rule(style="dim"))
-
-    return legend_shown
 
 def show_delete_panel(
     console: Console, 

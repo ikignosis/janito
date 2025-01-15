@@ -10,18 +10,16 @@ from janito.simple_format_parser.executor import Executor
 
 class FileOperation:
     """Base class for file operations that handles target_dir"""
-    def __init__(self, name: Path, target_dir: Path = None):
-        self.name = name
+    def __init__(self, name: str, target_dir: Path):
+        self.name = Path(name)
         self.target_dir = target_dir
 
     def _get_full_path(self, filename: Path) -> Path:
-        """Get the full path to a file, considering target_dir if set"""
-        if self.target_dir:
-            return self.target_dir / filename
-        return filename
+        """Get the full path to a file in the target directory"""
+        return self.target_dir / filename
 
 class CreateFile(FileOperation):
-    def __init__(self, name: Path, content: str, target_dir: Path = None):
+    def __init__(self, name: str, content: str, target_dir: Path):
         super().__init__(name, target_dir)
         self.content = content
 
@@ -32,7 +30,7 @@ class CreateFile(FileOperation):
         full_path.write_text(self.content, encoding='utf-8')
 
 class DeleteFile(FileOperation):
-    def __init__(self, name: Path, target_dir: Path = None):
+    def __init__(self, name: str, target_dir: Path):
         super().__init__(name, target_dir)
 
     def execute(self):
@@ -40,9 +38,9 @@ class DeleteFile(FileOperation):
         full_path.unlink()
 
 class RenameFile(FileOperation):
-    def __init__(self, name: Path, new_name: Path, target_dir: Path = None):
+    def __init__(self, name: str, new_name: str, target_dir: Path):
         super().__init__(name, target_dir)
-        self.new_name = new_name
+        self.new_name = Path(new_name)
 
     def execute(self):
         old_path = self._get_full_path(self.name)
@@ -52,7 +50,7 @@ class RenameFile(FileOperation):
         old_path.rename(new_path)
 
 class ReplaceFile(FileOperation):
-    def __init__(self, name: Path, content: str, target_dir: Path = None):
+    def __init__(self, name: str, content: str, target_dir: Path):
         super().__init__(name, target_dir)
         self.content = content
 
@@ -63,7 +61,7 @@ class ReplaceFile(FileOperation):
 class FileOperationExecutor(Executor):
     def __init__(self, target_dir: Path):
         self.target_dir = target_dir
-        super().__init__([CreateFile, DeleteFile, RenameFile, ReplaceFile, ModifyFile], target_dir=target_dir)
+        super().__init__([CreateFile, DeleteFile, RenameFile, ReplaceFile, ModifyFile], target_dir=self.target_dir)
     
     def get_changes(self):
         """ Build a list of changes from the instances """

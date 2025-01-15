@@ -51,26 +51,38 @@ class LineFinder:
         # If exact match fails, try indent pattern match
         return self._find_pattern(search_lines, start_pos)
 
-    def _find_exact(self, search_lines: List[str], start_pos: int = 0) -> int:
+    def _find_exact(self, search_lines: List[str], start_position: int = 0) -> int:
         """Find first position where the search lines match exactly."""
         if self.debug:
-            self._debug_print(f"\nTrying exact match from line {start_pos + 1}")
+            self._debug_print(f"\nTrying exact match from line {start_position + 1}")
         
-        for i in range(start_pos, len(self.content) - len(search_lines) + 1):
-            match = True
+        max_search_position = len(self.content) - len(search_lines) + 1
+
+        for content_position in range(start_position, max_search_position):
+            is_match = True
             
-            for j, search_line in enumerate(search_lines):
-                content_line = self.content[i + j].rstrip()
-                search_line = search_line.rstrip()
+            if self.debug:
+                self._debug_print(f"\nTrying match at line {content_position+1}:")
+
+            for line_offset, search_line in enumerate(search_lines):
+                current_line = self.content[content_position + line_offset].rstrip()
+                expected_line = search_line.rstrip()
                 
-                if content_line != search_line:
-                    match = False
-                    break
-                    
-            if match:
                 if self.debug:
-                    self._debug_print(f"\n✓ Found exact match at line {i + 1}")
-                return i
+                    line_matches = current_line == expected_line
+                    current_line_number = content_position + line_offset + 1
+                    self._debug_print(f"  Line {current_line_number}: {'✓' if line_matches else '✗'}")
+                    self._debug_print(f"    Search: '{expected_line}'")
+                    self._debug_print(f"    Found:  '{current_line}'")
+                
+                if current_line != expected_line:
+                    is_match = False
+                    break
+            
+            if is_match:
+                if self.debug:
+                    self._debug_print(f"\n✓ Found exact match at line {content_position + 1}")
+                return content_position
                 
         return -1
 
