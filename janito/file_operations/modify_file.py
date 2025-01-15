@@ -11,7 +11,7 @@ Supported Operations:
 import os
 from pathlib import Path
 from typing import List, Tuple, Optional, Any
-from .models import ChangeType, Change
+from .models import ChangeType, Change, OperationFailure
 from .line_finder import LineFinder
 from rich.console import Console
 from rich.table import Table
@@ -39,6 +39,7 @@ class ModifyFile:
         line_finder: LineFinder: LineFinder instance for line finding operations
         console: Console: Rich console instance for side-by-side diff visualization
         queued_operations: List[QueuedOperation]: List of queued operations
+        failed_operations: List[OperationFailure]: List of failed operations
     """
 
     def __init__(self, name: Path, target_dir: Path):
@@ -56,6 +57,7 @@ class ModifyFile:
         self.line_finder = None  # Will be initialized in prepare()
         self.console = Console()
         self.queued_operations: List[QueuedOperation] = []
+        self.failed_operations: List[OperationFailure] = []
 
     def _debug_print(self, *args, **kwargs):
         """Print debug information only if DEBUG environment variable is set"""
@@ -96,7 +98,13 @@ class ModifyFile:
         
         start_pos = self._find_lines(old_lines_list)
         if start_pos == -1:
-            raise ValueError(f"Lines to delete not found:\n{old_lines}")
+            self.failed_operations.append(OperationFailure(
+                operation_type=ChangeType.DELETE,
+                file_path=self.name,
+                search_content=old_lines,
+                error_message="Lines to delete not found"
+            ))
+            return False
             
         start = start_pos
         end = start + len(old_lines_list)
@@ -125,7 +133,13 @@ class ModifyFile:
         # Find the old lines
         start_pos = self._find_lines(old_lines_list)
         if start_pos == -1:
-            raise ValueError(f"Old lines not found:\n{old_lines}")
+            self.failed_operations.append(OperationFailure(
+                operation_type=ChangeType.REPLACE,
+                file_path=self.name,
+                search_content=old_lines,
+                error_message="Lines to replace not found"
+            ))
+            return False
             
         # Get the range to replace
         start = start_pos
@@ -191,7 +205,13 @@ class ModifyFile:
             current_lines_list = current_lines.splitlines()
             start_pos = self._find_lines(current_lines_list)
             if start_pos == -1:
-                raise ValueError(f"Current lines not found:\n{current_lines}")
+                self.failed_operations.append(OperationFailure(
+                    operation_type=ChangeType.ADD,
+                    file_path=self.name,
+                    search_content=current_lines,
+                    error_message="Lines to add after not found"
+                ))
+                return False
             
             # Add after the current lines
             start = start_pos
@@ -277,3 +297,7 @@ class ModifyFile:
     def get_changes(self) -> List[Change]:
         """Return the list of changes made to the file."""
         return self.changelog
+
+    def get_failures(self) -> List[OperationFailure]:
+        """Return list of failed operations."""
+        return self.failed_operations

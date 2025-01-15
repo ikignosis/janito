@@ -1,6 +1,7 @@
 from enum import Enum, auto
 from dataclasses import dataclass
 from typing import List, Optional
+from pathlib import Path
 
 class ChangeType(Enum):
     """Types of changes that can be made to a file."""
@@ -24,3 +25,11 @@ class Change:
     new_content: List[str]
     start_line: int
     end_line: int
+
+@dataclass
+class OperationFailure:
+    """Represents a failed file operation with details."""
+    operation_type: ChangeType
+    file_path: Path
+    search_content: str
+    error_message: str

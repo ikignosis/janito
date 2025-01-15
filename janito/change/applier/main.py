@@ -101,9 +101,24 @@ class ChangeApplier:
         changes = self.file_oper_exec.instances
         return apply_to_workspace_dir_impl(changes, self.preview_dir, Console())
 
+    def _display_failures(self):
+        """Display any failed operations."""
+        failures = self.file_oper_exec.get_failures()
+        if not failures:
+            return
+        
+        self.console.print("\n[red]Some operations failed:[/red]")
+        for failure in failures:
+            self.console.print(f"\n[yellow]File:[/yellow] {failure.file_path}")
+            self.console.print(f"[yellow]Operation:[/yellow] {failure.operation_type.name}")
+            self.console.print("[yellow]Expected content:[/yellow]")
+            self.console.print(Panel(failure.search_content, box=box.ROUNDED))
+            self.console.print(f"[red]Error:[/red] {failure.error_message}")
+
     def confirm_and_apply_to_workspace(self) -> bool:
-        """Handles confirmation and application of changes to workspace directory.
-        Returns True if changes were applied successfully."""
+        """Handles confirmation and application of changes to workspace directory."""
+        # Display any failures before prompting
+        self._display_failures()
         
         if not config.auto_apply:
             # Get terminal width and calculate padding

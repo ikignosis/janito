@@ -3,10 +3,12 @@ This module provides file operations to be used with our executor
 """
 import os
 from pathlib import Path
+from typing import List
 
 # Provide modify_file from it's own module considering it's complexity
 from .modify_file import ModifyFile
 from janito.simple_format_parser.executor import Executor
+from .models import OperationFailure
 
 class FileOperation:
     """Base class for file operations that handles target_dir"""
@@ -61,6 +63,7 @@ class ReplaceFile(FileOperation):
 class FileOperationExecutor(Executor):
     def __init__(self, target_dir: Path):
         self.target_dir = target_dir
+        self.failed_operations: List[OperationFailure] = []
         super().__init__([CreateFile, DeleteFile, RenameFile, ReplaceFile, ModifyFile], target_dir=self.target_dir)
     
     def get_changes(self):
@@ -69,5 +72,13 @@ class FileOperationExecutor(Executor):
         for instance in self.instances:
             changes.append(instance)
         return changes
+
+    def get_failures(self) -> List[OperationFailure]:
+        """Get all failed operations across instances."""
+        failures = []
+        for instance in self.instances:
+            if isinstance(instance, ModifyFile):
+                failures.extend(instance.get_failures())
+        return failures
 
 
