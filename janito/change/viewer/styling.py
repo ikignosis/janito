@@ -44,6 +44,19 @@ from textwrap import wrap
 def format_content(lines: List[str], search_lines: List[str], replace_lines: List[str],
                   is_search: bool, width: int = 80, is_delete: bool = False, is_removal: bool = False,
                   syntax_type: str = None, is_append: bool = False) -> Text:
+    """Format content with appropriate styling based on operation type"""
+    text = Text()
+
+    # For delete operations, show all content with red background in a single column
+    if is_delete:
+        bg_color = current_theme.line_backgrounds['deleted']
+        style = f"{current_theme.text_color} on {bg_color}"
+        min_indent = get_min_indent(lines)
+        for line in lines:
+            # Preserve empty lines but remove indentation from non-empty ones
+            processed_line = line[min_indent:] if line.strip() else line
+            text.append(apply_line_style(processed_line, style, width, full_width=True))
+        return text
     """Format content with minimal decoration and clean indentation with text wrapping"""
     text = Text()
 

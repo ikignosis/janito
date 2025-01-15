@@ -42,3 +42,18 @@ Changes:
 """
     history_file.write_text(history_content, encoding='utf-8')
     return history_file
+
+def get_latest_changes_file() -> Optional[Path]:
+    """Find and return the path to the most recent changes file in history.
+    
+    Returns:
+        Path to the most recent changes file, or None if no changes files exist
+    """
+    history_dir = get_history_path()
+    changes_files = [f for f in history_dir.glob("*_changes.txt")]
+    
+    if not changes_files:
+        return None
+        
+    # Sort by modification time, newest first
+    return max(changes_files, key=lambda p: p.stat().st_mtime)

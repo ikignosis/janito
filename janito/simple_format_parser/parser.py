@@ -60,6 +60,7 @@ class Parser:
 
         fields = {}
         substatements = []
+        current_substatement = None  # Track the current substatement
 
         while self.current_line < len(self.lines):
             line = self.lines[self.current_line]
@@ -77,11 +78,16 @@ class Parser:
                 substatement = self._parse_substatement()
                 if substatement:
                     substatements.append(substatement)
+                    current_substatement = substatement  # Track this as current substatement
                 continue
 
             if ':' in line:
                 key, value = self._parse_field()
-                fields[key] = value
+                # If we have a current substatement, add fields to it regardless of indentation
+                if current_substatement is not None:
+                    current_substatement.fields[key] = value
+                else:
+                    fields[key] = value
                 continue
 
             # Don't break on lines starting with '.' - they're part of multiline fields
@@ -101,29 +107,9 @@ class Parser:
         self.current_line += 1
         
         fields = {}
-        while self.current_line < len(self.lines):
-            line = self.lines[self.current_line]
-            stripped = line.strip()
-            
-            if not stripped or stripped.startswith('#'):
-                self.current_line += 1
-                continue
-
-            indent = self._get_indent(line)
-            if indent == 0 or stripped.startswith('==='):
-                break
-
-            if ':' in line:
-                key, value = self._parse_field()
-                fields[key] = value
-                continue
-
-            # Don't break on lines starting with '.' - they're part of multiline fields
-            if not stripped.startswith('.'):
-                break
-
-            self.current_line += 1
-
+        # Note: We don't parse fields here anymore since they'll be handled by _parse_statement
+        # This ensures all fields after a substatement are associated with it
+        
         return Statement(name=name, fields=fields, substatements=[])
 
     def _parse_field(self) -> tuple[str, str]:

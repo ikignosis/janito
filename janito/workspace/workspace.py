@@ -45,8 +45,12 @@ class Workspace:
         processed_files: Set[Path] = set()
         for path in paths:
             abs_path = config.workspace_dir / path
-            if not (config.skip_work and path == Path(".")):
-                self._scan_path(abs_path, processed_files, scan_time, recursive_paths)
+            # Skip workspace root if skip_work is enabled
+            if config.skip_work and path == Path("."):
+                if config.debug:
+                    Console(stderr=True).print("[cyan]Debug: Skipping workspace root due to skip_work[/cyan]")
+                continue
+            self._scan_path(abs_path, processed_files, scan_time, recursive_paths)
 
         self._content.scan_completed = True
         self._content.analyzed = False

@@ -47,32 +47,39 @@ def progress_send_message(message: str) -> str:
         console.print("[yellow]======= End of message[/yellow]")
 
     start_time = datetime.now()
-    stop_event = Event()
 
-    def update_display_thread(live_display):
-        while not stop_event.is_set():
+
+    response = None
+    error = None
+
+    def agent_thread():
+        nonlocal response, error
+        try:
+            response = agent.send_message(message, system_message=system_message)
+        except Exception as e:
+            error = e
+
+    agent_thread = Thread(target=agent_thread, daemon=True)
+    agent_thread.start()
+
+    with Live(Text("Waiting for response from AI agent...", justify="center"), refresh_per_second=4) as live:
+        while agent_thread.is_alive():
             elapsed = datetime.now() - start_time
             elapsed_seconds = elapsed.seconds
             elapsed_minutes = elapsed_seconds // 60
             remaining_seconds = elapsed_seconds % 60
             time_str = f"{elapsed_seconds}s" if elapsed_seconds < 60 else f"{elapsed_minutes}m{remaining_seconds}s"
-            live_display.update(Text.assemble(
+            live.update(Text.assemble(
                 "Waiting for response from AI agent... (",
                 (time_str, "magenta"),
                 ")",
                 justify="center"
             ))
-            sleep(0.25)  # Update 4 times per second
+            # Check thread status every 250ms, allows for cleaner interrupts
+            agent_thread.join(timeout=0.25)
 
-    with Live(Text("Waiting for response from AI agent...", justify="center"), refresh_per_second=4) as live:
-        display_thread = Thread(target=update_display_thread, args=(live,), daemon=True)
-        display_thread.start()
-
-        try:
-            response = agent.send_message(message, system_message=system_message)
-        finally:
-            stop_event.set()
-            display_thread.join()
+    if error:
+        raise error
 
         elapsed = datetime.now() - start_time
         elapsed_seconds = elapsed.seconds

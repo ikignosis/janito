@@ -64,7 +64,8 @@ def typer_main(
     history: bool = typer.Option(False, "--history", help="Display history of requests"),
     recursive: Optional[List[Path]] = typer.Option(None, "-r", "--recursive", help="Paths to scan recursively (directories only)"),
     demo: bool = typer.Option(False, "--demo", help="Run demo scenarios"),
-    skip_work: bool = typer.Option(False, "--skip-work", help="Skip scanning workspace_dir when using include paths"),
+    skip_work: bool = typer.Option(False, "-s", "--skip-work", help="Skip scanning workspace_dir when using include paths"),
+    replay: bool = typer.Option(False, "--replay", help="Replay the most recent changes"),
 ):
     """Janito - AI-powered code modification assistant"""
     if version:
@@ -78,6 +79,16 @@ def typer_main(
     if history:
         from janito.cli.history import display_history
         display_history()
+        return
+
+    if replay:
+        from janito.change.history import get_latest_changes_file
+        latest_changes = get_latest_changes_file()
+        if not latest_changes:
+            error_text = Text("\nError: No changes found in history to replay", style="red")
+            rich_print(error_text)
+            raise typer.Exit(1)
+        handle_play(latest_changes)
         return
 
     # Configure workspace
@@ -114,10 +125,14 @@ def typer_main(
             workset.add_scan_path(path, ScanType.RECURSIVE)
 
     # Validate skip_work usage
-    if skip_work and not workset.paths:
-        error_text = Text("\nError: --skip-work requires at least one include path (-i or -r)", style="red")
-        rich_print(error_text)
-        raise typer.Exit(1)
+    if skip_work:
+        # Check if any include or recursive paths are provided
+        if not include and not recursive:
+            error_text = Text("\nError: --skip-work requires at least one include path (-i or -r)", style="red")
+            rich_print(error_text)
+            raise typer.Exit(1)
+        # Remove root path from workset when skip_work is enabled
+        workset._scan_paths = [p for p in workset._scan_paths if p.path != Path(".")]
 
     if test_cmd:
         config.set_test_cmd(test_cmd)

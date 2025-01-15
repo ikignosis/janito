@@ -1,4 +1,6 @@
 from rich.console import Console
+from typing import List, Union, Tuple, Optional
+
 from rich.panel import Panel
 from rich.rule import Rule
 from rich.syntax import Syntax
@@ -24,8 +26,8 @@ PANEL_PADDING = 4
 COLUMN_SPACING = 4
 
 def create_progress_header(operation: str, filename: str, current: int, total: int,
-                          reason: str = None) -> Text:
-    """Create a compact single-line header with balanced layout.
+                          reason: str = None, style: str = "cyan") -> Tuple[str, str]:
+    """Create a header showing filename and change counter.
 
     Args:
         operation: Type of operation being performed
@@ -33,22 +35,19 @@ def create_progress_header(operation: str, filename: str, current: int, total: i
         current: Current change number
         total: Total number of changes
         reason: Optional reason for the change
+        style: Color style for the header
+
+    Returns:
+        Tuple of (header text, style)
     """
-    header = Text()
+    # Format header with operation type
+    header = f"[{style}]{operation}:[/{style}] {filename} | Change {current}/{total}"
 
-    # Left-aligned change counter
-    header.append(f"Change {current}/{total}", style="bold blue")
-
-    # Center-aligned filename
-    header.append(" │ ", style="dim")
-    header.append(str(filename), style="bold white")
-
-    # Right-aligned reason if provided
+    # Add reason if provided
     if reason:
-        header.append(" │ ", style="dim")
-        header.append(reason, style="yellow")
+        header += f" | {reason}"
 
-    return header
+    return header, style
 
 FileOperationType = Union[CreateFile, DeleteFile, RenameFile, ReplaceFile, ModifyFile]
 
@@ -90,7 +89,8 @@ def show_all_changes(changes: List[FileOperationType]) -> None:
     # Show file creations first
     if create_files:
         for change in create_files:
-            console.print(Rule(f"[green]Creating new file: {change.name}[/green]", style="green"), justify="center")
+            header, style = create_progress_header("Create", change.name, global_current + 1, global_total, style="green")
+            console.print(Rule(header, style=style, align="center"))
             if hasattr(change, 'content'):
                 preview = create_content_preview(Path(change.name), change.content, is_new=True)
                 console.print(preview, justify="center")
@@ -108,22 +108,30 @@ def show_all_changes(changes: List[FileOperationType]) -> None:
     if rename_files:
         console.print("\n[bold yellow]File Renames:[/bold yellow]")
         for change in rename_files:
-            console.print(Rule(f"[yellow]Renaming file: {change.name} → {change.new_name}[/yellow]", style="yellow"))
+            header, style = create_progress_header("Rename", f"{change.name} → {change.new_name}", global_current + 1, global_total, style="yellow")
+            console.print(Rule(header, style=style, align="center"))
             console.print()
 
     # Show file replacements
     if replace_files:
         console.print("\n[bold magenta]File Replacements:[/bold magenta]")
         for change in replace_files:
-            console.print(Rule(f"[magenta]Replacing content in: {change.name}[/magenta]", style="magenta"))
+            header, style = create_progress_header("Replace", change.name, global_current + 1, global_total, style="magenta")
+            console.print(Rule(header, style=style, align="center"))
             preview = create_content_preview(Path(change.name), change.content, is_new=False)
             console.print(preview, justify="center")
             console.print()
 
     # Show content modifications
     for modify_change in modify_files:
-        # Show file name without operation header
-        console.print(Rule(f"[cyan]{modify_change.name}[/cyan]", style="cyan"))
+        # Show file name using progress header
+        header, style = create_progress_header(
+            operation="Modify",
+            filename=modify_change.name,
+            current=global_current + 1,
+            total=global_total
+        )
+        console.print(Rule(header, style=style, align="center"))
 
         for content_change in modify_change.get_changes():
             # Get the content based on change type
@@ -316,28 +324,29 @@ def show_side_by_side_diff(
     reason: str = None,
     show_header: bool = True
 ) -> bool:
-    """Show side-by-side diff using Columns for better alignment"""
+    """Show diff content using appropriate panel style based on operation type"""
     term_width = console.width or 120
-    min_panel_width = 40
-    can_do_side_by_side = term_width >= (min_panel_width * 2 + 4)
 
     # Only show header if explicitly requested
     if show_header:
-        header = create_progress_header("Modify", filename, change_index + 1, total_changes, reason=reason)
-        console.print(Rule(title=header, style="cyan", align="center"))
+        header, style = create_progress_header("Modify", filename, change_index + 1, total_changes, reason=reason)
+        console.print(Rule(header, style=style, align="center"))
 
     # For add operations where original_content is empty, show only the new content
     if not original_content:
         syntax_type = get_file_syntax(Path(filename))
+        console.print(Rule("[green]Added Content[/green]", style="green"))
         content = format_content(new_content, [], new_content, False,
                                width=term_width - 4, syntax_type=syntax_type)
-        console.print(Panel(
-            content,
-            title="[green]Added Content[/green]",
-            title_align="center",
-            border_style="green",
-            padding=(1, 2)
-        ))
+        console.print(content)
+    # For delete operations where new_content is empty, show with header and red background
+    elif not new_content:
+        syntax_type = get_file_syntax(Path(filename))
+        console.print(Rule("[red]Deleted Content[/red]", style="red"))
+        content = format_content(original_content, original_content, [], True,
+                               width=term_width - 4, syntax_type=syntax_type,
+                               is_delete=True)
+        console.print(content)
     else:
         # Find modified sections and show side-by-side diff
         sections = find_modified_sections(original_content, new_content)
@@ -346,7 +355,7 @@ def show_side_by_side_diff(
                 orig_section,
                 new_section,
                 filename,
-                can_do_side_by_side,
+                True,
                 term_width
             )
             console.print(layout)
@@ -354,51 +363,27 @@ def show_side_by_side_diff(
                 console.print(Rule(style="dim"))
 
 def show_delete_panel(
-    console: Console, 
+    console: Console,
     delete_op: DeleteFile,
-    change_index: int = 0, 
+    change_index: int = 0,
     total_changes: int = 1
 ) -> None:
-    """Show an enhanced panel for file deletion operations with status indicators
-
-    Args:
-        console: Rich console instance
-        delete_op: DeleteFile operation instance
-        change_index: Current change number (0-based)
-        total_changes: Total number of changes
-    """
-    header = create_progress_header(
+    """Show file deletion operation with simple header."""
+    header, _ = create_progress_header(
         "Delete",
         delete_op.name,
         change_index + 1,
-        total_changes
+        total_changes,
+        style="red"
     )
-    header.rstrip()  # Remove trailing newlines
 
-    # Create content text with status indicators
-    content = Text()
-    content.append("⚠️  ", style="bold yellow")  # Warning icon
-    content.append("This file will be permanently removed", style="bold red")
-    content.append("\n\n")
-    content.append("Status: ", style="bold")
-    content.append("Pending Removal", style="red")
+    # Show header with consistent format
+    console.print(Rule(header, style="red", align="center"))
 
-    # Show file preview if file exists
+    # Show file content if exists
     if Path(delete_op.name).exists():
-        content.append("\n\n")
-        content.append("Original Content Preview:", style="dim red")
-        content.append("\n")
-
-        # Get syntax type using centralized function
-        syntax_type = get_file_syntax(Path(delete_op.name))
-
-        # Read current file content
         file_content = Path(delete_op.name).read_text()
-        
-        # Calculate optimal width based on content
-        content_lines = file_content.splitlines()
-        max_line_length = max((len(line) for line in content_lines), default=0)
-        optimal_width = max(max_line_length + 4, 40)  # 4 chars padding, 40 chars minimum
+        syntax_type = get_file_syntax(Path(delete_op.name))
 
         syntax = Syntax(
             file_content,
@@ -406,28 +391,9 @@ def show_delete_panel(
             theme="monokai",
             line_numbers=True,
             word_wrap=True,
-            background_color="red_1",
-            code_width=optimal_width
+            background_color="red_1"
         )
-        content.append(str(syntax))
-
-    # Display enhanced panels with consistent styling
-    console.print(Panel(
-        header,
-        box=box.HEAVY,
-        style="red",
-        title="[red]File Removal Operation[/red]",
-        title_align="center"
-    ))
-    console.print(Panel(
-        content,
-        title="[red]Removal Preview[/red]",
-        subtitle="[dim red]This action cannot be undone[/dim red]",
-        title_align="center",
-        subtitle_align="center",
-        border_style="red",
-        padding=(1, 2)
-    ))
+        console.print(syntax)
 
 def count_total_changes(changes: List[FileOperationType]) -> int:
     """Count total number of changes (file operations + content changes)
