@@ -44,8 +44,8 @@ def setup_history():
     if history_file.exists():
         readline.read_history_file(str(history_file))
 
-    # Save history on exit
-    atexit.register(readline.write_history_file, str(history_file))
+    return history_file
+
 
 def prompt_user(message: str, choices: List[str] = None, show_help: bool = True) -> str:
     """Display a simple user prompt with readline support and optional choices.
@@ -87,6 +87,9 @@ def prompt_user(message: str, choices: List[str] = None, show_help: bool = True)
         response = Prompt.ask(f"[bold cyan]> {message}[/bold cyan]\n")
         if response.strip():
             readline.add_history(response)
+            # Save history immediately after each command
+            history_file = config.workspace_dir / '.janito' / 'command_history'
+            readline.write_history_file(str(history_file))
         return response
     except KeyboardInterrupt:
         console.print("\n[yellow]Operation cancelled[/yellow]")

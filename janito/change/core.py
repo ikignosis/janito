@@ -24,9 +24,24 @@ def process_change_request(
     single: bool = False
 ) -> Tuple[bool, Optional[Path]]:
 
-    """Process a change request through the main flow."""
+    """Process a change request through the main flow.
+
+    Args:
+        request: The change request text
+        preview_only: If True, only preview changes without applying
+        debug: Enable debug output
+        single: Skip analysis phase if True
+
+    Returns:
+        Tuple of (success, history_file_path)
+        Returns (False, None) if request was canceled
+    """
     console = Console()
     selected_option = analyze_request(request, single=single)
+
+    # Early return if request was canceled
+    if selected_option is None:
+        return False, None
 
     preview_dir = workset.setup_preview_directory()
     prompt = build_change_request_prompt(request, selected_option.action_plan_text)

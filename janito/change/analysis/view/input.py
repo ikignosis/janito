@@ -11,14 +11,22 @@ def prompt_user(prompt: str, default: str = "") -> str:
     return Prompt.ask(prompt, default=default)
 
 def get_option_selection(options: Dict[str, AnalysisOption]) -> str:
-    """Get user selection from available options."""
+    """Get user selection from available options.
+
+    Returns:
+        Selected option letter or raises KeyboardInterrupt if Ctrl+C pressed
+    """
     valid_options = sorted(options.keys())
     while True:
-        choice = prompt_user(
-            f"Select an option [{'/'.join(valid_options)}]",
-            default=valid_options[0]
-        ).upper()
-        if choice in valid_options:
-            return choice
-        console = Console()
-        console.print(f"[red]Invalid option. Please choose from {', '.join(valid_options)}[/red]")
+        try:
+            choice = prompt_user(
+                f"Select an option [{'/'.join(valid_options)}]",
+                default=valid_options[0]
+            ).upper()
+            if choice in valid_options:
+                return choice
+            console = Console()
+            console.print(f"[red]Invalid option. Please choose from {', '.join(valid_options)}[/red]")
+        except KeyboardInterrupt:
+            # Re-raise to be handled by analyze_request
+            raise

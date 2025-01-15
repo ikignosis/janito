@@ -2,7 +2,7 @@ from typing import Optional
 from rich.console import Console
 import readline
 from janito.shell.user_prompt import prompt_user, display_history
-from janito.cli.commands import handle_request
+from janito.cli.commands import handle_request, handle_ask
 
 console = Console()
 
@@ -13,6 +13,10 @@ def shell_loop():
     - typing '/exit'
     - pressing Ctrl+D
     """
+    # Initialize command history
+    from janito.shell.user_prompt import setup_history
+    history_file = setup_history()
+
     console = Console()
     while True:
         try:
@@ -24,6 +28,12 @@ def shell_loop():
                 show_help()
             elif request.lower() == '/history':
                 display_history(20)  # Show last 20 commands
+            elif request.lower().startswith('/ask '):
+                question = request[5:].strip()  # Remove '/ask ' prefix
+                if not question:
+                    console.print("[red]Error: Please provide a question after /ask[/red]")
+                    continue
+                handle_ask(question)
             elif request:
                 handle_request(request)
         except Exception as e:

@@ -1,6 +1,7 @@
 """Core analysis functionality."""
 
 from typing import Optional
+from rich.console import Console
 from janito.agents import agent
 from janito.common import progress_send_message
 from janito.config import config
@@ -20,24 +21,33 @@ def analyze_request(
 ) -> Optional[AnalysisOption]:
     """
     Analyze changes and get user selection.
-    
+
     Args:
         request: User's change request
         files_content_xml: Optional content of files to analyze
         pre_select: Optional pre-selected option letter
-        
+
     Returns:
-        Selected AnalysisOption or None if modified
+        Selected AnalysisOption or None if modified or interrupted
     """
     if single:
         return None
 
     workset = Workset()  # Create workset instance
-       
+
     # Build and send prompt using workset content directly
     prompt = build_request_analysis_prompt(request)
-    response = progress_send_message(prompt)
-    
+    try:
+        response = progress_send_message(prompt)
+    except KeyboardInterrupt:
+        console = Console()
+        console.print("\n[yellow]Request cancelled by user[/yellow]")
+        return None
+
+    # Early return if response is empty
+    if not response:
+        return None
+
     # Parse and handle options
     options = parse_analysis_options(response)
     if not options:
@@ -45,16 +55,16 @@ def analyze_request(
 
     if pre_select:
         return options.get(pre_select.upper())
-        
+
     # Display formatted analysis in terminal mode
     format_analysis(response, config.raw)
-    
+
     # Get user selection
-    while True:
-        selection = get_option_selection()
-        
-        if selection == 'M':
-            return None
-            
-        if validate_option_letter(selection, options):
-            return options[selection.upper()]
+    selection = get_option_selection()
+    if selection == 'M':
+        return None
+
+    if validate_option_letter(selection, options):
+        return options[selection.upper()]
+
+    return None

@@ -1,13 +1,14 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from rich.live import Live
 from rich.text import Text
 from rich.console import Console
 from rich.rule import Rule
 from rich import print
-from threading import Event, Thread
-from time import sleep
+from threading import Thread
 from janito.agents import agent
 from .config import config
+from typing import Optional
+
 
 """ CACHE USAGE SUMMARY
 https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
@@ -20,24 +21,22 @@ from janito.prompt import build_system_prompt
 
 console = Console()
 
-def progress_send_message(message: str) -> str:
+def progress_send_message(message: str) -> Optional[str]:
     """Send a message to the AI agent with progress indication.
 
     Displays a progress spinner while waiting for the agent's response and shows
     token usage statistics after receiving the response. Uses a background thread
     to update the elapsed time display.
-    
-    Displays a progress spinner while waiting for the agent's response and shows
-    token usage statistics after receiving the response.
-    
+
     Args:
         message: The message to send to the AI agent
-        
+
     Returns:
-        str: The response text from the AI agent
-        
+        Optional[str]: The response text from the AI agent, or None if interrupted
+
     Note:
-        If the request fails or is canceled, returns the error message as a string
+        - Returns None if the operation is cancelled via Ctrl+C
+        - If the request fails, raises the original exception
     """
     system_message = build_system_prompt()
     if config.debug:
@@ -62,23 +61,30 @@ def progress_send_message(message: str) -> str:
     agent_thread = Thread(target=agent_thread, daemon=True)
     agent_thread.start()
 
-    with Live(Text("Waiting for response from AI agent...", justify="center"), refresh_per_second=4) as live:
-        while agent_thread.is_alive():
-            elapsed = datetime.now() - start_time
-            elapsed_seconds = elapsed.seconds
-            elapsed_minutes = elapsed_seconds // 60
-            remaining_seconds = elapsed_seconds % 60
-            time_str = f"{elapsed_seconds}s" if elapsed_seconds < 60 else f"{elapsed_minutes}m{remaining_seconds}s"
-            live.update(Text.assemble(
-                "Waiting for response from AI agent... (",
-                (time_str, "magenta"),
-                ")",
-                justify="center"
-            ))
-            # Check thread status every 250ms, allows for cleaner interrupts
-            agent_thread.join(timeout=0.25)
+    try:
+        with Live(Text("Waiting for response from AI agent...", justify="center"), refresh_per_second=4) as live:
+            while agent_thread.is_alive():
+                elapsed = datetime.now() - start_time
+                elapsed_seconds = elapsed.seconds
+                elapsed_minutes = elapsed_seconds // 60
+                remaining_seconds = elapsed_seconds % 60
+                time_str = f"{elapsed_seconds}s" if elapsed_seconds < 60 else f"{elapsed_minutes}m{remaining_seconds}s"
+                live.update(Text.assemble(
+                    "Waiting for response from AI agent... (",
+                    (time_str, "magenta"),
+                    ")",
+                    justify="center"
+                ))
+                # Check thread status every 250ms, allows for cleaner interrupts
+                agent_thread.join(timeout=0.25)
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Operation cancelled[/yellow]")
+        return None
 
     if error:
+        if isinstance(error, KeyboardInterrupt):
+            console.print("\n[yellow]Operation cancelled[/yellow]")
+            return None
         raise error
 
         elapsed = datetime.now() - start_time

@@ -11,7 +11,7 @@ DARK_LINE_BACKGROUNDS = {
     'unchanged': '#1A1A1A',
     'added': '#003300',
     'deleted': '#330000',
-    'removed': '#4A0000',
+    'removed': '#330000',
     'success': '#004400'  # Dark green for success messages
 }
 
@@ -20,7 +20,7 @@ LIGHT_LINE_BACKGROUNDS = {
     'unchanged': 'grey93',         # Light gray for unchanged
     'added': 'light_green',       # Semantic light green for additions
     'deleted': '#FFE6E6',         # Soft light red for deletions
-    'removed': 'red_1',           # Darker red for file removals
+    'removed': '#FFE6E6',
     'success': '#E6FFE6'          # Light green for success messages
 }
 

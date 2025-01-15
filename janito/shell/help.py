@@ -17,6 +17,7 @@ Commands:
   /exit    : Exit the shell
   /help    : Show this help message
   /history : Show command history
+  /ask     : Ask a question about the codebase
 """
 
 def show_help():

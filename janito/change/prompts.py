@@ -11,7 +11,9 @@ The developer has selected the following action plan:
 Please provide implementation instructions in two formats:
 
 1. Describe the changes in relation to the workset files in the format described below (between CHANGES_START_HERE and CHANGES_END_HERE)
-2. The context of workset is always described with lines prefixed with a dot (.) followed by the verbatim content of the line
+2. Any additional feedback about the changes must be provided after CHANGES_END_HERE
+3. The context of workset is always described with lines prefixed with a dot (.) followed by the verbatim content of the line
+4. Do not provide generic instructions based on the request, eg. remove any lines with "print" or "debug", instead provide always specific references to the workset files and content
 
 Examples of line formatting:
 # Original line -> How to format in changes
@@ -61,7 +63,6 @@ Important guidelines:
     * when adding new types like List, Dict, Tuple, etc, review the imports and add them if missing
 - Comments should be included to explain the changes
 - Remove code which is obsolete by the change, keep compatibility only when explicitly stated in the request
-- Any additional feedback about the changes should be provided after CHANGES_END_HERE
 - The old_lines sequence must be present as a continuous block in the original workset file
 - When a change is to be applied to non-contiguous lines, use multiple sub-statements, one for each contiguous block
 
@@ -75,7 +76,7 @@ Available statements:
     * Delete: Delete sequence of lines (requires old_lines)
     * Add: Add new lines after current_lines or at end of file
 
-CHANGES_START_HERE
+CHANGES_START_HERE  # Please send this marker
 
 # File operations are defined by statements (Create File, Delete File, Replace File, Rename File, Modify File)
 # Each statement must be followed by ===
@@ -149,9 +150,13 @@ name: path/to/modify.py
   new_lines:
   .# End of file comment
   .# Consider adding more functionality
+
 ===
 
-CHANGES_END_HERE
+CHANGES_END_HERE # Please send this marker before any additional feedback about the changes
+
+Additional feedback about the changes can be provided here
+
 """
 
 from pathlib import Path

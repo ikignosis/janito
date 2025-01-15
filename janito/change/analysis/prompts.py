@@ -29,6 +29,9 @@ Affected Files:
 END_OF_OPTIONS (mandatory marker)
 
 RULES:
+- validate the action plan against the workset files
+- if generic steps do not match any occurrence in the workset files, do not include them in the action plan
+  e.g "remove all references to xpto" (and xpto is not present in any of the workset files)
 - do NOT provide the content of the files
 - do NOT offer to implement the changes
 - description items should be 80 chars

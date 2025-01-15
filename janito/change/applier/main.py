@@ -12,6 +12,7 @@ The following situations should result in error:
 from pathlib import Path
 from .validator import validate_python_syntax, validation_count, validation_success
 from typing import Tuple, Optional, List, Set, Union
+from janito.file_operations import DeleteFile
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Confirm
@@ -65,9 +66,10 @@ class ChangeApplier:
 
         # Track modified files and validate Python syntax
         modified_files = {Path(op.name) for op in self.file_oper_exec.instances}
+        deleted_files = {Path(op.name) for op in self.file_oper_exec.instances if isinstance(op, DeleteFile)}
 
-        # Validate Python files syntax
-        for file_path in modified_files:
+        # Validate Python files syntax (skip deleted files)
+        for file_path in modified_files - deleted_files:
             if file_path.suffix == '.py':
                 is_valid, error = validate_python_syntax(self.preview_dir / file_path)
                 if not is_valid:

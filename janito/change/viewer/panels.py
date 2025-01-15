@@ -100,8 +100,8 @@ def show_all_changes(changes: List[FileOperationType]) -> None:
     if delete_files:
         console.print("\n[bold red]File Removals:[/bold red]")
         for change in delete_files:
-            show_delete_panel(console, change, change_index, total_changes)
-            change_index += 1
+            global_current += 1  # Increment counter before showing panel
+            show_delete_panel(console, change, global_current, global_total)
             console.print()
 
     # Show file renames
@@ -124,16 +124,20 @@ def show_all_changes(changes: List[FileOperationType]) -> None:
 
     # Show content modifications
     for modify_change in modify_files:
-        # Show file name using progress header
-        header, style = create_progress_header(
-            operation="Modify",
-            filename=modify_change.name,
-            current=global_current + 1,
-            total=global_total
-        )
-        console.print(Rule(header, style=style, align="center"))
+        for i, content_change in enumerate(modify_change.get_changes()):
+            # Update global counter
+            global_current += 1
 
-        for content_change in modify_change.get_changes():
+            # Show progress header for each change
+            header, style = create_progress_header(
+                operation="Modify",
+                filename=modify_change.name,
+                current=global_current,
+                total=global_total,
+                reason=f"Change {i + 1}/{len(modify_change.get_changes())}"
+            )
+            console.print(Rule(header, style=style, align="center"))
+
             # Get the content based on change type
             if content_change.change_type in (ChangeType.REPLACE, ChangeType.ADD):
                 orig_lines = content_change.original_content
@@ -143,9 +147,6 @@ def show_all_changes(changes: List[FileOperationType]) -> None:
                 new_lines = []  # Empty list for deletions
             else:
                 raise NotImplementedError(f"Unsupported change type: {content_change.change_type}")
-
-            # Update global counter
-            global_current += 1
 
             # Show the diff without operation header
             show_side_by_side_diff(
@@ -391,7 +392,7 @@ def show_delete_panel(
             theme="monokai",
             line_numbers=True,
             word_wrap=True,
-            background_color="red_1"
+            background_color="#330000"
         )
         console.print(syntax)
 
