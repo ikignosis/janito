@@ -3,7 +3,7 @@ from typing import List, Set, Dict, Optional, Tuple
 import time
 from rich.console import Console
 from janito.config import config
-from .types import WorksetContent, FileInfo, ScanPath  # Add ScanPath import
+from .models import WorksetContent, FileInfo, ScanPath  # Add ScanPath import
 
 class PathNotRelativeError(Exception):
     """Raised when a path is not relative."""
@@ -109,9 +109,6 @@ class Workspace:
             if config.debug:
                 Console(stderr=True).print(f"[red]Debug: Error reading file {path}: {str(e)}[/red]")
 
-    def get_file_info(self, time_ranges: Optional[List[int]] = None) -> Tuple[List[FileInfo], List[FileInfo], List[FileInfo], List[FileInfo]]:
-        """Get file information grouped by modification time."""
-        return self._content.get_file_info(time_ranges)
 
     def clear(self) -> None:
         """Clear all workspace content and settings."""

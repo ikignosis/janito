@@ -36,7 +36,6 @@ def process_change_request(
         Tuple of (success, history_file_path)
         Returns (False, None) if request was canceled
     """
-    console = Console()
     selected_option = analyze_request(request, single=single)
 
     # Early return if request was canceled
@@ -45,7 +44,8 @@ def process_change_request(
 
     preview_dir = workset.setup_preview_directory()
     prompt = build_change_request_prompt(request, selected_option.action_plan_text)
-    response = progress_send_message(prompt)
+    plain_modified_files = [Path(file) for file in selected_option.get_files_by_status('modified')]
+    response = progress_send_message(prompt, files_to_include=plain_modified_files)
     save_changes_to_history(response, request)
     
     # Extract changes content from response

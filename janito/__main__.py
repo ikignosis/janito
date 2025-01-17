@@ -8,7 +8,7 @@ from .version import get_version
 
 from janito.config import config
 from janito.workspace import workset
-from janito.workspace.types import ScanType  # Add this import
+from janito.workspace.models import ScanType  # Add this import
 from .cli.commands import (
     handle_request, handle_ask, handle_play,
     handle_scan
@@ -46,7 +46,6 @@ def validate_paths(paths: Optional[List[Path]]) -> Optional[List[Path]]:
 # Initialize console for CLI output
 console = Console()
 
-from janito.shell.loop import shell_loop
 
 def typer_main(
     change_request: Optional[str] = typer.Argument(None, help="Change request or command"),
@@ -63,17 +62,12 @@ def typer_main(
     auto_apply: bool = typer.Option(False, "--auto-apply", help="Apply changes without confirmation"),
     history: bool = typer.Option(False, "--history", help="Display history of requests"),
     recursive: Optional[List[Path]] = typer.Option(None, "-r", "--recursive", help="Paths to scan recursively (directories only)"),
-    demo: bool = typer.Option(False, "--demo", help="Run demo scenarios"),
     skip_work: bool = typer.Option(False, "-s", "--skip-work", help="Skip scanning workspace_dir when using include paths"),
     replay: bool = typer.Option(False, "--replay", help="Replay the most recent changes"),
 ):
     """Janito - AI-powered code modification assistant"""
     if version:
         console.print(f"Janito version {get_version()}")
-        return
-
-    if demo:
-        handle_demo()
         return
 
     if history:
@@ -88,6 +82,7 @@ def typer_main(
             error_text = Text("\nError: No changes found in history to replay", style="red")
             rich_print(error_text)
             raise typer.Exit(1)
+        console.print(f"\n[cyan]Replaying changes from:[/] [bold]{latest_changes.absolute()}[/]")
         handle_play(latest_changes)
         return
 
@@ -148,9 +143,6 @@ def typer_main(
         handle_scan()
     elif change_request:
         handle_request(change_request)
-    else:
-        # Enter interactive shell mode
-        shell_loop()
 
 def main():
     typer.run(typer_main)

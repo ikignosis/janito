@@ -9,7 +9,7 @@ from rich.panel import Panel
 from rich.rule import Rule
 from rich.text import Text
 from janito.config import config
-from .types import FileInfo, ScanPath
+from .models import FileInfo, ScanPath
 from .stats import collect_file_stats, _format_size 
 
 
@@ -61,13 +61,11 @@ def show_workset_analysis(
         )
 
     # Build sections - Show paths first
-    if paths_stats or current_dir_stats:
+    if paths_stats:
         content_sections.extend([
             "[bold yellow]📌 Included Paths[/bold yellow]",
             Rule(style="yellow"),
         ])
-
-        # All paths are now handled in the main loop
 
         content_sections.append(
             Text(" | ").join(Text.from_markup(path) for path in paths_stats)
@@ -107,30 +105,6 @@ def show_workset_analysis(
         Text(" | ").join(Text.from_markup(stat) for stat in type_stats)
     ])
 
-    # Finally show cache blocks if in debug mode
-    if config.debug and cache_blocks:
-        blocks = cache_blocks
-        if any(blocks):
-            content_sections.extend([
-                "\n",
-                "[bold blue]🕒 Cache Blocks[/bold blue]",
-                Rule(style="blue"),
-            ])
-            
-            block_names = ["Last 5 minutes", "Last hour", "Last 24 hours", "Older"]
-            for name, block in zip(block_names, blocks):
-                if block:  # Only show non-empty blocks
-                    content_sections.extend([
-                        f"\n[bold]{name}[/bold] ({len(block)} files):",
-                        Columns([
-                            Text.assemble(
-                                f"{f.name} - ",
-                                (f"{f.content.splitlines()[0][:50]}...", "dim")
-                            )
-                            for f in block[:5]  # Show first 5 files only
-                        ], padding=(0, 2)),
-                        "" if block == blocks[-1] else Rule(style="dim")
-                    ])
 
     # Display analysis
     console.print("\n")

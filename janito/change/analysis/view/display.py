@@ -8,6 +8,7 @@ from rich.panel import Panel
 from rich.padding import Padding
 from rich.style import Style
 from pathlib import Path
+import os
 
 from ..options import AnalysisOption
 
@@ -92,7 +93,7 @@ def _create_option_content(option: AnalysisOption) -> Text:
                     else:
                         content.append(str(path.parent), style=COLORS['directory'])
                         seen_dirs.add(str(path.parent))
-                    content.append("/", style=COLORS['separator'])
+                    content.append(os.path.sep, style=COLORS['separator'])
                 content.append(f"{path.name}\n", style=COLORS[status.lower()])
             content.append("\n")
 

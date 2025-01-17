@@ -1,6 +1,6 @@
 """User prompts and input handling for analysis."""
 
-from typing import List, Dict
+from typing import List, Dict, Optional
 from .options import AnalysisOption
 from rich.console import Console
 from rich.rule import Rule
@@ -29,9 +29,12 @@ Affected Files:
 END_OF_OPTIONS (mandatory marker)
 
 RULES:
-- validate the action plan against the workset files
-- if generic steps do not match any occurrence in the workset files, do not include them in the action plan
-  e.g "remove all references to xpto" (and xpto is not present in any of the workset files)
+- validate the action plan steps against the workset file
+    - if step is generic and does not match any occurrence in the workset files, do not include it in the action plan
+    e.g "remove all references to xpto" (and xpto is not present in any of the workset files)
+    - if step is already present in the workset file, do not include it in the action plan
+    e.g. add a print statement to a file that already has a print statement
+- remove any action plan items which 
 - do NOT provide the content of the files
 - do NOT offer to implement the changes
 - description items should be 80 chars
@@ -57,30 +60,7 @@ def prompt_user(message: str, choices: List[str] = None) -> str:
     padded_message = " " * padding + message
     return Prompt.ask(f"[bold cyan]{padded_message}[/bold cyan]")
 
-def validate_option_letter(letter: str, options: Dict[str, AnalysisOption]) -> bool:
-    """Validate if the given letter is a valid option or 'M' for modify"""
-    if letter.upper() == 'M':
-        return True
-    return letter.upper() in options
 
-def get_option_selection() -> str:
-    """Get user input for option selection with modify option"""
-    console = Console()
-    term_width = console.width or 80
-    message = "Enter option letter or 'M' to modify request"
-    padding = (term_width - len(message)) // 2
-    padded_message = " " * padding + message
-    
-    console.print(f"\n[cyan]{padded_message}[/cyan]")
-    while True:
-        letter = prompt_user("Select option").strip().upper()
-        if letter == 'M' or (letter.isalpha() and len(letter) == 1):
-            return letter
-        
-        error_msg = "Please enter a valid letter or 'M'"
-        error_padding = (term_width - len(error_msg)) // 2
-        padded_error = " " * error_padding + error_msg
-        console.print(f"[red]{padded_error}[/red]")
 
 def build_request_analysis_prompt(request: str) -> str:
     """Build prompt for information requests"""

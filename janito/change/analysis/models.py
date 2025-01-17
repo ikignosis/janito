@@ -53,3 +53,18 @@ class AnalysisOption:
         """Format action plan as text for change core"""
         items = [f"- {item}" for item in self.action_plan]
         return "\n".join(items)
+
+    def get_files_by_status(self, status: str) -> List[str]:
+        """Get files filtered by their status marker.
+        
+        Args:
+            status: Status to filter by ('new', 'modified', or 'removed')
+        
+        Returns:
+            List of file paths with the specified status
+        """
+        return [
+            self.get_clean_path(file) 
+            for file in self.modified_files 
+            if f"({status})" in file
+        ]

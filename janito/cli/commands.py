@@ -1,21 +1,26 @@
 from pathlib import Path
 from rich.console import Console
 from janito.agents import agent
-from janito.shell.user_prompt import prompt_user
 
 from janito.workspace import workset
+from janito.workspace.models import ScanType
 from janito.config import config
 from janito.change.core import process_change_request
 from janito.change.play import play_saved_changes
 from janito.cli.history import save_to_history
 from janito.qa import ask_question, display_answer
 
+
 console = Console()
 
-def handle_ask(question: str):
-    """Process a question about the codebase"""
-    answer = ask_question(question)
+def handle_ask(question: str, workset=None):
+    """Process a question about the codebase
 
+    Args:
+        question: The question to ask about the codebase
+        workset: Optional Workset instance for scoped operations
+    """
+    answer = ask_question(question)
     display_answer(answer)
 
 def handle_scan():
@@ -24,6 +29,7 @@ def handle_scan():
 
 def handle_play(filepath: Path):
     """Replay a saved changes or debug file"""
+    console.print(f"\n[cyan]Processing file:[/] [bold]{filepath.name}[/]")
     play_saved_changes(filepath)
 
 def is_dir_empty(path: Path) -> bool:
@@ -59,7 +65,10 @@ def handle_request(request: str = None, preview_only: bool = False, single: bool
             console.print(f"\nChanges saved to: {history_file}")
     elif not success:
         console.print("[red]Failed to process change request[/red]")
-
-    # Save request and response to history
-    if agent.last_response:
-        save_to_history(request, agent.last_response)
+# Command handler functions
+COMMANDS = {
+    'ask': handle_ask,
+    'scan': handle_scan,
+    'play': handle_play,
+    'request': handle_request
+}

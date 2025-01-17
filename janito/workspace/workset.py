@@ -3,7 +3,7 @@ from typing import List, Set, Tuple
 from .show import show_workset_analysis
 from rich.console import Console
 from janito.config import config
-from .types import WorksetContent, FileInfo, ScanPath, ScanType
+from .models import WorksetContent, FileInfo, ScanPath, ScanType
 from .workspace import Workspace
 from janito.change.preview import setup_preview_directory
 import tempfile
@@ -103,29 +103,9 @@ class Workset:
         show_workset_analysis(
             files=self._content.files,
             scan_paths=self._scan_paths,
-            cache_blocks=self.get_cache_blocks()
+            cache_blocks=None
         )
 
-    def get_cache_blocks(self) -> Tuple[List[FileInfo], List[FileInfo], List[FileInfo], List[FileInfo]]:
-        """Get files grouped into time-based cache blocks.
-        
-        Returns:
-            Tuple of 4 lists containing FileInfo objects:
-            - Last 5 minutes
-            - Last hour
-            - Last 24 hours
-            - Older files
-        """
-        time_ranges = [300, 3600, 86400]  # 5min, 1h, 24h
-        blocks: List[List[FileInfo]] = [[] for _ in range(4)]
-        
-        for file_info in sorted(self._content.files, key=lambda f: f.seconds_ago):
-            # Will return 3 if file is older than all thresholds
-            block_idx = next((i for i, threshold in enumerate(time_ranges) 
-                            if file_info.seconds_ago <= threshold), 3)
-            blocks[block_idx].append(file_info)
-            
-        return tuple(blocks)
 
     def setup_preview_directory(self) -> Path:
         """Create a temporary directory with a copy of the workspace contents.

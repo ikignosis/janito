@@ -1,7 +1,6 @@
 from rich.console import Console
 from rich.markdown import Markdown
 from janito.common import progress_send_message
-from janito.agents import AIAgent
 
 def review_text(text: str, raw: bool = False) -> None:
     """Review the provided text using Claude"""

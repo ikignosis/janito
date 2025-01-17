@@ -14,10 +14,15 @@ Format your response using markdown with appropriate headers and code blocks.
 """
 
 def ask_question(question: str) -> str:
-    """Process a question about the codebase and return the answer"""
+    """Process a question about the codebase and return the answer
+
+    Args:
+        question: The question to ask about the codebase
+    """
     # Ensure content is refreshed and analyzed
+    from janito.workspace import workset
     workset.show()
-    
+
     prompt = QA_PROMPT.format(
         question=question,
     )

@@ -7,11 +7,10 @@ from janito.common import progress_send_message
 from janito.config import config
 from janito.workspace.workset import Workset
 from .view import format_analysis
+from .view.input import get_option_selection
 from .options import AnalysisOption, parse_analysis_options
 from .prompts import (
     build_request_analysis_prompt,
-    get_option_selection,
-    validate_option_letter
 )
 
 def analyze_request(
@@ -32,8 +31,6 @@ def analyze_request(
     """
     if single:
         return None
-
-    workset = Workset()  # Create workset instance
 
     # Build and send prompt using workset content directly
     prompt = build_request_analysis_prompt(request)
@@ -59,12 +56,9 @@ def analyze_request(
     # Display formatted analysis in terminal mode
     format_analysis(response, config.raw)
 
-    # Get user selection
-    selection = get_option_selection()
-    if selection == 'M':
+    # Get user selection with validation
+    selection = get_option_selection(options)
+    if selection is None:
         return None
 
-    if validate_option_letter(selection, options):
-        return options[selection.upper()]
-
-    return None
+    return options[selection]

@@ -27,12 +27,12 @@ COLUMN_SPACING = 4
 
 def create_progress_header(operation: str, filename: str, current: int, total: int,
                           reason: str = None, style: str = "cyan") -> Tuple[str, str]:
-    """Create a header showing filename and change counter.
+    """Create a header showing filename and global change counter.
 
     Args:
         operation: Type of operation being performed
         filename: Name of the file being modified
-        current: Current change number
+        current: Current global change number
         total: Total number of changes
         reason: Optional reason for the change
         style: Color style for the header
@@ -40,8 +40,8 @@ def create_progress_header(operation: str, filename: str, current: int, total: i
     Returns:
         Tuple of (header text, style)
     """
-    # Format header with operation type
-    header = f"[{style}]{operation}:[/{style}] {filename} | Change {current}/{total}"
+    # Format header with operation type and global counter
+    header = f"[{style}]{operation}:[/{style}] {filename} | Progress {current}/{total}"
 
     # Add reason if provided
     if reason:
@@ -89,7 +89,8 @@ def show_all_changes(changes: List[FileOperationType]) -> None:
     # Show file creations first
     if create_files:
         for change in create_files:
-            header, style = create_progress_header("Create", change.name, global_current + 1, global_total, style="green")
+            global_current += 1
+            header, style = create_progress_header("Create", change.name, global_current, global_total, style="green")
             console.print(Rule(header, style=style, align="center"))
             if hasattr(change, 'content'):
                 preview = create_content_preview(Path(change.name), change.content, is_new=True)
@@ -108,7 +109,8 @@ def show_all_changes(changes: List[FileOperationType]) -> None:
     if rename_files:
         console.print("\n[bold yellow]File Renames:[/bold yellow]")
         for change in rename_files:
-            header, style = create_progress_header("Rename", f"{change.name} → {change.new_name}", global_current + 1, global_total, style="yellow")
+            global_current += 1
+            header, style = create_progress_header("Rename", f"{change.name} → {change.new_name}", global_current, global_total, style="yellow")
             console.print(Rule(header, style=style, align="center"))
             console.print()
 
@@ -116,7 +118,8 @@ def show_all_changes(changes: List[FileOperationType]) -> None:
     if replace_files:
         console.print("\n[bold magenta]File Replacements:[/bold magenta]")
         for change in replace_files:
-            header, style = create_progress_header("Replace", change.name, global_current + 1, global_total, style="magenta")
+            global_current += 1
+            header, style = create_progress_header("Replace", change.name, global_current, global_total, style="magenta")
             console.print(Rule(header, style=style, align="center"))
             preview = create_content_preview(Path(change.name), change.content, is_new=False)
             console.print(preview, justify="center")
@@ -134,7 +137,7 @@ def show_all_changes(changes: List[FileOperationType]) -> None:
                 filename=modify_change.name,
                 current=global_current,
                 total=global_total,
-                reason=f"Change {i + 1}/{len(modify_change.get_changes())}"
+                reason=None
             )
             console.print(Rule(header, style=style, align="center"))
 
@@ -320,8 +323,8 @@ def show_side_by_side_diff(
     filename: str,
     original_content: List[str],
     new_content: List[str],
-    change_index: int = 0,
-    total_changes: int = 1,
+    change_index: int,
+    total_changes: int,
     reason: str = None,
     show_header: bool = True
 ) -> bool:

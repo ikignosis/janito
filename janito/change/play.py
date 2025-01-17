@@ -14,7 +14,7 @@ def play_saved_changes(history_file: Path) -> Tuple[bool, Optional[Path]]:
     Replay changes from a saved history file
     Returns:
         success: True if changes were applied successfully
-        history_file: Path to the history file that was played
+        history_file: Absolute Path to the history file that was played
     """
     console = Console()
 
@@ -41,6 +41,6 @@ def play_saved_changes(history_file: Path) -> Tuple[bool, Optional[Path]]:
         show_all_changes(applier.file_oper_exec.instances)
         
         success = applier.confirm_and_apply_to_workspace()
-        return success, history_file if success else None
+        return success, history_file.absolute() if success else None
 
-    return False, None
+    return False, None  # Return None when file not found or changes fail

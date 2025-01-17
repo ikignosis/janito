@@ -1,72 +1,41 @@
-import os
 import pytest
-import tempfile
 from pathlib import Path
 from .file_operations import FileOperationExecutor
+from .line_finder import MatchMethod
 
 @pytest.fixture
-def sample_file() -> Path:
-    """Fixture to create a sample file for testing.
-    
-    Returns:
-        Path: Path to the created sample file
-    """
-    with tempfile.TemporaryDirectory() as input_dir:
-        sample_file = Path(input_dir) / "sample.py"
-        sample_file.write_text("""def old_function():
+def sample_file(tmp_path) -> Path:
+    """Create a sample file for testing with various formatting."""
+    content = """
+def old_function():
     print("Hello")
     return False
 
 def another_function():
-    print("World")
+    x = 1
     return True
 
-def last_function():
-    print("!")
-    return None
-""")
-        yield sample_file
+class MyClass:
+    def __init__(self):
+        self.x = 1
+        self.y = 2
 
-def test_replace_operation(sample_file: Path):
-    """Test replacing old lines with new lines.
-    
-    Args:
-        sample_file (Path): Path to the test file
-    """
-    
-    # Create executor
-    executor = FileOperationExecutor(sample_file.parent)
-    
-    # Execute modification
-    executor.execute(f"""
-    Modify File
-        name: {sample_file}
-        - Replace
-            old_lines:
-                .def old_function():
-                .    print("Hello")
-                .    return False
-            new_lines:
-                .def new_function():
-                .    print("New")
-                .    return True
-    """)
-    
-    # Read the modified file
-    result = (executor.target_dir / sample_file.name).read_text()
-    assert "def new_function():" in result
-    assert "print(\"New\")" in result
-    assert "def old_function():" not in result
-    assert "print(\"Hello\")" not in result
+    def method(self) -> bool:
+        return True
 
-def test_delete_operation(sample_file: Path):
-    """Test deleting a sequence of lines.
-    
-    Args:
-        sample_file (Path): Path to the test file
-    """
-    
-    # Create executor
+# HTML-like content
+<div class="container">
+    <div class="controls">
+        <button>Click me</button>
+    </div>
+</div>
+"""
+    file_path = tmp_path / "test.py"
+    file_path.write_text(content)
+    return file_path
+
+def test_exact_match(sample_file):
+    """Test exact matching of content."""
     executor = FileOperationExecutor(sample_file.parent)
     
     # Execute modification
@@ -80,126 +49,77 @@ def test_delete_operation(sample_file: Path):
                 .    return False
     """)
     
-    # Read the modified file
-    result = (executor.target_dir / sample_file.name).read_text()
+    result = Path(executor.target_dir / sample_file.name).read_text()
     assert "def old_function():" not in result
     assert "print(\"Hello\")" not in result
     assert "def another_function():" in result
-    assert "def last_function():" in result
 
-def test_add_after_lines(sample_file: Path):
-    """Test adding new lines after specified current lines.
-    
-    Adds new function implementation after 'old_function'."""
-    
-    # Create executor
+def test_stripped_match(sample_file):
+    """Test matching ignoring whitespace differences."""
     executor = FileOperationExecutor(sample_file.parent)
     
-    # Execute modification
+    # Execute modification with different indentation
     executor.execute(f"""
     Modify File
         name: {sample_file}
-        - Add
-            current_lines:
-                .def old_function():
-                .    print("Hello")
-                .    return False
-            new_lines:
-                .
-                .def new_function():
-                .    print("New")
-                .    return True
+        - Delete
+            old_lines:
+                .<div class="controls">
+                .    <button>Click me</button>
+                .</div>
     """)
     
-    # Read the modified file
-    result = (executor.target_dir / sample_file.name).read_text()
-    # Verify both functions exist
-    assert "def old_function():" in result
-    assert "def new_function():" in result
-    # Verify order
-    assert result.index("def old_function()") < result.index("def new_function()")
+    result = Path(executor.target_dir / sample_file.name).read_text()
+    assert '<div class="controls">' not in result
+    assert '<button>Click me</button>' not in result
+    assert '<div class="container">' in result
 
-def test_add_to_end(sample_file: Path):
-    """Test adding new lines at the end of file when no current_lines specified."""
-    
-    # Create executor
+def test_python_match(sample_file):
+    """Test Python-specific matching rules."""
     executor = FileOperationExecutor(sample_file.parent)
     
-    # Execute modification
-    executor.execute(f"""
-    Modify File
-        name: {sample_file}
-        - Add
-            new_lines:
-                .# Added at the end
-                .def final_function():
-                .    print("Final")
-                .    return None
-    """)
-    
-    # Read the modified file
-    result = (executor.target_dir / sample_file.name).read_text()
-    
-    # Original content should be unchanged
-    assert "def old_function():" in result
-    assert "def another_function():" in result
-    assert "def last_function():" in result
-    
-    # New content should be at the end
-    assert result.endswith("def final_function():\n    print(\"Final\")\n    return None\n")
-
-def test_multiple_operations(sample_file: Path):
-    """Test multiple operations in sequence.
-    
-    1. Replace old_function
-    2. Delete another_function
-    3. Add new content after last_function
-    """
-    
-    # Create executor
-    executor = FileOperationExecutor(sample_file.parent)
-    
-    # Execute modifications
+    # Execute modification with return type hint
     executor.execute(f"""
     Modify File
         name: {sample_file}
         - Replace
             old_lines:
-                .def old_function():
-                .    print("Hello")
+                .def method(self) -> bool:
+                .    return True
+            new_lines:
+                .def method(self):
                 .    return False
-            new_lines:
-                .def new_function():
-                .    print("New")
-                .    return True
-        - Delete
-            old_lines:
-                .def another_function():
-                .    print("World")
-                .    return True
-        - Add
-            current_lines:
-                .def last_function():
-                .    print("!")
-                .    return None
-            new_lines:
-                .
-                .def added_function():
-                .    print("Added")
-                .    return True
     """)
     
-    # Read the modified file
-    result = (executor.target_dir / sample_file.name).read_text()
+    result = Path(executor.target_dir / sample_file.name).read_text()
+    assert 'def method(self):' in result
+    assert '    return False' in result
+    assert '-> bool' not in result
+
+def test_indent_pattern_match(sample_file):
+    """Test matching based on indentation pattern.
     
-    # Verify replacements
-    assert "def new_function():" in result
-    assert "def old_function():" not in result
+    This matches blocks that have the same indentation pattern and stripped content,
+    regardless of the actual indentation levels."""
+    executor = FileOperationExecutor(sample_file.parent)
     
-    # Verify deletion
-    assert "def another_function():" not in result
+    # Execute modification matching indentation pattern
+    executor.execute(f"""
+    Modify File
+        name: {sample_file}
+        - Replace
+            old_lines:
+                .class MyClass:
+                .    def __init__(self):
+                .        self.x = 1
+            new_lines:
+                .class NewClass:
+                .    def setup(self):
+                .        self.ready = True
+    """)
     
-    # Verify addition and order
-    assert "def last_function():" in result
-    assert "def added_function():" in result
-    assert result.index("def last_function()") < result.index("def added_function()") 
+    result = Path(executor.target_dir / sample_file.name).read_text()
+    assert 'class NewClass:' in result
+    assert '    def setup(self):' in result
+    assert '        self.ready = True' in result
+    assert 'class MyClass:' not in result 

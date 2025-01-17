@@ -1,1 +1,0 @@
-"""Shell package for Janito's interactive shell functionality."""

@@ -7,21 +7,17 @@ from rich import print
 from threading import Thread
 from janito.agents import agent
 from .config import config
-from typing import Optional
+from typing import Optional, List
+from pathlib import Path
 
 
-""" CACHE USAGE SUMMARY
-https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
-cache_creation_input_tokens: Number of tokens written to the cache when creating a new entry.
-cache_read_input_tokens: Number of tokens retrieved from the cache for this request.
-input_tokens: Number of input tokens which were not read from or used to create a cache.
-"""
 
 from janito.prompt import build_system_prompt
 
 console = Console()
 
-def progress_send_message(message: str) -> Optional[str]:
+
+def progress_send_message(system_message: str, message: str) -> Optional[str]:
     """Send a message to the AI agent with progress indication.
 
     Displays a progress spinner while waiting for the agent's response and shows
@@ -29,6 +25,7 @@ def progress_send_message(message: str) -> Optional[str]:
     to update the elapsed time display.
 
     Args:
+        system_message: The system message to send to the AI agent
         message: The message to send to the AI agent
 
     Returns:
@@ -38,7 +35,6 @@ def progress_send_message(message: str) -> Optional[str]:
         - Returns None if the operation is cancelled via Ctrl+C
         - If the request fails, raises the original exception
     """
-    system_message = build_system_prompt()
     if config.debug:
         console.print(f"[yellow]======= Sending message via {agent.__class__.__name__.replace('AIAgent', '')}[/yellow]")
         print(system_message)
@@ -54,7 +50,7 @@ def progress_send_message(message: str) -> Optional[str]:
     def agent_thread():
         nonlocal response, error
         try:
-            response = agent.send_message(message, system_message=system_message)
+            response = agent.send_message(system_message=system_message, message=message)
         except Exception as e:
             error = e
 
@@ -87,17 +83,17 @@ def progress_send_message(message: str) -> Optional[str]:
             return None
         raise error
 
-        elapsed = datetime.now() - start_time
-        elapsed_seconds = elapsed.seconds
-        elapsed_minutes = elapsed_seconds // 60
-        remaining_seconds = elapsed_seconds % 60
-        time_str = f"{elapsed_seconds}s" if elapsed_seconds < 60 else f"{elapsed_minutes}m{remaining_seconds}s"
-        live.update(Text.assemble(
-            "Response received from ",
-            (agent.__class__.__name__.replace('AIAgent', ''), "dim"),
-            f" in {time_str}!",
-            justify="center"
-        ))
+    elapsed = datetime.now() - start_time
+    elapsed_seconds = elapsed.seconds
+    elapsed_minutes = elapsed_seconds // 60
+    remaining_seconds = elapsed_seconds % 60
+    time_str = f"{elapsed_seconds}s" if elapsed_seconds < 60 else f"{elapsed_minutes}m{remaining_seconds}s"
+    live.update(Text.assemble(
+        "Response received from ",
+        (agent.__class__.__name__.replace('AIAgent', ''), "dim"),
+        f" in {time_str}!",
+        justify="center"
+    ))
 
     if config.debug:
         console.print("[yellow]======= Received response[/yellow]")
@@ -137,18 +133,6 @@ def progress_send_message(message: str) -> Optional[str]:
 
         # Compact single-line token usage summary
         usage_text = f"[cyan]In: [/][bold green]{total_input:,} - direct: {direct_input} ({direct_pct:.1f}%))[/] [cyan]Out:[/] [bold yellow]{output_tokens:,}[/][dim]({output_ratio:.1f}%)[/]"
-
-        if cache_create or cache_read:
-            cache_text = f" [magenta]Input Cache:[/] [blue]Write:{cache_create:,}[/][dim]({create_pct:.1f}%)[/] [green]Read:{cache_read:,}[/][dim]({read_pct:.1f}%)[/]"
-            usage_text += cache_text
-
-        # Handle new format specific attributes
-        if not isinstance(usage, dict):
-            prompt_cache_hit = getattr(usage, 'prompt_cache_hit_tokens', 0)
-            prompt_cache_miss = getattr(usage, 'prompt_cache_miss_tokens', 0)
-            if prompt_cache_hit or prompt_cache_miss:
-                cache_hit_miss_text = f" [cyan]Cache Hits:[/] [green]{prompt_cache_hit}[/] [cyan]Misses:[/] [red]{prompt_cache_miss}[/]"
-                usage_text += cache_hit_miss_text
 
         console.print(Rule(usage_text, style="cyan"))
     

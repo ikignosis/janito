@@ -8,12 +8,12 @@ Considerng the above workset content, the developer has provided the following r
 The developer has selected the following action plan:
 {action_plan}
 
+
 Please provide implementation instructions in two formats:
 
 1. Describe the changes in relation to the workset files in the format described below (between CHANGES_START_HERE and CHANGES_END_HERE)
 2. Any additional feedback about the changes must be provided after CHANGES_END_HERE
-3. The context of workset is always described with lines prefixed with a dot (.) followed by the verbatim content of the line
-4. Do not provide generic instructions based on the request, eg. remove any lines with "print" or "debug", instead provide always specific references to the workset files and content
+3. The context of workset is always described with lines prefixed with a dot (.) followed by the EXACT, VERBATIM content of the line, preserving ALL whitespace and formatting
 
 Examples of line formatting:
 # Original line -> How to format in changes
@@ -24,7 +24,7 @@ def function():     # -> .def function():
 .import sys         # -> ..import sys
 .class MyClass:    # -> ..class MyClass:
 
-3. Use statements and sub-statements to describe changes, for example:
+4. Use statements and sub-statements to describe changes, for example:
 
 Modify File # this is a statement
 name: path/to/file.py
@@ -138,6 +138,7 @@ name: path/to/modify.py
   .    print("More debug")
 
 # Add example with current_lines - adds after specified lines
+# current_lines must contain lines found in the original workset file, not the modified file
 - Add
   current_lines:
   .def process_data():
@@ -151,19 +152,12 @@ name: path/to/modify.py
   .# End of file comment
   .# Consider adding more functionality
 
-===
-
 CHANGES_END_HERE # Please send this marker before any additional feedback about the changes
 
 Additional feedback about the changes can be provided here
 
 """
 
-from pathlib import Path
-from typing import Optional, List
-from janito.workspace import workset
-from janito.config import config
-from janito.common import progress_send_message
 
 def build_change_request_prompt(request: str, action_plan: str) -> str:
     """Build a prompt for the change request that includes workspace metadata.

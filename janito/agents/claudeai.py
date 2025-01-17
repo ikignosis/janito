@@ -1,7 +1,6 @@
 import anthropic
 import os
-from typing import Optional
-from threading import Event
+
 from .agent import Agent
 
 class ClaudeAIAgent(Agent):
@@ -24,7 +23,7 @@ class ClaudeAIAgent(Agent):
         self.last_response = None
 
 
-    def send_message(self, message: str, system_message: str = None) -> str:
+    def send_message(self, system_message: str, message: str) -> str:
         """Send message to Claude API and return response"""
         # Store the full message
         self.last_full_message = message

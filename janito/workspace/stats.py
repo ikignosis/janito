@@ -1,7 +1,7 @@
 from collections import defaultdict
 from pathlib import Path
 from typing import List, Dict, Tuple
-from .types import FileInfo
+from .models import FileInfo
 
 def collect_file_stats(files: List[FileInfo]) -> Tuple[Dict[str, List[int]], Dict[str, int]]:
     """Collect directory and file type statistics from files.

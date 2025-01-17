@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 from typing import List, Tuple, Optional, Any
 from .models import ChangeType, Change, OperationFailure
-from .line_finder import LineFinder
+from .line_finder import LineFinder, MatchMethod
 from rich.console import Console
 from rich.table import Table
 from dataclasses import dataclass
@@ -76,6 +76,10 @@ class ModifyFile:
             kwargs={'new_indent': new_indent}
         ))
 
+    def Modify(self, old_lines: str, new_lines: str, new_indent: int = None):
+        """ This is an alias for Replace as LLMs are likely to use it instead of Replace """
+        self.Replace(old_lines, new_lines, new_indent)
+
     def Delete(self, old_lines: str):
         """Queue a delete operation."""
         self.queued_operations.append(QueuedOperation(
@@ -96,8 +100,8 @@ class ModifyFile:
         """Execute a delete operation."""
         old_lines_list = old_lines.splitlines() if old_lines else []
         
-        start_pos = self._find_lines(old_lines_list)
-        if start_pos == -1:
+        match_result = self._find_lines(old_lines_list)
+        if match_result is None:
             self.failed_operations.append(OperationFailure(
                 operation_type=ChangeType.DELETE,
                 file_path=self.name,
@@ -106,12 +110,12 @@ class ModifyFile:
             ))
             return False
             
-        start = start_pos
-        end = start + len(old_lines_list)
+        start = match_result.start_pos
+        end = match_result.end_pos
         original = self.content[start:end]
         
         if self.debug:
-            self._debug_print("\nDeleting lines:")
+            self._debug_print(f"\nDeleting lines (matched using {match_result.method.name}):")
             for i, line in enumerate(original):
                 self._debug_print(f"  {start+i+1:4d}: {line}")
         
@@ -131,8 +135,8 @@ class ModifyFile:
         new_lines_list = new_lines.splitlines() if new_lines else []
         
         # Find the old lines
-        start_pos = self._find_lines(old_lines_list)
-        if start_pos == -1:
+        match_result = self._find_lines(old_lines_list)
+        if match_result is None:
             self.failed_operations.append(OperationFailure(
                 operation_type=ChangeType.REPLACE,
                 file_path=self.name,
@@ -142,8 +146,8 @@ class ModifyFile:
             return False
             
         # Get the range to replace
-        start = start_pos
-        end = start + len(old_lines_list)
+        start = match_result.start_pos
+        end = match_result.end_pos
         original = self.content[start:end]
         
         # Apply indentation if specified
@@ -156,6 +160,7 @@ class ModifyFile:
             table = Table(show_header=True, header_style="bold")
             table.add_column("Before", style="red")
             table.add_column("After", style="green")
+            table.add_column("Match Method", style="blue")
             
             # Get the maximum number of lines to show
             max_lines = max(len(original), len(new_lines_list))
@@ -164,7 +169,8 @@ class ModifyFile:
             for i in range(max_lines):
                 before = f"{start+i+1:4d}: {original[i]}" if i < len(original) else ""
                 after = f"{start+i+1:4d}: {new_lines_list[i]}" if i < len(new_lines_list) else ""
-                table.add_row(before, after)
+                method = match_result.method.name if i == 0 else ""
+                table.add_row(before, after, method)
             
             self._debug_print("\nReplacing content:")
             self.console.print(table)
@@ -203,8 +209,8 @@ class ModifyFile:
         else:
             # Find the current lines
             current_lines_list = current_lines.splitlines()
-            start_pos = self._find_lines(current_lines_list)
-            if start_pos == -1:
+            match_result = self._find_lines(current_lines_list)
+            if match_result is None:
                 self.failed_operations.append(OperationFailure(
                     operation_type=ChangeType.ADD,
                     file_path=self.name,
@@ -214,8 +220,8 @@ class ModifyFile:
                 return False
             
             # Add after the current lines
-            start = start_pos
-            end = start + len(current_lines_list)
+            start = match_result.start_pos
+            end = match_result.end_pos
             original = self.content[start:end]
             
             if self.debug:

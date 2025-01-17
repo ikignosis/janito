@@ -1,7 +1,8 @@
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List
+from typing import List, Optional
+from janito.shell.user_prompt import prompt_user
 from rich.console import Console
 from rich.prompt import Prompt
 from rich.panel import Panel
@@ -9,37 +10,14 @@ from rich.text import Text
 
 console = Console()
 
-import readline
-
-from janito.shell.user_prompt import prompt_user, show_shortcuts
-from janito.common import progress_send_message
 from janito.config import config
 
 
-def prompt_user(message: str, choices: List[str] = None) -> str:
-    """Display a simple user prompt with optional choices"""
-    console = Console()
-    
-    if choices:
-        console.print(f"\n[cyan]Options: {', '.join(choices)}[/cyan]")
-    
-    return Prompt.ask(f"[bold cyan]> {message}[/bold cyan]")
 
 def validate_option_letter(letter: str, options: dict) -> bool:
     """Validate if the given letter is a valid option or 'M' for modify"""
     return letter.upper() in options or letter.upper() == 'M'
 
-def get_option_selection() -> str:
-    """Get user input for option selection"""
-    console = Console()
-    console.print("\n[cyan]Enter option letter or 'M' to modify request[/cyan]")
-    
-    while True:
-        letter = Prompt.ask("[bold cyan]Select option[/bold cyan]").strip().upper()
-        if letter == 'M' or (letter.isalpha() and len(letter) == 1):
-            return letter
-        
-        console.print("[red]Please enter a valid letter or 'M'[/red]")
 
 def get_change_history_path() -> Path:
     """Create and return the changes history directory path"""

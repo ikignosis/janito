@@ -1,26 +1,147 @@
 import os
-from typing import List
+from typing import List, Callable, Optional, Tuple
+from enum import Enum, auto
+from dataclasses import dataclass
+
+class MatchMethod(Enum):
+    """Different methods for matching content blocks."""
+    EXACT = auto()          # Match content exactly
+    STRIPPED = auto()       # Match ignoring leading/trailing whitespace
+    PYTHON = auto()         # Match with Python-specific rules
+    INDENT_PATTERN = auto() # Match based on indentation pattern
+
+
+@dataclass
+class MatchResult:
+    """Result of a content match."""
+    start_pos: int      # Start position of the match (0-based)
+    end_pos: int        # End position of the match (exclusive)
+    method: MatchMethod # Method that found the match
 
 class LineFinder:
-    """Class responsible for finding lines in text content."""
+    """Class responsible for finding content blocks in text."""
 
     def __init__(self, content: List[str], debug: bool = False):
         """Initialize with content to search in and debug flag."""
         self.content = content
         self.debug = debug
+        
+        # Define match methods
+        self._match_methods = {
+            MatchMethod.EXACT: self._exact_content_match,
+            MatchMethod.STRIPPED: self._stripped_content_match,
+            MatchMethod.PYTHON: self._python_content_match,
+            MatchMethod.INDENT_PATTERN: self._indent_pattern_match
+        }
 
     def _debug_print(self, *args, **kwargs):
         """Print debug information only if debug is enabled."""
         if self.debug:
             print(*args, **kwargs)
 
+    def find_first(self, search_lines: List[str], start_pos: int = 0, 
+                  methods: Optional[List[MatchMethod]] = None) -> Optional[MatchResult]:
+        """Find first position where the content block matches using specified methods."""
+        if methods is None:
+            methods = [
+                MatchMethod.EXACT,
+                MatchMethod.STRIPPED,
+                MatchMethod.PYTHON,
+                MatchMethod.INDENT_PATTERN
+            ]
+        
+        search_block = search_lines
+        for method in methods:
+            if self.debug:
+                self._debug_print(f"\nTrying {method.name.lower()} match from line {start_pos + 1}")
+            
+            result = self._find_with_method(search_block, start_pos, method)
+            if result is not None:
+                return result
+        
+        return None
+
+    def _find_with_method(self, search_block: List[str], start_pos: int, 
+                         method: MatchMethod) -> Optional[MatchResult]:
+        """Find first position using a specific match method."""
+        match_func = self._match_methods[method]
+        max_search_position = len(self.content) - len(search_block) + 1
+
+        for content_pos in range(start_pos, max_search_position):
+            # For all methods, we use fixed block size
+            content_block = self.content[content_pos:content_pos + len(search_block)]
+            if self.debug:
+                self._debug_print(f"\nTrying at line {content_pos + 1}:")
+                self._debug_print("Search block:")
+                for i, line in enumerate(search_block):
+                    self._debug_print(f"  {i+1:4d}: '{line}'")
+                self._debug_print("Content block:")
+                for i, line in enumerate(content_block):
+                    self._debug_print(f"  {content_pos+i+1:4d}: '{line}'")
+            
+            if match_func(content_block, search_block):
+                end_pos = content_pos + len(search_block)
+                if self.debug:
+                    self._debug_print(f"\n✓ Found {method.name.lower()} match at lines {content_pos + 1}-{end_pos}")
+                return MatchResult(content_pos, end_pos, method)
+            elif self.debug:
+                self._debug_print("✗ No match")
+        
+        return None
+
+    def _exact_content_match(self, content_block: List[str], search_block: List[str]) -> bool:
+        """Match content blocks exactly (after rstrip)."""
+        if len(content_block) != len(search_block):
+            return False
+        return all(c.rstrip() == s.rstrip() for c, s in zip(content_block, search_block))
+
+    def _stripped_content_match(self, content_block: List[str], search_block: List[str]) -> bool:
+        """Match content blocks ignoring all whitespace."""
+        if len(content_block) != len(search_block):
+            return False
+        return all(c.strip() == s.strip() for c, s in zip(content_block, search_block))
+
+    def _python_content_match(self, content_block: List[str], search_block: List[str]) -> bool:
+        """Match content blocks with Python-specific rules."""
+        if len(content_block) != len(search_block):
+            return False
+            
+        for content_line, search_line in zip(content_block, search_block):
+            c = content_line.rstrip()
+            s = search_line.rstrip()
+            
+            if c.startswith('def ') and s.startswith('def '):
+                # Remove return type hint and trailing colon
+                c = c.split(' -> ')[0].rstrip(':').rstrip()
+                s = s.split(' -> ')[0].rstrip(':').rstrip()
+            
+            if c != s:
+                return False
+                
+        return True
+
+    def _indent_pattern_match(self, content_block: List[str], search_block: List[str]) -> bool:
+        """Match content blocks based on indentation pattern."""
+        if len(content_block) != len(search_block):
+            return False
+            
+        # Get indentation patterns
+        content_pattern = self._get_indent_pattern(content_block)
+        search_pattern = self._get_indent_pattern(search_block)
+        
+        # Check patterns match
+        if content_pattern != search_pattern:
+            return False
+            
+        # Check stripped content matches
+        return all(c.strip() == s.strip() for c, s in zip(content_block, search_block))
+
     def _get_indent_level(self, line: str) -> int:
         """Get the indentation level of a line."""
         return len(line) - len(line.lstrip())
 
     def _get_indent_pattern(self, lines: List[str]) -> List[str]:
-        """Get the indentation pattern between consecutive lines.
-        Returns a list of '=', '>' or '<' indicating same, more or less indentation."""
+        """Get the indentation pattern between consecutive lines."""
         if not lines or len(lines) < 2:
             return []
             
@@ -37,84 +158,36 @@ class LineFinder:
                 patterns.append('=')
             prev_indent = curr_indent
             
-        return patterns
+        return patterns 
 
-    def find_first(self, search_lines: List[str], start_pos: int = 0) -> int:
-        """Find first position where the search lines match in content.
-        First tries exact match, then tries indent-pattern match.
-        Returns the matching line number (0-based index) or -1 if not found."""
-        # Try exact match first
-        exact_match = self._find_exact(search_lines, start_pos)
-        if exact_match != -1:
-            return exact_match
-            
-        # If exact match fails, try indent pattern match
-        return self._find_pattern(search_lines, start_pos)
-
-    def _find_exact(self, search_lines: List[str], start_position: int = 0) -> int:
-        """Find first position where the search lines match exactly."""
-        if self.debug:
-            self._debug_print(f"\nTrying exact match from line {start_position + 1}")
+    def _nonspace_content_match(self, content_lines: List[str], search_block: List[str]) -> Optional[int]:
+        """Match content by comparing concatenated non-whitespace characters.
+        Returns the number of content lines consumed if matched, None if no match."""
+        # Join and strip all non-whitespace chars from search block
+        search_chars = ''.join(c for line in search_block 
+                              for c in line.strip() if not c.isspace())
         
-        max_search_position = len(self.content) - len(search_lines) + 1
-
-        for content_position in range(start_position, max_search_position):
-            is_match = True
+        if self.debug:
+            self._debug_print("\nSearch block without spaces:", repr(search_chars))
+        
+        # Build content string incrementally
+        content_chars = ""
+        for i, line in enumerate(content_lines):
+            # Strip each line before removing spaces
+            content_chars += ''.join(c for c in line.strip() if not c.isspace())
             
             if self.debug:
-                self._debug_print(f"\nTrying match at line {content_position+1}:")
-
-            for line_offset, search_line in enumerate(search_lines):
-                current_line = self.content[content_position + line_offset].rstrip()
-                expected_line = search_line.rstrip()
-                
-                if self.debug:
-                    line_matches = current_line == expected_line
-                    current_line_number = content_position + line_offset + 1
-                    self._debug_print(f"  Line {current_line_number}: {'✓' if line_matches else '✗'}")
-                    self._debug_print(f"    Search: '{expected_line}'")
-                    self._debug_print(f"    Found:  '{current_line}'")
-                
-                if current_line != expected_line:
-                    is_match = False
-                    break
+                self._debug_print(f"Content without spaces (lines 1-{i+1}):", repr(content_chars))
             
-            if is_match:
+            if content_chars == search_chars:
                 if self.debug:
-                    self._debug_print(f"\n✓ Found exact match at line {content_position + 1}")
-                return content_position
-                
-        return -1
-
-    def _find_pattern(self, search_lines: List[str], start_pos: int = 0) -> int:
-        """Find first position where the lines match the indent pattern."""
-        if len(search_lines) < 2:
-            return -1  # Need at least 2 lines to match pattern
-            
-        search_pattern = self._get_indent_pattern(search_lines)
+                    self._debug_print(f"✓ Found match consuming {i+1} lines")
+                return i + 1  # Return number of lines consumed
+            elif len(content_chars) > len(search_chars):
+                if self.debug:
+                    self._debug_print("✗ Content longer than search, stopping")
+                break  # Stop if we've collected too many characters
+        
         if self.debug:
-            self._debug_print(f"\nTrying pattern match from line {start_pos + 1}")
-            self._debug_print(f"Search pattern: {search_pattern}")
-        
-        for i in range(start_pos, len(self.content) - len(search_lines) + 1):
-            content_slice = self.content[i:i + len(search_lines)]
-            content_pattern = self._get_indent_pattern(content_slice)
-            
-            # Check if patterns match
-            if content_pattern == search_pattern:
-                # Verify content matches when stripped
-                match = True
-                for j, search_line in enumerate(search_lines):
-                    if self.content[i + j].strip() != search_line.strip():
-                        match = False
-                        break
-                
-                if match:
-                    if self.debug:
-                        self._debug_print(f"\n✓ Found pattern match at line {i + 1}")
-                        self._debug_print("Pattern matched:")
-                        for j, line in enumerate(content_slice):
-                            self._debug_print(f"  {i+j+1:4d}: '{line.rstrip()}'")
-                    return i
-        
-        return -1 
+            self._debug_print("✗ No match found")
+        return None 

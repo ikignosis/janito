@@ -23,6 +23,7 @@ from .workspace_dir import apply_changes as apply_to_workspace_dir_impl
 from janito.config import config
 from janito.file_operations import CreateFile, DeleteFile, RenameFile, ReplaceFile, ModifyFile
 from janito.file_operations import FileOperationExecutor
+from typing import Optional
 
 
 class ChangeApplier:
@@ -71,9 +72,14 @@ class ChangeApplier:
         # Validate Python files syntax (skip deleted files)
         for file_path in modified_files - deleted_files:
             if file_path.suffix == '.py':
-                is_valid, error = validate_python_syntax(self.preview_dir / file_path)
+                is_valid, error, code_line, pointer = validate_python_syntax(self.preview_dir / file_path)
                 if not is_valid:
-                    console.print(f"\n[red]Syntax error in {file_path}:[/red] {error}")
+                    console.print(f"\n[red]Syntax error in {file_path}:[/red]")
+                    if code_line:
+                        console.print(f"[red]{code_line}[/red]")
+                        if pointer:
+                            console.print(f"[red]{pointer}[/red]")
+                    console.print(f"[red]{error}[/red]")
                     return False, modified_files
 
         if validation_count > 0:
