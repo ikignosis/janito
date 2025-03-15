@@ -13,13 +13,11 @@ Janito is a powerful AI-assisted command-line interface (CLI) tool built with Py
 ## 🛠️ Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/joaompinto/janito.git
-cd janito
-
-# Install the package
-pip install -e .
+# Install directly from PyPI
+pip install janito
 ```
+
+For development or installation from source, please see [README_DEV.md](README_DEV.md).
 
 ## 🚀 Usage
 
@@ -72,4 +70,4 @@ pip install -e ".[dev]"
 
 ## 📜 License
 
-[Add your license information here]
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

@@ -21,9 +21,9 @@ print_error() {
     exit 1
 }
 
-# Check if uv is installed
-if ! command -v uv &> /dev/null; then
-    print_error "uv is not installed. Please install it first."
+# Check if hatch is installed
+if ! command -v hatch &> /dev/null; then
+    print_error "hatch is not installed. Please install it first."
 fi
 
 # Check if twine is installed
@@ -116,13 +116,22 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     exit 0
 fi
 
+# Clean the dist directory
+print_info "Cleaning dist directory..."
+if [ -d "dist" ]; then
+    rm -rf dist/*
+    print_info "Dist directory cleaned."
+else
+    mkdir -p dist
+    print_info "Dist directory created."
+fi
+
 # Build the package
 print_info "Building package..."
-uv build .
+hatch build
 
 # Publish to PyPI
 print_info "Publishing to PyPI..."
-# Using twine instead of uv publish since uv publish is experimental
 twine upload dist/*
 
 # Create a new git tag if one doesn't exist for this version

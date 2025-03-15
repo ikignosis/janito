@@ -13,7 +13,9 @@ def search_text(text_pattern: str, file_pattern: str = "*", root_dir: str = ".",
     
     Args:
         text_pattern: Text pattern to search for within files
-        file_pattern: Pattern to match file names against (default: "*" - all files)
+        file_pattern: Pattern to match file names against (default: "*")
+                     Multiple patterns can be specified using semicolons or spaces as separators
+                     Examples: "*.py *.toml *.sh *.md test*"
         root_dir: Root directory to start search from (default: current directory)
         recursive: Whether to search recursively in subdirectories (default: True)
         respect_gitignore: Whether to respect .gitignore files (default: True)
@@ -50,35 +52,63 @@ def search_text(text_pattern: str, file_pattern: str = "*", root_dir: str = ".",
                 if respect_gitignore:
                     dirnames[:] = [d for d in dirnames if not _is_ignored(os.path.join(dirpath, d), ignored_patterns, abs_root)]
                 
-                for filename in fnmatch.filter(filenames, file_pattern):
-                    file_path = os.path.join(dirpath, filename)
+                # Handle multiple patterns separated by semicolons or spaces
+                patterns = []
+                if ';' in file_pattern:
+                    patterns = file_pattern.split(';')
+                elif ' ' in file_pattern:
+                    patterns = file_pattern.split()
+                else:
+                    patterns = [file_pattern]
+                
+                for pattern in patterns:
+                    for filename in fnmatch.filter(filenames, pattern):
+                        file_path = os.path.join(dirpath, filename)
+                        
+                        # Skip ignored files
+                        if respect_gitignore and _is_ignored(file_path, ignored_patterns, abs_root):
+                            continue
+                        
+                        # Skip if already processed this file
+                        if file_path in matching_files:
+                            continue
+                        
+                        file_matches = _search_file(file_path, regex, abs_root)
+                        if file_matches:
+                            matching_files.append(file_path)
+                            match_count += len(file_matches)
+                            results.append(f"\n{os.path.relpath(file_path, abs_root)} ({len(file_matches)} matches):")
+                            results.extend(file_matches)
+        else:
+            # Non-recursive mode - only search in the specified directory
+            # Handle multiple patterns separated by semicolons or spaces
+            patterns = []
+            if ';' in file_pattern:
+                patterns = file_pattern.split(';')
+            elif ' ' in file_pattern:
+                patterns = file_pattern.split()
+            else:
+                patterns = [file_pattern]
+            
+            for pattern in patterns:
+                for filename in fnmatch.filter(os.listdir(abs_root), pattern):
+                    file_path = os.path.join(abs_root, filename)
                     
                     # Skip ignored files
                     if respect_gitignore and _is_ignored(file_path, ignored_patterns, abs_root):
                         continue
                     
-                    file_matches = _search_file(file_path, regex, abs_root)
-                    if file_matches:
-                        matching_files.append(file_path)
-                        match_count += len(file_matches)
-                        results.append(f"\n{os.path.relpath(file_path, abs_root)} ({len(file_matches)} matches):")
-                        results.extend(file_matches)
-        else:
-            # Non-recursive mode - only search in the specified directory
-            for filename in fnmatch.filter(os.listdir(abs_root), file_pattern):
-                file_path = os.path.join(abs_root, filename)
-                
-                # Skip ignored files
-                if respect_gitignore and _is_ignored(file_path, ignored_patterns, abs_root):
-                    continue
-                
-                if os.path.isfile(file_path):
-                    file_matches = _search_file(file_path, regex, abs_root)
-                    if file_matches:
-                        matching_files.append(file_path)
-                        match_count += len(file_matches)
-                        results.append(f"\n{os.path.relpath(file_path, abs_root)} ({len(file_matches)} matches):")
-                        results.extend(file_matches)
+                    # Skip if already processed this file
+                    if file_path in matching_files:
+                        continue
+                    
+                    if os.path.isfile(file_path):
+                        file_matches = _search_file(file_path, regex, abs_root)
+                        if file_matches:
+                            matching_files.append(file_path)
+                            match_count += len(file_matches)
+                            results.append(f"\n{os.path.relpath(file_path, abs_root)} ({len(file_matches)} matches):")
+                            results.extend(file_matches)
         
         if matching_files:
             result_text = "\n".join(results)
