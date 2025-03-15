@@ -3,14 +3,15 @@ Main entry point for the janito CLI.
 """
 
 import typer
-from rich.console import Console
-from rich import print as rprint
-import claudine
 import os
 import sys
-import logging
 from pathlib import Path
-from typing import Optional, Tuple, Dict, Any, Callable
+from typing import Optional, Dict, Any, Tuple, List
+from rich.console import Console
+from rich import print as rprint
+from rich.markdown import Markdown
+import claudine
+from claudine.exceptions import MaxTokensExceededException, MaxRoundsExceededException
 import locale
 
 # Fix console encoding for Windows
@@ -24,10 +25,12 @@ if sys.platform == 'win32':
     locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
 from janito.tools.str_replace_editor.editor import str_replace_editor
-from janito.tools.create_file import create_file
+from janito.tools.find_files import find_files
 from janito.tools.delete_file import delete_file
+from janito.tools.search_text import search_text
 from janito.config import get_config
-        
+from janito.tools.decorators import format_tool_label
+
 app = typer.Typer(help="Janito CLI tool")
 
 def pre_tool_callback(tool_name: str, tool_input: Dict[str, Any], preamble_text: str = "") -> Tuple[Dict[str, Any], bool]:
@@ -44,27 +47,53 @@ def pre_tool_callback(tool_name: str, tool_input: Dict[str, Any], preamble_text:
     """
     console = Console()
     
-    # Print preamble text if provided
-    if preamble_text:
-        console.print(preamble_text)
+    # Try to find the tool function
+    tool_func = None
+    for tool in [find_files, str_replace_editor, delete_file, search_text]:
+        if tool.__name__ == tool_name:
+            tool_func = tool
+            break
     
-    # Create a copy of tool_input to modify for display
-    display_input = {}
+    # Format the tool label if possible
+    label = None
+    if tool_func:
+        label = format_tool_label(tool_func, tool_input)
     
-    # Maximum length for string values
-    max_length = 50
+    if not label:
+        label = f"{tool_name}"
+        
+        # Special handling for str_replace_editor
+        if tool_name == "str_replace_editor":
+            command = tool_input.get("command", "unknown")
+            file_path = tool_input.get("file_path", "")
+            
+            if command == "view":
+                label = f"Editing file: {file_path} (view)"
+            elif command == "edit":
+                label = f"Editing file: {file_path} (edit)"
+            else:
+                label = f"Editing file: {file_path} ({command})"
     
-    # Trim long string values for display
-    for key, value in tool_input.items():
-        if isinstance(value, str) and len(value) > max_length:
-            # For long strings, show first and last part with ellipsis in between
-            display_input[key] = f"{value[:20]}...{value[-20:]}" if len(value) > 45 else value[:max_length] + "..."
-        else:
-            display_input[key] = value
+    # Print the tool call
+    console.print(f"Tool Call: {label}", style="bold yellow")
     
-    console.print(f"[bold cyan]Tool Call:[/bold cyan] {tool_name} {display_input}", end="")
+    # For delete_file, confirm with the user
+    if tool_name == "delete_file" and "file_path" in tool_input:
+        file_path = tool_input["file_path"]
+        
+        # Get the absolute path
+        abs_path = os.path.abspath(file_path)
+        
+        # Ask for confirmation
+        console.print(f"[bold red]Warning:[/bold red] About to delete file: {abs_path}")
+        confirm = typer.confirm("Are you sure you want to delete this file?", default=False)
+        
+        if not confirm:
+            console.print("File deletion cancelled.")
+            return tool_input, True  # Cancel the tool call
     
-    return tool_input, True  # Continue with the tool call
+    # Return the original tool input and don't cancel
+    return tool_input, False
 
 def post_tool_callback(tool_name: str, tool_input: Dict[str, Any], result: Any) -> Any:
     """
@@ -80,16 +109,43 @@ def post_tool_callback(tool_name: str, tool_input: Dict[str, Any], result: Any) 
     """
     console = Console()
     
-    # For str_replace_editor, extract just the last line of the result if it's a string
-    if tool_name == "str_replace_editor" and isinstance(result, tuple) and len(result) >= 1:
+    # Add debug counter only when debug mode is enabled
+    if get_config().debug_mode:
+        if not hasattr(post_tool_callback, "counter"):
+            post_tool_callback.counter = 1
+        console.print(f"[bold green]DEBUG: Completed tool call #{post_tool_callback.counter}[/bold green]")
+        post_tool_callback.counter += 1
+    
+    # Extract the last line of the result
+    if isinstance(result, tuple) and len(result) >= 1:
         content, is_error = result
-        if isinstance(content, str) and '\n' in content:
-            last_line = content.strip().split('\n')[-1]
-            console.print(f" → {last_line}")
+        if isinstance(content, str):
+            # For find_files, extract just the count from the last line
+            if tool_name == "find_files" and content.count("\n") > 0:
+                lines = content.strip().split('\n')
+                if lines and lines[-1].isdigit():
+                    console.print(f"{lines[-1]}")
+                else:
+                    # Get the last line
+                    last_line = content.strip().split('\n')[-1]
+                    console.print(f"{last_line}")
+            else:
+                # For other tools, just get the last line
+                if '\n' in content:
+                    last_line = content.strip().split('\n')[-1]
+                    console.print(f"{last_line}")
+                else:
+                    console.print(f"{content}")
         else:
-            console.print(f" → {content}")
+            console.print(f"{content}")
     else:
-        console.print(f" → {result}")
+        # If result is not a tuple, convert to string and get the last line
+        result_str = str(result)
+        if '\n' in result_str:
+            last_line = result_str.strip().split('\n')[-1]
+            console.print(f"{last_line}")
+        else:
+            console.print(f"{result_str}")
     
     return result
 
@@ -119,6 +175,9 @@ def main(ctx: typer.Context,
     Janito CLI tool. If a query is provided without a command, it will be sent to the claudine agent.
     """    
     console = Console()
+    
+    # Set debug mode in config
+    get_config().debug_mode = debug
     
     if workspace:
         try:
@@ -152,25 +211,46 @@ def main(ctx: typer.Context,
         agent = claudine.Agent(
             api_key=api_key,
             tools=[
-                str_replace_editor,
-                create_file,
                 delete_file,
-                # Add more tools here as needed
+                find_files,
+                search_text
             ],
+            text_editor_tool=str_replace_editor,
             tool_callbacks=(pre_tool_callback, post_tool_callback),
-            max_tokens=1024,
+            max_tokens=4096,
             temperature=0.7,
             instructions=instructions,
-            debug_mode=debug
+            debug_mode=debug  # Enable debug mode
         )
         
         # Process the query
         console.print(f"[bold blue]Query:[/bold blue] {query}")
         console.print("[bold blue]Generating response...[/bold blue]")
         
-        response = agent.process_prompt(query)
-        console.print("\n[bold green]Response:[/bold green]")
-        console.print(response)
+        try:
+            response = agent.process_prompt(query)
+            
+            console.print("\n[bold green]Response:[/bold green]")
+            # Use rich's enhanced Markdown rendering for the response
+            console.print(Markdown(response, code_theme="monokai"))
+            
+        except MaxTokensExceededException as e:
+            # Display the partial response if available
+            if e.response_text:
+                console.print("\n[bold green]Partial Response:[/bold green]")
+                console.print(Markdown(e.response_text, code_theme="monokai"))
+            
+            console.print("\n[bold red]Error:[/bold red] Response was truncated because it reached the maximum token limit.")
+            console.print("[dim]Consider increasing the max_tokens parameter or simplifying your query.[/dim]")
+            
+        except MaxRoundsExceededException as e:
+            # Display the final response if available
+            if e.response_text:
+                console.print("\n[bold green]Response:[/bold green]")
+                console.print(Markdown(e.response_text, code_theme="monokai"))
+            
+            console.print(f"\n[bold red]Error:[/bold red] Maximum number of tool execution rounds ({e.rounds}) reached. Some tasks may be incomplete.")
+            console.print("[dim]Consider increasing the max_rounds parameter or breaking down your task into smaller steps.[/dim]")
         
         # Show token usage
         usage = agent.get_token_usage()
@@ -203,43 +283,43 @@ def main(ctx: typer.Context,
                 
                 console = Console()
                 console.print("\n[bold blue]Detailed Token Usage:[/bold blue]")
-                console.print(f"[dim]Text Input tokens: {text_usage.input_tokens}[/dim]")
-                console.print(f"[dim]Text Output tokens: {text_usage.output_tokens}[/dim]")
-                console.print(f"[dim]Text Total tokens: {text_usage.input_tokens + text_usage.output_tokens}[/dim]")
-                console.print(f"[dim]Tool Input tokens: {tools_usage.input_tokens}[/dim]")
-                console.print(f"[dim]Tool Output tokens: {tools_usage.output_tokens}[/dim]")
-                console.print(f"[dim]Tool Total tokens: {tools_usage.input_tokens + tools_usage.output_tokens}[/dim]")
-                console.print(f"[dim]Total tokens: {total_usage.input_tokens + total_usage.output_tokens}[/dim]")
+                console.print(f"Text Input tokens: {text_usage.input_tokens}")
+                console.print(f"Text Output tokens: {text_usage.output_tokens}")
+                console.print(f"Text Total tokens: {text_usage.input_tokens + text_usage.output_tokens}")
+                console.print(f"Tool Input tokens: {tools_usage.input_tokens}")
+                console.print(f"Tool Output tokens: {tools_usage.output_tokens}")
+                console.print(f"Tool Total tokens: {tools_usage.input_tokens + tools_usage.output_tokens}")
+                console.print(f"Total tokens: {total_usage.input_tokens + total_usage.output_tokens}")
                 
                 console.print("\n[bold blue]Pricing Information:[/bold blue]")
-                console.print(f"[dim]Input pricing: ${pricing.input_tokens.cost_per_million_tokens}/million tokens[/dim]")
-                console.print(f"[dim]Output pricing: ${pricing.output_tokens.cost_per_million_tokens}/million tokens[/dim]")
-                console.print(f"[dim]Text Input cost: {format_cost(text_input_cost)}[/dim]")
-                console.print(f"[dim]Text Output cost: {format_cost(text_output_cost)}[/dim]")
-                console.print(f"[dim]Text Total cost: {format_cost(text_input_cost + text_output_cost)}[/dim]")
-                console.print(f"[dim]Tool Input cost: {format_cost(tools_input_cost)}[/dim]")
-                console.print(f"[dim]Tool Output cost: {format_cost(tools_output_cost)}[/dim]")
-                console.print(f"[dim]Tool Total cost: {format_cost(tools_input_cost + tools_output_cost)}[/dim]")
-                console.print(f"[dim]Total cost: {format_cost(text_input_cost + text_output_cost + tools_input_cost + tools_output_cost)}[/dim]")
-                
+                console.print(f"Input pricing: ${pricing.input_tokens.cost_per_million_tokens}/million tokens")
+                console.print(f"Output pricing: ${pricing.output_tokens.cost_per_million_tokens}/million tokens")
+                console.print(f"Text Input cost: {format_cost(text_input_cost)}")
+                console.print(f"Text Output cost: {format_cost(text_output_cost)}")
+                console.print(f"Text Total cost: {format_cost(text_input_cost + text_output_cost)}")
+                console.print(f"Tool Input cost: {format_cost(tools_input_cost)}")
+                console.print(f"Tool Output cost: {format_cost(tools_output_cost)}")
+                console.print(f"Tool Total cost: {format_cost(tools_input_cost + tools_output_cost)}")
+                console.print(f"Total cost: {format_cost(text_input_cost + text_output_cost + tools_input_cost + tools_output_cost)}")
+
                 # Display per-tool breakdown if available
                 if usage.by_tool:
                     console.print("\n[bold blue]Per-Tool Breakdown:[/bold blue]")
                     for tool_name, tool_usage in usage.by_tool.items():
                         tool_input_cost = pricing.input_tokens.calculate_cost(tool_usage.input_tokens)
                         tool_output_cost = pricing.output_tokens.calculate_cost(tool_usage.output_tokens)
-                        console.print(f"[dim]Tool: {tool_name}[/dim]")
-                        console.print(f"[dim]  Input tokens: {tool_usage.input_tokens}[/dim]")
-                        console.print(f"[dim]  Output tokens: {tool_usage.output_tokens}[/dim]")
-                        console.print(f"[dim]  Total tokens: {tool_usage.input_tokens + tool_usage.output_tokens}[/dim]")
-                        console.print(f"[dim]  Total cost: {format_cost(tool_input_cost + tool_output_cost)}[/dim]")
+                        console.print(f"Tool: {tool_name}")
+                        console.print(f"  Input tokens: {tool_usage.input_tokens}")
+                        console.print(f"  Output tokens: {tool_usage.output_tokens}")
+                        console.print(f"  Total tokens: {tool_usage.input_tokens + tool_usage.output_tokens}")
+                        console.print(f"  Total cost: {format_cost(tool_input_cost + tool_output_cost)}")
 
             debug_tokens(agent)
         else:
-            console.print(f"\n[dim]Total tokens: {text_usage.input_tokens + text_usage.output_tokens + tools_usage.input_tokens + tools_usage.output_tokens}[/dim]")
+            console.print(f"\nTotal tokens: {text_usage.input_tokens + text_usage.output_tokens + tools_usage.input_tokens + tools_usage.output_tokens}")
             cost_info = agent.get_cost()
             if hasattr(cost_info, 'format_total_cost'):
-                console.print(f"[dim]Cost: {cost_info.format_total_cost()}[/dim]")
+                console.print(f"Cost: {cost_info.format_total_cost()}")
 
 if __name__ == "__main__":
     app()

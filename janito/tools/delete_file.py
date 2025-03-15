@@ -6,8 +6,10 @@ from pathlib import Path
 from typing import Dict, Any, Tuple
 from janito.config import get_config
 from janito.tools.str_replace_editor.utils import normalize_path
+from janito.tools.decorators import tool_meta
 
 
+@tool_meta(label="Deleting file {file_path}")
 def delete_file(
     file_path: str,
 ) -> Tuple[str, bool]:

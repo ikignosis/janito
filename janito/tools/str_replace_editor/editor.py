@@ -10,7 +10,9 @@ from .handlers import (
     handle_undo_edit
 )
 from .utils import normalize_path
+from janito.tools.decorators import tool_meta
 
+@tool_meta(label="Editing file: {file_path} ({command})")
 def str_replace_editor(**kwargs) -> Tuple[str, bool]:
     """
     Handle text editor tool requests from Claude.

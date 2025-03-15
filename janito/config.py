@@ -15,6 +15,7 @@ class Config:
         if cls._instance is None:
             cls._instance = super(Config, cls).__new__(cls)
             cls._instance._workspace_dir = os.getcwd()
+            cls._instance._debug_mode = False
         return cls._instance
     
     @property
@@ -45,6 +46,16 @@ class Config:
                 raise ValueError(f"Workspace directory does not exist: {path}")
         
         self._workspace_dir = path
+    
+    @property
+    def debug_mode(self) -> bool:
+        """Get the debug mode status."""
+        return self._debug_mode
+    
+    @debug_mode.setter
+    def debug_mode(self, value: bool) -> None:
+        """Set the debug mode status."""
+        self._debug_mode = value
 
 # Convenience function to get the config instance
 def get_config() -> Config:

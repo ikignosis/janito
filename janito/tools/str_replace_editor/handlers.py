@@ -120,7 +120,7 @@ def handle_view(args: Dict[str, Any]) -> Tuple[str, bool]:
             
             # Add line count information
             line_count = end_line - start_line
-            line_info = f"Viewed {line_count} lines (lines {start_line + 1}-{end_line} of {len(content)})"
+            line_info = f"Viewed {line_count} lines from {path}"
             
             return ("".join(numbered_content) + f"\n{line_info}", False)
         else:
@@ -131,7 +131,7 @@ def handle_view(args: Dict[str, Any]) -> Tuple[str, bool]:
                 numbered_content.append(f"{line_number}: {line}")
             
             # Add line count information
-            line_info = f"Viewed {len(content)} lines"
+            line_info = f"Viewed {len(content)} lines from {path}"
             
             return ("".join(numbered_content) + f"\n{line_info}", False)
     except Exception as e:
