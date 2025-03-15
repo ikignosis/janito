@@ -24,7 +24,7 @@ wheels = [
 
 [[package]]
 name = "janito"
-version = "0.1.0"
+version = "0.9.0"
 source = { editable = "." }
 dependencies = [
     { name = "rich" },

@@ -1,1 +1,1 @@
--e ../claude
+normal claudine installe
