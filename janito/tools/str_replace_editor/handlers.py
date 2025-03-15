@@ -41,7 +41,9 @@ def handle_create(args: Dict[str, Any]) -> Tuple[str, bool]:
     try:
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(file_text)
-        return (f"Successfully created file {path}", False)
+        # Show relative path if it's not an absolute path
+        display_path = path if os.path.isabs(path) else os.path.relpath(file_path, get_config().workspace_dir)
+        return (f"Successfully created file {display_path}", False)
     except Exception as e:
         return (f"Error creating file {path}: {str(e)}", True)
 
@@ -120,7 +122,10 @@ def handle_view(args: Dict[str, Any]) -> Tuple[str, bool]:
             
             # Add line count information
             line_count = end_line - start_line
-            line_info = f"Viewed {line_count} lines from {path}"
+            
+            # Show relative path if it's not an absolute path
+            display_path = path if os.path.isabs(path) else os.path.relpath(file_path, get_config().workspace_dir)
+            line_info = f"Viewed {line_count} lines from {display_path}"
             
             return ("".join(numbered_content) + f"\n{line_info}", False)
         else:
@@ -131,7 +136,9 @@ def handle_view(args: Dict[str, Any]) -> Tuple[str, bool]:
                 numbered_content.append(f"{line_number}: {line}")
             
             # Add line count information
-            line_info = f"Viewed {len(content)} lines from {path}"
+            # Show relative path if it's not an absolute path
+            display_path = path if os.path.isabs(path) else os.path.relpath(file_path, get_config().workspace_dir)
+            line_info = f"Viewed {len(content)} lines from {display_path}"
             
             return ("".join(numbered_content) + f"\n{line_info}", False)
     except Exception as e:

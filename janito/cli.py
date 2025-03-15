@@ -141,14 +141,14 @@ def process_query(query: str, debug: bool, verbose: bool):
     try:
         response = agent.process_prompt(query)
         
-        console.print("\n[bold green]Response:[/bold green]")
+        console.print("\n[bold magenta]Janito:[/bold magenta] ", end="")
         # Use rich's enhanced Markdown rendering for the response
         console.print(Markdown(response, code_theme="monokai"))
         
     except MaxTokensExceededException as e:
         # Display the partial response if available
         if e.response_text:
-            console.print("\n[bold green]Partial Response:[/bold green]")
+            console.print("\n[bold magenta]Janito:[/bold magenta] ", end="")
             console.print(Markdown(e.response_text, code_theme="monokai"))
         
         console.print("\n[bold red]Error:[/bold red] Response was truncated because it reached the maximum token limit.")
@@ -157,7 +157,7 @@ def process_query(query: str, debug: bool, verbose: bool):
     except MaxRoundsExceededException as e:
         # Display the final response if available
         if e.response_text:
-            console.print("\n[bold green]Response:[/bold green]")
+            console.print("\n[bold magenta]Janito:[/bold magenta] ", end="")
             console.print(Markdown(e.response_text, code_theme="monokai"))
         
         console.print(f"\n[bold red]Error:[/bold red] Maximum number of tool execution rounds ({e.rounds}) reached. Some tasks may be incomplete.")
@@ -171,10 +171,11 @@ def process_query(query: str, debug: bool, verbose: bool):
     if verbose:
         debug_tokens(agent)
     else:
-        console.print(f"\nTotal tokens: {text_usage.input_tokens + text_usage.output_tokens + tools_usage.input_tokens + tools_usage.output_tokens}")
+        total_tokens = text_usage.input_tokens + text_usage.output_tokens + tools_usage.input_tokens + tools_usage.output_tokens
         cost_info = agent.get_cost()
-        if hasattr(cost_info, 'format_total_cost'):
-            console.print(f"Cost: {cost_info.format_total_cost()}")
+        cost_display = cost_info.format_total_cost() if hasattr(cost_info, 'format_total_cost') else ""
+        # Consolidated tokens and cost in a single line with a ruler
+        console.print(Rule(f"Tokens: {total_tokens} | Cost: {cost_display}", style="dim", align="center"))
 
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context, 
