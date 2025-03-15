@@ -41,14 +41,7 @@ def hello(name: str = typer.Argument("World", help="Name to greet")):
     """
     rprint(f"[bold green]Hello {name}[/bold green]")
     
-@app.command()
-def claudine_info():
-    """
-    Show information about the claudine package.
-    """
-    rprint(f"[bold blue]Using claudine from:[/bold blue] {claudine.__file__}")
-    if hasattr(claudine, "__version__"):
-        rprint(f"[bold blue]Claudine version:[/bold blue] {claudine.__version__}")
+
 
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context, 

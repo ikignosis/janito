@@ -29,20 +29,12 @@ After installation, you can use the `janito` command in your terminal:
 # Get help
 janito --help
 
-# Simple greeting
-janito hello "Your Name"
 
 # Ask the AI assistant a question
-janito "How can I optimize this Python function?"
+janito "Suggest improvements to this project"
 
-# Set a specific workspace directory
-janito --workspace /path/to/project "Refactor this code"
+janito "Add a --version to the cli to report he version"
 
-# View detailed token usage and pricing
-janito --verbose "Generate a unit test for this function"
-
-# Show information about the Claude integration
-janito claudine-info
 ```
 
 ## 🔧 Available Tools
