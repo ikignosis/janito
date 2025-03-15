@@ -55,11 +55,26 @@ if [ $? -eq 0 ]; then
         print_error "Version $PROJECT_VERSION already exists on PyPI. Please update the version in pyproject.toml."
     fi
     
-    # Compare versions (simple string comparison, assuming semantic versioning format)
-    if [[ "$PROJECT_VERSION" < "$LATEST_VERSION" ]]; then
+    # Compare versions using proper version comparison
+    # Split versions into components
+    IFS='.' read -r -a PROJECT_PARTS <<< "$PROJECT_VERSION"
+    IFS='.' read -r -a LATEST_PARTS <<< "$LATEST_VERSION"
+    
+    # Compare major version
+    if [[ ${PROJECT_PARTS[0]} -lt ${LATEST_PARTS[0]} ]]; then
         print_error "Version $PROJECT_VERSION is older than the latest version $LATEST_VERSION on PyPI. Please update the version in pyproject.toml."
-    elif [[ "$PROJECT_VERSION" == "$LATEST_VERSION" ]]; then
-        print_error "Version $PROJECT_VERSION is the same as the latest version on PyPI. Please update the version in pyproject.toml."
+    elif [[ ${PROJECT_PARTS[0]} -eq ${LATEST_PARTS[0]} ]]; then
+        # Compare minor version
+        if [[ ${PROJECT_PARTS[1]} -lt ${LATEST_PARTS[1]} ]]; then
+            print_error "Version $PROJECT_VERSION is older than the latest version $LATEST_VERSION on PyPI. Please update the version in pyproject.toml."
+        elif [[ ${PROJECT_PARTS[1]} -eq ${LATEST_PARTS[1]} ]]; then
+            # Compare patch version
+            if [[ ${PROJECT_PARTS[2]} -lt ${LATEST_PARTS[2]} ]]; then
+                print_error "Version $PROJECT_VERSION is older than the latest version $LATEST_VERSION on PyPI. Please update the version in pyproject.toml."
+            elif [[ ${PROJECT_PARTS[2]} -eq ${LATEST_PARTS[2]} ]]; then
+                print_error "Version $PROJECT_VERSION is the same as the latest version $LATEST_VERSION on PyPI. Please update the version in pyproject.toml."
+            fi
+        fi
     fi
 else
     print_warning "Could not fetch information from PyPI. Will attempt to publish anyway."
