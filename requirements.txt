@@ -1,1 +1,1 @@
-normal claudine installe
+claudine>=0.1.0
