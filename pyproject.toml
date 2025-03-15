@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "janito"
-version = "0.9.0"
+version = "0.10.0"
 description = "Janito CLI tool"
 readme = "README.md"
 requires-python = ">=3.8"
