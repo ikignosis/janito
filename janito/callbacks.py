@@ -64,11 +64,9 @@ def pre_tool_callback(tool_name: str, tool_input: Dict[str, Any], preamble_text:
     if tool_func:
         formatted_label = format_tool_label(tool_func, tool_input)
         if formatted_label:
-            console.print(f"[bold cyan]Tool Call:[/bold cyan] {formatted_label}", end=" → ")
+            console.print("[bold cyan]  Tool:[/bold cyan]", formatted_label, end=" → ")
         else:
-            console.print(f"[bold cyan]Tool Call:[/bold cyan] {tool_name} {display_input}", end=" → ")
-    else:
-        console.print(f"[bold cyan]Tool Call:[/bold cyan] {tool_name} {display_input}", end=" → ")
+            console.print("[bold cyan]  Tool:[/bold cyan]", f"{tool_name} {display_input}", end=" → ")
     
     return tool_input, True  # Continue with the tool call
 

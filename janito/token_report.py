@@ -62,7 +62,7 @@ def generate_token_report(agent, verbose=False):
             for tool_name, tool_usage in usage.by_tool.items():
                 tool_input_cost = pricing.input_tokens.calculate_cost(tool_usage.input_tokens)
                 tool_output_cost = pricing.output_tokens.calculate_cost(tool_usage.output_tokens)
-                console.print(f"Tool: {tool_name}")
+                console.print(f"   Tool: {tool_name}")
                 console.print(f"  Input tokens: {tool_usage.input_tokens}")
                 console.print(f"  Output tokens: {tool_usage.output_tokens}")
                 console.print(f"  Total tokens: {tool_usage.input_tokens + tool_usage.output_tokens}")

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "janito"
-version = "0.1.0"
+version = "0.9.0"
 description = "Janito CLI tool"
 requires-python = ">=3.8"
 dependencies = [
@@ -14,3 +14,6 @@ dependencies = [
 
 [project.scripts]
 janito = "janito.__main__:app"
+
+[tool.setuptools.package-data]
+"janito" = ["data/*.txt"]

@@ -89,13 +89,18 @@ def main(ctx: typer.Context,
                 api_key = typer.prompt("Anthropic API Key", hide_input=True)
         
             # Load instructions from file
-            package_dir = Path(__file__).parent
-            instructions_path = package_dir / "data" / "instructions.txt"
+            import importlib.resources as pkg_resources
             try:
-                with open(instructions_path, "r") as f:
-                    instructions = f.read().strip()
-            except FileNotFoundError:
-                console.print(f"[bold yellow]Warning:[/bold yellow] Instructions file not found at {instructions_path}")
+                # For Python 3.9+
+                try:
+                    from importlib.resources import files
+                    instructions = files('janito.data').joinpath('instructions.txt').read_text()
+                # Fallback for older Python versions
+                except (ImportError, AttributeError):
+                    instructions = pkg_resources.read_text('janito.data', 'instructions.txt')
+                instructions = instructions.strip()
+            except Exception as e:
+                console.print(f"[bold yellow]Warning:[/bold yellow] Could not load instructions file: {str(e)}")
                 console.print("[dim]Using default instructions instead.[/dim]")
                 instructions = "You are a helpful AI assistant. Answer the user's questions to the best of your ability."
                    
@@ -122,14 +127,14 @@ def main(ctx: typer.Context,
             try:
                 response = agent.process_prompt(query)
                 
-                console.print("\n[bold green]Response:[/bold green]")
+                console.print("\n[bold green]Janito:[/bold green]")
                 # Use rich's enhanced Markdown rendering for the response
                 console.print(Markdown(response, code_theme="monokai"))
                 
             except MaxTokensExceededException as e:
                 # Display the partial response if available
                 if e.response_text:
-                    console.print("\n[bold green]Partial Response:[/bold green]")
+                    console.print("\n[bold green]Partial Janito:[/bold green]")
                     console.print(Markdown(e.response_text, code_theme="monokai"))
                 
                 console.print("\n[bold red]Error:[/bold red] Response was truncated because it reached the maximum token limit.")
@@ -138,7 +143,7 @@ def main(ctx: typer.Context,
             except MaxRoundsExceededException as e:
                 # Display the final response if available
                 if e.response_text:
-                    console.print("\n[bold green]Response:[/bold green]")
+                    console.print("\n[bold green]Janito:[/bold green]")
                     console.print(Markdown(e.response_text, code_theme="monokai"))
                 
                 console.print(f"\n[bold red]Error:[/bold red] Maximum number of tool execution rounds ({e.rounds}) reached. Some tasks may be incomplete.")

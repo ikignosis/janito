@@ -20,18 +20,14 @@ def normalize_path(path: str) -> str:
     if os.path.isabs(path):
         return path
     
-    # Get workspace directory
-    workspace_dir = get_config().workspace_dir
-    
     # Handle paths starting with ./ by removing the ./ prefix
     if path.startswith('./'):
         path = path[2:]
     
-    # Handle paths starting with ../ as relative to the workspace directory
-    # This is more complex and might need more sophisticated handling
-    
-    # Make the path relative to the workspace directory
-    return os.path.join(workspace_dir, path)
+    # For relative paths, we should keep them relative
+    # Only prepend workspace_dir if we need to resolve the path
+    # against the workspace directory
+    return path
 
 def backup_file(file_path: str, content: str) -> None:
     """

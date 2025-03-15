@@ -88,7 +88,7 @@ def debug_tokens(agent):
         for tool_name, tool_usage in usage.by_tool.items():
             tool_input_cost = pricing.input_tokens.calculate_cost(tool_usage.input_tokens)
             tool_output_cost = pricing.output_tokens.calculate_cost(tool_usage.output_tokens)
-            console.print(f"Tool: {tool_name}")
+            console.print(f"   Tool: {tool_name}")
             console.print(f"  Input tokens: {tool_usage.input_tokens}")
             console.print(f"  Output tokens: {tool_usage.output_tokens}")
             console.print(f"  Total tokens: {tool_usage.input_tokens + tool_usage.output_tokens}")
@@ -108,13 +108,18 @@ def process_query(query: str, debug: bool, verbose: bool):
         api_key = typer.prompt("Anthropic API Key", hide_input=True)
     
     # Load instructions from file
-    package_dir = Path(__file__).parent
-    instructions_path = package_dir / "data" / "instructions.txt"
+    import importlib.resources as pkg_resources
     try:
-        with open(instructions_path, "r") as f:
-            instructions = f.read().strip()
-    except FileNotFoundError:
-        console.print(f"[bold yellow]Warning:[/bold yellow] Instructions file not found at {instructions_path}")
+        # For Python 3.9+
+        try:
+            from importlib.resources import files
+            instructions = files('janito.data').joinpath('instructions.txt').read_text()
+        # Fallback for older Python versions
+        except (ImportError, AttributeError):
+            instructions = pkg_resources.read_text('janito.data', 'instructions.txt')
+        instructions = instructions.strip()
+    except Exception as e:
+        console.print(f"[bold yellow]Warning:[/bold yellow] Could not load instructions file: {str(e)}")
         console.print("[dim]Using default instructions instead.[/dim]")
         instructions = "You are a helpful AI assistant. Answer the user's questions to the best of your ability."
            
