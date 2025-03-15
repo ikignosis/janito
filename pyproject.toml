@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "janito"
+version = "0.1.0"
+description = "Janito CLI tool"
+requires-python = ">=3.8"
+dependencies = [
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+]
+
+[project.scripts]
+janito = "janito.__main__:app"
