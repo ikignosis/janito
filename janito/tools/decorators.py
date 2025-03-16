@@ -49,6 +49,23 @@ def tool_meta(label: str):
     return decorator
 
 
+def tool(func: Callable):
+    """
+    Basic decorator for tool functions.
+    
+    This decorator marks a function as a tool and can be used for
+    simpler tools that don't need additional metadata.
+    
+    Returns:
+        Decorated function
+    """
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    
+    return wrapper
+
+
 def format_tool_label(func: Callable, tool_input: Dict[str, Any]) -> Optional[str]:
     """
     Format the tool label using the function's parameters.

@@ -3,8 +3,9 @@ Configuration module for Janito.
 Provides a singleton Config class to access configuration values.
 """
 import os
+import json
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Any, Dict
 import typer
 
 class Config:
@@ -15,8 +16,41 @@ class Config:
         if cls._instance is None:
             cls._instance = super(Config, cls).__new__(cls)
             cls._instance._workspace_dir = os.getcwd()
-            cls._instance._debug_mode = False
+            cls._instance._verbose = False
+            cls._instance._history_context_count = 5
+            cls._instance._load_config()
         return cls._instance
+        
+    def _load_config(self) -> None:
+        """Load configuration from file."""
+        config_path = Path(self._workspace_dir) / ".janito" / "config.json"
+        if config_path.exists():
+            try:
+                with open(config_path, "r", encoding="utf-8") as f:
+                    config_data = json.load(f)
+                    if "history_context_count" in config_data:
+                        self._history_context_count = config_data["history_context_count"]
+                    if "debug_mode" in config_data:
+                        self._verbose = config_data["debug_mode"]
+            except Exception as e:
+                print(f"Warning: Failed to load configuration: {str(e)}")
+                
+    def _save_config(self) -> None:
+        """Save configuration to file."""
+        config_dir = Path(self._workspace_dir) / ".janito"
+        config_dir.mkdir(parents=True, exist_ok=True)
+        config_path = config_dir / "config.json"
+        
+        config_data = {
+            "history_context_count": self._history_context_count,
+            "verbose": self._verbose
+        }
+        
+        try:
+            with open(config_path, "w", encoding="utf-8") as f:
+                json.dump(config_data, f, indent=2)
+        except Exception as e:
+            print(f"Warning: Failed to save configuration: {str(e)}")
     
     @property
     def workspace_dir(self) -> str:
@@ -48,14 +82,38 @@ class Config:
         self._workspace_dir = path
     
     @property
+    def verbose(self) -> bool:
+        """Get the verbose mode status."""
+        return self._verbose
+    
+    @verbose.setter
+    def verbose(self, value: bool) -> None:
+        """Set the verbose mode status."""
+        self._verbose = value
+    
+    # For backward compatibility
+    @property
     def debug_mode(self) -> bool:
-        """Get the debug mode status."""
-        return self._debug_mode
+        """Get the debug mode status (alias for verbose)."""
+        return self._verbose
     
     @debug_mode.setter
     def debug_mode(self, value: bool) -> None:
-        """Set the debug mode status."""
-        self._debug_mode = value
+        """Set the debug mode status (alias for verbose)."""
+        self._verbose = value
+
+    @property
+    def history_context_count(self) -> int:
+        """Get the number of previous conversations to include in context."""
+        return self._history_context_count
+        
+    @history_context_count.setter
+    def history_context_count(self, count: int) -> None:
+        """Set the number of previous conversations to include in context."""
+        if count < 0:
+            raise ValueError("History context count must be a non-negative integer")
+        self._history_context_count = count
+        self._save_config()
 
 # Convenience function to get the config instance
 def get_config() -> Config:

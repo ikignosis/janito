@@ -4,13 +4,13 @@ from typing import List, Dict, Any, Tuple
 from janito.tools.decorators import tool_meta
 
 
-@tool_meta(label="Finding files {pattern}, on {root_dir} ({recursive and 'recursive' or 'non-recursive'}, {respect_gitignore and 'respecting gitignore' or 'ignoring gitignore'})")
+@tool_meta(label="Finding files matching path pattern {pattern}, on {root_dir} ({recursive and 'recursive' or 'non-recursive'}, {respect_gitignore and 'respecting gitignore' or 'ignoring gitignore'})")
 def find_files(pattern: str, root_dir: str = ".", recursive: bool = True, respect_gitignore: bool = True) -> Tuple[str, bool]:
     """
-    Find files whose name matches a glob pattern.
+    Find files whose path matches a glob pattern.
     
     Args:
-        pattern: pattern to match file names against
+        pattern: pattern to match file paths against (e.g., "*.py", "*/tools/*.py")
         root_dir: root directory to start search from (default: current directory)
         recursive: Whether to search recursively in subdirectories (default: True)
         respect_gitignore: Whether to respect .gitignore files (default: True)
@@ -39,7 +39,7 @@ def find_files(pattern: str, root_dir: str = ".", recursive: bool = True, respec
                 if respect_gitignore:
                     dirnames[:] = [d for d in dirnames if not _is_ignored(os.path.join(dirpath, d), ignored_patterns, abs_root)]
                 
-                for filename in fnmatch.filter(filenames, pattern):
+                for filename in filenames:
                     file_path = os.path.join(dirpath, filename)
                     
                     # Skip ignored files
@@ -48,10 +48,12 @@ def find_files(pattern: str, root_dir: str = ".", recursive: bool = True, respec
                     
                     # Convert to relative path from root_dir
                     rel_path = os.path.relpath(file_path, abs_root)
-                    matching_files.append(rel_path)
+                    # Match against the relative path, not just the filename
+                    if fnmatch.fnmatch(rel_path, pattern):
+                        matching_files.append(rel_path)
         else:
             # Non-recursive mode - only search in the specified directory
-            for filename in fnmatch.filter(os.listdir(abs_root), pattern):
+            for filename in os.listdir(abs_root):
                 file_path = os.path.join(abs_root, filename)
                 
                 # Skip ignored files
@@ -61,7 +63,9 @@ def find_files(pattern: str, root_dir: str = ".", recursive: bool = True, respec
                 if os.path.isfile(file_path):
                     # Convert to relative path from root_dir
                     rel_path = os.path.relpath(file_path, abs_root)
-                    matching_files.append(rel_path)
+                    # Match against the relative path, not just the filename
+                    if fnmatch.fnmatch(rel_path, pattern):
+                        matching_files.append(rel_path)
         
         # Sort the files for consistent output
         matching_files.sort()

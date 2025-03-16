@@ -2,7 +2,7 @@
 Callback functions for tool execution in janito.
 """
 
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Optional, List
 from rich.console import Console
 from rich.markdown import Markdown
 
@@ -13,55 +13,51 @@ from janito.tools.delete_file import delete_file
 from janito.tools.search_text import search_text
 from janito.tools.decorators import format_tool_label
 
-def pre_tool_callback(tool_name: str, tool_input: Dict[str, Any], preamble_text: str = "") -> Tuple[Dict[str, Any], bool]:
+# Note: ConsoleCallback has been removed as we're using pre_tool and post_tool callbacks directly
+
+def pre_tool_callback(tool_name: str, tool_input: Dict[str, Any]) -> Tuple[Dict[str, Any], bool]:
     """
     Callback function that runs before a tool is executed.
     
     Args:
         tool_name: Name of the tool being called
         tool_input: Input parameters for the tool
-        preamble_text: Any text generated before the tool call
         
     Returns:
         Tuple of (modified tool input, whether to cancel the tool call)
     """
     console = Console()
     
-    # Add debug counter only when debug mode is enabled
-    if get_config().debug_mode:
+    # Add debug counter only when verbose mode is enabled
+    if get_config().verbose:
         if not hasattr(pre_tool_callback, "counter"):
             pre_tool_callback.counter = 1
-        console.print(f"[bold yellow]DEBUG: Starting tool call #{pre_tool_callback.counter}[/bold yellow]")
-        pre_tool_callback.counter += 1
-    
-    # Print preamble text with enhanced markdown support if provided
-    if preamble_text:
-        # Use a single print statement to avoid extra newlines
-        console.print("[bold magenta]Janito:[/bold magenta] ", Markdown(preamble_text, code_theme="monokai"), end="")
-    
-    # Try to find the tool function
-    tool_func = None
-    for tool in [find_files, str_replace_editor, delete_file, search_text]:
-        if tool.__name__ == tool_name:
-            tool_func = tool
-            break
-    
-    # Create a copy of tool_input to modify for display
-    display_input = {}
-    
-    # Maximum length for string values
-    max_length = 50
-    
-    # Trim long string values for display
-    for key, value in tool_input.items():
-        if isinstance(value, str) and len(value) > max_length:
-            # For long strings, show first and last part with ellipsis in between
-            display_input[key] = f"{value[:20]}...{value[-20:]}" if len(value) > 45 else value[:max_length] + "..."
-        else:
-            display_input[key] = value
-    
-    # If we found the tool and it has a tool_meta label, use that for display
-    if tool_func:
+        console.print(f"[bold green]DEBUG: Starting tool call #{pre_tool_callback.counter}[/bold green]")
+        
+        # Print the tool name and input
+        console.print(f"[bold green]Tool:[/bold green] {tool_name}")
+        console.print(f"[bold green]Input:[/bold green] {tool_input}")
+    else:
+        # For non-debug mode, just print a simple message
+        # Find the tool function
+        tool_func = None
+        if tool_name == "find_files":
+            tool_func = find_files
+        elif tool_name == "str_replace_editor":
+            tool_func = str_replace_editor
+        elif tool_name == "delete_file":
+            tool_func = delete_file
+        elif tool_name == "search_text":
+            tool_func = search_text
+            
+        # Format the input for display
+        display_input = ""
+        if "path" in tool_input:
+            display_input = tool_input["path"]
+        elif "file_path" in tool_input:
+            display_input = tool_input["file_path"]
+        
+        # Print formatted tool label if available
         formatted_label = format_tool_label(tool_func, tool_input)
         if formatted_label:
             console.print("[bold cyan]  Tool:[/bold cyan]", formatted_label, end=" → ")
@@ -84,47 +80,53 @@ def post_tool_callback(tool_name: str, tool_input: Dict[str, Any], result: Any) 
     """
     console = Console()
     
-    # Add debug counter only when debug mode is enabled
-    if get_config().debug_mode:
+    # Add debug counter only when verbose mode is enabled
+    if get_config().verbose:
         if not hasattr(post_tool_callback, "counter"):
             post_tool_callback.counter = 1
         console.print(f"[bold green]DEBUG: Completed tool call #{post_tool_callback.counter}[/bold green]")
         post_tool_callback.counter += 1
     
-    # Extract the last line of the result
+    # Show the number of lines in the result content
     if isinstance(result, tuple) and len(result) >= 1:
         content, is_error = result
         # Define prefix icon based on is_error
         icon_prefix = "❌ " if is_error else "✅ "
         
         if isinstance(content, str):
-            # For find_files, extract just the count from the last line
-            if tool_name == "find_files" and content.count("\n") > 0:
-                lines = content.strip().split('\n')
-                if lines and lines[-1].isdigit():
-                    console.print(f"{icon_prefix}{lines[-1]}")
-                else:
-                    # Get the last line
-                    last_line = content.strip().split('\n')[-1]
-                    console.print(f"{icon_prefix}{last_line}")
-            else:
-                # For other tools, just get the last line
-                if '\n' in content:
-                    last_line = content.strip().split('\n')[-1]
-                    console.print(f"{icon_prefix}{last_line}")
-                else:
-                    console.print(f"{icon_prefix}{content}")
+            # Count the number of lines in the content
+            line_count = content.count('\n') + 1 if content else 0
+            console.print(f"{icon_prefix}{line_count} items")
         else:
             console.print(f"{icon_prefix}{content}")
     else:
-        # If result is not a tuple, convert to string and get the last line
+        # If result is not a tuple, convert to string and count lines
         result_str = str(result)
         # Default to success icon when no error status is available
         icon_prefix = "✅ "
-        if '\n' in result_str:
-            last_line = result_str.strip().split('\n')[-1]
-            console.print(f"{icon_prefix}{last_line}")
-        else:
-            console.print(f"{icon_prefix}{result_str}")
+        line_count = result_str.count('\n') + 1 if result_str else 0
+        console.print(f"{icon_prefix}{line_count} lines")
     
     return result
+
+def text_callback(text: str) -> None:
+    """
+    Callback function that handles text output from the agent.
+    
+    Args:
+        text: Text output from the agent
+        
+    Returns:
+        None
+    """
+    console = Console()
+    
+    # Add debug counter only when debug mode is enabled
+    if get_config().debug_mode:
+        if not hasattr(text_callback, "counter"):
+            text_callback.counter = 1
+        console.print(f"[bold blue]DEBUG: Text callback #{text_callback.counter}[/bold blue]")
+        text_callback.counter += 1
+    
+    # Print the text with markdown formatting
+    console.print("[bold magenta]Janito:[/bold magenta] ", Markdown(text, code_theme="monokai"), end="")

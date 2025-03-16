@@ -5,7 +5,7 @@ import os
 import pathlib
 from typing import Dict, Any, Tuple
 from janito.config import get_config
-from .utils import normalize_path, _file_history, backup_file, get_backup_info
+from .utils import normalize_path, _file_history
 
 def handle_create(args: Dict[str, Any]) -> Tuple[str, bool]:
     """
@@ -30,9 +30,9 @@ def handle_create(args: Dict[str, Any]) -> Tuple[str, bool]:
     # Convert to Path object for better path handling
     file_path = pathlib.Path(path)
     
-    # Check if the file already exists
-    if file_path.exists():
-        return (f"File {path} already exists", True)
+    # Check if the file already exists - according to spec, create cannot be used if file exists
+    if file_path.exists() and file_path.is_file():
+        return (f"File {path} already exists. The 'create' command cannot be used if the specified path already exists as a file.", True)
     
     # Create parent directories if they don't exist
     file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -72,35 +72,48 @@ def handle_view(args: Dict[str, Any]) -> Tuple[str, bool]:
     if not file_path.exists():
         return (f"File or directory {path} does not exist", True)
     
-    # If the path is a directory, list its contents
+    # If the path is a directory, list non-hidden files and directories up to 2 levels deep
     if file_path.is_dir():
         try:
-            # Get all files and directories in the directory
-            items = list(file_path.iterdir())
+            result = []
+            # Process the first level
+            for item in sorted(file_path.iterdir()):
+                if item.name.startswith('.'):
+                    continue  # Skip hidden files/directories
+                
+                if item.is_dir():
+                    result.append(f"{item.name}/")
+                    # Process the second level
+                    try:
+                        for subitem in sorted(item.iterdir()):
+                            if subitem.name.startswith('.'):
+                                continue  # Skip hidden files/directories
+                                
+                            if subitem.is_dir():
+                                result.append(f"{item.name}/{subitem.name}/")
+                            else:
+                                result.append(f"{item.name}/{subitem.name}")
+                    except PermissionError:
+                        # Skip directories we can't access
+                        pass
+                else:
+                    result.append(item.name)
             
-            # Sort items (directories first, then files)
-            dirs = [item.name + "/" for item in items if item.is_dir()]
-            files = [item.name for item in items if item.is_file()]
+            if not result:
+                return (f"Directory {path} is empty or contains only hidden files", False)
             
-            dirs.sort()
-            files.sort()
+            # Determine if we need to truncate the output
+            MAX_LINES = 100  # Arbitrary limit for demonstration
+            output = "\n".join(result)
+            if len(result) > MAX_LINES:
+                truncated_output = "\n".join(result[:MAX_LINES])
+                return (truncated_output + "\n<response clipped>", False)
             
-            # Combine the lists
-            contents = dirs + files
-            
-            if not contents:
-                return (f"Directory {path} is empty", False)
-            
-            # Add count information to the output
-            dir_count = len(dirs)
-            file_count = len(files)
-            count_info = f"Total: {len(contents)} ({dir_count} directories, {file_count} files)"
-            
-            return ("\n".join(contents) + f"\n{count_info}", False)
+            return (output, False)
         except Exception as e:
             return (f"Error listing directory {path}: {str(e)}", True)
     
-    # If the path is a file, view its contents
+    # If the path is a file, view its contents with cat -n style output
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.readlines()
@@ -113,34 +126,27 @@ def handle_view(args: Dict[str, Any]) -> Tuple[str, bool]:
             
             # Adjust content to only include the specified lines
             content = content[start_line:end_line]
-            
-            # Add line numbers to each line
-            numbered_content = []
-            for i, line in enumerate(content):
-                line_number = start_line + i + 1  # Convert back to 1-indexed
-                numbered_content.append(f"{line_number}: {line}")
-            
-            # Add line count information
-            line_count = end_line - start_line
-            
-            # Show relative path if it's not an absolute path
-            display_path = path if os.path.isabs(path) else os.path.relpath(file_path, get_config().workspace_dir)
-            line_info = f"Viewed {line_count} lines from {display_path}"
-            
-            return ("".join(numbered_content) + f"\n{line_info}", False)
-        else:
-            # Add line numbers to each line
-            numbered_content = []
-            for i, line in enumerate(content):
-                line_number = i + 1  # 1-indexed line numbers
-                numbered_content.append(f"{line_number}: {line}")
-            
-            # Add line count information
-            # Show relative path if it's not an absolute path
-            display_path = path if os.path.isabs(path) else os.path.relpath(file_path, get_config().workspace_dir)
-            line_info = f"Viewed {len(content)} lines from {display_path}"
-            
-            return ("".join(numbered_content) + f"\n{line_info}", False)
+        
+        # Add line numbers to each line (cat -n style)
+        numbered_content = []
+        start_idx = 1 if view_range is None else view_range[0]
+        for i, line in enumerate(content):
+            line_number = start_idx + i
+            # Ensure line ends with newline
+            if not line.endswith('\n'):
+                line += '\n'
+            numbered_content.append(f"{line_number:6d}\t{line}")
+        
+        # Show relative path if it's not an absolute path
+        display_path = path if os.path.isabs(path) else os.path.relpath(file_path, get_config().workspace_dir)
+        
+        # Check if we need to truncate the output
+        MAX_LINES = 500  # Arbitrary limit for demonstration
+        if len(numbered_content) > MAX_LINES:
+            truncated_content = "".join(numbered_content[:MAX_LINES])
+            return (truncated_content + "\n<response clipped>", False)
+        
+        return ("".join(numbered_content), False)
     except Exception as e:
         return (f"Error viewing file {path}: {str(e)}", True)
 
@@ -152,7 +158,7 @@ def handle_str_replace(args: Dict[str, Any]) -> Tuple[str, bool]:
     Args:
         args: Dictionary containing:
             - path: Path to the file to modify
-            - old_str: The text to replace
+            - old_str: The text to replace (must match EXACTLY)
             - new_str: The new text to insert
         
     Returns:
@@ -160,14 +166,12 @@ def handle_str_replace(args: Dict[str, Any]) -> Tuple[str, bool]:
     """
     path = args.get("path")
     old_str = args.get("old_str")
-    new_str = args.get("new_str")
+    new_str = args.get("new_str", "")  # new_str can be empty to effectively delete text
     
     if not path:
         return ("Missing required parameter: path", True)
     if old_str is None:
         return ("Missing required parameter: old_str", True)
-    if new_str is None:
-        return ("Missing required parameter: new_str", True)
     
     path = normalize_path(path)
     file_path = pathlib.Path(path)
@@ -180,22 +184,19 @@ def handle_str_replace(args: Dict[str, Any]) -> Tuple[str, bool]:
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # Backup the file before making changes
-        backup_file(path, content)
-        
-        # Save the current content for undo (legacy approach, will be deprecated)
+        # Save the current content for undo
         if path not in _file_history:
             _file_history[path] = []
         _file_history[path].append(content)
         
-        # Check if old_str exists in the content
+        # Check if old_str exists in the content (must match EXACTLY)
         if old_str not in content:
-            return ("Error: No match found for replacement. Please check your text and try again.", True)
+            return ("Error: No exact match found for replacement. Please check your text and ensure whitespaces match exactly.", True)
         
         # Count occurrences to check for multiple matches
         match_count = content.count(old_str)
         if match_count > 1:
-            return (f"Error: Found {match_count} matches for replacement text. Please provide more context to make a unique match.", True)
+            return (f"Error: Found {match_count} matches for replacement text. The old_str parameter is not unique in the file. Please include more context to make it unique.", True)
         
         # Replace the string
         new_content = content.replace(old_str, new_str)
@@ -204,9 +205,13 @@ def handle_str_replace(args: Dict[str, Any]) -> Tuple[str, bool]:
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(new_content)
         
-        return (f"Successfully replaced string in file {path}", False)
+        # Show relative path if it's not an absolute path in the original input
+        display_path = args.get("path") if os.path.isabs(args.get("path")) else os.path.relpath(file_path, get_config().workspace_dir)
+        return (f"Successfully replaced string in file {display_path}", False)
     except Exception as e:
-        return (f"Error replacing string in file {path}: {str(e)}", True)
+        # Show relative path if it's not an absolute path in the original input
+        display_path = args.get("path") if os.path.isabs(args.get("path")) else os.path.relpath(file_path, get_config().workspace_dir)
+        return (f"Error replacing string in file {display_path}: {str(e)}", True)
 
 
 def handle_insert(args: Dict[str, Any]) -> Tuple[str, bool]:
@@ -233,13 +238,11 @@ def handle_insert(args: Dict[str, Any]) -> Tuple[str, bool]:
     if new_str is None:
         return ("Missing required parameter: new_str", True)
     
-    # Get the workspace directory from config
-    workspace_dir = get_config().workspace_dir
+    # Store the original path for display purposes
+    original_path = path
     
-    # Make path absolute if it's not already
-    if not os.path.isabs(path):
-        path = os.path.join(workspace_dir, path)
-    
+    # Normalize the path (converts to absolute path)
+    path = normalize_path(path)
     file_path = pathlib.Path(path)
     
     if not file_path.exists():
@@ -251,10 +254,7 @@ def handle_insert(args: Dict[str, Any]) -> Tuple[str, bool]:
             lines = f.readlines()
             content = "".join(lines)
         
-        # Backup the file before making changes
-        backup_file(path, content)
-        
-        # Save the current content for undo (legacy approach, will be deprecated)
+        # Save the current content for undo
         if path not in _file_history:
             _file_history[path] = []
         _file_history[path].append(content)
@@ -274,14 +274,23 @@ def handle_insert(args: Dict[str, Any]) -> Tuple[str, bool]:
         with open(file_path, 'w', encoding='utf-8') as f:
             f.writelines(lines)
         
-        return (f"Successfully inserted text at line {insert_line} in file {path}", False)
+        # Show relative path if it's not an absolute path in the original input
+        display_path = original_path if os.path.isabs(original_path) else os.path.relpath(file_path, get_config().workspace_dir)
+        
+        # If the response is too long, truncate it
+        response = f"Successfully inserted text at line {insert_line} in file {display_path}"
+        if len(response) > 1000:  # Arbitrary limit for demonstration
+            return (response[:1000] + "\n<response clipped>", False)
+            
+        return (response, False)
     except Exception as e:
-        return (f"Error inserting text in file {path}: {str(e)}", True)
+        display_path = original_path if os.path.isabs(original_path) else os.path.relpath(file_path, get_config().workspace_dir)
+        return (f"Error inserting text in file {display_path}: {str(e)}", True)
 
 
 def handle_undo_edit(args: Dict[str, Any]) -> Tuple[str, bool]:
     """
-    Undo the last edit made to a file.
+    Undo the last edit made to a file using in-memory history.
     
     Args:
         args: Dictionary containing:
@@ -295,33 +304,18 @@ def handle_undo_edit(args: Dict[str, Any]) -> Tuple[str, bool]:
     if not path:
         return ("Missing required parameter: path", True)
     
-    # Get the workspace directory from config
-    workspace_dir = get_config().workspace_dir
+    # Store the original path for display purposes
+    original_path = path
     
-    # Make path absolute if it's not already
-    if not os.path.isabs(path):
-        path = os.path.join(workspace_dir, path)
+    # Normalize the path (converts to absolute path)
+    path = normalize_path(path)
+    file_path = pathlib.Path(path)
     
-    # First try to use the file-based backup system
-    backup_info = get_backup_info()
-    if backup_info:
-        backup_path = backup_info['path']
-        backup_content = backup_info['content']
-        
-        # If a path was provided, check if it matches the backup
-        if path != backup_path:
-            return (f"No backup found for file {path}. Last edited file was {backup_path}", True)
-        
-        try:
-            # Write the backup content back to the file
-            with open(path, 'w', encoding='utf-8') as f:
-                f.write(backup_content)
-            
-            return (f"Successfully undid last edit to file {path}", False)
-        except Exception as e:
-            return (f"Error undoing edit to file {path}: {str(e)}", True)
+    # Check if file exists
+    if not file_path.exists():
+        return (f"File {path} does not exist", True)
     
-    # Fall back to the in-memory history if no file backup exists
+    # Check in-memory history
     if path not in _file_history or not _file_history[path]:
         return (f"No edit history for file {path}", True)
     
@@ -333,6 +327,9 @@ def handle_undo_edit(args: Dict[str, Any]) -> Tuple[str, bool]:
         with open(path, 'w', encoding='utf-8') as f:
             f.write(last_content)
         
-        return (f"Successfully undid last edit to file {path}", False)
+        # Show relative path if it's not an absolute path in the original input
+        display_path = original_path if os.path.isabs(original_path) else os.path.relpath(file_path, get_config().workspace_dir)
+        return (f"Successfully reverted the last edit made to the file {display_path}", False)
     except Exception as e:
-        return (f"Error undoing edit to file {path}: {str(e)}", True)
+        display_path = original_path if os.path.isabs(original_path) else os.path.relpath(file_path, get_config().workspace_dir)
+        return (f"Error undoing edit to file {display_path}: {str(e)}", True)

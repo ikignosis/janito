@@ -108,3 +108,4 @@ venv.bak/
 
 # Janito
 .janito/
+janito-env/

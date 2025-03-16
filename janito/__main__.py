@@ -1,61 +1,84 @@
 """
-Main entry point for the janito CLI.
+Main entry point for Janito.
 """
-
-import typer
 import os
 import sys
-from pathlib import Path
-from typing import Optional, Dict, Any, List
+from typing import Optional
+import importlib.resources
+import typer
 from rich.console import Console
-from rich import print as rprint
-from rich.markdown import Markdown
-import claudine
-from claudine.exceptions import MaxTokensExceededException, MaxRoundsExceededException
-import locale
-
-# Fix console encoding for Windows
-if sys.platform == 'win32':
-    # Try to set UTF-8 mode for Windows 10 version 1903 or newer
-    os.system('chcp 65001 > NUL')
-    # Ensure stdout and stderr are using UTF-8
-    sys.stdout.reconfigure(encoding='utf-8')
-    sys.stderr.reconfigure(encoding='utf-8')
-    # Set locale to UTF-8
-    locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
-
-from janito.tools.str_replace_editor.editor import str_replace_editor
-from janito.tools.find_files import find_files
-from janito.tools.delete_file import delete_file
-from janito.tools.search_text import search_text
+import anthropic
 from janito.config import get_config
-from janito.callbacks import pre_tool_callback, post_tool_callback
+from janito.chat_history import store_conversation, get_chat_history_context
+from janito.callbacks import pre_tool_callback, post_tool_callback, text_callback
 from janito.token_report import generate_token_report
+from janito.tools import str_replace_editor
+from janito.tools.bash import bash_tool
+import claudine
 
-app = typer.Typer(help="Janito CLI tool")
+app = typer.Typer()
 
 @app.command()
-def hello(name: str = typer.Argument("World", help="Name to greet")):
+def create_tool(name: str = typer.Argument(..., help="Name of the tool to create")):
     """
-    Say hello to someone.
+    Create a new tool with the given name.
     """
-    rprint(f"[bold green]Hello {name}[/bold green]")
+    console = Console()
     
+    # Ensure workspace is set
+    workspace_dir = get_config().workspace_dir
+    
+    # Create the tools directory if it doesn't exist
+    tools_dir = os.path.join(workspace_dir, "tools")
+    os.makedirs(tools_dir, exist_ok=True)
+    
+    # Create the tool file
+    tool_file = os.path.join(tools_dir, f"{name}.py")
+    
+    # Check if the file already exists
+    if os.path.exists(tool_file):
+        console.print(f"[bold red]Error:[/bold red] Tool file already exists: {tool_file}")
+        return
+    
+    # Create the tool file with a template
+    template = f'''"""
+{name} tool for Janito.
+"""
 
+def {name}(param1: str) -> str:
+    """
+    Description of the {name} tool.
+    
+    Args:
+        param1: Description of param1
+        
+    Returns:
+        str: Description of return value
+    """
+    # TODO: Implement the tool
+    return f"Executed {name} with param1={{param1}}"
+'''
+    
+    with open(tool_file, "w") as f:
+        f.write(template)
+    
+    console.print(f"[bold green]Created tool:[/bold green] {tool_file}")
 
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context, 
          query: Optional[str] = typer.Argument(None, help="Query to send to the claudine agent"),
-         debug: bool = typer.Option(False, "--debug", "-d", help="Enable debug mode"),
-         verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed token usage and pricing information"),
-         workspace: Optional[str] = typer.Option(None, "--workspace", "-w", help="Set the workspace directory")):
+         verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose mode with detailed output"),
+         show_tokens: bool = typer.Option(False, "--show-tokens", "-t", help="Show detailed token usage and pricing information"),
+         workspace: Optional[str] = typer.Option(None, "--workspace", "-w", help="Set the workspace directory"),
+         config_str: Optional[str] = typer.Option(None, "--set-config", help="Configuration string in format 'key=value', e.g., 'context=5' for number of history messages to include"),
+         show_config: bool = typer.Option(False, "--show-config", help="Show current configuration")):
     """
     Janito CLI tool. If a query is provided without a command, it will be sent to the claudine agent.
     """    
     console = Console()
     
-    # Set debug mode in config
-    get_config().debug_mode = debug
+    # Set verbose mode in config
+    get_config().verbose = verbose
     
     if workspace:
         try:
@@ -65,6 +88,42 @@ def main(ctx: typer.Context,
         except ValueError as e:
             console.print(f"[bold red]Error:[/bold red] {str(e)}")
             sys.exit(1)
+            
+    # Show current configuration if requested
+    if show_config:
+        config = get_config()
+        console.print("[bold blue]Current Configuration:[/bold blue]")
+        console.print(f"[bold]Workspace Directory:[/bold] {config.workspace_dir}")
+        console.print(f"[bold]Verbose Mode:[/bold] {'Enabled' if config.verbose else 'Disabled'}")
+        console.print(f"[bold]Chat History Context Count:[/bold] {config.history_context_count} messages")
+        # Exit if this was the only operation requested
+        if ctx.invoked_subcommand is None and not query:
+            sys.exit(0)
+            
+    # Handle the --set-config parameter
+    if config_str is not None:
+        try:
+            # Parse the config string
+            if "context=" in config_str:
+                context_value = config_str.split("context=")[1].strip()
+                # If there are other configs after context, extract just the number
+                if " " in context_value:
+                    context_value = context_value.split(" ")[0]
+                
+                try:
+                    context_value = int(context_value)
+                    if context_value < 0:
+                        console.print("[bold red]Error:[/bold red] History context count must be a non-negative integer")
+                        return
+                    
+                    get_config().history_context_count = context_value
+                    console.print(f"[bold green]Chat history context count set to {context_value} messages[/bold green]")
+                except ValueError:
+                    console.print(f"[bold red]Error:[/bold red] Invalid context value: {context_value}. Must be an integer.")
+            else:
+                console.print(f"[bold yellow]Warning:[/bold yellow] Unsupported configuration in: {config_str}")
+        except Exception as e:
+            console.print(f"[bold red]Error:[/bold red] {str(e)}")
             
     if ctx.invoked_subcommand is None:
         # If no query provided in command line, read from stdin
@@ -87,65 +146,60 @@ def main(ctx: typer.Context,
                 # For Python 3.9+
                 try:
                     from importlib.resources import files
-                    instructions = files('janito.data').joinpath('instructions.txt').read_text()
+                    instructions = files('janito.data').joinpath('instructions.txt').read_text(encoding='utf-8')
                 # Fallback for older Python versions
                 except (ImportError, AttributeError):
-                    instructions = pkg_resources.read_text('janito.data', 'instructions.txt')
-                instructions = instructions.strip()
+                    instructions = pkg_resources.read_text('janito.data', 'instructions.txt', encoding='utf-8')
             except Exception as e:
-                console.print(f"[bold yellow]Warning:[/bold yellow] Could not load instructions file: {str(e)}")
-                console.print("[dim]Using default instructions instead.[/dim]")
-                instructions = "You are a helpful AI assistant. Answer the user's questions to the best of your ability."
+                console.print(f"[bold red]Error loading instructions:[/bold red] {str(e)}")
+                instructions = "You are Janito, an AI assistant."
+                
+            # Temporarily disable chat history
+            # Get chat history context
+            # chat_history = get_chat_history_context(get_config().history_context_count)
+            # if chat_history:
+            #     console.print("[dim]Loaded chat history from previous sessions.[/dim]")
+            #     # Append chat history to instructions
+            #     instructions = f"{instructions}\n\n{chat_history}"
                    
+            # Get tools
+            from janito.tools import get_tools
+            tools_list = get_tools()
+            
             # Initialize the agent with the tools
             agent = claudine.Agent(
                 api_key=api_key,
-                tools=[
-                    delete_file,
-                    find_files,
-                    search_text
-                ],
+                system_prompt=instructions,
+                callbacks={"pre_tool": pre_tool_callback, "post_tool": post_tool_callback, "text": text_callback},
                 text_editor_tool=str_replace_editor,
-                tool_callbacks=(pre_tool_callback, post_tool_callback),
-                max_tokens=4096,
-                temperature=0.7,
-                instructions=instructions,
-                debug_mode=debug  # Enable debug mode
+               #bash_tool=bash_tool,
+                tools=tools_list,
+                verbose=verbose
             )
-        
-            # Process the query
-            console.print(f"[bold blue]Query:[/bold blue] {query}")
-            console.print("[bold blue]Generating response...[/bold blue]")
             
+            # Send the query to the agent
             try:
-                response = agent.process_prompt(query)
+                agent.query(query)
                 
-                console.print("\n[bold green]Janito:[/bold green]")
-                # Use rich's enhanced Markdown rendering for the response
-                console.print(Markdown(response, code_theme="monokai"))
+                # Temporarily disable storing conversation in chat history
+                # Store the conversation in chat history
+                # store_conversation(query, response, agent)
                 
-            except MaxTokensExceededException as e:
-                # Display the partial response if available
-                if e.response_text:
-                    console.print("\n[bold green]Partial Janito:[/bold green]")
-                    console.print(Markdown(e.response_text, code_theme="monokai"))
+                # Print token usage report if show_tokens mode is enabled
+                if show_tokens:
+                    generate_token_report(agent, verbose=True)
+                else:
+                    # Show basic token usage
+                    generate_token_report(agent, verbose=False)
+                    
+            except anthropic.APIError as e:
+                console.print(f"[bold red]Anthropic API Error:[/bold red] {str(e)}")
                 
-                console.print("\n[bold red]Error:[/bold red] Response was truncated because it reached the maximum token limit.")
-                console.print("[dim]Consider increasing the max_tokens parameter or simplifying your query.[/dim]")
-                
-            except MaxRoundsExceededException as e:
-                # Display the final response if available
-                if e.response_text:
-                    console.print("\n[bold green]Janito:[/bold green]")
-                    console.print(Markdown(e.response_text, code_theme="monokai"))
-                
-                console.print(f"\n[bold red]Error:[/bold red] Maximum number of tool execution rounds ({e.rounds}) reached. Some tasks may be incomplete.")
-                console.print("[dim]Consider increasing the max_rounds parameter or breaking down your task into smaller steps.[/dim]")
-            
-            # Show token usage report
-            generate_token_report(agent, verbose)
-        else:
-            console.print("[bold yellow]No query provided. Exiting.[/bold yellow]")
+            except Exception as e:
+                console.print(f"[bold red]Error:[/bold red] {str(e)}")
+                if verbose:
+                    import traceback
+                    console.print(traceback.format_exc())
 
 if __name__ == "__main__":
     app()
