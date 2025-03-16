@@ -1,15 +1,12 @@
 """
 Tool for deleting files through the claudine agent.
 """
-import os
 from pathlib import Path
-from typing import Dict, Any, Tuple
-from janito.config import get_config
+from typing import Tuple
 from janito.tools.str_replace_editor.utils import normalize_path
-from janito.tools.decorators import tool_meta
+from janito.tools.rich_console import print_info, print_success, print_error
 
 
-@tool_meta(label="Deleting file {file_path}")
 def delete_file(
     file_path: str,
 ) -> Tuple[str, bool]:
@@ -22,6 +19,7 @@ def delete_file(
     Returns:
         A tuple containing (message, is_error)
     """
+    print_info(f"Deleting file {file_path}", "Delete Operation")
     # Store the original path for display purposes
     original_path = file_path
     
@@ -33,15 +31,23 @@ def delete_file(
     
     # Check if the file exists
     if not path_obj.exists():
-        return (f"File {original_path} does not exist.", True)
+        error_msg = f"File {original_path} does not exist."
+        print_error(error_msg, "Error")
+        return (error_msg, True)
     
     # Check if it's a directory
     if path_obj.is_dir():
-        return (f"{original_path} is a directory, not a file. Use delete_directory for directories.", True)
+        error_msg = f"{original_path} is a directory, not a file. Use delete_directory for directories."
+        print_error(error_msg, "Error")
+        return (error_msg, True)
     
     # Delete the file
     try:
         path_obj.unlink()
-        return (f"Successfully deleted file {original_path}", False)
+        success_msg = f"Successfully deleted file {original_path}"
+        print_success(success_msg, "Success")
+        return (success_msg, False)
     except Exception as e:
-        return (f"Error deleting file {original_path}: {str(e)}", True)
+        error_msg = f"Error deleting file {original_path}: {str(e)}"
+        print_error(error_msg, "Error")
+        return (error_msg, True)

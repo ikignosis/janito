@@ -29,3 +29,54 @@ include = ["janito", "README.md"]
 
 [tool.hatch.build.force-include]
 "janito/data" = "janito/data"
+
+[tool.ruff]
+# Assume Python 3.8
+target-version = "py38"
+# Same as Black.
+line-length = 88
+
+[tool.ruff.lint]
+# Enable flake8-bugbear (`B`) rules.
+select = ["E", "F", "B"]
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.per-file-ignores]
+# Ignore specific rules for specific files
+"janito/tools/bash/*.py" = ["E722", "E501"]  # Ignore bare except and line length in bash tools
+"janito/token_report.py" = ["E501"]  # Ignore line length in token_report.py
+"janito/tools/str_replace_editor/*.py" = ["E501"]  # Ignore line length in editor tools
+"janito/tools/find_files.py" = ["E501"]  # Ignore line length in find_files
+"janito/tools/search_text.py" = ["E501"]  # Ignore line length in search_text
+"janito/__main__.py" = ["E501"]  # Ignore line length in main module
+"janito/callbacks.py" = ["E501"]  # Ignore line length in callbacks
+"janito/chat_history.py" = ["E501"]  # Ignore line length in chat_history
+"janito/config.py" = ["E501"]  # Ignore line length in config
+"janito/tools/__init__.py" = ["E501"]  # Ignore line length in tools init
+"janito/tools/decorators.py" = ["E501"]  # Ignore line length in decorators
+"janito/tools/delete_file.py" = ["E501"]  # Ignore line length in delete_file

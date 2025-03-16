@@ -2,9 +2,8 @@
 Decorators for janito tools.
 """
 import functools
-import inspect
 import string
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, Optional
 
 
 class ToolMetaFormatter(string.Formatter):
@@ -83,19 +82,9 @@ def format_tool_label(func: Callable, tool_input: Dict[str, Any]) -> Optional[st
     # Get the label template
     label_template = func._tool_meta['label']
     
-    # Special handling for str_replace_editor which uses **kwargs
-    if func.__name__ == 'str_replace_editor':
-        # Extract command and file_path from tool_input if they exist
-        command = tool_input.get('command', 'unknown')
-        file_path = tool_input.get('file_path', '')
-        
-        # Simple string replacement for the common case
-        if '{command}' in label_template and '{file_path}' in label_template:
-            return label_template.replace('{command}', command).replace('{file_path}', file_path)
-    
     # Format the label with the parameters
     try:
         formatter = ToolMetaFormatter()
         return formatter.format(label_template, **tool_input)
-    except Exception as e:
+    except Exception:
         return f"{func.__name__}"

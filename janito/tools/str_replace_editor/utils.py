@@ -2,7 +2,6 @@
 Utility functions for the str_replace_editor package.
 """
 import os
-from typing import Dict
 from janito.config import get_config
 
 def normalize_path(path: str) -> str:

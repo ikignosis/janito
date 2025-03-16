@@ -5,6 +5,7 @@ import os
 from typing import Tuple
 
 from janito.tools.decorators import tool
+from janito.tools.rich_console import print_info, print_success, print_error
 
 
 @tool
@@ -20,17 +21,25 @@ def replace_file(file_path: str, new_content: str) -> Tuple[str, bool]:
         A tuple containing (message, is_error)
     """
     try:
+        print_info(f"Replacing file '{file_path}'", "File Operation")
+        
         # Convert relative path to absolute path
         abs_path = os.path.abspath(file_path)
         
         # Check if file exists
         if not os.path.isfile(abs_path):
-            return f"Error: File '{file_path}' does not exist", True
+            error_msg = f"Error: File '{file_path}' does not exist"
+            print_error(error_msg, "File Error")
+            return error_msg, True
             
         # Write new content to the file
         with open(abs_path, 'w', encoding='utf-8') as f:
             f.write(new_content)
-            
-        return f"Successfully replaced file '{file_path}'", False
+        
+        success_msg = f"Successfully replaced file '{file_path}'"
+        print_success(success_msg, "Success")
+        return success_msg, False
     except Exception as e:
-        return f"Error replacing file '{file_path}': {str(e)}", True
+        error_msg = f"Error replacing file '{file_path}': {str(e)}"
+        print_error(error_msg, "Error")
+        return error_msg, True

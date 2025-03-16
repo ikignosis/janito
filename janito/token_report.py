@@ -3,7 +3,6 @@ Module for generating token usage reports.
 """
 
 from rich.console import Console
-from rich.panel import Panel
 
 def generate_token_report(agent, verbose=False):
     """
@@ -38,7 +37,8 @@ def generate_token_report(agent, verbose=False):
         tools_cache_read_cost = cost.cache_read_cost
         
         # Format costs
-        format_cost = lambda cost: f"{cost * 100:.2f}¢" if cost < 1.0 else f"${cost:.6f}"
+        def format_cost(cost):
+            return f"{cost * 100:.2f}¢" if cost < 1.0 else f"${cost:.6f}"
         
         console.print("\n[bold blue]Detailed Token Usage:[/bold blue]")
         console.print(f"Text Input tokens: {text_usage.input_tokens}")
@@ -125,7 +125,8 @@ def generate_token_report(agent, verbose=False):
                        tools_usage.cache_creation_input_tokens + tools_usage.cache_read_input_tokens)
         
         # Format costs
-        format_cost = lambda cost: f"{cost * 100:.2f}¢" if cost < 1.0 else f"${cost:.6f}"
+        def format_cost(cost):
+            return f"{cost * 100:.2f}¢" if cost < 1.0 else f"${cost:.6f}"
         
         # Prepare summary message
         summary = f"Total tokens: {total_tokens} | Cost: {format_cost(cost.total_cost)}"

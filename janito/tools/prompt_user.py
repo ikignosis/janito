@@ -2,10 +2,9 @@
 Tool for prompting the user for input through the claudine agent.
 """
 from typing import Tuple
-from janito.tools.decorators import tool_meta
+from janito.tools.rich_console import print_info, print_error
 
 
-@tool_meta(label="Prompting user with '{prompt_text}'")
 def prompt_user(
     prompt_text: str,
 ) -> Tuple[str, bool]:
@@ -18,9 +17,13 @@ def prompt_user(
     Returns:
         A tuple containing (user_response, is_error)
     """
+    print_info(f"Prompting user with '{prompt_text}'", "User Prompt") 
     try:
-        # Print the prompt and get user input
-        user_response = input(f"{prompt_text}")
+        # Only show "Waiting for your answer:" in the input prompt
+        # The original prompt is already displayed in the panel
+        user_response = input("Waiting for your answer: ")
         return (user_response, False)
     except Exception as e:
-        return (f"Error prompting user: {str(e)}", True)
+        error_msg = f"Error prompting user: {str(e)}"
+        print_error(error_msg, "Prompt Error")
+        return (error_msg, True)

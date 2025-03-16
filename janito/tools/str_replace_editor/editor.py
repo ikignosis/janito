@@ -1,7 +1,8 @@
 """
 Main module for implementing the Claude text editor functionality.
 """
-from typing import Dict, Any, Tuple
+from typing import Tuple
+from janito.config import get_config
 from .handlers import (
     handle_create,
     handle_view,
@@ -9,10 +10,7 @@ from .handlers import (
     handle_insert,
     handle_undo_edit
 )
-from .utils import normalize_path
-from janito.tools.decorators import tool_meta
 
-@tool_meta(label="File Command: ({command})")
 def str_replace_editor(**kwargs) -> Tuple[str, bool]:
     """
     Custom editing tool for viewing, creating and editing files
@@ -21,6 +19,7 @@ def str_replace_editor(**kwargs) -> Tuple[str, bool]:
     * The `create` command cannot be used if the specified `path` already exists as a file
     * If a `command` generates a long output, it will be truncated and marked with `<response clipped>`
     * The `undo_edit` command will revert the last edit made to the file at `path`
+    * When in ask mode, only the `view` command is allowed
 
     Notes for using the `str_replace` command:
     * The `old_str` parameter should match EXACTLY one or more consecutive lines from the original file. Be mindful of whitespaces!
@@ -37,6 +36,10 @@ def str_replace_editor(**kwargs) -> Tuple[str, bool]:
         A tuple containing (message, is_error)
     """
     command = kwargs.get("command")
+    
+    # If in ask mode, only allow view operations
+    if get_config().ask_mode and command != "view":
+        return ("Cannot perform file modifications in ask mode. Use --ask option to disable modifications.", True)
     
     if command == "create":
         return handle_create(kwargs)

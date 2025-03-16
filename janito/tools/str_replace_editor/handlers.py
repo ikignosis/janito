@@ -5,6 +5,7 @@ import os
 import pathlib
 from typing import Dict, Any, Tuple
 from janito.config import get_config
+from janito.tools.rich_console import print_info, print_success, print_error, print_warning
 from .utils import normalize_path, _file_history
 
 def handle_create(args: Dict[str, Any]) -> Tuple[str, bool]:
@@ -22,6 +23,8 @@ def handle_create(args: Dict[str, Any]) -> Tuple[str, bool]:
     path = args.get("path")
     file_text = args.get("file_text", "")
     
+    print_info(f"Creating file: {path}", "File Creation")
+    
     if not path:
         return ("Missing required parameter: path", True)
     
@@ -32,6 +35,7 @@ def handle_create(args: Dict[str, Any]) -> Tuple[str, bool]:
     
     # Check if the file already exists - according to spec, create cannot be used if file exists
     if file_path.exists() and file_path.is_file():
+        print_error(f"File {path} already exists. The 'create' command cannot be used if the specified path already exists as a file.", "Error")
         return (f"File {path} already exists. The 'create' command cannot be used if the specified path already exists as a file.", True)
     
     # Create parent directories if they don't exist
@@ -43,8 +47,10 @@ def handle_create(args: Dict[str, Any]) -> Tuple[str, bool]:
             f.write(file_text)
         # Show relative path if it's not an absolute path
         display_path = path if os.path.isabs(path) else os.path.relpath(file_path, get_config().workspace_dir)
+        print_success(f"Successfully created file {display_path}", "Success")
         return (f"Successfully created file {display_path}", False)
     except Exception as e:
+        print_error(f"Error creating file {path}: {str(e)}", "Error")
         return (f"Error creating file {path}: {str(e)}", True)
 
 
@@ -63,13 +69,34 @@ def handle_view(args: Dict[str, Any]) -> Tuple[str, bool]:
     path = args.get("path")
     view_range = args.get("view_range")
     
+    # First normalize the path to check if it's a file or directory
+    normalized_path = normalize_path(path)
+    file_path = pathlib.Path(normalized_path)
+    
+    if file_path.exists():
+        if file_path.is_dir():
+            print_info(f"Viewing directory: {path}", "Directory View")
+        else:
+            if view_range:
+                print_info(f"Viewing file: {path}, from line {view_range[0]} to {view_range[1]}", "File View")
+            else:
+                print_info(f"Viewing file: {path}, all lines", "File View")
+    else:
+        # If path doesn't exist yet, assume it's a file (will be validated later)
+        if view_range:
+            print_info(f"Viewing file: {path}, from line {view_range[0]} to {view_range[1]}", "File View")
+        else:
+            print_info(f"Viewing file: {path}, all lines", "File View")
+    
     if not path:
+        print_error("Missing required parameter: path", "Error")
         return ("Missing required parameter: path", True)
     
     path = normalize_path(path)
     file_path = pathlib.Path(path)
     
     if not file_path.exists():
+        print_error(f"File or directory {path} does not exist", "Error")
         return (f"File or directory {path} does not exist", True)
     
     # If the path is a directory, list non-hidden files and directories up to 2 levels deep
@@ -137,9 +164,6 @@ def handle_view(args: Dict[str, Any]) -> Tuple[str, bool]:
                 line += '\n'
             numbered_content.append(f"{line_number:6d}\t{line}")
         
-        # Show relative path if it's not an absolute path
-        display_path = path if os.path.isabs(path) else os.path.relpath(file_path, get_config().workspace_dir)
-        
         # Check if we need to truncate the output
         MAX_LINES = 500  # Arbitrary limit for demonstration
         if len(numbered_content) > MAX_LINES:
@@ -168,15 +192,20 @@ def handle_str_replace(args: Dict[str, Any]) -> Tuple[str, bool]:
     old_str = args.get("old_str")
     new_str = args.get("new_str", "")  # new_str can be empty to effectively delete text
     
+    print_info(f"Replacing text in file: {path}", "String Replace Operation")
+    
     if not path:
+        print_error("Missing required parameter: path", "Error")
         return ("Missing required parameter: path", True)
     if old_str is None:
+        print_error("Missing required parameter: old_str", "Error")
         return ("Missing required parameter: old_str", True)
     
     path = normalize_path(path)
     file_path = pathlib.Path(path)
     
     if not file_path.exists():
+        print_error(f"File {path} does not exist", "Error")
         return (f"File {path} does not exist", True)
     
     try:
@@ -191,11 +220,13 @@ def handle_str_replace(args: Dict[str, Any]) -> Tuple[str, bool]:
         
         # Check if old_str exists in the content (must match EXACTLY)
         if old_str not in content:
+            print_error("No exact match found for replacement. Please check your text and ensure whitespaces match exactly.", "Error")
             return ("Error: No exact match found for replacement. Please check your text and ensure whitespaces match exactly.", True)
         
         # Count occurrences to check for multiple matches
         match_count = content.count(old_str)
         if match_count > 1:
+            print_error(f"Found {match_count} matches for replacement text. The old_str parameter is not unique in the file. Please include more context to make it unique.", "Error")
             return (f"Error: Found {match_count} matches for replacement text. The old_str parameter is not unique in the file. Please include more context to make it unique.", True)
         
         # Replace the string
@@ -207,10 +238,12 @@ def handle_str_replace(args: Dict[str, Any]) -> Tuple[str, bool]:
         
         # Show relative path if it's not an absolute path in the original input
         display_path = args.get("path") if os.path.isabs(args.get("path")) else os.path.relpath(file_path, get_config().workspace_dir)
+        print_success(f"Successfully replaced string in file {display_path}", "Success")
         return (f"Successfully replaced string in file {display_path}", False)
     except Exception as e:
         # Show relative path if it's not an absolute path in the original input
         display_path = args.get("path") if os.path.isabs(args.get("path")) else os.path.relpath(file_path, get_config().workspace_dir)
+        print_error(f"Error replacing string in file {display_path}: {str(e)}", "Error")
         return (f"Error replacing string in file {display_path}: {str(e)}", True)
 
 
@@ -231,11 +264,16 @@ def handle_insert(args: Dict[str, Any]) -> Tuple[str, bool]:
     insert_line = args.get("insert_line")
     new_str = args.get("new_str")
     
+    print_info(f"Inserting text in file: {path}, after line {insert_line}", "Insert Operation")
+    
     if not path:
+        print_error("Missing required parameter: path", "Error")
         return ("Missing required parameter: path", True)
     if insert_line is None:
+        print_error("Missing required parameter: insert_line", "Error")
         return ("Missing required parameter: insert_line", True)
     if new_str is None:
+        print_error("Missing required parameter: new_str", "Error")
         return ("Missing required parameter: new_str", True)
     
     # Store the original path for display purposes
@@ -246,6 +284,7 @@ def handle_insert(args: Dict[str, Any]) -> Tuple[str, bool]:
     file_path = pathlib.Path(path)
     
     if not file_path.exists():
+        print_error(f"File {path} does not exist", "Error")
         return (f"File {path} does not exist", True)
     
     try:
@@ -261,6 +300,7 @@ def handle_insert(args: Dict[str, Any]) -> Tuple[str, bool]:
         
         # Check if insert_line is valid
         if insert_line < 0 or insert_line > len(lines):
+            print_error(f"Invalid insert line {insert_line} for file {path}", "Error")
             return (f"Invalid insert line {insert_line} for file {path}", True)
         
         # Ensure new_str ends with a newline if it doesn't already
@@ -279,13 +319,16 @@ def handle_insert(args: Dict[str, Any]) -> Tuple[str, bool]:
         
         # If the response is too long, truncate it
         response = f"Successfully inserted text at line {insert_line} in file {display_path}"
+        print_success(response, "Success")
         if len(response) > 1000:  # Arbitrary limit for demonstration
             return (response[:1000] + "\n<response clipped>", False)
             
         return (response, False)
     except Exception as e:
         display_path = original_path if os.path.isabs(original_path) else os.path.relpath(file_path, get_config().workspace_dir)
-        return (f"Error inserting text in file {display_path}: {str(e)}", True)
+        error_msg = f"Error inserting text in file {display_path}: {str(e)}"
+        print_error(error_msg, "Error")
+        return (error_msg, True)
 
 
 def handle_undo_edit(args: Dict[str, Any]) -> Tuple[str, bool]:
@@ -301,7 +344,10 @@ def handle_undo_edit(args: Dict[str, Any]) -> Tuple[str, bool]:
     """
     path = args.get("path")
     
+    print_info(f"Undoing last edit to file: {path}", "Undo Operation")
+    
     if not path:
+        print_error("Missing required parameter: path", "Error")
         return ("Missing required parameter: path", True)
     
     # Store the original path for display purposes
@@ -313,10 +359,12 @@ def handle_undo_edit(args: Dict[str, Any]) -> Tuple[str, bool]:
     
     # Check if file exists
     if not file_path.exists():
+        print_error(f"File {path} does not exist", "Error")
         return (f"File {path} does not exist", True)
     
     # Check in-memory history
     if path not in _file_history or not _file_history[path]:
+        print_warning(f"No edit history for file {path}", "Warning")
         return (f"No edit history for file {path}", True)
     
     try:
@@ -329,7 +377,11 @@ def handle_undo_edit(args: Dict[str, Any]) -> Tuple[str, bool]:
         
         # Show relative path if it's not an absolute path in the original input
         display_path = original_path if os.path.isabs(original_path) else os.path.relpath(file_path, get_config().workspace_dir)
-        return (f"Successfully reverted the last edit made to the file {display_path}", False)
+        success_msg = f"Successfully reverted the last edit made to the file {display_path}"
+        print_success(success_msg, "Success")
+        return (success_msg, False)
     except Exception as e:
         display_path = original_path if os.path.isabs(original_path) else os.path.relpath(file_path, get_config().workspace_dir)
-        return (f"Error undoing edit to file {display_path}: {str(e)}", True)
+        error_msg = f"Error undoing edit to file {display_path}: {str(e)}"
+        print_error(error_msg, "Error")
+        return (error_msg, True)

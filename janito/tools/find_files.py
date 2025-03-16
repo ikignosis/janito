@@ -1,10 +1,9 @@
 import os
 import fnmatch
-from typing import List, Dict, Any, Tuple
-from janito.tools.decorators import tool_meta
+from typing import List, Tuple
+from janito.tools.rich_console import print_info, print_success, print_error
 
 
-@tool_meta(label="Finding files matching path pattern {pattern}, on {root_dir} ({recursive and 'recursive' or 'non-recursive'}, {respect_gitignore and 'respecting gitignore' or 'ignoring gitignore'})")
 def find_files(pattern: str, root_dir: str = ".", recursive: bool = True, respect_gitignore: bool = True) -> Tuple[str, bool]:
     """
     Find files whose path matches a glob pattern.
@@ -18,12 +17,20 @@ def find_files(pattern: str, root_dir: str = ".", recursive: bool = True, respec
     Returns:
         A tuple containing (message, is_error)
     """
+    print_info(
+        f"Finding files matching path pattern {pattern}, on {root_dir} " +
+        f"({'recursive' if recursive else 'non-recursive'}, " +
+        f"{'respecting gitignore' if respect_gitignore else 'ignoring gitignore'})",
+        "File Search"
+    )
     try:
         # Convert to absolute path if relative
         abs_root = os.path.abspath(root_dir)
         
         if not os.path.isdir(abs_root):
-            return f"Error: Directory '{root_dir}' does not exist", True
+            error_msg = f"Error: Directory '{root_dir}' does not exist"
+            print_error(error_msg, "Directory Error")
+            return error_msg, True
         
         matching_files = []
         
@@ -72,12 +79,18 @@ def find_files(pattern: str, root_dir: str = ".", recursive: bool = True, respec
         
         if matching_files:
             file_list = "\n- ".join(matching_files)
-            return f"Found {len(matching_files)} files matching pattern '{pattern}':\n- {file_list}\n{len(matching_files)}", False
+            result_msg = f"Found {len(matching_files)} files matching pattern '{pattern}':\n- {file_list}\n{len(matching_files)}"
+            print_success(result_msg, "Search Results")
+            return result_msg, False
         else:
-            return f"No files found matching pattern '{pattern}' in '{root_dir}'", False
+            result_msg = f"No files found matching pattern '{pattern}' in '{root_dir}'"
+            print_info(result_msg, "Search Results")
+            return result_msg, False
             
     except Exception as e:
-        return f"Error finding files: {str(e)}", True
+        error_msg = f"Error finding files: {str(e)}"
+        print_error(error_msg, "Search Error")
+        return error_msg, True
 
 
 def _get_gitignore_patterns(root_dir: str) -> List[str]:

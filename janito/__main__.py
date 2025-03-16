@@ -4,17 +4,16 @@ Main entry point for Janito.
 import os
 import sys
 from typing import Optional
-import importlib.resources
 import typer
 from rich.console import Console
 import anthropic
 from janito.config import get_config
-from janito.chat_history import store_conversation, get_chat_history_context
-from janito.callbacks import pre_tool_callback, post_tool_callback, text_callback
+from janito.callbacks import text_callback
 from janito.token_report import generate_token_report
 from janito.tools import str_replace_editor
-from janito.tools.bash import bash_tool
+from janito.tools.bash.bash import bash_tool
 import claudine
+import importlib.metadata
 
 app = typer.Typer()
 
@@ -71,7 +70,9 @@ def main(ctx: typer.Context,
          show_tokens: bool = typer.Option(False, "--show-tokens", "-t", help="Show detailed token usage and pricing information"),
          workspace: Optional[str] = typer.Option(None, "--workspace", "-w", help="Set the workspace directory"),
          config_str: Optional[str] = typer.Option(None, "--set-config", help="Configuration string in format 'key=value', e.g., 'context=5' for number of history messages to include"),
-         show_config: bool = typer.Option(False, "--show-config", help="Show current configuration")):
+         show_config: bool = typer.Option(False, "--show-config", help="Show current configuration"),
+         ask: bool = typer.Option(False, "--ask", help="Enable ask mode which disables tools that perform changes"),
+         version: bool = typer.Option(False, "--version", help="Show the version and exit")):
     """
     Janito CLI tool. If a query is provided without a command, it will be sent to the claudine agent.
     """    
@@ -79,6 +80,22 @@ def main(ctx: typer.Context,
     
     # Set verbose mode in config
     get_config().verbose = verbose
+    
+    # Set ask mode in config
+    get_config().ask_mode = ask
+    
+    # Show a message if ask mode is enabled
+    if ask:
+        console.print("[bold yellow]Ask Mode enabled:[/bold yellow] Tools that perform changes are disabled")
+    
+    # Show version and exit if requested
+    if version:
+        try:
+            version_str = importlib.metadata.version("janito")
+            console.print(f"Janito version: {version_str}")
+        except importlib.metadata.PackageNotFoundError:
+            console.print("Janito version: [italic]development[/italic]")
+        sys.exit(0)
     
     if workspace:
         try:
@@ -95,6 +112,7 @@ def main(ctx: typer.Context,
         console.print("[bold blue]Current Configuration:[/bold blue]")
         console.print(f"[bold]Workspace Directory:[/bold] {config.workspace_dir}")
         console.print(f"[bold]Verbose Mode:[/bold] {'Enabled' if config.verbose else 'Disabled'}")
+        console.print(f"[bold]Ask Mode:[/bold] {'Enabled' if config.ask_mode else 'Disabled'}")
         console.print(f"[bold]Chat History Context Count:[/bold] {config.history_context_count} messages")
         # Exit if this was the only operation requested
         if ctx.invoked_subcommand is None and not query:
@@ -140,19 +158,44 @@ def main(ctx: typer.Context,
                 console.print("Please set it or provide your API key now:")
                 api_key = typer.prompt("Anthropic API Key", hide_input=True)
         
-            # Load instructions from file
+            # Load instructions from file and process as a template
             import importlib.resources as pkg_resources
+            import platform
+            from jinja2 import Template
+            
             try:
                 # For Python 3.9+
                 try:
                     from importlib.resources import files
-                    instructions = files('janito.data').joinpath('instructions.txt').read_text(encoding='utf-8')
+                    template_content = files('janito.data').joinpath('instructions_template.txt').read_text(encoding='utf-8')
                 # Fallback for older Python versions
                 except (ImportError, AttributeError):
-                    instructions = pkg_resources.read_text('janito.data', 'instructions.txt', encoding='utf-8')
+                    template_content = pkg_resources.read_text('janito.data', 'instructions_template.txt', encoding='utf-8')
+                
+                # Create template variables
+                template_variables = {
+                    'platform': platform.system()
+                    # Add any other variables you want to pass to the template here
+                }
+                
+                # Create template and render
+                template = Template(template_content)
+                instructions = template.render(**template_variables)
+                
             except Exception as e:
-                console.print(f"[bold red]Error loading instructions:[/bold red] {str(e)}")
-                instructions = "You are Janito, an AI assistant."
+                console.print(f"[bold red]Error loading instructions template:[/bold red] {str(e)}")
+                # Try to fall back to regular instructions.txt
+                try:
+                    # For Python 3.9+
+                    try:
+                        from importlib.resources import files
+                        instructions = files('janito.data').joinpath('instructions.txt').read_text(encoding='utf-8')
+                    # Fallback for older Python versions
+                    except (ImportError, AttributeError):
+                        instructions = pkg_resources.read_text('janito.data', 'instructions.txt', encoding='utf-8')
+                except Exception as e2:
+                    console.print(f"[bold red]Error loading fallback instructions:[/bold red] {str(e2)}")
+                    instructions = "You are Janito, an AI assistant."
                 
             # Temporarily disable chat history
             # Get chat history context
@@ -170,11 +213,13 @@ def main(ctx: typer.Context,
             agent = claudine.Agent(
                 api_key=api_key,
                 system_prompt=instructions,
-                callbacks={"pre_tool": pre_tool_callback, "post_tool": post_tool_callback, "text": text_callback},
+                callbacks={"text": text_callback},
                 text_editor_tool=str_replace_editor,
-               #bash_tool=bash_tool,
+                bash_tool=bash_tool,
                 tools=tools_list,
-                verbose=verbose
+                verbose=verbose,
+                max_tokens=8126,
+                max_tool_rounds=100,
             )
             
             # Send the query to the agent

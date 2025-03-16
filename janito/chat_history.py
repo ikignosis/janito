@@ -2,11 +2,10 @@
 Chat history module for Janito.
 Handles storing and loading chat history.
 """
-import os
 import json
 import datetime
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict
 from janito.config import get_config
 
 def ensure_chat_history_dir() -> Path:

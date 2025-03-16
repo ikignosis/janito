@@ -5,8 +5,8 @@ Provides a singleton Config class to access configuration values.
 import os
 import json
 from pathlib import Path
-from typing import Optional, Any, Dict
 import typer
+from typing import Dict, Any, Optional
 
 class Config:
     """Singleton configuration class for Janito."""
@@ -18,6 +18,7 @@ class Config:
             cls._instance._workspace_dir = os.getcwd()
             cls._instance._verbose = False
             cls._instance._history_context_count = 5
+            cls._instance._ask_mode = False
             cls._instance._load_config()
         return cls._instance
         
@@ -32,6 +33,8 @@ class Config:
                         self._history_context_count = config_data["history_context_count"]
                     if "debug_mode" in config_data:
                         self._verbose = config_data["debug_mode"]
+                    if "ask_mode" in config_data:
+                        self._ask_mode = config_data["ask_mode"]
             except Exception as e:
                 print(f"Warning: Failed to load configuration: {str(e)}")
                 
@@ -43,7 +46,8 @@ class Config:
         
         config_data = {
             "history_context_count": self._history_context_count,
-            "verbose": self._verbose
+            "verbose": self._verbose,
+            "ask_mode": self._ask_mode
         }
         
         try:
@@ -75,7 +79,7 @@ class Config:
                     os.makedirs(path, exist_ok=True)
                     print(f"Created workspace directory: {path}")
                 except Exception as e:
-                    raise ValueError(f"Failed to create workspace directory: {str(e)}")
+                    raise ValueError(f"Failed to create workspace directory: {str(e)}") from e
             else:
                 raise ValueError(f"Workspace directory does not exist: {path}")
         
@@ -113,6 +117,17 @@ class Config:
         if count < 0:
             raise ValueError("History context count must be a non-negative integer")
         self._history_context_count = count
+        self._save_config()
+        
+    @property
+    def ask_mode(self) -> bool:
+        """Get the ask mode status."""
+        return self._ask_mode
+        
+    @ask_mode.setter
+    def ask_mode(self, value: bool) -> None:
+        """Set the ask mode status."""
+        self._ask_mode = value
         self._save_config()
 
 # Convenience function to get the config instance

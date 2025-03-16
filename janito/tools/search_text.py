@@ -1,12 +1,10 @@
 import os
 import fnmatch
 import re
-import pathlib
-from typing import List, Dict, Any, Tuple
-from janito.tools.decorators import tool_meta
+from typing import List, Tuple
+from janito.tools.rich_console import print_info, print_success, print_error, print_warning
 
 
-@tool_meta(label="Searching for '{text_pattern}' in files matching '{file_pattern}'")
 def search_text(text_pattern: str, file_pattern: str = "*", root_dir: str = ".", recursive: bool = True, respect_gitignore: bool = True) -> Tuple[str, bool]:
     """
     Search for text patterns within files matching a filename pattern.
@@ -23,18 +21,23 @@ def search_text(text_pattern: str, file_pattern: str = "*", root_dir: str = ".",
     Returns:
         A tuple containing (message, is_error)
     """
+    print_info(f"Searching for '{text_pattern}' in files matching '{file_pattern}'", "Text Search")
     try:
         # Convert to absolute path if relative
         abs_root = os.path.abspath(root_dir)
         
         if not os.path.isdir(abs_root):
-            return f"Error: Directory '{root_dir}' does not exist", True
+            error_msg = f"Error: Directory '{root_dir}' does not exist"
+            print_error(error_msg, "Directory Error")
+            return error_msg, True
         
         # Compile the regex pattern for better performance
         try:
             regex = re.compile(text_pattern)
         except re.error as e:
-            return f"Error: Invalid regex pattern '{text_pattern}': {str(e)}", True
+            error_msg = f"Error: Invalid regex pattern '{text_pattern}': {str(e)}"
+            print_error(error_msg, "Regex Error")
+            return error_msg, True
         
         matching_files = []
         match_count = 0
@@ -113,12 +116,18 @@ def search_text(text_pattern: str, file_pattern: str = "*", root_dir: str = ".",
         if matching_files:
             result_text = "\n".join(results)
             summary = f"\n{match_count} matches in {len(matching_files)} files"
-            return f"Searching for '{text_pattern}' in files matching '{file_pattern}':{result_text}\n{summary}", False
+            result_msg = f"Searching for '{text_pattern}' in files matching '{file_pattern}':{result_text}\n{summary}"
+            print_success(result_msg, "Search Results")
+            return result_msg, False
         else:
-            return f"No matches found for '{text_pattern}' in files matching '{file_pattern}' in '{root_dir}'", False
+            result_msg = f"No matches found for '{text_pattern}' in files matching '{file_pattern}' in '{root_dir}'"
+            print_info(result_msg, "Search Results")
+            return result_msg, False
             
     except Exception as e:
-        return f"Error searching text: {str(e)}", True
+        error_msg = f"Error searching text: {str(e)}"
+        print_error(error_msg, "Search Error")
+        return error_msg, True
 
 
 def _search_file(file_path: str, pattern: re.Pattern, root_dir: str) -> List[str]:
@@ -143,7 +152,7 @@ def _search_file(file_path: str, pattern: re.Pattern, root_dir: str) -> List[str
                     if len(display_line) > 100:
                         display_line = display_line[:97] + "..."
                     matches.append(f"  Line {i}: {display_line}")
-    except (UnicodeDecodeError, IOError) as e:
+    except (UnicodeDecodeError, IOError):
         # Skip binary files or files with encoding issues
         pass
     return matches
