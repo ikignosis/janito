@@ -6,6 +6,7 @@ import pathlib
 from typing import Dict, Any, Tuple
 from janito.config import get_config
 from janito.tools.rich_console import print_info, print_success, print_error, print_warning
+from janito.tools.usage_tracker import get_tracker, count_lines_in_string
 from .utils import normalize_path, _file_history
 
 def handle_create(args: Dict[str, Any]) -> Tuple[str, bool]:
@@ -45,6 +46,8 @@ def handle_create(args: Dict[str, Any]) -> Tuple[str, bool]:
     try:
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(file_text)
+        # Track file creation
+        get_tracker().increment('files_created')
         # Show relative path if it's not an absolute path
         display_path = path if os.path.isabs(path) else os.path.relpath(file_path, get_config().workspace_dir)
         print_success(f"Successfully created file {display_path}", "Success")
@@ -129,6 +132,9 @@ def handle_view(args: Dict[str, Any]) -> Tuple[str, bool]:
             if not result:
                 return (f"Directory {path} is empty or contains only hidden files", False)
             
+            # Track directory view
+            get_tracker().increment('file_views')
+            
             # Determine if we need to truncate the output
             MAX_LINES = 100  # Arbitrary limit for demonstration
             output = "\n".join(result)
@@ -153,6 +159,12 @@ def handle_view(args: Dict[str, Any]) -> Tuple[str, bool]:
             
             # Adjust content to only include the specified lines
             content = content[start_line:end_line]
+            
+            # Track partial file view
+            get_tracker().increment('partial_file_views')
+        else:
+            # Track full file view
+            get_tracker().increment('file_views')
         
         # Add line numbers to each line (cat -n style)
         numbered_content = []
@@ -232,6 +244,10 @@ def handle_str_replace(args: Dict[str, Any]) -> Tuple[str, bool]:
         # Replace the string
         new_content = content.replace(old_str, new_str)
         
+        # Track the number of lines replaced
+        lines_changed = count_lines_in_string(old_str, new_str)
+        get_tracker().increment('lines_replaced', lines_changed)
+        
         # Write the new content
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(new_content)
@@ -309,6 +325,10 @@ def handle_insert(args: Dict[str, Any]) -> Tuple[str, bool]:
         
         # Insert the new string
         lines.insert(insert_line, new_str)
+        
+        # Track the number of lines inserted
+        lines_count = len(new_str.splitlines())
+        get_tracker().increment('lines_replaced', lines_count)
         
         # Write the new content
         with open(file_path, 'w', encoding='utf-8') as f:

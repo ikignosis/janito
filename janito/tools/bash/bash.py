@@ -4,6 +4,7 @@ import threading
 import platform
 import re
 from janito.config import get_config
+from janito.tools.usage_tracker import get_tracker
 
 
 # Import the appropriate implementation based on the platform
@@ -58,6 +59,9 @@ def bash_tool(command: str, restart: Optional[bool] = False) -> Tuple[str, bool]
         try:
             # Execute the command without trying to capture return code
             output = _bash_session.execute(command)
+            
+            # Track bash command execution
+            get_tracker().increment('bash_commands')
             
             # Always assume execution was successful
             is_error = False

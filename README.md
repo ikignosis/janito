@@ -2,13 +2,15 @@
 
 Janito is a powerful AI-assisted command-line interface (CLI) tool built with Python, leveraging Anthropic's Claude for intelligent code and file management.
 
+[![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-blue?logo=github)](https://github.com/joaompinto/janito)
+
 ## ✨ Features
 
 - 🧠 Intelligent AI assistant powered by Claude
 - 📁 File management capabilities 
 - 🔍 Smart code search and editing
 - 💻 Interactive terminal interface with rich formatting
-- 📊 Token usage tracking and cost reporting
+- 📊 Detailed token usage tracking and cost reporting with cache savings analysis
 
 ## 🛠️ Installation
 
@@ -31,7 +33,11 @@ janito --help
 # Ask the AI assistant a question
 janito "Suggest improvements to this project"
 
-janito "Add a --version to the cli to report he version"
+# Add a feature to the CLI
+janito "Add a --version to the cli to report the version"
+
+# Show detailed token usage and cost information
+janito --show-tokens "Explain how to optimize Python code"
 
 ```
 
@@ -42,6 +48,27 @@ Janito comes with several built-in tools:
 - 🔎 `find_files` - Find files matching patterns
 - 🗑️ `delete_file` - Delete files
 - 🔍 `search_text` - Search for text patterns in files
+
+## 📊 Usage Tracking
+
+Janito includes a comprehensive token usage tracking system that helps you monitor API costs:
+
+- **Basic tracking**: By default, Janito displays a summary of token usage and cost after each query
+- **Detailed reporting**: Use the `--show-tokens` or `-t` flag to see detailed breakdowns including:
+  - Input and output token counts
+  - Per-tool token usage statistics
+  - Precise cost calculations
+  - Cache performance metrics with savings analysis
+
+```bash
+# Show detailed token usage and cost information
+janito --show-tokens "Write a Python function to sort a list"
+
+# Basic usage (shows simplified token usage summary)
+janito "Explain Docker containers"
+```
+
+The usage tracker automatically calculates cache savings, showing you how much you're saving by reusing previous responses.
 
 ## ⚙️ Requirements
 

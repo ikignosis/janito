@@ -9,10 +9,13 @@ from .search_text import search_text
 from .replace_file import replace_file
 from .prompt_user import prompt_user
 from .move_file import move_file
-from .fetch_webpage import fetch_webpage
+from janito.tools.fetch_webpage import fetch_webpage
+from .usage_tracker import get_tracker, reset_tracker, print_usage_stats
 from janito.config import get_config
 
-__all__ = ["str_replace_editor", "find_files", "delete_file", "search_text", "replace_file", "prompt_user", "move_file", "fetch_webpage", "get_tools"]
+__all__ = ["str_replace_editor", "find_files", "delete_file", "search_text", "replace_file", 
+           "prompt_user", "move_file", "fetch_webpage", "get_tools", 
+           "get_tracker", "reset_tracker", "print_usage_stats"]
 
 def get_tools():
     """

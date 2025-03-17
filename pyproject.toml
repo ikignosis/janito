@@ -16,6 +16,13 @@ dependencies = [
     "typer>=0.9.0",
     "rich>=13.0.0",
     "claudine>=0.1.0",
+    "lxml_html_clean>=0.4.1",
+    "requests>=2.32.0",
+    "jinja2>=3.0.0",
+    "beautifulsoup4>=4.13.0",
+    "anthropic>=0.5.0",
+    "trafilatura>=1.6.0",
+    "newspaper3k>=0.2.8",
 ]
 
 [project.scripts]

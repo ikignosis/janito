@@ -100,6 +100,9 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+# Ruff
+.ruff_cache/
+
 # IDE specific files
 .idea/
 .vscode/
@@ -107,5 +110,5 @@ venv.bak/
 *.swo
 
 # Janito
-.janito/
 janito-env/
+.janito/

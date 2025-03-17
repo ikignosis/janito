@@ -3,8 +3,10 @@ import fnmatch
 import re
 from typing import List, Tuple
 from janito.tools.rich_console import print_info, print_success, print_error, print_warning
+from janito.tools.usage_tracker import track_usage
 
 
+@track_usage('search_operations')
 def search_text(text_pattern: str, file_pattern: str = "*", root_dir: str = ".", recursive: bool = True, respect_gitignore: bool = True) -> Tuple[str, bool]:
     """
     Search for text patterns within files matching a filename pattern.

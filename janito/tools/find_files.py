@@ -1,5 +1,6 @@
 import os
-import fnmatch
+import glob
+import fnmatch  # Still needed for gitignore pattern matching
 from typing import List, Tuple
 from janito.tools.rich_console import print_info, print_success, print_error
 
@@ -38,48 +39,55 @@ def find_files(pattern: str, root_dir: str = ".", recursive: bool = True, respec
         ignored_patterns = []
         if respect_gitignore:
             ignored_patterns = _get_gitignore_patterns(abs_root)
+            
+            # Check if the search pattern itself is in the gitignore
+            if _is_pattern_ignored(pattern, ignored_patterns):
+                warning_msg = f"Warning: The search pattern '{pattern}' matches patterns in .gitignore. Search may not yield expected results."
+                print_error(warning_msg, "Gitignore Conflict")
+                return warning_msg, True
         
-        # Use os.walk for more intuitive recursive behavior
+        # Use glob for pattern matching
+        # Construct the glob pattern with the root directory
+        glob_pattern = os.path.join(abs_root, pattern) if not pattern.startswith(os.path.sep) else pattern
+        
+        # Use recursive glob if needed
         if recursive:
-            for dirpath, dirnames, filenames in os.walk(abs_root):
-                # Skip ignored directories
-                if respect_gitignore:
-                    dirnames[:] = [d for d in dirnames if not _is_ignored(os.path.join(dirpath, d), ignored_patterns, abs_root)]
-                
-                for filename in filenames:
-                    file_path = os.path.join(dirpath, filename)
-                    
-                    # Skip ignored files
-                    if respect_gitignore and _is_ignored(file_path, ignored_patterns, abs_root):
-                        continue
-                    
-                    # Convert to relative path from root_dir
-                    rel_path = os.path.relpath(file_path, abs_root)
-                    # Match against the relative path, not just the filename
-                    if fnmatch.fnmatch(rel_path, pattern):
-                        matching_files.append(rel_path)
+            # Use ** pattern for recursive search if not already in the pattern
+            if '**' not in glob_pattern:
+                # Check if the pattern already has a directory component
+                if os.path.sep in pattern or '/' in pattern:
+                    # Pattern already has directory component, keep as is
+                    pass
+                else:
+                    # Add ** to search in all subdirectories
+                    glob_pattern = os.path.join(abs_root, '**', pattern)
+            
+            # Use recursive=True for Python 3.5+ glob
+            glob_files = glob.glob(glob_pattern, recursive=True)
         else:
             # Non-recursive mode - only search in the specified directory
-            for filename in os.listdir(abs_root):
-                file_path = os.path.join(abs_root, filename)
+            glob_files = glob.glob(glob_pattern)
+        
+        # Process the glob results
+        for file_path in glob_files:
+            # Skip directories
+            if not os.path.isfile(file_path):
+                continue
                 
-                # Skip ignored files
-                if respect_gitignore and _is_ignored(file_path, ignored_patterns, abs_root):
-                    continue
-                
-                if os.path.isfile(file_path):
-                    # Convert to relative path from root_dir
-                    rel_path = os.path.relpath(file_path, abs_root)
-                    # Match against the relative path, not just the filename
-                    if fnmatch.fnmatch(rel_path, pattern):
-                        matching_files.append(rel_path)
+            # Skip ignored files
+            if respect_gitignore and _is_ignored(file_path, ignored_patterns, abs_root):
+                continue
+            
+            # Convert to relative path from root_dir
+            rel_path = os.path.relpath(file_path, abs_root)
+            matching_files.append(rel_path)
         
         # Sort the files for consistent output
         matching_files.sort()
         
         if matching_files:
             file_list = "\n- ".join(matching_files)
-            result_msg = f"Found {len(matching_files)} files matching pattern '{pattern}':\n- {file_list}\n{len(matching_files)}"
+            result_msg = f"Found {len(matching_files)} files matching pattern '{pattern}':\n- {file_list}"
             print_success(result_msg, "Search Results")
             return result_msg, False
         else:
@@ -126,6 +134,49 @@ def _get_gitignore_patterns(root_dir: str) -> List[str]:
     patterns.extend(common_patterns)
     
     return patterns
+
+
+def _is_pattern_ignored(search_pattern: str, gitignore_patterns: List[str]) -> bool:
+    """
+    Check if a search pattern conflicts with gitignore patterns.
+    
+    Args:
+        search_pattern: The search pattern to check
+        gitignore_patterns: List of gitignore patterns
+        
+    Returns:
+        True if the search pattern conflicts with gitignore patterns, False otherwise
+    """
+    # Remove any directory part from the search pattern
+    pattern_only = search_pattern.split('/')[-1]
+    
+    for git_pattern in gitignore_patterns:
+        # Skip negation patterns
+        if git_pattern.startswith('!'):
+            continue
+            
+        # Remove trailing slash for directory patterns
+        if git_pattern.endswith('/'):
+            git_pattern = git_pattern[:-1]
+            
+        # Direct match
+        if git_pattern == search_pattern or git_pattern == pattern_only:
+            return True
+            
+        # Check if the gitignore pattern is a prefix of the search pattern
+        if search_pattern.startswith(git_pattern) and (
+            len(git_pattern) == len(search_pattern) or 
+            search_pattern[len(git_pattern)] in ['/', '\\']
+        ):
+            return True
+            
+        # Check for wildcard matches
+        if '*' in git_pattern or '?' in git_pattern:
+            # Check if the search pattern would be caught by this gitignore pattern
+            if fnmatch.fnmatch(search_pattern, git_pattern) or fnmatch.fnmatch(pattern_only, git_pattern):
+                return True
+                
+    return False
 
 
 def _is_ignored(path: str, patterns: List[str], root_dir: str) -> bool:

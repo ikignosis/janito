@@ -6,9 +6,11 @@ from typing import Tuple
 
 from janito.tools.decorators import tool
 from janito.tools.rich_console import print_info, print_success, print_error
+from janito.tools.usage_tracker import track_usage
 
 
 @tool
+@track_usage('files_modified')
 def replace_file(file_path: str, new_content: str) -> Tuple[str, bool]:
     """
     Replace an existing file with new content.

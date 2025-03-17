@@ -5,8 +5,10 @@ from pathlib import Path
 from typing import Tuple
 from janito.tools.str_replace_editor.utils import normalize_path
 from janito.tools.rich_console import print_info, print_success, print_error
+from janito.tools.usage_tracker import track_usage
 
 
+@track_usage('files_deleted')
 def delete_file(
     file_path: str,
 ) -> Tuple[str, bool]:

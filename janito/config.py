@@ -8,6 +8,40 @@ from pathlib import Path
 import typer
 from typing import Dict, Any, Optional
 
+# Predefined parameter profiles
+PROFILES = {
+    "precise": {
+        "temperature": 0.2,
+        "top_p": 0.85,
+        "top_k": 20,
+        "description": "Factual answers, documentation, structured data, avoiding hallucinations"
+    },
+    "balanced": {
+        "temperature": 0.5,
+        "top_p": 0.9,
+        "top_k": 40,
+        "description": "Professional writing, summarization, everyday tasks with moderate creativity"
+    },
+    "conversational": {
+        "temperature": 0.7,
+        "top_p": 0.9,
+        "top_k": 45,
+        "description": "Natural dialogue, educational content, support conversations"
+    },
+    "creative": {
+        "temperature": 0.9,
+        "top_p": 0.95,
+        "top_k": 70,
+        "description": "Storytelling, brainstorming, marketing copy, poetry"
+    },
+    "technical": {
+        "temperature": 0.3,
+        "top_p": 0.95,
+        "top_k": 15,
+        "description": "Code generation, debugging, decision analysis, technical problem-solving"
+    }
+}
+
 class Config:
     """Singleton configuration class for Janito."""
     _instance = None
@@ -17,8 +51,13 @@ class Config:
             cls._instance = super(Config, cls).__new__(cls)
             cls._instance._workspace_dir = os.getcwd()
             cls._instance._verbose = False
-            cls._instance._history_context_count = 5
+            # Chat history context feature has been removed
             cls._instance._ask_mode = False
+            cls._instance._temperature = 0.0
+            cls._instance._top_k = 0
+            cls._instance._top_p = 0.0
+            cls._instance._profile = None
+            cls._instance._role = "software engineer"
             cls._instance._load_config()
         return cls._instance
         
@@ -29,12 +68,21 @@ class Config:
             try:
                 with open(config_path, "r", encoding="utf-8") as f:
                     config_data = json.load(f)
-                    if "history_context_count" in config_data:
-                        self._history_context_count = config_data["history_context_count"]
+                    # Chat history context feature has been removed
                     if "debug_mode" in config_data:
                         self._verbose = config_data["debug_mode"]
                     if "ask_mode" in config_data:
                         self._ask_mode = config_data["ask_mode"]
+                    if "temperature" in config_data:
+                        self._temperature = config_data["temperature"]
+                    if "top_k" in config_data:
+                        self._top_k = config_data["top_k"]
+                    if "top_p" in config_data:
+                        self._top_p = config_data["top_p"]
+                    if "profile" in config_data:
+                        self._profile = config_data["profile"]
+                    if "role" in config_data:
+                        self._role = config_data["role"]
             except Exception as e:
                 print(f"Warning: Failed to load configuration: {str(e)}")
                 
@@ -45,16 +93,115 @@ class Config:
         config_path = config_dir / "config.json"
         
         config_data = {
-            "history_context_count": self._history_context_count,
+            # Chat history context feature has been removed
             "verbose": self._verbose,
-            "ask_mode": self._ask_mode
+            "ask_mode": self._ask_mode,
+            "temperature": self._temperature,
+            "top_k": self._top_k,
+            "top_p": self._top_p,
+            "role": self._role
         }
+        
+        # Save profile name if one is set
+        if self._profile:
+            config_data["profile"] = self._profile
         
         try:
             with open(config_path, "w", encoding="utf-8") as f:
                 json.dump(config_data, f, indent=2)
         except Exception as e:
             print(f"Warning: Failed to save configuration: {str(e)}")
+            
+    def set_profile(self, profile_name: str) -> None:
+        """Set parameter values based on a predefined profile.
+        
+        Args:
+            profile_name: Name of the profile to use (precise, balanced, conversational, creative, technical)
+            
+        Raises:
+            ValueError: If the profile name is not recognized
+        """
+        profile_name = profile_name.lower()
+        if profile_name not in PROFILES:
+            valid_profiles = ", ".join(PROFILES.keys())
+            raise ValueError(f"Unknown profile: {profile_name}. Valid profiles are: {valid_profiles}")
+            
+        profile = PROFILES[profile_name]
+        self._temperature = profile["temperature"]
+        self._top_p = profile["top_p"]
+        self._top_k = profile["top_k"]
+        self._profile = profile_name
+        self._save_config()
+        
+    @property
+    def profile(self) -> Optional[str]:
+        """Get the current profile name."""
+        return self._profile
+        
+    @staticmethod
+    def get_available_profiles() -> Dict[str, Dict[str, Any]]:
+        """Get all available predefined profiles."""
+        return PROFILES
+        
+    @staticmethod
+    def set_api_key(api_key: str) -> None:
+        """Set the API key in the global configuration file.
+        
+        Args:
+            api_key: The Anthropic API key to store
+            
+        Returns:
+            None
+        """
+        # Create .janito directory in user's home directory if it doesn't exist
+        home_dir = Path.home()
+        config_dir = home_dir / ".janito"
+        config_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Create or update the config.json file
+        config_path = config_dir / "config.json"
+        
+        # Load existing config if it exists
+        config_data = {}
+        if config_path.exists():
+            try:
+                with open(config_path, "r", encoding="utf-8") as f:
+                    config_data = json.load(f)
+            except Exception as e:
+                print(f"Warning: Failed to load global configuration: {str(e)}")
+        
+        # Update the API key
+        config_data["api_key"] = api_key
+        
+        # Save the updated config
+        try:
+            with open(config_path, "w", encoding="utf-8") as f:
+                json.dump(config_data, f, indent=2)
+            print(f"API key saved to {config_path}")
+        except Exception as e:
+            raise ValueError(f"Failed to save API key: {str(e)}")
+            
+    @staticmethod
+    def get_api_key() -> Optional[str]:
+        """Get the API key from the global configuration file.
+        
+        Returns:
+            The API key if found, None otherwise
+        """
+        # Look for config.json in user's home directory
+        home_dir = Path.home()
+        config_path = home_dir / ".janito" / "config.json"
+        
+        if config_path.exists():
+            try:
+                with open(config_path, "r", encoding="utf-8") as f:
+                    config_data = json.load(f)
+                    return config_data.get("api_key")
+            except Exception:
+                # Silently fail and return None
+                pass
+                
+        return None
     
     @property
     def workspace_dir(self) -> str:
@@ -106,18 +253,7 @@ class Config:
         """Set the debug mode status (alias for verbose)."""
         self._verbose = value
 
-    @property
-    def history_context_count(self) -> int:
-        """Get the number of previous conversations to include in context."""
-        return self._history_context_count
-        
-    @history_context_count.setter
-    def history_context_count(self, count: int) -> None:
-        """Set the number of previous conversations to include in context."""
-        if count < 0:
-            raise ValueError("History context count must be a non-negative integer")
-        self._history_context_count = count
-        self._save_config()
+    # Chat history context feature has been removed
         
     @property
     def ask_mode(self) -> bool:
@@ -129,6 +265,77 @@ class Config:
         """Set the ask mode status."""
         self._ask_mode = value
         self._save_config()
+        
+    @property
+    def temperature(self) -> float:
+        """Get the temperature value for model generation."""
+        return self._temperature
+        
+    @temperature.setter
+    def temperature(self, value: float) -> None:
+        """Set the temperature value for model generation."""
+        if value < 0.0 or value > 1.0:
+            raise ValueError("Temperature must be between 0.0 and 1.0")
+        self._temperature = value
+        self._save_config()
+        
+    @property
+    def top_k(self) -> int:
+        """Get the top_k value for model generation."""
+        return self._top_k
+        
+    @top_k.setter
+    def top_k(self, value: int) -> None:
+        """Set the top_k value for model generation."""
+        if value < 0:
+            raise ValueError("top_k must be a non-negative integer")
+        self._top_k = value
+        self._save_config()
+        
+    @property
+    def top_p(self) -> float:
+        """Get the top_p value for model generation."""
+        return self._top_p
+        
+    @top_p.setter
+    def top_p(self, value: float) -> None:
+        """Set the top_p value for model generation."""
+        if value < 0.0 or value > 1.0:
+            raise ValueError("top_p must be between 0.0 and 1.0")
+        self._top_p = value
+        self._save_config()
+        
+    @property
+    def role(self) -> str:
+        """Get the role for the assistant."""
+        return self._role
+        
+    @role.setter
+    def role(self, value: str) -> None:
+        """Set the role for the assistant."""
+        self._role = value
+        self._save_config()
+        
+    def reset_config(self) -> bool:
+        """Reset configuration by removing the config file.
+        
+        Returns:
+            bool: True if the config file was removed, False if it didn't exist
+        """
+        config_path = Path(self._workspace_dir) / ".janito" / "config.json"
+        if config_path.exists():
+            config_path.unlink()
+            # Reset instance variables to defaults
+            self._verbose = False
+            # Chat history context feature has been removed
+            self._ask_mode = False
+            self._temperature = 0.0
+            self._top_k = 0
+            self._top_p = 0.0
+            self._profile = None
+            self._role = "software engineer"
+            return True
+        return False
 
 # Convenience function to get the config instance
 def get_config() -> Config:
