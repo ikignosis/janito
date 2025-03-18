@@ -68,9 +68,7 @@ def bash_tool(command: str, restart: Optional[bool] = False) -> Tuple[str, bool]
             if output.strip():
                 from rich.text import Text
                 from rich.panel import Panel
-                console.print("\n" + "*"*50)
                 console.print("$ COMMAND OUTPUT", style="bold white on blue")
-                console.print("*"*50)
                 console.print(Panel(Text(output), style="white on dark_blue"))
             
             # Always assume execution was successful
