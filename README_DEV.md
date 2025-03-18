@@ -2,6 +2,17 @@
 
 This document provides instructions for developers working with Janito, including installation from source and using hatch for development.
 
+## Quick Development Setup
+
+```bash
+# Create a virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install development dependencies
+pip install -e ".[dev]"
+```
+
 ## Installing from Source
 
 ```bash

@@ -3,6 +3,7 @@ Agent initialization and query handling for Janito CLI.
 """
 import os
 import sys
+import json
 import anthropic
 import claudine
 import typer
@@ -153,7 +154,64 @@ def initialize_agent(temperature: float, verbose: bool) -> claudine.Agent:
     
     return agent
 
-def handle_query(query: str, temperature: float, verbose: bool, show_tokens: bool) -> None:
+def save_messages(agent):
+    """
+    Save agent messages to .janito/last_message.json
+    
+    Args:
+        agent: The claudine agent instance
+    """
+    try:
+        # Get the workspace directory
+        workspace_dir = Path(get_config().workspace_dir)
+        
+        # Create .janito directory if it doesn't exist
+        janito_dir = workspace_dir / ".janito"
+        janito_dir.mkdir(exist_ok=True)
+        
+        # Get messages from the agent
+        messages = agent.get_messages()
+        
+        # Save messages to file
+        with open(janito_dir / "last_message.json", "w", encoding="utf-8") as f:
+            json.dump(messages, f, ensure_ascii=False, indent=2)
+            
+        if get_config().verbose:
+            console.print(f"[bold green]✅ Conversation saved to {janito_dir / 'last_message.json'}[/bold green]")
+    except Exception as e:
+        console.print(f"[bold red]❌ Error saving conversation:[/bold red] {str(e)}")
+
+def load_messages():
+    """
+    Load messages from .janito/last_message.json
+    
+    Returns:
+        List of message dictionaries or None if file doesn't exist
+    """
+    try:
+        # Get the workspace directory
+        workspace_dir = Path(get_config().workspace_dir)
+        
+        # Check if file exists
+        messages_file = workspace_dir / ".janito" / "last_message.json"
+        if not messages_file.exists():
+            console.print("[bold yellow]⚠️ No previous conversation found[/bold yellow]")
+            return None
+        
+        # Load messages from file
+        with open(messages_file, "r", encoding="utf-8") as f:
+            messages = json.load(f)
+            
+        if get_config().verbose:
+            console.print(f"[bold green]✅ Loaded previous conversation from {messages_file}[/bold green]")
+            console.print(f"[dim]📝 Conversation has {len(messages)} messages[/dim]")
+            
+        return messages
+    except Exception as e:
+        console.print(f"[bold red]❌ Error loading previous conversation:[/bold red] {str(e)}")
+        return None
+
+def handle_query(query: str, temperature: float, verbose: bool, show_tokens: bool, continue_conversation: bool = False) -> None:
     """
     Handle a query by initializing the agent and sending the query.
     
@@ -162,13 +220,24 @@ def handle_query(query: str, temperature: float, verbose: bool, show_tokens: boo
         temperature: Temperature value for model generation
         verbose: Whether to enable verbose mode
         show_tokens: Whether to show detailed token usage
+        continue_conversation: Whether to continue the previous conversation
     """
     # Initialize the agent
     agent = initialize_agent(temperature, verbose)
     
+    # Load previous messages if continuing conversation
+    if continue_conversation:
+        messages = load_messages()
+        if messages:
+            agent.set_messages(messages)
+            console.print("[bold blue]🔄 Continuing previous conversation[/bold blue]")
+    
     # Send the query to the agent
     try:
         agent.query(query)
+        
+        # Save messages after successful query
+        save_messages(agent)
         
         # Print token usage report
         if show_tokens:
@@ -184,6 +253,9 @@ def handle_query(query: str, temperature: float, verbose: bool, show_tokens: boo
     except KeyboardInterrupt:
         # Handle Ctrl+C by printing token and tool usage information
         console.print("\n[bold yellow]⚠️ Query interrupted by user (Ctrl+C)[/bold yellow]")
+        
+        # Save messages even if interrupted
+        save_messages(agent)
         
         # Print token usage report (even if interrupted)
         try:

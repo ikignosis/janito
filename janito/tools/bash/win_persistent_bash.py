@@ -19,6 +19,7 @@ class PersistentBash:
         
         Args:
             bash_path (str, optional): Path to the Bash executable. If None, tries to detect automatically.
+                                      This can be configured in Janito's config using the gitbash_path setting.
         """
         self.process = None
         self.bash_path = bash_path

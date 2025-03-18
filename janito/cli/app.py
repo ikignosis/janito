@@ -29,7 +29,8 @@ def main(ctx: typer.Context,
          temperature: float = typer.Option(0.0, "--temperature", help="Set the temperature for model generation (0.0 to 1.0)"),
          profile: Optional[str] = typer.Option(None, "--profile", help="Use a predefined parameter profile (precise, balanced, conversational, creative, technical)"),
          role: Optional[str] = typer.Option(None, "--role", help="Set the assistant's role (default: 'software engineer')"),
-         version: bool = typer.Option(False, "--version", help="Show the version and exit")):
+         version: bool = typer.Option(False, "--version", help="Show the version and exit"),
+         continue_conversation: bool = typer.Option(False, "--continue", "-c", help="Continue the previous conversation")):
     """
     Janito CLI tool. If a query is provided without a command, it will be sent to the claudine agent.
     """    
@@ -65,7 +66,8 @@ def main(ctx: typer.Context,
         role, 
         set_api_key, 
         config_str, 
-        query
+        query,
+        continue_conversation
     )
     
     if exit_after_config:
@@ -81,4 +83,4 @@ def main(ctx: typer.Context,
             
         # Only proceed if we have a query (either from command line or stdin)
         if query:
-            handle_query(query, temperature, verbose, show_tokens)
+            handle_query(query, temperature, verbose, show_tokens, continue_conversation)

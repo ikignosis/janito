@@ -24,8 +24,7 @@ def validate_parameters(temperature: float) -> None:
             raise ValueError("Temperature must be between 0.0 and 1.0")
             
         # We'll use this value directly in the agent initialization but we don't save it to config
-        if temperature != 0.0:
-            console.print(f"[bold blue]🌡️ Using temperature: {temperature} (from command line)[/bold blue]")
+        # Temperature display is hidden
     except ValueError as e:
         console.print(f"[bold red]Error:[/bold red] {str(e)}")
         sys.exit(1)
@@ -92,7 +91,7 @@ def handle_show_config(show_config: bool, ctx: typer.Context, query: Optional[st
     """
     if show_config:
         config = get_config()
-        console.print("[bold blue]⚙️ Current Configuration:[/bold blue]")
+        console.print("[bold blue]⚙️  Current Configuration:[/bold blue]")
         console.print(f"[bold]📁 Local Configuration File:[/bold] .janito/config.json")
         console.print(f"[bold]🏠 Global Configuration File:[/bold] {Path.home() / '.janito' / 'config.json'}")
         
@@ -115,16 +114,13 @@ def handle_show_config(show_config: bool, ctx: typer.Context, query: Optional[st
         if config.profile:
             profile_data = config.get_available_profiles()[config.profile]
             console.print(f"[bold]📋 Active Profile:[/bold] {config.profile} - {profile_data['description']}")
-            
-        console.print(f"[bold]🌡️ Temperature:[/bold] {config.temperature}")
         
         # Show available profiles
         profiles = config.get_available_profiles()
         if profiles:
             console.print("\n[bold blue]📋 Available Parameter Profiles:[/bold blue]")
             for name, data in profiles.items():
-                console.print(f"[bold]🔹 {name}[/bold] (temp={data['temperature']}, top_p={data['top_p']}, top_k={data['top_k']})")
-                console.print(f"  {data['description']}")
+                console.print(f"[bold]🔹 {name}[/bold] - {data['description']}")
             
         # Exit if this was the only operation requested
         return ctx.invoked_subcommand is None and not query
@@ -155,7 +151,6 @@ def handle_profile(profile: Optional[str], ctx: typer.Context, query: Optional[s
             
             console.print(f"[bold green]✅ Profile '{profile.lower()}' applied for this session only[/bold green]")
             console.print(f"[dim]📝 Description: {profile_data['description']}[/dim]")
-            console.print(f"[dim]⚙️ Parameters: temperature={profile_data['temperature']}, top_p={profile_data['top_p']}, top_k={profile_data['top_k']}[/dim]")
             
             # Exit after applying profile if no other operation is requested
             return ctx.invoked_subcommand is None and not query
@@ -253,7 +248,6 @@ def handle_set_config(config_str: Optional[str], ctx: typer.Context, query: Opti
                     profile_data = get_config().get_available_profiles()[value.lower()]
                     console.print(f"[bold green]✅ Profile set to '{value.lower()}'[/bold green]")
                     console.print(f"[dim]📝 Description: {profile_data['description']}[/dim]")
-                    console.print(f"[dim]⚙️ Parameters: temperature={profile_data['temperature']}, top_p={profile_data['top_p']}, top_k={profile_data['top_k']}[/dim]")
                 except ValueError as e:
                     console.print(f"[bold red]Error:[/bold red] {str(e)}")
             elif key == "temperature":
@@ -290,7 +284,8 @@ def handle_config_commands(
     role: Optional[str],
     set_api_key: Optional[str],
     config_str: Optional[str],
-    query: Optional[str]
+    query: Optional[str],
+    continue_conversation: bool = False
 ) -> bool:
     """
     Handle all configuration-related commands.
@@ -305,6 +300,7 @@ def handle_config_commands(
         set_api_key: API key
         config_str: Configuration string in format 'key=value'
         query: Query string
+        continue_conversation: Whether to continue the previous conversation
         
     Returns:
         bool: True if the program should exit after these operations

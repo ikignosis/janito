@@ -58,7 +58,9 @@ def bash_tool(command: str, restart: Optional[bool] = False) -> Tuple[str, bool]
         if _bash_session is None or restart:
             if _bash_session is not None:
                 _bash_session.close()
-            _bash_session = PersistentBash()
+            # Get GitBash path from config (None means auto-detect)
+            gitbash_path = get_config().gitbash_path
+            _bash_session = PersistentBash(bash_path=gitbash_path)
         
         try:
             # Execute the command - output will be printed to console in real-time

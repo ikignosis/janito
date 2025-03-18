@@ -53,9 +53,12 @@ class Config:
             cls._instance._verbose = False
             # Chat history context feature has been removed
             cls._instance._ask_mode = False
-            cls._instance._temperature = 0.0
-            cls._instance._profile = None
+            # Set technical profile as default
+            profile_data = PROFILES["technical"]
+            cls._instance._temperature = profile_data["temperature"]
+            cls._instance._profile = "technical"
             cls._instance._role = "software engineer"
+            cls._instance._gitbash_path = None  # Default to None for auto-detection
             cls._instance._load_config()
         return cls._instance
         
@@ -77,6 +80,8 @@ class Config:
                         self._profile = config_data["profile"]
                     if "role" in config_data:
                         self._role = config_data["role"]
+                    if "gitbash_path" in config_data:
+                        self._gitbash_path = config_data["gitbash_path"]
             except Exception as e:
                 print(f"Warning: Failed to load configuration: {str(e)}")
                 
@@ -97,6 +102,10 @@ class Config:
         # Save profile name if one is set
         if self._profile:
             config_data["profile"] = self._profile
+            
+        # Save GitBash path if one is set
+        if self._gitbash_path:
+            config_data["gitbash_path"] = self._gitbash_path
         
         try:
             with open(config_path, "w", encoding="utf-8") as f:
@@ -282,6 +291,25 @@ class Config:
         self._role = value
         self._save_config()
         
+    @property
+    def gitbash_path(self) -> Optional[str]:
+        """Get the path to the GitBash executable."""
+        return self._gitbash_path
+        
+    @gitbash_path.setter
+    def gitbash_path(self, value: Optional[str]) -> None:
+        """Set the path to the GitBash executable.
+        
+        Args:
+            value: Path to the GitBash executable, or None to use auto-detection
+        """
+        # If a path is provided, verify it exists
+        if value is not None and not os.path.exists(value):
+            raise ValueError(f"GitBash executable not found at: {value}")
+        
+        self._gitbash_path = value
+        self._save_config()
+        
     def reset_config(self) -> bool:
         """Reset configuration by removing the config file.
         
@@ -295,9 +323,12 @@ class Config:
             self._verbose = False
             # Chat history context feature has been removed
             self._ask_mode = False
-            self._temperature = 0.0
-            self._profile = None
+            # Set technical profile as default
+            profile_data = PROFILES["technical"]
+            self._temperature = profile_data["temperature"]
+            self._profile = "technical"
             self._role = "software engineer"
+            self._gitbash_path = None  # Reset to auto-detection
             return True
         return False
 

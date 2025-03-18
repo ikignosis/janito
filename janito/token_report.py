@@ -39,7 +39,7 @@ def generate_token_report(agent, verbose=False, interrupted=False):
         
         # Format costs
         def format_cost(cost):
-            return f"{cost * 100:.2f}¢" if cost < 1.0 else f"${cost:.6f}"
+            return f"{cost * 100:.2f}¢ USD" if cost < 1.0 else f"${cost:.6f} USD"
         
         console.print("\n[bold blue]📊 Detailed Token Usage:[/bold blue]")
         console.print(f"📝 Text Input tokens: {text_usage.input_tokens}")
@@ -130,7 +130,7 @@ def generate_token_report(agent, verbose=False, interrupted=False):
         
         # Format costs
         def format_cost(cost):
-            return f"{cost * 100:.2f}¢" if cost < 1.0 else f"${cost:.6f}"
+            return f"{cost * 100:.2f}¢ USD" if cost < 1.0 else f"${cost:.6f} USD"
         
         # Prepare summary message
         cost_text = f"Cost: {format_cost(cost.total_cost)}"

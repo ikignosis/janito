@@ -26,14 +26,4 @@ def display_generation_params(
             profile_data = config.get_available_profiles()[config.profile]
         console.print(f"[dim]👤 Using profile: {config.profile} - {profile_data['description']}[/dim]")
     
-    if temperature != 0.0:
-        console.print(f"[dim]🌡️ Using temperature: {temp_to_use} (from command line)[/dim]")
-    else:
-        console.print(f"[dim]🌡️ Using temperature: {temp_to_use} (from configuration){' (via profile)' if config.profile else ''}[/dim]")
-        
-    # Display top_k and top_p only if they come from a profile
-    if profile_data:
-        if "top_k" in profile_data and profile_data["top_k"] != 0:
-            console.print(f"[dim]🔝 Using top_k: {profile_data['top_k']} (via profile {config.profile})[/dim]")
-        if "top_p" in profile_data and profile_data["top_p"] != 0.0:
-            console.print(f"[dim]📊 Using top_p: {profile_data['top_p']} (via profile {config.profile})[/dim]")
+    # Temperature, top_k, and top_p information is hidden
