@@ -11,6 +11,7 @@ Janito is a powerful AI-assisted command-line interface (CLI) tool built with Py
 - 🔍 Smart code search and editing
 - 💻 Interactive terminal interface with rich formatting
 - 📊 Detailed token usage tracking and cost reporting with cache savings analysis
+- 🛑 Token and tool usage reporting even when interrupted with Ctrl+C
 
 ## 🛠️ Installation
 
@@ -38,6 +39,9 @@ janito "Add a --version to the cli to report the version"
 
 # Show detailed token usage and cost information
 janito --show-tokens "Explain how to optimize Python code"
+
+# You can press Ctrl+C at any time to interrupt a query
+# Janito will still display token and tool usage information
 
 ```
 

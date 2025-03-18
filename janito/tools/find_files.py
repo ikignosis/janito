@@ -2,27 +2,27 @@ import os
 import glob
 import fnmatch  # Still needed for gitignore pattern matching
 from typing import List, Tuple
-from janito.tools.rich_console import print_info, print_success, print_error
+from janito.tools.rich_console import print_info, print_success, print_error, print_warning
 
 
-def find_files(pattern: str, root_dir: str = ".", recursive: bool = True, respect_gitignore: bool = True) -> Tuple[str, bool]:
+def find_files(pattern: str, root_dir: str = ".", recursive: bool = True) -> Tuple[str, bool]:
     """
     Find files whose path matches a glob pattern.
+    Files in .gitignore are always ignored.
     
     Args:
         pattern: pattern to match file paths against (e.g., "*.py", "*/tools/*.py")
         root_dir: root directory to start search from (default: current directory)
         recursive: Whether to search recursively in subdirectories (default: True)
-        respect_gitignore: Whether to respect .gitignore files (default: True)
         
     Returns:
         A tuple containing (message, is_error)
     """
+    # Print start message without newline
     print_info(
         f"Finding files matching path pattern {pattern}, on {root_dir} " +
-        f"({'recursive' if recursive else 'non-recursive'}, " +
-        f"{'respecting gitignore' if respect_gitignore else 'ignoring gitignore'})",
-        "File Search"
+        f"({'recursive' if recursive else 'non-recursive'})",
+        title="Text Search"
     )
     try:
         # Convert to absolute path if relative
@@ -30,21 +30,19 @@ def find_files(pattern: str, root_dir: str = ".", recursive: bool = True, respec
         
         if not os.path.isdir(abs_root):
             error_msg = f"Error: Directory '{root_dir}' does not exist"
-            print_error(error_msg, "Directory Error")
+            print_error(error_msg, title="File Operation")
             return error_msg, True
         
         matching_files = []
         
-        # Get gitignore patterns if needed
-        ignored_patterns = []
-        if respect_gitignore:
-            ignored_patterns = _get_gitignore_patterns(abs_root)
-            
-            # Check if the search pattern itself is in the gitignore
-            if _is_pattern_ignored(pattern, ignored_patterns):
-                warning_msg = f"Warning: The search pattern '{pattern}' matches patterns in .gitignore. Search may not yield expected results."
-                print_error(warning_msg, "Gitignore Conflict")
-                return warning_msg, True
+        # Get gitignore patterns
+        ignored_patterns = _get_gitignore_patterns(abs_root)
+        
+        # Check if the search pattern itself is in the gitignore
+        if _is_pattern_ignored(pattern, ignored_patterns):
+            warning_msg = f"Warning: The search pattern '{pattern}' matches patterns in .gitignore. Search may not yield expected results."
+            print_error(warning_msg, title="Text Search")
+            return warning_msg, True
         
         # Use glob for pattern matching
         # Construct the glob pattern with the root directory
@@ -75,7 +73,7 @@ def find_files(pattern: str, root_dir: str = ".", recursive: bool = True, respec
                 continue
                 
             # Skip ignored files
-            if respect_gitignore and _is_ignored(file_path, ignored_patterns, abs_root):
+            if _is_ignored(file_path, ignored_patterns, abs_root):
                 continue
             
             # Convert to relative path from root_dir
@@ -87,17 +85,17 @@ def find_files(pattern: str, root_dir: str = ".", recursive: bool = True, respec
         
         if matching_files:
             file_list = "\n- ".join(matching_files)
-            result_msg = f"Found {len(matching_files)} files matching pattern '{pattern}':\n- {file_list}"
-            print_success(result_msg, "Search Results")
-            return result_msg, False
+            result_msg = f"{len(matching_files)} files found"
+            print_success(result_msg, title="Search Results")
+            return file_list, False
         else:
-            result_msg = f"No files found matching pattern '{pattern}' in '{root_dir}'"
-            print_info(result_msg, "Search Results")
+            result_msg = "No files found"
+            print_success(result_msg, title="Search Results")
             return result_msg, False
             
     except Exception as e:
         error_msg = f"Error finding files: {str(e)}"
-        print_error(error_msg, "Search Error")
+        print_error(error_msg, title="Text Search")
         return error_msg, True
 
 

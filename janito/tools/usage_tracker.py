@@ -102,6 +102,7 @@ def count_lines_in_string(old_str: str, new_str: str) -> int:
     new_lines = new_str.splitlines()
     
     # Simple approach: count the total number of lines changed
+    # For tracking purposes, we'll use the max to ensure we don't undercount
     return max(len(old_lines), len(new_lines))
 
 

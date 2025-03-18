@@ -81,9 +81,8 @@ def fetch_webpage(url: str, headers: dict = None, timeout: int = 30, max_size: i
         
         # Create a summary message with first 300 chars of content
         content_preview = content[:300] + "..." if len(content) > 300 else content
-        summary = f"Successfully fetched content from {url}\n\nContent preview:\n{content_preview}"
         
-        print_success(f"Successfully fetched content from {url} ({len(content)} bytes)", "Web Fetch")
+        print_success(f"({len(content)} bytes)", "Web Fetch")
         
         # Return the full content
         return content, False

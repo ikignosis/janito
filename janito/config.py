@@ -54,8 +54,6 @@ class Config:
             # Chat history context feature has been removed
             cls._instance._ask_mode = False
             cls._instance._temperature = 0.0
-            cls._instance._top_k = 0
-            cls._instance._top_p = 0.0
             cls._instance._profile = None
             cls._instance._role = "software engineer"
             cls._instance._load_config()
@@ -75,10 +73,6 @@ class Config:
                         self._ask_mode = config_data["ask_mode"]
                     if "temperature" in config_data:
                         self._temperature = config_data["temperature"]
-                    if "top_k" in config_data:
-                        self._top_k = config_data["top_k"]
-                    if "top_p" in config_data:
-                        self._top_p = config_data["top_p"]
                     if "profile" in config_data:
                         self._profile = config_data["profile"]
                     if "role" in config_data:
@@ -97,8 +91,6 @@ class Config:
             "verbose": self._verbose,
             "ask_mode": self._ask_mode,
             "temperature": self._temperature,
-            "top_k": self._top_k,
-            "top_p": self._top_p,
             "role": self._role
         }
         
@@ -128,8 +120,6 @@ class Config:
             
         profile = PROFILES[profile_name]
         self._temperature = profile["temperature"]
-        self._top_p = profile["top_p"]
-        self._top_k = profile["top_k"]
         self._profile = profile_name
         self._save_config()
         
@@ -279,31 +269,7 @@ class Config:
         self._temperature = value
         self._save_config()
         
-    @property
-    def top_k(self) -> int:
-        """Get the top_k value for model generation."""
-        return self._top_k
-        
-    @top_k.setter
-    def top_k(self, value: int) -> None:
-        """Set the top_k value for model generation."""
-        if value < 0:
-            raise ValueError("top_k must be a non-negative integer")
-        self._top_k = value
-        self._save_config()
-        
-    @property
-    def top_p(self) -> float:
-        """Get the top_p value for model generation."""
-        return self._top_p
-        
-    @top_p.setter
-    def top_p(self, value: float) -> None:
-        """Set the top_p value for model generation."""
-        if value < 0.0 or value > 1.0:
-            raise ValueError("top_p must be between 0.0 and 1.0")
-        self._top_p = value
-        self._save_config()
+    # top_k and top_p are now only accessible through profiles
         
     @property
     def role(self) -> str:
@@ -330,8 +296,6 @@ class Config:
             # Chat history context feature has been removed
             self._ask_mode = False
             self._temperature = 0.0
-            self._top_k = 0
-            self._top_p = 0.0
             self._profile = None
             self._role = "software engineer"
             return True

@@ -5,6 +5,7 @@ import platform
 import re
 from janito.config import get_config
 from janito.tools.usage_tracker import get_tracker
+from janito.tools.rich_console import console, print_info
 
 
 # Import the appropriate implementation based on the platform
@@ -30,7 +31,7 @@ def bash_tool(command: str, restart: Optional[bool] = False) -> Tuple[str, bool]
     Returns:
         A tuple containing (output message, is_error flag)
     """
-    print(f"Executing Command: {command}")
+    print_info(f"{command}", "Bash Run")
     global _bash_session
     
     # Check if in ask mode and if the command might modify files
@@ -63,9 +64,19 @@ def bash_tool(command: str, restart: Optional[bool] = False) -> Tuple[str, bool]
             # Track bash command execution
             get_tracker().increment('bash_commands')
             
+            # Only display the output with ASCII header if there is actual output
+            if output.strip():
+                from rich.text import Text
+                from rich.panel import Panel
+                console.print("\n" + "*"*50)
+                console.print("$ COMMAND OUTPUT", style="bold white on blue")
+                console.print("*"*50)
+                console.print(Panel(Text(output), style="white on dark_blue"))
+            
             # Always assume execution was successful
             is_error = False
             
+            # Return the output as a string, not the Panel object
             return output, is_error
             
         except Exception as e:

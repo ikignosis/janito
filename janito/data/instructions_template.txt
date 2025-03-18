@@ -7,21 +7,21 @@ If creating or editing files with a large number of lines, organize them into sm
 If creating or editing files in an existing directory check surrounding files for the used patterns.
 
 # Structure Discovery (.janito/docs/STRUCTURE.md)
-Allways start to discovery the project structure by viewing precisely the .janito/docs/STRUCTURE.md.
-At the end of your plan create or update the structure file per the search and creations with the tools.
+Start by checking the project structure from .janito/docs/STRUCTURE.md and hand over to tools when more info is needed or if consistency issues are found.
 The janito STRUCTURE.md should be concise to provide a fast index into the files and directories.
-Consider to use the STRUCTURE.md info until you find mismatching or missing information.
 Do not track files or directories wich are in .gitignore in the structure.
+At the end of responding to the user, create or update the structure file based on the files and directories you have interacted with.
 
-Tools:
+
+# Tools
 The bash tool does not support commands which will require user input.
 Prefer the str_replace_editor tool to view directories and file contents.
 
-<IMPORTANT>
+</IMPORTANT>
 Call the tool user_prompt when:
 - There are multiple options to apply a certain change
 - The next operation risk is moderated or high
 - The implementation plan is complex, requiring a review
 Proceed according to the user answer.
-</IMPORTANT>
+<IMPORTANT/>
 

@@ -7,9 +7,10 @@ from janito.tools.usage_tracker import track_usage
 
 
 @track_usage('search_operations')
-def search_text(text_pattern: str, file_pattern: str = "*", root_dir: str = ".", recursive: bool = True, respect_gitignore: bool = True) -> Tuple[str, bool]:
+def search_text(text_pattern: str, file_pattern: str = "*", root_dir: str = ".", recursive: bool = True) -> Tuple[str, bool]:
     """
     Search for text patterns within files matching a filename pattern.
+    Files in .gitignore are always ignored.
     
     Args:
         text_pattern: Text pattern to search for within files
@@ -18,12 +19,12 @@ def search_text(text_pattern: str, file_pattern: str = "*", root_dir: str = ".",
                      Examples: "*.py *.toml *.sh *.md test*"
         root_dir: Root directory to start search from (default: current directory)
         recursive: Whether to search recursively in subdirectories (default: True)
-        respect_gitignore: Whether to respect .gitignore files (default: True)
         
     Returns:
         A tuple containing (message, is_error)
     """
-    print_info(f"Searching for '{text_pattern}' in files matching '{file_pattern}'", "Text Search")
+    # Simplified initial message
+    print_info(f"Searching for '{text_pattern}' in '{file_pattern}'", "Text Search")
     try:
         # Convert to absolute path if relative
         abs_root = os.path.abspath(root_dir)
@@ -45,17 +46,14 @@ def search_text(text_pattern: str, file_pattern: str = "*", root_dir: str = ".",
         match_count = 0
         results = []
         
-        # Get gitignore patterns if needed
-        ignored_patterns = []
-        if respect_gitignore:
-            ignored_patterns = _get_gitignore_patterns(abs_root)
+        # Get gitignore patterns
+        ignored_patterns = _get_gitignore_patterns(abs_root)
         
         # Use os.walk for recursive behavior
         if recursive:
             for dirpath, dirnames, filenames in os.walk(abs_root):
                 # Skip ignored directories
-                if respect_gitignore:
-                    dirnames[:] = [d for d in dirnames if not _is_ignored(os.path.join(dirpath, d), ignored_patterns, abs_root)]
+                dirnames[:] = [d for d in dirnames if not _is_ignored(os.path.join(dirpath, d), ignored_patterns, abs_root)]
                 
                 # Handle multiple patterns separated by semicolons or spaces
                 patterns = []
@@ -71,7 +69,7 @@ def search_text(text_pattern: str, file_pattern: str = "*", root_dir: str = ".",
                         file_path = os.path.join(dirpath, filename)
                         
                         # Skip ignored files
-                        if respect_gitignore and _is_ignored(file_path, ignored_patterns, abs_root):
+                        if _is_ignored(file_path, ignored_patterns, abs_root):
                             continue
                         
                         # Skip if already processed this file
@@ -100,7 +98,7 @@ def search_text(text_pattern: str, file_pattern: str = "*", root_dir: str = ".",
                     file_path = os.path.join(abs_root, filename)
                     
                     # Skip ignored files
-                    if respect_gitignore and _is_ignored(file_path, ignored_patterns, abs_root):
+                    if _is_ignored(file_path, ignored_patterns, abs_root):
                         continue
                     
                     # Skip if already processed this file
@@ -116,14 +114,17 @@ def search_text(text_pattern: str, file_pattern: str = "*", root_dir: str = ".",
                             results.extend(file_matches)
         
         if matching_files:
+            # Only print the count summary, not the full results
+            summary = f"{match_count} matches in {len(matching_files)} files"
+            print_success(summary, "Search Results")
+            
+            # Still return the full results for programmatic use
             result_text = "\n".join(results)
-            summary = f"\n{match_count} matches in {len(matching_files)} files"
             result_msg = f"Searching for '{text_pattern}' in files matching '{file_pattern}':{result_text}\n{summary}"
-            print_success(result_msg, "Search Results")
             return result_msg, False
         else:
-            result_msg = f"No matches found for '{text_pattern}' in files matching '{file_pattern}' in '{root_dir}'"
-            print_info(result_msg, "Search Results")
+            result_msg = f"No matches found for '{text_pattern}' in files matching '{file_pattern}'"
+            print_warning("No matches found", "Search Results")
             return result_msg, False
             
     except Exception as e:
