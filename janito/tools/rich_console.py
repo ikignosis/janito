@@ -19,7 +19,7 @@ def print_info(message: str, title: Optional[str] = None):
     # Map titles to specific icons
     icon_map = {
         # File operations
-        "Delete Operation": "🗑️",
+        "Delete Operation": "🗑️ ",
         "Move Operation": "📦",
         "File Operation": "📄",
         "Directory View": "📁",
@@ -129,12 +129,11 @@ def print_error(message: str, title: Optional[str] = None):
     else:
         console.print(f"\n❌ {text}", style="red")
 
-def print_warning(message: str, title: Optional[str] = None):
+def print_warning(message: str):
     """
     Print a warning message with rich formatting.
     
     Args:
         message: The message to print
-        title: Optional title for the panel
     """
-    console.print(f"⚠️ {message or title}", style="yellow")
+    console.print(f"⚠️  {message}", style="yellow")

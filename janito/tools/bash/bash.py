@@ -7,7 +7,6 @@ from janito.config import get_config
 from janito.tools.usage_tracker import get_tracker
 from janito.tools.rich_console import console, print_info
 
-
 # Import the appropriate implementation based on the platform
 if platform.system() == "Windows":
     from janito.tools.bash.win_persistent_bash import PersistentBash
@@ -16,13 +15,14 @@ else:
 
 # Global instance of PersistentBash to maintain state between calls
 _bash_session = None
-_session_lock = threading.Lock()
+_session_lock = threading.RLock()  # Use RLock to allow reentrant locking
 
 def bash_tool(command: str, restart: Optional[bool] = False) -> Tuple[str, bool]:
     """
     Execute a bash command using a persistent Bash session.
     The appropriate implementation (Windows or Unix) is selected based on the detected platform.
     When in ask mode, only read-only commands are allowed.
+    Output is printed to the console in real-time as it's received.
     
     Args:
         command: The bash command to execute
@@ -31,6 +31,9 @@ def bash_tool(command: str, restart: Optional[bool] = False) -> Tuple[str, bool]
     Returns:
         A tuple containing (output message, is_error flag)
     """
+    # Import console for printing output in real-time
+    from janito.tools.rich_console import console, print_info
+    
     print_info(f"{command}", "Bash Run")
     global _bash_session
     
@@ -58,29 +61,20 @@ def bash_tool(command: str, restart: Optional[bool] = False) -> Tuple[str, bool]
             _bash_session = PersistentBash()
         
         try:
-            # Execute the command without trying to capture return code
+            # Execute the command - output will be printed to console in real-time
             output = _bash_session.execute(command)
             
             # Track bash command execution
             get_tracker().increment('bash_commands')
             
-            # Only display the output with ASCII header if there is actual output
-            if output.strip():
-                from rich.text import Text
-                from rich.panel import Panel
-                console.print("$ COMMAND OUTPUT", style="bold white on blue")
-                console.print(Panel(Text(output), style="white on dark_blue"))
-            
             # Always assume execution was successful
             is_error = False
             
-            # Return the output as a string, not the Panel object
+            # Return the output as a string (even though it was already printed in real-time)
             return output, is_error
             
         except Exception as e:
             # Handle any exceptions that might occur
             error_message = f"Error executing bash command: {str(e)}"
+            console.print(error_message, style="red bold")
             return error_message, True
-
-
-

@@ -6,7 +6,7 @@ from typing import Tuple
 
 from janito.tools.decorators import tool
 from janito.tools.rich_console import print_info, print_success, print_error
-from janito.tools.usage_tracker import track_usage
+from janito.tools.usage_tracker import track_usage, get_tracker
 
 
 @tool
@@ -33,6 +33,22 @@ def replace_file(file_path: str, new_content: str) -> Tuple[str, bool]:
             error_msg = f"Error: File '{file_path}' does not exist"
             print_error(error_msg, "File Error")
             return error_msg, True
+        
+        # Read the original content to calculate line delta
+        try:
+            with open(abs_path, 'r', encoding='utf-8') as f:
+                old_content = f.read()
+            
+            # Calculate line delta
+            old_lines_count = len(old_content.splitlines()) if old_content else 0
+            new_lines_count = len(new_content.splitlines()) if new_content else 0
+            line_delta = new_lines_count - old_lines_count
+            
+            # Track line delta
+            get_tracker().increment('lines_delta', line_delta)
+        except Exception:
+            # If we can't read the file, we can't calculate line delta
+            pass
             
         # Write new content to the file
         with open(abs_path, 'w', encoding='utf-8') as f:

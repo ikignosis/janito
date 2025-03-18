@@ -26,6 +26,7 @@ class ToolUsageTracker:
         self.files_deleted = 0
         self.files_moved = 0
         self.lines_replaced = 0
+        self.lines_delta = 0  # Track the net change in number of lines
         self.web_requests = 0
         self.bash_commands = 0
         self.user_prompts = 0
@@ -87,7 +88,7 @@ def track_usage(counter_name: str, increment_value: int = 1):
     return decorator
 
 
-def count_lines_in_string(old_str: str, new_str: str) -> int:
+def count_lines_in_string(old_str: str, new_str: str) -> tuple[int, int]:
     """
     Count the number of lines that differ between old_str and new_str.
     
@@ -96,14 +97,17 @@ def count_lines_in_string(old_str: str, new_str: str) -> int:
         new_str: New string
         
     Returns:
-        Number of lines that differ
+        Tuple of (number of lines that differ, line delta)
     """
     old_lines = old_str.splitlines()
     new_lines = new_str.splitlines()
     
+    # Calculate the line delta (positive for added lines, negative for removed lines)
+    line_delta = len(new_lines) - len(old_lines)
+    
     # Simple approach: count the total number of lines changed
     # For tracking purposes, we'll use the max to ensure we don't undercount
-    return max(len(old_lines), len(new_lines))
+    return max(len(old_lines), len(new_lines)), line_delta
 
 
 def print_usage_stats():
@@ -117,7 +121,13 @@ def print_usage_stats():
         # Create a single-line summary of tool usage
         summary_parts = []
         for name, value in stats.items():
-            summary_parts.append(f"{name}: {value}")
+            # Format lines delta with a sign
+            if name == "Lines Delta":
+                sign = "+" if value > 0 else "" if value == 0 else "-"
+                formatted_value = f"{sign}{abs(value)}"
+                summary_parts.append(f"{name}: {formatted_value}")
+            else:
+                summary_parts.append(f"{name}: {value}")
         
         summary = " | ".join(summary_parts)
         

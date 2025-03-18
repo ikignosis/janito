@@ -72,9 +72,10 @@ def handle_str_replace(args: Dict[str, Any]) -> Tuple[str, bool]:
         # Replace the string
         new_content = content.replace(old_str, new_str)
         
-        # Track the number of lines replaced
-        lines_changed = count_lines_in_string(old_str, new_str)
+        # Track the number of lines replaced and the line delta
+        lines_changed, line_delta = count_lines_in_string(old_str, new_str)
         get_tracker().increment('lines_replaced', lines_changed)
+        get_tracker().increment('lines_delta', line_delta)
         
         # Write the new content
         with open(file_path, 'w', encoding='utf-8') as f:

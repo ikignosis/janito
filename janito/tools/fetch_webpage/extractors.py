@@ -42,11 +42,11 @@ def extract_clean_text(html_content: str, method: str = 'trafilatura',
                 extracted_text = traf_text
                 print_success("Successfully extracted content with Trafilatura", "Content Extraction")
         except Exception as e:
-            print_warning(f"Trafilatura extraction error: {str(e)}", "Content Extraction")
+            print_warning(f"Content Extraction: Trafilatura extraction error: {str(e)}")
     
     if method == 'newspaper' or method == 'all':
         if not url:
-            print_warning("URL required for newspaper extraction but not provided", "Content Extraction")
+            print_warning("Content Extraction: URL required for newspaper extraction but not provided")
         else:
             try:
                 article = Article(url)
@@ -61,7 +61,7 @@ def extract_clean_text(html_content: str, method: str = 'trafilatura',
                         extracted_text = np_text
                         print_success("Successfully extracted content with Newspaper3k", "Content Extraction")
             except Exception as e:
-                print_warning(f"Newspaper extraction error: {str(e)}", "Content Extraction")
+                print_warning(f"Content Extraction: Newspaper extraction error: {str(e)}")
     
     if method == 'beautifulsoup' or method == 'all':
         try:
@@ -87,10 +87,10 @@ def extract_clean_text(html_content: str, method: str = 'trafilatura',
                     extracted_text = bs_text
                     print_success("Successfully extracted content with BeautifulSoup", "Content Extraction")
         except Exception as e:
-            print_warning(f"BeautifulSoup extraction error: {str(e)}", "Content Extraction")
+            print_warning(f"Content Extraction: BeautifulSoup extraction error: {str(e)}")
     
     if not extracted_text:
-        print_warning("Could not extract meaningful content with any method", "Content Extraction")
+        print_warning("Content Extraction: Could not extract meaningful content with any method")
         # Fall back to the raw text with HTML tags removed
         extracted_text = BeautifulSoup(html_content, 'html.parser').get_text(separator='\n')
     
@@ -169,7 +169,7 @@ def extract_targeted_content(html_content: str, target_strings: List[str],
             unique_sections.append(section)
     
     if not unique_sections:
-        print_warning("No content sections found matching the target strings", "Targeted Extraction")
+        print_warning("Targeted Extraction: No content sections found matching the target strings")
         return ""
     
     # Join the sections with paragraph breaks

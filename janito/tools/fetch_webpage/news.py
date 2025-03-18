@@ -37,7 +37,7 @@ def fetch_and_extract_news_aggregator(url: str, max_stories: int = 15) -> Tuple[
             break
     
     if not strategy:
-        print_warning(f"No specific strategy found for {domain}. Using general extraction.", "News Extraction")
+        print_warning(f"News Extraction: No specific strategy found for {domain}. Using general extraction.")
         from janito.tools.fetch_webpage.core import fetch_and_extract
         return fetch_and_extract(url)
     

@@ -41,7 +41,7 @@ def handle_undo_edit(args: Dict[str, Any]) -> Tuple[str, bool]:
     
     # Check in-memory history
     if path not in _file_history or not _file_history[path]:
-        print_warning(f"No edit history for file {path}", "Warning")
+        print_warning(f"Warning: No edit history for file {path}")
         return (f"No edit history for file {path}", True)
     
     try:

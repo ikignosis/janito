@@ -87,6 +87,8 @@ class PersistentBash:
         Returns:
             str: The command output.
         """
+        from janito.tools.rich_console import console
+        
         if self.process is None or self.process.poll() is not None:
             # Process has terminated, restart it
             self.start_process()
@@ -130,14 +132,27 @@ class PersistentBash:
         max_wait = timeout if timeout is not None else 3600  # Default to 1 hour if no timeout
         
         while time.time() - start_time < max_wait + 5:  # Add buffer time
-            line = self.process.stdout.readline().rstrip('\r\n')
-            if end_marker in line:
-                break
-            output_lines.append(line)
+            try:
+                line = self.process.stdout.readline().rstrip('\r\n')
+                if end_marker in line:
+                    break
+                    
+                # Print the output to the console in real-time
+                if line:
+                    console.print(line)
+                    
+                output_lines.append(line)
+            except Exception as e:
+                error_msg = f"[Error reading output: {str(e)}]"
+                console.print(error_msg, style="red")
+                output_lines.append(error_msg)
+                continue
             
         # Check for timeout
         if time.time() - start_time >= max_wait + 5:
-            output_lines.append(f"Error: Command timed out after {max_wait} seconds")
+            timeout_msg = f"Error: Command timed out after {max_wait} seconds"
+            console.print(timeout_msg, style="red bold")
+            output_lines.append(timeout_msg)
             
             # Try to reset the bash session after a timeout
             self.close()

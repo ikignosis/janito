@@ -48,11 +48,12 @@ def handle_create(args: Dict[str, Any]) -> Tuple[str, bool]:
     try:
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(file_text)
-        # Track file creation
+        # Track file creation and line delta
         get_tracker().increment('files_created')
+        get_tracker().increment('lines_delta', line_count)
         # Show relative path if it's not an absolute path
         display_path = path if os.path.isabs(path) else os.path.relpath(file_path, get_config().workspace_dir)
-        print_success(f"Successfully created file {display_path}", "Success")
+        print_success(f"", "Success")
         return (f"Successfully created file {display_path}", False)
     except Exception as e:
         print_error(f"Error creating file {path}: {str(e)}", "Error")

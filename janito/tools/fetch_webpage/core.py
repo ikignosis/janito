@@ -47,8 +47,8 @@ def fetch_webpage(url: str, headers: dict = None, timeout: int = 30, max_size: i
         # Check content length before downloading fully
         content_length = response.headers.get('Content-Length')
         if content_length and int(content_length) > max_size:
-            warning_msg = f"Content size ({int(content_length)/1000000:.1f}MB) exceeds max size ({max_size/1000000:.1f}MB). Aborting download."
-            print_warning(warning_msg, "Web Fetch")
+            warning_msg = f"Web Fetch: Content size ({int(content_length)/1000000:.1f}MB) exceeds max size ({max_size/1000000:.1f}MB). Aborting download."
+            print_warning(warning_msg)
             return warning_msg, True
             
         # Download content with size limit
@@ -56,8 +56,8 @@ def fetch_webpage(url: str, headers: dict = None, timeout: int = 30, max_size: i
         for chunk in response.iter_content(chunk_size=1024 * 1024):  # 1MB chunks
             content_bytes += chunk
             if len(content_bytes) > max_size:
-                warning_msg = f"Download exceeded max size ({max_size/1000000:.1f}MB). Truncating."
-                print_warning(warning_msg, "Web Fetch")
+                warning_msg = f"Web Fetch: Download exceeded max size ({max_size/1000000:.1f}MB). Truncating."
+                print_warning(warning_msg)
                 break
                 
         # Get the content
@@ -77,7 +77,7 @@ def fetch_webpage(url: str, headers: dict = None, timeout: int = 30, max_size: i
                 print_success(f"Successfully fetched targeted content from {url} ({len(targeted_content)} bytes)", "Web Fetch")
                 return targeted_content, False
             else:
-                print_warning(f"Could not find content matching the target strings. Returning full content.", "Web Fetch")
+                print_warning(f"Web Fetch: Could not find content matching the target strings. Returning full content.")
         
         # Create a summary message with first 300 chars of content
         content_preview = content[:300] + "..." if len(content) > 300 else content
@@ -149,8 +149,7 @@ def fetch_and_extract(url: str, extract_method: str = 'trafilatura',
     # Check if the content is still too large for an LLM (rough estimate)
     estimated_tokens = len(extracted_text.split())
     if estimated_tokens > 10000:  # Conservative estimate for token limits
-        print_warning(f"Extracted content still very large (~{estimated_tokens} words). Consider using chunk_large_content()", 
-                     "Content Extraction")
+        print_warning(f"Content Extraction: Extracted content still very large (~{estimated_tokens} words). Consider using chunk_large_content()")
     
     print_success(f"Successfully extracted {len(extracted_text)} characters of content", "Content Extraction")
     return extracted_text, False

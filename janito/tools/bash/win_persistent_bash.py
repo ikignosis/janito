@@ -207,6 +207,9 @@ class PersistentBash:
         # Send the command
         self._send_command(wrapped_command)
         
+        # Import the console here to avoid circular imports
+        from janito.tools.rich_console import console
+        
         # Collect output until the end marker is found
         output_lines = []
         start_time = time.time()
@@ -217,19 +220,30 @@ class PersistentBash:
                 line = self.stdout.readline().rstrip('\r\n')
                 if end_marker in line:
                     break
+                    
+                # Print the output to the console in real-time
+                if line:
+                    console.print(line)
+                    
                 output_lines.append(line)
             except UnicodeDecodeError as e:
                 # Handle potential UTF-8 decoding errors
-                output_lines.append(f"[Warning: Unicode decode error occurred: {str(e)}]")
+                error_msg = f"[Warning: Unicode decode error occurred: {str(e)}]"
+                console.print(error_msg, style="yellow")
+                output_lines.append(error_msg)
                 # Just continue with replacement character
                 continue
             except Exception as e:
-                output_lines.append(f"[Error reading output: {str(e)}]")
+                error_msg = f"[Error reading output: {str(e)}]"
+                console.print(error_msg, style="red")
+                output_lines.append(error_msg)
                 continue
             
         # Check for timeout
         if time.time() - start_time >= max_wait + 5:
-            output_lines.append(f"Error: Command timed out after {max_wait} seconds")
+            timeout_msg = f"Error: Command timed out after {max_wait} seconds"
+            console.print(timeout_msg, style="red bold")
+            output_lines.append(timeout_msg)
             
             # Try to reset the bash session after a timeout
             self.close()

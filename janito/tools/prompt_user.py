@@ -35,7 +35,7 @@ def prompt_user(
         
         # Show input instructions with stdin termination hint
         termination_hint = get_stdin_termination_hint().replace("[bold yellow]", "").replace("[/bold yellow]", "")
-        print_info(f"Enter your response below. {termination_hint}", "Input Instructions")
+        print_info(f"Enter your response below. {termination_hint}\n", "Input Instructions")
         
         # Read input from stdin
         lines = []
@@ -47,7 +47,7 @@ def prompt_user(
         
         # If no input was provided, return a message
         if not user_response.strip():
-            print_warning("No input was provided.", "Empty Input")
+            print_warning("No input was provided. Empty Input.")
             return ("", False)
             
         return (user_response, False)

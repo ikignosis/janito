@@ -124,7 +124,7 @@ def search_text(text_pattern: str, file_pattern: str = "*", root_dir: str = ".",
             return result_msg, False
         else:
             result_msg = f"No matches found for '{text_pattern}' in files matching '{file_pattern}'"
-            print_warning("No matches found", "Search Results")
+            print_warning("No matches found. Search Results.")
             return result_msg, False
             
     except Exception as e:
