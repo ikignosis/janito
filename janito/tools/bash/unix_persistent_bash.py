@@ -117,7 +117,8 @@ class PersistentBash:
 
             if is_timeout_available:
                 # For timeout to work with shell syntax, we need to use bash -c
-                wrapped_command = f"timeout {timeout}s bash -c \"{command.replace('"', '\\"')}\" 2>&1; echo '{end_marker}'"
+                escaped_command = command.replace('"', '\\"')
+                wrapped_command = f"timeout {timeout}s bash -c \"{escaped_command}\" 2>&1; echo '{end_marker}'"
             else:
                 wrapped_command = f"{command} 2>&1; echo '{end_marker}'"
         else:
