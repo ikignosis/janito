@@ -16,6 +16,14 @@ Janito is a powerful AI-assisted command-line interface (CLI) tool built with Py
 - 🔄 Parameter profiles for optimizing Claude's behavior for different tasks
 - 📋 Line delta tracking to monitor net changes in files
 
+## 🛠️ System Requirements
+
+- **Python 3.8+** - Janito requires Python 3.8 or higher
+- **Operating Systems**:
+  - Linux/macOS: Native support
+  - Windows: Requires Git Bash for proper operation of CLI tools
+- **Anthropic API Key** - Required for Claude AI integration
+
 ## 🛠️ Installation
 
 ```bash
@@ -23,30 +31,65 @@ Janito is a powerful AI-assisted command-line interface (CLI) tool built with Py
 pip install janito
 ```
 
+### Setting up your API Key
+
+Janito requires an Anthropic API key to function. You can:
+1. Set the API key: `janito --set-api-key your_api_key`
+
 For development or installation from source, please see [README_DEV.md](README_DEV.md).
 
-## 🚀 Usage
+## 🚀 Usage Tutorial
 
-After installation, you can use the `janito` command in your terminal:
+After installation, you can start using Janito right away. Let's walk through a simple tutorial:
+
+### Getting Started
+
+First, let's check that everything is working:
 
 ```bash
-# Get help
+# Get help and see available commands
 janito --help
+```
 
-# Ask the AI assistant a question
-janito "Suggest improvements to this project"
+### Tutorial: Creating a Simple Project
 
-# Add a feature to the CLI
-janito "Add a --version to the cli to report the version"
+Let's create a simple HTML project with Janito's help:
 
+After installing Janito, using your prefered editor and/or terminal, go to a new empty folder.
+
+Use the janito command to create a new project.
+
+```bash
+# Step 1: Create a new project structure
+janito "Create a simple HTML page with a calculator and 3 columns with text for the 3 main activities of the Kazakh culture"
+```
+Browse the resulting html page.
+
+### Tutorial: Adding Features
+
+Now, let's enhance our example
+
+```bash
+# Step 2: Add multiplication and division features
+janito "Add some svg icons and remove the calculator"
+
+```
+
+Refresh the page
+
+### Exploring More Features
+
+Janito offers many more capabilities:
+
+```bash
 # Show detailed token usage and cost information
-janito --show-tokens "Explain how to optimize Python code"
+janito --show-tokens "Explain what is in the project"
 
-# Use a specific parameter profile
-janito --profile creative "Write a short story about AI"
+# Use a specific parameter profile for creative tasks
+janito --profile creative "Write a fun description for our project"
 
 # Continue previous conversation
-janito --continue "Can you elaborate on that last point?"
+janito --continue "Plese add one more line"
 
 # Show current configuration and available profiles
 janito --show-config
@@ -106,22 +149,30 @@ janito --profile creative "Write a poem about coding"
 janito --show-config
 ```
 
-## ⚙️ Requirements
+## ⚙️ Dependencies
 
-- Python 3.8 or higher
-- Dependencies:
-  - typer (>=0.9.0)
-  - rich (>=13.0.0)
-  - claudine (for Claude AI integration)
-- For Windows users:
-  - Git Bash is required for proper operation of the CLI tools
+Janito automatically installs the following dependencies:
+- typer (>=0.9.0) - For CLI interface
+- rich (>=13.0.0) - For rich text formatting
+- claudine - For Claude AI integration
+- Additional packages for file handling and web content extraction
 
-## 🔑 API Key
+## 🔑 API Key Configuration
 
-Janito requires an Anthropic API key to function. You can:
-1. Set it as an environment variable: `export ANTHROPIC_API_KEY=your_api_key`
-2. Set it globally: `janito --set-api-key your_api_key`
-3. Or enter it when prompted
+You can configure your Anthropic API key in several ways:
+
+```bash
+# Option 1: Set as environment variable
+export ANTHROPIC_API_KEY=your_api_key
+
+# Option 2: Configure globally within Janito
+janito --set-api-key your_api_key
+
+# Option 3: Let Janito prompt you on first use
+janito "Hello, I'm new to Janito!"
+```
+
+Your API key is securely stored and used for all future sessions.
 
 ## 💻 Development
 
