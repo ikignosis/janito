@@ -15,6 +15,7 @@ Janito is a powerful AI-assisted command-line interface (CLI) tool built with Py
 - 🌐 Web page fetching with content extraction capabilities
 - 🔄 Parameter profiles for optimizing Claude's behavior for different tasks
 - 📋 Line delta tracking to monitor net changes in files
+- 💬 Conversation history with ability to resume previous conversations
 
 ## 🛠️ System Requirements
 
@@ -88,14 +89,19 @@ janito --show-tokens "Explain what is in the project"
 # Use a specific parameter profile for creative tasks
 janito --profile creative "Write a fun description for our project"
 
-# Continue previous conversation
-janito --continue "Plese add one more line"
+# Continue the most recent conversation
+janito --continue "Please add one more line"
+
+# Continue a specific conversation using its message ID
+# (Janito displays the message ID after each conversation)
+janito --continue abc123def "Let's refine that code"
 
 # Show current configuration and available profiles
 janito --show-config
 
 # You can press Ctrl+C at any time to interrupt a query
 # Janito will still display token and tool usage information
+# Even interrupted conversations can be continued with --continue
 ```
 
 ## 🔧 Available Tools
@@ -148,6 +154,37 @@ janito --profile creative "Write a poem about coding"
 # View available profiles
 janito --show-config
 ```
+
+## 💬 Conversation History
+
+Janito automatically saves your conversation history, allowing you to continue previous discussions:
+
+### How It Works
+
+- Each conversation is saved with a unique message ID in `.janito/last_messages/`
+- The most recent conversation is also saved as `.janito/last_message.json` for backward compatibility
+- After each conversation, Janito displays the command to continue that specific conversation
+
+### Using the Continue Feature
+
+```bash
+# Continue the most recent conversation
+janito --continue "Add more details to your previous response"
+
+# Continue a specific conversation using its ID
+janito --continue abc123def "Let's modify that code you suggested"
+```
+
+The `--continue` flag (or `-c` for short) allows you to:
+- Resume the most recent conversation when used without an ID
+- Resume a specific conversation when provided with a message ID
+- Maintain context across multiple interactions for complex tasks
+
+This feature is particularly useful for:
+- Multi-step development tasks
+- Iterative code improvements
+- Continuing discussions after system interruptions
+- Maintaining context when working on complex problems
 
 ## ⚙️ Dependencies
 
