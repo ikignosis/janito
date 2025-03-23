@@ -50,7 +50,7 @@ def main(ctx: typer.Context,
         
     # Show a message if trust mode is enabled
     if trust:
-        console.print("[bold blue]🔍 Trust Mode enabled:[/bold blue] Tool outputs are suppressed for concise execution (per-session setting)")
+        console.print("[bold blue]⚡ Trust Mode enabled:[/bold blue] Tool outputs are suppressed for concise execution (per-session setting)")
     
     # Show version and exit if requested
     if version:

@@ -10,7 +10,7 @@
   - `cli/`: Command-line interface components
     - `__init__.py`: Package initialization
     - `agent.py`: Agent initialization and query handling
-    - `app.py`: Main CLI application with command-line options including trust mode
+    - `app.py`: Main CLI application with command-line options including trust mode messages
     - `commands.py`: Command handling logic
     - `output.py`: Output formatting
     - `utils.py`: Utility functions
@@ -41,3 +41,4 @@
 - `LICENSE`: License information
 - `README.md`: Project overview with usage instructions and features
 - `README_DEV.md`: Developer documentation
+- `CHANGELOG.md`: Record of all notable changes to the project
