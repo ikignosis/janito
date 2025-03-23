@@ -37,9 +37,10 @@ def search_text(text_pattern: str, file_pattern: str = "*", root_dir: str = ".",
         # Compile the regex pattern for better performance
         try:
             regex = re.compile(text_pattern)
-        except re.error as e:
-            error_msg = f"Error: Invalid regex pattern '{text_pattern}': {str(e)}"
-            print_error(error_msg, "Regex Error")
+        except re.error:
+            # Simplified error message without the specific regex error details
+            error_msg = f"Error: Invalid regex pattern '{text_pattern}'"
+            print_error(error_msg, "Search Error")
             return error_msg, True
         
         matching_files = []

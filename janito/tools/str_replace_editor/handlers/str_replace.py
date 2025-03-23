@@ -60,7 +60,9 @@ def handle_str_replace(args: Dict[str, Any]) -> Tuple[str, bool]:
         
         # Check if old_str exists in the content (must match EXACTLY)
         if old_str not in content:
-            print_error("No exact match found for replacement. Please check your text and ensure whitespaces match exactly.", "Error")
+            # Only print error if not in trust mode
+            if not get_config().trust_mode:
+                print_error("No exact match", "?")
             return ("Error: No exact match found for replacement. Please check your text and ensure whitespaces match exactly.", True)
         
         # Count occurrences to check for multiple matches

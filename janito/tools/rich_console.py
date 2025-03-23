@@ -4,6 +4,7 @@ Utility module for rich console printing in tools.
 from rich.console import Console
 from rich.text import Text
 from typing import Optional
+from janito.config import get_config
 
 # Create a shared console instance
 console = Console()
@@ -16,6 +17,9 @@ def print_info(message: str, title: Optional[str] = None):
         message: The message to print
         title: Optional title for the panel
     """
+    # Skip printing if trust mode is enabled
+    if get_config().trust_mode:
+        return
     # Map titles to specific icons
     icon_map = {
         # File operations
@@ -82,20 +86,22 @@ def print_info(message: str, title: Optional[str] = None):
             elif "Undoing last edit" in title:
                 icon = "↩️"  # Undo icon
     
+    # Add indentation to all tool messages
+    indent = "    "
     text = Text(message)
     if title:
         # Special case for Bash Run commands
         if title == "Bash Run":
             console.print("\n" + "-"*50)
-            console.print(f"{icon} {title}", style="bold white on blue")
+            console.print(f"{indent}{icon} {title}", style="bold white on blue")
             console.print("-"*50)
-            console.print(f"$ {text}", style="white on dark_blue")
+            console.print(f"{indent}$ {text}", style="white on dark_blue")
             # Make sure we're not returning anything
             return
         else:
-            console.print(f"{icon} {message}", style="blue", end="")
+            console.print(f"{indent}{icon} {message}", style="blue", end="")
     else:
-        console.print(f"{icon} {text}", style="blue", end="")
+        console.print(f"{indent}{icon} {text}", style="blue", end="")
 
 def print_success(message: str, title: Optional[str] = None):
     """
@@ -105,6 +111,9 @@ def print_success(message: str, title: Optional[str] = None):
         message: The message to print
         title: Optional title for the panel
     """
+    # Skip printing if trust mode is enabled
+    if get_config().trust_mode:
+        return
     text = Text(message)
     if title:
         console.print(f" ✅ {message}", style="green")
@@ -114,26 +123,54 @@ def print_success(message: str, title: Optional[str] = None):
 def print_error(message: str, title: Optional[str] = None):
     """
     Print an error message with rich formatting.
+    In trust mode, error messages are suppressed.
     
     Args:
         message: The message to print
         title: Optional title for the panel
     """
+    # Skip printing if trust mode is enabled
+    if get_config().trust_mode:
+        return
+        
     text = Text(message)
-    if title:
-        # Special case for File View - print without header
+    
+    # Check if message starts with question mark emoji (❓)
+    # If it does, use warning styling (yellow) instead of error styling (red)
+    starts_with_question_mark = message.startswith("❓")
+    
+    if starts_with_question_mark:
+        # Use warning styling for question mark emoji errors
+        # For question mark emoji errors, don't include the title (like "Error")
+        # Just print the message with the emoji
         if title == "File View":
-            console.print(f"\n ❌ {message}", style="red")
+            console.print(f"\n {message}", style="yellow")
         else:
-            console.print(f"❌ {title} {text}")
+            console.print(f"{message}", style="yellow")
     else:
-        console.print(f"\n❌ {text}", style="red")
+        # Regular error styling
+        if title:
+            # Special case for File View - print without header
+            if title == "File View":
+                console.print(f"\n ❌ {message}", style="red")
+            # Special case for Search Error
+            elif title == "Search Error":
+                console.print(f"❌ {message}", style="red")
+            else:
+                console.print(f"❌ {title} {text}", style="red")
+        else:
+            console.print(f"\n❌ {text}", style="red")
 
 def print_warning(message: str):
     """
     Print a warning message with rich formatting.
+    In trust mode, warning messages are suppressed.
     
     Args:
         message: The message to print
     """
+    # Skip printing if trust mode is enabled
+    if get_config().trust_mode:
+        return
+        
     console.print(f"⚠️  {message}", style="yellow")

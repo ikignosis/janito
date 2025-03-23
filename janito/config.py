@@ -53,6 +53,7 @@ class Config:
             cls._instance._verbose = False
             # Chat history context feature has been removed
             cls._instance._ask_mode = False
+            cls._instance._trust_mode = False  # New trust mode setting
             # Set technical profile as default
             profile_data = PROFILES["technical"]
             cls._instance._temperature = profile_data["temperature"]
@@ -74,6 +75,8 @@ class Config:
                         self._verbose = config_data["debug_mode"]
                     if "ask_mode" in config_data:
                         self._ask_mode = config_data["ask_mode"]
+                    if "trust_mode" in config_data:
+                        self._trust_mode = config_data["trust_mode"]
                     if "temperature" in config_data:
                         self._temperature = config_data["temperature"]
                     if "profile" in config_data:
@@ -95,6 +98,7 @@ class Config:
             # Chat history context feature has been removed
             "verbose": self._verbose,
             "ask_mode": self._ask_mode,
+            # trust_mode is not saved as it's a per-session setting
             "temperature": self._temperature,
             "role": self._role
         }
@@ -266,6 +270,21 @@ class Config:
         self._save_config()
         
     @property
+    def trust_mode(self) -> bool:
+        """Get the trust mode status."""
+        return self._trust_mode
+        
+    @trust_mode.setter
+    def trust_mode(self, value: bool) -> None:
+        """Set the trust mode status.
+        
+        Note: This setting is not persisted to config file
+        as it's meant to be a per-session setting.
+        """
+        self._trust_mode = value
+        # Don't save to config file - this is a per-session setting
+        
+    @property
     def temperature(self) -> float:
         """Get the temperature value for model generation."""
         return self._temperature
@@ -323,6 +342,7 @@ class Config:
             self._verbose = False
             # Chat history context feature has been removed
             self._ask_mode = False
+            self._trust_mode = False
             # Set technical profile as default
             profile_data = PROFILES["technical"]
             self._temperature = profile_data["temperature"]

@@ -222,9 +222,11 @@ class PersistentBash:
                 if end_marker in line:
                     break
                     
-                # Print the output to the console in real-time
+                # Print the output to the console in real-time if not in trust mode
                 if line:
-                    console.print(line)
+                    from janito.config import get_config
+                    if not get_config().trust_mode:
+                        console.print(line)
                     
                 output_lines.append(line)
             except UnicodeDecodeError as e:

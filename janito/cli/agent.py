@@ -7,6 +7,8 @@ import json
 import anthropic
 import claudine
 import typer
+import datetime
+from typing import Optional
 from rich.console import Console
 from pathlib import Path
 from jinja2 import Template
@@ -18,6 +20,7 @@ from janito.token_report import generate_token_report
 from janito.tools import str_replace_editor
 from janito.tools.bash.bash import bash_tool
 from janito.cli.output import display_generation_params
+
 
 console = Console()
 
@@ -154,12 +157,25 @@ def initialize_agent(temperature: float, verbose: bool) -> claudine.Agent:
     
     return agent
 
+def generate_message_id():
+    """
+    Generate a message ID based on timestamp with seconds granularity
+    
+    Returns:
+        str: A timestamp-based message ID
+    """
+    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    return timestamp
+
 def save_messages(agent):
     """
-    Save agent messages to .janito/last_message.json
+    Save agent messages to .janito/last_messages/{message_id}.json
     
     Args:
         agent: The claudine agent instance
+        
+    Returns:
+        str: The message ID used for saving
     """
     try:
         # Get the workspace directory
@@ -169,49 +185,115 @@ def save_messages(agent):
         janito_dir = workspace_dir / ".janito"
         janito_dir.mkdir(exist_ok=True)
         
+        # Create last_messages directory if it doesn't exist
+        messages_dir = janito_dir / "last_messages"
+        messages_dir.mkdir(exist_ok=True)
+        
+        # Generate a unique message ID
+        message_id = generate_message_id()
+        
         # Get messages from the agent
         messages = agent.get_messages()
         
+        # Create a message object with metadata
+        message_object = {
+            "id": message_id,
+            "timestamp": datetime.datetime.now().isoformat(),
+            "messages": messages
+        }
+        
         # Save messages to file
-        with open(janito_dir / "last_message.json", "w", encoding="utf-8") as f:
-            json.dump(messages, f, ensure_ascii=False, indent=2)
+        message_file = messages_dir / f"{message_id}.json"
+        with open(message_file, "w", encoding="utf-8") as f:
+            json.dump(message_object, f, ensure_ascii=False, indent=2)
+        
+        # No longer saving to last_message.json for backward compatibility
             
         if get_config().verbose:
-            console.print(f"[bold green]✅ Conversation saved to {janito_dir / 'last_message.json'}[/bold green]")
+            console.print(f"[bold green]✅ Conversation saved to {message_file}[/bold green]")
+            
+        return message_id
     except Exception as e:
         console.print(f"[bold red]❌ Error saving conversation:[/bold red] {str(e)}")
+        return None
 
-def load_messages():
+def load_messages(message_id=None):
     """
-    Load messages from .janito/last_message.json
+    Load messages from .janito/last_messages/{message_id}.json or the latest message file
     
+    Args:
+        message_id: Optional message ID to load specific conversation
+        
     Returns:
         List of message dictionaries or None if file doesn't exist
     """
     try:
         # Get the workspace directory
         workspace_dir = Path(get_config().workspace_dir)
+        janito_dir = workspace_dir / ".janito"
+        messages_dir = janito_dir / "last_messages"
         
-        # Check if file exists
-        messages_file = workspace_dir / ".janito" / "last_message.json"
-        if not messages_file.exists():
+        # If message_id is provided, try to load that specific conversation
+        if message_id:
+            # Check if the message ID is a file name or just the ID
+            if message_id.endswith('.json'):
+                message_file = messages_dir / message_id
+            else:
+                message_file = messages_dir / f"{message_id}.json"
+                
+            if not message_file.exists():
+                console.print(f"[bold yellow]⚠️ No conversation found with ID {message_id}[/bold yellow]")
+                return None
+                
+            # Load messages from file
+            with open(message_file, "r", encoding="utf-8") as f:
+                message_object = json.load(f)
+                
+            # Extract messages from the message object
+            if isinstance(message_object, dict) and "messages" in message_object:
+                messages = message_object["messages"]
+            else:
+                # Handle legacy format
+                messages = message_object
+                
+            if get_config().verbose:
+                console.print(f"[bold green]✅ Loaded conversation from {message_file}[/bold green]")
+                console.print(f"[dim]📝 Conversation has {len(messages)} messages[/dim]")
+                
+            return messages
+        
+        # If no message_id is provided, try to load the latest message from last_messages directory
+        if not messages_dir.exists() or not any(messages_dir.iterdir()):
             console.print("[bold yellow]⚠️ No previous conversation found[/bold yellow]")
             return None
         
-        # Load messages from file
-        with open(messages_file, "r", encoding="utf-8") as f:
-            messages = json.load(f)
+        # Find the latest message file (based on filename which is a timestamp)
+        latest_file = max(
+            [f for f in messages_dir.iterdir() if f.is_file() and f.suffix == '.json'],
+            key=lambda x: x.stem
+        )
+        
+        # Load messages from the latest file
+        with open(latest_file, "r", encoding="utf-8") as f:
+            message_object = json.load(f)
+            
+        # Extract messages from the message object
+        if isinstance(message_object, dict) and "messages" in message_object:
+            messages = message_object["messages"]
+        else:
+            # Handle legacy format
+            messages = message_object
             
         if get_config().verbose:
-            console.print(f"[bold green]✅ Loaded previous conversation from {messages_file}[/bold green]")
+            console.print(f"[bold green]✅ Loaded latest conversation from {latest_file}[/bold green]")
             console.print(f"[dim]📝 Conversation has {len(messages)} messages[/dim]")
             
         return messages
     except Exception as e:
-        console.print(f"[bold red]❌ Error loading previous conversation:[/bold red] {str(e)}")
+        console.print(f"[bold red]❌ Error loading conversation:[/bold red] {str(e)}")
         return None
 
-def handle_query(query: str, temperature: float, verbose: bool, show_tokens: bool, continue_conversation: bool = False) -> None:
+def handle_query(query: str, temperature: float, verbose: bool, show_tokens: bool, continue_conversation: Optional[str] = None) -> None:
     """
     Handle a query by initializing the agent and sending the query.
     
@@ -220,24 +302,29 @@ def handle_query(query: str, temperature: float, verbose: bool, show_tokens: boo
         temperature: Temperature value for model generation
         verbose: Whether to enable verbose mode
         show_tokens: Whether to show detailed token usage
-        continue_conversation: Whether to continue the previous conversation
+        continue_conversation: Optional message ID to continue a specific conversation
     """
     # Initialize the agent
     agent = initialize_agent(temperature, verbose)
     
     # Load previous messages if continuing conversation
-    if continue_conversation:
-        messages = load_messages()
+    if continue_conversation is not None:
+        # If continue_conversation is an empty string (from flag with no value), use default behavior
+        message_id = None if continue_conversation == "" else continue_conversation
+        messages = load_messages(message_id)
         if messages:
             agent.set_messages(messages)
-            console.print("[bold blue]🔄 Continuing previous conversation[/bold blue]")
+            if message_id:
+                console.print(f"[bold blue]🔄 Continuing conversation with ID: {message_id}[/bold blue]")
+            else:
+                console.print("[bold blue]🔄 Continuing previous conversation[/bold blue]")
     
     # Send the query to the agent
     try:
         agent.query(query)
         
-        # Save messages after successful query
-        save_messages(agent)
+        # Save messages after successful query and get the message ID
+        message_id = save_messages(agent)
         
         # Print token usage report
         if show_tokens:
@@ -249,13 +336,26 @@ def handle_query(query: str, temperature: float, verbose: bool, show_tokens: boo
         # Print tool usage statistics
         from janito.tools import print_usage_stats
         print_usage_stats()
+        
+        # Show message about continuing this conversation
+        if message_id:
+            script_name = "janito"
+            try:
+                # Check if we're running from the entry point script or as a module
+                if sys.argv[0].endswith(('janito', 'janito.exe')):
+                    console.print(f"[bold green]💬 This conversation can be continued with:[/bold green] {script_name} --continue {message_id} <request>")
+                else:
+                    console.print(f"[bold green]💬 This conversation can be continued with:[/bold green] python -m janito --continue {message_id} <request>")
+            except:
+                # Fallback message
+                console.print(f"[bold green]💬 This conversation can be continued with:[/bold green] --continue {message_id} <request>")
             
     except KeyboardInterrupt:
         # Handle Ctrl+C by printing token and tool usage information
         console.print("\n[bold yellow]⚠️ Query interrupted by user (Ctrl+C)[/bold yellow]")
         
         # Save messages even if interrupted
-        save_messages(agent)
+        message_id = save_messages(agent)
         
         # Print token usage report (even if interrupted)
         try:
@@ -268,6 +368,19 @@ def handle_query(query: str, temperature: float, verbose: bool, show_tokens: boo
             # Print tool usage statistics
             from janito.tools import print_usage_stats
             print_usage_stats()
+            
+            # Show message about continuing this conversation
+            if message_id:
+                script_name = "janito"
+                try:
+                    # Check if we're running from the entry point script or as a module
+                    if sys.argv[0].endswith(('janito', 'janito.exe')):
+                        console.print(f"[bold green]💬 This conversation can be continued with:[/bold green] {script_name} --continue {message_id} <request>")
+                    else:
+                        console.print(f"[bold green]💬 This conversation can be continued with:[/bold green] python -m janito --continue {message_id} <request>")
+                except:
+                    # Fallback message
+                    console.print(f"[bold green]💬 This conversation can be continued with:[/bold green] --continue {message_id} <request>")
         except Exception as e:
             console.print(f"[bold red]❌ Error generating usage report:[/bold red] {str(e)}")
             if verbose:

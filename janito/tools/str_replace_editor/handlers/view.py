@@ -55,8 +55,8 @@ def handle_view(args: Dict[str, Any]) -> Tuple[str, bool]:
     file_path = pathlib.Path(path)
     
     if not file_path.exists():
-        print_error(f"File or directory {path} does not exist", "Error")
-        return (f"File or directory {path} does not exist", True)
+        print_error(f"❓ (not found)", "Error")
+        return (f"❓ (not found)", True)
     
     # If the path is a directory, list non-hidden files and directories up to 2 levels deep
     if file_path.is_dir():
@@ -94,9 +94,12 @@ def handle_view(args: Dict[str, Any]) -> Tuple[str, bool]:
             # Directory listings should not be truncated
             file_dir_count = len(result)
             output = "\n".join(result)
-            console.print(f"Found ", style="default", end="")
-            console.print(f"{file_dir_count}", style="cyan", end="")
-            console.print(" files and directories")
+            
+            # Only print count if not in trust mode
+            if not get_config().trust_mode:
+                console.print(f"Found ", style="default", end="")
+                console.print(f"{file_dir_count}", style="cyan", end="")
+                console.print(" files and directories")
             return (output, False)
         except Exception as e:
             return (f"Error listing directory {path}: {str(e)}", True)
@@ -144,9 +147,12 @@ def handle_view(args: Dict[str, Any]) -> Tuple[str, bool]:
             return (truncated_content + "\n<response clipped>", False)
         
         content_to_print = "".join(numbered_content)
-        console.print("(", style="default", end="")
-        console.print(f"{len(numbered_content)}", style="cyan", end="")
-        console.print(")")
+        
+        # Only print line count if not in trust mode
+        if not get_config().trust_mode:
+            console.print("(", style="default", end="")
+            console.print(f"{len(numbered_content)}", style="cyan", end="")
+            console.print(")")
         # Return the content as a string without any Rich objects
         return (content_to_print, False)
     except Exception as e:

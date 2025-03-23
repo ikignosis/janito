@@ -34,7 +34,9 @@ def bash_tool(command: str, restart: Optional[bool] = False) -> Tuple[str, bool]
     # Import console for printing output in real-time
     from janito.tools.rich_console import console, print_info
     
-    print_info(f"{command}", "Bash Run")
+    # Only print command if not in trust mode
+    if not get_config().trust_mode:
+        print_info(f"{command}", "Bash Run")
     global _bash_session
     
     # Check if in ask mode and if the command might modify files

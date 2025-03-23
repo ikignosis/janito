@@ -285,7 +285,7 @@ def handle_config_commands(
     set_api_key: Optional[str],
     config_str: Optional[str],
     query: Optional[str],
-    continue_conversation: bool = False
+    continue_conversation: Optional[str] = None
 ) -> bool:
     """
     Handle all configuration-related commands.
@@ -300,7 +300,7 @@ def handle_config_commands(
         set_api_key: API key
         config_str: Configuration string in format 'key=value'
         query: Query string
-        continue_conversation: Whether to continue the previous conversation
+        continue_conversation: Optional message ID to continue a specific conversation
         
     Returns:
         bool: True if the program should exit after these operations
