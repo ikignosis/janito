@@ -4,8 +4,13 @@ import json
 from aurora.agent.queued_tool_handler import QueuedToolHandler
 from aurora.agent.agent import Agent
 from aurora.agent.config import get_api_key
+import os
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    static_url_path='/static',
+    static_folder=os.path.join(os.path.dirname(__file__), 'static')
+)
 
 # Global event queue for streaming
 stream_queue = Queue()
