@@ -7,6 +7,7 @@ class QueuedToolHandler(ToolHandler):
 
     def handle_tool_call(self, tool_call, on_progress=None):
         def enqueue_progress(data):
+            print(f"[QueuedToolHandler] Enqueue tool progress: {data}")  # Debug print
             self._queue.put(('tool_progress', data))
 
         if on_progress is None:
