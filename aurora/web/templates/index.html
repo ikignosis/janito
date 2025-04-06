@@ -96,8 +96,23 @@ async function sendCommandStream(cmd) {
         const jsonStr = part.slice(6);
         try {
           const data = JSON.parse(jsonStr);
-          if(data.chunk) {
-            appendOutput(data.chunk);
+          if(data.type === 'content' && data.content) {
+            appendOutput(data.content);
+          } else if(data.type === 'tool_progress') {
+            const progress = data.progress;
+            let msg = `[Tool ${progress.tool}] ${progress.event}`;
+            if(progress.event === 'start') {
+              msg += ` with args: ${JSON.stringify(progress.args)}`;
+            } else if(progress.event === 'finish') {
+              if(progress.error) {
+                msg += ` error: ${progress.error}`;
+              } else {
+                msg += ` result: ${JSON.stringify(progress.result)}`;
+              }
+            } else {
+              msg += ` data: ${JSON.stringify(progress)}`;
+            }
+            appendOutput(msg);
           } else if(data.error) {
             appendOutput('Error: ' + data.error);
           }

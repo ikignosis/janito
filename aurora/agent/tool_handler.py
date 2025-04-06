@@ -91,6 +91,12 @@ class ToolHandler:
         try:
             import inspect
             sig = inspect.signature(func)
+            if on_progress:
+                on_progress({
+                    'event': 'start',
+                    'tool': tool_call.function.name,
+                    'args': args
+                })
             if 'on_progress' in sig.parameters and on_progress is not None:
                 args['on_progress'] = on_progress
             result = func(**args)
@@ -103,8 +109,22 @@ class ToolHandler:
                     elif len(result) > 500:
                         preview = result[:500] + "... (truncated)"
                 print(f"[Tool Result] {tool_call.function.name} returned:\n{preview}")
+            if on_progress:
+                on_progress({
+                    'event': 'finish',
+                    'tool': tool_call.function.name,
+                    'args': args,
+                    'result': result
+                })
             return result
         except Exception as e:
+            if on_progress:
+                on_progress({
+                    'event': 'finish',
+                    'tool': tool_call.function.name,
+                    'args': args,
+                    'error': str(e)
+                })
             error_message = f"Error executing tool '{tool_call.function.name}': {e}"
             if self.verbose:
                 print(f"[Tool Error] {error_message}")
