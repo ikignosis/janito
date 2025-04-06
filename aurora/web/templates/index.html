@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <title>Terminal Landing Page</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
   body {
     background-color: black;
@@ -25,6 +26,9 @@
   }
   @keyframes blink {
     50% { background-color: transparent; }
+  }
+  .markdown-content {
+    white-space: normal;
   }
 </style>
 </head>
@@ -49,12 +53,11 @@ function appendToTerminal(text) {
 }
 
 function appendOutput(text) {
-  const lines = text.split('\n');
-  lines.forEach(lineText => {
-    const line = document.createElement('div');
-    line.textContent = lineText;
-    terminal.insertBefore(line, output);
-  });
+  const html = marked.parse(text);
+  const container = document.createElement('div');
+  container.className = 'markdown-content';
+  container.innerHTML = html;
+  terminal.insertBefore(container, output);
 }
 
 document.addEventListener('keydown', function(event) {
