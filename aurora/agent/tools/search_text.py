@@ -6,13 +6,12 @@ from aurora.agent.tools.rich_utils import print_info, print_success, print_error
 from aurora.agent.tools.gitignore_utils import load_gitignore_patterns, filter_ignored
 
 @ToolHandler.register_tool
-def search_text(directory: str, file_pattern: str, text_pattern: str, case_sensitive: bool = False, max_matches: int = 1000):
+def search_text(directory: str, file_pattern: str, text_pattern: str, case_sensitive: bool = False):
     """
     directory: Root directory to search.
     file_pattern: Glob pattern for filenames (e.g., '*.py').
     text_pattern: Regex pattern to search within files.
     case_sensitive: Whether the search is case sensitive.
-    max_matches: Maximum number of matches to return.
 
     Returns a string with matches, each in 'filepath:line_number:matched_line' format, separated by newlines.
     """
@@ -32,9 +31,6 @@ def search_text(directory: str, file_pattern: str, text_pattern: str, case_sensi
                         for lineno, line in enumerate(f, start=1):
                             if regex.search(line):
                                 results.append(f"{filepath}:{lineno}:{line.rstrip()}")
-                                if len(results) >= max_matches:
-                                    print_success(f"✅ Found {format_number(len(results))} matches (limit reached)")
-                                    return "\n".join(results)
                 except Exception as e:
                     print_error(f"❌ Error reading file '{filepath}': {e}")
                     continue  # Ignore unreadable files
