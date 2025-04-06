@@ -8,7 +8,8 @@ authors = [
 requires-python = ">=3.8"
 dependencies = [
     "rich",
-    "openai"
+    "openai",
+    "flask"
 ]
 license = { text = "MIT" }
 readme = "README.md"
@@ -29,5 +30,6 @@ aurora = "aurora.__main__:main"
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
 [tool.setuptools.package-data]
-"aurora.prompts" = ["system_instructions.txt"]
+"aurora.templates" = ["system_instructions.j2"]
