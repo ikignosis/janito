@@ -1,3 +1,11 @@
+- `aurora/agent/config.py`: Defines configuration management classes:
+  - `FileConfig` loads and saves JSON configs (local and global)
+  - `RuntimeConfig` is an in-memory, reset-on-restart config
+  - `EffectiveConfig` provides a merged, read-only view of runtime, local, and global configs, with priority order runtime > local > global
+  - Singleton instances: `runtime_config`, `local_config`, `global_config`, and `effective_config`
+
+Other files:
+
 - `create_file.py`: Tool to create a file with specified content. Supports an `overwrite` parameter (default False) to control overwriting existing files. When replacing, it reports the number of lines in the old and new content.
 - `remove_file.py`: Tool to delete files.
 - `move_file.py`: Tool to move a file or directory from a source path to a destination path. Supports an `overwrite` parameter to replace the destination if it exists.

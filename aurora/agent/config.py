@@ -57,7 +57,31 @@ class FileConfig(BaseConfig):
             json.dump(self._data, f, indent=2)
 
 
+class EffectiveConfig:
+    """Read-only merged view of runtime, local, and global configs"""
+    def __init__(self, runtime_cfg, local_cfg, global_cfg):
+        self.runtime_cfg = runtime_cfg
+        self.local_cfg = local_cfg
+        self.global_cfg = global_cfg
+
+    def get(self, key, default=None):
+        for cfg in (self.runtime_cfg, self.local_cfg, self.global_cfg):
+            val = cfg.get(key)
+            if val is not None:
+                return val
+        return default
+
+    def all(self):
+        merged = {}
+        # Start with global, override with local, then runtime
+        for cfg in (self.global_cfg, self.local_cfg, self.runtime_cfg):
+            merged.update(cfg.all())
+        return merged
+
+
 # Singleton instances
 runtime_config = RuntimeConfig()
 local_config = FileConfig(Path('.aurora/config.json'))
 global_config = FileConfig(Path.home() / '.aurora/config.json')
+
+effective_config = EffectiveConfig(runtime_config, local_config, global_config)
