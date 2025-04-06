@@ -1,7 +1,9 @@
 # Project Structure
 
 ## Root Files
-- `app.py`: Defines the Flask application. Instead of executing shell commands locally, it now forwards commands to an Aurora agent instance (using the `aurora` package) and returns the agent's response as output.
+- `app.py`: Defines the Flask application.
+  - `/`: Serves the web interface.
+  - `/execute_stream`: POST endpoint that accepts user input and streams the Aurora agent's response back to the client using server-sent events (SSE).
 - `__main__.py`: Entry point script to run the Flask app, configured to run in development mode with `debug=True`. Accepts an optional port argument.
 - `__init__.py`: (Empty) Marks the directory as a package.
 
@@ -15,4 +17,4 @@
 ## Behavior
 - Running `python -m <module>` or `python __main__.py` will start the Flask app in development mode with debugging enabled.
 - The web interface allows entering shell commands, which are sent to the backend.
-- The backend uses the Aurora agent to process the commands and returns the agent's response, instead of executing shell commands directly.
+- The backend uses the Aurora agent to process the commands and streams the response back to the frontend via SSE.

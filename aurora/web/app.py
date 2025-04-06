@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, make_response, Response
+from flask import Flask, render_template, request, jsonify, Response
 import os
 import json
 import uuid
@@ -29,4 +29,20 @@ for tool_entry in ToolHandler._tool_registry.values():
 def index():
     return render_template('index.html')
 
-# (rest of the file remains unchanged)
+
+def generate_sse(agent_response_generator):
+    """Helper generator to yield server-sent events from agent response."""
+    for chunk in agent_response_generator:
+        data = json.dumps({"content": chunk})
+        yield f"data: {data}\n\n"
+
+
+@app.route('/execute_stream', methods=['POST'])
+def execute_stream():
+    data = request.get_json()
+    user_input = data.get('input', '')
+
+    def agent_response():
+        yield from agent.chat(user_input, stream=True)
+
+    return Response(generate_sse(agent_response()), mimetype='text/event-stream')
