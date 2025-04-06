@@ -55,9 +55,9 @@ def execute_stream():
             try:
                 event_type, payload = q.get(timeout=0.1)
                 if event_type == 'content':
-                    yield f"data: {json.dumps({'type': 'content', 'payload': payload})}\n\n"
+                    yield f"data: {json.dumps({'type': 'content', 'content': payload})}\n\n"
                 elif event_type == 'tool_progress':
-                    yield f"data: {json.dumps({'type': 'tool_progress', 'payload': payload})}\n\n"
+                    yield f"data: {json.dumps({'type': 'tool_progress', 'progress': payload})}\n\n"
             except Exception:
                 continue
 
