@@ -5,7 +5,7 @@ import threading
 
 
 @ToolHandler.register_tool
-def bash_exec(command: str) -> str:
+def bash_exec(command: str, on_progress=None) -> str:
     """
     command: The Bash command to execute.
 
@@ -25,14 +25,16 @@ def bash_exec(command: str) -> str:
             stdout_lines = []
             stderr_lines = []
 
-            def read_stream(stream, collector, print_func):
+            def read_stream(stream, collector, print_func, stream_name):
                 for line in iter(stream.readline, ''):
                     collector.append(line)
                     print_func(line.rstrip())
+                    if on_progress:
+                        on_progress({'stream': stream_name, 'line': line.rstrip()})
                 stream.close()
 
-            stdout_thread = threading.Thread(target=read_stream, args=(process.stdout, stdout_lines, print_bash_stdout))
-            stderr_thread = threading.Thread(target=read_stream, args=(process.stderr, stderr_lines, print_bash_stderr))
+            stdout_thread = threading.Thread(target=read_stream, args=(process.stdout, stdout_lines, print_bash_stdout, 'stdout'))
+            stderr_thread = threading.Thread(target=read_stream, args=(process.stderr, stderr_lines, print_bash_stderr, 'stderr'))
             stdout_thread.start()
             stderr_thread.start()
             stdout_thread.join()
