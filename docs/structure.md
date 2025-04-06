@@ -40,8 +40,15 @@
 ## Web Server Package: `aurora.web`
 - `aurora/web/__init__.py`: Marks the web module as a package.
 - `aurora/web/__main__.py`: **Module entry point.** Allows running the web server via `python -m aurora.web [port]`. Parses optional port argument, then starts the Flask app.
-- `aurora/web/app.py`: Defines the Flask app, initializes the `Agent` **with a generated system prompt (same as CLI)**, provides `/`, `/execute` (standard POST), `/execute_stream` (Server-Sent Events streaming chunks tagged with command_id). Uses `QueuedToolHandler` to stream tool progress events without patching. **Passes `on_tool_progress` callback to `agent.chat()` to stream tool progress updates.**
-- `aurora/web/templates/index.html`: Default index page served by Flask. **Renders streamed `on_content` and `tool_progress` messages as Markdown using marked.js**.
+- `aurora/web/app.py`: Defines the Flask app, initializes the `Agent` **with a generated system prompt (same as CLI)**. Provides:
+  - `/`: index page.
+  - `/execute`: standard POST endpoint.
+  - `/execute_stream`: **streams Server-Sent Events (SSE)** including:
+    - `{"type": "content", "data": ...}` for incremental LLM output.
+    - `{"type": "tool_progress", "data": ...}` for tool execution updates.
+
+  Uses a `QueuedToolHandler` to inject tool progress events into a queue, and an `on_content` callback to enqueue content chunks. These are streamed concurrently to the client.
+- `aurora/web/templates/index.html`: Default index page served by Flask. **Renders streamed `content` and `tool_progress` messages as Markdown using marked.js**.
 
 ## Documentation
 - `docs/structure.md`: This file. Explains the purpose of each file and folder.
@@ -50,4 +57,4 @@
 - CLI: `python -m aurora`
 - Web: `python -m aurora.web`
 - Both use the same core `Agent` class, config system, and **system prompt generation logic**.
-- `/execute_stream` endpoint streams partial responses and tool progress as SSE.
+- `/execute_stream` endpoint streams incremental LLM output and tool progress updates as SSE.
