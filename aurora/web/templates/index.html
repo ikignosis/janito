@@ -106,7 +106,8 @@ async function sendCommandStream(cmd) {
 
     for(const part of parts) {
       if(part.startsWith('data: ')) {
-        const jsonStr = part.slice(6);
+        const jsonStr = part.slice(6).trim();
+        if (!jsonStr) continue;  // skip empty data
         try {
           const data = JSON.parse(jsonStr);
           console.log('[WebClient] SSE event received:', data); // Log all SSE events
@@ -132,7 +133,7 @@ async function sendCommandStream(cmd) {
             appendOutput('Error: ' + data.error);
           }
         } catch(e) {
-          console.error('Error parsing SSE data', e);
+          console.error('Error parsing SSE data', e, jsonStr);
         }
       }
     }
