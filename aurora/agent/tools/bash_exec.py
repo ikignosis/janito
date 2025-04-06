@@ -5,9 +5,10 @@ import threading
 
 
 @ToolHandler.register_tool
-def bash_exec(command: str, on_progress=None) -> str:
+def bash_exec(command: str, on_progress: callable = None) -> str:
     """
     command: The Bash command to execute.
+    on_progress: Optional callback function for streaming progress updates.
 
     Execute a non interactive bash command and print output live.
 

@@ -4,12 +4,13 @@ from aurora.agent.tool_handler import ToolHandler
 from aurora.agent.tools.rich_utils import print_info, print_success, print_error
 
 @ToolHandler.register_tool
-def fetch_url(url: str, search_strings: list[str] = None, on_progress=None) -> str:
+def fetch_url(url: str, search_strings: list[str] = None, on_progress: callable = None) -> str:
     """
     Fetch the content of a web page and extract its text.
 
     url: The URL to fetch.
     search_strings: Optional list of strings to filter the extracted text around those strings.
+    on_progress: Optional callback function for streaming progress updates.
     """
     if on_progress:
         on_progress({'event': 'start', 'url': url})
