@@ -1,0 +1,6 @@
+- Explored the project and found it was using a basic HTTP server.
+- Replaced the HTTP server implementation with a Flask-based web server.
+- Updated `app.py` to define a minimal Flask app with a root route.
+- Updated `__main__.py` to launch the Flask app, supporting an optional port argument.
+- Created `docs/structure.md` documenting the new project structure and purpose of key files.
+- Committed all changes to git.

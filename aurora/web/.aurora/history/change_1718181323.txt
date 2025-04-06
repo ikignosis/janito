@@ -1,0 +1,3 @@
+- Replaced the existing `index.html` with a new landing page styled as a terminal emulator, featuring green monospace text on black background and a blinking cursor effect.
+- Updated `docs/structure.md` to reflect the new purpose of `index.html` as a terminal-style landing page.
+- Committed these changes to version control.

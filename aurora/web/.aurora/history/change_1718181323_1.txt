@@ -1,0 +1,4 @@
+- Explored the project structure and identified the cause of `ModuleNotFoundError: No module named 'app'`
+- The issue was due to `from app import app` in `__main__.py` which conflicts with the filename `app.py`
+- Modified `__main__.py` to use `import app as flask_app` and then reference `flask_app.app`
+- Committed the fix with message: "fix: correct import of app module in __main__.py to avoid ModuleNotFoundError"
