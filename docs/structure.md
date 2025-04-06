@@ -11,7 +11,7 @@ Other files:
 - `move_file.py`: Tool to move a file or directory from a source path to a destination path. Supports an `overwrite` parameter to replace the destination if it exists.
 - `view_file.py`: Tool to view the contents of a file or list directory contents. Accepts `start_line` (1-based, default 1) and `end_line` (inclusive, optional). Displays total number of lines in the file and does not truncate output. The start message includes 'View' before the path.
 - `find_files.py`: Recursively finds files matching a glob pattern within a directory, **skipping files and directories ignored by `.gitignore`** if present.
-- `search_text.py`: Searches for a regex pattern inside files matching a glob pattern, recursively within a directory, **skipping files and directories ignored by `.gitignore`** if present. Returns matches with filename, line number, and matched line.
+- `search_text.py`: Searches for a regex pattern inside files matching a glob pattern, recursively within a directory, **skipping files and directories ignored by `.gitignore`** if present. Returns matches with filename, line number, and matched line. **No limit on the number of matches returned.**
 - `gitignore_utils.py`: Utility functions to load `.gitignore` patterns, check if a path is ignored, and filter directory listings accordingly.
 - `bash_exec.py`: Tool to execute Bash commands. Prints output to the terminal immediately as it is received from the running process, capturing both stdout and stderr live. **stdout is printed with white text on a blue background, stderr with white text on a red background, both on a dark background**. Returns the combined output and the return code after completion.
 
