@@ -11,6 +11,9 @@ class ConversationHandler:
         self.tool_handler = tool_handler
 
     def handle_conversation(self, messages, max_rounds=50, on_content=None, verbose_response=False):
+        if not messages:
+            raise ValueError("No prompt provided in messages")
+
         for _ in range(max_rounds):
             response = self.client.chat.completions.create(
                 model=self.model,
