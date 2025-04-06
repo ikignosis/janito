@@ -1,12 +1,5 @@
 import sys
-from http.server import HTTPServer, SimpleHTTPRequestHandler
-
-
-def run(server_class=HTTPServer, handler_class=SimpleHTTPRequestHandler, port=8000):
-    server_address = ('', port)
-    httpd = server_class(server_address, handler_class)
-    print(f"Starting web server on port {port}...")
-    httpd.serve_forever()
+from app import app
 
 
 def main():
@@ -17,7 +10,7 @@ def main():
         except ValueError:
             print(f"Invalid port number: {sys.argv[1]}")
             sys.exit(1)
-    run(port=port)
+    app.run(host='0.0.0.0', port=port)
 
 
 if __name__ == '__main__':

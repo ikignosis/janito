@@ -1,6 +1,10 @@
-# Placeholder for the web app logic
-# This will eventually provide similar capabilities to the CLI via a web interface
+from flask import Flask
 
-def handle_request():
-    # Future implementation for handling web requests
-    pass
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return "Hello, Flask is running!"
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8000)
