@@ -21,3 +21,8 @@
   It loads the API key, renders the system prompt (with optional role override), initializes the agent, and handles interaction.
 
 - `aurora/__init__.py`: Defines the package version (`__version__`).
+
+# Web Server Package
+- `aurora/web/__init__.py`: Marks the `web` directory as a Python package.
+- `aurora/web/__main__.py`: Entry point to start a simple HTTP server. Can be run with `python -m aurora.web [port]` (default port 8000).
+- `aurora/web/app.py`: Placeholder for the future web application logic that will provide similar capabilities to the CLI.
