@@ -27,11 +27,58 @@
 </style>
 </head>
 <body>
-<div class="terminal">
-$ Welcome to Aurora Web App
-<br>
-$ Your terminal-style landing page is ready.
-<span class="cursor"></span>
+<div class="terminal" id="terminal">
+$ Welcome to Aurora Web App<br>
+$ Your terminal-style landing page is ready.<br>
+<span id="output"></span>
+<span id="input-line"></span><span class="cursor"></span>
 </div>
+<script>
+const terminal = document.getElementById('terminal');
+const inputLine = document.getElementById('input-line');
+const output = document.getElementById('output');
+
+let command = '';
+
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Backspace') {
+    command = command.slice(0, -1);
+  } else if (event.key === 'Enter') {
+    appendToTerminal('$ ' + command);
+    sendCommand(command);
+    command = '';
+  } else if (event.key.length === 1) {
+    command += event.key;
+  }
+  inputLine.textContent = '$ ' + command;
+});
+
+function appendToTerminal(text) {
+  const line = document.createElement('div');
+  line.textContent = text;
+  terminal.insertBefore(line, output);
+}
+
+function appendOutput(text) {
+  const lines = text.split('\n');
+  lines.forEach(lineText => {
+    const line = document.createElement('div');
+    line.textContent = lineText;
+    terminal.insertBefore(line, output);
+  });
+}
+
+async function sendCommand(cmd) {
+  const response = await fetch('/execute', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ command: cmd })
+  });
+  const data = await response.json();
+  appendOutput(data.output);
+}
+</script>
 </body>
 </html>
