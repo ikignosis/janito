@@ -16,7 +16,7 @@ def main():
     parser = argparse.ArgumentParser(description="OpenRouter API call using OpenAI Python SDK")
     parser.add_argument("prompt", type=str, nargs="?", help="Prompt to send to the model")
     parser.add_argument("-s", "--system-prompt", type=str, default=None, help="Optional system prompt")
-    parser.add_argument("-r", "--role", type=str, default="software engineer", help="Role description for the system prompt")
+    parser.add_argument("-r", "--role", type=str, default=None, help="Role description for the system prompt")
     parser.add_argument("--verbose-http", action="store_true", help="Enable verbose HTTP logging")
     parser.add_argument("--verbose-http-raw", action="store_true", help="Enable raw HTTP wire-level logging")
     parser.add_argument("--verbose-response", action="store_true", help="Pretty print the full response object")
@@ -74,8 +74,19 @@ def main():
                 print(f"{key} = {value}    (source: {source})")
         sys.exit(0)
 
-    # Render system prompt with role override
-    default_system_prompt = render_system_prompt(args.role)
+    # Determine effective role
+    role = args.role
+    if role is None:
+        role = local_config.get("role") or global_config.get("role") or "software engineer"
+
+    # Determine effective system prompt
+    system_prompt = args.system_prompt
+    if system_prompt is None:
+        system_prompt = local_config.get("system_prompt") or global_config.get("system_prompt")
+
+    # If still none, render default
+    if system_prompt is None:
+        system_prompt = render_system_prompt(role)
 
     if args.show_system:
         api_key = os.getenv("OPENROUTER_API_KEY")
@@ -84,12 +95,8 @@ def main():
 
         agent = Agent(api_key=api_key)
         print("Model:", agent.model)
-        # Placeholder for model parameters (none explicitly stored)
         print("Parameters: {}")
-        # System prompt: user-supplied or default
-        system_prompt_display = args.system_prompt or default_system_prompt or "(default system prompt not provided)"
-        print("System Prompt:", system_prompt_display)
-        # Tool definitions
+        print("System Prompt:", system_prompt or "(default system prompt not provided)")
         import json as _json
         print("Tool Definitions:")
         print(_json.dumps(agent.tool_handler.tools, indent=2))
@@ -103,7 +110,6 @@ def main():
         httpx_logger.addHandler(handler)
 
     if args.verbose_http_raw:
-        # Set environment variable to increase HTTPX verbosity
         os.environ["HTTPX_LOG_LEVEL"] = "trace"
 
         httpcore_logger = logging.getLogger("httpcore")
@@ -119,10 +125,9 @@ def main():
         httpx_logger.addHandler(handler)
 
     if not args.prompt:
-        # Read prompt from stdin if not provided as argument
-        if os.name == "nt":  # Windows
+        if os.name == "nt":
             print("Enter your prompt. Press Ctrl+Z then Enter to finish:")
-        else:  # Unix/Linux/macOS
+        else:
             print("Enter your prompt. Press Ctrl+D to finish:")
         prompt = sys.stdin.read().strip()
         if not prompt:
@@ -135,7 +140,7 @@ def main():
     if not api_key:
         raise ValueError("Please set the OPENROUTER_API_KEY environment variable.")
 
-    agent = Agent(api_key=api_key, system_prompt=(args.system_prompt or default_system_prompt), verbose_tools=args.verbose_tools)
+    agent = Agent(api_key=api_key, system_prompt=system_prompt, verbose_tools=args.verbose_tools)
 
     console = Console()
 
