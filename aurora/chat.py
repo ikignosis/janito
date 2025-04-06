@@ -12,13 +12,30 @@ def chat_loop(agent):
         messages.append({"role": "system", "content": agent.system_prompt})
 
     console.print("[bold green]Entering chat mode. Type /exit to quit.[/bold green]")
+    console.print("[bold yellow]Enter your message. End input with a single '.' on a line or Ctrl+D (Unix) / Ctrl+Z (Windows).[/bold yellow]")
 
     while True:
         try:
-            user_input = input("You: ").strip()
-            if user_input.lower() in {"/exit", "/quit"}:
+            lines = []
+            first_line = input("You: ").strip()
+            if first_line.lower() in {"/exit", "/quit"}:
                 print("Exiting chat mode.")
                 break
+            if first_line == ".":
+                continue  # ignore empty message
+            lines.append(first_line)
+
+            # Read additional lines
+            while True:
+                try:
+                    line = input()
+                except EOFError:
+                    break
+                if line.strip() == ".":
+                    break
+                lines.append(line)
+
+            user_input = "\n".join(lines).strip()
             if not user_input:
                 continue
 
