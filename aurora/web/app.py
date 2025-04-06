@@ -24,4 +24,9 @@ agent = Agent(api_key=api_key, system_prompt=system_prompt)
 for tool_entry in ToolHandler._tool_registry.values():
     agent.tool_handler.register(tool_entry['function'])
 
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
 # (rest of the file remains unchanged)
