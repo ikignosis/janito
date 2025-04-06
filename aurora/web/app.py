@@ -19,8 +19,8 @@ def index():
 def execute():
     try:
         data = request.get_json()
-        # Assuming agent.run is the main processing function
-        result = agent.run(data)
+        # Call agent.chat instead of agent.run
+        result = agent.chat(data)
         return jsonify({'output': result})
     except Exception as e:
         # Print error to terminal
