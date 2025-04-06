@@ -1,5 +1,6 @@
 from flask import Flask, request, render_template, Response
 from queue import Queue
+import json
 from aurora.agent.queued_tool_handler import QueuedToolHandler
 from aurora.agent.agent import Agent
 from aurora.agent.config import get_api_key
@@ -28,7 +29,6 @@ def execute_stream():
     user_input = data.get('input', '')
 
     def generate():
-        # Use agent.chat() instead of deprecated agent.run()
         agent.chat(
             [{"role": "user", "content": user_input}],
             on_content=lambda content: stream_queue.put(content)
@@ -37,6 +37,10 @@ def execute_stream():
             content = stream_queue.get()
             if content is None:
                 break
-            yield f"data: {content}\n\n"
+            if isinstance(content, tuple) and content[0] == 'tool_progress':
+                message = json.dumps({"type": "tool_progress", "data": content[1]})
+                yield f"data: {message}\n\n"
+            else:
+                yield f"data: {content}\n\n"
 
     return Response(generate(), mimetype='text/event-stream')
