@@ -17,4 +17,15 @@ def index():
 
 @app.route('/execute', methods=['POST'])
 def execute():
-    data = request.get_json()
+    try:
+        data = request.get_json()
+        # Assuming agent.run is the main processing function
+        result = agent.run(data)
+        return jsonify({'result': result})
+    except Exception as e:
+        # Print error to terminal
+        print(f"Error during execution: {e}")
+        return jsonify({'error': str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(debug=True)
