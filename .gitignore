@@ -149,3 +149,6 @@ $RECYCLE.BIN/
 
 # System-specific
 *.orig
+
+# Ignore all .aurora directories recursively
+**/.aurora/
