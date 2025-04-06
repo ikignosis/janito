@@ -1,5 +1,5 @@
 import sys
-import app as flask_app
+import app
 
 
 def main():
@@ -10,7 +10,7 @@ def main():
         except ValueError:
             print(f"Invalid port number: {sys.argv[1]}")
             sys.exit(1)
-    flask_app.app.run(host='0.0.0.0', port=port)
+    app.app.run(host='0.0.0.0', port=port)
 
 
 if __name__ == '__main__':
