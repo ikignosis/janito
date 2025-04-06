@@ -19,68 +19,45 @@ class ToolHandler:
             "required": []
         }
 
-        # Simple docstring param description extraction
-        param_docs = {}
-        if func.__doc__:
-            import re
-            # Match lines like: param_name: description
-            for line in func.__doc__.splitlines():
-                match = re.match(r"\s*(\w+)\s*:\s*(.+)", line)
-                if match:
-                    param_docs[match.group(1)] = match.group(2).strip()
-
         for param_name, param in sig.parameters.items():
-            # Enforce type hint presence
-            if param.annotation is inspect.Parameter.empty:
+            if param.annotation is param.empty:
                 raise TypeError(f"Parameter '{param_name}' in tool '{name}' is missing a type hint.")
-
-            # Enforce docstring description presence
-            doc = param_docs.get(param_name, "")
-            if not doc:
-                raise ValueError(f"Parameter '{param_name}' in tool '{name}' is missing a docstring description.")
-
-            # Map Python type to JSON Schema type
-            py_type = param.annotation
-            if py_type == str:
-                json_type = "string"
-            elif py_type == int:
+            param_type = param.annotation
+            json_type = "string"
+            if param_type == int:
                 json_type = "integer"
-            elif py_type == bool:
-                json_type = "boolean"
-            elif py_type == float:
+            elif param_type == float:
                 json_type = "number"
-            else:
-                # Default fallback
-                json_type = "string"
-
-            params_schema["properties"][param_name] = {
-                "type": json_type,
-                "description": doc
-            }
-            if param.default is inspect.Parameter.empty:
+            elif param_type == bool:
+                json_type = "boolean"
+            elif param_type == dict:
+                json_type = "object"
+            elif param_type == list:
+                json_type = "array"
+            params_schema["properties"][param_name] = {"type": json_type}
+            if param.default is param.empty:
                 params_schema["required"].append(param_name)
 
         cls._tool_registry[name] = {
             "function": func,
-            "schema": {
-                "type": "function",
-                "function": {
-                    "name": name,
-                    "description": description,
-                    "parameters": params_schema
-                }
-            }
+            "description": description,
+            "parameters": params_schema
         }
         return func
 
     def __init__(self, verbose=False):
         self.verbose = verbose
-        self.tools = [entry["schema"] for entry in self._tool_registry.values()]
+        self.tools = []
+
+    def register(self, func):
+        self.tools.append(func)
+        return func
 
     def get_tools(self):
         return self.tools
 
     def handle_tool_call(self, tool_call, on_progress=None):
+        print(f"[ToolHandler] handle_tool_call invoked for: {tool_call.function.name}")  # Debug print
         tool_entry = self._tool_registry.get(tool_call.function.name)
         if not tool_entry:
             return f"Unknown tool: {tool_call.function.name}"
@@ -118,15 +95,13 @@ class ToolHandler:
                 })
             return result
         except Exception as e:
+            tb = traceback.format_exc()
             if on_progress:
                 on_progress({
                     'event': 'finish',
                     'tool': tool_call.function.name,
                     'args': args,
-                    'error': str(e)
+                    'error': str(e),
+                    'traceback': tb
                 })
-            error_message = f"Error executing tool '{tool_call.function.name}': {e}"
-            if self.verbose:
-                print(f"[Tool Error] {error_message}")
-                traceback.print_exc()
-            return error_message
+            return f"Error running tool {tool_call.function.name}: {e}"
