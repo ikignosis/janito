@@ -5,6 +5,7 @@
 - `aurora/__main__.py`: Main CLI entry point. Parses command line arguments, manages configuration, initializes the agent, and handles interaction. **Supports single prompt mode and interactive chat mode (`--chat`)**.
 - `aurora/render_prompt.py`: Renders the system prompt template.
 - `aurora/chat.py`: Implements an interactive chat loop, repeatedly asking user input and calling the agent.
+  - **Supports multiline user input in chat mode. User can enter multiple lines, ending input with a single `.` on a line or EOF (Ctrl+D/Ctrl+Z).**
 
 ## Agent Subpackage: `aurora.agent`
 - `aurora/agent/__init__.py`: Marks the agent module as a package.
