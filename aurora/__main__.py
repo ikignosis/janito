@@ -9,6 +9,7 @@ from rich.markdown import Markdown
 from aurora.agent.agent import Agent
 from aurora.agent.conversation import MaxRoundsExceededError
 from aurora.agent.config import local_config, global_config
+from aurora import __version__
 
 
 def main():
@@ -23,8 +24,14 @@ def main():
     parser.add_argument("--verbose-tools", action="store_true", help="Print tool call parameters and results")
     parser.add_argument("--set-local-config", type=str, default=None, help='Set a local config key-value pair, format "key=val"')
     parser.add_argument("--set-global-config", type=str, default=None, help='Set a global config key-value pair, format "key=val"')
+    parser.add_argument("--show-config", action="store_true", help="Show effective configuration and exit")
+    parser.add_argument("--version", action="store_true", help="Show program's version number and exit")
 
     args = parser.parse_args()
+
+    if args.version:
+        print(f"aurora version {__version__}")
+        sys.exit(0)
 
     # Handle config set commands early and exit
     if args.set_local_config or args.set_global_config:
@@ -48,6 +55,23 @@ def main():
             global_config.save()
             print(f"Global config updated: {key.strip()} = {val.strip()}")
 
+        sys.exit(0)
+
+    # Handle show-config early and exit
+    if args.show_config:
+        keys = set(global_config.all().keys()) | set(local_config.all().keys())
+        if not keys:
+            print("No configuration found.")
+        else:
+            print("Effective configuration:")
+            for key in sorted(keys):
+                if key in local_config.all():
+                    source = "local"
+                    value = local_config.get(key)
+                else:
+                    source = "global"
+                    value = global_config.get(key)
+                print(f"{key} = {value}    (source: {source})")
         sys.exit(0)
 
     # Render system prompt with role override

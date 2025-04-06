@@ -15,5 +15,9 @@
   - `--verbose-http`, `--verbose-http-raw`, `--verbose-response`, `--show-system`, `--verbose-tools`: Various debug and display options
   - `--set-local-config key=val`: Set a key-value pair in the local config file `.aurora/config.json` and exit
   - `--set-global-config key=val`: Set a key-value pair in the global config file `~/.aurora/config.json` and exit
+  - `--show-config`: Display the effective configuration, showing the source (local or global) for each key, then exit
+  - `--version`: Show the program's version number and exit
 
   It loads the API key, renders the system prompt (with optional role override), initializes the agent, and handles interaction.
+
+- `aurora/__init__.py`: Defines the package version (`__version__`).
