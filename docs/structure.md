@@ -20,10 +20,10 @@
 
 ### Tools (`aurora/agent/tools/`)
 - `ask_user.py`: Tool to ask user questions.
-- `bash_exec.py`: Run bash commands, live output.
+- `bash_exec.py`: Run bash commands, live output. **Supports `on_progress` callback for streaming output lines.**
 - `create_directory.py`: Create directories.
 - `create_file.py`: Create files.
-- `fetch_url.py`: Fetch webpage text.
+- `fetch_url.py`: Fetch webpage text. **Supports `on_progress` callback for fetch status updates.**
 - `find_files.py`: Recursive file search respecting .gitignore.
 - `gitignore_utils.py`: Helpers for .gitignore filtering.
 - `move_file.py`: Move files/directories.
@@ -40,7 +40,7 @@
 - `aurora/web/__init__.py`: Marks the web module as a package.
 - `aurora/web/__main__.py`: **Module entry point.** Allows running the web server via `python -m aurora.web [port]`. Parses optional port argument, then starts the Flask app.
 - `aurora/web/app.py`: Defines the Flask app, initializes the `Agent`, provides `/`, `/execute` (standard POST), `/execute_stream` (Server-Sent Events streaming chunks tagged with command_id). Uses `QueuedToolHandler` to stream tool progress events without patching.
-- `aurora/web/templates/index.html`: Default index page served by Flask. **Renders streamed `on_content` messages as Markdown using marked.js**.
+- `aurora/web/templates/index.html`: Default index page served by Flask. **Renders streamed `on_content` and `tool_progress` messages as Markdown using marked.js**.
 
 ## Documentation
 - `docs/structure.md`: This file. Explains the purpose of each file and folder.
