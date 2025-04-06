@@ -21,11 +21,11 @@ def execute():
         data = request.get_json()
         # Assuming agent.run is the main processing function
         result = agent.run(data)
-        return jsonify({'result': result})
+        return jsonify({'output': result})
     except Exception as e:
         # Print error to terminal
         print(f"Error during execution: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'output': f"Error: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
