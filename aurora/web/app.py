@@ -27,7 +27,14 @@ def execute():
 @app.route('/execute_stream', methods=['POST'])
 def execute_stream():
     data = request.get_json()
-    messages = data.get('messages', [])
+
+    # Support both {"command": "..."} and {"messages": [...]}
+    if 'messages' in data:
+        messages = data['messages']
+    elif 'command' in data:
+        messages = [{"role": "user", "content": data['command']}]
+    else:
+        messages = []
 
     q = Queue()
     # Replace the tool handler with queued version
