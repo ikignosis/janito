@@ -2,8 +2,9 @@
 
 ## Core Package: `aurora`
 - `aurora/__init__.py`: Defines the package version (`__version__`).
-- `aurora/__main__.py`: Main CLI entry point. Parses command line arguments, manages configuration, initializes the agent, and handles interaction.
+- `aurora/__main__.py`: Main CLI entry point. Parses command line arguments, manages configuration, initializes the agent, and handles interaction. **Supports single prompt mode and interactive chat mode (`--chat`)**.
 - `aurora/render_prompt.py`: Renders the system prompt template.
+- `aurora/chat.py`: Implements an interactive chat loop, repeatedly asking user input and calling the agent.
 
 ## Agent Subpackage: `aurora.agent`
 - `aurora/agent/__init__.py`: Marks the agent module as a package.

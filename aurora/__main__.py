@@ -26,6 +26,7 @@ def main():
     parser.add_argument("--set-global-config", type=str, default=None, help='Set a global config key-value pair, format "key=val"')
     parser.add_argument("--show-config", action="store_true", help="Show effective configuration and exit")
     parser.add_argument("--version", action="store_true", help="Show program's version number and exit")
+    parser.add_argument("--chat", action="store_true", help="Enter interactive chat mode")
 
     args = parser.parse_args()
 
@@ -118,6 +119,17 @@ def main():
         handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
         httpx_logger.addHandler(handler)
 
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if not api_key:
+        raise ValueError("Please set the OPENROUTER_API_KEY environment variable.")
+
+    agent = Agent(api_key=api_key, system_prompt=system_prompt, verbose_tools=args.verbose_tools)
+
+    if args.chat:
+        from aurora.chat import chat_loop
+        chat_loop(agent)
+        sys.exit(0)
+
     if not args.prompt:
         if os.name == "nt":
             print("Enter your prompt. Press Ctrl+Z then Enter to finish:")
@@ -129,12 +141,6 @@ def main():
             sys.exit(1)
     else:
         prompt = args.prompt
-
-    api_key = os.getenv("OPENROUTER_API_KEY")
-    if not api_key:
-        raise ValueError("Please set the OPENROUTER_API_KEY environment variable.")
-
-    agent = Agent(api_key=api_key, system_prompt=system_prompt, verbose_tools=args.verbose_tools)
 
     console = Console()
 
