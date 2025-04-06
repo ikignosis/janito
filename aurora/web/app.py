@@ -19,11 +19,18 @@ def index():
 def execute():
     try:
         data = request.get_json()
-        # Call agent.chat instead of agent.run
-        result = agent.chat(data)
+        command = data.get('command', '').strip()
+        if not command:
+            return jsonify({'output': 'Error: No command provided'}), 400
+
+        messages = []
+        if agent.system_prompt:
+            messages.append({"role": "system", "content": agent.system_prompt})
+        messages.append({"role": "user", "content": command})
+
+        result = agent.chat(messages)
         return jsonify({'output': result})
     except Exception as e:
-        # Print error to terminal
         print(f"Error during execution: {e}")
         return jsonify({'output': f"Error: {str(e)}"}), 500
 
