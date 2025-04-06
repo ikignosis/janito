@@ -2,10 +2,11 @@ from aurora.agent.tool_handler import ToolHandler
 from aurora.agent.tools.rich_utils import print_info, print_bash_stdout, print_bash_stderr
 import subprocess
 import threading
+from typing import Callable, Optional
 
 
 @ToolHandler.register_tool
-def bash_exec(command: str, on_progress: callable = None) -> str:
+def bash_exec(command: str, on_progress: Optional[Callable[[dict], None]] = None) -> str:
     """
     command: The Bash command to execute.
     on_progress: Optional callback function for streaming progress updates.
