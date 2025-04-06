@@ -36,7 +36,7 @@ def execute_stream():
     def generate():
         agent.chat(
             [{"role": "user", "content": user_input}],
-            on_content=lambda content: stream_queue.put(content)
+            on_content=lambda content: stream_queue.put({"type": "content", "content": content})
         )
         while True:
             content = stream_queue.get()
@@ -44,8 +44,8 @@ def execute_stream():
                 break
             if isinstance(content, tuple) and content[0] == 'tool_progress':
                 message = json.dumps({"type": "tool_progress", "data": content[1]})
-                yield f"data: {message}\n\n"
             else:
-                yield f"data: {content}\n\n"
+                message = json.dumps(content)
+            yield f"data: {message}\n\n"
 
     return Response(generate(), mimetype='text/event-stream')

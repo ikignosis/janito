@@ -60,15 +60,14 @@ async function sendCommandStream(cmd) {
     for(const part of parts) {
       if(part.startsWith('data: ')) {
         const jsonStr = part.slice(6).trim();
-        if (!jsonStr) continue;  // skip empty data
         try {
           const data = JSON.parse(jsonStr);
-          console.log('[WebClient] SSE event received:', data); // Log all SSE events
+          console.log('[WebClient] SSE event received:', data);
           if(data.type === 'content' && data.content) {
             appendOutput(data.content);
           } else if(data.type === 'tool_progress') {
-            console.debug('[WebClient] Tool progress event:', data.progress); // Debug log
-            const progress = data.progress;
+            const progress = data.data;
+            console.debug('[WebClient] Tool progress event:', progress);
             let msg = `🔧 <b>[Tool ${progress.tool}]</b> <b>${progress.event.toUpperCase()}</b>`;
             if(progress.event === 'start') {
               msg += `<br>Args: <code>${JSON.stringify(progress.args, null, 2)}</code>`;
@@ -82,7 +81,7 @@ async function sendCommandStream(cmd) {
               msg += `<br>Data: <code>${JSON.stringify(progress, null, 2)}</code>`;
             }
             appendOutput(msg, 'tool-progress');
-          } else if(data.error) {
+          } else if(data.type === 'error') {
             appendOutput('Error: ' + data.error);
           }
         } catch(e) {
