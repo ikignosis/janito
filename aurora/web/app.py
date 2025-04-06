@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory, make_response
 import os
 from aurora.agent.agent import Agent
 
@@ -33,6 +33,11 @@ def execute():
     except Exception as e:
         print(f"Error during execution: {e}")
         return jsonify({'output': f"Error: {str(e)}"}), 500
+
+@app.route('/favicon.ico')
+def favicon():
+    # Dummy empty response for favicon requests
+    return make_response('', 204)
 
 if __name__ == '__main__':
     app.run(debug=True)
