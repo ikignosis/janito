@@ -8,7 +8,7 @@ from rich.console import Console
 from rich.markdown import Markdown
 from aurora.agent.agent import Agent
 from aurora.agent.conversation import MaxRoundsExceededError
-from aurora.agent.config import local_config, global_config
+from aurora.agent.config import local_config, global_config, effective_config
 from aurora import __version__
 
 
@@ -75,16 +75,10 @@ def main():
         sys.exit(0)
 
     # Determine effective role
-    role = args.role
-    if role is None:
-        role = local_config.get("role") or global_config.get("role") or "software engineer"
+    role = args.role or effective_config.get("role", "software engineer")
 
     # Determine effective system prompt
-    system_prompt = args.system_prompt
-    if system_prompt is None:
-        system_prompt = local_config.get("system_prompt") or global_config.get("system_prompt")
-
-    # If still none, render default
+    system_prompt = args.system_prompt or effective_config.get("system_prompt")
     if system_prompt is None:
         system_prompt = render_system_prompt(role)
 
