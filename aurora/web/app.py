@@ -5,6 +5,7 @@ import uuid
 from queue import Queue
 from aurora.agent.agent import Agent
 from aurora.agent.queued_tool_handler import QueuedToolHandler
+from aurora.agent.tool_handler import ToolHandler
 
 app = Flask(__name__)
 
@@ -14,6 +15,10 @@ if not api_key:
     raise RuntimeError('OPENROUTER_API_KEY environment variable not set')
 
 agent = Agent(api_key=api_key)
+
+# Register all known tools with the agent's tool handler
+for tool_entry in ToolHandler._tool_registry.values():
+    agent.tool_handler.register(tool_entry['function'])
 
 @app.route('/')
 def index():
@@ -39,6 +44,10 @@ def execute_stream():
     q = Queue()
     # Replace the tool handler with queued version
     agent.tool_handler = QueuedToolHandler(q, verbose=True)
+
+    # Register all known tools again for the queued handler
+    for tool_entry in ToolHandler._tool_registry.values():
+        agent.tool_handler.register(tool_entry['function'])
 
     def enqueue_content(content):
         q.put(('content', content))
