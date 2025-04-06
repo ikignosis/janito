@@ -39,7 +39,7 @@
 - `aurora/web/__init__.py`: Marks the web module as a package.
 - `aurora/web/__main__.py`: **Module entry point.** Allows running the web server via `python -m aurora.web [port]`. Parses optional port argument, then starts the Flask app.
 - `aurora/web/app.py`: Defines the Flask app, initializes the `Agent`, provides `/`, `/execute` (standard POST), `/execute_stream` (Server-Sent Events streaming chunks tagged with command_id), and a dummy `/favicon.ico` endpoint.
-- `aurora/web/templates/index.html`: Default index page served by Flask.
+- `aurora/web/templates/index.html`: Default index page served by Flask. **Renders streamed `on_content` messages as Markdown using marked.js**.
 
 ## Documentation
 - `docs/structure.md`: This file. Explains the purpose of each file and folder.
