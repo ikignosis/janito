@@ -55,8 +55,11 @@ def execute_stream():
     def on_content_q(content):
         enqueue_content(content)
 
+    def on_tool_progress_q(progress):
+        q.put(('tool_progress', progress))
+
     import threading
-    t = threading.Thread(target=agent.chat, args=(messages,), kwargs={'on_content': on_content_q})
+    t = threading.Thread(target=agent.chat, args=(messages,), kwargs={'on_content': on_content_q, 'on_tool_progress': on_tool_progress_q})
     t.start()
 
     def generate():
