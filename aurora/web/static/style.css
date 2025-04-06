@@ -1,0 +1,30 @@
+body {
+  background-color: black;
+  color: #33FF33;
+  font-family: monospace;
+  margin: 0;
+  padding: 20px;
+  font-size: 16px;
+}
+.terminal {
+  white-space: pre-wrap;
+}
+.cursor {
+  display: inline-block;
+  width: 10px;
+  height: 1em;
+  vertical-align: bottom;
+  background-color: #33FF33;
+  animation: blink 1s step-start infinite;
+}
+@keyframes blink {
+  50% { background-color: transparent; }
+}
+.markdown-content {
+  white-space: normal;
+}
+.tool-progress {
+  color: #00BFFF;
+  font-weight: bold;
+  white-space: pre-wrap;
+}
