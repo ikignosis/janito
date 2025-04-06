@@ -1,5 +1,5 @@
 import sys
-import app
+from . import app
 
 
 def main():
