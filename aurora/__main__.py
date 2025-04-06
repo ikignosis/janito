@@ -1,30 +1,57 @@
 import os
 import sys
 import importlib.resources
+from aurora.render_prompt import render_system_prompt
 import argparse
 import logging
 from rich.console import Console
 from rich.markdown import Markdown
 from aurora.agent.agent import Agent
 from aurora.agent.conversation import MaxRoundsExceededError
+from aurora.agent.config import local_config, global_config
 
 
 def main():
-    try:
-        with importlib.resources.files("aurora.prompts").joinpath("system_instructions.txt").open("r", encoding="utf-8") as f:
-            system_prompt = f.read()
-    except (FileNotFoundError, ModuleNotFoundError, AttributeError):
-        print("[Error] Could not find 'aurora/prompts/system_instructions.txt'. Please ensure it exists.")
-        sys.exit(1)
-
     parser = argparse.ArgumentParser(description="OpenRouter API call using OpenAI Python SDK")
     parser.add_argument("prompt", type=str, nargs="?", help="Prompt to send to the model")
     parser.add_argument("-s", "--system-prompt", type=str, default=None, help="Optional system prompt")
+    parser.add_argument("-r", "--role", type=str, default="software engineer", help="Role description for the system prompt")
     parser.add_argument("--verbose-http", action="store_true", help="Enable verbose HTTP logging")
     parser.add_argument("--verbose-http-raw", action="store_true", help="Enable raw HTTP wire-level logging")
     parser.add_argument("--verbose-response", action="store_true", help="Pretty print the full response object")
     parser.add_argument("--show-system", action="store_true", help="Show model, parameters, system prompt, and tool definitions, then exit")
+    parser.add_argument("--verbose-tools", action="store_true", help="Print tool call parameters and results")
+    parser.add_argument("--set-local-config", type=str, default=None, help='Set a local config key-value pair, format "key=val"')
+    parser.add_argument("--set-global-config", type=str, default=None, help='Set a global config key-value pair, format "key=val"')
+
     args = parser.parse_args()
+
+    # Handle config set commands early and exit
+    if args.set_local_config or args.set_global_config:
+        if args.set_local_config:
+            try:
+                key, val = args.set_local_config.split("=", 1)
+            except ValueError:
+                print("Invalid format for --set-local-config, expected key=val")
+                sys.exit(1)
+            local_config.set(key.strip(), val.strip())
+            local_config.save()
+            print(f"Local config updated: {key.strip()} = {val.strip()}")
+
+        if args.set_global_config:
+            try:
+                key, val = args.set_global_config.split("=", 1)
+            except ValueError:
+                print("Invalid format for --set-global-config, expected key=val")
+                sys.exit(1)
+            global_config.set(key.strip(), val.strip())
+            global_config.save()
+            print(f"Global config updated: {key.strip()} = {val.strip()}")
+
+        sys.exit(0)
+
+    # Render system prompt with role override
+    default_system_prompt = render_system_prompt(args.role)
 
     if args.show_system:
         api_key = os.getenv("OPENROUTER_API_KEY")
@@ -36,7 +63,7 @@ def main():
         # Placeholder for model parameters (none explicitly stored)
         print("Parameters: {}")
         # System prompt: user-supplied or default
-        system_prompt_display = args.system_prompt or "(default system prompt not provided)"
+        system_prompt_display = args.system_prompt or default_system_prompt or "(default system prompt not provided)"
         print("System Prompt:", system_prompt_display)
         # Tool definitions
         import json as _json
@@ -68,16 +95,23 @@ def main():
         httpx_logger.addHandler(handler)
 
     if not args.prompt:
-        print("Error: You must provide a prompt unless using --show-system.")
-        sys.exit(1)
-
-    prompt = args.prompt
+        # Read prompt from stdin if not provided as argument
+        if os.name == "nt":  # Windows
+            print("Enter your prompt. Press Ctrl+Z then Enter to finish:")
+        else:  # Unix/Linux/macOS
+            print("Enter your prompt. Press Ctrl+D to finish:")
+        prompt = sys.stdin.read().strip()
+        if not prompt:
+            print("Error: No prompt provided.")
+            sys.exit(1)
+    else:
+        prompt = args.prompt
 
     api_key = os.getenv("OPENROUTER_API_KEY")
     if not api_key:
         raise ValueError("Please set the OPENROUTER_API_KEY environment variable.")
 
-    agent = Agent(api_key=api_key, system_prompt=(args.system_prompt or system_prompt))
+    agent = Agent(api_key=api_key, system_prompt=(args.system_prompt or default_system_prompt), verbose_tools=args.verbose_tools)
 
     console = Console()
 

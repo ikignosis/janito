@@ -1,5 +1,6 @@
 import os
 import json
+import traceback
 
 class ToolHandler:
     _tool_registry = {}
@@ -72,7 +73,8 @@ class ToolHandler:
         }
         return func
 
-    def __init__(self):
+    def __init__(self, verbose=False):
+        self.verbose = verbose
         # Build tools list from registered tools
         self.tools = [entry["schema"] for entry in self._tool_registry.values()]
 
@@ -85,15 +87,24 @@ class ToolHandler:
             return f"Unknown tool: {tool_call.function.name}"
         func = tool_entry["function"]
         args = json.loads(tool_call.function.arguments)
+        if self.verbose:
+            print(f"[Tool Call] {tool_call.function.name} called with arguments: {args}")
         try:
-            return func(**args)
+            result = func(**args)
+            if self.verbose:
+                preview = result
+                if isinstance(result, str):
+                    lines = result.splitlines()
+                    if len(lines) > 10:
+                        preview = "\n".join(lines[:10]) + "\n... (truncated)"
+                    elif len(result) > 500:
+                        preview = result[:500] + "... (truncated)"
+                print(f"[Tool Result] {tool_call.function.name} returned:\n{preview}")
+            return result
         except Exception as e:
-            return f"Error executing tool '{tool_call.function.name}': {e}"
+            error_message = f"Error executing tool '{tool_call.function.name}': {e}"
+            if self.verbose:
+                print(f"[Tool Error] {error_message}")
+                traceback.print_exc()
+            return error_message
 
-import aurora.agent.tools.view_file
-import aurora.agent.tools.remove_file
-import aurora.agent.tools.create_file
-import aurora.agent.tools.replace_file
-import aurora.agent.tools.ask_user
-import aurora.agent.tools.create_directory
-import aurora.agent.tools.search_text

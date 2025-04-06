@@ -1,5 +1,5 @@
 from aurora.agent.tool_handler import ToolHandler
-from aurora.agent.tools.rich_utils import print_info, print_success, print_error
+from aurora.agent.tools.rich_utils import print_info, print_bash_stdout, print_bash_stderr
 import subprocess
 import threading
 
@@ -9,7 +9,7 @@ def bash_exec(command: str) -> str:
     """
     command: The Bash command to execute.
 
-    Execute a non interactive bash command and wait for it to finish.
+    Execute a non interactive bash command and print output live.
 
     Returns:
     str: A formatted message string containing stdout, stderr, and return code.
@@ -19,12 +19,27 @@ def bash_exec(command: str) -> str:
 
     def run_command():
         try:
-            completed = subprocess.run(
-                command, shell=True, capture_output=True, text=True
+            process = subprocess.Popen(
+                command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
             )
-            result['stdout'] = completed.stdout
-            result['stderr'] = completed.stderr
-            result['returncode'] = completed.returncode
+            stdout_lines = []
+            stderr_lines = []
+
+            def read_stream(stream, collector, print_func):
+                for line in iter(stream.readline, ''):
+                    collector.append(line)
+                    print_func(line.rstrip())
+                stream.close()
+
+            stdout_thread = threading.Thread(target=read_stream, args=(process.stdout, stdout_lines, print_bash_stdout))
+            stderr_thread = threading.Thread(target=read_stream, args=(process.stderr, stderr_lines, print_bash_stderr))
+            stdout_thread.start()
+            stderr_thread.start()
+            stdout_thread.join()
+            stderr_thread.join()
+            result['returncode'] = process.wait()
+            result['stdout'] = ''.join(stdout_lines)
+            result['stderr'] = ''.join(stderr_lines)
         except Exception as e:
             result['stderr'] = str(e)
             result['returncode'] = -1
@@ -33,11 +48,7 @@ def bash_exec(command: str) -> str:
     thread.start()
     thread.join()  # Wait for the thread to finish
 
-    print_success(f"[bash_exec] Command execution completed.")
+    print_info(f"[bash_exec] Command execution completed.")
     print_info(f"[bash_exec] Return code: {result['returncode']}")
-    if result['stdout']:
-        print_success(f"[bash_exec] Standard Output:\n{result['stdout']}")
-    if result['stderr']:
-        print_error(f"[bash_exec] Standard Error:\n{result['stderr']}")
 
     return f"stdout:\n{result['stdout']}\nstderr:\n{result['stderr']}\nreturncode: {result['returncode']}"

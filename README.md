@@ -10,6 +10,25 @@ Aurora is a command-line AI agent designed to **edit code and manage files** usi
 - **Interactive User Prompts:** When clarification is needed, Aurora asks you before making changes.
 - **Extensible Tooling:** Built-in tools for file operations, with the ability to add more.
 
+## Built-in Tools
+
+Aurora leverages a rich set of tools to perform project operations:
+
+- **File Operations:**
+  - View file contents or list directory contents
+  - Create or overwrite files
+  - Replace content in existing files
+  - Remove files
+- **Directory Management:**
+  - Create new directories
+- **Search & Discovery:**
+  - Search for text patterns within files
+  - Find files matching patterns recursively
+- **Execution:**
+  - Run Bash commands
+- **User Interaction:**
+  - Prompt the user for clarification or confirmation
+
 ## Usage
 
 1. **Install dependencies:**

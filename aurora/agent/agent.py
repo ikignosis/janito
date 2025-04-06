@@ -4,16 +4,8 @@ from openai import OpenAI
 from aurora.agent.conversation import ConversationHandler
 from aurora.agent.tool_handler import ToolHandler
 
-import aurora.agent.tools.view_file
-import aurora.agent.tools.remove_file
-import aurora.agent.tools.create_file
-import aurora.agent.tools.replace_file
-import aurora.agent.tools.ask_user
-import aurora.agent.tools.create_directory
-import aurora.agent.tools.search_text
-
 class Agent:
-    def __init__(self, api_key: str, model: str = "openrouter/quasar-alpha", system_prompt: str | None = None):
+    def __init__(self, api_key: str, model: str = "openrouter/quasar-alpha", system_prompt: str | None = None, verbose_tools: bool = False):
         self.api_key = api_key
         self.model = model
         self.system_prompt = system_prompt
@@ -21,7 +13,7 @@ class Agent:
             base_url="https://openrouter.ai/api/v1",
             api_key=api_key,
         )
-        self.tool_handler = ToolHandler()
+        self.tool_handler = ToolHandler(verbose=verbose_tools)
         self.conversation_handler = ConversationHandler(
             self.client, self.model, self.tool_handler
         )

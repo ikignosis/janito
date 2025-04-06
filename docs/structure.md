@@ -1,35 +1,19 @@
-# Project Structure
-
-## Root
-- `.gitignore`: Git ignore rules.
-- `pyproject.toml`: Project metadata and build configuration.
-- `LICENSE`: MIT license for the project.
-- `README.md`: Project overview, installation, and usage instructions.
-- `aurora.egg-info/`: Packaging metadata generated during build/distribution.
-- `aurora/`: Main source code package.
-- `docs/`: Project documentation.
-
-## `aurora/`
-- `__init__.py`: Package marker.
-- `__main__.py`: Command-line interface for running the agent, handling arguments, API key, and output.
-- `prompts/`: Contains prompt templates or system instructions.
-- `agent/`: Core agent logic and tools.
-
-## `aurora/agent/`
-- `__init__.py`: Package marker.
-- `agent.py`: Defines the main `Agent` class.
-- `conversation.py`: Conversation management, including error classes.
-- `tool_handler.py`: Tool registration and dispatch.
-- `tools/`: Built-in tool implementations.
-
-## `aurora/agent/tools/`
-- `__init__.py`: Imports all tool functions for easy access.
-- `ask_user.py`: Tool to interactively ask the user questions.
-- `create_directory.py`: Tool to create directories.
-- `create_file.py`: Tool to create files.
+- `create_file.py`: Tool to create a file with specified content. Supports an `overwrite` parameter (default False) to control overwriting existing files. When replacing, it reports the number of lines in the old and new content.
 - `remove_file.py`: Tool to delete files.
-- `replace_file.py`: Tool to replace file contents.
-- `view_file.py`: Tool to view file contents or list directory contents.
-- `find_files.py`: Tool to recursively search for files matching a pattern.
-- `search_text.py`: Tool to search for a regex pattern inside files matching a glob pattern.
-- `bash_exec.py`: Tool to execute Bash commands in a separate thread, returning a formatted message string with stdout, stderr, and return code.
+- `move_file.py`: Tool to move a file or directory from a source path to a destination path. Supports an `overwrite` parameter to replace the destination if it exists.
+- `view_file.py`: Tool to view the contents of a file or list directory contents. Accepts `start_line` (1-based, default 1) and `end_line` (inclusive, optional). Displays total number of lines in the file and does not truncate output. The start message includes 'View' before the path.
+- `find_files.py`: Recursively finds files matching a glob pattern within a directory, **skipping files and directories ignored by `.gitignore`** if present.
+- `search_text.py`: Searches for a regex pattern inside files matching a glob pattern, recursively within a directory, **skipping files and directories ignored by `.gitignore`** if present. Returns matches with filename, line number, and matched line.
+- `gitignore_utils.py`: Utility functions to load `.gitignore` patterns, check if a path is ignored, and filter directory listings accordingly.
+- `bash_exec.py`: Tool to execute Bash commands. Prints output to the terminal immediately as it is received from the running process, capturing both stdout and stderr live. **stdout is printed with white text on a blue background, stderr with white text on a red background, both on a dark background**. Returns the combined output and the return code after completion.
+
+# CLI Entry Point
+- `aurora/__main__.py`: Main CLI entry point. Parses command line arguments, including:
+  - `prompt`: The user prompt (positional or stdin)
+  - `-s/--system-prompt`: Optional override for the entire system prompt string
+  - `-r/--role`: Override the role used in the system prompt template (default: 'software engineer')
+  - `--verbose-http`, `--verbose-http-raw`, `--verbose-response`, `--show-system`, `--verbose-tools`: Various debug and display options
+  - `--set-local-config key=val`: Set a key-value pair in the local config file `.aurora/config.json` and exit
+  - `--set-global-config key=val`: Set a key-value pair in the global config file `~/.aurora/config.json` and exit
+
+  It loads the API key, renders the system prompt (with optional role override), initializes the agent, and handles interaction.
