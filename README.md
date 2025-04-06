@@ -1,20 +1,20 @@
-# Aurora: Natural Language Code Editing Agent
+# 🚀 Aurora: Natural Language Code Editing Agent
 
 Aurora is a command-line and web-based AI agent designed to **edit code and manage files** using natural language instructions.
 
 ---
 
-## Key Features
-- **Code Editing via Natural Language:** Modify, create, or delete code files simply by describing the changes.
-- **File & Directory Management:** Navigate, create, move, or remove files and folders.
-- **Context-Aware:** Understands your project structure for precise edits.
-- **Interactive User Prompts:** Asks for clarification when needed.
-- **Extensible Tooling:** Built-in tools for file operations, shell commands, and more.
-- **Web Interface:** Stream responses and tool progress via a simple web UI.
+## ✨ Key Features
+- 📝 **Code Editing via Natural Language:** Modify, create, or delete code files simply by describing the changes.
+- 📁 **File & Directory Management:** Navigate, create, move, or remove files and folders.
+- 🧠 **Context-Aware:** Understands your project structure for precise edits.
+- 💬 **Interactive User Prompts:** Asks for clarification when needed.
+- 🧩 **Extensible Tooling:** Built-in tools for file operations, shell commands, and more.
+- 🌐 **Web Interface:** Stream responses and tool progress via a simple web UI.
 
 ---
 
-## Installation
+## 📦 Installation
 
 ### Requirements
 - Python 3.8+
@@ -32,7 +32,7 @@ export OPENAI_API_KEY=your_api_key_here
 
 ---
 
-## Usage
+## 💻 Usage
 
 ### Command Line Interface
 Run Aurora in single prompt mode:
@@ -64,7 +64,7 @@ Supports multiline input (end with `.` on a line or Ctrl+D/Z).
 
 ---
 
-## Web Interface
+## 🖥️ Web Interface
 Launch the web server:
 ```bash
 python -m aurora.web
@@ -77,7 +77,7 @@ python -m aurora.web
 
 ---
 
-## Supported Built-in Tools
+## 🧰 Supported Built-in Tools
 - `ask_user`: Ask the user questions.
 - `bash_exec`: Run bash commands with live output.
 - `create_directory`: Create directories.
