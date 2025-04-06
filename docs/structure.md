@@ -24,5 +24,6 @@
 
 # Web Server Package
 - `aurora/web/__init__.py`: Marks the `web` directory as a Python package.
-- `aurora/web/__main__.py`: Entry point to start a simple HTTP server. Can be run with `python -m aurora.web [port]` (default port 8000).
+- `aurora/web/__main__.py`: Entry point to start a simple HTTP server. Can be run with `python -m aurora.web [port]` (default port 8000). Serves static files including `index.html` if present.
 - `aurora/web/app.py`: Placeholder for the future web application logic that will provide similar capabilities to the CLI.
+- `aurora/web/index.html`: The default index page served by the web server, providing a welcome message for the Aurora Web App.
