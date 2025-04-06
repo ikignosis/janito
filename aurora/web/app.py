@@ -57,6 +57,7 @@ def execute_stream():
                 if event_type == 'content':
                     yield f"data: {json.dumps({'type': 'content', 'content': payload})}\n\n"
                 elif event_type == 'tool_progress':
+                    print(f"[WebServer] Tool progress event: {payload}")  # Debug print
                     yield f"data: {json.dumps({'type': 'tool_progress', 'progress': payload})}\n\n"
             except Exception:
                 continue
