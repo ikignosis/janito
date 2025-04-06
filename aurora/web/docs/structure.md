@@ -4,8 +4,8 @@
 
 - `app.py`: Flask application instance with a simple route (`/`) returning a greeting. This is the core web app logic.
 - `__main__.py`: Entry point script. Parses optional port argument and runs the Flask app on the specified port.
-- `index.html`: (Purpose not yet analyzed)
-- `__init__.py`: Marks the directory as a Python package. (Content not yet analyzed)
+- `index.html`: Landing page styled as a terminal emulator, providing a terminal-like welcome screen for the web app.
+- `__init__.py`: Marks the directory as a Python package.
 
 ## Bytecode Cache
 - `__pycache__/`: Python bytecode cache directory.
@@ -14,7 +14,7 @@
 - `docs/structure.md`: This file. Describes the purpose and structure of the project files and folders.
 
 ## Summary
-The project is now set up to run a Flask web server instead of a basic HTTP server. You can start the server by running:
+The project is set up to run a Flask web server. You can start the server by running:
 
 ```bash
 python -m __main__ [port]

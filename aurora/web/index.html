@@ -2,10 +2,36 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Welcome</title>
+<title>Terminal Landing Page</title>
+<style>
+  body {
+    background-color: black;
+    color: #33FF33;
+    font-family: monospace;
+    margin: 0;
+    padding: 20px;
+    font-size: 16px;
+  }
+  .terminal {
+    white-space: pre-wrap;
+  }
+  .cursor {
+    display: inline-block;
+    width: 10px;
+    background-color: #33FF33;
+    animation: blink 1s step-start infinite;
+  }
+  @keyframes blink {
+    50% { background-color: transparent; }
+  }
+</style>
 </head>
 <body>
-<h1>Welcome to the Aurora Web App</h1>
-<p>This is the index page.</p>
+<div class="terminal">
+$ Welcome to Aurora Web App
+<br>
+$ Your terminal-style landing page is ready.
+<span class="cursor"></span>
+</div>
 </body>
 </html>
