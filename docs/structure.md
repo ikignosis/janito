@@ -10,6 +10,8 @@
 ## Agent Subpackage: `aurora.agent`
 - `aurora/agent/__init__.py`: Marks the agent module as a package.
 - `aurora/agent/agent.py`: Defines the `Agent` class, the core LLM interaction logic.
+  - Accepts optional `tool_handler` parameter to customize tool execution behavior.
+  - Defaults to a standard `ToolHandler` if none provided.
 - `aurora/agent/config.py`: Configuration management classes:
   - `FileConfig`: Loads/saves JSON configs (local/global)
   - `RuntimeConfig`: In-memory, reset-on-restart config
@@ -47,7 +49,7 @@
     - `{"type": "content", "data": ...}` for incremental LLM output.
     - `{"type": "tool_progress", "progress": ...}` for tool execution updates.
 
-  Uses a `QueuedToolHandler` to inject tool progress events into a queue, and an `on_content` callback to enqueue content chunks. These are streamed concurrently to the client.
+  Creates a `QueuedToolHandler` and injects it into the `Agent` during initialization, enabling streaming of tool progress updates without mutating the agent at runtime.
 
 - `aurora/web/templates/index.html`: Default index page served by Flask. **Terminal-style UI. Sends user input as `{ "input": "..." }` to `/execute_stream`. Renders streamed `content` and `tool_progress` messages as Markdown using marked.js.**
 
