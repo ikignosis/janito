@@ -5,6 +5,7 @@ from aurora.agent.queued_tool_handler import QueuedToolHandler
 from aurora.agent.agent import Agent
 from aurora.agent.config import get_api_key
 import os
+import threading
 
 app = Flask(
     __name__,
@@ -33,11 +34,17 @@ def execute_stream():
     data = request.get_json()
     user_input = data.get('input', '')
 
-    def generate():
+    def run_agent():
         agent.chat(
             [{"role": "user", "content": user_input}],
             on_content=lambda content: stream_queue.put({"type": "content", "content": content})
         )
+        # Signal end of stream
+        stream_queue.put(None)
+
+    threading.Thread(target=run_agent, daemon=True).start()
+
+    def generate():
         while True:
             content = stream_queue.get()
             if content is None:
