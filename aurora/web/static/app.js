@@ -1,3 +1,5 @@
+document.addEventListener('DOMContentLoaded', function() {
+
 const terminal = document.getElementById('terminal');
 const inputLine = document.getElementById('input-line');
 const output = document.getElementById('output');
@@ -91,3 +93,5 @@ async function sendCommandStream(cmd) {
     }
   }
 }
+
+});
