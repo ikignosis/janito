@@ -2,8 +2,8 @@
 
 ## Core Package: `aurora`
 - `aurora/__init__.py`: Defines the package version (`__version__`).
-- `aurora/__main__.py`: Main CLI entry point. Parses command line arguments, manages configuration, initializes the agent, and handles interaction. **Supports single prompt mode and interactive chat mode (`--chat`)**.
-- `aurora/render_prompt.py`: Renders the system prompt template.
+- `aurora/__main__.py`: Main CLI entry point. Parses command line arguments, manages configuration, initializes the agent, and handles interaction. **Supports single prompt mode and interactive chat mode (`--chat`)**. **Generates the system prompt using `render_system_prompt()` and passes it to the agent.**
+- `aurora/render_prompt.py`: Renders the system prompt template using Jinja2. Used by both CLI and web app to ensure consistent prompt generation.
 - `aurora/chat.py`: Implements an interactive chat loop, repeatedly asking user input and calling the agent.
   - **Supports multiline user input in chat mode. User can enter multiple lines, ending input with a single `.` on a line or EOF (Ctrl+D/Ctrl+Z).**
 
@@ -40,7 +40,7 @@
 ## Web Server Package: `aurora.web`
 - `aurora/web/__init__.py`: Marks the web module as a package.
 - `aurora/web/__main__.py`: **Module entry point.** Allows running the web server via `python -m aurora.web [port]`. Parses optional port argument, then starts the Flask app.
-- `aurora/web/app.py`: Defines the Flask app, initializes the `Agent`, provides `/`, `/execute` (standard POST), `/execute_stream` (Server-Sent Events streaming chunks tagged with command_id). Uses `QueuedToolHandler` to stream tool progress events without patching.
+- `aurora/web/app.py`: Defines the Flask app, initializes the `Agent` **with a generated system prompt (same as CLI)**, provides `/`, `/execute` (standard POST), `/execute_stream` (Server-Sent Events streaming chunks tagged with command_id). Uses `QueuedToolHandler` to stream tool progress events without patching. **Passes `on_tool_progress` callback to `agent.chat()` to stream tool progress updates.**
 - `aurora/web/templates/index.html`: Default index page served by Flask. **Renders streamed `on_content` and `tool_progress` messages as Markdown using marked.js**.
 
 ## Documentation
@@ -49,5 +49,5 @@
 ## Summary
 - CLI: `python -m aurora`
 - Web: `python -m aurora.web`
-- Both use the same core `Agent` class and config system.
+- Both use the same core `Agent` class, config system, and **system prompt generation logic**.
 - `/execute_stream` endpoint streams partial responses and tool progress as SSE.
