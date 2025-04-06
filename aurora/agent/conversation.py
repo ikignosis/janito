@@ -18,7 +18,7 @@ class ConversationHandler:
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
-                tools=self.tool_handler.get_tools(),
+                tools=self.tool_handler.get_tool_schemas(),
                 tool_choice="auto",
                 temperature=0,
                 max_tokens=200000
@@ -38,25 +38,14 @@ class ConversationHandler:
             if not choice.message.tool_calls:
                 return choice.message.content
 
-            # Otherwise, handle all tool calls
-            tool_results = []
+            tool_responses = []
             for tool_call in choice.message.tool_calls:
-                result = self.tool_handler.handle_tool_call(tool_call)
-                tool_results.append((tool_call, result))
+                result = self.tool_handler.handle_tool_call(tool_call, on_progress=on_content)
+                tool_responses.append({"tool_call_id": tool_call.id, "content": result})
 
-            # Append a single assistant message with all tool calls
-            messages.append({
-                "role": "assistant",
-                "content": None,
-                "tool_calls": [tr[0] for tr in tool_results]
-            })
+            messages.append({"role": "assistant", "content": choice.message.content, "tool_calls": [tc.to_dict() for tc in choice.message.tool_calls]})
 
-            # Append one tool response message per tool call
-            for tool_call, result in tool_results:
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": tool_call.id,
-                    "content": result
-                })
-        # If max rounds reached without resolution
-        raise MaxRoundsExceededError("Maximum tool call rounds reached without final response.")
+            for tr in tool_responses:
+                messages.append({"role": "tool", "tool_call_id": tr["tool_call_id"], "content": tr["content"]})
+
+        raise MaxRoundsExceededError("Max conversation rounds exceeded")
