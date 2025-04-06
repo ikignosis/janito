@@ -1,25 +1,15 @@
 # Project Structure
 
 ## Root Files
+- `app.py`: Defines the Flask application instance and the main route `/` rendering `index.html`.
+- `__main__.py`: Entry point script to run the Flask app, now configured to run in development mode with `debug=True`. Accepts an optional port argument.
+- `__init__.py`: (Empty) Marks the directory as a package.
 
-- `app.py`: Flask application instance. Serves the `index.html` template on the root route (`/`).
-- `__main__.py`: Entry point script. Parses optional port argument and runs the Flask app on the specified port.
-- `__init__.py`: Marks the directory as a Python package.
+## Folders
+- `docs/`: Project documentation.
+  - `structure.md`: This file, describing the project structure.
+- `templates/`: Contains HTML templates for rendering views.
+- `.aurora/`: Internal directory for change history and metadata.
 
-## Templates
-- `templates/index.html`: Landing page styled as a terminal emulator, providing a terminal-like welcome screen for the web app. Rendered by Flask.
-
-## Bytecode Cache
-- `__pycache__/`: Python bytecode cache directory.
-
-## Documentation
-- `docs/structure.md`: This file. Describes the purpose and structure of the project files and folders.
-
-## Summary
-The project is set up to run a Flask web server. You can start the server by running:
-
-```bash
-python -m __main__ [port]
-```
-
-Then visit `http://localhost:8000` (or your specified port) to see the terminal emulator landing page.
+## Behavior
+- Running `python -m <module>` or `python __main__.py` will start the Flask app in development mode with debugging enabled.
