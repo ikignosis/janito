@@ -60,9 +60,12 @@ def execute_stream():
     def on_content(content):
         event_queue.put({"type": "content", "data": content})
 
+    def on_tool_progress(progress):
+        event_queue.put({"type": "tool_progress", "progress": progress})
+
     def run_agent():
         try:
-            agent.chat(user_input, on_content=on_content, on_tool_progress=None)
+            agent.chat(user_input, on_content=on_content, on_tool_progress=on_tool_progress)
         finally:
             event_queue.put('DONE')
 

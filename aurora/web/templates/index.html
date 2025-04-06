@@ -89,7 +89,7 @@ async function sendCommandStream(cmd) {
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ command: cmd })
+    body: JSON.stringify({ input: cmd })
   });
 
   const reader = response.body.getReader();

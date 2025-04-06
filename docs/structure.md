@@ -45,10 +45,11 @@
   - `/execute`: standard POST endpoint.
   - `/execute_stream`: **streams Server-Sent Events (SSE)** including:
     - `{"type": "content", "data": ...}` for incremental LLM output.
-    - `{"type": "tool_progress", "data": ...}` for tool execution updates.
+    - `{"type": "tool_progress", "progress": ...}` for tool execution updates.
 
   Uses a `QueuedToolHandler` to inject tool progress events into a queue, and an `on_content` callback to enqueue content chunks. These are streamed concurrently to the client.
-- `aurora/web/templates/index.html`: Default index page served by Flask. **Renders streamed `content` and `tool_progress` messages as Markdown using marked.js**.
+
+- `aurora/web/templates/index.html`: Default index page served by Flask. **Terminal-style UI. Sends user input as `{ "input": "..." }` to `/execute_stream`. Renders streamed `content` and `tool_progress` messages as Markdown using marked.js.**
 
 ## Documentation
 - `docs/structure.md`: This file. Explains the purpose of each file and folder.
