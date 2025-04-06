@@ -85,3 +85,13 @@ local_config = FileConfig(Path('.aurora/config.json'))
 global_config = FileConfig(Path.home() / '.aurora/config.json')
 
 effective_config = EffectiveConfig(runtime_config, local_config, global_config)
+
+def get_api_key():
+    """Retrieve API key from environment or config files."""
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if api_key:
+        return api_key
+    api_key = effective_config.get("api_key")
+    if api_key:
+        return api_key
+    raise ValueError("API key not found. Please set the OPENROUTER_API_KEY environment variable or configure 'api_key' in your config.")

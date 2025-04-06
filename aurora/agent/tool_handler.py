@@ -70,7 +70,6 @@ class ToolHandler:
         return schemas
 
     def handle_tool_call(self, tool_call, on_progress=None):
-        print(f"[ToolHandler] handle_tool_call invoked for: {tool_call.function.name}")  # Debug print
         tool_entry = self._tool_registry.get(tool_call.function.name)
         if not tool_entry:
             return f"Unknown tool: {tool_call.function.name}"

@@ -2,7 +2,7 @@
 
 ## Core Package: `aurora`
 - `aurora/__init__.py`: Defines the package version (`__version__`).
-- `aurora/__main__.py`: Main CLI entry point. Parses command line arguments, manages configuration, initializes the agent, and handles interaction. **Supports single prompt mode and interactive chat mode (`--chat`)**. **Generates the system prompt using `render_system_prompt()` and passes it to the agent.**
+- `aurora/__main__.py`: Main CLI entry point. Parses command line arguments, manages configuration, initializes the agent, and handles interaction. **Supports single prompt mode and interactive chat mode (`--chat`)**. **Generates the system prompt using `render_system_prompt()` and passes it to the agent.** Uses `get_api_key()` for API key retrieval.
 - `aurora/render_prompt.py`: Renders the system prompt template using Jinja2. Used by both CLI and web app to ensure consistent prompt generation.
 - `aurora/chat.py`: Implements an interactive chat loop, repeatedly asking user input and calling the agent.
   - **Supports multiline user input in chat mode. User can enter multiple lines, ending input with a single `.` on a line or EOF (Ctrl+D/Ctrl+Z).**
@@ -17,6 +17,7 @@
   - `RuntimeConfig`: In-memory, reset-on-restart config
   - `EffectiveConfig`: Merged, read-only view of all configs
   - Singleton instances: `runtime_config`, `local_config`, `global_config`, `effective_config`
+  - **`get_api_key()`**: Retrieves the API key by checking the `OPENROUTER_API_KEY` environment variable first, then falling back to the merged config (`api_key` key). Raises an error if not found. **Used by both CLI and web app.**
 - `aurora/agent/conversation.py`: Manages conversation history.
 - `aurora/agent/tool_handler.py`: Handles tool execution.
 - `aurora/agent/queued_tool_handler.py`: Subclass of `ToolHandler` that injects progress updates into a queue, used for streaming tool progress in the web server.
@@ -42,7 +43,7 @@
 ## Web Server Package: `aurora.web`
 - `aurora/web/__init__.py`: Marks the web module as a package.
 - `aurora/web/__main__.py`: **Module entry point.** Allows running the web server via `python -m aurora.web [port]`. Parses optional port argument, then starts the Flask app.
-- `aurora/web/app.py`: Defines the Flask app, initializes the `Agent` **with a generated system prompt (same as CLI)**. Provides:
+- `aurora/web/app.py`: Defines the Flask app, initializes the `Agent` **with a generated system prompt (same as CLI)**. Uses `get_api_key()` for API key retrieval. Provides:
   - `/`: index page.
   - `/execute`: standard POST endpoint.
   - `/execute_stream`: **streams Server-Sent Events (SSE)** including:
@@ -59,5 +60,5 @@
 ## Summary
 - CLI: `python -m aurora`
 - Web: `python -m aurora.web`
-- Both use the same core `Agent` class, config system, and **system prompt generation logic**.
+- Both use the same core `Agent` class, config system, **API key retrieval logic (`get_api_key()`)**, and system prompt generation.
 - `/execute_stream` endpoint streams incremental LLM output and tool progress updates as SSE.

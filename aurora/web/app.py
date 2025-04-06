@@ -2,6 +2,7 @@ from flask import Flask, request, render_template, Response
 from queue import Queue
 from aurora.agent.queued_tool_handler import QueuedToolHandler
 from aurora.agent.agent import Agent
+from aurora.agent.config import get_api_key
 
 app = Flask(__name__)
 
@@ -13,7 +14,7 @@ queued_handler = QueuedToolHandler(stream_queue)
 
 # Instantiate the Agent with the custom tool handler
 agent = Agent(
-    api_key="YOUR_API_KEY",  # TODO: Replace with actual key management
+    api_key=get_api_key(),
     tool_handler=queued_handler
 )
 
@@ -27,8 +28,11 @@ def execute_stream():
     user_input = data.get('input', '')
 
     def generate():
-        # Start agent run in background (if needed, threading can be added)
-        agent.run(user_input, on_content=lambda content: stream_queue.put(content))
+        # Use agent.chat() instead of deprecated agent.run()
+        agent.chat(
+            [{"role": "user", "content": user_input}],
+            on_content=lambda content: stream_queue.put(content)
+        )
         while True:
             content = stream_queue.get()
             if content is None:

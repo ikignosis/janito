@@ -8,7 +8,7 @@ from rich.console import Console
 from rich.markdown import Markdown
 from aurora.agent.agent import Agent
 from aurora.agent.conversation import MaxRoundsExceededError
-from aurora.agent.config import local_config, global_config, effective_config
+from aurora.agent.config import local_config, global_config, effective_config, get_api_key
 from aurora import __version__
 
 
@@ -84,10 +84,7 @@ def main():
         system_prompt = render_system_prompt(role)
 
     if args.show_system:
-        api_key = os.getenv("OPENROUTER_API_KEY")
-        if not api_key:
-            raise ValueError("Please set the OPENROUTER_API_KEY environment variable.")
-
+        api_key = get_api_key()
         agent = Agent(api_key=api_key)
         print("Model:", agent.model)
         print("Parameters: {}")
@@ -119,9 +116,7 @@ def main():
         handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
         httpx_logger.addHandler(handler)
 
-    api_key = os.getenv("OPENROUTER_API_KEY")
-    if not api_key:
-        raise ValueError("Please set the OPENROUTER_API_KEY environment variable.")
+    api_key = get_api_key()
 
     agent = Agent(api_key=api_key, system_prompt=system_prompt, verbose_tools=args.verbose_tools)
 
@@ -145,6 +140,8 @@ def main():
     console = Console()
 
     def on_content(content):
+        if not isinstance(content, str):
+            raise TypeError(f"on_content() expected a string, got {type(content)}")
         console.print(Markdown(content))
 
     messages = []
@@ -155,7 +152,10 @@ def main():
 
     try:
         try:
-            response = agent.chat(messages, on_content=on_content)
+            response = agent.chat(
+                messages,
+                on_content=on_content,
+            )
             if args.verbose_response:
                 import json
                 console.print_json(json.dumps(response))

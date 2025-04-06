@@ -10,7 +10,7 @@ class ConversationHandler:
         self.model = model
         self.tool_handler = tool_handler
 
-    def handle_conversation(self, messages, max_rounds=50, on_content=None, verbose_response=False):
+    def handle_conversation(self, messages, max_rounds=50, on_content=None, on_tool_progress=None, verbose_response=False):
         if not messages:
             raise ValueError("No prompt provided in messages")
 
@@ -40,7 +40,7 @@ class ConversationHandler:
 
             tool_responses = []
             for tool_call in choice.message.tool_calls:
-                result = self.tool_handler.handle_tool_call(tool_call, on_progress=on_content)
+                result = self.tool_handler.handle_tool_call(tool_call, on_progress=on_tool_progress)
                 tool_responses.append({"tool_call_id": tool_call.id, "content": result})
 
             messages.append({"role": "assistant", "content": choice.message.content, "tool_calls": [tc.to_dict() for tc in choice.message.tool_calls]})
