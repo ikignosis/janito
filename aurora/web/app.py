@@ -53,37 +53,87 @@ def execute_stream():
 
         def generate():
             try:
-                buffer = []
-                tool_events = []
+                def stream_event(payload_dict):
+                    payload = json.dumps(payload_dict)
+                    yield f"data: {payload}\n\n"
 
                 def on_content(content):
-                    payload = json.dumps({
+                    yield from stream_event({
                         'command_id': command_id,
                         'type': 'content',
                         'content': content
                     })
-                    buffer.append(f"data: {payload}\n\n")
 
                 def on_tool_progress(progress_data):
-                    payload = json.dumps({
+                    yield from stream_event({
                         'command_id': command_id,
                         'type': 'tool_progress',
                         'progress': progress_data
                     })
-                    tool_events.append(f"data: {payload}\n\n")
 
                 # patch tool handler to pass on_progress
-                agent.tool_handler.handle_tool_call = (lambda orig_func=agent.tool_handler.handle_tool_call:
-                    lambda tool_call, **kwargs: orig_func(tool_call, on_progress=on_tool_progress, **kwargs))()
+                orig_handle_tool_call = agent.tool_handler.handle_tool_call
 
-                agent.chat(messages, on_content=on_content)
+                def patched_handle_tool_call(tool_call, **kwargs):
+                    return orig_handle_tool_call(tool_call, on_progress=lambda data: [
+                        (_ for _ in ()).throw(StopIteration) if False else next(stream_event({
+                            'command_id': command_id,
+                            'type': 'tool_progress',
+                            'progress': data
+                        }), None)
+                    ], **kwargs)
 
-                # yield content events
-                for event in buffer:
-                    yield event
-                # yield tool progress events
-                for event in tool_events:
-                    yield event
+                agent.tool_handler.handle_tool_call = patched_handle_tool_call
+
+                # workaround: accumulate content and yield immediately
+                def content_callback(content):
+                    for ev in stream_event({
+                        'command_id': command_id,
+                        'type': 'content',
+                        'content': content
+                    }):
+                        yield ev
+
+                # since callbacks can't yield, we use a queue
+                import queue
+                q = queue.Queue()
+
+                def enqueue_content(content):
+                    q.put(('content', content))
+
+                def enqueue_progress(data):
+                    q.put(('tool_progress', data))
+
+                # patch again with queue
+                def patched_handle_tool_call_q(tool_call, **kwargs):
+                    return orig_handle_tool_call(tool_call, on_progress=enqueue_progress, **kwargs)
+
+                agent.tool_handler.handle_tool_call = patched_handle_tool_call_q
+
+                def on_content_q(content):
+                    enqueue_content(content)
+
+                import threading
+                t = threading.Thread(target=agent.chat, args=(messages,), kwargs={'on_content': on_content_q})
+                t.start()
+
+                while t.is_alive() or not q.empty():
+                    try:
+                        event_type, data_obj = q.get(timeout=0.1)
+                        if event_type == 'content':
+                            yield from stream_event({
+                                'command_id': command_id,
+                                'type': 'content',
+                                'content': data_obj
+                            })
+                        elif event_type == 'tool_progress':
+                            yield from stream_event({
+                                'command_id': command_id,
+                                'type': 'tool_progress',
+                                'progress': data_obj
+                            })
+                    except queue.Empty:
+                        continue
 
             except Exception as e:
                 error_payload = json.dumps({'command_id': command_id, 'error': str(e)})
