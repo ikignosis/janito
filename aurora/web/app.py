@@ -53,33 +53,38 @@ def execute_stream():
 
         def generate():
             try:
-                def on_content(chunk):
-                    payload = json.dumps({
-                        'command_id': command_id,
-                        'chunk': chunk
-                    })
-                    yield f"data: {payload}\n\n"
-
-                # call agent.chat with on_content callback
-                chunks = []
-                def collect_and_yield(content):
-                    chunks.append(content)
-                    yield from on_content(content)
-
-                # workaround: use a closure to yield from callback
-                # since callback can't yield, we accumulate and yield in outer scope
                 buffer = []
-                def cb(content):
-                    buffer.append(content)
+                tool_events = []
 
-                agent.chat(messages, on_content=cb)
-
-                for chunk in buffer:
+                def on_content(content):
                     payload = json.dumps({
                         'command_id': command_id,
-                        'chunk': chunk
+                        'type': 'content',
+                        'content': content
                     })
-                    yield f"data: {payload}\n\n"
+                    buffer.append(f"data: {payload}\n\n")
+
+                def on_tool_progress(progress_data):
+                    payload = json.dumps({
+                        'command_id': command_id,
+                        'type': 'tool_progress',
+                        'progress': progress_data
+                    })
+                    tool_events.append(f"data: {payload}\n\n")
+
+                # patch tool handler to pass on_progress
+                agent.tool_handler.handle_tool_call = (lambda orig_func=agent.tool_handler.handle_tool_call:
+                    lambda tool_call, **kwargs: orig_func(tool_call, on_progress=on_tool_progress, **kwargs))()
+
+                agent.chat(messages, on_content=on_content)
+
+                # yield content events
+                for event in buffer:
+                    yield event
+                # yield tool progress events
+                for event in tool_events:
+                    yield event
+
             except Exception as e:
                 error_payload = json.dumps({'command_id': command_id, 'error': str(e)})
                 yield f"data: {error_payload}\n\n"

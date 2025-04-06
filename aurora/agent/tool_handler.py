@@ -75,13 +75,12 @@ class ToolHandler:
 
     def __init__(self, verbose=False):
         self.verbose = verbose
-        # Build tools list from registered tools
         self.tools = [entry["schema"] for entry in self._tool_registry.values()]
 
     def get_tools(self):
         return self.tools
 
-    def handle_tool_call(self, tool_call):
+    def handle_tool_call(self, tool_call, on_progress=None):
         tool_entry = self._tool_registry.get(tool_call.function.name)
         if not tool_entry:
             return f"Unknown tool: {tool_call.function.name}"
@@ -90,6 +89,10 @@ class ToolHandler:
         if self.verbose:
             print(f"[Tool Call] {tool_call.function.name} called with arguments: {args}")
         try:
+            import inspect
+            sig = inspect.signature(func)
+            if 'on_progress' in sig.parameters and on_progress is not None:
+                args['on_progress'] = on_progress
             result = func(**args)
             if self.verbose:
                 preview = result
@@ -107,4 +110,3 @@ class ToolHandler:
                 print(f"[Tool Error] {error_message}")
                 traceback.print_exc()
             return error_message
-
