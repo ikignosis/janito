@@ -18,8 +18,12 @@
   .cursor {
     display: inline-block;
     width: 10px;
+    height: 1em;
+    vertical-align: bottom;
     background-color: #33FF33;
     animation: blink 1s step-start infinite;
+    /* Debug border to visualize cursor */
+    /* border: 1px solid red; */
   }
   @keyframes blink {
     50% { background-color: transparent; }
