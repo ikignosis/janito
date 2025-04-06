@@ -23,7 +23,7 @@ def create_file(path: str, content: str, overwrite: bool = False) -> str:
             except Exception:
                 old_lines = 'unknown'
         else:
-            print_error("❗ Error: file exists and overwrite is False")
+            print_error(f"❗ Error: file '{path}' exists and overwrite is False")
             return f"❗ Cannot create file: '{path}' already exists and overwrite is False."
 
     new_lines = content.count('\n') + 1 if content else 0
