@@ -8,10 +8,8 @@
 
 ## CLI Chat Shell Package: `aurora.cli_chat_shell`
 - `aurora/cli_chat_shell/__init__.py`: Marks the CLI chat shell module as a package.
-- `aurora/cli_chat_shell/chat_shell.py`: Implements the interactive chat shell using `prompt_toolkit`. Handles multiline input, chat history, resending on empty input, and displays a colored status toolbar. Supports special commands:
-  - `/exit` to exit the shell
-  - `/restart` to fully reload the CLI process
-  - `/paste` to paste multiline input
+- `aurora/cli_chat_shell/chat_shell.py`: Implements the interactive chat shell using `prompt_toolkit`. Handles multiline input, chat history, resending on empty input, and displays a colored status toolbar. Delegates special commands to `commands.py`.
+- `aurora/cli_chat_shell/commands.py`: Handles special chat shell commands like `/exit`, `/restart`, `/paste`.
 
 ## CLI Package: `aurora.cli`
 - `aurora/cli/__init__.py`: Marks the CLI module as a package.

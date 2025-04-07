@@ -11,6 +11,7 @@ from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.styles import Style
 from prompt_toolkit.history import InMemoryHistory
+from .commands import handle_command
 
 
 def chat_loop(agent):
@@ -43,12 +44,10 @@ def chat_loop(agent):
     for item in history_list:
         mem_history.append_string(item)
 
-    # Setup prompt_toolkit session without custom Shift+Enter multiline support
     bindings = KeyBindings()
 
     @bindings.add('c-r')
     def _(event):
-        # Disable reverse search
         pass
 
     def get_toolbar():
@@ -96,26 +95,17 @@ def chat_loop(agent):
         try:
             user_input = session.prompt(prompt_icon)
             stripped_input = user_input.strip()
-            if stripped_input == '/exit':
-                console.print("[bold red]Exiting chat mode.[/bold red]")
-                break
-            if stripped_input == '/restart':
-                console.print("[bold yellow]Restarting CLI...[/bold yellow]")
-                os.execv(sys.executable, [sys.executable] + sys.argv)
 
-            if stripped_input == '/paste':
-                console.print("[bold cyan]Paste your content below. Press Ctrl+D (Unix) or Ctrl+Z (Windows) then Enter to finish.[/bold cyan]")
-                pasted_lines = []
-                try:
-                    while True:
-                        line = sys.stdin.readline()
-                        if not line:
-                            break
-                        pasted_lines.append(line.rstrip('\n'))
-                except EOFError:
-                    pass
-                user_input = "\n".join(pasted_lines).strip()
-                if not user_input:
+            # Handle commands
+            command_result = handle_command(stripped_input, console=console)
+            if command_result is not None:
+                # For /paste, replace user_input
+                if isinstance(command_result, str):
+                    user_input = command_result
+                    if not user_input:
+                        continue
+                else:
+                    # For /exit and /restart, process exits, so this is just in case
                     continue
 
             user_input = user_input.strip()
