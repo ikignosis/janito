@@ -36,7 +36,7 @@ def run_cli(args):
     agent = Agent(api_key=api_key, system_prompt=system_prompt, verbose_tools=args.verbose_tools)
 
     if not args.prompt:
-        from aurora.chat import chat_loop
+        from aurora.cli_chat_shell.chat_shell import chat_loop
         chat_loop(agent)
         sys.exit(0)
 
@@ -48,4 +48,32 @@ def run_cli(args):
     print("Waiting for AI response...", end="", flush=True)
 
     def on_content(data):
-        pass  # The rest of the function remains unchanged
+        content = data.get("content", "")
+        if waiting_displayed[0]:
+            # Clear the waiting message
+            sys.stdout.write("\r" + " " * len("Waiting for AI response...") + "\r")
+            sys.stdout.flush()
+            waiting_displayed[0] = False
+        console.print(Markdown(content))
+
+    messages = []
+    if agent.system_prompt:
+        messages.append({"role": "system", "content": agent.system_prompt})
+
+    messages.append({"role": "user", "content": prompt})
+
+    try:
+        try:
+            response = agent.chat(
+                messages,
+                on_content=on_content,
+            )
+            if args.verbose_response:
+                import json
+                console.print_json(json.dumps(response))
+        except MaxRoundsExceededError:
+            print("[Error] Conversation exceeded maximum rounds.")
+            sys.exit(1)
+    except KeyboardInterrupt:
+        print("\n[Interrupted by user]")
+        sys.exit(1)
