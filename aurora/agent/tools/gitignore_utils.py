@@ -1,37 +1,40 @@
 import os
-import fnmatch
+import pathspec
+
+_spec = None
 
 
 def load_gitignore_patterns(gitignore_path='.gitignore'):
-    patterns = []
+    global _spec
     if not os.path.exists(gitignore_path):
-        return patterns
+        _spec = pathspec.PathSpec.from_lines('gitwildmatch', [])
+        return _spec
     with open(gitignore_path, 'r') as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith('#'):
-                continue
-            patterns.append(line)
-    return patterns
+        lines = f.readlines()
+    _spec = pathspec.PathSpec.from_lines('gitwildmatch', lines)
+    return _spec
 
 
-def is_ignored(path, patterns):
-    for pattern in patterns:
-        # Handle directory ignore
-        if pattern.endswith('/'):
-            if os.path.isdir(path) and fnmatch.fnmatch(path + '/', pattern):
-                return True
-            if path.startswith(pattern):
-                return True
-        # Handle file ignore
-        if fnmatch.fnmatch(path, pattern):
-            return True
-    return False
+def is_ignored(path):
+    global _spec
+    if _spec is None:
+        _spec = load_gitignore_patterns()
+    # Normalize path to be relative and use forward slashes
+    rel_path = os.path.relpath(path).replace(os.sep, '/')
+    return _spec.match_file(rel_path)
 
 
-def filter_ignored(root, dirs, files, patterns):
-    # Modify dirs in-place to skip ignored directories
-    dirs[:] = [d for d in dirs if not is_ignored(os.path.join(root, d), patterns)]
-    # Filter files
-    files = [f for f in files if not is_ignored(os.path.join(root, f), patterns)]
+def filter_ignored(root, dirs, files, spec=None):
+    if spec is None:
+        global _spec
+        if _spec is None:
+            _spec = load_gitignore_patterns()
+        spec = _spec
+
+    def not_ignored(p):
+        rel_path = os.path.relpath(os.path.join(root, p)).replace(os.sep, '/')
+        return not spec.match_file(rel_path)
+
+    dirs[:] = [d for d in dirs if not_ignored(d)]
+    files = [f for f in files if not_ignored(f)]
     return dirs, files

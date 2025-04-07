@@ -45,16 +45,32 @@ export OPENROUTER_API_KEY=your_api_key_here
 ## 💻 Usage
 
 ### Command Line Interface
-Run Aurora in single prompt mode:
+Run Aurora with a single prompt:
 ```bash
 python -m aurora "Refactor the data processing module to improve readability."
 ```
 
+### Default Interactive Chat Shell
+If no prompt is provided, Aurora launches an **interactive chat shell** by default.
+
+- Supports **multiline input** (end with a single `.` on a line or Ctrl+D/Z).
+- **Interrupt** agent requests with Ctrl+C.
+- Pressing Enter on an empty line sends a "continue" command.
+- **Session is saved automatically** after each message.
+- Restore last session on startup with `--continue-session` or inside the shell with `/continue`.
+
+#### Special Commands inside the Shell
+- `/exit`: Exit chat mode.
+- `/restart`: Restart the CLI.
+- `/paste`: Paste multiline input.
+- `/help`: Show help message.
+- `/system`: Show the current system prompt.
+- `/continue`: Restore the last saved conversation.
+
 ### Command Line Options
-- `PROMPT` (positional): Prompt to send to the model. If omitted, reads from stdin.
+- `PROMPT` (positional): Prompt to send to the model. If omitted, starts interactive chat shell.
 - `-s`, `--system-prompt`: Override the system prompt.
 - `-r`, `--role`: Role description for the system prompt (default: "software engineer").
-- `--chat`: Enter interactive chat mode.
 - `--verbose-http`: Enable verbose HTTP logging.
 - `--verbose-http-raw`: Enable raw HTTP wire-level logging.
 - `--verbose-response`: Pretty print the full response object.
@@ -64,13 +80,6 @@ python -m aurora "Refactor the data processing module to improve readability."
 - `--set-global-config key=val`: Set a global config key-value pair.
 - `--show-config`: Show effective configuration and exit.
 - `--version`: Show program version and exit.
-
-### Interactive Chat Mode
-Start an interactive conversation:
-```bash
-python -m aurora --chat
-```
-Supports multiline input (end with `.` on a line or Ctrl+D/Z).
 
 ---
 

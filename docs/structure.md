@@ -60,7 +60,7 @@
 - `fetch_url.py`: Fetch webpage text.
 - `find_files.py`: Recursive file search respecting .gitignore.
 - `file_str_replace.py`: Replace exact string occurrences in a file with a new string.
-- `gitignore_utils.py`: Helpers for .gitignore filtering.
+- `gitignore_utils.py`: Uses the `pathspec` library to fully support `.gitignore` syntax (including negations, nested patterns, wildcards) for filtering ignored files and directories during file search.
 - `move_file.py`: Move files/directories.
 - `remove_file.py`: Delete files.
 - `rich_live.py`, `rich_utils.py`: Terminal output formatting.
