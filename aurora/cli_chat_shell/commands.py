@@ -40,7 +40,7 @@ def handle_continue(console, state, **kwargs):
         state['messages'].extend(data.get('messages', []))
         state['history_list'].clear()
         state['history_list'].extend(data.get('prompts', []))
-        state['mem_history'].clear()
+        state['mem_history'] = InMemoryHistory()
         for item in state['history_list']:
             state['mem_history'].append_string(item)
         console.print('[bold green]Conversation restored from last session.[/bold green]')
