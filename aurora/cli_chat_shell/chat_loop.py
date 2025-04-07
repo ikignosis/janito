@@ -49,8 +49,11 @@ def start_chat_shell(agent, continue_session=False):
     def get_elapsed():
         return last_elapsed
 
+    # Try to get model name from agent
+    model_name = getattr(agent, 'model_name', None)
+
     session = get_prompt_session(
-        get_toolbar_func(get_messages, get_usage, get_elapsed),
+        get_toolbar_func(get_messages, get_usage, get_elapsed, model_name=model_name),
         mem_history
     )
 

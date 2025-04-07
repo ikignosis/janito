@@ -35,7 +35,7 @@ def print_welcome(console):
     console.print("[bold yellow]Press Esc+Enter to send your message.[/bold yellow]")
 
 
-def get_toolbar_func(messages_ref, last_usage_info_ref, last_elapsed_ref):
+def get_toolbar_func(messages_ref, last_usage_info_ref, last_elapsed_ref, model_name=None):
     def format_tokens(n):
         if n is None:
             return "?"
@@ -47,6 +47,7 @@ def get_toolbar_func(messages_ref, last_usage_info_ref, last_elapsed_ref):
 
     def get_toolbar():
         toolbar = (
+            (f'<model>{model_name}</model> | ' if model_name else '') +
             f'<b>/help</b> for help | <b>Submit: Esc+Enter</b> | '
             f'Messages: <msg_count>{len(messages_ref())}</msg_count>'
         )
@@ -76,6 +77,7 @@ def get_prompt_session(get_toolbar_func, mem_history):
         'bottom-toolbar': 'bg:#333333 #ffffff',
         'b': 'bold',
         'prompt': 'ansicyan bold',
+        'model': 'bold bg:#005f5f #ffffff',  # distinct background/foreground
         'msg_count': 'bg:#333333 #ffff00 bold',
         'tokens_in': 'ansicyan bold',
         'tokens_out': 'ansigreen bold',
