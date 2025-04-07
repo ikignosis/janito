@@ -15,6 +15,20 @@
   - `/paste`: Paste multiline input.
   - `/help`: Show help message.
   - `/system`: Show the current system prompt.
+  - `/continue`: Restore the last saved conversation and CLI prompts from `.aurora/last_conversation.json`.
+
+## Session Persistence
+- The CLI shell automatically saves the conversation history and CLI prompts after each message or command to `.aurora/last_conversation.json`.
+- To continue from the last saved session:
+  - Use the CLI flag `--continue-session` when starting the shell.
+  - Or, inside the shell, type `/continue`.
+- If neither is used, the shell starts fresh.
+
+### Saved File
+- `.aurora/last_conversation.json`: Stores the last chat session, including:
+  - `messages`: List of agent/user messages.
+  - `prompts`: List of CLI prompt inputs.
+
 
 ## CLI Package: `aurora.cli`
 - `aurora/cli/__init__.py`: Marks the CLI module as a package.
@@ -27,6 +41,9 @@
 ## Agent Subpackage: `aurora.agent`
 - `aurora/agent/__init__.py`: Marks the agent module as a package.
 - `aurora/agent/agent.py`: Defines the `Agent` class, the core LLM interaction logic.
+  - The `Agent.chat()` method returns a dictionary with:
+    - `"content"`: the assistant's message text.
+    - `"usage"`: a dictionary with token usage info (`prompt_tokens`, `completion_tokens`, `total_tokens`), or `None`.
 - `aurora/agent/config.py`: Configuration management classes and `get_api_key()`.
 - `aurora/agent/conversation.py`: Manages conversation history.
 - `aurora/agent/tool_handler.py`: Handles tool execution.

@@ -52,7 +52,10 @@ class ConversationHandler:
 
             # If no tool calls, return the assistant's message and usage info
             if not choice.message.tool_calls:
-                return choice.message.content, usage_info
+                return {
+    "content": choice.message.content,
+    "usage": usage_info
+}
 
             tool_responses = []
             for tool_call in choice.message.tool_calls:

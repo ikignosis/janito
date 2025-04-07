@@ -27,6 +27,26 @@ def handle_paste(console, **kwargs):
     return "\n".join(pasted_lines).strip()
 
 
+def handle_continue(console, state, **kwargs):
+    import json, os
+    save_path = os.path.join('.aurora', 'last_conversation.json')
+    if not os.path.exists(save_path):
+        console.print('[bold red]No saved conversation found.[/bold red]')
+        return
+    try:
+        with open(save_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        state['messages'].clear()
+        state['messages'].extend(data.get('messages', []))
+        state['history_list'].clear()
+        state['history_list'].extend(data.get('prompts', []))
+        state['mem_history'].clear()
+        for item in state['history_list']:
+            state['mem_history'].append_string(item)
+        console.print('[bold green]Conversation restored from last session.[/bold green]')
+    except Exception as e:
+        console.print(f'[bold red]Failed to load conversation:[/bold red] {e}')
+
 def handle_help(console, **kwargs):
     console.print("""
 [bold green]Available commands:[/bold green]
@@ -34,6 +54,7 @@ def handle_help(console, **kwargs):
   /restart  - Restart the CLI
   /paste    - Paste multiline input
   /help     - Show this help message
+  /continue - Restore last saved conversation
   /system   - Show the system prompt
 """)
 
@@ -44,6 +65,7 @@ def handle_system(console, **kwargs):
 
 
 COMMAND_HANDLERS = {
+    "/continue": handle_continue,
     "/exit": handle_exit,
     "/restart": handle_restart,
     "/paste": handle_paste,

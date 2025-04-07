@@ -37,7 +37,7 @@ def run_cli(args):
 
     if not args.prompt:
         from aurora.cli_chat_shell.chat_shell import chat_loop
-        chat_loop(agent)
+        chat_loop(agent, continue_session=getattr(args, 'continue_session', False))
         sys.exit(0)
 
     prompt = args.prompt

@@ -14,18 +14,11 @@ from prompt_toolkit.history import InMemoryHistory
 from .commands import handle_command
 
 
-def chat_loop(agent):
+def chat_loop(agent, continue_session=False):
     console = Console()
     messages = []
     last_usage_info = None
     last_elapsed = None
-
-    # Add system prompt if available
-    if agent.system_prompt:
-        messages.append({"role": "system", "content": agent.system_prompt})
-
-    console.print("[bold green]Entering chat mode. Type /exit to exit.[/bold green]")
-    console.print("[bold yellow]Press Esc+Enter to send your message.[/bold yellow]")
 
     # Setup persistent input history
     history_dir = os.path.join(".aurora", "input_history")
@@ -43,6 +36,29 @@ def chat_loop(agent):
     mem_history = InMemoryHistory()
     for item in history_list:
         mem_history.append_string(item)
+
+    # Load last conversation if requested
+    if continue_session:
+        save_path = os.path.join('.aurora', 'last_conversation.json')
+        if os.path.exists(save_path):
+            try:
+                with open(save_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                messages = data.get('messages', [])
+                history_list = data.get('prompts', [])
+                mem_history = InMemoryHistory()
+                for item in history_list:
+                    mem_history.append_string(item)
+                console.print('[bold green]Restored last saved conversation.[/bold green]')
+            except Exception as e:
+                console.print(f'[bold red]Failed to load last conversation:[/bold red] {e}')
+
+    # Add system prompt if available and not already present
+    if agent.system_prompt and not any(m.get('role') == 'system' for m in messages):
+        messages.insert(0, {"role": "system", "content": agent.system_prompt})
+
+    console.print("[bold green]Entering chat mode. Type /exit to exit.[/bold green]")
+    console.print("[bold yellow]Press Esc+Enter to send your message.[/bold yellow]")
 
     bindings = KeyBindings()
 
@@ -102,6 +118,13 @@ def chat_loop(agent):
 
     prompt_icon = HTML('<prompt>💬 </prompt>')
 
+    # Shared state for commands
+    state = {
+        'messages': messages,
+        'history_list': history_list,
+        'mem_history': mem_history
+    }
+
     while True:
         try:
             user_input = session.prompt(prompt_icon)
@@ -109,13 +132,18 @@ def chat_loop(agent):
 
             # Always intercept slash commands before anything else
             if stripped_input.startswith("/"):
-                command_result = handle_command(stripped_input, console=console)
+                command_result = handle_command(stripped_input, console=console, state=state)
                 # For commands like /paste that return replacement input
                 if isinstance(command_result, str):
                     user_input = command_result.strip()
                     if not user_input:
                         continue
                 else:
+                    # Save session after command
+                    save_path = os.path.join('.aurora', 'last_conversation.json')
+                    os.makedirs('.aurora', exist_ok=True)
+                    with open(save_path, 'w', encoding='utf-8') as f:
+                        json.dump({'messages': messages, 'prompts': history_list}, f, ensure_ascii=False, indent=2)
                     continue  # skip sending to agent
 
             # If empty input, treat as "do it"
@@ -152,6 +180,12 @@ def chat_loop(agent):
             history_list.append(user_input)
             with open(history_file, "w", encoding="utf-8") as f:
                 json.dump(history_list, f, ensure_ascii=False, indent=2)
+
+            # Save conversation state
+            save_path = os.path.join('.aurora', 'last_conversation.json')
+            os.makedirs('.aurora', exist_ok=True)
+            with open(save_path, 'w', encoding='utf-8') as f:
+                json.dump({'messages': messages, 'prompts': history_list}, f, ensure_ascii=False, indent=2)
 
         except (EOFError, KeyboardInterrupt):
             console.print("\n[bold red]Exiting chat mode.[/bold red]")
