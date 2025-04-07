@@ -70,6 +70,8 @@ class ToolHandler:
         return schemas
 
     def handle_tool_call(self, tool_call, on_progress=None):
+        import uuid
+        call_id = str(uuid.uuid4())
         tool_entry = self._tool_registry.get(tool_call.function.name)
         if not tool_entry:
             return f"Unknown tool: {tool_call.function.name}"
@@ -83,6 +85,7 @@ class ToolHandler:
             if on_progress:
                 on_progress({
                     'event': 'start',
+                    'call_id': call_id,
                     'tool': tool_call.function.name,
                     'args': args
                 })
@@ -101,6 +104,7 @@ class ToolHandler:
             if on_progress:
                 on_progress({
                     'event': 'finish',
+                    'call_id': call_id,
                     'tool': tool_call.function.name,
                     'args': args,
                     'result': result
@@ -111,6 +115,7 @@ class ToolHandler:
             if on_progress:
                 on_progress({
                     'event': 'finish',
+                    'call_id': call_id,
                     'tool': tool_call.function.name,
                     'args': args,
                     'error': str(e),
