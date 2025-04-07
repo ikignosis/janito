@@ -3,6 +3,8 @@ import json
 class MaxRoundsExceededError(Exception):
     pass
 
+class EmptyResponseError(Exception):
+    pass
 
 class ConversationHandler:
     def __init__(self, client, model, tool_handler):
@@ -27,6 +29,9 @@ class ConversationHandler:
             if verbose_response:
                 import pprint
                 pprint.pprint(response)
+
+            if not response.choices:
+                raise EmptyResponseError("The LLM API returned no choices in the response.")
 
             choice = response.choices[0]
 
