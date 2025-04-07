@@ -31,8 +31,20 @@ def chat_loop(agent):
             else:
                 buffer.insert_text('\n')
 
-    session = PromptSession(multiline=True, key_bindings=bindings)
-    session.editing_mode = EditingMode.EMACS
+    def get_toolbar():
+        return (
+            "[bold cyan]/exit[/], [bold cyan]/quit[/] to exit | "
+            "[bold cyan]/paste[/] multiline input | "
+            "[bold cyan]Shift+Enter[/] new line | "
+            "[bold cyan]Ctrl+R[/] search history"
+        )
+
+    session = PromptSession(
+        multiline=True,
+        key_bindings=bindings,
+        editing_mode=EditingMode.EMACS,
+        bottom_toolbar=get_toolbar
+    )
 
     while True:
         try:
@@ -49,6 +61,21 @@ def chat_loop(agent):
             if user_input.lower() in {"/exit", "/quit"}:
                 print("Exiting chat mode.")
                 break
+
+            if user_input.lower() == "/paste":
+                console.print("[bold cyan]Paste your content below. Press Ctrl+D (Unix) or Ctrl+Z (Windows) then Enter to finish.[/bold cyan]")
+                pasted_lines = []
+                try:
+                    while True:
+                        line = sys.stdin.readline()
+                        if not line:
+                            break
+                        pasted_lines.append(line.rstrip('\n'))
+                except EOFError:
+                    pass
+                user_input = "\n".join(pasted_lines).strip()
+                if not user_input:
+                    continue
 
             messages.append({"role": "user", "content": user_input})
 
