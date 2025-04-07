@@ -96,31 +96,26 @@ def chat_loop(agent):
         history=mem_history
     )
 
-    prompt_icon = HTML('<prompt>💬 </prompt>')
+    prompt_icon = HTML('<prompt>\ud83d\udcac </prompt>')
 
     while True:
         try:
             user_input = session.prompt(prompt_icon)
             stripped_input = user_input.strip()
 
-            # Handle commands
-            command_result = handle_command(stripped_input, console=console)
-            if command_result is not None:
-                # For /paste, replace user_input
+            # Always intercept slash commands before anything else
+            if stripped_input.startswith("/"):
+                command_result = handle_command(stripped_input, console=console)
+                # For commands like /paste that return replacement input
                 if isinstance(command_result, str):
-                    user_input = command_result
+                    user_input = command_result.strip()
                     if not user_input:
                         continue
                 else:
-                    continue
+                    continue  # skip sending to agent
 
-            # Prevent sending commands like /help to agent
-            if stripped_input.startswith("/"):
-                continue
-
-            user_input = user_input.strip()
-            if not user_input:
-                # Instead of resending last message, treat empty input as 'do it'
+            # If empty input, treat as "do it"
+            if not user_input.strip():
                 user_input = "do it"
 
             messages.append({"role": "user", "content": user_input})
