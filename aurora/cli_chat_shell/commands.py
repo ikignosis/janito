@@ -47,6 +47,32 @@ def handle_continue(console, state, **kwargs):
     except Exception as e:
         console.print(f'[bold red]Failed to load conversation:[/bold red] {e}')
 
+def handle_history(console, state, *args, **kwargs):
+    messages = state.get('messages', [])
+    try:
+        if not args:
+            # Default: last 5 messages
+            start = max(0, len(messages) - 5)
+            end = len(messages)
+        elif len(args) == 1:
+            count = int(args[0])
+            start = max(0, len(messages) - count)
+            end = len(messages)
+        elif len(args) >= 2:
+            start = int(args[0])
+            end = int(args[1]) + 1  # inclusive
+        else:
+            start = 0
+            end = len(messages)
+
+        console.print(f"[bold cyan]Showing messages {start} to {end - 1} (total {len(messages)}):[/bold cyan]")
+        for idx, msg in enumerate(messages[start:end], start=start):
+            role = msg.get('role', 'unknown')
+            content = msg.get('content', '')
+            console.print(f"[bold]{idx} [{role}]:[/bold] {content}")
+    except Exception as e:
+        console.print(f"[bold red]Error parsing arguments or displaying history:[/bold red] {e}")
+
 def handle_help(console, **kwargs):
     console.print("""
 [bold green]Available commands:[/bold green]
@@ -65,6 +91,7 @@ def handle_system(console, **kwargs):
 
 
 COMMAND_HANDLERS = {
+    "/history": handle_history,
     "/continue": handle_continue,
     "/exit": handle_exit,
     "/restart": handle_restart,
@@ -75,7 +102,10 @@ COMMAND_HANDLERS = {
 
 
 def handle_command(command, console, **kwargs):
-    handler = COMMAND_HANDLERS.get(command)
+    parts = command.strip().split()
+    cmd = parts[0]
+    args = parts[1:]
+    handler = COMMAND_HANDLERS.get(cmd)
     if handler:
-        return handler(console=console, **kwargs)
+        return handler(console=console, *args, **kwargs)
     return None
