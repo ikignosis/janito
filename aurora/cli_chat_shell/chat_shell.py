@@ -50,9 +50,16 @@ def chat_loop(agent):
     def _(event):
         pass
 
+    def format_tokens(n):
+        if n is None:
+            return "?"
+        if n >= 1000:
+            return f"{n/1000:.1f}k"
+        return str(n)
+
     def get_toolbar():
         toolbar = (
-            f'<b>/exit</b> to exit | <b>/restart</b> to restart | '
+            f'<b>/exit</b> to exit | <b>/restart</b> to restart | <b>/help</b> for help | '
             f'Messages: <msg_count>{len(messages)}</msg_count>'
         )
         if last_usage_info:
@@ -63,8 +70,8 @@ def chat_loop(agent):
             if last_elapsed and last_elapsed > 0:
                 speed = total_tokens / last_elapsed
             toolbar += (
-                f" | Tokens: in=<tokens_in>{prompt_tokens}</tokens_in>, "
-                f"out=<tokens_out>{completion_tokens}</tokens_out>"
+                f" | Tokens: in=<tokens_in>{format_tokens(prompt_tokens)}</tokens_in>, "
+                f"out=<tokens_out>{format_tokens(completion_tokens)}</tokens_out>"
             )
             if speed is not None:
                 toolbar += f", speed=<speed>{speed:.1f}</speed> tokens/sec"
@@ -105,31 +112,13 @@ def chat_loop(agent):
                     if not user_input:
                         continue
                 else:
-                    # For /exit and /restart, process exits, so this is just in case
                     continue
 
             user_input = user_input.strip()
             if not user_input:
-                # If empty input and more than just system prompt, resend last chat
-                if len(messages) > 1 or (len(messages) == 1 and messages[0].get("role") != "system"):
-                    def on_content(data):
-                        content = data.get("content", "")
-                        console.print(Markdown(content))
-
-                    try:
-                        start_time = time.time()
-                        try:
-                            content, usage_info = agent.chat(messages, on_content=on_content)
-                            elapsed = time.time() - start_time
-                            last_usage_info = usage_info
-                            last_elapsed = elapsed
-                        except KeyboardInterrupt:
-                            console.print("[bold red]Request cancelled.[/bold red]")
-                            continue
-                    except Exception as e:
-                        console.print(f"[red]Error during chat: {e}[/red]")
-                        continue
-                continue
+                # Instead of resending last message, treat empty input as 'do it'
+                user_input = "do it"
+                console.print("[dim]Empty input detected. Interpreting as: 'do it'[/dim]")
 
             # Save input to history
             history_list.append(user_input)
