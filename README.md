@@ -27,7 +27,7 @@ pip install -e .
 ### Set your API key
 Aurora uses OpenAI-compatible APIs (default: `openrouter/quasar-alpha`). Set your API key as an environment variable:
 ```bash
-export OPENAI_API_KEY=your_api_key_here
+export OPENROUTER_API_KEY=your_api_key_here
 ```
 
 ---
