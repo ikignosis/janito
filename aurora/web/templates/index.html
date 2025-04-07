@@ -8,11 +8,18 @@
 <script src="/static/app.js"></script>
 </head>
 <body>
-<div class="terminal" id="terminal">
-$ Welcome to Aurora Web App<br>
-$ Your terminal-style landing page is ready.<br>
-<span id="output"></span>
-<span id="input-line"></span><span class="cursor"></span>
+<div class="terminal-window">
+  <div class="window-header">
+    <span class="button close"></span>
+    <span class="button minimize"></span>
+    <span class="button zoom"></span>
+  </div>
+  <div class="terminal" id="terminal">
+    $ Welcome to Aurora Web App<br>
+    $ Your terminal-style landing page is ready.<br>
+    <span id="output"></span>
+    <span id="input-line"><input id="terminal-input" type="text" autofocus /><span class="cursor"></span></span>
+  </div>
 </div>
 </body>
 </html>

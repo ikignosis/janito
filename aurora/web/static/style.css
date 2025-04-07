@@ -1,22 +1,76 @@
 body {
-  background-color: black;
+  background: #1e1e1e;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  margin: 0;
+  font-size: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.terminal-window {
+  background: rgba(30, 30, 30, 0.85);
+  backdrop-filter: blur(10px);
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  overflow: hidden;
+  width: 80%;
+  max-width: 900px;
+}
+
+.window-header {
+  background: rgba(50, 50, 50, 0.8);
+  padding: 8px 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.window-header .button {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.window-header .close { background: #ff5f56; }
+.window-header .minimize { background: #ffbd2e; }
+.window-header .zoom { background: #27c93f; }
+
+.terminal {
+  padding: 20px;
   color: #33FF33;
   font-family: monospace;
-  margin: 0;
-  padding: 20px;
-  font-size: 16px;
-}
-.terminal {
   white-space: pre-wrap;
 }
+
+
+  white-space: pre-wrap;
+}
+#terminal-input {
+  background: transparent;
+  border: none;
+  color: #33FF33;
+  font-family: monospace;
+  font-size: 1em;
+  outline: none;
+  caret-color: #33FF33;
+  width: 90%;
+}
+#terminal-input:focus {
+  cursor: text;
+}
+
 .cursor {
   display: inline-block;
-  width: 10px;
-  height: 1em;
-  vertical-align: bottom;
+  width: 8px;
+  height: 1.2em;
+  margin-left: 2px;
   background-color: #33FF33;
   animation: blink 1s step-start infinite;
 }
+
 @keyframes blink {
   50% { background-color: transparent; }
 }
