@@ -76,10 +76,48 @@ async function sendCommandStream(cmd) {
             let msg = `🔧 <b>[Tool ${progress.tool}]</b> <b>${progress.event.toUpperCase()}</b>`;
             if(progress.event === 'start') {
               if(progress.args && typeof progress.args === 'object') {
-                const argSummary = Object.entries(progress.args)
-                  .map(([k, v]) => `${k}: ${v}`)
-                  .join(', ');
-                msg += `<div class=\"breadcrumb-tab\">[${progress.tool}] &gt; ${argSummary}</div>`;
+                let breadcrumb = '';
+                switch(progress.tool) {
+                  case 'view_file':
+                    breadcrumb = `Viewing &gt; ${progress.args.path}`;
+                    break;
+                  case 'create_file':
+                    breadcrumb = `Creating file &gt; ${progress.args.path}`;
+                    break;
+                  case 'create_directory':
+                    breadcrumb = `Creating directory &gt; ${progress.args.path}`;
+                    break;
+                  case 'move_file':
+                    breadcrumb = `Moving &gt; ${progress.args.source_path} &rarr; ${progress.args.destination_path}`;
+                    break;
+                  case 'remove_file':
+                    breadcrumb = `Removing &gt; ${progress.args.path}`;
+                    break;
+                  case 'file_str_replace':
+                    breadcrumb = `Replacing in &gt; ${progress.args.path}`;
+                    break;
+                  case 'find_files':
+                    breadcrumb = `Searching in &gt; ${progress.args.directory}`;
+                    break;
+                  case 'search_text':
+                    breadcrumb = `Searching text in &gt; ${progress.args.directory}`;
+                    break;
+                  case 'bash_exec':
+                    breadcrumb = `Running command`;
+                    break;
+                  case 'fetch_url':
+                    breadcrumb = `Fetching URL &gt; ${progress.args.url}`;
+                    break;
+                  case 'ask_user':
+                    breadcrumb = `User input`;
+                    break;
+                  default:
+                    const argSummary = Object.entries(progress.args)
+                      .map(([k, v]) => `${k}: ${v}`)
+                      .join(', ');
+                    breadcrumb = `[${progress.tool}] &gt; ${argSummary}`;
+                }
+                msg += `<div class=\"breadcrumb-tab\">${breadcrumb}</div>`;
               }
             } else if(progress.event === 'finish') {
               if(progress.error) {
