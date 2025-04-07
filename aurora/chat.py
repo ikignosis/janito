@@ -4,6 +4,8 @@ from rich.markdown import Markdown
 from prompt_toolkit import PromptSession
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.enums import EditingMode
+from prompt_toolkit.formatted_text import HTML
+from prompt_toolkit.styles import Style
 
 
 def chat_loop(agent):
@@ -32,63 +34,33 @@ def chat_loop(agent):
                 buffer.insert_text('\n')
 
     def get_toolbar():
-        return (
-            "/exit, /quit to exit | "
-            "/paste multiline input | "
-            "Shift+Enter new line | "
-            "Ctrl+R search history"
+        return HTML(
+            '<b>/exit</b>, <b>/quit</b> to exit | '
+            '<b>/paste</b> multiline input | '
+            '<b>Shift+Enter</b> new line | '
+            '<b>Ctrl+R</b> search history'
         )
+
+    style = Style.from_dict({
+        'bottom-toolbar': 'bg:#333333 #ffffff',
+        'b': 'ansiyellow bold',
+    })
 
     session = PromptSession(
         multiline=True,
         key_bindings=bindings,
         editing_mode=EditingMode.EMACS,
-        bottom_toolbar=get_toolbar
+        bottom_toolbar=get_toolbar,
+        style=style
     )
 
     while True:
         try:
-            try:
-                user_input = session.prompt("You: ")
-            except EOFError:
-                print("Exiting chat mode.")
+            user_input = session.prompt()
+            if user_input.strip() in ('/exit', '/quit'):
+                console.print("[bold red]Exiting chat mode.[/bold red]")
                 break
-
-            user_input = user_input.strip()
-            if not user_input:
-                continue
-
-            if user_input.lower() in {"/exit", "/quit"}:
-                print("Exiting chat mode.")
-                break
-
-            if user_input.lower() == "/paste":
-                console.print("[bold cyan]Paste your content below. Press Ctrl+D (Unix) or Ctrl+Z (Windows) then Enter to finish.[/bold cyan]")
-                pasted_lines = []
-                try:
-                    while True:
-                        line = sys.stdin.readline()
-                        if not line:
-                            break
-                        pasted_lines.append(line.rstrip('\n'))
-                except EOFError:
-                    pass
-                user_input = "\n".join(pasted_lines).strip()
-                if not user_input:
-                    continue
-
-            messages.append({"role": "user", "content": user_input})
-
-            def on_content(data):
-                content = data.get("content", "")
-                console.print(Markdown(content))
-
-            try:
-                response = agent.chat(messages, on_content=on_content)
-            except Exception as e:
-                console.print(f"[red]Error during chat: {e}[/red]")
-                continue
-
-        except KeyboardInterrupt:
-            print("\n[Interrupted by user]")
-            sys.exit(0)
+            # Process user input here
+        except (EOFError, KeyboardInterrupt):
+            console.print("[bold red]Exiting chat mode.[/bold red]")
+            break
