@@ -68,6 +68,7 @@ def handle_help(console, **kwargs):
   /restart  - Restart the CLI
   /help     - Show this help message
   /continue - Restore last saved conversation
+  /reset    - Reset conversation history
   /system   - Show the system prompt
   /clear    - Clear the terminal screen
 """)
@@ -82,6 +83,30 @@ def handle_clear(console, **kwargs):
     os.system('cls' if os.name == 'nt' else 'clear')
 
 
+def handle_reset(console, state, **kwargs):
+    import os
+    save_path = os.path.join('.aurora', 'last_conversation.json')
+
+    # Clear in-memory conversation and prompt history
+    state['messages'].clear()
+    state['history_list'].clear()
+    state['mem_history'] = InMemoryHistory()
+    state['last_usage_info'] = None
+    state['last_elapsed'] = None
+
+    # Delete saved conversation file if exists
+    if os.path.exists(save_path):
+        try:
+            os.remove(save_path)
+            console.print('[bold yellow]Deleted saved conversation history.[/bold yellow]')
+        except Exception as e:
+            console.print(f'[bold red]Failed to delete saved conversation:[/bold red] {e}')
+    else:
+        console.print('[bold yellow]No saved conversation to delete.[/bold yellow]')
+
+    console.print('[bold green]Conversation history has been reset.[/bold green]')
+
+
 COMMAND_HANDLERS = {
     "/history": handle_history,
     "/continue": handle_continue,
@@ -91,6 +116,7 @@ COMMAND_HANDLERS = {
     "/help": handle_help,
     "/system": handle_system,
     "/clear": handle_clear,
+    "/reset": handle_reset,
 }
 
 

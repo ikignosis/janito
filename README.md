@@ -66,6 +66,7 @@ If no prompt is provided, Aurora launches an **interactive chat shell** by defau
 - `/help`: Show help message.
 - `/system`: Show the current system prompt.
 - `/continue`: Restore the last saved conversation.
+- `/reset`: Reset conversation history.
 - `/clear`: Clear the terminal screen.
 
 ### Command Line Options

@@ -18,6 +18,7 @@
   - `/help`: Show help message.
   - `/system`: Show the current system prompt.
   - `/continue`: Restore the last saved conversation and CLI prompts from `.aurora/last_conversation.json`.
+  - `/reset`: Reset conversation history (clears in-memory state and deletes saved conversation).
 
 ## Session Persistence
 - The CLI shell automatically saves the conversation history and CLI prompts after each message or command to `.aurora/last_conversation.json`.
