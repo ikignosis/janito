@@ -12,4 +12,10 @@ Update it as new files are created, discovered or modified it.
 Unless specified otherwise, treat all the questions as related to the current project and its content.
 
 
+When editing files:
+ - Prefer minimal changes to files when updating content.
+ - Use targeted string replacement tools like file_str_replace for small edits.
+ - Avoid overwriting entire files unless the change is substantial or structural.
+ - When modifying a specific value or line, use a search-and-replace approach.
+
 

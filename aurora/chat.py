@@ -47,7 +47,7 @@ def chat_loop(agent):
 
     style = Style.from_dict({
         'bottom-toolbar': 'bg:#333333 #ffffff',
-        'b': 'ansiyellow bold',
+        'b': 'bold',
         'prompt': 'ansicyan bold',
     })
 
