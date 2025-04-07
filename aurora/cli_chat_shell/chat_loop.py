@@ -9,26 +9,24 @@ from .commands import handle_command
 def start_chat_shell(agent, continue_session=False):
     console = Console()
 
-    # Show last saved conversation summary
-    data = load_last_summary()
-    print_summary(console, data, continue_session)
-
     # Load input history
     history_list = load_input_history()
     mem_history = InMemoryHistory()
     for item in history_list:
         mem_history.append_string(item)
 
-    # Initialize chat state
-state = {
-    'messages': messages,
-    'mem_history': mem_history,
-    'last_usage_info': last_usage_info,
-    'last_elapsed': last_elapsed,
-}
+        # Initialize chat state variables
     messages = []
     last_usage_info = None
     last_elapsed = None
+
+    state = {
+        'messages': messages,
+        'mem_history': mem_history,
+        'history_list': history_list,
+        'last_usage_info': last_usage_info,
+        'last_elapsed': last_elapsed,
+    }
 
     # Restore conversation if requested
     if continue_session:
@@ -38,6 +36,11 @@ state = {
         mem_history = InMemoryHistory()
         for item in prompts:
             mem_history.append_string(item)
+        # update state dict with restored data
+
+        state['messages'] = messages
+        state['last_usage_info'] = last_usage_info
+        state['mem_history'] = mem_history
         console.print('[bold green]Restored last saved conversation.[/bold green]')
 
     # Add system prompt if needed

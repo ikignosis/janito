@@ -11,6 +11,7 @@
 - `aurora/cli_chat_shell/chat_loop.py`: Implements the interactive chat shell using `prompt_toolkit`. Handles multiline input, chat history, and displays a colored status toolbar. Delegates special commands to `commands.py`.
   - **Empty input behavior:** If the user presses Enter without typing anything, the shell interprets this as a request to continue and automatically sends the command `"do it"` to the agent.
   - **Interrupt handling:** Pressing Ctrl-C during an agent request will interrupt the request and return to the prompt with a message, instead of exiting the shell.
+  - **Note:** The chat shell no longer displays the last saved conversation summary on startup by default. To restore a previous session, use the `--continue-session` flag or `/continue` command inside the shell.
 - `aurora/cli_chat_shell/commands.py`: Handles special chat shell commands:
   - `/exit`: Exit chat mode.
   - `/restart`: Restart the CLI.
