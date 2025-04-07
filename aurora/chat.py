@@ -17,7 +17,12 @@ def chat_loop(agent):
     while True:
         try:
             lines = []
-            first_line = input("You: ").strip()
+            try:
+                first_line = input("You: ").strip()
+            except EOFError:
+                print("Exiting chat mode.")
+                break
+
             if first_line.lower() in {"/exit", "/quit"}:
                 print("Exiting chat mode.")
                 break
