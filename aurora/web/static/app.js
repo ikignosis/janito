@@ -12,7 +12,8 @@ let command = '';
 function appendToTerminal(text) {
   const line = document.createElement('div');
   line.innerHTML = text;
-  terminal.insertBefore(line, output);
+  const inputLine = document.getElementById('input-line');
+  terminal.insertBefore(line, inputLine);
 }
 
 function appendOutput(content, cssClass = '') {
@@ -25,7 +26,8 @@ function appendOutput(content, cssClass = '') {
   const container = document.createElement('div');
   container.className = 'markdown-content ' + cssClass;
   container.innerHTML = html;
-  terminal.insertBefore(container, output);
+  const inputLine = document.getElementById('input-line');
+  terminal.insertBefore(container, inputLine);
 }
 
 document.addEventListener('keydown', function(event) {
