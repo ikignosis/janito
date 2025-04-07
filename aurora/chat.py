@@ -33,12 +33,16 @@ def chat_loop(agent):
             else:
                 buffer.insert_text('\n')
 
+    @bindings.add('c-r')
+    def _(event):
+        # Disable reverse search
+        pass
+
     def get_toolbar():
         return HTML(
             '<b>/exit</b>, <b>/quit</b> to exit | '
             '<b>/paste</b> multiline input | '
-            '<b>Shift+Enter</b> new line | '
-            '<b>Ctrl+R</b> search history'
+            '<b>Shift+Enter</b> new line'
         )
 
     style = Style.from_dict({
