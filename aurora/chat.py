@@ -1,4 +1,7 @@
 import sys
+import os
+import json
+from datetime import datetime
 from rich.console import Console
 from rich.markdown import Markdown
 from prompt_toolkit import PromptSession
@@ -6,6 +9,7 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.styles import Style
+from prompt_toolkit.history import InMemoryHistory
 
 
 def chat_loop(agent):
@@ -18,6 +22,23 @@ def chat_loop(agent):
 
     console.print("[bold green]Entering chat mode. Type /exit or /quit to exit.[/bold green]")
     console.print("[bold yellow]Use Shift+Enter for new lines. Ctrl+D (Unix) / Ctrl+Z (Windows) to exit.[/bold yellow]")
+
+    # Setup persistent input history
+    history_dir = os.path.join(".aurora", "input_history")
+    os.makedirs(history_dir, exist_ok=True)
+    today_str = datetime.now().strftime("%y%m%d")
+    history_file = os.path.join(history_dir, f"{today_str}.json")
+
+    # Load history from file
+    try:
+        with open(history_file, "r", encoding="utf-8") as f:
+            history_list = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        history_list = []
+
+    mem_history = InMemoryHistory()
+    for item in history_list:
+        mem_history.append_string(item)
 
     # Setup prompt_toolkit session with multiline support
     bindings = KeyBindings()
@@ -56,7 +77,8 @@ def chat_loop(agent):
         key_bindings=bindings,
         editing_mode=EditingMode.EMACS,
         bottom_toolbar=get_toolbar,
-        style=style
+        style=style,
+        history=mem_history
     )
 
     prompt_icon = HTML('<prompt>💬 </prompt>')
@@ -86,6 +108,14 @@ def chat_loop(agent):
             user_input = user_input.strip()
             if not user_input:
                 continue
+
+            # Save input to history
+            history_list.append(user_input)
+            try:
+                with open(history_file, "w", encoding="utf-8") as f:
+                    json.dump(history_list, f, ensure_ascii=False, indent=2)
+            except Exception as e:
+                console.print(f"[red]Failed to save input history: {e}[/red]")
 
             messages.append({"role": "user", "content": user_input})
 
