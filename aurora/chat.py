@@ -24,7 +24,6 @@ def chat_loop(agent):
         messages.append({"role": "system", "content": agent.system_prompt})
 
     console.print("[bold green]Entering chat mode. Type /exit or /quit to exit.[/bold green]")
-    console.print("[bold yellow]Press Esc+Enter to send message. Ctrl+D (Unix) / Ctrl+Z (Windows) to exit.[/bold yellow]")
 
     # Setup persistent input history
     history_dir = os.path.join(".aurora", "input_history")
@@ -53,7 +52,7 @@ def chat_loop(agent):
 
     def get_toolbar():
         toolbar = (
-            f'<b>/exit</b>, <b>/quit</b> to exit | Press Esc+Enter to send | 
+            f'<b>/exit</b>, <b>/quit</b> to exit | Press Esc+Enter to send | '
             f'Messages: {len(messages)}'
         )
         if last_usage_info:
