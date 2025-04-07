@@ -78,7 +78,7 @@ def chat_loop(agent):
         'msg_count': 'ansiyellow bold',
         'tokens_in': 'ansicyan bold',
         'tokens_out': 'ansigreen bold',
-        'speed': 'ansired bold',
+        'speed': 'ansimagenta bold',
     })
 
     session = PromptSession(
@@ -90,7 +90,7 @@ def chat_loop(agent):
         history=mem_history
     )
 
-    prompt_icon = HTML('<prompt>\ud83d\udcac </prompt>')
+    prompt_icon = HTML('<prompt>💬 </prompt>')
 
     while True:
         try:
