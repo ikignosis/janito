@@ -72,9 +72,9 @@ def chat_loop(agent):
             if last_elapsed and last_elapsed > 0:
                 speed = total_tokens / last_elapsed
             toolbar += (
-                f" | Tokens: <tokens_in>{format_tokens(prompt_tokens)}</tokens_in> / "
-                f"<tokens_out>{format_tokens(completion_tokens)}</tokens_out> / "
-                f"<tokens_total>{format_tokens(total_tokens)}</tokens_total>"
+                f" | Tokens: In=<tokens_in>{format_tokens(prompt_tokens)}</tokens_in> / "
+                f"Out=<tokens_out>{format_tokens(completion_tokens)}</tokens_out> / "
+                f"Total=<tokens_total>{format_tokens(total_tokens)}</tokens_total>"
             )
             if speed is not None:
                 toolbar += f", speed=<speed>{speed:.1f}</speed> tokens/sec"
