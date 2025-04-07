@@ -15,7 +15,6 @@
 - `aurora/cli_chat_shell/commands.py`: Handles special chat shell commands:
   - `/exit`: Exit chat mode.
   - `/restart`: Restart the CLI.
-  - `/paste`: Paste multiline input.
   - `/help`: Show help message.
   - `/system`: Show the current system prompt.
   - `/continue`: Restore the last saved conversation and CLI prompts from `.aurora/last_conversation.json`.
