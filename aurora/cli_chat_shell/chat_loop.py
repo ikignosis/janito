@@ -100,8 +100,15 @@ def start_chat_shell(agent, continue_session=False):
         start_time = None
         import time
         start_time = time.time()
+
+        # Define streaming content handler
+        def on_content(chunk):
+            content_piece = chunk.get('content')
+            if content_piece:
+                console.print(Markdown(content_piece))
+
         try:
-            response = agent.chat(messages)
+            response = agent.chat(messages, on_content=on_content)
         except KeyboardInterrupt:
             console.print("[bold yellow]Request interrupted. Returning to prompt.[/bold yellow]")
             continue
@@ -112,7 +119,7 @@ def start_chat_shell(agent, continue_session=False):
         last_usage_info = usage
 
         if content:
-            console.print(Markdown(content))
+            # Already printed during streaming, but save to history
             messages.append({"role": "assistant", "content": content})
 
         # Save conversation and input history
