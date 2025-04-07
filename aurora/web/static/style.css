@@ -48,6 +48,12 @@ body {
 
   white-space: pre-wrap;
 }
+#input-container {
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
 #input-line {
   background-color: rgba(255, 255, 255, 0.1);
   padding: 2px 4px;
