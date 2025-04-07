@@ -106,6 +106,13 @@ body {
 .markdown-content {
   white-space: normal;
 }
+.breadcrumb-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0;
+}
+
 .breadcrumb-tab {
   display: inline-block;
   background-color: #444;

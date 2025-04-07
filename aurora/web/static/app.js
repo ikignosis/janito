@@ -172,6 +172,7 @@ async function sendCommandStream(cmd) {
             } else {
               msg += `<br>Data: <code>${JSON.stringify(progress, null, 2)}</code>`;
             }
+            msg = `<div class=\"breadcrumb-container\">${msg}</div>`;
             appendOutput(msg, 'tool-progress');
           } else if(data.type === 'error') {
             appendOutput('Error: ' + data.error);
