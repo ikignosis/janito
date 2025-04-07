@@ -128,10 +128,14 @@ def chat_loop(agent):
 
             try:
                 start_time = time.time()
-                content, usage_info = agent.chat(messages, on_content=on_content)
-                elapsed = time.time() - start_time
-                last_usage_info = usage_info
-                last_elapsed = elapsed
+                try:
+                    content, usage_info = agent.chat(messages, on_content=on_content)
+                    elapsed = time.time() - start_time
+                    last_usage_info = usage_info
+                    last_elapsed = elapsed
+                except KeyboardInterrupt:
+                    console.print("[bold red]Request cancelled.[/bold red]")
+                    continue
             except Exception as e:
                 console.print(f"[red]Error during chat: {e}[/red]")
                 continue
