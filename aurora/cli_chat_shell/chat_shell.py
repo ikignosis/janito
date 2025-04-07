@@ -46,6 +46,7 @@ def chat_loop(agent, continue_session=False):
                     data = json.load(f)
                 messages = data.get('messages', [])
                 history_list = data.get('prompts', [])
+                last_usage_info = data.get('last_usage_info')
                 mem_history = InMemoryHistory()
                 for item in history_list:
                     mem_history.append_string(item)
@@ -143,7 +144,7 @@ def chat_loop(agent, continue_session=False):
                     save_path = os.path.join('.aurora', 'last_conversation.json')
                     os.makedirs('.aurora', exist_ok=True)
                     with open(save_path, 'w', encoding='utf-8') as f:
-                        json.dump({'messages': messages, 'prompts': history_list}, f, ensure_ascii=False, indent=2)
+                        json.dump({'messages': messages, 'prompts': history_list, 'last_usage_info': last_usage_info}, f, ensure_ascii=False, indent=2)
                     continue  # skip sending to agent
 
             # If empty input, treat as "do it"
@@ -185,7 +186,7 @@ def chat_loop(agent, continue_session=False):
             save_path = os.path.join('.aurora', 'last_conversation.json')
             os.makedirs('.aurora', exist_ok=True)
             with open(save_path, 'w', encoding='utf-8') as f:
-                json.dump({'messages': messages, 'prompts': history_list}, f, ensure_ascii=False, indent=2)
+                json.dump({'messages': messages, 'prompts': history_list, 'last_usage_info': last_usage_info}, f, ensure_ascii=False, indent=2)
 
         except (EOFError, KeyboardInterrupt):
             console.print("\n[bold red]Exiting chat mode.[/bold red]")
