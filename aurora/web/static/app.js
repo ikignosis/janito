@@ -73,7 +73,10 @@ async function sendCommandStream(cmd) {
           } else if(data.type === 'tool_progress') {
             const progress = data.data;
             console.debug('[WebClient] Tool progress event:', progress);
-            let msg = `🔧 <b>[Tool ${progress.tool}]</b> <b>${progress.event.toUpperCase()}</b>`;
+            let msg = '';
+            if(progress.event !== 'start') {
+              msg = `🔧 <b>[Tool ${progress.tool}]</b> <b>${progress.event.toUpperCase()}</b>`;
+            }
             if(progress.event === 'start') {
               if(progress.args && typeof progress.args === 'object') {
                 let breadcrumb = '';
