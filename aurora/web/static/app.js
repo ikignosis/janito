@@ -172,8 +172,15 @@ async function sendCommandStream(cmd) {
             } else {
               msg += `<br>Data: <code>${JSON.stringify(progress, null, 2)}</code>`;
             }
-            msg = `<div class=\"breadcrumb-container\">${msg}</div>`;
-            appendOutput(msg, 'tool-progress');
+            const callId = progress.call_id;
+            let container = document.getElementById(`call-${callId}`);
+            if (!container) {
+              container = document.createElement('div');
+              container.id = `call-${callId}`;
+              container.className = 'breadcrumb-container';
+              document.getElementById('terminal').appendChild(container);
+            }
+            container.innerHTML += msg;
           } else if(data.type === 'error') {
             appendOutput('Error: ' + data.error);
           }
