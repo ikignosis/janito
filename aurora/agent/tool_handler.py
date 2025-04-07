@@ -70,8 +70,7 @@ class ToolHandler:
         return schemas
 
     def handle_tool_call(self, tool_call, on_progress=None):
-        import uuid
-        call_id = str(uuid.uuid4())
+        call_id = getattr(tool_call, 'id', None)
         tool_entry = self._tool_registry.get(tool_call.function.name)
         if not tool_entry:
             return f"Unknown tool: {tool_call.function.name}"
