@@ -30,6 +30,7 @@
 - `create_file.py`: Create files.
 - `fetch_url.py`: Fetch webpage text.
 - `find_files.py`: Recursive file search respecting .gitignore.
+- `file_str_replace.py`: Replace exact string occurrences in a file with a new string.
 - `gitignore_utils.py`: Helpers for .gitignore filtering.
 - `move_file.py`: Move files/directories.
 - `remove_file.py`: Delete files.
