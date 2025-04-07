@@ -47,6 +47,20 @@ def run_cli(args):
                     messages = data.get('messages', [])
                     num_messages = len(messages)
                     console.print(f"[bold yellow]A previous conversation with {num_messages} messages was found.[/bold yellow]")
+
+                    last_usage_info = data.get('last_usage_info')
+                    if last_usage_info:
+                        prompt_tokens = last_usage_info.get('prompt_tokens', 0)
+                        completion_tokens = last_usage_info.get('completion_tokens', 0)
+                        total_tokens = prompt_tokens + completion_tokens
+                        def fmt(n):
+                            if n >= 1_000_000:
+                                return f"{n/1_000_000:.1f}m"
+                            if n >= 1_000:
+                                return f"{n/1_000:.1f}k"
+                            return str(n)
+                        console.print(f"Token usage - Prompt: {fmt(prompt_tokens)}, Completion: {fmt(completion_tokens)}, Total: {fmt(total_tokens)}")
+
                     console.print("You can resume it anytime by typing [bold]/continue[/bold].")
                 except Exception:
                     pass  # Fail silently if file is corrupt or unreadable
