@@ -65,3 +65,6 @@
 
 ## Build Artifacts
 - `build/`, `dist/`: Build output directories containing compiled packages and distribution archives.
+
+## Removed Legacy Files
+- `aurora/chat.py`: An older standalone interactive chat loop implementation using `prompt_toolkit`. Removed as it was superseded by `aurora.cli_chat_shell.chat_shell` and no longer used.
