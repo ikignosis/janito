@@ -64,7 +64,38 @@ def chat_loop(agent):
             if user_input.strip() in ('/exit', '/quit'):
                 console.print("[bold red]Exiting chat mode.[/bold red]")
                 break
-            # Process user input here
+
+            if user_input.strip() == '/paste':
+                console.print("[bold cyan]Paste your content below. Press Ctrl+D (Unix) or Ctrl+Z (Windows) then Enter to finish.[/bold cyan]")
+                pasted_lines = []
+                try:
+                    while True:
+                        line = sys.stdin.readline()
+                        if not line:
+                            break
+                        pasted_lines.append(line.rstrip('\n'))
+                except EOFError:
+                    pass
+                user_input = "\n".join(pasted_lines).strip()
+                if not user_input:
+                    continue
+
+            user_input = user_input.strip()
+            if not user_input:
+                continue
+
+            messages.append({"role": "user", "content": user_input})
+
+            def on_content(data):
+                content = data.get("content", "")
+                console.print(Markdown(content))
+
+            try:
+                agent.chat(messages, on_content=on_content)
+            except Exception as e:
+                console.print(f"[red]Error during chat: {e}[/red]")
+                continue
+
         except (EOFError, KeyboardInterrupt):
             console.print("[bold red]Exiting chat mode.[/bold red]")
             break
