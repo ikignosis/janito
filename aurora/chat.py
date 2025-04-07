@@ -83,7 +83,7 @@ def chat_loop(agent):
         history=mem_history
     )
 
-    prompt_icon = HTML('<prompt>💬 </prompt>')
+    prompt_icon = HTML('<prompt>\ud83d\udcac </prompt>')
 
     while True:
         try:
@@ -109,6 +109,25 @@ def chat_loop(agent):
 
             user_input = user_input.strip()
             if not user_input:
+                # If empty input and more than just system prompt, resend last chat
+                if len(messages) > 1 or (len(messages) == 1 and messages[0].get("role") != "system"):
+                    def on_content(data):
+                        content = data.get("content", "")
+                        console.print(Markdown(content))
+
+                    try:
+                        start_time = time.time()
+                        try:
+                            content, usage_info = agent.chat(messages, on_content=on_content)
+                            elapsed = time.time() - start_time
+                            last_usage_info = usage_info
+                            last_elapsed = elapsed
+                        except KeyboardInterrupt:
+                            console.print("[bold red]Request cancelled.[/bold red]")
+                            continue
+                    except Exception as e:
+                        console.print(f"[red]Error during chat: {e}[/red]")
+                        continue
                 continue
 
             # Save input to history
