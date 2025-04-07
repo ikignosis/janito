@@ -61,9 +61,10 @@ def chat_loop(agent):
 
     def get_toolbar():
         return HTML(
-            '<b>/exit</b>, <b>/quit</b> to exit | '
-            '<b>/paste</b> multiline input | '
-            '<b>Shift+Enter</b> new line'
+            f'<b>/exit</b>, <b>/quit</b> to exit | '
+            f'<b>/paste</b> multiline input | '
+            f'<b>Shift+Enter</b> new line | '
+            f'Messages: {len(messages)}'
         )
 
     style = Style.from_dict({
