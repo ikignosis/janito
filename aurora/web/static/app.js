@@ -11,7 +11,7 @@ let command = '';
 
 function appendToTerminal(text) {
   const line = document.createElement('div');
-  line.textContent = text;
+  line.innerHTML = text;
   terminal.insertBefore(line, output);
 }
 
