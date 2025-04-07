@@ -96,7 +96,7 @@ def chat_loop(agent):
         history=mem_history
     )
 
-    prompt_icon = HTML('<prompt>\ud83d\udcac </prompt>')
+    prompt_icon = HTML('<prompt>💬 </prompt>')
 
     while True:
         try:
