@@ -23,7 +23,7 @@ def chat_loop(agent):
     if agent.system_prompt:
         messages.append({"role": "system", "content": agent.system_prompt})
 
-    console.print("[bold green]Entering chat mode. Type /exit or /quit to exit.[/bold green]")
+    console.print("[bold green]Entering chat mode. Type /exit to exit.[/bold green]")
     console.print("[bold yellow]Press Esc+Enter to send your message.[/bold yellow]")
 
     # Setup persistent input history
@@ -53,7 +53,7 @@ def chat_loop(agent):
 
     def get_toolbar():
         toolbar = (
-            f'<b>/exit</b>, <b>/quit</b> to exit | '
+            f'<b>/exit</b> to exit | '
             f'Messages: {len(messages)}'
         )
         if last_usage_info:
@@ -88,7 +88,7 @@ def chat_loop(agent):
     while True:
         try:
             user_input = session.prompt(prompt_icon)
-            if user_input.strip() in ('/exit', '/quit'):
+            if user_input.strip() == '/exit':
                 console.print("[bold red]Exiting chat mode.[/bold red]")
                 break
 
