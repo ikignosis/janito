@@ -32,7 +32,7 @@ class ConversationHandler:
 
             # Call the on_content callback if provided and content is not None
             if on_content is not None and choice.message.content is not None:
-                on_content(choice.message.content)
+                on_content({"content": choice.message.content})
 
             # If no tool calls, return the assistant's message
             if not choice.message.tool_calls:

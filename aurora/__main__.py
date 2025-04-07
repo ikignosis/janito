@@ -139,9 +139,8 @@ def main():
 
     console = Console()
 
-    def on_content(content):
-        if not isinstance(content, str):
-            raise TypeError(f"on_content() expected a string, got {type(content)}")
+    def on_content(data):
+        content = data.get("content", "")
         console.print(Markdown(content))
 
     messages = []

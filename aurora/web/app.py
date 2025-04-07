@@ -37,7 +37,7 @@ def execute_stream():
     def run_agent():
         agent.chat(
             [{"role": "user", "content": user_input}],
-            on_content=lambda content: stream_queue.put({"type": "content", "content": content})
+            on_content=lambda data: stream_queue.put({"type": "content", "content": data.get("content")})
         )
         # Signal end of stream
         stream_queue.put(None)

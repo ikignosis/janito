@@ -41,7 +41,8 @@ def chat_loop(agent):
 
             messages.append({"role": "user", "content": user_input})
 
-            def on_content(content):
+            def on_content(data):
+                content = data.get("content", "")
                 console.print(Markdown(content))
 
             try:
