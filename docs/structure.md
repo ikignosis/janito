@@ -2,11 +2,14 @@
 
 ## Core Package: `aurora`
 - `aurora/__init__.py`: Defines the package version (`__version__`).
-- `aurora/__main__.py`: Main CLI entry point. Parses command line arguments, manages configuration, initializes the agent, and handles interaction. **Supports single prompt mode and interactive chat mode (`--chat`)**. **Generates the system prompt using `render_system_prompt()` and passes it to the agent.** Uses `get_api_key()` for API key retrieval.
+- `aurora/__main__.py`: Main CLI entry point. Parses command line arguments, manages configuration, initializes the agent, and handles interaction. Supports single prompt mode and interactive chat mode (`--chat`). Generates the system prompt using `render_system_prompt()` and passes it to the agent. Uses `get_api_key()` for API key retrieval.
 - `aurora/render_prompt.py`: Renders the system prompt template using Jinja2. Used by both CLI and web app to ensure consistent prompt generation.
 - `aurora/chat.py`: Implements an interactive chat loop using `prompt_toolkit` for a shell-like experience.
-  - **Supports multiline user input with Shift+Enter.**
-  - **Supports `/exit` and `/quit` commands, and EOF (Ctrl+D/Ctrl+Z) to exit.**
+  - Supports multiline user input with Shift+Enter.
+  - Supports `/exit` and `/quit` commands, and EOF (Ctrl+D/Ctrl+Z) to exit.
+  - Supports `/paste` command to paste multiline input until EOF (Ctrl+D/Ctrl+Z), treating it as a single message.
+  - **Provides a bottom toolbar with command hints and informs about Ctrl+R keyword history search.**
+- `aurora/prompts/system_instructions.txt`: Alternative or plain text version of the system prompt instructions.
 
 ## Agent Subpackage: `aurora.agent`
 - `aurora/agent/__init__.py`: Marks the agent module as a package.
@@ -18,17 +21,17 @@
   - `RuntimeConfig`: In-memory, reset-on-restart config
   - `EffectiveConfig`: Merged, read-only view of all configs
   - Singleton instances: `runtime_config`, `local_config`, `global_config`, `effective_config`
-  - **`get_api_key()`**: Retrieves the API key by checking the `OPENROUTER_API_KEY` environment variable first, then falling back to the merged config (`api_key` key). Raises an error if not found. **Used by both CLI and web app.**
+  - `get_api_key()`: Retrieves the API key by checking the `OPENROUTER_API_KEY` environment variable first, then falling back to the merged config (`api_key` key). Raises an error if not found. Used by both CLI and web app.
 - `aurora/agent/conversation.py`: Manages conversation history.
 - `aurora/agent/tool_handler.py`: Handles tool execution.
 - `aurora/agent/queued_tool_handler.py`: Subclass of `ToolHandler` that injects progress updates into a queue, used for streaming tool progress in the web server.
 
 ### Tools (`aurora/agent/tools/`)
 - `ask_user.py`: Tool to ask user questions.
-- `bash_exec.py`: Run bash commands, live output. **Supports `on_progress` callback for streaming output lines.**
+- `bash_exec.py`: Run bash commands, live output. Supports `on_progress` callback for streaming output lines.
 - `create_directory.py`: Create directories.
 - `create_file.py`: Create files.
-- `fetch_url.py`: Fetch webpage text. **Supports `on_progress` callback for fetch status updates.**
+- `fetch_url.py`: Fetch webpage text. Supports `on_progress` callback for fetch status updates.
 - `find_files.py`: Recursive file search respecting .gitignore.
 - `gitignore_utils.py`: Helpers for .gitignore filtering.
 - `move_file.py`: Move files/directories.
@@ -43,23 +46,29 @@
 
 ## Web Server Package: `aurora.web`
 - `aurora/web/__init__.py`: Marks the web module as a package.
-- `aurora/web/__main__.py`: **Module entry point.** Allows running the web server via `python -m aurora.web [port]`. Parses optional port argument, then starts the Flask app.
-- `aurora/web/app.py`: Defines the Flask app, initializes the `Agent` **with a generated system prompt (same as CLI)**. Uses `get_api_key()` for API key retrieval. Provides:
+- `aurora/web/__main__.py`: Module entry point. Allows running the web server via `python -m aurora.web [port]`. Parses optional port argument, then starts the Flask app.
+- `aurora/web/app.py`: Defines the Flask app, initializes the `Agent` with a generated system prompt (same as CLI). Uses `get_api_key()` for API key retrieval. Provides:
   - `/`: index page.
   - `/execute`: standard POST endpoint.
-  - `/execute_stream`: **streams Server-Sent Events (SSE)** including:
-    - `{"type": "content", "data": ...}` for incremental LLM output.
-    - `{"type": "tool_progress", "progress": ...}` for tool execution updates.
+  - `/execute_stream`: streams Server-Sent Events (SSE) including:
+    - `{ "type": "content", "data": ... }` for incremental LLM output.
+    - `{ "type": "tool_progress", "progress": ... }` for tool execution updates.
 
   Creates a `QueuedToolHandler` and injects it into the `Agent` during initialization, enabling streaming of tool progress updates without mutating the agent at runtime.
 
-- `aurora/web/templates/index.html`: Default index page served by Flask. **Terminal-style UI. Sends user input as `{ "input": "..." }` to `/execute_stream`. Renders streamed `content` and `tool_progress` messages as Markdown using marked.js.**
+- `aurora/web/templates/index.html`: Default index page served by Flask. Terminal-style UI. Sends user input as `{ "input": "..." }` to `/execute_stream`. Renders streamed `content` and `tool_progress` messages as Markdown using marked.js.
+- `aurora/web/static/app.js`: JavaScript for the web UI.
+- `aurora/web/static/style.css`: CSS styles for the web UI.
+- `aurora/web/docs/structure.md`: Duplicate or misplaced copy of the project structure documentation.
 
 ## Documentation
-- `docs/structure.md`: This file. Explains the purpose of each file and folder.
+- `docs/structure.md`: Main documentation file explaining the purpose of each file and folder.
+
+## Build Artifacts
+- `build/`, `dist/`: Build output directories containing compiled packages and distribution archives.
 
 ## Summary
 - CLI: `python -m aurora`
 - Web: `python -m aurora.web`
-- Both use the same core `Agent` class, config system, **API key retrieval logic (`get_api_key()`)**, and system prompt generation.
+- Both use the same core `Agent` class, config system, API key retrieval logic (`get_api_key()`), and system prompt generation.
 - `/execute_stream` endpoint streams incremental LLM output and tool progress updates as SSE.
