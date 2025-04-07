@@ -75,7 +75,7 @@ def chat_loop(agent):
         'bottom-toolbar': 'bg:#333333 #ffffff',
         'b': 'bold',
         'prompt': 'ansicyan bold',
-        'msg_count': 'ansiyellow bold',
+        'msg_count': 'bg:#333333 #ffff00 bold',
         'tokens_in': 'ansicyan bold',
         'tokens_out': 'ansigreen bold',
         'speed': 'ansimagenta bold',
