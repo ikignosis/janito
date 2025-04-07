@@ -50,6 +50,14 @@ body {
 
   white-space: pre-wrap;
 }
+.terminal .user-input {
+  display: inline-block;
+  color: #33FF33;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
 .user-input {
   background-color: rgba(255, 255, 255, 0.1);
   padding: 2px 4px;
