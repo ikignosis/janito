@@ -11,7 +11,7 @@ def view_file(path: str, start_line: int = 1, end_line: int = None) -> str:
     start_line: The starting line number (1-based, default: 1)
     end_line: The ending line number (inclusive). If None, view until end of file.
     """
-    print_info(f"📂 View '{format_path(path)}' lines {format_number(start_line)} to {format_number(end_line) if end_line else 'EOF'}")
+    print_info(f"📂 View '{format_path(path)}' lines {format_number(start_line)} to {format_number(end_line) if end_line else 'end of file'}")
     if os.path.isdir(path):
         files = os.listdir(path)
         print_success(f"✅ {format_number(len(files))} items")
