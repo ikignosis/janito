@@ -1,15 +1,9 @@
-import sys
 import os
-
-
-def handle_exit(console, **kwargs):
-    console.print("[bold red]Exiting chat mode.[/bold red]")
-    sys.exit(0)
-
+import sys
 
 def handle_restart(console, **kwargs):
     console.print("[bold yellow]Restarting CLI...[/bold yellow]")
-    os.execv(sys.executable, [sys.executable] + sys.argv)
+    os.execv(sys.executable, [sys.executable, "-m", "aurora"] + sys.argv[1:])
 
 
 def handle_paste(console, **kwargs):
@@ -31,10 +25,3 @@ COMMAND_HANDLERS = {
     "/restart": handle_restart,
     "/paste": handle_paste,
 }
-
-
-def handle_command(command, console, **kwargs):
-    handler = COMMAND_HANDLERS.get(command)
-    if handler:
-        return handler(console=console, **kwargs)
-    return None
