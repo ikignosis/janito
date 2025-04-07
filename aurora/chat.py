@@ -1,6 +1,7 @@
 import sys
 import os
 import json
+import time
 from datetime import datetime
 from rich.console import Console
 from rich.markdown import Markdown
@@ -16,6 +17,7 @@ def chat_loop(agent):
     console = Console()
     messages = []
     last_usage_info = None
+    last_elapsed = None
 
     # Add system prompt if available
     if agent.system_prompt:
@@ -70,8 +72,13 @@ def chat_loop(agent):
         if last_usage_info:
             prompt_tokens = last_usage_info.get('prompt_tokens')
             completion_tokens = last_usage_info.get('completion_tokens')
-            total_tokens = last_usage_info.get('total_tokens')
-            toolbar += f" | Tokens: prompt={prompt_tokens}, completion={completion_tokens}, total={total_tokens}"
+            total_tokens = (prompt_tokens or 0) + (completion_tokens or 0)
+            speed = None
+            if last_elapsed and last_elapsed > 0:
+                speed = total_tokens / last_elapsed
+            toolbar += f" | Tokens: in={prompt_tokens}, out={completion_tokens}"
+            if speed is not None:
+                toolbar += f", speed={speed:.1f} tokens/sec"
         return HTML(toolbar)
 
     style = Style.from_dict({
@@ -132,8 +139,11 @@ def chat_loop(agent):
                 console.print(Markdown(content))
 
             try:
+                start_time = time.time()
                 content, usage_info = agent.chat(messages, on_content=on_content)
+                elapsed = time.time() - start_time
                 last_usage_info = usage_info
+                last_elapsed = elapsed
             except Exception as e:
                 console.print(f"[red]Error during chat: {e}[/red]")
                 continue
