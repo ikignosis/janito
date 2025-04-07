@@ -8,7 +8,8 @@
   - Supports multiline user input with Shift+Enter.
   - Supports `/exit` and `/quit` commands, and EOF (Ctrl+D/Ctrl+Z) to exit.
   - Supports `/paste` command to paste multiline input until EOF (Ctrl+D/Ctrl+Z), treating it as a single message.
-  - **Provides a bottom toolbar with command hints and informs about Ctrl+R keyword history search.**
+  - **Provides a bottom toolbar with command hints, now enhanced with `prompt_toolkit`'s HTML-based styling for colored and bolded text.**
+  - **Defines a style dictionary to control toolbar background and text colors.**
 - `aurora/prompts/system_instructions.txt`: Alternative or plain text version of the system prompt instructions.
 
 ## Agent Subpackage: `aurora.agent`
