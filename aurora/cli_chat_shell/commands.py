@@ -1,5 +1,6 @@
 import os
 import sys
+from prompt_toolkit.history import InMemoryHistory
 from aurora.render_prompt import render_system_prompt
 
 
