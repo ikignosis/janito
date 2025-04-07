@@ -4,8 +4,11 @@
 - `aurora/__init__.py`: Defines the package version (`__version__`).
 - `aurora/__main__.py`: Minimal CLI entry point. Delegates to `aurora.cli.main.main()`.
 - `aurora/render_prompt.py`: Renders the system prompt template using Jinja2.
-- `aurora/chat.py`: Implements an interactive chat loop using `prompt_toolkit`. The toolbar and startup message show key combinations: press `Esc+Enter` to submit messages, `Ctrl+D` (Unix) or `Ctrl+Z` (Windows) to exit. Multiline input is default; `/paste` command is deprecated.
 - `aurora/prompts/system_instructions.txt`: Alternative or plain text version of the system prompt instructions.
+
+## CLI Chat Shell Package: `aurora.cli_chat_shell`
+- `aurora/cli_chat_shell/__init__.py`: Marks the CLI chat shell module as a package.
+- `aurora/cli_chat_shell/chat_shell.py`: Implements the interactive chat shell using `prompt_toolkit`. Handles multiline input, chat history, resending on empty input, and displays a colored status toolbar.
 
 ## CLI Package: `aurora.cli`
 - `aurora/cli/__init__.py`: Marks the CLI module as a package.
@@ -52,9 +55,7 @@
 - `aurora/web/docs/structure.md`: Duplicate or misplaced copy of the project structure documentation.
 
 ## Documentation
-- `docs/structure.md`: Main documentation file explaining the purpose of each file and folder. The CLI defaults to chat mode if no prompt is provided; the `--chat` option has been removed.
+- `docs/structure.md`: Main documentation file explaining the purpose of each file and folder.
 
 ## Build Artifacts
 - `build/`, `dist/`: Build output directories containing compiled packages and distribution archives.
-
-## Summary
