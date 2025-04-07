@@ -8,7 +8,9 @@
 
 ## CLI Chat Shell Package: `aurora.cli_chat_shell`
 - `aurora/cli_chat_shell/__init__.py`: Marks the CLI chat shell module as a package.
-- `aurora/cli_chat_shell/chat_shell.py`: Implements the interactive chat shell using `prompt_toolkit`. Handles multiline input, chat history, resending on empty input, and displays a colored status toolbar. Delegates special commands to `commands.py`.
+- `aurora/cli_chat_shell/chat_loop.py`: Implements the interactive chat shell using `prompt_toolkit`. Handles multiline input, chat history, and displays a colored status toolbar. Delegates special commands to `commands.py`.
+  - **Empty input behavior:** If the user presses Enter without typing anything, the shell interprets this as a request to continue and automatically sends the command `"do it"` to the agent.
+  - **Interrupt handling:** Pressing Ctrl-C during an agent request will interrupt the request and return to the prompt with a message, instead of exiting the shell.
 - `aurora/cli_chat_shell/commands.py`: Handles special chat shell commands:
   - `/exit`: Exit chat mode.
   - `/restart`: Restart the CLI.

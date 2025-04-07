@@ -64,9 +64,17 @@ def start_chat_shell(agent, continue_session=False):
     while True:
         try:
             user_input = session.prompt(prompt_icon)
-        except (EOFError, KeyboardInterrupt):
+        except EOFError:
             console.print("\n[bold red]Exiting...[/bold red]")
             break
+        except KeyboardInterrupt:
+            console.print()  # Move to next line
+            confirm = input("Do you really want to exit? (y/n): ").strip().lower()
+            if confirm == 'y':
+                console.print("[bold red]Exiting...[/bold red]")
+                break
+            else:
+                continue
 
         if user_input.strip().startswith('/'):
             result = handle_command(user_input.strip(), console, agent=agent, messages=messages, mem_history=mem_history)
@@ -75,7 +83,7 @@ def start_chat_shell(agent, continue_session=False):
             continue
 
         if not user_input.strip():
-            continue
+            user_input = "do it"
 
         mem_history.append_string(user_input)
         messages.append({"role": "user", "content": user_input})
@@ -83,7 +91,11 @@ def start_chat_shell(agent, continue_session=False):
         start_time = None
         import time
         start_time = time.time()
-        response = agent.chat(messages)
+        try:
+            response = agent.chat(messages)
+        except KeyboardInterrupt:
+            console.print("[bold yellow]Request interrupted. Returning to prompt.[/bold yellow]")
+            continue
         last_elapsed = time.time() - start_time
 
         content = response.get('content')
