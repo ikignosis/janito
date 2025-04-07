@@ -36,6 +36,21 @@ def run_cli(args):
     agent = Agent(api_key=api_key, system_prompt=system_prompt, verbose_tools=args.verbose_tools)
 
     if not args.prompt:
+        console = Console()
+
+        if not getattr(args, 'continue_session', False):
+            save_path = os.path.join('.aurora', 'last_conversation.json')
+            if os.path.exists(save_path):
+                try:
+                    with open(save_path, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                    messages = data.get('messages', [])
+                    num_messages = len(messages)
+                    console.print(f"[bold yellow]A previous conversation with {num_messages} messages was found.[/bold yellow]")
+                    console.print("You can resume it anytime by typing [bold]/continue[/bold].")
+                except Exception:
+                    pass  # Fail silently if file is corrupt or unreadable
+
         from aurora.cli_chat_shell.chat_shell import chat_loop
         chat_loop(agent, continue_session=getattr(args, 'continue_session', False))
         sys.exit(0)
