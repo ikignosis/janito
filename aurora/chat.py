@@ -24,7 +24,7 @@ def chat_loop(agent):
         messages.append({"role": "system", "content": agent.system_prompt})
 
     console.print("[bold green]Entering chat mode. Type /exit or /quit to exit.[/bold green]")
-    console.print("[bold yellow]Use Shift+Enter for new lines. Ctrl+D (Unix) / Ctrl+Z (Windows) to exit.[/bold yellow]")
+    console.print("[bold yellow]Use /paste for multiline input. Ctrl+D (Unix) / Ctrl+Z (Windows) to exit.[/bold yellow]")
 
     # Setup persistent input history
     history_dir = os.path.join(".aurora", "input_history")
@@ -43,19 +43,8 @@ def chat_loop(agent):
     for item in history_list:
         mem_history.append_string(item)
 
-    # Setup prompt_toolkit session with multiline support
+    # Setup prompt_toolkit session without custom Shift+Enter multiline support
     bindings = KeyBindings()
-
-    @bindings.add('enter')
-    def _(event):
-        buffer = event.current_buffer
-        if buffer.complete_state:
-            buffer.complete_state = None
-        elif buffer.validate():
-            if buffer.document.is_cursor_at_the_end:
-                event.app.exit(result=buffer.text)
-            else:
-                buffer.insert_text('\n')
 
     @bindings.add('c-r')
     def _(event):
@@ -66,7 +55,6 @@ def chat_loop(agent):
         toolbar = (
             f'<b>/exit</b>, <b>/quit</b> to exit | '
             f'<b>/paste</b> multiline input | '
-            f'<b>Shift+Enter</b> new line | '
             f'Messages: {len(messages)}'
         )
         if last_usage_info:
