@@ -32,7 +32,7 @@ document.addEventListener('keydown', function(event) {
   if (event.key === 'Backspace') {
     command = command.slice(0, -1);
   } else if (event.key === 'Enter') {
-    appendToTerminal(command);
+    appendToTerminal('<span class="user-input">' + command + '</span>');
     sendCommandStream(command);
     command = '';
   } else if (event.key.length === 1) {
