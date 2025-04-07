@@ -28,7 +28,7 @@ def file_str_replace(path: str, old_string: str, new_string: str, count: int = -
     num_replacements = content.count(old_string) if count == -1 else min(content.count(old_string), count)
 
     if num_replacements == 0:
-        print_info(f"ℹ️ No occurrences of the target string found in '{format_path(path)}'.")
+        print_info(f"ℹ️  No occurrences of the target string found in '{format_path(path)}'.")
         return f"ℹ️ No occurrences of the target string found in '{path}'."
 
     new_content = content.replace(old_string, new_string, count if count != -1 else content.count(old_string))

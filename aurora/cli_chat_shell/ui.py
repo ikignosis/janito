@@ -77,9 +77,9 @@ def get_toolbar_func(messages_ref, last_usage_info_ref, last_elapsed_ref, model_
             total_len = len(left) + len(model_name) + 2  # spaces around model_name
             if total_len < width:
                 padding = ' ' * (width - total_len)
-                toolbar_text = f"{left}{padding} | Model: {model_name} "
+                toolbar_text = f"{left}{padding} | Model: <model>{model_name}</model> "
             else:
-                toolbar_text = f"{left} | Model: {model_name} "
+                toolbar_text = f"{left} | Model: <model>{model_name}</model> "
         else:
             toolbar_text = left
 

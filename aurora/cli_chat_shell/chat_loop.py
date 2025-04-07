@@ -20,6 +20,12 @@ def start_chat_shell(agent, continue_session=False):
         mem_history.append_string(item)
 
     # Initialize chat state
+state = {
+    'messages': messages,
+    'mem_history': mem_history,
+    'last_usage_info': last_usage_info,
+    'last_elapsed': last_elapsed,
+}
     messages = []
     last_usage_info = None
     last_elapsed = None
@@ -77,7 +83,7 @@ def start_chat_shell(agent, continue_session=False):
                 continue
 
         if user_input.strip().startswith('/'):
-            result = handle_command(user_input.strip(), console, agent=agent, messages=messages, mem_history=mem_history)
+            result = handle_command(user_input.strip(), console, agent=agent, messages=messages, mem_history=mem_history, state=state)
             if result == 'exit':
                 break
             continue
