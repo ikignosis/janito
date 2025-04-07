@@ -54,7 +54,7 @@ def chat_loop(agent):
     def get_toolbar():
         toolbar = (
             f'<b>/exit</b> to exit | '
-            f'Messages: {len(messages)}'
+            f'Messages: <msg_count>{len(messages)}</msg_count>'
         )
         if last_usage_info:
             prompt_tokens = last_usage_info.get('prompt_tokens')
@@ -63,15 +63,22 @@ def chat_loop(agent):
             speed = None
             if last_elapsed and last_elapsed > 0:
                 speed = total_tokens / last_elapsed
-            toolbar += f" | Tokens: in={prompt_tokens}, out={completion_tokens}"
+            toolbar += (
+                f" | Tokens: in=<tokens_in>{prompt_tokens}</tokens_in>, "
+                f"out=<tokens_out>{completion_tokens}</tokens_out>"
+            )
             if speed is not None:
-                toolbar += f", speed={speed:.1f} tokens/sec"
+                toolbar += f", speed=<speed>{speed:.1f}</speed> tokens/sec"
         return HTML(toolbar)
 
     style = Style.from_dict({
         'bottom-toolbar': 'bg:#333333 #ffffff',
         'b': 'bold',
         'prompt': 'ansicyan bold',
+        'msg_count': 'ansiyellow bold',
+        'tokens_in': 'ansicyan bold',
+        'tokens_out': 'ansigreen bold',
+        'speed': 'ansired bold',
     })
 
     session = PromptSession(
