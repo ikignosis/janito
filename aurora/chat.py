@@ -48,6 +48,7 @@ def chat_loop(agent):
     style = Style.from_dict({
         'bottom-toolbar': 'bg:#333333 #ffffff',
         'b': 'ansiyellow bold',
+        'prompt': 'ansicyan bold',
     })
 
     session = PromptSession(
@@ -58,9 +59,11 @@ def chat_loop(agent):
         style=style
     )
 
+    prompt_icon = HTML('<prompt>💬 </prompt>')
+
     while True:
         try:
-            user_input = session.prompt()
+            user_input = session.prompt(prompt_icon)
             if user_input.strip() in ('/exit', '/quit'):
                 console.print("[bold red]Exiting chat mode.[/bold red]")
                 break
