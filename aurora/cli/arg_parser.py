@@ -15,5 +15,4 @@ def create_parser():
     parser.add_argument("--set-global-config", type=str, default=None, help='Set a global config key-value pair, format "key=val"')
     parser.add_argument("--show-config", action="store_true", help="Show effective configuration and exit")
     parser.add_argument("--version", action="store_true", help="Show program's version number and exit")
-    parser.add_argument("--chat", action="store_true", help="Enter interactive chat mode")
     return parser
