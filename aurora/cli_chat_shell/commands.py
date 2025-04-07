@@ -107,5 +107,5 @@ def handle_command(command, console, **kwargs):
     args = parts[1:]
     handler = COMMAND_HANDLERS.get(cmd)
     if handler:
-        return handler(console=console, *args, **kwargs)
+        return handler(console, *args, **kwargs)
     return None
