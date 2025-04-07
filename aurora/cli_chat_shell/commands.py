@@ -69,12 +69,17 @@ def handle_help(console, **kwargs):
   /help     - Show this help message
   /continue - Restore last saved conversation
   /system   - Show the system prompt
+  /clear    - Clear the terminal screen
 """)
 
 
 def handle_system(console, **kwargs):
     prompt = render_system_prompt("software engineer")
     console.print(f"[bold magenta]System Prompt:[/bold magenta]\n{prompt}")
+
+
+def handle_clear(console, **kwargs):
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 
 COMMAND_HANDLERS = {
@@ -85,6 +90,7 @@ COMMAND_HANDLERS = {
 
     "/help": handle_help,
     "/system": handle_system,
+    "/clear": handle_clear,
 }
 
 
