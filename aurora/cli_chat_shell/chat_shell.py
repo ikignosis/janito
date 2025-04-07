@@ -53,8 +53,10 @@ def chat_loop(agent):
     def format_tokens(n):
         if n is None:
             return "?"
-        if n >= 1000:
-            return f"{n/1000:.1f}k"
+        if n >= 1_000_000:
+            return f"{n/1_000_000:.1f}m"
+        if n >= 1_000:
+            return f"{n/1_000:.1f}k"
         return str(n)
 
     def get_toolbar():
@@ -70,8 +72,9 @@ def chat_loop(agent):
             if last_elapsed and last_elapsed > 0:
                 speed = total_tokens / last_elapsed
             toolbar += (
-                f" | Tokens: in=<tokens_in>{format_tokens(prompt_tokens)}</tokens_in>, "
-                f"out=<tokens_out>{format_tokens(completion_tokens)}</tokens_out>"
+                f" | Tokens: <tokens_in>{format_tokens(prompt_tokens)}</tokens_in> / "
+                f"<tokens_out>{format_tokens(completion_tokens)}</tokens_out> / "
+                f"<tokens_total>{format_tokens(total_tokens)}</tokens_total>"
             )
             if speed is not None:
                 toolbar += f", speed=<speed>{speed:.1f}</speed> tokens/sec"
@@ -84,6 +87,7 @@ def chat_loop(agent):
         'msg_count': 'bg:#333333 #ffff00 bold',
         'tokens_in': 'ansicyan bold',
         'tokens_out': 'ansigreen bold',
+        'tokens_total': 'ansiyellow bold',
         'speed': 'ansimagenta bold',
     })
 
