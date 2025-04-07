@@ -30,6 +30,16 @@ Aurora uses OpenAI-compatible APIs (default: `openrouter/quasar-alpha`). Set you
 export OPENROUTER_API_KEY=your_api_key_here
 ```
 
+### Obtain an API key from openrouter.io
+1. Visit [https://openrouter.io/](https://openrouter.io/)
+2. Sign in or create a free account.
+3. Navigate to **API Keys** in your account dashboard.
+4. Click **Create new key**, provide a name, and save the generated key.
+5. Set it as an environment variable:
+```bash
+export OPENROUTER_API_KEY=your_api_key_here
+```
+
 ---
 
 ## 💻 Usage
