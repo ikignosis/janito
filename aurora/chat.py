@@ -33,10 +33,10 @@ def chat_loop(agent):
 
     def get_toolbar():
         return (
-            "[bold cyan]/exit[/], [bold cyan]/quit[/] to exit | "
-            "[bold cyan]/paste[/] multiline input | "
-            "[bold cyan]Shift+Enter[/] new line | "
-            "[bold cyan]Ctrl+R[/] search history"
+            "/exit, /quit to exit | "
+            "/paste multiline input | "
+            "Shift+Enter new line | "
+            "Ctrl+R search history"
         )
 
     session = PromptSession(
