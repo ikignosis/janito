@@ -74,7 +74,7 @@ async function sendCommandStream(cmd) {
             const progress = data.data;
             console.debug('[WebClient] Tool progress event:', progress);
             let msg = '';
-            if(progress.event !== 'start') {
+            if(progress.event !== 'start' && progress.event !== 'finish') {
               msg = `🔧 <b>[Tool ${progress.tool}]</b> <b>${progress.event.toUpperCase()}</b>`;
             }
             if(progress.event === 'start') {
