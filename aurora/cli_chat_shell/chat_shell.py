@@ -53,7 +53,7 @@ def chat_loop(agent):
 
     def get_toolbar():
         toolbar = (
-            f'<b>/exit</b> to exit | '
+            f'<b>/exit</b> to exit | <b>/restart</b> to restart | '
             f'Messages: <msg_count>{len(messages)}</msg_count>'
         )
         if last_usage_info:
@@ -95,11 +95,15 @@ def chat_loop(agent):
     while True:
         try:
             user_input = session.prompt(prompt_icon)
-            if user_input.strip() == '/exit':
+            stripped_input = user_input.strip()
+            if stripped_input == '/exit':
                 console.print("[bold red]Exiting chat mode.[/bold red]")
                 break
+            if stripped_input == '/restart':
+                console.print("[bold yellow]Restarting CLI...[/bold yellow]")
+                os.execv(sys.executable, [sys.executable] + sys.argv)
 
-            if user_input.strip() == '/paste':
+            if stripped_input == '/paste':
                 console.print("[bold cyan]Paste your content below. Press Ctrl+D (Unix) or Ctrl+Z (Windows) then Enter to finish.[/bold cyan]")
                 pasted_lines = []
                 try:
