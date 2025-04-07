@@ -118,10 +118,6 @@ def start_chat_shell(agent, continue_session=False):
         usage = response.get('usage')
         last_usage_info = usage
 
-        if content:
-            # Already printed during streaming, but save to history
-            messages.append({"role": "assistant", "content": content})
-
         # Save conversation and input history
         from .session_manager import save_conversation, save_input_history
         prompts = [h for h in mem_history.get_strings()]
