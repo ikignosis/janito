@@ -4,7 +4,7 @@
 - `aurora/__init__.py`: Defines the package version (`__version__`).
 - `aurora/__main__.py`: Minimal CLI entry point. Delegates to `aurora.cli.main.main()`.
 - `aurora/render_prompt.py`: Renders the system prompt template using Jinja2.
-- `aurora/chat.py`: Implements an interactive chat loop using `prompt_toolkit`. Multiline input via `/paste` command (Shift+Enter support removed).
+- `aurora/chat.py`: Implements an interactive chat loop using `prompt_toolkit`. The toolbar and startup message show key combinations: press `Esc+Enter` to submit messages, `Ctrl+D` (Unix) or `Ctrl+Z` (Windows) to exit. Multiline input is default; `/paste` command is deprecated.
 - `aurora/prompts/system_instructions.txt`: Alternative or plain text version of the system prompt instructions.
 
 ## CLI Package: `aurora.cli`
