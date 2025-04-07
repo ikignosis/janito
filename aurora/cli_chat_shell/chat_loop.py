@@ -1,4 +1,5 @@
 from rich.console import Console
+from rich.markdown import Markdown
 from prompt_toolkit.history import InMemoryHistory
 from .session_manager import load_last_summary, load_last_conversation, load_input_history
 from .ui import print_summary, print_welcome, get_toolbar_func, get_prompt_session
@@ -68,7 +69,7 @@ def start_chat_shell(agent, continue_session=False):
             break
 
         if user_input.strip().startswith('/'):
-            result = handle_command(user_input.strip(), console, agent, messages, mem_history)
+            result = handle_command(user_input.strip(), console, agent=agent, messages=messages, mem_history=mem_history)
             if result == 'exit':
                 break
             continue
