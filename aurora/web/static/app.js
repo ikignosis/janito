@@ -178,7 +178,8 @@ async function sendCommandStream(cmd) {
               container = document.createElement('div');
               container.id = `call-${callId}`;
               container.className = 'breadcrumb-container';
-              document.getElementById('terminal').appendChild(container);
+              const inputLine = document.getElementById('input-line');
+              document.getElementById('terminal').insertBefore(container, inputLine);
             }
             container.innerHTML += msg;
           } else if(data.type === 'error') {
