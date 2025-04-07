@@ -78,7 +78,7 @@ def chat_loop(agent, continue_session=False):
 
     def get_toolbar():
         toolbar = (
-            f'<b>/help</b> for help | '
+            f'<b>/help</b> for help | <b>Submit: Esc+Enter</b> | '
             f'Messages: <msg_count>{len(messages)}</msg_count>'
         )
         if last_usage_info:
