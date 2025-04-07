@@ -5,7 +5,7 @@ const inputLine = document.getElementById('input-line');
 const output = document.getElementById('output');
 
 // Initialize input line with prompt and blinking cursor
-inputLine.innerHTML = '$ <span class="cursor"></span>';
+inputLine.innerHTML = '<span class="cursor"></span>';
 
 let command = '';
 
