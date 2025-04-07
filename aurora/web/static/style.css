@@ -106,6 +106,16 @@ body {
 .markdown-content {
   white-space: normal;
 }
+.breadcrumb-tab {
+  display: inline-block;
+  background-color: #444;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: bold;
+  margin: 4px 0;
+}
+
 .tool-progress {
   color: #00BFFF;
   font-weight: bold;

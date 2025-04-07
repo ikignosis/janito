@@ -75,7 +75,11 @@ async function sendCommandStream(cmd) {
             console.debug('[WebClient] Tool progress event:', progress);
             let msg = `🔧 <b>[Tool ${progress.tool}]</b> <b>${progress.event.toUpperCase()}</b>`;
             if(progress.event === 'start') {
-              msg += `<br>Args: <code>${JSON.stringify(progress.args, null, 2)}</code>`;
+              if(progress.tool === 'view_file' && progress.args && progress.args.path) {
+                msg += `<div class="breadcrumb-tab">Viewing &gt; ${progress.args.path}</div>`;
+              } else {
+                msg += `<br>Args: <code>${JSON.stringify(progress.args, null, 2)}</code>`;
+              }
             } else if(progress.event === 'finish') {
               if(progress.error) {
                 msg += `<br>Error: <code>${progress.error}</code>`;
