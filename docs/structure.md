@@ -24,7 +24,7 @@
 - `aurora/agent/queued_tool_handler.py`: Tool handler subclass for streaming tool progress.
 
 ### Tools (`aurora/agent/tools/`)
-- `ask_user.py`: Tool to ask user questions.
+- `ask_user.py`: Tool to ask user questions. Uses a `prompt_toolkit` multiline input prompt with Esc+Enter submission, matching the chat interface style.
 - `bash_exec.py`: Run bash commands, live output.
 - `create_directory.py`: Create directories.
 - `create_file.py`: Create files.
