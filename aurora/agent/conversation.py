@@ -30,13 +30,24 @@ class ConversationHandler:
 
             choice = response.choices[0]
 
+            # Extract token usage info if available
+            usage = getattr(response, 'usage', None)
+            if usage:
+                usage_info = {
+                    'prompt_tokens': getattr(usage, 'prompt_tokens', None),
+                    'completion_tokens': getattr(usage, 'completion_tokens', None),
+                    'total_tokens': getattr(usage, 'total_tokens', None)
+                }
+            else:
+                usage_info = None
+
             # Call the on_content callback if provided and content is not None
             if on_content is not None and choice.message.content is not None:
                 on_content({"content": choice.message.content})
 
-            # If no tool calls, return the assistant's message
+            # If no tool calls, return the assistant's message and usage info
             if not choice.message.tool_calls:
-                return choice.message.content
+                return choice.message.content, usage_info
 
             tool_responses = []
             for tool_call in choice.message.tool_calls:

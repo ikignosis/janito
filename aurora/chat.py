@@ -15,6 +15,7 @@ from prompt_toolkit.history import InMemoryHistory
 def chat_loop(agent):
     console = Console()
     messages = []
+    last_usage_info = None
 
     # Add system prompt if available
     if agent.system_prompt:
@@ -60,12 +61,18 @@ def chat_loop(agent):
         pass
 
     def get_toolbar():
-        return HTML(
+        toolbar = (
             f'<b>/exit</b>, <b>/quit</b> to exit | '
             f'<b>/paste</b> multiline input | '
             f'<b>Shift+Enter</b> new line | '
             f'Messages: {len(messages)}'
         )
+        if last_usage_info:
+            prompt_tokens = last_usage_info.get('prompt_tokens')
+            completion_tokens = last_usage_info.get('completion_tokens')
+            total_tokens = last_usage_info.get('total_tokens')
+            toolbar += f" | Tokens: prompt={prompt_tokens}, completion={completion_tokens}, total={total_tokens}"
+        return HTML(toolbar)
 
     style = Style.from_dict({
         'bottom-toolbar': 'bg:#333333 #ffffff',
@@ -125,7 +132,8 @@ def chat_loop(agent):
                 console.print(Markdown(content))
 
             try:
-                agent.chat(messages, on_content=on_content)
+                content, usage_info = agent.chat(messages, on_content=on_content)
+                last_usage_info = usage_info
             except Exception as e:
                 console.print(f"[red]Error during chat: {e}[/red]")
                 continue
