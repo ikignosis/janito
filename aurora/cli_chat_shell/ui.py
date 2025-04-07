@@ -46,8 +46,7 @@ def get_toolbar_func(messages_ref, last_usage_info_ref, last_elapsed_ref, model_
         return str(n)
 
     def get_toolbar():
-        toolbar = (
-            (f'<model>{model_name}</model> | ' if model_name else '') +
+        left = (
             f'<b>/help</b> for help | <b>Submit: Esc+Enter</b> | '
             f'Messages: <msg_count>{len(messages_ref())}</msg_count>'
         )
@@ -60,14 +59,31 @@ def get_toolbar_func(messages_ref, last_usage_info_ref, last_elapsed_ref, model_
             speed = None
             if last_elapsed and last_elapsed > 0:
                 speed = total_tokens / last_elapsed
-            toolbar += (
+            left += (
                 f" | Tokens: In=<tokens_in>{format_tokens(prompt_tokens)}</tokens_in> / "
                 f"Out=<tokens_out>{format_tokens(completion_tokens)}</tokens_out> / "
                 f"Total=<tokens_total>{format_tokens(total_tokens)}</tokens_total>"
             )
             if speed is not None:
-                toolbar += f", speed=<speed>{speed:.1f}</speed> tokens/sec"
-        return HTML(toolbar)
+                left += f", speed=<speed>{speed:.1f}</speed> tokens/sec"
+
+        from prompt_toolkit.application import get_app
+
+        if model_name:
+            try:
+                width = get_app().output.get_size().columns
+            except Exception:
+                width = 80  # fallback default
+            total_len = len(left) + len(model_name) + 2  # spaces around model_name
+            if total_len < width:
+                padding = ' ' * (width - total_len)
+                toolbar_text = f"{left}{padding} | Model: {model_name} "
+            else:
+                toolbar_text = f"{left} | Model: {model_name} "
+        else:
+            toolbar_text = left
+
+        return HTML(toolbar_text)
 
     return get_toolbar
 
@@ -83,6 +99,7 @@ def get_prompt_session(get_toolbar_func, mem_history):
         'tokens_out': 'ansigreen bold',
         'tokens_total': 'ansiyellow bold',
         'speed': 'ansimagenta bold',
+'right': 'bg:#005f5f #ffffff',
     })
 
     session = PromptSession(
