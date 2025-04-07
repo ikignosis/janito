@@ -4,6 +4,9 @@ const terminal = document.getElementById('terminal');
 const inputLine = document.getElementById('input-line');
 const output = document.getElementById('output');
 
+// Initialize input line with prompt and blinking cursor
+inputLine.innerHTML = '$ <span class="cursor"></span>';
+
 let command = '';
 
 function appendToTerminal(text) {
@@ -29,13 +32,13 @@ document.addEventListener('keydown', function(event) {
   if (event.key === 'Backspace') {
     command = command.slice(0, -1);
   } else if (event.key === 'Enter') {
-    appendToTerminal('$ ' + command);
+    appendToTerminal(command);
     sendCommandStream(command);
     command = '';
   } else if (event.key.length === 1) {
     command += event.key;
   }
-  inputLine.textContent = '$ ' + command;
+  inputLine.innerHTML = command + '<span class="cursor"></span>';
 });
 
 async function sendCommandStream(cmd) {
