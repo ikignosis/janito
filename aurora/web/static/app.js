@@ -9,14 +9,27 @@ document.getElementById('input-container').innerHTML = '<span class="cursor"></s
 
 let command = '';
 
+function isScrolledToBottom(element) {
+  return element.scrollHeight - element.clientHeight <= element.scrollTop + 5;
+}
+
+function scrollToBottom(element) {
+  element.scrollTop = element.scrollHeight;
+}
+
 function appendToTerminal(text) {
+  const shouldScroll = isScrolledToBottom(terminal);
   const line = document.createElement('div');
   line.innerHTML = text;
   const inputLine = document.getElementById('input-line');
   terminal.insertBefore(line, inputLine);
+  if (shouldScroll) {
+    scrollToBottom(terminal);
+  }
 }
 
 function appendOutput(content, cssClass = '') {
+  const shouldScroll = isScrolledToBottom(terminal);
   let html = '';
   if (typeof content === 'string') {
     html = marked.parse(content);
@@ -28,6 +41,9 @@ function appendOutput(content, cssClass = '') {
   container.innerHTML = html;
   const inputLine = document.getElementById('input-line');
   terminal.insertBefore(container, inputLine);
+  if (shouldScroll) {
+    scrollToBottom(terminal);
+  }
 }
 
 document.addEventListener('keydown', function(event) {
