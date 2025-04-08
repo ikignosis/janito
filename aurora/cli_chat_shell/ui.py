@@ -32,7 +32,6 @@ def print_summary(console, data, continue_session):
 
 def print_welcome(console):
     console.print("[bold green]Entering chat mode. Type /exit to exit.[/bold green]")
-    console.print("[bold yellow]Press Enter to send message. In paste mode, press Esc+Enter.[/bold yellow]")
 
 
 def get_toolbar_func(messages_ref, last_usage_info_ref, last_elapsed_ref, model_name=None):
