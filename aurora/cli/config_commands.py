@@ -28,6 +28,12 @@ def handle_config_commands(args):
         print(f"Global config updated: {key.strip()} = {val.strip()}")
         did_something = True
 
+    if args.set_api_key:
+        local_config.set("api_key", args.set_api_key.strip())
+        local_config.save()
+        print("Local API key saved.")
+        did_something = True
+
     if args.show_config:
         from aurora.agent.config import effective_config
         keys = set(global_config.all().keys()) | set(local_config.all().keys())

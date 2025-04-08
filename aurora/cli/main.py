@@ -10,4 +10,8 @@ def main():
 
     handle_config_commands(args)
     setup_verbose_logging(args)
-    run_cli(args)
+    if getattr(args, 'web', False):
+        import subprocess
+        subprocess.run(['python', '-m', 'aurora.web'])
+    else:
+        run_cli(args)

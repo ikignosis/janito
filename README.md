@@ -70,6 +70,7 @@ If no prompt is provided, Aurora launches an **interactive chat shell** by defau
 - `/clear`: Clear the terminal screen.
 
 ### Command Line Options
+- `--web`: Launch the Aurora web server instead of the CLI interface.
 - `PROMPT` (positional): Prompt to send to the model. If omitted, starts interactive chat shell.
 - `-s`, `--system-prompt`: Override the system prompt.
 - `-r`, `--role`: Role description for the system prompt (default: "software engineer").

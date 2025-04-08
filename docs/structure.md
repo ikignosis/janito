@@ -36,6 +36,8 @@
 ## CLI Package: `aurora.cli`
 - `aurora/cli/__init__.py`: Marks the CLI module as a package.
 - `aurora/cli/arg_parser.py`: Defines `create_parser()` to build the CLI argument parser. The positional `prompt` argument is optional; if omitted, the CLI defaults to interactive chat mode.
+  - Supports `--set-api-key` to save the API key locally (stored in `.aurora/config.json`).
+  - Also supports `--set-local-config key=val`, `--set-global-config key=val`, and `--show-config`.
 - `aurora/cli/config_commands.py`: Defines `handle_config_commands(args)` to process config-related commands (`--set-*`, `--show-config`).
 - `aurora/cli/logging_setup.py`: Defines `setup_verbose_logging(args)` to configure verbose HTTP and wire-level logging.
 - `aurora/cli/runner.py`: Defines `run_cli(args)` containing the main CLI logic. If a prompt is provided, it sends a single prompt to the agent. If no prompt is provided, it enters interactive chat mode by default.

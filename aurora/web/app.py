@@ -1,11 +1,15 @@
-from flask import Flask, request, render_template, Response
+from flask import Flask, request, render_template, Response, send_from_directory
 from queue import Queue
 import json
 from aurora.agent.queued_tool_handler import QueuedToolHandler
 from aurora.agent.agent import Agent
 from aurora.agent.config import get_api_key
+from aurora.render_prompt import render_system_prompt
 import os
 import threading
+
+# Render system prompt once
+system_prompt = render_system_prompt("software engineer")
 
 app = Flask(
     __name__,
@@ -25,6 +29,15 @@ agent = Agent(
     tool_handler=queued_handler
 )
 
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(
+        os.path.join(app.root_path, 'static'),
+        'favicon.ico',
+        mimetype='image/vnd.microsoft.icon'
+    )
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -35,8 +48,12 @@ def execute_stream():
     user_input = data.get('input', '')
 
     def run_agent():
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_input}
+        ]
         agent.chat(
-            [{"role": "user", "content": user_input}],
+            messages,
             on_content=lambda data: stream_queue.put({"type": "content", "content": data.get("content")})
         )
         # Signal end of stream

@@ -127,4 +127,5 @@ def handle_command(command, console, **kwargs):
     handler = COMMAND_HANDLERS.get(cmd)
     if handler:
         return handler(console, *args, **kwargs)
+    console.print(f"[bold red]Invalid command: {cmd}. Type /help for a list of commands.[/bold red]")
     return None

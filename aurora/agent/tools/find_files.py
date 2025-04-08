@@ -13,6 +13,13 @@ def find_files(directory: str, pattern: str = "*") -> str:
     pattern: Glob pattern to match filenames (default: '*').
     """
     print_info(f"🔍 Searching for files in '{format_path(directory)}' matching pattern '{pattern}' ... ")
+
+    # Check if pattern is an exact relative path to a file
+    full_path = os.path.join(directory, pattern)
+    if os.path.isfile(full_path):
+        print_success("✅ Found 1 file (exact match)")
+        return full_path
+
     matches = []
     ignore_patterns = load_gitignore_patterns()
     try:

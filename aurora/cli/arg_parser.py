@@ -14,6 +14,8 @@ def create_parser():
     parser.add_argument("--set-local-config", type=str, default=None, help='Set a local config key-value pair, format "key=val"')
     parser.add_argument("--set-global-config", type=str, default=None, help='Set a global config key-value pair, format "key=val"')
     parser.add_argument("--show-config", action="store_true", help="Show effective configuration and exit")
+    parser.add_argument("--set-api-key", type=str, default=None, help="Set and save the API key locally")
     parser.add_argument("--version", action="store_true", help="Show program's version number and exit")
     parser.add_argument("--continue-session", action="store_true", help="Continue from the last saved conversation")
+    parser.add_argument("--web", action="store_true", help="Launch the Aurora web server instead of CLI")
     return parser
