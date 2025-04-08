@@ -101,6 +101,12 @@ async function sendCommandStream(cmd) {
                 switch(progress.tool) {
                   case 'view_file':
                     breadcrumb = `Viewing &gt; ${progress.args.path}`;
+                    const start = progress.args.start_line;
+                    const end = progress.args.end_line;
+                    if (start !== undefined || end !== undefined) {
+                      breadcrumb += ' &gt; ';
+                      breadcrumb += (start !== undefined ? start : '') + '-' + (end !== undefined ? end : '');
+                    }
                     break;
                   case 'create_file':
                     breadcrumb = `Creating file &gt; ${progress.args.path}`;
