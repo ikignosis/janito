@@ -16,23 +16,33 @@ document.addEventListener('DOMContentLoaded', function() {
       zIndex: '1000'
     });
     modal.innerHTML = `
-      <div style="background:#fff; margin:5% auto; padding:20px; max-width:80%; max-height:80%; overflow:auto;">
-        <button onclick="document.getElementById('content-modal').style.display='none'">Close</button>
-        <pre id="modal-content" style="white-space: pre-wrap;"></pre>
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="modal-title">File Content</span>
+          <button class="modal-close">&times;</button>
+        </div>
+        <pre id="modal-content-text" style="white-space: pre-wrap;"></pre>
       </div>`;
     document.body.appendChild(modal);
+
+    modal.querySelector('.modal-close').onclick = () => { modal.style.display = 'none'; };
+    document.addEventListener('keydown', function(event) {
+      if(event.key === 'Escape') {
+        modal.style.display = 'none';
+      }
+    });
   }
 
   window.contentStore = [];
 
 window.showContentPopup = function(index) {
   const content = window.contentStore[index];
-  document.getElementById('modal-content').textContent = content;
+  document.getElementById('modal-content-text').textContent = content;
   document.getElementById('content-modal').style.display = 'block';
 }
 
 window.showPopup = function(content) {
-    document.getElementById('modal-content').textContent = content;
+    document.getElementById('modal-content-text').textContent = content;
     document.getElementById('content-modal').style.display = 'block';
   }
 
