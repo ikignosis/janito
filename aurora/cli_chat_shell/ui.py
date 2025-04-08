@@ -32,7 +32,7 @@ def print_summary(console, data, continue_session):
 
 def print_welcome(console):
     console.print("[bold green]Entering chat mode. Type /exit to exit.[/bold green]")
-    console.print("[bold yellow]Press Esc+Enter to send your message.[/bold yellow]")
+    console.print("[bold yellow]Press Enter to send message. In paste mode, press Esc+Enter.[/bold yellow]")
 
 
 def get_toolbar_func(messages_ref, last_usage_info_ref, last_elapsed_ref, model_name=None):
@@ -47,7 +47,7 @@ def get_toolbar_func(messages_ref, last_usage_info_ref, last_elapsed_ref, model_
 
     def get_toolbar():
         left = (
-            f'<b>/help</b> for help | <b>Submit: Esc+Enter</b> | '
+            f'<b>/help</b> for help | <b>Submit: Enter (or Esc+Enter in paste mode)</b> | '
             f'Messages: <msg_count>{len(messages_ref())}</msg_count>'
         )
         usage = last_usage_info_ref()
@@ -103,7 +103,7 @@ def get_prompt_session(get_toolbar_func, mem_history):
     })
 
     session = PromptSession(
-        multiline=True,
+        multiline=False,
         key_bindings=KeyBindings(),
         editing_mode=EditingMode.EMACS,
         bottom_toolbar=get_toolbar_func,

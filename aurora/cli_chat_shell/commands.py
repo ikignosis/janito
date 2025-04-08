@@ -71,6 +71,7 @@ def handle_help(console, **kwargs):
   /reset    - Reset conversation history
   /system   - Show the system prompt
   /clear    - Clear the terminal screen
+  /paste    - Paste multiline input as next message
 """)
 
 
@@ -107,6 +108,11 @@ def handle_reset(console, state, **kwargs):
     console.print('[bold green]Conversation history has been reset.[/bold green]')
 
 
+def handle_paste(console, state, **kwargs):
+    console.print('[bold green]Paste mode activated. Enter your multiline input and submit when done.[/bold green]')
+    state['paste_mode'] = True
+
+
 COMMAND_HANDLERS = {
     "/history": handle_history,
     "/continue": handle_continue,
@@ -114,6 +120,7 @@ COMMAND_HANDLERS = {
     "/restart": handle_restart,
 
     "/help": handle_help,
+    "/paste": handle_paste,
     "/system": handle_system,
     "/clear": handle_clear,
     "/reset": handle_reset,

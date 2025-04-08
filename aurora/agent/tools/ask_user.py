@@ -29,7 +29,7 @@ def ask_user(question: str) -> str:
     })
 
     def get_toolbar():
-        return HTML('<b>Press Esc+Enter to submit your answer</b>')
+        return HTML('<b>Press Enter to submit. In paste mode, press Esc+Enter.</b>')
 
     session = PromptSession(
         multiline=True,

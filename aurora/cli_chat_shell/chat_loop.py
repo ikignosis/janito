@@ -72,7 +72,12 @@ def start_chat_shell(agent, continue_session=False):
     # Main chat loop
     while True:
         try:
-            user_input = session.prompt(prompt_icon)
+            if state.get('paste_mode'):
+                console.print('[bold cyan]Paste mode: Enter your multiline input. Submit when done.[/bold cyan]')
+                user_input = session.prompt('Paste> ', multiline=True)
+                state['paste_mode'] = False
+            else:
+                user_input = session.prompt(prompt_icon, multiline=False)
         except EOFError:
             console.print("\n[bold red]Exiting...[/bold red]")
             break
