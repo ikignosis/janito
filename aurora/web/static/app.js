@@ -230,6 +230,7 @@ if(args.path) {
   if(args.path.endsWith('.py')) lang = 'python';
   else if(args.path.endsWith('.sh') || args.path.endsWith('.bash')) lang = 'bash';
   else if(args.path.endsWith('.json')) lang = 'json';
+  else if(args.path.endsWith('.md') || args.path.endsWith('.markdown')) lang = 'markdown';
 }
 const index = window.contentStore.push(content) - 1;
 const link = `<a href="#" onclick="showContentPopup(${index}, '${lang}'); return false;">Show content</a>`;
