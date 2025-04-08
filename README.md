@@ -10,7 +10,7 @@ Aurora is a command-line and web-based AI agent designed to **edit code and mana
 - 🧠 **Context-Aware:** Understands your project structure for precise edits.
 - 💬 **Interactive User Prompts:** Asks for clarification when needed.
 - 🧩 **Extensible Tooling:** Built-in tools for file operations, shell commands, and more.
-- 🌐 **Web Interface:** Stream responses and tool progress via a simple web UI.
+- 🌐 **Web Interface (In Development):** Upcoming simple web UI for streaming responses and tool progress.
 
 ---
 
@@ -50,24 +50,27 @@ Run Aurora with a single prompt:
 python -m aurora "Refactor the data processing module to improve readability."
 ```
 
-### Default Interactive Chat Shell
-If no prompt is provided, Aurora launches an **interactive chat shell** by default.
+### Interactive Chat Shell (Default Mode)
+If no prompt is provided, Aurora launches an **interactive chat shell**.
 
-- Supports **multiline input** (end with a single `.` on a line or Ctrl+D/Z).
-- **Interrupt** agent requests with Ctrl+C.
-- Pressing Enter on an empty line sends a "continue" command.
-- **Session is saved automatically** after each message.
-- Restore last session on startup with `--continue-session` or inside the shell with `/continue`.
+- Supports **multiline input** (end with a single `.` on a line or Ctrl+D/Z)
+- **Interrupt** agent requests anytime with Ctrl+C
+- Pressing Enter on an empty line sends a "continue" command
+- **Session is saved automatically** after each message
+- Restore last session on startup with `--continue-session` or inside the shell with `/continue`
 
-#### Special Commands inside the Shell
-- `/exit`: Exit chat mode.
-- `/restart`: Restart the CLI.
-- `/paste`: Paste multiline input.
-- `/help`: Show help message.
-- `/system`: Show the current system prompt.
-- `/continue`: Restore the last saved conversation.
-- `/reset`: Reset conversation history.
-- `/clear`: Clear the terminal screen.
+#### Session Management
+Aurora automatically saves your conversation history and summaries. You can:
+- **Continue last session**: `/continue` or `--continue-session`
+- **Reset conversation**: `/reset`
+- **Restart the CLI**: `/restart`
+- **Exit chat**: `/exit`
+
+#### Other Shell Commands
+- `/paste`: Paste multiline input
+- `/help`: Show help message
+- `/system`: Show the current system prompt
+- `/clear`: Clear the terminal screen
 
 ### Command Line Options
 - `--web`: Launch the Aurora web server instead of the CLI interface.

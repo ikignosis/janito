@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 from prompt_toolkit.history import InMemoryHistory
 from aurora.render_prompt import render_system_prompt
 
@@ -15,7 +16,6 @@ def handle_restart(console, **kwargs):
 
 
 def handle_continue(console, state, **kwargs):
-    import json, os
     save_path = os.path.join('.aurora', 'last_conversation.json')
     if not os.path.exists(save_path):
         console.print('[bold red]No saved conversation found.[/bold red]')
@@ -114,8 +114,6 @@ def handle_reset(console, state, **kwargs):
 def handle_paste(console, state, **kwargs):
     console.print("[bold yellow]Paste mode activated. Paste your text and press Esc + Enter to submit.[/bold yellow]")
     state['paste_mode'] = True
-
-from aurora.render_prompt import render_system_prompt
 
 def handle_role(console, *args, **kwargs):
     state = kwargs.get('state')

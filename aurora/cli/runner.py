@@ -2,13 +2,11 @@ import sys
 import os
 from rich.console import Console
 from rich.markdown import Markdown
-from rich.markdown import Markdown
 from aurora.render_prompt import render_system_prompt
 from aurora.agent.agent import Agent
 from aurora.agent.conversation import MaxRoundsExceededError
 from aurora.agent.config import effective_config, get_api_key
 from aurora import __version__
-import json
 from rich.rule import Rule
 
 
