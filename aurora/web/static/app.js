@@ -57,6 +57,32 @@ document.addEventListener('keydown', function(event) {
     command += event.key;
   }
   document.getElementById('input-container').innerHTML = (command || '&nbsp;') + '<span class="cursor"></span>';
+
+// Create modal if it doesn't exist
+if (!document.getElementById('content-modal')) {
+  const modal = document.createElement('div');
+  modal.id = 'content-modal';
+  modal.style.display = 'none';
+  modal.style.position = 'fixed';
+  modal.style.top = '0';
+  modal.style.left = '0';
+  modal.style.width = '100%';
+  modal.style.height = '100%';
+  modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+  modal.style.zIndex = '1000';
+  modal.innerHTML = `
+    <div style="background:#fff; margin:5% auto; padding:20px; max-width:80%; max-height:80%; overflow:auto;">
+      <button onclick="document.getElementById('content-modal').style.display='none'">Close</button>
+      <pre id="modal-content" style="white-space: pre-wrap;"></pre>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+window.showPopup = function(content) {
+  document.getElementById('modal-content').textContent = content;
+  document.getElementById('content-modal').style.display = 'block';
+}
+
 });
 
 async function sendCommandStream(cmd) {
@@ -66,7 +92,33 @@ async function sendCommandStream(cmd) {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({ input: cmd })
-  });
+  
+// Create modal if it doesn't exist
+if (!document.getElementById('content-modal')) {
+  const modal = document.createElement('div');
+  modal.id = 'content-modal';
+  modal.style.display = 'none';
+  modal.style.position = 'fixed';
+  modal.style.top = '0';
+  modal.style.left = '0';
+  modal.style.width = '100%';
+  modal.style.height = '100%';
+  modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+  modal.style.zIndex = '1000';
+  modal.innerHTML = `
+    <div style="background:#fff; margin:5% auto; padding:20px; max-width:80%; max-height:80%; overflow:auto;">
+      <button onclick="document.getElementById('content-modal').style.display='none'">Close</button>
+      <pre id="modal-content" style="white-space: pre-wrap;"></pre>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+window.showPopup = function(content) {
+  document.getElementById('modal-content').textContent = content;
+  document.getElementById('content-modal').style.display = 'block';
+}
+
+});
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
@@ -75,7 +127,33 @@ async function sendCommandStream(cmd) {
   while(true) {
     const { done, value } = await reader.read();
     if(done) break;
-    buffer += decoder.decode(value, {stream:true});
+    buffer += decoder.decode(value, {stream:true
+// Create modal if it doesn't exist
+if (!document.getElementById('content-modal')) {
+  const modal = document.createElement('div');
+  modal.id = 'content-modal';
+  modal.style.display = 'none';
+  modal.style.position = 'fixed';
+  modal.style.top = '0';
+  modal.style.left = '0';
+  modal.style.width = '100%';
+  modal.style.height = '100%';
+  modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+  modal.style.zIndex = '1000';
+  modal.innerHTML = `
+    <div style="background:#fff; margin:5% auto; padding:20px; max-width:80%; max-height:80%; overflow:auto;">
+      <button onclick="document.getElementById('content-modal').style.display='none'">Close</button>
+      <pre id="modal-content" style="white-space: pre-wrap;"></pre>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+window.showPopup = function(content) {
+  document.getElementById('modal-content').textContent = content;
+  document.getElementById('content-modal').style.display = 'block';
+}
+
+});
 
     let parts = buffer.split('\n\n');
     buffer = parts.pop();
@@ -157,7 +235,9 @@ async function sendCommandStream(cmd) {
                     if (progress.result && typeof progress.result === 'string') {
                       lineCount = progress.result.split(/\r?\n/).length;
                     }
-                    breadcrumb = `Viewed ${lineCount} line${lineCount !== 1 ? 's' : ''}`;
+                    const safeContent = content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const link = `<a href="#" onclick="showPopup(\`${safeContent.replace(/`/g, '\\`')}\`); return false;">Show content</a>`;
+breadcrumb = `Viewed ${lineCount} line${lineCount !== 1 ? 's' : ''} (${link})`;
                     break;
                   case 'create_file':
                     breadcrumb = `Finished creating file &gt; ${progress.args.path}`;
@@ -207,7 +287,7 @@ async function sendCommandStream(cmd) {
               container.id = `call-${callId}`;
               container.className = 'breadcrumb-container';
               const inputLine = document.getElementById('input-line');
-              document.getElementById('terminal').insertBefore(container, inputLine);
+              document.getElementById('terminal').appendChild(container);
             }
             container.innerHTML += msg;
           } else if(data.type === 'error') {
@@ -219,6 +299,32 @@ async function sendCommandStream(cmd) {
       }
     }
   }
+}
+
+
+// Create modal if it doesn't exist
+if (!document.getElementById('content-modal')) {
+  const modal = document.createElement('div');
+  modal.id = 'content-modal';
+  modal.style.display = 'none';
+  modal.style.position = 'fixed';
+  modal.style.top = '0';
+  modal.style.left = '0';
+  modal.style.width = '100%';
+  modal.style.height = '100%';
+  modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+  modal.style.zIndex = '1000';
+  modal.innerHTML = `
+    <div style="background:#fff; margin:5% auto; padding:20px; max-width:80%; max-height:80%; overflow:auto;">
+      <button onclick="document.getElementById('content-modal').style.display='none'">Close</button>
+      <pre id="modal-content" style="white-space: pre-wrap;"></pre>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+window.showPopup = function(content) {
+  document.getElementById('modal-content').textContent = content;
+  document.getElementById('content-modal').style.display = 'block';
 }
 
 });
