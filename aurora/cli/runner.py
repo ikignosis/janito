@@ -9,7 +9,21 @@ from aurora.agent.conversation import MaxRoundsExceededError
 from aurora.agent.config import effective_config, get_api_key
 from aurora import __version__
 import json
+from rich.rule import Rule
 
+
+def format_tokens(n):
+    if n is None:
+        return "?"
+    try:
+        n = int(n)
+    except (TypeError, ValueError):
+        return str(n)
+    if n >= 1_000_000:
+        return f"{n/1_000_000:.1f}m"
+    if n >= 1_000:
+        return f"{n/1_000:.1f}k"
+    return str(n)
 
 
 def run_cli(args):
@@ -28,10 +42,8 @@ def run_cli(args):
         agent = Agent(api_key=api_key)
         print("Model:", agent.model)
         print("Parameters: {}")
-        import json as _json
+        import json
         print("System Prompt:", system_prompt or "(default system prompt not provided)")
-        print("Tool Definitions:")
-        print(_json.dumps(agent.tool_handler.tools, indent=2))
         sys.exit(0)
 
     api_key = get_api_key()
@@ -56,13 +68,7 @@ def run_cli(args):
                         prompt_tokens = last_usage_info.get('prompt_tokens', 0)
                         completion_tokens = last_usage_info.get('completion_tokens', 0)
                         total_tokens = prompt_tokens + completion_tokens
-                        def fmt(n):
-                            if n >= 1_000_000:
-                                return f"{n/1_000_000:.1f}m"
-                            if n >= 1_000:
-                                return f"{n/1_000:.1f}k"
-                            return str(n)
-                        console.print(f"Token usage - Prompt: {fmt(prompt_tokens)}, Completion: {fmt(completion_tokens)}, Total: {fmt(total_tokens)}")
+                        console.print(Rule(f"Token usage - Prompt: {format_tokens(prompt_tokens)}, Completion: {format_tokens(completion_tokens)}, Total: {format_tokens(total_tokens)}"))
 
                     console.print("You can resume it anytime by typing [bold]/continue[/bold].")
                 except Exception:
@@ -103,6 +109,13 @@ def run_cli(args):
             if args.verbose_response:
                 import json
                 console.print_json(json.dumps(response))
+
+            usage = response.get('usage')
+            if usage:
+                prompt_tokens = usage.get('prompt_tokens')
+                completion_tokens = usage.get('completion_tokens')
+                total_tokens = usage.get('total_tokens')
+                console.print(Rule(f"Token usage - Prompt: {format_tokens(prompt_tokens)}, Completion: {format_tokens(completion_tokens)}, Total: {format_tokens(total_tokens)}"))
         except MaxRoundsExceededError:
             print("[Error] Conversation exceeded maximum rounds.")
             sys.exit(1)

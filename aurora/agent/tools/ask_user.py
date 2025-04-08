@@ -13,7 +13,10 @@ def ask_user(question: str) -> str:
 
     question: The question to ask the user
     """
-    print(f"[ask_user] {question}")
+    from rich import print as rich_print
+    from rich.panel import Panel
+
+    rich_print(Panel.fit(question, title="Question", style="cyan"))
 
     bindings = KeyBindings()
 
@@ -29,7 +32,7 @@ def ask_user(question: str) -> str:
     })
 
     def get_toolbar():
-        return HTML('<b>Press Enter to submit. In paste mode, press Esc+Enter.</b>')
+        return HTML('<b>Press Esc+Enter to submit.</b>')
 
     session = PromptSession(
         multiline=True,

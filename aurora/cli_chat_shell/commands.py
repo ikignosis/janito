@@ -70,13 +70,16 @@ def handle_help(console, **kwargs):
   /continue - Restore last saved conversation
   /reset    - Reset conversation history
   /system   - Show the system prompt
+  /role     - Change the system role
   /clear    - Clear the terminal screen
   /paste    - Paste multiline input as next message
 """)
 
 
 def handle_system(console, **kwargs):
-    prompt = render_system_prompt("software engineer")
+    prompt = getattr(kwargs.get('agent'), 'system_prompt', None)
+    if not prompt:
+        prompt = render_system_prompt("software engineer")
     console.print(f"[bold magenta]System Prompt:[/bold magenta]\n{prompt}")
 
 
@@ -109,8 +112,37 @@ def handle_reset(console, state, **kwargs):
 
 
 def handle_paste(console, state, **kwargs):
-    console.print('')
+    console.print("[bold yellow]Paste mode activated. Paste your text and press Esc + Enter to submit.[/bold yellow]")
     state['paste_mode'] = True
+
+from aurora.render_prompt import render_system_prompt
+
+def handle_role(console, *args, **kwargs):
+    state = kwargs.get('state')
+    agent = kwargs.get('agent')
+    if not args:
+        console.print('[bold red]Usage: /role <new role description>[/bold red]')
+        return
+    new_role = ' '.join(args)
+    # Update system message in conversation
+    found = False
+    for msg in state['messages']:
+        if msg.get('role') == 'system':
+            msg['content'] = render_system_prompt(new_role)
+            found = True
+            break
+    if not found:
+        # Insert new system message at the beginning
+        state['messages'].insert(0, {'role': 'system', 'content': new_role})
+    # Update agent's system prompt attribute if exists
+    if hasattr(agent, 'system_prompt'):
+        agent.system_prompt = render_system_prompt(new_role)
+    # Also store the raw role string
+    if hasattr(agent, 'role_name'):
+        agent.role_name = new_role
+    else:
+        setattr(agent, 'role_name', new_role)
+    console.print(f"[bold green]System role updated to:[/bold green] {new_role}")
 
 
 COMMAND_HANDLERS = {
@@ -122,6 +154,7 @@ COMMAND_HANDLERS = {
     "/help": handle_help,
     "/paste": handle_paste,
     "/system": handle_system,
+    "/role": handle_role,
     "/clear": handle_clear,
     "/reset": handle_reset,
 }

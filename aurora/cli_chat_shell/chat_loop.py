@@ -63,7 +63,10 @@ def start_chat_shell(agent, continue_session=False):
     model_name = getattr(agent, 'model', None)
 
     session = get_prompt_session(
-        get_toolbar_func(get_messages, get_usage, get_elapsed, model_name=model_name),
+        get_toolbar_func(
+            get_messages, get_usage, get_elapsed, model_name=model_name,
+            role_ref=lambda: __import__('aurora.agent.config').agent.config.effective_config.get('role', 'software engineer')
+        ),
         mem_history
     )
 
@@ -75,9 +78,12 @@ def start_chat_shell(agent, continue_session=False):
             if state.get('paste_mode'):
                 console.print('')
                 user_input = session.prompt('Paste> ', multiline=True)
+                was_paste_mode = True
                 state['paste_mode'] = False
             else:
-                user_input = session.prompt(prompt_icon, multiline=False)
+                from prompt_toolkit.formatted_text import HTML
+                user_input = session.prompt(HTML('<prompt>💬 </prompt>'), multiline=False)
+                was_paste_mode = False
         except EOFError:
             console.print("\n[bold red]Exiting...[/bold red]")
             break
@@ -90,7 +96,7 @@ def start_chat_shell(agent, continue_session=False):
             else:
                 continue
 
-        if user_input.strip().startswith('/'):
+        if not was_paste_mode and user_input.strip().startswith('/'):
             result = handle_command(user_input.strip(), console, agent=agent, messages=messages, mem_history=mem_history, state=state)
             if result == 'exit':
                 break

@@ -34,7 +34,7 @@ def print_welcome(console):
     console.print("[bold green]Entering chat mode. Type /exit to exit.[/bold green]")
 
 
-def get_toolbar_func(messages_ref, last_usage_info_ref, last_elapsed_ref, model_name=None):
+def get_toolbar_func(messages_ref, last_usage_info_ref, last_elapsed_ref, model_name=None, role_ref=None):
     def format_tokens(n):
         if n is None:
             return "?"
@@ -45,10 +45,7 @@ def get_toolbar_func(messages_ref, last_usage_info_ref, last_elapsed_ref, model_
         return str(n)
 
     def get_toolbar():
-        left = (
-            f'<b>/help</b> for help | '
-            f'Messages: <msg_count>{len(messages_ref())}</msg_count>'
-        )
+        left = f'Messages: <msg_count>{len(messages_ref())}</msg_count>'
         usage = last_usage_info_ref()
         last_elapsed = last_elapsed_ref()
         if usage:
@@ -68,19 +65,42 @@ def get_toolbar_func(messages_ref, last_usage_info_ref, last_elapsed_ref, model_
 
         from prompt_toolkit.application import get_app
 
-        if model_name:
-            try:
-                width = get_app().output.get_size().columns
-            except Exception:
-                width = 80  # fallback default
-            total_len = len(left) + len(model_name) + 2  # spaces around model_name
-            if total_len < width:
-                padding = ' ' * (width - total_len)
-                toolbar_text = f"{left}{padding} | Model: <model>{model_name}</model> "
-            else:
-                toolbar_text = f"{left} | Model: <model>{model_name}</model> "
+        # Compose first line with Model and Role
+        try:
+            width = get_app().output.get_size().columns
+        except Exception:
+            width = 80  # fallback default
+
+        model_part = f"Model: <model>{model_name}</model>" if model_name else ""
+        role_part = ""
+        if role_ref:
+            role = role_ref()
+            if role:
+                role_part = f"Role: <b>{role}</b>"
+
+        first_line_parts = []
+        if model_part:
+            first_line_parts.append(model_part)
+        if role_part:
+            first_line_parts.append(role_part)
+        first_line = " | ".join(first_line_parts)
+
+        help_part = "<b>/help</b> for help"
+
+        total_len = len(left) + len(help_part) + 3  # separators and spaces
+        if first_line:
+            total_len += len(first_line) + 3
+
+        if total_len < width:
+            padding = ' ' * (width - total_len)
+            second_line = f"{left}{padding} | {help_part}"
         else:
-            toolbar_text = left
+            second_line = f"{left} | {help_part}"
+
+        if first_line:
+            toolbar_text = first_line + "\n" + second_line
+        else:
+            toolbar_text = second_line
 
         return HTML(toolbar_text)
 
@@ -91,7 +111,7 @@ def get_prompt_session(get_toolbar_func, mem_history):
     style = Style.from_dict({
         'bottom-toolbar': 'bg:#333333 #ffffff',
         'b': 'bold',
-        'prompt': 'ansicyan bold',
+        'prompt': 'bold bg:#000080 #ffffff',
         'model': 'bold bg:#005f5f #ffffff',  # distinct background/foreground
         'msg_count': 'bg:#333333 #ffff00 bold',
         'tokens_in': 'ansicyan bold',
@@ -99,6 +119,8 @@ def get_prompt_session(get_toolbar_func, mem_history):
         'tokens_total': 'ansiyellow bold',
         'speed': 'ansimagenta bold',
 'right': 'bg:#005f5f #ffffff',
+        'input': 'bg:#000080 #ffffff',
+'': 'bg:#000080 #ffffff',
     })
 
     session = PromptSession(
