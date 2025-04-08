@@ -22,7 +22,7 @@ function appendToTerminal(text) {
   const line = document.createElement('div');
   line.innerHTML = text;
   const inputLine = document.getElementById('input-line');
-  terminal.insertBefore(line, inputLine);
+  terminal.appendChild(line);
   if (shouldScroll) {
     scrollToBottom(terminal);
   }
@@ -40,7 +40,7 @@ function appendOutput(content, cssClass = '') {
   container.className = 'markdown-content ' + cssClass;
   container.innerHTML = html;
   const inputLine = document.getElementById('input-line');
-  terminal.insertBefore(container, inputLine);
+  terminal.appendChild(container);
   if (shouldScroll) {
     scrollToBottom(terminal);
   }
