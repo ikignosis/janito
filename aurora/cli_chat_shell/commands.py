@@ -109,7 +109,7 @@ def handle_reset(console, state, **kwargs):
 
 
 def handle_paste(console, state, **kwargs):
-    console.print('[bold green]Paste mode activated. Enter your multiline input and submit when done.[/bold green]')
+    console.print('')
     state['paste_mode'] = True
 
 

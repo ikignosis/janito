@@ -73,7 +73,7 @@ def start_chat_shell(agent, continue_session=False):
     while True:
         try:
             if state.get('paste_mode'):
-                console.print('[bold cyan]Paste mode: Enter your multiline input. Submit when done.[/bold cyan]')
+                console.print('')
                 user_input = session.prompt('Paste> ', multiline=True)
                 state['paste_mode'] = False
             else:

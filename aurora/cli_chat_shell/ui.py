@@ -47,7 +47,7 @@ def get_toolbar_func(messages_ref, last_usage_info_ref, last_elapsed_ref, model_
 
     def get_toolbar():
         left = (
-            f'<b>/help</b> for help | <b>Submit: Enter (or Esc+Enter in paste mode)</b> | '
+            f'<b>/help</b> for help | '
             f'Messages: <msg_count>{len(messages_ref())}</msg_count>'
         )
         usage = last_usage_info_ref()
