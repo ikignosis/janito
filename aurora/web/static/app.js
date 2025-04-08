@@ -202,7 +202,8 @@ document.addEventListener('DOMContentLoaded', function() {
             lineCount = content.split(/\r?\n/).length;
           }
           const safeContent = content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-          const link = `<a href="#" onclick="showPopup(\`${safeContent.replace(/`/g, '\\`')}\`); return false;">Show content</a>`;
+          const escapedContent = safeContent.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${}');
+const link = `<a href="#" onclick="showPopup(\`${escapedContent}\`); return false;">Show content</a>`;
           breadcrumb = `Viewed ${lineCount} line${lineCount !== 1 ? 's' : ''} (${link})`;
           break;
         case 'create_file':
