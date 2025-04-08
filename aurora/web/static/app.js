@@ -35,9 +35,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
   window.contentStore = [];
 
-window.showContentPopup = function(index) {
+window.showContentPopup = function(index, language) {
   const content = window.contentStore[index];
-  document.getElementById('modal-content-text').textContent = content;
+  const pre = document.getElementById('modal-content-text');
+  pre.innerHTML = `<code class="language-${language || ''}"></code>`;
+  const codeEl = pre.querySelector('code');
+  codeEl.textContent = content;
+  Prism.highlightElement(codeEl);
   document.getElementById('content-modal').style.display = 'block';
 }
 
@@ -221,8 +225,14 @@ window.showPopup = function(content) {
           }
           const safeContent = content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
           const escapedContent = safeContent.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${}');
+let lang = '';
+if(args.path) {
+  if(args.path.endsWith('.py')) lang = 'python';
+  else if(args.path.endsWith('.sh') || args.path.endsWith('.bash')) lang = 'bash';
+  else if(args.path.endsWith('.json')) lang = 'json';
+}
 const index = window.contentStore.push(content) - 1;
-const link = `<a href="#" onclick="showContentPopup(${index}); return false;">Show content</a>`;
+const link = `<a href="#" onclick="showContentPopup(${index}, '${lang}'); return false;">Show content</a>`;
           breadcrumb = `Viewed ${lineCount} line${lineCount !== 1 ? 's' : ''} (${link})`;
           break;
         case 'create_file':
