@@ -5,7 +5,7 @@ const inputLine = document.getElementById('input-line');
 const output = document.getElementById('output');
 
 // Initialize input line with prompt and blinking cursor
-document.getElementById('input-container').innerHTML = '<span class="cursor"></span>';
+document.getElementById('input-container').innerHTML = '&nbsp;<span class="cursor"></span>';
 
 let command = '';
 
@@ -56,7 +56,7 @@ document.addEventListener('keydown', function(event) {
   } else if (event.key.length === 1) {
     command += event.key;
   }
-  document.getElementById('input-container').innerHTML = command + '<span class="cursor"></span>';
+  document.getElementById('input-container').innerHTML = (command || '&nbsp;') + '<span class="cursor"></span>';
 });
 
 async function sendCommandStream(cmd) {
