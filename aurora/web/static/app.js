@@ -23,7 +23,15 @@ document.addEventListener('DOMContentLoaded', function() {
     document.body.appendChild(modal);
   }
 
-  window.showPopup = function(content) {
+  window.contentStore = [];
+
+window.showContentPopup = function(index) {
+  const content = window.contentStore[index];
+  document.getElementById('modal-content').textContent = content;
+  document.getElementById('content-modal').style.display = 'block';
+}
+
+window.showPopup = function(content) {
     document.getElementById('modal-content').textContent = content;
     document.getElementById('content-modal').style.display = 'block';
   }
@@ -203,7 +211,8 @@ document.addEventListener('DOMContentLoaded', function() {
           }
           const safeContent = content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
           const escapedContent = safeContent.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${}');
-const link = `<a href="#" onclick="showPopup(\`${escapedContent}\`); return false;">Show content</a>`;
+const index = window.contentStore.push(content) - 1;
+const link = `<a href="#" onclick="showContentPopup(${index}); return false;">Show content</a>`;
           breadcrumb = `Viewed ${lineCount} line${lineCount !== 1 ? 's' : ''} (${link})`;
           break;
         case 'create_file':
