@@ -1,5 +1,31 @@
 document.addEventListener('DOMContentLoaded', function() {
 
+// Create modal if it doesn't exist
+if (!document.getElementById('content-modal')) {
+  const modal = document.createElement('div');
+  modal.id = 'content-modal';
+  modal.style.display = 'none';
+  modal.style.position = 'fixed';
+  modal.style.top = '0';
+  modal.style.left = '0';
+  modal.style.width = '100%';
+  modal.style.height = '100%';
+  modal.style.backgroundColor = 'rgba(0,0,0,0.5)';
+  modal.style.zIndex = '1000';
+  modal.innerHTML = `
+    <div style=\"background:#fff; margin:5% auto; padding:20px; max-width:80%; max-height:80%; overflow:auto;\">
+      <button onclick=\"document.getElementById('content-modal').style.display='none'\">Close</button>
+      <pre id=\"modal-content\" style=\"white-space: pre-wrap;\"></pre>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+window.showPopup = function(content) {
+  document.getElementById('modal-content').textContent = content;
+  document.getElementById('content-modal').style.display = 'block';
+}
+
+
 const terminal = document.getElementById('terminal');
 const inputLine = document.getElementById('input-line');
 const output = document.getElementById('output');
