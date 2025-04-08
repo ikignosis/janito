@@ -153,7 +153,15 @@ async function sendCommandStream(cmd) {
                 let breadcrumb = '';
                 switch(progress.tool) {
                   case 'view_file':
-                    breadcrumb = `Finished viewing &gt; ${progress.args.path}`;
+                    const start = progress.args.start_line;
+                    const end = progress.args.end_line;
+                    let lineCount;
+                    if (start !== undefined && end !== undefined) {
+                      lineCount = end - start + 1;
+                    } else {
+                      lineCount = 1;
+                    }
+                    breadcrumb = `Viewed ${lineCount} line${lineCount !== 1 ? 's' : ''}`;
                     break;
                   case 'create_file':
                     breadcrumb = `Finished creating file &gt; ${progress.args.path}`;
