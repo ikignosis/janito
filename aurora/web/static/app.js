@@ -85,7 +85,7 @@ async function sendCommandStream(cmd) {
         const jsonStr = part.slice(6).trim();
         try {
           const data = JSON.parse(jsonStr);
-          console.log('[WebClient] SSE event received:', data);
+          
           if(data.type === 'content' && data.content) {
             appendOutput(data.content);
           } else if(data.type === 'tool_progress') {
