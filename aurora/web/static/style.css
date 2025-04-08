@@ -22,6 +22,10 @@ body {
 }
 
 .terminal-window {
+  display: flex;
+  flex-direction: column;
+  height: 80vh; /* or desired height */
+}
   background: rgba(30, 30, 30, 0.85);
   backdrop-filter: blur(10px);
   border-radius: 10px;
@@ -50,7 +54,7 @@ body {
 .window-header .zoom { background: #27c93f; }
 
 .terminal {
-  max-height: 70vh;
+  flex: 1;
   overflow-y: auto;
   padding: 20px;
   color: #33FF33;
@@ -120,6 +124,16 @@ body {
 .markdown-content {
   white-space: normal;
 }
+.input-footer {
+  background: rgba(30, 30, 30, 0.85);
+  padding: 10px;
+  border-top: 1px solid #444;
+}
+
+#input-line {
+  display: block;
+}
+
 .breadcrumb-container {
   display: flex;
   flex-wrap: wrap;
