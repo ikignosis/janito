@@ -103,6 +103,7 @@ def run_cli(args):
             response = agent.chat(
                 messages,
                 on_content=on_content,
+                spinner=True,
             )
             if args.verbose_response:
                 import json
