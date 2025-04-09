@@ -1,3 +1,4 @@
+/* Welcome box */
 .welcome-box {
   color: #33FF33;
   text-shadow:
@@ -5,19 +6,12 @@
     0 0 10px #33FF33,
     0 0 20px #33FF33,
     0 0 40px #00FFFF;
-  border: 2px solid #33FF33;
-  box-shadow:
-    0 0 10px #33FF33,
-    0 0 20px #00FFFF,
-    0 0 30px #33FF33;
-
   background: rgba(255, 255, 255, 0.1);
   padding: 15px;
   border-radius: 12px;
   border: 1px solid rgba(255,255,255,0.2);
   margin-bottom: 20px;
   font-weight: bold;
-  color: #33FF33;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
@@ -36,8 +30,7 @@ body {
 .terminal-window {
   display: flex;
   flex-direction: column;
-  height: 80vh; /* or desired height */
-}
+  height: 80vh;
   background: rgba(30, 30, 30, 0.85);
   backdrop-filter: blur(10px);
   border-radius: 10px;
@@ -74,9 +67,6 @@ body {
   white-space: pre-wrap;
 }
 
-
-  white-space: pre-wrap;
-}
 .terminal .user-input {
   display: inline-block;
   color: #33FF33;
@@ -92,15 +82,8 @@ body {
 }
 
 #input-text {
-  color: #00ff00; /* bright green */
-  border: 2px solid magenta;
-  padding: 2px 4px;
-  border-radius: 4px;
-}
-
-#input-text {
   color: #33FF33;
-  border: 2px solid #33FF33;
+  border: 2px solid magenta;
   box-shadow: 0 0 10px #33FF33, 0 0 15px #33FF33;
   animation: pulseGreenGlow 2s infinite ease-in-out;
   padding: 2px 4px;
@@ -119,10 +102,6 @@ body {
 }
 
 #terminal-input {
-  background: #33FF33;
-  border-radius: 6px;
-  box-shadow: 0 0 10px #33FF33, 0 0 15px #33FF33;
-
   background: transparent;
   border: none;
   color: #33FF33;
@@ -137,7 +116,6 @@ body {
 }
 
 .cursor {
-  vertical-align: middle;
   vertical-align: bottom;
   display: inline-block;
   width: 8px;
@@ -156,100 +134,11 @@ body {
   }
 }
 
-/* Modal content styling */
-#content-modal .modal-content {
-  background: #2d2d2d;
-  color: #ccc;
-  margin: 5% auto;
-  padding: 20px;
-  border-radius: 8px;
-  width: 80%;
-  max-height: 80%;
-  overflow-y: auto;
-}
-
-/* Header inside modal */
-#content-modal .modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-/* Close button */
-#content-modal .modal-close {
-  background: none;
-  border: none;
-  font-size: 24px;
-  color: #ccc;
-  cursor: pointer;
-}
-
-/* Line number styling */
-.line {
-  display: block;
-  white-space: pre;
-}
-
-.line-number {
-  display: inline-block;
-  width: 3em;
-  text-align: right;
-  margin-right: 1em;
-  color: #888;
-  user-select: none;
-}
-
-/* Green glow animation removed */
-
 @keyframes blink {
   50% { background: rgba(30,30,30,0.8); }
 }
-.markdown-content {
-  white-space: normal;
-}
-.input-footer {
-  background: rgba(30, 30, 30, 0.85);
-  padding: 10px;
-  border-top: 1px solid #444;
-}
 
-/* Consolidated with the main #input-line rule above */
-
-.breadcrumb-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 4px 0;
-}
-
-.breadcrumb-tab {
-  display: inline-block;
-  background-color: #444;
-  color: #fff;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-weight: bold;
-  margin: 4px 0;
-}
-
-.tool-progress {
-  color: #00BFFF;
-  font-weight: bold;
-  white-space: pre-wrap;
-}
-
-/* Link styles */
-.terminal a, .markdown-content a {
-  color: #00ffff;
-  text-decoration: none;
-}
-.terminal a:hover, .markdown-content a:hover {
-  color: #33ffcc;
-  text-decoration: underline;
-}
-
-/* Modal styles */
+/* Modal content styling */
 #content-modal {
   display: none;
 }
@@ -301,4 +190,61 @@ body {
   color: #eee;
   border-bottom-left-radius: 8px;
   border-bottom-right-radius: 8px;
+}
+
+/* Line number styling */
+.line {
+  display: block;
+  white-space: pre;
+}
+
+.line-number {
+  display: inline-block;
+  width: 3em;
+  text-align: right;
+  margin-right: 1em;
+  color: #888;
+  user-select: none;
+}
+
+.markdown-content {
+  white-space: normal;
+}
+
+.input-footer {
+  background: rgba(30, 30, 30, 0.85);
+  padding: 10px;
+  border-top: 1px solid #444;
+}
+
+.breadcrumb-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0;
+}
+
+.breadcrumb-tab {
+  display: inline-block;
+  background-color: #444;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: bold;
+  margin: 4px 0;
+}
+
+.tool-progress {
+  color: #00BFFF;
+  font-weight: bold;
+  white-space: pre-wrap;
+}
+
+.terminal a, .markdown-content a {
+  color: #00ffff;
+  text-decoration: none;
+}
+.terminal a:hover, .markdown-content a:hover {
+  color: #33ffcc;
+  text-decoration: underline;
 }
