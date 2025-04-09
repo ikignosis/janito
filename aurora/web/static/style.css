@@ -91,6 +91,10 @@ body {
   border-radius: 4px;
 }
 
+.input-active {
+  color: #00ff00; /* bright green */
+}
+
 #input-container {
   color: #33FF33;
   border: 2px solid #33FF33;
