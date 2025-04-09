@@ -30,10 +30,36 @@ class Agent:
         )
 
     def chat(self, messages, on_content=None, on_tool_progress=None, verbose_response=False, spinner=False):
-        return self.conversation_handler.handle_conversation(
-            messages,
-            on_content=on_content,
-            on_tool_progress=on_tool_progress,
-            verbose_response=verbose_response,
-            spinner=spinner
-        )
+        import time
+        from aurora.agent.conversation import ProviderError
+
+        max_retries = 5
+        for attempt in range(1, max_retries + 1):
+            try:
+                return self.conversation_handler.handle_conversation(
+                    messages,
+                    on_content=on_content,
+                    on_tool_progress=on_tool_progress,
+                    verbose_response=verbose_response,
+                    spinner=spinner
+                )
+            except ProviderError as e:
+                error_data = getattr(e, 'error_data', {}) or {}
+                code = error_data.get('code', '')
+                # Retry only on 5xx errors
+                if isinstance(code, int) and 500 <= code < 600:
+                    pass
+                elif isinstance(code, str) and code.isdigit() and 500 <= int(code) < 600:
+                    code = int(code)
+                else:
+                    raise
+
+                if attempt < max_retries:
+                    print(f"ProviderError with 5xx code encountered (attempt {attempt}/{max_retries}). Retrying in 5 seconds...")
+                    time.sleep(5)
+                else:
+                    print("Max retries reached. Raising error.")
+                    raise
+            except Exception:
+                raise
+

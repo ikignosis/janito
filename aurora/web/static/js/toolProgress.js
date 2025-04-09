@@ -35,32 +35,29 @@ export function formatBreadcrumb(progress, isStart) {
   if(isStart) {
     switch(progress.tool) {
       case "view_file":
-        breadcrumb = `Viewing &gt; ${args.path}`;
+        const path = args.path || "";
         const start = args.start_line;
         const end = args.end_line;
-        if (start !== undefined || end !== undefined) {
-          breadcrumb += " &gt; ";
-          breadcrumb += (start !== undefined ? start : "") + "-" + (end !== undefined ? end : "");
-        }
+        breadcrumb = `Viewing ${path} (${start !== undefined ? start : ""}-${end !== undefined ? end : ""})`;
         break;
       case "create_file":
-        breadcrumb = `Creating file &gt; ${args.path}`; break;
+        breadcrumb = `Creating ${args.path}`; break;
       case "create_directory":
-        breadcrumb = `Creating directory &gt; ${args.path}`; break;
+        breadcrumb = `Creating directory ${args.path}`; break;
       case "move_file":
-        breadcrumb = `Moving &gt; ${args.source_path} &rarr; ${args.destination_path}`; break;
+        breadcrumb = `Moving ${args.source_path} → ${args.destination_path}`; break;
       case "remove_file":
-        breadcrumb = `Removing &gt; ${args.path}`; break;
+        breadcrumb = `Removing ${args.path}`; break;
       case "file_str_replace":
-        breadcrumb = `Replacing in &gt; ${args.path}`; break;
+        breadcrumb = `Replacing in ${args.path}`; break;
       case "find_files":
-        breadcrumb = `Searching in &gt; ${args.directory}`; break;
+        breadcrumb = `Searching in ${args.directory}`; break;
       case "search_text":
-        breadcrumb = `Searching text in &gt; ${args.directory}`; break;
+        breadcrumb = `Searching in ${args.directory}`; break;
       case "bash_exec":
         breadcrumb = "Running command"; break;
       case "fetch_url":
-        breadcrumb = `Fetching URL &gt; ${args.url}`; break;
+        breadcrumb = `Fetching ${args.url}`; break;
       case "ask_user":
         breadcrumb = "User input"; break;
       default:
@@ -72,8 +69,10 @@ export function formatBreadcrumb(progress, isStart) {
         let lineCount = 0;
         let content = "";
         if (progress.result && typeof progress.result === "string") {
-          content = progress.result;
-          lineCount = content.split(/\r?\n/).length;
+          content = progress.result.split(/\r?\n/).map(line => line.replace(/^\s*\d+:\s*/, "")).join("\n");
+          const newlineCount = (content.match(/\n/g) || []).length;
+          const endsWithNewline = content.endsWith('\n');
+          lineCount = endsWithNewline ? newlineCount : newlineCount + 1;
         }
         const safeContent = content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
         const escapedContent = safeContent.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${}");
@@ -86,7 +85,7 @@ if(args.path) {
 }
 const index = window.contentStore.push(content) - 1;
 const link = `<a href="#" onclick="showContentPopup(${index}, '${lang}'); return false;">${lineCount} line${lineCount !== 1 ? "s" : ""}</a>`;
-        breadcrumb = `Viewing ${link}`;
+        breadcrumb = `${lineCount} line${lineCount !== 1 ? "s" : ""} (${link})`;
         break;
       case "create_file":
         breadcrumb = `Finished creating file &gt; ${args.path}`; break;

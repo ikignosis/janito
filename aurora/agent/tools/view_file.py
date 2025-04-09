@@ -29,6 +29,6 @@ def view_file(path: str, start_line: int = 1, end_line: int = None) -> str:
         end_idx = end_line
 
         selected_lines = lines[start_idx:end_idx]
-        content = ''.join(selected_lines)
+        content = '\n'.join(f"{i + start_line}: {line.rstrip()}" for i, line in enumerate(selected_lines))
         print_success(f"✅ Returned lines {format_number(start_line)} to {format_number(end_line)} of {format_number(total_lines)}")
         return content

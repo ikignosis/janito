@@ -38,8 +38,15 @@ export function showContentPopup(index, language) {
 
   const lines = content.split('\n');
   const numberedHtml = lines.map((line, idx) => {
-    const lineNumber = idx + 1;
-    return `<span class="line"><span class="line-number">${lineNumber}</span> ${line}</span>`;
+    const match = line.match(/^\s*(\d+):\s*(.*)$/);
+    if(match) {
+      const originalLineNumber = match[1];
+      const contentPart = match[2];
+      return `<span class="line"><span class="line-number">${originalLineNumber}</span> ${contentPart}</span>`;
+    } else {
+      const lineNumber = idx + 1;
+      return `<span class="line"><span class="line-number">${lineNumber}</span> ${line}</span>`;
+    }
   }).join('\n');
 
   codeEl.innerHTML = numberedHtml;
