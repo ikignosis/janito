@@ -35,7 +35,7 @@ export function setupTerminal(onCommandSubmit) {
 
   const inputContainer = document.getElementById("input-container");
   function updateInputDisplay() {
-    inputContainer.innerHTML = '<span class="input-active">' + (command || "&nbsp;") + '</span><span class="cursor"></span>';
+    inputContainer.innerHTML = (command || "&nbsp;") + '<span class="cursor"></span>';
   }
   updateInputDisplay();
 
