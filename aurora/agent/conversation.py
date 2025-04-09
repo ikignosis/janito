@@ -17,19 +17,35 @@ class ConversationHandler:
         self.model = model
         self.tool_handler = tool_handler
 
-    def handle_conversation(self, messages, max_rounds=50, on_content=None, on_tool_progress=None, verbose_response=False):
+    def handle_conversation(self, messages, max_rounds=50, on_content=None, on_tool_progress=None, verbose_response=False, spinner=False):
         if not messages:
             raise ValueError("No prompt provided in messages")
 
+        from rich.console import Console
+        console = Console()
+
         for _ in range(max_rounds):
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                tools=self.tool_handler.get_tool_schemas(),
-                tool_choice="auto",
-                temperature=0,
-                max_tokens=200000
-            )
+            if spinner:
+                with console.status("[bold green]Waiting for AI response...", spinner="dots") as status:
+                    response = self.client.chat.completions.create(
+                        model=self.model,
+                        messages=messages,
+                        tools=self.tool_handler.get_tool_schemas(),
+                        tool_choice="auto",
+                        temperature=0,
+                        max_tokens=200000
+                    )
+                    status.stop()
+                    # console.print("\r\033[2K", end="")  # Clear the spinner line removed
+            else:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    tools=self.tool_handler.get_tool_schemas(),
+                    tool_choice="auto",
+                    temperature=0,
+                    max_tokens=200000
+                )
 
             if verbose_response:
                 import pprint
