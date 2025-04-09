@@ -82,7 +82,7 @@ body {
 }
 
 #input-text {
-  color: #33FF33;
+  color: white;
   border: 2px solid magenta;
   box-shadow: 0 0 10px #33FF33, 0 0 15px #33FF33;
   animation: pulseGreenGlow 2s infinite ease-in-out;
