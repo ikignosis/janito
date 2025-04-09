@@ -8,28 +8,59 @@ window.contentStore = [];
 window.showContentPopup = showContentPopup;
 window.showPopup = showPopup;
 
+function updateMessageCount(count) {
+  const bar = document.getElementById('message-count-bar');
+  if(!bar) return;
+
+  bar.textContent = `Messages: ${count}`;
+
+  if(count > 0) {
+    bar.style.cursor = 'pointer';
+    bar.onclick = async () => {
+      try {
+        const response = await fetch('/load_conversation');
+        const data = await response.json();
+        document.getElementById('json-modal-content').textContent = JSON.stringify(data.conversation, null, 2);
+        document.getElementById('json-modal').style.display = 'block';
+
+        // Update count based on fetched conversation
+        if(Array.isArray(data.conversation)) {
+          messageCount = data.conversation.filter(msg => msg.role === 'user' || msg.role === 'assistant').length;
+          updateMessageCount(messageCount);
+        }
+      } catch(err) {
+        document.getElementById('json-modal-content').textContent = 'Error loading conversation: ' + err;
+        document.getElementById('json-modal').style.display = 'block';
+      }
+    };
+  } else {
+    bar.style.cursor = 'default';
+    bar.onclick = null;
+  }
+}
+
+let messageCount = 0;
+
+
 document.addEventListener("DOMContentLoaded", async function() {
+
+  // Setup JSON modal toggle
+  const msgBar = document.getElementById('message-count-bar');
+  const jsonModal = document.getElementById('json-modal');
+  const jsonContent = document.getElementById('json-modal-content');
+
+  jsonModal.querySelector('.modal-close').onclick = () => {
+    jsonModal.style.display = 'none';
+  };
+
+  window.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape') jsonModal.style.display = 'none';
+  });
+
   setupSessionControls();
   createContentModal();
 
   const terminalApi = setupTerminal(async (command) => {
-
-    // After terminalApi is ready, load last conversation
-    try {
-      const response = await fetch('/load_conversation');
-      const data = await response.json();
-      if(data.status === 'ok' && Array.isArray(data.conversation)) {
-        data.conversation.forEach(msg => {
-          if(msg.role === 'user') {
-            terminalApi.appendOutput('**You:** ' + msg.content);
-          } else if(msg.role === 'assistant') {
-            terminalApi.appendOutput('**Assistant:** ' + msg.content);
-          }
-        });
-      }
-    } catch(err) {
-      console.error('Error loading conversation:', err);
-    }
 
     const trimmed = command.trim();
     if(trimmed.startsWith('/')) {
@@ -38,13 +69,18 @@ document.addEventListener("DOMContentLoaded", async function() {
           const response = await fetch('/load_conversation');
           const data = await response.json();
           if(data.status === 'ok' && Array.isArray(data.conversation)) {
+            messageCount = 0;
             data.conversation.forEach(msg => {
+              if(msg.role === 'user' || msg.role === 'assistant') {
+                messageCount++;
+              }
               if(msg.role === 'user') {
                 terminalApi.appendOutput('**You:** ' + msg.content);
               } else if(msg.role === 'assistant') {
                 terminalApi.appendOutput('**Assistant:** ' + msg.content);
               }
             });
+            updateMessageCount(messageCount);
           } else {
             terminalApi.appendOutput('No previous conversation found.');
           }
@@ -59,6 +95,14 @@ document.addEventListener("DOMContentLoaded", async function() {
       return;
     }
 
+    if(messageCount === 0) {
+      try {
+        await fetch('/new_conversation', { method: 'POST' });
+      } catch(err) {
+        console.error('Error starting new conversation:', err);
+      }
+    }
+
     await sendCommandStream(command, (data) => {
       if(data.type === "content" && data.content) {
         terminalApi.appendOutput(data.content);
@@ -68,5 +112,9 @@ document.addEventListener("DOMContentLoaded", async function() {
         terminalApi.appendOutput("Error: " + data.error);
       }
     });
+
+    // Increment message count for user + assistant
+    messageCount += 2;
+    updateMessageCount(messageCount);
   });
 });
