@@ -120,8 +120,7 @@ def start_chat_shell(agent, continue_session=False):
                 console.print(Markdown(content_piece))
 
         try:
-            with console.status("[bold green]Waiting for AI response...", spinner="dots"):
-                response = agent.chat(messages, on_content=on_content)
+            response = agent.chat(messages, on_content=on_content, spinner=True)
         except KeyboardInterrupt:
             console.print("[bold yellow]Request interrupted. Returning to prompt.[/bold yellow]")
             continue

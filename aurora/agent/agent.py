@@ -29,10 +29,23 @@ class Agent:
             self.client, self.model, self.tool_handler
         )
 
-    def chat(self, messages, on_content=None, on_tool_progress=None, verbose_response=False):
-        return self.conversation_handler.handle_conversation(
-            messages,
-            on_content=on_content,
-            on_tool_progress=on_tool_progress,
-            verbose_response=verbose_response
-        )
+    def chat(self, messages, on_content=None, on_tool_progress=None, verbose_response=False, spinner=False):
+        if spinner:
+            from rich.console import Console
+            console = Console()
+            with console.status("[bold green]Waiting for AI response...", spinner="dots") as status:
+                response = self.conversation_handler.handle_conversation(
+                    messages,
+                    on_content=on_content,
+                    on_tool_progress=on_tool_progress,
+                    verbose_response=verbose_response
+                )
+                status.stop()
+                return response
+        else:
+            return self.conversation_handler.handle_conversation(
+                messages,
+                on_content=on_content,
+                on_tool_progress=on_tool_progress,
+                verbose_response=verbose_response
+            )
