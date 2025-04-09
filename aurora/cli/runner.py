@@ -83,13 +83,11 @@ def run_cli(args):
     console = Console()
 
     waiting_displayed = [True]
-    print("Waiting for AI response...", end="", flush=True)
 
     def on_content(data):
         content = data.get("content", "")
         if waiting_displayed[0]:
             # Clear the waiting message
-            sys.stdout.write("\r" + " " * len("Waiting for AI response...") + "\r")
             sys.stdout.flush()
             waiting_displayed[0] = False
         console.print(Markdown(content))
