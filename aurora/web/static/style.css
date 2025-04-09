@@ -93,6 +93,9 @@ body {
 
 #input-text {
   color: #00ff00; /* bright green */
+  border: 2px solid magenta;
+  padding: 2px 4px;
+  border-radius: 4px;
 }
 
 #input-text {
