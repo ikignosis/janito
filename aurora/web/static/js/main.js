@@ -33,6 +33,8 @@ document.addEventListener("DOMContentLoaded", function() {
         } catch(err) {
           terminalApi.appendOutput('Error loading conversation: ' + err);
         }
+      } else if(trimmed === '/help') {
+        terminalApi.appendOutput(`Available commands:\n/continue - Load the last conversation\n/help - Show this help message`);
       } else {
         terminalApi.appendOutput('Unknown command: ' + trimmed);
       }
