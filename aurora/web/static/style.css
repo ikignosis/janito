@@ -91,11 +91,11 @@ body {
   border-radius: 4px;
 }
 
-#input-container {
+#input-text {
   color: #00ff00; /* bright green */
 }
 
-#input-container {
+#input-text {
   color: #33FF33;
   border: 2px solid #33FF33;
   box-shadow: 0 0 10px #33FF33, 0 0 15px #33FF33;
