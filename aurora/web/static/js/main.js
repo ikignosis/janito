@@ -8,9 +8,26 @@ window.contentStore = [];
 window.showContentPopup = showContentPopup;
 window.showPopup = showPopup;
 
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", async function() {
   setupSessionControls();
   createContentModal();
+
+  // Auto-load last conversation
+  try {
+    const response = await fetch('/load_conversation');
+    const data = await response.json();
+    if(data.status === 'ok' && Array.isArray(data.conversation)) {
+      data.conversation.forEach(msg => {
+        if(msg.role === 'user') {
+          terminalApi.appendOutput('**You:** ' + msg.content);
+        } else if(msg.role === 'assistant') {
+          terminalApi.appendOutput('**Assistant:** ' + msg.content);
+        }
+      });
+    }
+  } catch(err) {
+    console.error('Error loading conversation:', err);
+  }
 
   const terminalApi = setupTerminal(async (command) => {
     const trimmed = command.trim();
