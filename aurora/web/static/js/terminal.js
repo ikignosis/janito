@@ -33,7 +33,7 @@ export function setupTerminal(onCommandSubmit) {
     if (shouldScroll) scrollToBottom(terminal);
   }
 
-  const inputContainer = document.getElementById("input-container");
+  const inputContainer = document.getElementById("input-text");
   function updateInputDisplay() {
     inputContainer.innerHTML = (command || "&nbsp;") + '<span class="cursor"></span>';
   }
