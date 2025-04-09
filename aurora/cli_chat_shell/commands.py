@@ -73,7 +73,7 @@ def handle_help(console, **kwargs):
   /system   - Show the system prompt
   /role     - Change the system role
   /clear    - Clear the terminal screen
-  /paste    - Paste multiline input as next message
+  /multi    - Provide multiline input as next message
 """)
 
 
@@ -112,8 +112,8 @@ def handle_reset(console, state, **kwargs):
     console.print('[bold green]Conversation history has been reset.[/bold green]')
 
 
-def handle_paste(console, state, **kwargs):
-    console.print("[bold yellow]Paste mode activated. Paste your text and press Esc + Enter to submit.[/bold yellow]")
+def handle_multi(console, state, **kwargs):
+    console.print("[bold yellow]Multiline mode activated. Provide or write your text and press Esc + Enter to submit.[/bold yellow]")
     state['paste_mode'] = True
 
 def handle_role(console, *args, **kwargs):
@@ -154,7 +154,7 @@ COMMAND_HANDLERS = {
     "/restart": handle_restart,
 
     "/help": handle_help,
-    "/paste": handle_paste,
+    "/multi": handle_multi,
     "/system": handle_system,
     "/role": handle_role,
     "/clear": handle_clear,
