@@ -188,14 +188,24 @@ body {
   white-space: pre-wrap;
 }
 
+/* Link styles */
+.terminal a, .markdown-content a {
+  color: #00ffff;
+  text-decoration: none;
+}
+.terminal a:hover, .markdown-content a:hover {
+  color: #33ffcc;
+  text-decoration: underline;
+}
+
 /* Modal styles */
 #content-modal {
   display: none;
 }
 
 #content-modal .modal-content {
-  background: #fff;
-  color: #000;
+  background: #1e1e1e;
+  color: #eee;
   margin: 5% auto;
   padding: 0;
   max-width: 80%;
@@ -236,8 +246,8 @@ body {
   padding: 20px;
   white-space: pre-wrap;
   font-family: monospace;
-  background: #f9f9f9;
-  color: #000;
+  background: #2b2b2b;
+  color: #eee;
   border-bottom-left-radius: 8px;
   border-bottom-right-radius: 8px;
 }

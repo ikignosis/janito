@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, Response, send_from_directory, session
+from flask import Flask, request, render_template, Response, send_from_directory, session, jsonify
 from queue import Queue
 import json
 from aurora.agent.queued_tool_handler import QueuedToolHandler
@@ -23,12 +23,8 @@ app.secret_key = 'replace_with_a_secure_random_secret_key'
 # Path for persistent conversation storage
 conversation_file = os.path.expanduser('~/.aurora/last_conversation_web.json')
 
-# Load existing conversation if available
-try:
-    with open(conversation_file, 'r') as f:
-        conversation = json.load(f)
-except (FileNotFoundError, json.JSONDecodeError):
-    conversation = []
+# Initially no conversation loaded
+conversation = None
 
 
 # Global event queue for streaming
@@ -56,13 +52,31 @@ def favicon():
 def index():
     return render_template('index.html')
 
+@app.route('/load_conversation')
+def load_conversation():
+    global conversation
+    try:
+        with open(conversation_file, 'r') as f:
+            conversation = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        conversation = []
+    return jsonify({'status': 'ok', 'conversation': conversation})
+
+@app.route('/new_conversation', methods=['POST'])
+def new_conversation():
+    global conversation
+    conversation = []
+    return jsonify({'status': 'ok'})
+
 @app.route('/execute_stream', methods=['POST'])
 def execute_stream():
     data = request.get_json()
     user_input = data.get('input', '')
 
-    # Ignore session IDs, use single persistent conversation
     global conversation
+    if conversation is None:
+        # If no conversation loaded, start a new one
+        conversation = []
 
     # Always start with the system prompt as the first message
     if not conversation or conversation[0]['role'] != 'system':
@@ -72,22 +86,18 @@ def execute_stream():
     conversation.append({"role": "user", "content": user_input})
 
     def run_agent():
-        # Call agent with full conversation history
         response = agent.chat(
             conversation,
             on_content=lambda data: stream_queue.put({"type": "content", "content": data.get("content")})
         )
-        # Append assistant's reply to conversation
         if response and 'content' in response:
             conversation.append({"role": "assistant", "content": response['content']})
-        # Save updated conversation to file
         try:
             os.makedirs(os.path.dirname(conversation_file), exist_ok=True)
             with open(conversation_file, 'w') as f:
                 json.dump(conversation, f, indent=2)
         except Exception as e:
             print(f"Error saving conversation: {e}")
-        # Signal end of stream
         stream_queue.put(None)
 
     threading.Thread(target=run_agent, daemon=True).start()
@@ -102,5 +112,16 @@ def execute_stream():
             else:
                 message = json.dumps(content)
             yield f"data: {message}\n\n"
+            import sys
+            sys.stdout.flush()
 
-    return Response(generate(), mimetype='text/event-stream')
+    return Response(
+        generate(),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'X-Accel-Buffering': 'no',
+            'Connection': 'keep-alive',
+            'Transfer-Encoding': 'chunked'
+        }
+    )

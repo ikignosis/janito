@@ -20,6 +20,8 @@ def ask_user(question: str) -> str:
 
     bindings = KeyBindings()
 
+    mode = {'multiline': False}
+
     @bindings.add('c-r')
     def _(event):
         # Disable reverse search
@@ -28,14 +30,17 @@ def ask_user(question: str) -> str:
     style = Style.from_dict({
         'bottom-toolbar': 'bg:#333333 #ffffff',
         'b': 'bold',
-        'prompt': 'ansicyan bold',
+        'prompt': 'bold bg:#000080 #ffffff',
     })
 
     def get_toolbar():
-        return HTML('<b>Press Esc+Enter to submit.</b>')
+        if mode['multiline']:
+            return HTML('<b>Multiline mode (Esc+Enter to submit). Type /single to switch.</b>')
+        else:
+            return HTML('<b>Single-line mode (Enter to submit). Type /multi for multiline.</b>')
 
     session = PromptSession(
-        multiline=True,
+        multiline=False,
         key_bindings=bindings,
         editing_mode=EditingMode.EMACS,
         bottom_toolbar=get_toolbar,
@@ -44,5 +49,15 @@ def ask_user(question: str) -> str:
 
     prompt_icon = HTML('<prompt>💬 </prompt>')
 
-    response = session.prompt(prompt_icon)
-    return response
+    while True:
+        response = session.prompt(prompt_icon)
+        if not mode['multiline'] and response.strip() == '/multi':
+            mode['multiline'] = True
+            session.multiline = True
+            continue
+        elif mode['multiline'] and response.strip() == '/single':
+            mode['multiline'] = False
+            session.multiline = False
+            continue
+        else:
+            return response

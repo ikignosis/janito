@@ -78,7 +78,7 @@ def start_chat_shell(agent, continue_session=False):
         try:
             if state.get('paste_mode'):
                 console.print('')
-                user_input = session.prompt('Paste> ', multiline=True)
+                user_input = session.prompt('Multiline> ', multiline=True)
                 was_paste_mode = True
                 state['paste_mode'] = False
             else:
@@ -104,7 +104,7 @@ def start_chat_shell(agent, continue_session=False):
             continue
 
         if not user_input.strip():
-            user_input = "do it"
+            continue
 
         mem_history.append_string(user_input)
         messages.append({"role": "user", "content": user_input})
