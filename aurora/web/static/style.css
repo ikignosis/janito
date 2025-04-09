@@ -93,34 +93,28 @@ body {
 
 #input-container {
   color: #33FF33;
-  border: 2px solid transparent;
-  border-image: linear-gradient(45deg, #33FF33, #00FFFF, #FF33FF, #FFFF00) 1;
-  box-shadow: 0 0 10px #33FF33, 0 0 20px #00FFFF, 0 0 30px #FF33FF;
-  animation: pulseGlow 2s infinite ease-in-out;
-}
+  border: 2px solid #33FF33;
+  box-shadow: 0 0 10px #33FF33, 0 0 15px #33FF33;
+  animation: pulseGreenGlow 2s infinite ease-in-out;
   padding: 2px 4px;
   border-radius: 4px;
   background: linear-gradient(135deg, rgba(30,30,30,0.8), rgba(50,50,50,0.8));
-  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 #input-line {
   color: #33FF33;
-  border: 2px solid transparent;
-  border-image: linear-gradient(45deg, #33FF33, #00FFFF, #FF33FF, #FFFF00) 1;
-  box-shadow: 0 0 10px #33FF33, 0 0 20px #00FFFF, 0 0 30px #FF33FF;
+  border: 2px solid #33FF33;
+  box-shadow: 0 0 10px #33FF33, 0 0 15px #33FF33;
   padding: 2px 4px;
   border-radius: 4px;
   background: linear-gradient(135deg, rgba(30,30,30,0.8), rgba(50,50,50,0.8));
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: block;
 }
 
 #terminal-input {
-  background: linear-gradient(135deg, #33FF33, #00FFFF, #FF33FF);
-  background-size: 200% 200%;
-  animation: glowGradient 3s ease infinite;
+  background: #33FF33;
   border-radius: 6px;
-  box-shadow: 0 0 10px #33FF33, 0 0 20px #00FFFF, 0 0 30px #FF33FF;
+  box-shadow: 0 0 10px #33FF33, 0 0 15px #33FF33;
 
   background: transparent;
   border: none;
@@ -146,29 +140,19 @@ body {
   animation: blink 1s step-start infinite;
 }
 
-@keyframes pulseGlow {
+@keyframes pulseGreenGlow {
   0%, 100% {
-    box-shadow: 0 0 10px #33FF33, 0 0 20px #00FFFF, 0 0 30px #FF33FF;
+    box-shadow: 0 0 10px #33FF33, 0 0 15px #33FF33;
   }
   50% {
-    box-shadow: 0 0 20px #33FF33, 0 0 40px #00FFFF, 0 0 60px #FF33FF;
+    box-shadow: 0 0 15px #33FF33, 0 0 25px #33FF33;
   }
 }
 
-@keyframes glowGradient {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
+/* Green glow animation removed */
 
 @keyframes blink {
-  50% { background: linear-gradient(135deg, rgba(30,30,30,0.8), rgba(50,50,50,0.8)); }
+  50% { background: rgba(30,30,30,0.8); }
 }
 .markdown-content {
   white-space: normal;
@@ -179,13 +163,7 @@ body {
   border-top: 1px solid #444;
 }
 
-#input-line {
-  color: #33FF33;
-  border: 2px solid transparent;
-  border-image: linear-gradient(45deg, #33FF33, #00FFFF, #FF33FF, #FFFF00) 1;
-  box-shadow: 0 0 10px #33FF33, 0 0 20px #00FFFF, 0 0 30px #FF33FF;
-  display: block;
-}
+/* Consolidated with the main #input-line rule above */
 
 .breadcrumb-container {
   display: flex;

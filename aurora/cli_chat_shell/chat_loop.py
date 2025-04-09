@@ -4,6 +4,8 @@ from prompt_toolkit.history import InMemoryHistory
 from .session_manager import load_last_conversation, load_input_history
 from .ui import print_welcome, get_toolbar_func, get_prompt_session
 from .commands import handle_command
+from aurora.agent.config import effective_config
+from aurora.agent.conversation import EmptyResponseError, ProviderError
 
 
 def start_chat_shell(agent, continue_session=False):
@@ -65,7 +67,7 @@ def start_chat_shell(agent, continue_session=False):
     session = get_prompt_session(
         get_toolbar_func(
             get_messages, get_usage, get_elapsed, model_name=model_name,
-            role_ref=lambda: __import__('aurora.agent.config').agent.config.effective_config.get('role', 'software engineer')
+            role_ref=lambda: effective_config.get('role')
         ),
         mem_history
     )
@@ -121,6 +123,12 @@ def start_chat_shell(agent, continue_session=False):
             response = agent.chat(messages, on_content=on_content)
         except KeyboardInterrupt:
             console.print("[bold yellow]Request interrupted. Returning to prompt.[/bold yellow]")
+            continue
+        except ProviderError as e:
+            console.print(f"[bold red]Provider error:[/bold red] {e}")
+            continue
+        except EmptyResponseError as e:
+            console.print(f"[bold red]Error:[/bold red] {e}")
             continue
         last_elapsed = time.time() - start_time
 

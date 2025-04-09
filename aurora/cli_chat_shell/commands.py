@@ -3,6 +3,7 @@ import sys
 import json
 from prompt_toolkit.history import InMemoryHistory
 from aurora.render_prompt import render_system_prompt
+from aurora.agent.config import runtime_config
 
 
 def handle_exit(console, **kwargs):
@@ -140,6 +141,9 @@ def handle_role(console, *args, **kwargs):
         agent.role_name = new_role
     else:
         setattr(agent, 'role_name', new_role)
+    # Update effective_config role for UI/toolbox
+    runtime_config.set('role', new_role)
+
     console.print(f"[bold green]System role updated to:[/bold green] {new_role}")
 
 

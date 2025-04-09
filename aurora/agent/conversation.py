@@ -6,6 +6,11 @@ class MaxRoundsExceededError(Exception):
 class EmptyResponseError(Exception):
     pass
 
+class ProviderError(Exception):
+    def __init__(self, message, error_data):
+        self.error_data = error_data
+        super().__init__(message)
+
 class ConversationHandler:
     def __init__(self, client, model, tool_handler):
         self.client = client
@@ -30,6 +35,12 @@ class ConversationHandler:
                 import pprint
                 pprint.pprint(response)
 
+            # Check for provider errors
+            if hasattr(response, 'error') and response.error:
+                error_msg = response.error.get('message', 'Unknown provider error')
+                error_code = response.error.get('code', 'unknown')
+                raise ProviderError(f"Provider error: {error_msg} (Code: {error_code})", response.error)
+                
             if not response.choices:
                 raise EmptyResponseError("The LLM API returned no choices in the response.")
 

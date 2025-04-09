@@ -4,8 +4,8 @@ from rich.console import Console
 from rich.markdown import Markdown
 from aurora.render_prompt import render_system_prompt
 from aurora.agent.agent import Agent
-from aurora.agent.conversation import MaxRoundsExceededError
-from aurora.agent.config import effective_config, get_api_key
+from aurora.agent.conversation import MaxRoundsExceededError, EmptyResponseError, ProviderError
+from aurora.agent.config import effective_config, get_api_key, runtime_config
 from aurora import __version__
 from rich.rule import Rule
 
@@ -30,6 +30,8 @@ def run_cli(args):
         sys.exit(0)
 
     role = args.role or effective_config.get("role", "software engineer")
+    if args.role:
+        runtime_config.set('role', args.role)
 
     system_prompt = args.system_prompt or effective_config.get("system_prompt")
     if system_prompt is None:
@@ -116,6 +118,12 @@ def run_cli(args):
                 console.print(Rule(f"Token usage - Prompt: {format_tokens(prompt_tokens)}, Completion: {format_tokens(completion_tokens)}, Total: {format_tokens(total_tokens)}"))
         except MaxRoundsExceededError:
             print("[Error] Conversation exceeded maximum rounds.")
+            sys.exit(1)
+        except ProviderError as e:
+            print(f"[Error] Provider error: {e}")
+            sys.exit(1)
+        except EmptyResponseError as e:
+            print(f"[Error] {e}")
             sys.exit(1)
     except KeyboardInterrupt:
         print("\n[Interrupted by user]")
