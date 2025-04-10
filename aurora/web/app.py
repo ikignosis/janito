@@ -39,6 +39,11 @@ agent = Agent(
     tool_handler=queued_handler
 )
 
+@app.route('/get_model_name')
+def get_model_name():
+    return jsonify({"model": agent.model})
+
+
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory(

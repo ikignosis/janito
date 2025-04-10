@@ -41,11 +41,13 @@
 - `aurora/cli/config_commands.py`: Defines `handle_config_commands(args)` to process config-related commands (`--set-*`, `--show-config`).
 - `aurora/cli/logging_setup.py`: Defines `setup_verbose_logging(args)` to configure verbose HTTP and wire-level logging.
 - `aurora/cli/runner.py`: Defines `run_cli(args)` containing the main CLI logic. If a prompt is provided, it sends a single prompt to the agent. If no prompt is provided, it enters interactive chat mode by default.
+  - Loads the model and API base URL from the *effective config* if available (`effective_config.get("model")` and `effective_config.get("base_url")`), allowing users to customize which OpenAI-compatible model and endpoint to use.
 - `aurora/cli/main.py`: Defines `main()` which orchestrates argument parsing, config commands, logging setup, and runs the CLI.
 
 ## Agent Subpackage: `aurora.agent`
 - `aurora/agent/__init__.py`: Marks the agent module as a package.
 - `aurora/agent/agent.py`: Defines the `Agent` class, the core LLM interaction logic.
+  - The `Agent` constructor accepts optional `model` and `base_url` parameters (defaulting to `'openrouter/quasar-alpha'` and `'https://openrouter.ai/api/v1'` respectively). This enables flexible use of different OpenAI-compatible endpoints and models, configurable via CLI or config files.
   - The `Agent.chat()` method returns a dictionary with:
     - `"content"`: the assistant's message text.
     - `"usage"`: a dictionary with token usage info (`prompt_tokens`, `completion_tokens`, `total_tokens`), or `None`.

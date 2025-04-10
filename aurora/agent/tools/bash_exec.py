@@ -22,7 +22,7 @@ def bash_exec(command: str, on_progress: Optional[Callable[[dict], None]] = None
     def run_command():
         try:
             process = subprocess.Popen(
-                command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+                command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8', errors='replace'
             )
             stdout_lines = []
             stderr_lines = []

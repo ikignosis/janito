@@ -48,7 +48,9 @@ def run_cli(args):
 
     api_key = get_api_key()
 
-    agent = Agent(api_key=api_key, system_prompt=system_prompt, verbose_tools=args.verbose_tools)
+    model = effective_config.get('model')
+    base_url = effective_config.get('base_url', 'https://openrouter.ai/api/v1')
+    agent = Agent(api_key=api_key, model=model if model else 'openrouter/quasar-alpha', system_prompt=system_prompt, verbose_tools=args.verbose_tools, base_url=base_url)
 
     if not args.prompt:
         console = Console()

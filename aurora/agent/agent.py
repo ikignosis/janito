@@ -1,3 +1,5 @@
+"""Agent module: defines the core LLM agent with tool and conversation handling."""
+
 import os
 import json
 from openai import OpenAI
@@ -5,21 +7,43 @@ from aurora.agent.conversation import ConversationHandler
 from aurora.agent.tool_handler import ToolHandler
 
 class Agent:
+    """LLM Agent capable of handling conversations and tool calls."""
+
     def __init__(
         self,
         api_key: str,
         model: str = "openrouter/quasar-alpha",
         system_prompt: str | None = None,
         verbose_tools: bool = False,
-        tool_handler: ToolHandler | None = None
+        tool_handler = None,
+        base_url: str = "https://openrouter.ai/api/v1"
     ):
+        """
+        Initialize the Agent.
+
+        Args:
+            api_key: API key for OpenAI-compatible service.
+            model: Model name to use.
+            system_prompt: Optional system prompt override.
+            verbose_tools: Enable verbose tool call logging.
+            tool_handler: Optional custom ToolHandler instance.
+            base_url: API base URL.
+        """
         self.api_key = api_key
         self.model = model
         self.system_prompt = system_prompt
-        self.client = OpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=api_key,
-        )
+        if os.environ.get("USE_AZURE_OPENAI"):
+            from openai import AzureOpenAI
+            self.client = AzureOpenAI(
+                api_key=api_key,
+                azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
+                api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2023-05-15"),
+            )
+        else:
+            self.client = OpenAI(
+                base_url=base_url,
+                api_key=api_key,
+            )
         if tool_handler is not None:
             self.tool_handler = tool_handler
         else:
@@ -62,4 +86,3 @@ class Agent:
                     raise
             except Exception:
                 raise
-

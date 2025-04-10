@@ -1,5 +1,24 @@
 # 🚀 Aurora: Natural Language Code Editing Agent
 
+## ⚡ Quick Start
+
+Run a one-off prompt:
+```bash
+python -m aurora "Refactor the data processing module to improve readability."
+```
+
+Or start the interactive chat shell:
+```bash
+python -m aurora
+```
+
+Launch the web UI:
+```bash
+python -m aurora.web
+```
+
+---
+
 Aurora is a command-line and web-based AI agent designed to **edit code and manage files** using natural language instructions.
 
 ---
@@ -39,6 +58,79 @@ export OPENROUTER_API_KEY=your_api_key_here
 ```bash
 export OPENROUTER_API_KEY=your_api_key_here
 ```
+
+---
+
+## ⚙️ Configuration
+
+Aurora supports multiple ways to configure API access, model, and behavior:
+
+### API Key
+
+- Set via environment variable:
+  ```bash
+  export OPENROUTER_API_KEY=your_api_key_here
+  ```
+- Or save it using CLI:
+  ```bash
+  python -m aurora --set-api-key your_api_key_here
+  ```
+
+### Configurable Options
+
+| Key             | Description                                               | How to set                                                      | Default                                    |
+|-----------------|-----------------------------------------------------------|-----------------------------------------------------------------|--------------------------------------------|
+| `api_key`       | API key for OpenAI-compatible service                     | Env var, `--set-api-key`, config file                           | _None_ (required)                          |
+| `model`         | Model name to use                                         | `--set-local-config model=...` or `--set-global-config`         | `openrouter/quasar-alpha`                 |
+| `base_url`      | API base URL (OpenAI-compatible endpoint)                 | `--set-local-config base_url=...` or `--set-global-config`      | `https://openrouter.ai/api/v1`            |
+| `role`          | Role description for system prompt                        | CLI `--role` or config                                          | "software engineer"                     |
+| `system_prompt` | Override the entire system prompt                         | CLI `--system-prompt` or config                                 | _Template-generated prompt_               |
+
+### Config files
+
+- **Local config:** `.aurora/config.json` (project-specific)
+- **Global config:** `~/.config/aurora/config.json` (user-wide)
+
+Set values via:
+
+```bash
+python -m aurora --set-local-config key=value
+python -m aurora --set-global-config key=value
+```
+
+Show current effective config:
+
+```bash
+python -m aurora --show-config
+```
+
+---
+
+## ☁️ Using Azure OpenAI
+
+Aurora supports **Azure OpenAI Service** as a backend.
+
+### How to enable
+
+Set the environment variable:
+
+```bash
+export USE_AZURE_OPENAI=1
+```
+
+### Required environment variables
+
+| Variable                     | Description                                                      | Example                                               |
+|------------------------------|------------------------------------------------------------------|-------------------------------------------------------|
+| `AZURE_OPENAI_ENDPOINT`      | Your Azure OpenAI resource endpoint                              | `https://my-resource-name.openai.azure.com`           |
+| `AZURE_OPENAI_API_VERSION`   | API version (default: `2023-05-15`)                             | `2023-05-15`                                          |
+| `OPENROUTER_API_KEY`         | Your Azure OpenAI API key (same as `api_key` in config)         | _Your Azure API key_                                  |
+
+### Notes
+
+- The **model name** you configure (via CLI or config) should be the **Azure deployment name** (not the base model name).
+- All other CLI options and config settings apply as usual.
+- If `USE_AZURE_OPENAI` is **not** set, Aurora defaults to OpenRouter or OpenAI-compatible APIs.
 
 ---
 
@@ -116,4 +208,26 @@ python -m aurora.web
 
 ---
 
-For more details, see `docs/structure.md`.
+## 🤝 Contributing
+
+We welcome contributions! To get started:
+
+1. **Fork the repository** and clone your fork.
+2. **Create a virtual environment** (recommended):
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # or venv\Scripts\activate on Windows
+   ```
+3. **Install in editable mode with dev dependencies:**
+   ```bash
+   pip install -e .
+   ```
+4. **Style:** Follow [PEP8](https://pep8.org/) and add clear docstrings to modules, classes, and functions.
+5. **Testing:** Add or update tests if applicable.
+6. **Pull Requests:**
+   - Describe your changes clearly.
+   - Link related issues if any.
+   - Keep PRs focused and minimal.
+
+For project structure details, see `docs/structure.md`.
+

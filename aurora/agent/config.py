@@ -57,6 +57,15 @@ class FileConfig(BaseConfig):
             json.dump(self._data, f, indent=2)
 
 
+CONFIG_OPTIONS = {
+    "api_key": "API key for OpenAI-compatible service (required)",
+    "model": "Model name to use (e.g., 'openrouter/quasar-alpha')",
+    "base_url": "API base URL (OpenAI-compatible endpoint)",
+    "role": "Role description for the system prompt (e.g., 'software engineer')",
+    "system_prompt": "Override the entire system prompt text",
+    "temperature": "Sampling temperature (float, e.g., 0.0 - 2.0)",
+}
+
 class EffectiveConfig:
     """Read-only merged view of runtime, local, and global configs"""
     def __init__(self, runtime_cfg, local_cfg, global_cfg):

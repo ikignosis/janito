@@ -27,6 +27,11 @@ function updateMessageCount(count) {
         if(Array.isArray(data.conversation)) {
           messageCount = data.conversation.filter(msg => msg.role === 'user' || msg.role === 'assistant').length;
           updateMessageCount(messageCount);
+
+      // Trigger fireworks after message submission
+      if (typeof window.launchFireworks === 'function') {
+        window.launchFireworks();
+      }
         }
       } catch(err) {
         document.getElementById('json-modal-content').textContent = 'Error loading conversation: ' + err;
@@ -40,6 +45,13 @@ function updateMessageCount(count) {
 }
 
 let messageCount = 0;
+
+function updateModelName(name) {
+  const modelBar = document.getElementById('model-name-bar');
+  if(modelBar) {
+    modelBar.textContent = `Model: ${name}`;
+  }
+}
 
 
 document.addEventListener("DOMContentLoaded", async function() {
@@ -81,6 +93,11 @@ document.addEventListener("DOMContentLoaded", async function() {
               }
             });
             updateMessageCount(messageCount);
+
+      // Trigger fireworks after message submission
+      if (typeof window.launchFireworks === 'function') {
+        window.launchFireworks();
+      }
           } else {
             terminalApi.appendOutput('No previous conversation found.');
           }
@@ -116,5 +133,10 @@ document.addEventListener("DOMContentLoaded", async function() {
     // Increment message count for user + assistant
     messageCount += 2;
     updateMessageCount(messageCount);
+
+      // Trigger fireworks after message submission
+      if (typeof window.launchFireworks === 'function') {
+        window.launchFireworks();
+      }
   });
 });
