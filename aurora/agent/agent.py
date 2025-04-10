@@ -9,6 +9,9 @@ from aurora.agent.tool_handler import ToolHandler
 class Agent:
     """LLM Agent capable of handling conversations and tool calls."""
 
+    REFERER = "www.janito.dev"
+    TITLE = "Janito"
+
     def __init__(
         self,
         api_key: str,
@@ -43,6 +46,10 @@ class Agent:
             self.client = OpenAI(
                 base_url=base_url,
                 api_key=api_key,
+                default_headers={
+                    "HTTP-Referer": self.REFERER,
+                    "X-Title": self.TITLE
+                }
             )
         if tool_handler is not None:
             self.tool_handler = tool_handler
