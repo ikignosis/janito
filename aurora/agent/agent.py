@@ -53,7 +53,7 @@ class Agent:
             self.client, self.model, self.tool_handler
         )
 
-    def chat(self, messages, on_content=None, on_tool_progress=None, verbose_response=False, spinner=False):
+    def chat(self, messages, on_content=None, on_tool_progress=None, verbose_response=False, spinner=False, max_tokens=None):
         import time
         from aurora.agent.conversation import ProviderError
 
@@ -62,6 +62,7 @@ class Agent:
             try:
                 return self.conversation_handler.handle_conversation(
                     messages,
+                    max_tokens=max_tokens,
                     on_content=on_content,
                     on_tool_progress=on_tool_progress,
                     verbose_response=verbose_response,

@@ -85,6 +85,7 @@ Aurora supports multiple ways to configure API access, model, and behavior:
 | `base_url`      | API base URL (OpenAI-compatible endpoint)                 | `--set-local-config base_url=...` or `--set-global-config`      | `https://openrouter.ai/api/v1`            |
 | `role`          | Role description for system prompt                        | CLI `--role` or config                                          | "software engineer"                     |
 | `system_prompt` | Override the entire system prompt                         | CLI `--system-prompt` or config                                 | _Template-generated prompt_               |
+| `max_tokens`    | Maximum tokens for model response                        | CLI `--max-tokens` or config                                    | 200000                                     |
 
 ### Config files
 

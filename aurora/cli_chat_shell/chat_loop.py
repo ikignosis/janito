@@ -90,7 +90,11 @@ def start_chat_shell(agent, continue_session=False):
             break
         except KeyboardInterrupt:
             console.print()  # Move to next line
-            confirm = input("Do you really want to exit? (y/n): ").strip().lower()
+            try:
+                confirm = input("Do you really want to exit? (y/n): ").strip().lower()
+            except KeyboardInterrupt:
+                console.print("\n[bold red]Exiting...[/bold red]")
+                break
             if confirm == 'y':
                 console.print("[bold red]Exiting...[/bold red]")
                 break

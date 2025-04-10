@@ -64,6 +64,7 @@ CONFIG_OPTIONS = {
     "role": "Role description for the system prompt (e.g., 'software engineer')",
     "system_prompt": "Override the entire system prompt text",
     "temperature": "Sampling temperature (float, e.g., 0.0 - 2.0)",
+    "max_tokens": "Maximum tokens for model response (int)"
 }
 
 class EffectiveConfig:

@@ -52,6 +52,10 @@ def run_cli(args):
     base_url = effective_config.get('base_url', 'https://openrouter.ai/api/v1')
     agent = Agent(api_key=api_key, model=model if model else 'openrouter/quasar-alpha', system_prompt=system_prompt, verbose_tools=args.verbose_tools, base_url=base_url)
 
+    # Save runtime max_tokens override if provided
+    if args.max_tokens is not None:
+        runtime_config.set('max_tokens', args.max_tokens)
+
     if not args.prompt:
         console = Console()
 

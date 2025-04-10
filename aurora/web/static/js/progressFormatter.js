@@ -1,126 +1,145 @@
-// progressFormatter.js
+// Per-tool progress formatter dispatch
 
-export function formatProgress(progress, args) {
-  let breadcrumb = '';
-  let lineCount = 0;
-  let content = '';
+export function formatToolProgress(progress) {
+  const formatter = toolFormatters[progress.tool] || defaultFormatter;
+  return formatter(progress);
+}
 
-  if (progress.result && typeof progress.result === 'string') {
-    content = progress.result;
-    lineCount = content.split(/\r?\n/).length;
-  }
+const toolFormatters = {
+  view_file: formatViewFile,
+  find_files: formatFindFiles,
+  search_text: formatFindFiles,  // similar output
+  bash_exec: formatBashExec,
+  fetch_url: formatFetchUrl,
+  create_file: formatCreateFile,
+  create_directory: formatCreateDirectory,
+  move_file: formatMoveFile,
+  remove_file: formatRemoveFile,
+  file_str_replace: formatFileStrReplace,
+  ask_user: formatAskUser
+};
 
-  const safeContent = content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const escapedContent = safeContent.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${}');
+function escape(s) {
+  return (s || '').toString().replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
 
-  let lang = '';
-  if(args.path) {
-    if(args.path.endsWith('.py')) lang = 'python';
-    else if(args.path.endsWith('.sh') || args.path.endsWith('.bash')) lang = 'bash';
-    else if(args.path.endsWith('.json')) lang = 'json';
-    else if(args.path.endsWith('.md') || args.path.endsWith('.markdown')) lang = 'markdown';
-  }
-
+function makeContentLink(content, lang = '') {
   const index = window.contentStore.push(content) - 1;
-  const link = `<a href=\"#\" onclick=\"showContentPopup(${index}, '${lang}'); return false;\">${lineCount} line${lineCount !== 1 ? 's' : ''}</a>`;
-
-  const isStart = progress.event === 'start';
-
-  if(isStart) {
-    switch(progress.tool) {
-      case 'view_file':
-        breadcrumb = `Viewing ${args.path} lines ${args.start_line || 1} to ${args.end_line || 'end'}`;
-        break;
-      case 'create_file': {
-        const newLines = args.content ? (args.content.match(/\n/g) || []).length + 1 : 0;
-        const overwriteText = args.overwrite ? ' (overwriting)' : '';
-        breadcrumb = `Creating file${overwriteText} ${args.path} (${newLines} lines)`;
-        break;
-      }
-      case 'move_file':
-        breadcrumb = `Moving ${args.source_path} → ${args.destination_path}`;
-        break;
-      case 'bash_exec':
-        breadcrumb = `Running command: ${args.command}`;
-        break;
-      case 'create_directory':
-        breadcrumb = `Creating dir ${args.path}`;
-        break;
-      case 'remove_file':
-        breadcrumb = `Removing ${args.path}`;
-        break;
-      case 'file_str_replace':
-        breadcrumb = `Replacing in ${args.path}`;
-        break;
-      case 'find_files':
-        breadcrumb = `Searching in ${args.directory}`;
-if(args.file_pattern || args.text_pattern || args.case_sensitive !== undefined) {
-  const parts = [];
-  if(args.file_pattern) parts.push(`file: ${args.file_pattern}`);
-  if(args.text_pattern) parts.push(`text: ${args.text_pattern}`);
-  if(args.case_sensitive !== undefined) parts.push(`case: ${args.case_sensitive}`);
-  if(parts.length) breadcrumb += ' (' + parts.join(', ') + ')';
+  const lineCount = content.split(/\r?\n/).length;
+  return `<a href="#" onclick="showContentPopup(${index}, '${lang}'); return false;">${lineCount} line${lineCount !== 1 ? 's' : ''}</a>`;
 }
-        break;
-      case 'search_text':
-        breadcrumb = `Searching text in ${args.directory}`;
-if(args.file_pattern || args.text_pattern || args.case_sensitive !== undefined) {
-  const parts = [];
-  if(args.file_pattern) parts.push(`file: ${args.file_pattern}`);
-  if(args.text_pattern) parts.push(`text: ${args.text_pattern}`);
-  if(args.case_sensitive !== undefined) parts.push(`case: ${args.case_sensitive}`);
-  if(parts.length) breadcrumb += ' (' + parts.join(', ') + ')';
-}
-        break;
-      case 'fetch_url':
-        breadcrumb = `Fetching ${args.url}`;
-        break;
-      case 'ask_user':
-        breadcrumb = `Waiting user input`;
-        break;
-      default:
-        breadcrumb = `[${progress.tool}] starting > ` + Object.entries(args).map(([k,v])=>`${k}: ${v}`).join(', ');
+
+function defaultFormatter(progress) {
+  if(progress.event === 'start') {
+    return `[${progress.tool}] starting`;
+  } else if(progress.event === 'finish') {
+    if(progress.error) {
+      return `<span style='color:red'>Error:</span> ${escape(progress.error)}`;
+    } else {
+      return `[${progress.tool}] finished`;
     }
   } else {
-    switch(progress.tool) {
-      case 'view_file':
-        breadcrumb = `${link}`;
-        break;
-      case 'create_file': {
-        const success = progress.result && progress.result.includes('Successfully');
-        const overwriteText = args.overwrite ? ' (overwriting)' : '';
-        breadcrumb = `${success ? 'Created' : 'Failed'}${overwriteText} ${args.path}`;
-        break;
-      }
-      case 'create_directory':
-        breadcrumb = `Created dir ${args.path}`; break;
-      case 'move_file': {
-        const success = progress.result && progress.result.includes('Successfully');
-        breadcrumb = `${success ? 'Moved' : 'Failed move'} ${args.source_path} → ${args.destination_path}`;
-        break;
-      }
-      case 'remove_file':
-        breadcrumb = `Removed ${args.path}`; break;
-      case 'file_str_replace':
-        breadcrumb = `Replaced in ${args.path}`; break;
-      case 'find_files':
-        breadcrumb = `Searched in ${args.directory}`; break;
-      case 'search_text':
-        breadcrumb = `Searched text in ${args.directory}`; break;
-      case 'bash_exec': {
-        const codeMatch = progress.result && progress.result.match(/returncode: ([-\d]+)/);
-        const code = codeMatch ? codeMatch[1] : '?';
-        breadcrumb = `Command done (code ${code})`;
-        break;
-      }
-      case 'fetch_url':
-        breadcrumb = `Fetched ${args.url}`; break;
-      case 'ask_user':
-        breadcrumb = `User input done`; break;
-      default:
-        breadcrumb = `[${progress.tool}] done > ` + Object.entries(args).map(([k,v])=>`${k}: ${v}`).join(', ');
-    }
+    return `<pre>${escape(JSON.stringify(progress, null, 2))}</pre>`;
   }
+}
 
-  return breadcrumb;
+function formatViewFile(progress) {
+  const args = progress.args || {};
+  const lang = (args.path||'').endsWith('.py') ? 'python' :
+               (args.path||'').endsWith('.sh') ? 'bash' :
+               (args.path||'').endsWith('.json') ? 'json' :
+               (args.path||'').endsWith('.md') ? 'markdown' : '';
+
+  if(progress.event === 'start') {
+    return `Viewing ${args.path} lines ${args.start_line || 1} to ${args.end_line || 'end'}`;
+  }
+  if(progress.event === 'finish') {
+    let content = '';
+    if(typeof progress.result === 'string') {
+      content = progress.result.split(/\r?\n/).map(line => line.replace(/^\s*\d+:\s*/, '')).join('\n');
+    }
+    const link = makeContentLink(content, lang);
+    const count = content.trim() === '' ? 0 : content.split(/\r?\n/).length;
+    return `${count} line${count !== 1 ? 's' : ''} (${link})`;
+  }
+  return '';
+}
+
+function formatFindFiles(progress) {
+  const args = progress.args || {};
+  if(progress.event === 'start') {
+    return `Searching in ${args.directory}`;
+  }
+  if(progress.event === 'finish') {
+    let content = '';
+    let count = 0;
+    if(Array.isArray(progress.result)) {
+      content = progress.result.join('\n');
+      count = progress.result.length;
+    } else if(typeof progress.result === 'string') {
+      content = progress.result;
+      count = content.trim() === '' ? 0 : content.trim().split(/\r?\n/).length;
+    }
+    const link = makeContentLink(content);
+    return `Found ${count} item${count !== 1 ? 's' : ''} (${link})`;
+  }
+  return '';
+}
+
+function formatBashExec(progress) {
+  if(progress.event === 'start') return 'Running command';
+  if(progress.event === 'finish') {
+    const codeMatch = progress.result && progress.result.match(/returncode: ([-\d]+)/);
+    const code = codeMatch ? codeMatch[1] : '?';
+    return `Command finished (code ${code})`;
+  }
+  return '';
+}
+
+function formatFetchUrl(progress) {
+  const args = progress.args || {};
+  if(progress.event === 'start') return `Fetching ${args.url}`;
+  if(progress.event === 'finish') return `Fetched ${args.url}`;
+  return '';
+}
+
+function formatCreateFile(progress) {
+  const args = progress.args || {};
+  if(progress.event === 'start') return `Creating file ${args.path}`;
+  if(progress.event === 'finish') return `Created file ${args.path}`;
+  return '';
+}
+
+function formatCreateDirectory(progress) {
+  const args = progress.args || {};
+  if(progress.event === 'start') return `Creating directory ${args.path}`;
+  if(progress.event === 'finish') return `Created directory ${args.path}`;
+  return '';
+}
+
+function formatMoveFile(progress) {
+  const args = progress.args || {};
+  if(progress.event === 'start') return `Moving ${args.source_path} → ${args.destination_path}`;
+  if(progress.event === 'finish') return `Moved ${args.source_path} → ${args.destination_path}`;
+  return '';
+}
+
+function formatRemoveFile(progress) {
+  const args = progress.args || {};
+  if(progress.event === 'start') return `Removing ${args.path}`;
+  if(progress.event === 'finish') return `Removed ${args.path}`;
+  return '';
+}
+
+function formatFileStrReplace(progress) {
+  const args = progress.args || {};
+  if(progress.event === 'start') return `Replacing in ${args.path}`;
+  if(progress.event === 'finish') return `Replaced in ${args.path}`;
+  return '';
+}
+
+function formatAskUser(progress) {
+  if(progress.event === 'start') return 'Waiting for user input';
+  if(progress.event === 'finish') return 'User input done';
+  return '';
 }

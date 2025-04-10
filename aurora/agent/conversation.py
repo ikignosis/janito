@@ -17,12 +17,19 @@ class ConversationHandler:
         self.model = model
         self.tool_handler = tool_handler
 
-    def handle_conversation(self, messages, max_rounds=50, on_content=None, on_tool_progress=None, verbose_response=False, spinner=False):
+    def handle_conversation(self, messages, max_rounds=50, on_content=None, on_tool_progress=None, verbose_response=False, spinner=False, max_tokens=None):
         if not messages:
             raise ValueError("No prompt provided in messages")
 
         from rich.console import Console
         console = Console()
+
+        from aurora.agent.config import effective_config
+
+        # Resolve max_tokens priority: runtime param > config > default
+        resolved_max_tokens = max_tokens
+        if resolved_max_tokens is None:
+            resolved_max_tokens = effective_config.get('max_tokens', 200000)
 
         for _ in range(max_rounds):
             if spinner:
@@ -33,7 +40,7 @@ class ConversationHandler:
                         tools=self.tool_handler.get_tool_schemas(),
                         tool_choice="auto",
                         temperature=0,
-                        max_tokens=200000
+                        max_tokens=resolved_max_tokens
                     )
                     status.stop()
                     # console.print("\r\033[2K", end="")  # Clear the spinner line removed
@@ -44,7 +51,7 @@ class ConversationHandler:
                     tools=self.tool_handler.get_tool_schemas(),
                     tool_choice="auto",
                     temperature=0,
-                    max_tokens=200000
+                    max_tokens=resolved_max_tokens
                 )
 
             if verbose_response:

@@ -1,11 +1,11 @@
 /* Welcome box */
 .welcome-box {
-  color: #ff69b4;
+  text-align: center;
+  color: #CCCCCC;
   text-shadow:
-    0 0 5px #ff69b4,
-    0 0 10px #ff69b4,
-    0 0 20px #ff69b4,
-    0 0 40px #ffb6c1;
+    1px 1px 2px #000,
+    2px 2px 4px #000,
+    0 0 5px #DD4814;
   background: rgba(255, 255, 255, 0.1);
   padding: 15px;
   border-radius: 12px;
@@ -16,7 +16,7 @@
 }
 
 body {
-  background: #1e1e1e;
+  background: #1C1C1C;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   margin: 0;
   font-size: 16px;
@@ -54,22 +54,22 @@ body {
   display: inline-block;
 }
 
-.window-header .close { background: #ff5f56; }
-.window-header .minimize { background: #ffbd2e; }
-.window-header .zoom { background: #27c93f; }
+.window-header .close { background: #DD4814; }
+.window-header .minimize { background: #C4A000; }
+.window-header .zoom { background: #4E9A06; }
 
 .terminal {
   flex: 1;
   overflow-y: auto;
   padding: 20px;
-  color: #ff69b4;
+  color: #CCCCCC;
   font-family: monospace;
   white-space: pre-wrap;
 }
 
 .terminal .user-input {
   display: inline-block;
-  color: #ff69b4;
+  color: #CCCCCC;
   background-color: rgba(255, 255, 255, 0.1);
   padding: 2px 4px;
   border-radius: 4px;
@@ -83,8 +83,8 @@ body {
 
 #input-text {
   color: white;
-  border: 2px solid magenta;
-  box-shadow: 0 0 10px #ff69b4, 0 0 15px #ff69b4;
+  border: 2px solid #DD4814;
+  box-shadow: 0 0 10px #CCCCCC, 0 0 15px #CCCCCC;
   animation: pulsePinkGlow 2s infinite ease-in-out;
   padding: 2px 4px;
   border-radius: 4px;
@@ -92,9 +92,9 @@ body {
 }
 
 #input-line {
-  color: #ff69b4;
-  border: 2px solid #ff69b4;
-  box-shadow: 0 0 10px #ff69b4, 0 0 15px #ff69b4;
+  color: #CCCCCC;
+  border: 2px solid #CCCCCC;
+  box-shadow: 0 0 10px #CCCCCC, 0 0 15px #CCCCCC;
   padding: 2px 4px;
   border-radius: 4px;
   background: linear-gradient(135deg, rgba(30,30,30,0.8), rgba(50,50,50,0.8));
@@ -104,11 +104,11 @@ body {
 #terminal-input {
   background: transparent;
   border: none;
-  color: #ff69b4;
+  color: #CCCCCC;
   font-family: monospace;
   font-size: 1em;
   outline: none;
-  caret-color: #ff69b4;
+  caret-color: #CCCCCC;
   width: 90%;
 }
 #terminal-input:focus {
@@ -121,7 +121,7 @@ body {
   width: 8px;
   height: 1.2em;
   margin-left: 2px;
-  background-color: #ff69b4;
+  background-color: #CCCCCC;
   animation: blink 1s step-start infinite;
 }
 
@@ -135,7 +135,7 @@ body {
 }
 
 #json-modal .modal-content {
-  background: #1e1e1e;
+  background: #1C1C1C;
   color: #eee;
   margin: 5% auto;
   padding: 20px;
@@ -154,12 +154,12 @@ body {
   font-size: 14px;
 }
 
-@keyframes pulsePinkGlow {
+@keyframes pulsePinkGlow_disabled {
   0%, 100% {
-    box-shadow: 0 0 10px #ff69b4, 0 0 15px #ff69b4;
+    box-shadow: 0 0 10px #CCCCCC, 0 0 15px #CCCCCC;
   }
   50% {
-    box-shadow: 0 0 15px #ff69b4, 0 0 25px #ff69b4;
+    box-shadow: 0 0 15px #CCCCCC, 0 0 25px #CCCCCC;
   }
 }
 
@@ -173,7 +173,7 @@ body {
 }
 
 #content-modal .modal-content {
-  background: #1e1e1e;
+  background: #1C1C1C;
   color: #eee;
   margin: 5% auto;
   padding: 0;
@@ -208,7 +208,7 @@ body {
 }
 
 #content-modal .modal-close:hover {
-  color: #ff5f56;
+  color: #DD4814;
 }
 
 #modal-content-text {
