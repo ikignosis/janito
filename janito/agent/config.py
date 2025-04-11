@@ -43,6 +43,8 @@ class FileConfig(BaseConfig):
             try:
                 with open(self.path, 'r') as f:
                     self._data = json.load(f)
+                    # Remove keys with value None (null in JSON)
+                    self._data = {k: v for k, v in self._data.items() if v is not None}
             except Exception:
                 self._data = {}
         else:
@@ -64,6 +66,9 @@ CONFIG_OPTIONS = {
     "max_tokens": "Maximum tokens for model response (int)"
 }
 
+# Import defaults for reference
+from .config_defaults import CONFIG_DEFAULTS
+
 class EffectiveConfig:
     """Read-only merged view of local and global configs"""
     def __init__(self, local_cfg, global_cfg):
@@ -71,10 +76,17 @@ class EffectiveConfig:
         self.global_cfg = global_cfg
 
     def get(self, key, default=None):
+        from .config_defaults import CONFIG_DEFAULTS
         for cfg in (self.local_cfg, self.global_cfg):
             val = cfg.get(key)
             if val is not None:
+                # Treat explicit None/null as not set
+                if val is None:
+                    continue
                 return val
+        # Use centralized defaults if no config found
+        if default is None and key in CONFIG_DEFAULTS:
+            return CONFIG_DEFAULTS[key]
         return default
 
     def all(self):
@@ -93,11 +105,8 @@ global_config = FileConfig(Path.home() / '.janito/config.json')
 effective_config = EffectiveConfig(local_config, global_config)
 
 def get_api_key():
-    """Retrieve API key from environment or config files."""
-    api_key = os.getenv("OPENROUTER_API_KEY")
-    if api_key:
-        return api_key
+    """Retrieve API key from config files (local, then global)."""
     api_key = effective_config.get("api_key")
     if api_key:
         return api_key
-    raise ValueError("API key not found. Please set the OPENROUTER_API_KEY environment variable or configure 'api_key' in your config.")
+    raise ValueError("API key not found. Please configure 'api_key' in your config.")
