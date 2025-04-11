@@ -3,6 +3,7 @@ import sys
 import json
 from prompt_toolkit.history import InMemoryHistory
 from janito.render_prompt import render_system_prompt
+from .load_prompt import load_prompt
 from janito.agent.config import effective_config
 
 
@@ -75,6 +76,29 @@ def handle_help(console, **kwargs):
   /clear    - Clear the terminal screen
   /multi    - Provide multiline input as next message
 """)
+
+
+def handle_reload(console, *args, **kwargs):
+    """
+    /reload [filename] - Reload the system prompt from the default or specified file
+    """
+    agent = kwargs.get('agent')
+    state = kwargs.get('state')
+    filename = args[0] if args else None
+    try:
+        prompt_text = load_prompt(filename)
+        if hasattr(agent, 'system_prompt'):
+            agent.system_prompt = prompt_text
+        # Update the first system message in the conversation if present
+        messages = state.get('messages') if state else None
+        if messages:
+            for msg in messages:
+                if msg.get('role') == 'system':
+                    msg['content'] = prompt_text
+                    break
+        console.print(f"[bold green]System prompt reloaded from {'default file' if not filename else filename}![/bold green]")
+    except Exception as e:
+        console.print(f"[bold red]Failed to reload system prompt:[/bold red] {e}")
 
 
 def handle_system(console, **kwargs):
@@ -160,6 +184,7 @@ COMMAND_HANDLERS = {
     "/role": handle_role,
     "/clear": handle_clear,
     "/reset": handle_reset,
+    "/reload": handle_reload,
 }
 
 
