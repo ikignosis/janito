@@ -55,19 +55,35 @@ def handle_config_commands(args):
         global_items = {}
 
         # Collect and group keys
-        keys = set(global_config.all().keys()) | set(local_config.all().keys())
-        if not keys:
+        from janito.agent.config_defaults import CONFIG_DEFAULTS
+        local_keys = set(local_config.all().keys())
+        global_keys = set(global_config.all().keys())
+        all_keys = set(CONFIG_DEFAULTS.keys()) | global_keys | local_keys
+        if not (local_keys or global_keys):
             print("No configuration found.")
         else:
-            for key in sorted(keys):
-                if key in local_config.all():
-                    source = "local"
-                    value = local_config.get(key)
-                    local_items[key] = value
+            from janito.agent.config import get_api_key
+            from janito.agent.runtime_config import unified_config
+            for key in sorted(local_keys):
+                if key == "api_key":
+                    try:
+                        value = get_api_key()
+                        value = value[:4] + '...' + value[-4:] if value and len(value) > 8 else '***'
+                    except Exception:
+                        value = None
                 else:
-                    source = "global"
-                    value = global_config.get(key)
-                    global_items[key] = value
+                    value = unified_config.get(key)
+                local_items[key] = value
+            for key in sorted(global_keys - local_keys):
+                if key == "api_key":
+                    try:
+                        value = get_api_key()
+                        value = value[:4] + '...' + value[-4:] if value and len(value) > 8 else '***'
+                    except Exception:
+                        value = None
+                else:
+                    value = unified_config.get(key)
+                global_items[key] = value
 
             # Mask API key
             for cfg in (local_items, global_items):
@@ -89,6 +105,20 @@ def handle_config_commands(args):
                     print(f"{key} = {value}")
                 print()
 
+        # Show defaults for unset keys
+        shown_keys = set(local_items.keys()) | set(global_items.keys())
+        default_items = {k: v for k, v in CONFIG_DEFAULTS.items() if k not in shown_keys and k != 'api_key'}
+        if default_items:
+            print("[green]🟢 Defaults (not set in config files)[/green]")
+            for key, value in default_items.items():
+                # Special case for system_prompt: show template file if None
+                if key == "system_prompt" and value is None:
+                    from pathlib import Path
+                    template_path = Path(__file__).parent.parent / "templates" / "system_instructions.j2"
+                    print(f"{key} = file: {template_path}")
+                else:
+                    print(f"{key} = {value}")
+            print()
         did_something = True
 
     if did_something:
