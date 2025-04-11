@@ -68,14 +68,13 @@ CONFIG_OPTIONS = {
 }
 
 class EffectiveConfig:
-    """Read-only merged view of runtime, local, and global configs"""
-    def __init__(self, runtime_cfg, local_cfg, global_cfg):
-        self.runtime_cfg = runtime_cfg
+    """Read-only merged view of local and global configs"""
+    def __init__(self, local_cfg, global_cfg):
         self.local_cfg = local_cfg
         self.global_cfg = global_cfg
 
     def get(self, key, default=None):
-        for cfg in (self.runtime_cfg, self.local_cfg, self.global_cfg):
+        for cfg in (self.local_cfg, self.global_cfg):
             val = cfg.get(key)
             if val is not None:
                 return val
@@ -83,18 +82,18 @@ class EffectiveConfig:
 
     def all(self):
         merged = {}
-        # Start with global, override with local, then runtime
-        for cfg in (self.global_cfg, self.local_cfg, self.runtime_cfg):
+        # Start with global, override with local
+        for cfg in (self.global_cfg, self.local_cfg):
             merged.update(cfg.all())
         return merged
 
 
 # Singleton instances
-runtime_config = RuntimeConfig()
+
 local_config = FileConfig(Path('.janito/config.json'))
 global_config = FileConfig(Path.home() / '.janito/config.json')
 
-effective_config = EffectiveConfig(runtime_config, local_config, global_config)
+effective_config = EffectiveConfig(local_config, global_config)
 
 def get_api_key():
     """Retrieve API key from environment or config files."""

@@ -39,7 +39,7 @@ class ConversationHandler:
                         messages=messages,
                         tools=self.tool_handler.get_tool_schemas(),
                         tool_choice="auto",
-                        temperature=0,
+                        temperature=0.2,
                         max_tokens=resolved_max_tokens
                     )
                     status.stop()
@@ -50,7 +50,7 @@ class ConversationHandler:
                     messages=messages,
                     tools=self.tool_handler.get_tool_schemas(),
                     tool_choice="auto",
-                    temperature=0,
+                    temperature=0.2,
                     max_tokens=resolved_max_tokens
                 )
 
