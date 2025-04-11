@@ -116,6 +116,8 @@ def handle_multi(console, state, **kwargs):
     console.print("[bold yellow]Multiline mode activated. Provide or write your text and press Esc + Enter to submit.[/bold yellow]")
     state['paste_mode'] = True
 
+from janito.agent.runtime_config import runtime_config
+
 def handle_role(console, *args, **kwargs):
     state = kwargs.get('state')
     agent = kwargs.get('agent')
@@ -141,9 +143,8 @@ def handle_role(console, *args, **kwargs):
         agent.role_name = new_role
     else:
         setattr(agent, 'role_name', new_role)
-    # Update effective_config role for UI/toolbox
-    effective_config.set('role', new_role)
-
+    # Update runtime config so all lookups see the new role
+    runtime_config.set('role', new_role)
     console.print(f"[bold green]System role updated to:[/bold green] {new_role}")
 
 
