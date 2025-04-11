@@ -1,0 +1,4 @@
+- Fixed import error in `__main__.py` by changing `import app as flask_app` to `import app`.
+- Verified `app.py` contains the Flask app instance as `app`.
+- No changes needed to documentation, as it was already accurate.
+- Committed the fix to git.

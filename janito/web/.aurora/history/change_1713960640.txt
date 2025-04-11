@@ -1,0 +1,3 @@
+Reviewed project structure and terminal interface.
+Confirmed that a blinking cursor is already implemented in `templates/index.html` using CSS animations.
+No changes were necessary.

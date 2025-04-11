@@ -1,25 +1,25 @@
-# 🚀 Aurora: Natural Language Code Editing Agent
+# 🚀 Janito: Natural Language Code Editing Agent
 
 ## ⚡ Quick Start
 
 Run a one-off prompt:
 ```bash
-python -m aurora "Refactor the data processing module to improve readability."
+python -m janito "Refactor the data processing module to improve readability."
 ```
 
 Or start the interactive chat shell:
 ```bash
-python -m aurora
+python -m janito
 ```
 
 Launch the web UI:
 ```bash
-python -m aurora.web
+python -m janito.web
 ```
 
 ---
 
-Aurora is a command-line and web-based AI agent designed to **edit code and manage files** using natural language instructions.
+Janito is a command-line and web-based AI agent designed to **edit code and manage files** using natural language instructions.
 
 ---
 
@@ -44,7 +44,7 @@ pip install -e .
 ```
 
 ### Set your API key
-Aurora uses OpenAI-compatible APIs (default: `openrouter/quasar-alpha`). Set your API key as an environment variable:
+Janito uses OpenAI-compatible APIs (default: `openrouter/optimus-alpha`). Set your API key as an environment variable:
 ```bash
 export OPENROUTER_API_KEY=your_api_key_here
 ```
@@ -63,7 +63,7 @@ export OPENROUTER_API_KEY=your_api_key_here
 
 ## ⚙️ Configuration
 
-Aurora supports multiple ways to configure API access, model, and behavior:
+Janito supports multiple ways to configure API access, model, and behavior:
 
 ### API Key
 
@@ -73,7 +73,7 @@ Aurora supports multiple ways to configure API access, model, and behavior:
   ```
 - Or save it using CLI:
   ```bash
-  python -m aurora --set-api-key your_api_key_here
+  python -m janito --set-api-key your_api_key_here
   ```
 
 ### Configurable Options
@@ -81,7 +81,7 @@ Aurora supports multiple ways to configure API access, model, and behavior:
 | Key             | Description                                               | How to set                                                      | Default                                    |
 |-----------------|-----------------------------------------------------------|-----------------------------------------------------------------|--------------------------------------------|
 | `api_key`       | API key for OpenAI-compatible service                     | Env var, `--set-api-key`, config file                           | _None_ (required)                          |
-| `model`         | Model name to use                                         | `--set-local-config model=...` or `--set-global-config`         | `openrouter/quasar-alpha`                 |
+| `model`         | Model name to use                                         | `--set-local-config model=...` or `--set-global-config`         | `openrouter/optimus-alpha`                 |
 | `base_url`      | API base URL (OpenAI-compatible endpoint)                 | `--set-local-config base_url=...` or `--set-global-config`      | `https://openrouter.ai/api/v1`            |
 | `role`          | Role description for system prompt                        | CLI `--role` or config                                          | "software engineer"                     |
 | `system_prompt` | Override the entire system prompt                         | CLI `--system-prompt` or config                                 | _Template-generated prompt_               |
@@ -89,27 +89,27 @@ Aurora supports multiple ways to configure API access, model, and behavior:
 
 ### Config files
 
-- **Local config:** `.aurora/config.json` (project-specific)
-- **Global config:** `~/.config/aurora/config.json` (user-wide)
+- **Local config:** `.janito/config.json` (project-specific)
+- **Global config:** `~/.config/janito/config.json` (user-wide)
 
 Set values via:
 
 ```bash
-python -m aurora --set-local-config key=value
-python -m aurora --set-global-config key=value
+python -m janito --set-local-config key=value
+python -m janito --set-global-config key=value
 ```
 
 Show current effective config:
 
 ```bash
-python -m aurora --show-config
+python -m janito --show-config
 ```
 
 ---
 
 ## ☁️ Using Azure OpenAI
 
-Aurora supports **Azure OpenAI Service** as a backend.
+Janito supports **Azure OpenAI Service** as a backend.
 
 ### How to enable
 
@@ -131,20 +131,20 @@ export USE_AZURE_OPENAI=1
 
 - The **model name** you configure (via CLI or config) should be the **Azure deployment name** (not the base model name).
 - All other CLI options and config settings apply as usual.
-- If `USE_AZURE_OPENAI` is **not** set, Aurora defaults to OpenRouter or OpenAI-compatible APIs.
+- If `USE_AZURE_OPENAI` is **not** set, Janito defaults to OpenRouter or OpenAI-compatible APIs.
 
 ---
 
 ## 💻 Usage
 
 ### Command Line Interface
-Run Aurora with a single prompt:
+Run Janito with a single prompt:
 ```bash
-python -m aurora "Refactor the data processing module to improve readability."
+python -m janito "Refactor the data processing module to improve readability."
 ```
 
 ### Interactive Chat Shell (Default Mode)
-If no prompt is provided, Aurora launches an **interactive chat shell**.
+If no prompt is provided, Janito launches an **interactive chat shell**.
 
 - Supports **multiline input** (end with a single `.` on a line or Ctrl+D/Z)
 - **Interrupt** agent requests anytime with Ctrl+C
@@ -153,7 +153,7 @@ If no prompt is provided, Aurora launches an **interactive chat shell**.
 - Restore last session on startup with `--continue-session` or inside the shell with `/continue`
 
 #### Session Management
-Aurora automatically saves your conversation history and summaries. You can:
+Janito automatically saves your conversation history and summaries. You can:
 - **Continue last session**: `/continue` or `--continue-session`
 - **Reset conversation**: `/reset`
 - **Restart the CLI**: `/restart`
@@ -166,7 +166,7 @@ Aurora automatically saves your conversation history and summaries. You can:
 - `/clear`: Clear the terminal screen
 
 ### Command Line Options
-- `--web`: Launch the Aurora web server instead of the CLI interface.
+- `--web`: Launch the Janito web server instead of the CLI interface.
 - `PROMPT` (positional): Prompt to send to the model. If omitted, starts interactive chat shell.
 - `-s`, `--system-prompt`: Override the system prompt.
 - `-r`, `--role`: Role description for the system prompt (default: "software engineer").
@@ -185,7 +185,7 @@ Aurora automatically saves your conversation history and summaries. You can:
 ## 🖥️ Web Interface
 Launch the web server:
 ```bash
-python -m aurora.web
+python -m janito.web
 ```
 
 - Access via `http://localhost:5000` (default port).

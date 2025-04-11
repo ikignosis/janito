@@ -1,5 +1,5 @@
 [project]
-name = "aurora"
+name = "janito"
 version = "0.1.0"
 description = "An agent framework with built-in tools."
 authors = [
@@ -22,15 +22,15 @@ classifiers = [
 ]
 
 [project.urls]
-homepage = "https://github.com/joaompinto/aurora"
-repository = "https://github.com/joaompinto/aurora"
+homepage = "https://github.com/joaompinto/janito"
+repository = "https://github.com/joaompinto/janito"
 
 [project.scripts]
-aurora = "aurora.__main__:main"
+janito = "janito.__main__:main"
 
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.package-data]
-"aurora.templates" = ["system_instructions.j2"]
+"janito.templates" = ["system_instructions.j2"]

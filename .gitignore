@@ -150,5 +150,5 @@ $RECYCLE.BIN/
 # System-specific
 *.orig
 
-# Ignore all .aurora directories recursively
-**/.aurora/
+# Ignore all .janito directories recursively
+**/.janito/
