@@ -66,21 +66,15 @@ def handle_config_commands(args):
             from janito.agent.runtime_config import unified_config
             for key in sorted(local_keys):
                 if key == "api_key":
-                    try:
-                        value = get_api_key()
-                        value = value[:4] + '...' + value[-4:] if value and len(value) > 8 else '***'
-                    except Exception:
-                        value = None
+                    value = local_config.get("api_key")
+                    value = value[:4] + '...' + value[-4:] if value and len(value) > 8 else ('***' if value else None)
                 else:
                     value = unified_config.get(key)
                 local_items[key] = value
             for key in sorted(global_keys - local_keys):
                 if key == "api_key":
-                    try:
-                        value = get_api_key()
-                        value = value[:4] + '...' + value[-4:] if value and len(value) > 8 else '***'
-                    except Exception:
-                        value = None
+                    value = global_config.get("api_key")
+                    value = value[:4] + '...' + value[-4:] if value and len(value) > 8 else ('***' if value else None)
                 else:
                     value = unified_config.get(key)
                 global_items[key] = value
