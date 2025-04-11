@@ -152,3 +152,4 @@ $RECYCLE.BIN/
 
 # Ignore all .janito directories recursively
 **/.janito/
+'.aurora/' 
