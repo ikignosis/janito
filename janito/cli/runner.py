@@ -5,7 +5,8 @@ from rich.markdown import Markdown
 from janito.render_prompt import render_system_prompt
 from janito.agent.agent import Agent
 from janito.agent.conversation import MaxRoundsExceededError, EmptyResponseError, ProviderError
-from janito.agent.config import effective_config, get_api_key
+from janito.agent.runtime_config import unified_config
+from janito.agent.config import get_api_key
 from janito import __version__
 from rich.rule import Rule
 
@@ -29,11 +30,10 @@ def run_cli(args):
         print(f"janito version {__version__}")
         sys.exit(0)
 
-    role = args.role or effective_config.get("role", "software engineer")
-    if args.role:
-        runtime_config.set('role', args.role)
-
-    system_prompt = args.system_prompt or effective_config.get("system_prompt")
+    role = args.role or unified_config.get("role", "software engineer")
+    # if args.role:
+    #     runtime_config.set('role', args.role)
+    system_prompt = args.system_prompt or unified_config.get("system_prompt")
     if system_prompt is None:
         system_prompt = render_system_prompt(role)
 
@@ -48,14 +48,14 @@ def run_cli(args):
 
     api_key = get_api_key()
 
-    model = effective_config.get('model')
-    base_url = effective_config.get('base_url', 'https://openrouter.ai/api/v1')
+    model = unified_config.get('model')
+    base_url = unified_config.get('base_url', 'https://openrouter.ai/api/v1')
     agent = Agent(api_key=api_key, model=model if model else 'openrouter/optimus-alpha', system_prompt=system_prompt, verbose_tools=args.verbose_tools, base_url=base_url)
 
     # Save runtime max_tokens override if provided
+    from janito.agent.runtime_config import runtime_config
     if args.max_tokens is not None:
         runtime_config.set('max_tokens', args.max_tokens)
-
     if not args.prompt:
         console = Console()
 

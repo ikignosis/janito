@@ -41,7 +41,7 @@
 - `janito/cli/config_commands.py`: Defines `handle_config_commands(args)` to process config-related commands (`--set-*`, `--show-config`).
 - `janito/cli/logging_setup.py`: Defines `setup_verbose_logging(args)` to configure verbose HTTP and wire-level logging.
 - `janito/cli/runner.py`: Defines `run_cli(args)` containing the main CLI logic. If a prompt is provided, it sends a single prompt to the agent. If no prompt is provided, it enters interactive chat mode by default.
-  - Loads the model and API base URL from the *effective config* if available (`effective_config.get("model")` and `effective_config.get("base_url")`), allowing users to customize which OpenAI-compatible model and endpoint to use.
+  - Loads model, API base URL, and other settings from the *unified config* (`unified_config.get(...)`), which first checks runtime/session overrides, then falls back to effective (local/global) config.
 - `janito/cli/main.py`: Defines `main()` which orchestrates argument parsing, config commands, logging setup, and runs the CLI.
 
 ## Agent Subpackage: `janito.agent`
@@ -52,6 +52,7 @@
     - `"content"`: the assistant's message text.
     - `"usage"`: a dictionary with token usage info (`prompt_tokens`, `completion_tokens`, `total_tokens`), or `None`.
 - `janito/agent/config.py`: Configuration management classes and `get_api_key()`.
+- `janito/agent/runtime_config.py`: Defines the in-memory runtime config and `unified_config`, which always checks runtime (session) overrides before falling back to effective (local/global) config.
 - `janito/agent/conversation.py`: Manages conversation history.
 - `janito/agent/tool_handler.py`: Handles tool execution.
 - `janito/agent/queued_tool_handler.py`: Tool handler subclass for streaming tool progress.

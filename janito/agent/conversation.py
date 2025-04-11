@@ -24,12 +24,12 @@ class ConversationHandler:
         from rich.console import Console
         console = Console()
 
-        from janito.agent.config import effective_config
+        from janito.agent.runtime_config import unified_config
 
         # Resolve max_tokens priority: runtime param > config > default
         resolved_max_tokens = max_tokens
         if resolved_max_tokens is None:
-            resolved_max_tokens = effective_config.get('max_tokens', 200000)
+            resolved_max_tokens = unified_config.get('max_tokens', 200000)
 
         for _ in range(max_rounds):
             if spinner:

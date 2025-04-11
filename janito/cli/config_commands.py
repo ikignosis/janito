@@ -1,5 +1,6 @@
 import sys
 from janito.agent.config import local_config, global_config
+from janito.agent.runtime_config import runtime_config
 from rich import print
 
 
@@ -20,6 +21,7 @@ def handle_config_commands(args):
             sys.exit(1)
         local_config.set(key, val.strip())
         local_config.save()
+        runtime_config.set(key, val.strip())
         print(f"Local config updated: {key} = {val.strip()}")
         did_something = True
 
@@ -36,17 +38,19 @@ def handle_config_commands(args):
             sys.exit(1)
         global_config.set(key, val.strip())
         global_config.save()
+        runtime_config.set(key, val.strip())
         print(f"Global config updated: {key} = {val.strip()}")
         did_something = True
 
     if args.set_api_key:
         local_config.set("api_key", args.set_api_key.strip())
         local_config.save()
+        runtime_config.set("api_key", args.set_api_key.strip())
         print("Local API key saved.")
         did_something = True
 
     if args.show_config:
-        from janito.agent.config import effective_config
+        from janito.agent.runtime_config import unified_config, runtime_config
         local_items = {}
         global_items = {}
 

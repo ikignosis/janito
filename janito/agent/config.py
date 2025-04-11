@@ -30,9 +30,6 @@ class BaseConfig(metaclass=SingletonMeta):
         return self._data
 
 
-class RuntimeConfig(BaseConfig):
-    """In-memory only config, reset on restart"""
-    pass
 
 
 class FileConfig(BaseConfig):
