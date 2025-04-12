@@ -1,7 +1,8 @@
 import sys
 from janito.agent.config import local_config, global_config
-from janito.agent.runtime_config import runtime_config
+from janito.agent.runtime_config import unified_config, runtime_config
 from rich import print
+from ._utils import home_shorten
 
 
 def handle_config_commands(args):
@@ -43,14 +44,13 @@ def handle_config_commands(args):
         did_something = True
 
     if args.set_api_key:
-        local_config.set("api_key", args.set_api_key.strip())
-        local_config.save()
+        global_config.set("api_key", args.set_api_key.strip())
+        global_config.save()
         runtime_config.set("api_key", args.set_api_key.strip())
-        print("Local API key saved.")
+        print("Global API key saved.")
         did_something = True
 
     if args.show_config:
-        from janito.agent.runtime_config import unified_config, runtime_config
         local_items = {}
         global_items = {}
 
@@ -86,18 +86,12 @@ def handle_config_commands(args):
                     cfg['api_key'] = val[:4] + '...' + val[-4:] if len(val) > 8 else '***'
 
             # Print local config
-            if local_items:
-                print("[cyan]🏠 Local Configuration[/cyan]")
-                for key, value in local_items.items():
-                    print(f"{key} = {value}")
-                print()
+            from ._print_config import print_config_items
+            print_config_items(local_items, color_label="[cyan]🏠 Local Configuration[/cyan]")
 
             # Print global config
-            if global_items:
-                print("[yellow]🌐 Global Configuration[/yellow]")
-                for key, value in global_items.items():
-                    print(f"{key} = {value}")
-                print()
+            print_config_items(global_items, color_label="[yellow]🌐 Global Configuration[/yellow]")
+
 
         # Show defaults for unset keys
         shown_keys = set(local_items.keys()) | set(global_items.keys())
@@ -109,7 +103,7 @@ def handle_config_commands(args):
                 if key == "system_prompt" and value is None:
                     from pathlib import Path
                     template_path = Path(__file__).parent.parent / "templates" / "system_instructions.j2"
-                    print(f"{key} = file: {template_path}")
+                    print(f"{key} = file: {home_shorten(str(template_path))}")
                 else:
                     print(f"{key} = {value}")
             print()
