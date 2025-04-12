@@ -141,6 +141,7 @@ def handle_multi(console, state, **kwargs):
     state['paste_mode'] = True
 
 from janito.agent.runtime_config import runtime_config
+from .config_shell import handle_config_shell
 
 def handle_role(console, *args, **kwargs):
     state = kwargs.get('state')
@@ -184,6 +185,7 @@ COMMAND_HANDLERS = {
     "/role": handle_role,
     "/clear": handle_clear,
     "/reset": handle_reset,
+    "/config": handle_config_shell,
     "/reload": handle_reload,
 }
 

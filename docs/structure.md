@@ -19,6 +19,10 @@
   - `/system`: Show the current system prompt.
   - `/continue`: Restore the last saved conversation and CLI prompts from `.janito/last_conversation.json`.
   - `/reset`: Reset conversation history (clears in-memory state and deletes saved conversation).
+  - `/config`: Show or set configuration from within the chat shell. Usage:
+    - `/config show` — Show effective configuration (local, global, defaults)
+    - `/config set local key=value` — Set a local config value
+    - `/config set global key=value` — Set a global config value
 
 ## Session Persistence
 - The CLI shell automatically saves the conversation history and CLI prompts after each message or command to `.janito/last_conversation.json`.
@@ -44,3 +48,4 @@
 - `janito/cli/runner.py`: Runs the CLI chat loop, manages agent setup, and handles prompt/system prompt logic.
 - `janito/cli/logging_setup.py`: CLI logging configuration.
 
+# ... (rest unchanged)
