@@ -109,5 +109,23 @@ def handle_config_commands(args):
             print()
         did_something = True
 
+    import os
+    from pathlib import Path
+    if getattr(args, "config_reset_local", False):
+        local_path = Path('.janito/config.json')
+        if local_path.exists():
+            os.remove(local_path)
+            print(f"Removed local config file: {local_path}")
+        else:
+            print(f"Local config file does not exist: {local_path}")
+        sys.exit(0)
+    if getattr(args, "config_reset_global", False):
+        global_path = Path.home() / '.janito/config.json'
+        if global_path.exists():
+            os.remove(global_path)
+            print(f"Removed global config file: {global_path}")
+        else:
+            print(f"Global config file does not exist: {global_path}")
+        sys.exit(0)
     if did_something:
         sys.exit(0)
