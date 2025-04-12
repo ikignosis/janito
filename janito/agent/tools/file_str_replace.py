@@ -9,9 +9,12 @@ def file_str_replace(path: str, old_string: str, new_string: str) -> str:
 
     path: Path to the file
     old_string: The exact string to replace
+        - must be unique within all the file lines
     new_string: The replacement string
 
-    Returns a message indicating success, or an error if zero or multiple matches are found.
+
+
+    Returns a message indicating success on an error
     """
     if not os.path.isfile(path):
         print_error(f"❌ Error: '{path}' is not a valid file.")

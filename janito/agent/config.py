@@ -16,7 +16,7 @@ class SingletonMeta(type):
         return cls._instances[cls]
 
 
-class BaseConfig(metaclass=SingletonMeta):
+class BaseConfig:
     def __init__(self):
         self._data = {}
 
@@ -45,7 +45,8 @@ class FileConfig(BaseConfig):
                     self._data = json.load(f)
                     # Remove keys with value None (null in JSON)
                     self._data = {k: v for k, v in self._data.items() if v is not None}
-            except Exception:
+            except Exception as e:
+                print(f"Warning: Failed to load config file {self.path}: {e}")
                 self._data = {}
         else:
             self._data = {}
