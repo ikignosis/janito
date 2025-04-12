@@ -33,7 +33,10 @@ class ConversationHandler:
 
         for _ in range(max_rounds):
             if spinner:
-                with console.status("[bold green]Waiting for AI response...", spinner="dots") as status:
+                                # Calculate word count for all messages
+                word_count = sum(len(str(m.get('content', '')).split()) for m in messages if 'content' in m)
+                spinner_msg = f"[bold green]Waiting for AI response... ({word_count} words in conversation)"
+                with console.status(spinner_msg, spinner="dots") as status:
                     response = self.client.chat.completions.create(
                         model=self.model,
                         messages=messages,
