@@ -48,4 +48,16 @@
 - `janito/cli/runner.py`: Runs the CLI chat loop, manages agent setup, and handles prompt/system prompt logic.
 - `janito/cli/logging_setup.py`: CLI logging configuration.
 
+# Build & Release Automation
+
+## Release Scripts
+- `tools/release.sh`: Bash script for automated build and release to PyPI. Checks for required tools (`hatch`, `twine`), validates the version in `pyproject.toml` against PyPI and git tags, builds the package, and uploads to PyPI.
+- `tools/release.ps1`: PowerShell script for Windows with the same logic as the Bash script.
+
+## Usage
+- **Linux/macOS:** `./tools/release.sh`
+- **Windows:** `./tools/release.ps1`
+
+These scripts ensure version consistency and automate the release process for maintainers.
+
 # ... (rest unchanged)
