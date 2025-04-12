@@ -15,7 +15,7 @@ class Agent:
     def __init__(
         self,
         api_key: str,
-        model: str = "openrouter/optimus-alpha",
+        model: str = None,
         system_prompt: str | None = None,
         verbose_tools: bool = False,
         tool_handler = None,

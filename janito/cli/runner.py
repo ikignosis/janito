@@ -39,7 +39,8 @@ def run_cli(args):
 
     if args.show_system:
         api_key = get_api_key()
-        agent = Agent(api_key=api_key)
+        model = unified_config.get('model')
+        agent = Agent(api_key=api_key, model=model)
         print("Model:", agent.model)
         print("Parameters: {}")
         import json
@@ -50,7 +51,7 @@ def run_cli(args):
 
     model = unified_config.get('model')
     base_url = unified_config.get('base_url', 'https://openrouter.ai/api/v1')
-    agent = Agent(api_key=api_key, model=model if model else 'openrouter/optimus-alpha', system_prompt=system_prompt, verbose_tools=args.verbose_tools, base_url=base_url)
+    agent = Agent(api_key=api_key, model=model, system_prompt=system_prompt, verbose_tools=args.verbose_tools, base_url=base_url)
 
     # Save runtime max_tokens override if provided
     if args.max_tokens is not None:
