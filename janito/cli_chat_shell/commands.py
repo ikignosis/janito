@@ -75,6 +75,7 @@ def handle_help(console, **kwargs):
   /role     - Change the system role
   /clear    - Clear the terminal screen
   /multi    - Provide multiline input as next message
+  /config   - Show or set configuration (see: /config show, /config set local|global key=value)
 """)
 
 
