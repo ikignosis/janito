@@ -33,6 +33,7 @@ def print_summary(console, data, continue_session):
 def print_welcome(console, version=None):
     version_str = f" (v{version})" if version else ""
     console.print(f"[bold green]Welcome to Janito{version_str}! Entering chat mode. Type /exit to exit.[/bold green]")
+    console.print("[yellow]To resume your previous conversation, type /continue at any time.[/yellow]")
 
 
 def get_toolbar_func(messages_ref, last_usage_info_ref, last_elapsed_ref, model_name=None, role_ref=None):
