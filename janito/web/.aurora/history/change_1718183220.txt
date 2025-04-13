@@ -1,4 +1,0 @@
-- Moved `index.html` into `templates/` directory to be used as a Flask template
-- Updated `app.py` to render `index.html` instead of returning plain text
-- Updated `docs/structure.md` to reflect new template location and clarify file purposes
-- Committed changes to git

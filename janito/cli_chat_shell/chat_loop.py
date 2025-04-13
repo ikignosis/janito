@@ -6,6 +6,7 @@ from .ui import print_welcome, get_toolbar_func, get_prompt_session
 from janito import __version__
 from .commands import handle_command
 from janito.agent.config import effective_config
+from janito.agent.runtime_config import runtime_config
 from janito.agent.conversation import EmptyResponseError, ProviderError
 
 
@@ -68,7 +69,7 @@ def start_chat_shell(agent, continue_session=False):
     session = get_prompt_session(
         get_toolbar_func(
             get_messages, get_usage, get_elapsed, model_name=model_name,
-            role_ref=lambda: effective_config.get('role')
+            role_ref=lambda: runtime_config.get('role') or effective_config.get('role')
         ),
         mem_history
     )

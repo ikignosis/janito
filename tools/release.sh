@@ -102,6 +102,8 @@ else
 fi
 
 # Build the package
+print_info "Removing old dist directory..."
+rm -rf dist
 print_info "Building the package..."
 hatch build
 

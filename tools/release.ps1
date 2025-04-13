@@ -100,6 +100,8 @@ if ([string]::IsNullOrEmpty($CurrentTag)) {
 }
 
 # Build the package
+Print-Info "Removing old dist directory..."
+Remove-Item -Recurse -Force dist
 Print-Info "Building the package..."
 hatch build
 

@@ -1,3 +1,0 @@
-- Soft reset the last commit
-- Recommitted all changes excluding `.aurora` files
-- Verified `.aurora` files are no longer tracked in the latest commit

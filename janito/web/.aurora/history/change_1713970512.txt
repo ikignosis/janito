@@ -1,4 +1,0 @@
-- Searched for all occurrences of `AURORA_API_KEY` in the project.
-- Found and updated `app.py` to use `OPENROUTER_API_KEY` instead.
-- Updated the error message accordingly.
-- Committed the change with message: "refactor: use OPENROUTER_API_KEY instead of AURORA_API_KEY".

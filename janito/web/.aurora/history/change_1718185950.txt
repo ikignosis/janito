@@ -1,6 +1,0 @@
-- Investigated 500 error and JS TypeError caused by backend response format mismatch
-- Located /execute endpoint in app.py
-- Found it returned {'result': ...} or {'error': ...}
-- Updated /execute endpoint to always return {'output': ...} with error message if exception occurs
-- This matches frontend JS expecting 'output' key and calling split() on it
-- Committed fix to git
