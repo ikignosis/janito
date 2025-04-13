@@ -52,6 +52,7 @@ Janito is a command-line and web-based AI agent designed to **edit code and mana
 | `system_prompt_file`| Use a plain text file as the system prompt (no template rendering, takes precedence over `system_prompt`). | CLI `--system-file` | _None_ |
 | `temperature`       | Sampling temperature (float, e.g., 0.0 - 2.0)                                              | CLI `--temperature` or config                                    | 0.2                                        |
 | `max_tokens`        | Maximum tokens for model response                                                          | CLI `--max-tokens` or config                                    | 200000                                     |
+| `enable_tools`      | Enable tool use (tools passed to agent)                                                    | CLI `--enable-tools`                                             | _True_                                      |
 
 #### System Prompt Precedence
 

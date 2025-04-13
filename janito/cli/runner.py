@@ -66,7 +66,10 @@ def run_cli(args):
 
     model = unified_config.get('model')
     base_url = unified_config.get('base_url', 'https://openrouter.ai/api/v1')
-    agent = Agent(api_key=api_key, model=model, system_prompt=system_prompt, verbose_tools=args.verbose_tools, base_url=base_url)
+    # Handle --enable-tools flag
+    from janito.agent.tool_handler import ToolHandler
+    tool_handler = ToolHandler(verbose=args.verbose_tools, enable_tools=getattr(args, 'enable_tools', True))
+    agent = Agent(api_key=api_key, model=model, system_prompt=system_prompt, verbose_tools=args.verbose_tools, base_url=base_url, tool_handler=tool_handler)
 
     # Save runtime max_tokens override if provided
     if args.max_tokens is not None:

@@ -45,9 +45,10 @@ class ToolHandler:
         }
         return func
 
-    def __init__(self, verbose=False):
+    def __init__(self, verbose=False, enable_tools=True):
         self.verbose = verbose
         self.tools = []
+        self.enable_tools = enable_tools
 
     def register(self, func):
         self.tools.append(func)
@@ -57,6 +58,8 @@ class ToolHandler:
         return self.tools
 
     def get_tool_schemas(self):
+        if not getattr(self, 'enable_tools', True):
+            return []
         schemas = []
         for name, entry in self._tool_registry.items():
             schemas.append({
