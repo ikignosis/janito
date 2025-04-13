@@ -5,8 +5,12 @@ def create_parser():
     parser = argparse.ArgumentParser(description="OpenRouter API call using OpenAI Python SDK")
     parser.add_argument("prompt", type=str, nargs="?", help="Prompt to send to the model")
     parser.add_argument("--max-tokens", type=int, default=None, help="Maximum tokens for model response (overrides config, default: 200000)")
-    parser.add_argument("-s", "--system-prompt", type=str, default=None, help="Optional system prompt as a raw string.")
-    parser.add_argument("--system-file", type=str, default=None, help="Path to a plain text file to use as the system prompt")
+
+    # Mutually exclusive group for system prompt options
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-s", "--system-prompt", type=str, default=None, help="Optional system prompt as a raw string.")
+    group.add_argument("--system-file", type=str, default=None, help="Path to a plain text file to use as the system prompt (no template rendering, takes precedence over --system-prompt)")
+
     parser.add_argument("-r", "--role", type=str, default=None, help="Role description for the default system prompt")
     parser.add_argument("-t", "--temperature", type=float, default=None, help="Sampling temperature (e.g., 0.0 - 2.0)")
     parser.add_argument("--verbose-http", action="store_true", help="Enable verbose HTTP logging")
