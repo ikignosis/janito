@@ -18,7 +18,7 @@ def create_parser():
     parser.add_argument("--verbose-response", action="store_true", help="Pretty print the full response object")
     parser.add_argument("--show-system", action="store_true", help="Show model, parameters, system prompt, and tool definitions, then exit")
     parser.add_argument("--verbose-tools", action="store_true", help="Print tool call parameters and results")
-    parser.add_argument("--enable-tools", action="store_true", default=True, help="Enable tool use (default: enabled)")
+    parser.add_argument("--disable-tools", action="store_true", default=False, help="Disable tool use (default: enabled)")
     parser.add_argument("--set-local-config", type=str, default=None, help='Set a local config key-value pair, format "key=val"')
     parser.add_argument("--set-global-config", type=str, default=None, help='Set a global config key-value pair, format "key=val"')
     parser.add_argument("--show-config", action="store_true", help="Show effective configuration and exit")
