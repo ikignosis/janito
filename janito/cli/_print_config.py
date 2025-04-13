@@ -62,7 +62,7 @@ def print_full_config(local_config, global_config, unified_config, config_defaul
             template_path = Path(__file__).parent.parent / "templates" / "system_instructions.j2"
             for key, value in default_items.items():
                 if key == "system_prompt" and value is None:
-                    out(f"{key} = file: {home_shorten(str(template_path))}")
+                    out(f"{key} = (default template path: {home_shorten(str(template_path))})")
                 else:
                     out(f"{key} = {value}")
             out("")
