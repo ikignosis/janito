@@ -69,7 +69,7 @@ def start_chat_shell(agent, continue_session=False):
     session = get_prompt_session(
         get_toolbar_func(
             get_messages, get_usage, get_elapsed, model_name=model_name,
-            role_ref=lambda: runtime_config.get('role') or effective_config.get('role')
+            role_ref=lambda: ("*using custom system prompt*" if (runtime_config.get('system_prompt') or runtime_config.get('system_prompt_file')) else (runtime_config.get('role') or effective_config.get('role')))
         ),
         mem_history
     )
