@@ -47,6 +47,8 @@ def run_cli(args):
             sys.exit(1)
     else:
         system_prompt = args.system_prompt or unified_config.get("system_prompt")
+        if args.system_prompt:
+            runtime_config.set('system_prompt', system_prompt)
         if system_prompt is None:
             system_prompt = render_system_prompt(role)
 
