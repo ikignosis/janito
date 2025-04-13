@@ -34,11 +34,21 @@ def run_cli(args):
     # Ensure runtime_config is updated so chat shell sees the role
     if args.role:
         runtime_config.set('role', args.role)
-    # if args.role:
-    #     runtime_config.set('role', args.role)
-    system_prompt = args.system_prompt or unified_config.get("system_prompt")
-    if system_prompt is None:
-        system_prompt = render_system_prompt(role)
+
+    # New logic for --system-file
+    system_prompt = None
+    if getattr(args, 'system_file', None):
+        try:
+            with open(args.system_file, 'r', encoding='utf-8') as f:
+                system_prompt = f.read()
+            runtime_config.set('system_prompt_file', args.system_file)
+        except Exception as e:
+            print(f"[red]Failed to read system prompt file:[/red] {e}")
+            sys.exit(1)
+    else:
+        system_prompt = args.system_prompt or unified_config.get("system_prompt")
+        if system_prompt is None:
+            system_prompt = render_system_prompt(role)
 
     if args.show_system:
         api_key = get_api_key()
