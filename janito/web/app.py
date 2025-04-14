@@ -59,6 +59,36 @@ def get_config():
         config["api_key"] = api_key[:4] + '...' + api_key[-4:] if len(api_key) > 8 else '***'
     return jsonify(config)
 
+@app.route('/set_config', methods=['POST'])
+def set_config():
+    from janito.agent.runtime_config import runtime_config
+    from janito.agent.config import CONFIG_OPTIONS
+    from janito.agent.config_defaults import CONFIG_DEFAULTS
+    data = request.get_json()
+    key = data.get('key')
+    value = data.get('value')
+    if key not in CONFIG_OPTIONS:
+        return jsonify({'status': 'error', 'message': f'Invalid config key: {key}'}), 400
+    # Type coercion based on defaults
+    default = CONFIG_DEFAULTS.get(key)
+    if default is not None and value is not None:
+        try:
+            if isinstance(default, bool):
+                value = bool(value)
+            elif isinstance(default, int):
+                value = int(value)
+            elif isinstance(default, float):
+                value = float(value)
+            # else: leave as string or None
+        except Exception as e:
+            return jsonify({'status': 'error', 'message': f'Invalid value type for {key}: {e}'}), 400
+    runtime_config.set(key, value)
+    # Mask api_key in response
+    resp_value = value
+    if key == 'api_key' and value:
+        resp_value = value[:4] + '...' + value[-4:] if len(value) > 8 else '***'
+    return jsonify({'status': 'ok', 'key': key, 'value': resp_value})
+
 
 @app.route('/favicon.ico')
 def favicon():
