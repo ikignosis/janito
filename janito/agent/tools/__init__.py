@@ -1,11 +1,9 @@
 from .ask_user import ask_user
-from .create_directory import create_directory
-from .create_file import create_file
-from .remove_file import remove_file
+from .file_ops import create_directory, create_file, remove_file, move_file
 from .view_file import view_file
 from .find_files import find_files
 from .search_text import search_text
 from .bash_exec import bash_exec
 from .fetch_url import fetch_url
-from .move_file import move_file
+
 from .file_str_replace import file_str_replace
