@@ -8,8 +8,15 @@ from janito.render_prompt import render_system_prompt
 import os
 import threading
 
-# Render system prompt once
-system_prompt = render_system_prompt("software engineer")
+from janito.agent.runtime_config import unified_config
+
+# Render system prompt from config
+role = unified_config.get("role", "software engineer")
+system_prompt_override = unified_config.get("system_prompt")
+if system_prompt_override:
+    system_prompt = system_prompt_override
+else:
+    system_prompt = render_system_prompt(role)
 
 app = Flask(
     __name__,
@@ -33,15 +40,24 @@ stream_queue = Queue()
 # Create a QueuedToolHandler with the queue
 queued_handler = QueuedToolHandler(stream_queue)
 
-# Instantiate the Agent with the custom tool handler
+# Instantiate the Agent with config-driven parameters
 agent = Agent(
-    api_key=get_api_key(),
+    api_key=unified_config.get("api_key"),
+    model=unified_config.get("model"),
+    base_url=unified_config.get("base_url"),
+    temperature=unified_config.get("temperature"),
+    max_tokens=unified_config.get("max_tokens"),
     tool_handler=queued_handler
 )
 
-@app.route('/get_model_name')
-def get_model_name():
-    return jsonify({"model": agent.model})
+@app.route('/get_config')
+def get_config():
+    # Expose effective config for the web app (mask api_key)
+    config = dict(unified_config.all())
+    api_key = config.get("api_key")
+    if api_key:
+        config["api_key"] = api_key[:4] + '...' + api_key[-4:] if len(api_key) > 8 else '***'
+    return jsonify(config)
 
 
 @app.route('/favicon.ico')
