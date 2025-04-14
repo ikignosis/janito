@@ -10,7 +10,8 @@ dependencies = [
     "rich",
     "openai",
     "flask",
-    "pathspec"
+    "pathspec",
+    "beautifulsoup4"
 ]
 license = { text = "MIT" }
 readme = "README.md"
