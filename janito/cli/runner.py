@@ -35,6 +35,10 @@ def run_cli(args):
     if args.role:
         runtime_config.set('role', args.role)
 
+    # Set runtime_config['model'] if --model is provided (highest priority, session only)
+    if getattr(args, 'model', None):
+        runtime_config.set('model', args.model)
+
     # New logic for --system-file
     system_prompt = None
     if getattr(args, 'system_file', None):
@@ -54,6 +58,7 @@ def run_cli(args):
 
     if args.show_system:
         api_key = get_api_key()
+        # Always get model from unified_config (which checks runtime_config first)
         model = unified_config.get('model')
         agent = Agent(api_key=api_key, model=model)
         print("Model:", agent.model)
@@ -64,6 +69,7 @@ def run_cli(args):
 
     api_key = get_api_key()
 
+    # Always get model from unified_config (which checks runtime_config first)
     model = unified_config.get('model')
     base_url = unified_config.get('base_url', 'https://openrouter.ai/api/v1')
     # Handle --enable-tools flag
@@ -112,4 +118,4 @@ def run_cli(args):
         except EmptyResponseError as e:
             print(f"[red]Error:[/red] {e}")
     except KeyboardInterrupt:
-        print("[yellow]Interrupted by user.[/yellow]")
+        console.print("[yellow]Interrupted by user.[/yellow]")
