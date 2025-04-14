@@ -31,6 +31,12 @@ class ConversationHandler:
         if resolved_max_tokens is None:
             resolved_max_tokens = unified_config.get('max_tokens', 200000)
 
+        # Ensure max_tokens is always an int (handles config/CLI string values)
+        try:
+            resolved_max_tokens = int(resolved_max_tokens)
+        except (TypeError, ValueError):
+            raise ValueError(f"max_tokens must be an integer, got: {resolved_max_tokens!r}")
+
         for _ in range(max_rounds):
             if spinner:
                                 # Calculate word count for all messages
