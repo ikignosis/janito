@@ -16,6 +16,7 @@ class ConversationHandler:
         self.client = client
         self.model = model
         self.tool_handler = tool_handler
+        self.usage_history = []
 
     def handle_conversation(self, messages, max_rounds=50, on_content=None, on_tool_progress=None, verbose_response=False, spinner=False, max_tokens=None):
         if not messages:
@@ -95,16 +96,23 @@ class ConversationHandler:
 
             # If no tool calls, return the assistant's message and usage info
             if not choice.message.tool_calls:
+                # Store usage info in usage_history, linked to the next assistant message index
+                assistant_idx = len([m for m in messages if m.get('role') == 'assistant'])
+                self.usage_history.append({"assistant_index": assistant_idx, "usage": usage_info})
                 return {
-    "content": choice.message.content,
-    "usage": usage_info
-}
+                    "content": choice.message.content,
+                    "usage": usage_info,
+                    "usage_history": self.usage_history
+                }
 
             tool_responses = []
             for tool_call in choice.message.tool_calls:
                 result = self.tool_handler.handle_tool_call(tool_call, on_progress=on_tool_progress)
                 tool_responses.append({"tool_call_id": tool_call.id, "content": result})
 
+            # Store usage info in usage_history, linked to the next assistant message index
+            assistant_idx = len([m for m in messages if m.get('role') == 'assistant'])
+            self.usage_history.append({"assistant_index": assistant_idx, "usage": usage_info})
             messages.append({"role": "assistant", "content": choice.message.content, "tool_calls": [tc.to_dict() for tc in choice.message.tool_calls]})
 
             for tr in tool_responses:

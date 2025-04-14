@@ -1,6 +1,6 @@
 [project]
 name = "janito"
-version = "1.2.0"
+version = "1.2.1"
 description = "An agent framework with built-in tools."
 authors = [
     { name = "João Pinto", email = "joao.pinto@gmail.com" }

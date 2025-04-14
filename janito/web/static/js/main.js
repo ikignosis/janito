@@ -56,6 +56,15 @@ function updateModelName(name) {
 
 document.addEventListener("DOMContentLoaded", async function() {
 
+  // Fetch config and update model bar
+  try {
+    const resp = await fetch('/get_config');
+    const config = await resp.json();
+    updateModelName(config.model || 'unknown');
+  } catch (e) {
+    updateModelName('unknown');
+  }
+
   // Setup JSON modal toggle
   const msgBar = document.getElementById('message-count-bar');
   const jsonModal = document.getElementById('json-modal');

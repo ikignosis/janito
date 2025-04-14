@@ -45,15 +45,20 @@ agent = Agent(
     api_key=unified_config.get("api_key"),
     model=unified_config.get("model"),
     base_url=unified_config.get("base_url"),
-    temperature=unified_config.get("temperature"),
-    max_tokens=unified_config.get("max_tokens"),
     tool_handler=queued_handler
 )
 
 @app.route('/get_config')
 def get_config():
-    # Expose effective config for the web app (mask api_key)
-    config = dict(unified_config.all())
+    # Expose full config for the web app: defaults, effective, runtime (mask api_key)
+    from janito.agent.runtime_config import unified_config
+    from janito.agent.config_defaults import CONFIG_DEFAULTS
+    # Start with defaults
+    config = dict(CONFIG_DEFAULTS)
+    # Overlay effective config
+    config.update(unified_config.effective_cfg.all())
+    # Overlay runtime config (highest priority)
+    config.update(unified_config.runtime_cfg.all())
     api_key = config.get("api_key")
     if api_key:
         config["api_key"] = api_key[:4] + '...' + api_key[-4:] if len(api_key) > 8 else '***'
@@ -137,19 +142,25 @@ def execute_stream():
     conversation.append({"role": "user", "content": user_input})
 
     def run_agent():
-        response = agent.chat(
-            conversation,
-            on_content=lambda data: stream_queue.put({"type": "content", "content": data.get("content")})
-        )
-        if response and 'content' in response:
-            conversation.append({"role": "assistant", "content": response['content']})
         try:
-            os.makedirs(os.path.dirname(conversation_file), exist_ok=True)
-            with open(conversation_file, 'w') as f:
-                json.dump(conversation, f, indent=2)
+            response = agent.chat(
+                conversation,
+                on_content=lambda data: stream_queue.put({"type": "content", "content": data.get("content")})
+            )
+            if response and 'content' in response:
+                conversation.append({"role": "assistant", "content": response['content']})
+            try:
+                os.makedirs(os.path.dirname(conversation_file), exist_ok=True)
+                with open(conversation_file, 'w') as f:
+                    json.dump(conversation, f, indent=2)
+            except Exception as e:
+                print(f"Error saving conversation: {e}")
         except Exception as e:
-            print(f"Error saving conversation: {e}")
-        stream_queue.put(None)
+            import traceback
+            tb = traceback.format_exc()
+            stream_queue.put({"type": "error", "error": str(e), "traceback": tb})
+        finally:
+            stream_queue.put(None)
 
     threading.Thread(target=run_agent, daemon=True).start()
 

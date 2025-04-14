@@ -80,26 +80,27 @@ else
     print_warning "Could not fetch information from PyPI. Will attempt to publish anyway."
 fi
 
-# Get current git tag
-CURRENT_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-if [ -z "$CURRENT_TAG" ]; then
-    print_warning "No git tags found. A new tag will be created during the release process."
+# Check for exact version tag (v$PROJECT_VERSION or $PROJECT_VERSION)
+TAG_V="v$PROJECT_VERSION"
+TAG_RAW="$PROJECT_VERSION"
+
+if git rev-parse "$TAG_V" >/dev/null 2>&1; then
+    CURRENT_TAG="$TAG_V"
+elif git rev-parse "$TAG_RAW" >/dev/null 2>&1; then
+    CURRENT_TAG="$TAG_RAW"
 else
-    # Remove 'v' prefix if present
-    CURRENT_TAG_VERSION=${CURRENT_TAG#v}
-    print_info "Current git tag: $CURRENT_TAG (version: $CURRENT_TAG_VERSION)"
-
-    if [ "$PROJECT_VERSION" != "$CURRENT_TAG_VERSION" ]; then
-        print_error "Version mismatch: pyproject.toml ($PROJECT_VERSION) != git tag ($CURRENT_TAG_VERSION)"
-    fi
-
-    # Check if the tag points to the current commit
-    CURRENT_COMMIT=$(git rev-parse HEAD)
-    TAG_COMMIT=$(git rev-parse "$CURRENT_TAG")
-    if [ "$CURRENT_COMMIT" != "$TAG_COMMIT" ]; then
-        print_error "Tag $CURRENT_TAG does not point to the current commit. Please update the tag or create a new one."
-    fi
+    print_error "No git tag found matching version $PROJECT_VERSION (expected tag: $TAG_V or $TAG_RAW). Please create the tag before running this script."
 fi
+
+print_info "Found git tag: $CURRENT_TAG"
+
+# Check if the tag points to the current commit
+CURRENT_COMMIT=$(git rev-parse HEAD)
+TAG_COMMIT=$(git rev-parse "$CURRENT_TAG")
+if [ "$CURRENT_COMMIT" != "$TAG_COMMIT" ]; then
+    print_error "Tag $CURRENT_TAG does not point to the current commit. Please update the tag or create a new one."
+fi
+
 
 # Build the package
 print_info "Removing old dist directory..."

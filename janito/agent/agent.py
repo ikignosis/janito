@@ -60,6 +60,10 @@ class Agent:
             self.client, self.model, self.tool_handler
         )
 
+    @property
+    def usage_history(self):
+        return self.conversation_handler.usage_history
+
     def chat(self, messages, on_content=None, on_tool_progress=None, verbose_response=False, spinner=False, max_tokens=None):
         import time
         from janito.agent.conversation import ProviderError
