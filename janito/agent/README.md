@@ -9,7 +9,7 @@ The `Agent` class in `janito.agent.agent` provides the core interface for intera
 ```
 Agent(
     api_key: str,
-    model: str = "openrouter/optimus-alpha",
+    model: str = "openai/gpt-4.1",
     system_prompt: str | None = None,
     verbose_tools: bool = False,
     tool_handler: ToolHandler | None = None
@@ -18,7 +18,7 @@ Agent(
 
 ### Parameters
 - **`api_key`** (`str`): API key for OpenRouter/OpenAI.
-- **`model`** (`str`, default: `"openrouter/optimus-alpha"`): Model name.
+- **`model`** (`str`, default: `"openai/gpt-4.1"`): Model name.
 - **`system_prompt`** (`str | None`, optional): Optional system prompt to guide the assistant.
 - **`verbose_tools`** (`bool`, default: `False`): Enable verbose output for tool execution.
 - **`tool_handler`** (`ToolHandler | None`, optional): Custom tool handler instance. If not provided, a default `ToolHandler` is created.
