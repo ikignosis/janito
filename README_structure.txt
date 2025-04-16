@@ -18,6 +18,23 @@ This file provides an overview of the project's structure, including key directo
         - tool_handler.py
         - tool_handler.py.bak
         - __init__.py
+        - tools/               — Built-in tools for file operations, shell commands, etc.
+            - ask_user.py
+            - bash_exec.py
+            - edit_file.py
+            - fetch_url.py
+            - file_ops.py
+            - find_files.py
+            - get_lines.py
+            - gitignore_utils.py
+            - python_exec.py
+            - py_compile.py
+            - replace_text_in_file.py
+            - rich_live.py
+            - rich_utils.py
+            - run_bash_command.py
+            - search_files.py
+            - __init__.py
     - cli_chat_shell/          — CLI chat shell interface
         - chat_loop.py
         - chat_loop.py.bak

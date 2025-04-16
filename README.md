@@ -28,10 +28,29 @@ Janito is a command-line and web-based tool designed to **edit code and manage f
 - 📁 **File & Directory Management:** Navigate, create, move, or remove files and folders.
 - 🧠 **Context-Aware:** Understands your project structure for precise edits.
 - 💬 **Interactive User Prompts:** Asks for clarification when needed.
-- 🧩 **Extensible Tooling:** Built-in tools for file operations, shell commands, and more.
+- 🧩 **Extensible Tooling:** Built-in tools for file operations, shell commands, directory listing, Python file validation, text replacement, code execution, and more. Recent tools include:
+  - `find_files`: Search for files matching a pattern in directories.
+  - `get_lines`: Retrieve specific lines from files for efficient context.
+  - `py_compile_file`: Validate Python files for syntax correctness.
+  - `replace_text_in_file`: Replace exact text fragments in files.
+  - `search_files`: Search for text patterns across files.
+  - `python_exec`: Execute Python code and capture output.
+  - And more, see `janito/agent/tools/` for the full list.
 - 🌐 **Web Interface (In Development):** Upcoming simple web UI for streaming responses and tool progress.
 
 ---
+
+### 🗂️ Directory Listing Tool
+
+- Use the `list_directory` tool to list the contents of a directory up to a specified depth. Returns name, type (file/dir), last modified time, and path for each entry.
+
+### 🛡️ Python File Validation Tool
+
+- Use the `py_compile_file` tool to validate a Python file by compiling it with Python's built-in `py_compile` module. This tool is recommended for checking Python files after making changes, ensuring syntax correctness before running or deploying code.
+- **Usage:**
+  - Provide the path to the Python file you want to validate.
+  - Optionally, set `doraise` to `True` (default) to raise exceptions on errors.
+  - Returns a success message if the file is valid, or error details if compilation fails.
 
 ## 📦 Installation
 
@@ -56,7 +75,8 @@ Below are the supported configuration parameters and CLI flags. Some options can
 | `max_tokens`              | Maximum tokens for model response                                                          | `--max-tokens` or config                                      | 200000                                     |
 | `max_rounds`              | Maximum number of agent rounds per prompt/session                                          | `--max-rounds` or config                                      | 50                                         |
 | `max_tools`               | Maximum number of tool calls allowed within a chat session                                 | `--max-tools` or config                                       | _None_ (unlimited)                         |
-| `disable_tools`           | Disable tool use (no tools passed to agent)                                                | `--disable-tools` (CLI only)                                   | False                                       |
+| `no_tools`           | Disable tool use (no tools passed to agent)                                                | `-n`, `--no-tools` (CLI only)                                   | False                                       |
+| `trust`                   | Trust mode: suppresses run_bash_command output, only shows output file locations                  | `--trust` (CLI only)                                           | False                                       |
 | `template` / `template.*` | Template context dictionary for prompt rendering (nested or flat keys)                     | Config only                                                    | _None_                                     |
 
 Other config-related CLI flags:
