@@ -1,0 +1,60 @@
+# Project Structure Overview
+
+This file provides an overview of the project's structure, including key directories and files:
+
+- janito/                      — Main source code for the project
+    - agent/                   — Agent logic and related modules
+        - agent.py
+        - agent.py.bak
+        - config.py
+        - config.py.bak
+        - config_defaults.py
+        - config_utils.py
+        - conversation.py
+        - conversation.py.bak
+        - queued_tool_handler.py
+        - README.md
+        - runtime_config.py
+        - tool_handler.py
+        - tool_handler.py.bak
+        - __init__.py
+    - cli_chat_shell/          — CLI chat shell interface
+        - chat_loop.py
+        - chat_loop.py.bak
+        - commands.py
+        - commands.py.bak
+        - config_shell.py
+        - load_prompt.py
+        - session_manager.py
+        - session_manager.py.bak
+        - ui.py
+        - ui.py.bak
+        - __init__.py
+    - templates/               — Jinja2 templates for system instructions, etc.
+        - system_instructions.j2
+    - web/                     — Web interface and related modules
+        - app.py
+        - __init__.py
+        - __main__.py
+    - render_prompt.py         — Prompt rendering utilities
+    - __init__.py
+    - __init__.py.bak
+    - __main__.py
+- docs/                        — Documentation files
+    - cli_model_override.md
+    - cli_model_override.md.bak
+    - cli_reload_command.md
+    - cli_reload_command.md.bak
+    - structure.md
+    - structure.md.bak
+- README.md                    — Main project readme
+- README_structure.txt         — (This file) Project structure overview
+- README_DEV.md                — Developer-focused documentation
+- CHANGELOG.md                 — Project changelog
+- LICENSE                      — License file
+- pyproject.toml               — Project build/configuration
+- pyproject.toml.bak           — Backup of build/config
+- RELEASE_NOTES_1.3.md         — Release notes for version 1.3
+- .gitignore                   — Git ignore rules
+
+Update this file whenever files or directories are added, removed, or significantly changed.
