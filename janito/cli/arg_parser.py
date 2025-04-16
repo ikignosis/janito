@@ -6,6 +6,7 @@ def create_parser():
     parser.add_argument("prompt", type=str, nargs="?", help="Prompt to send to the model")
     parser.add_argument("--max-tokens", type=int, default=None, help="Maximum tokens for model response (overrides config, default: 200000)")
     parser.add_argument("--model", type=str, default=None, help="Model name to use for this session (overrides config, does not persist)")
+    parser.add_argument("--max-rounds", type=int, default=None, help="Maximum number of agent rounds per prompt (overrides config, default: 50)")
 
     # Mutually exclusive group for system prompt options
     group = parser.add_mutually_exclusive_group()

@@ -10,7 +10,7 @@ from janito.agent.runtime_config import runtime_config
 from janito.agent.conversation import EmptyResponseError, ProviderError
 
 
-def start_chat_shell(agent, continue_session=False):
+def start_chat_shell(agent, continue_session=False, max_rounds=50):
     console = Console()
 
     # Load input history
@@ -77,6 +77,8 @@ def start_chat_shell(agent, continue_session=False):
 
     # Main chat loop
     while True:
+        # max_rounds is now available for use in the chat loop
+
         try:
             if state.get('paste_mode'):
                 console.print('')
@@ -126,7 +128,7 @@ def start_chat_shell(agent, continue_session=False):
                 console.print(Markdown(content_piece))
 
         try:
-            response = agent.chat(messages, on_content=on_content, spinner=True)
+            response = agent.chat(messages, on_content=on_content, spinner=True, max_rounds=max_rounds)
         except KeyboardInterrupt:
             console.print("[bold yellow]Request interrupted. Returning to prompt.[/bold yellow]")
             continue

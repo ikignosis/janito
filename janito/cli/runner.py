@@ -55,7 +55,7 @@ def run_cli(args):
             runtime_config.set('system_prompt', system_prompt)
         if system_prompt is None:
             # Pass full merged config (runtime overrides effective)
-            template_context = unified_config.get_template_context()
+
             system_prompt = render_system_prompt(role)
 
     if args.show_system:
@@ -105,10 +105,12 @@ def run_cli(args):
 
     try:
         try:
+            max_rounds = runtime_config.get('max_rounds', 50)
             response = agent.chat(
                 messages,
                 on_content=on_content,
                 spinner=True,
+                max_rounds=max_rounds,
             )
             if args.verbose_response:
                 import json

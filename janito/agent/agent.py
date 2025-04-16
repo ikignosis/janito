@@ -64,7 +64,7 @@ class Agent:
     def usage_history(self):
         return self.conversation_handler.usage_history
 
-    def chat(self, messages, on_content=None, on_tool_progress=None, verbose_response=False, spinner=False, max_tokens=None):
+    def chat(self, messages, on_content=None, on_tool_progress=None, verbose_response=False, spinner=False, max_tokens=None, max_rounds=50):
         import time
         from janito.agent.conversation import ProviderError
 
@@ -73,11 +73,12 @@ class Agent:
             try:
                 return self.conversation_handler.handle_conversation(
                     messages,
-                    max_tokens=max_tokens,
+                    max_rounds=max_rounds,
                     on_content=on_content,
                     on_tool_progress=on_tool_progress,
                     verbose_response=verbose_response,
-                    spinner=spinner
+                    spinner=spinner,
+                    max_tokens=max_tokens
                 )
             except ProviderError as e:
                 error_data = getattr(e, 'error_data', {}) or {}

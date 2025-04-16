@@ -41,6 +41,7 @@
 - `janito/cli/arg_parser.py`: Defines `create_parser()` to build the CLI argument parser. The positional `prompt` argument is optional; if omitted, the CLI defaults to interactive chat mode.
   - Supports `--set-api-key` to save the API key globally (stored in `.janito/config.json`).
   - Also supports `--set-local-config key=val`, `--set-global-config key=val`, and `--show-config`.
+  - Supports `--max-rounds` to override the maximum number of agent rounds per prompt or chat session (default: 50).
 - `janito/cli/config_commands.py`: Handles config-related CLI commands, including showing, setting, and saving config values. Now uses a helper (`_print_config.py`) to display config values, replacing the home directory with `~` for `system_prompt` if it starts with the user's home directory.
 - `janito/cli/_print_config.py`: Helper for printing config items, with home directory shortening for `system_prompt`.
 - `janito/cli/_utils.py`: Utility functions for CLI, including `home_shorten()`.
