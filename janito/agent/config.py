@@ -57,6 +57,7 @@ class FileConfig(BaseConfig):
             json.dump(self._data, f, indent=2)
 
 
+
 CONFIG_OPTIONS = {
     "api_key": "API key for OpenAI-compatible service (required)",
     "model": "Model name to use (e.g., 'openai/gpt-4.1')",
@@ -64,8 +65,37 @@ CONFIG_OPTIONS = {
     "role": "Role description for the system prompt (e.g., 'software engineer')",
     "system_prompt": "Override the entire system prompt text",
     "temperature": "Sampling temperature (float, e.g., 0.0 - 2.0)",
-    "max_tokens": "Maximum tokens for model response (int)"
+    "max_tokens": "Maximum tokens for model response (int)",
+    # Accept template.* keys as valid config keys (for CLI validation, etc.)
+    "template": "Template context dictionary for prompt rendering (nested)",
+    # Note: template.* keys are validated dynamically, not statically here
 }
+
+class BaseConfig:
+    def __init__(self):
+        self._data = {}
+
+    def get(self, key, default=None):
+        return self._data.get(key, default)
+
+    def set(self, key, value):
+        self._data[key] = value
+
+    def all(self):
+        return self._data
+
+    def get_template_context(self):
+        """
+        Returns a dictionary suitable for passing as Jinja2 template variables.
+        Merges the nested 'template' dict (if present) and all flat 'template.*' keys.
+        Flat keys override nested dict keys if there is a conflict.
+        """
+        template_vars = dict(self._data.get("template", {}))
+        for k, v in self._data.items():
+            if k.startswith("template.") and k != "template":
+                template_vars[k[9:]] = v
+        return template_vars
+
 
 # Import defaults for reference
 from .config_defaults import CONFIG_DEFAULTS

@@ -3,8 +3,8 @@
 ## Core Package: `janito`
 - `janito/__init__.py`: Defines the package version (`__version__`).
 - `janito/__main__.py`: Minimal CLI entry point. Delegates to `janito.cli.main.main()`.
-- `janito/render_prompt.py`: Renders the system prompt template using Jinja2.
-- `janito/prompts/system_instructions.txt`: Alternative or plain text version of the system prompt instructions.
+- `janito/render_prompt.py`: Renders the system prompt using Jinja2. The logic is now static except for the 'role' variable.
+- `janito/prompts/system_instructions.txt`: Alternative or plain text version of the system prompt instructions (for reference only).
 
 ## CLI Chat Shell Package: `janito.cli_chat_shell`
 - `janito/cli_chat_shell/__init__.py`: Marks the CLI chat shell module as a package.
@@ -16,7 +16,7 @@
   - `/exit`: Exit chat mode.
   - `/restart`: Restart the CLI.
   - `/help`: Show help message.
-  - `/system`: Show the current system prompt.
+  - `/system`: Show the current system prompt. The prompt is now always rendered in a static way except for the 'role' variable.
   - `/continue`: Restore the last saved conversation and CLI prompts from `.janito/last_conversation.json`.
   - `/reset`: Reset conversation history (clears in-memory state and deletes saved conversation).
   - `/config`: Show or set configuration from within the chat shell. Usage:

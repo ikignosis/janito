@@ -54,6 +54,8 @@ def run_cli(args):
         if args.system_prompt:
             runtime_config.set('system_prompt', system_prompt)
         if system_prompt is None:
+            # Pass full merged config (runtime overrides effective)
+            template_context = unified_config.get_template_context()
             system_prompt = render_system_prompt(role)
 
     if args.show_system:

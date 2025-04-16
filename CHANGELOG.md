@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.3.0] - Unreleased
+
+### Changed
+
+### Fixed
+- Cleaned up legacy code and improved config validation logic.
+
+---
+
 ## [1.2.0] - Unreleased
 
 ### Added

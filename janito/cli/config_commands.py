@@ -9,6 +9,18 @@ def handle_config_commands(args):
     """Handle --set-local-config, --set-global-config, --show-config. Exit if any are used."""
     did_something = False
 
+    if args.run_config:
+        for run_item in args.run_config:
+            try:
+                key, val = run_item.split("=", 1)
+            except ValueError:
+                print("Invalid format for --run-config, expected key=val")
+                sys.exit(1)
+            key = key.strip()
+            if key not in CONFIG_OPTIONS:
+                print(f"Invalid config key: '{key}'. Supported keys are: {', '.join(CONFIG_OPTIONS.keys())}")
+                sys.exit(1)
+            runtime_config.set(key, val.strip())
     if args.set_local_config:
         from janito.agent.config import CONFIG_OPTIONS
         try:
@@ -34,17 +46,33 @@ def handle_config_commands(args):
             print("Invalid format for --set-global-config, expected key=val")
             sys.exit(1)
         key = key.strip()
-        if key not in CONFIG_OPTIONS:
+        if key not in CONFIG_OPTIONS and not key.startswith("template."):
             print(f"Invalid config key: '{key}'. Supported keys are: {', '.join(CONFIG_OPTIONS.keys())}")
             sys.exit(1)
-        global_config.set(key, val.strip())
-        global_config.save()
-        runtime_config.set(key, val.strip())
-        print(f"Global config updated: {key} = {val.strip()}")
-        did_something = True
+        if key.startswith('template.'):
+            subkey = key[len('template.'):]
+            template_dict = global_config.get('template', {})
+            template_dict[subkey] = val.strip()
+            global_config.set('template', template_dict)
+            global_config.save()
+            # Remove legacy flat key if present
+            if key in global_config._data:
+                del global_config._data[key]
+            runtime_config.set('template', template_dict)
+            print(f"Global config updated: template.{subkey} = {val.strip()}")
+            did_something = True
+        else:
+            global_config.set(key, val.strip())
+            global_config.save()
+            runtime_config.set(key, val.strip())
+            print(f"Global config updated: {key} = {val.strip()}")
+            did_something = True
 
     if args.set_api_key:
-        global_config.set("api_key", args.set_api_key.strip())
+        # Merge: load full config, update api_key, save all
+        existing = dict(global_config.all())
+        existing["api_key"] = args.set_api_key.strip()
+        global_config._data = existing
         global_config.save()
         runtime_config.set("api_key", args.set_api_key.strip())
         print("Global API key saved.")
@@ -64,7 +92,18 @@ def handle_config_commands(args):
         else:
             from janito.agent.config import get_api_key
             from janito.agent.runtime_config import unified_config
+            # Handle template as nested dict
             for key in sorted(local_keys):
+                if key == "template":
+                    template_dict = local_config.get("template", {})
+                    if template_dict:
+                        local_items["template"] = f"({len(template_dict)} keys set)"
+                        for tkey, tval in template_dict.items():
+                            local_items[f"  template.{tkey}"] = tval
+                    continue
+                if key.startswith("template."):
+                    # Skip legacy flat keys
+                    continue
                 if key == "api_key":
                     value = local_config.get("api_key")
                     value = value[:4] + '...' + value[-4:] if value and len(value) > 8 else ('***' if value else None)
@@ -72,6 +111,15 @@ def handle_config_commands(args):
                     value = unified_config.get(key)
                 local_items[key] = value
             for key in sorted(global_keys - local_keys):
+                if key == "template":
+                    template_dict = global_config.get("template", {})
+                    if template_dict:
+                        global_items["template"] = f"({len(template_dict)} keys set)"
+                        for tkey, tval in template_dict.items():
+                            global_items[f"  template.{tkey}"] = tval
+                    continue
+                if key.startswith("template."):
+                    continue
                 if key == "api_key":
                     value = global_config.get("api_key")
                     value = value[:4] + '...' + value[-4:] if value and len(value) > 8 else ('***' if value else None)

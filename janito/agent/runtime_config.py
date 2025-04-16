@@ -16,6 +16,7 @@ class UnifiedConfig:
         self.runtime_cfg = runtime_cfg
         self.effective_cfg = effective_cfg
 
+
     def get(self, key, default=None):
         val = self.runtime_cfg.get(key)
         if val is not None:

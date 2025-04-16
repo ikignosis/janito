@@ -48,16 +48,16 @@ Janito is a command-line and web-based AI agent designed to **edit code and mana
 | `model`             | Model name to use                                                                           | `--model` (session only), `--set-local-config model=...`, or `--set-global-config`         | `openai/gpt-4.1`                 |
 | `base_url`          | API base URL (OpenAI-compatible endpoint)                                                   | `--set-local-config base_url=...` or `--set-global-config`      | `https://openrouter.ai/api/v1`            |
 | `role`              | Role description for system prompt                                                          | CLI `--role` or config                                          | "software engineer"                     |
-| `system_prompt`     | Override the entire system prompt as a raw string.                                          | CLI `--system-prompt` or config                                 | _Template-generated prompt_               |
-| `system_prompt_file`| Use a plain text file as the system prompt (no template rendering, takes precedence over `system_prompt`). | CLI `--system-file` | _None_ |
+| `system_prompt`     | Override the entire system prompt as a raw string.                                          | CLI `--system-prompt` or config                                 | _Default prompt_               |
+| `system_prompt_file`| Use a plain text file as the system prompt (takes precedence over `system_prompt`). | CLI `--system-file` | _None_ |
 | `temperature`       | Sampling temperature (float, e.g., 0.0 - 2.0)                                              | CLI `--temperature` or config                                    | 0.2                                        |
 | `max_tokens`        | Maximum tokens for model response                                                          | CLI `--max-tokens` or config                                    | 200000                                     |
 | `disable_tools`     | Disable tool use (no tools passed to agent)                                                | CLI `--disable-tools`                                            | _False_                                     |
 
 #### System Prompt Precedence
 
-- If `--system-file` is provided, the file's content is used as the system prompt (no template rendering).
+- If `--system-file` is provided, the file's content is used as the system prompt.
 - Otherwise, if `--system-prompt` or the config value is set, that string is used.
-- Otherwise, a default template is rendered using the current role.
+- Otherwise, a default prompt is used.
 
 ...

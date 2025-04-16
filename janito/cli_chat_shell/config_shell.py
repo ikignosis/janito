@@ -58,7 +58,7 @@ def handle_config_shell(console, *args, **kwargs):
             console.print("[bold red]Invalid format, expected key=val[/bold red]")
             return
         key = key.strip()
-        if key not in CONFIG_OPTIONS:
+        if key not in CONFIG_OPTIONS and not key.startswith("template."):
             console.print(f"[bold red]Invalid config key: '{key}'. Supported keys are: {', '.join(CONFIG_OPTIONS.keys())}")
             return
         val = val.strip()

@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, Response, send_from_directory, session, jsonify
+from flask import Flask, request, Response, send_from_directory, session, jsonify
 from queue import Queue
 import json
 from janito.agent.queued_tool_handler import QueuedToolHandler

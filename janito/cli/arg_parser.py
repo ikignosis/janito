@@ -22,6 +22,7 @@ def create_parser():
     parser.add_argument("--disable-tools", action="store_true", default=False, help="Disable tool use (default: enabled)")
     parser.add_argument("--set-local-config", type=str, default=None, help='Set a local config key-value pair, format "key=val"')
     parser.add_argument("--set-global-config", type=str, default=None, help='Set a global config key-value pair, format "key=val"')
+    parser.add_argument("--run-config", type=str, action='append', default=None, help='Set a runtime (in-memory only) config key-value pair, format "key=val". Can be repeated.')
     parser.add_argument("--show-config", action="store_true", help="Show effective configuration and exit")
     parser.add_argument("--set-api-key", type=str, default=None, help="Set and save the API key globally")
     parser.add_argument("--version", action="store_true", help="Show program's version number and exit")
