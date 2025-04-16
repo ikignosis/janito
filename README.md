@@ -1,4 +1,8 @@
-# 🚀 Janito: A Natural Programming Language Tool
+# 🚀 Janito: Agent
+
+Janito is an AI-powered command-line and web-based assistant that operates like a thoughtful human developer. It interprets your natural language instructions, analyzes project context, and applies changes with the same care and stepwise reasoning as an experienced engineer. Janito’s design prioritizes transparency, interactive clarification, and granular control—mirroring the best practices and decision patterns of real-world software development. Whether editing code, managing files, or validating changes, Janito ensures every action is understandable, reviewable, and aligned with developer intent.
+
+---
 
 ## ⚡ Quick Start
 
@@ -19,10 +23,6 @@ python -m janito.web
 
 ---
 
-Janito is a command-line and web-based tool designed to **edit code and manage files** using natural language instructions.
-
----
-
 ## ✨ Key Features
 - 📝 **Code Editing via Natural Language:** Modify, create, or delete code files simply by describing the changes.
 - 📁 **File & Directory Management:** Navigate, create, move, or remove files and folders.
@@ -40,17 +40,6 @@ Janito is a command-line and web-based tool designed to **edit code and manage f
 
 ---
 
-### 🗂️ Directory Listing Tool
-
-- Use the `list_directory` tool to list the contents of a directory up to a specified depth. Returns name, type (file/dir), last modified time, and path for each entry.
-
-### 🛡️ Python File Validation Tool
-
-- Use the `py_compile_file` tool to validate a Python file by compiling it with Python's built-in `py_compile` module. This tool is recommended for checking Python files after making changes, ensuring syntax correctness before running or deploying code.
-- **Usage:**
-  - Provide the path to the Python file you want to validate.
-  - Optionally, set `doraise` to `True` (default) to raise exceptions on errors.
-  - Returns a success message if the file is valid, or error details if compilation fails.
 
 ## 📦 Installation
 
@@ -105,25 +94,5 @@ Verbose/debugging flags:
 - `--version`                    Show program's version number and exit
 
 
-#### Tool Call Limits
-
-- You can use `--max-tools` to limit the total number of tool calls allowed in a chat session. If the limit is reached, further tool calls will be prevented.
-
-#### System Prompt Precedence
-
-- If `--system-file` is provided, the file's content is used as the system prompt.
-- Otherwise, if `--system-prompt` or the config value is set, that string is used.
-- Otherwise, a default prompt is used.
-
-#### Interactive Shell Config Commands
-
-Within the interactive chat shell, you can use special commands:
-- `/config show` — Show effective configuration (local, global, defaults)
-- `/config set local key=value` — Set a local config value
-- `/config set global key=value` — Set a global config value
-- `/continue` — Restore the last saved conversation
-- `/reset` — Reset conversation history
-- `/system` — Show the current system prompt
-- `/help` — Show help message
 
 ...
