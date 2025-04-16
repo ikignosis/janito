@@ -54,6 +54,11 @@ Janito is a command-line and web-based AI agent designed to **edit code and mana
 | `max_tokens`        | Maximum tokens for model response                                                          | CLI `--max-tokens` or config                                    | 200000                                     |
 | `max_rounds`        | Maximum number of agent rounds per prompt/session                                         | CLI `--max-rounds` or config                                    | 50                                         |
 | `disable_tools`     | Disable tool use (no tools passed to agent)                                                | CLI `--disable-tools`                                            | _False_                                     |
+| `single_tool`      | Disable parallel tool calls (forces sequential tool execution)                            | CLI `--single-tool`                                              | _False_                                     |
+
+#### Tool Call Parallelism
+
+- By default, Janito may execute multiple tool calls in parallel if supported. Use `--single-tool` to force sequential tool execution (disables parallel tool calls for this session).
 
 #### System Prompt Precedence
 

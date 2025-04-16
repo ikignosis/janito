@@ -31,6 +31,8 @@ def run_cli(args):
         sys.exit(0)
 
     role = args.role or unified_config.get("role", "software engineer")
+    # Set single_tool mode in runtime_config if requested
+    runtime_config.set('single_tool', getattr(args, 'single_tool', False))
     # Ensure runtime_config is updated so chat shell sees the role
     if args.role:
         runtime_config.set('role', args.role)

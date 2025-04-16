@@ -105,10 +105,19 @@ class ConversationHandler:
                     "usage_history": self.usage_history
                 }
 
+            from janito.agent.runtime_config import runtime_config
             tool_responses = []
-            for tool_call in choice.message.tool_calls:
-                result = self.tool_handler.handle_tool_call(tool_call, on_progress=on_tool_progress)
-                tool_responses.append({"tool_call_id": tool_call.id, "content": result})
+            if runtime_config.get('single_tool', False):
+                # Sequential tool execution (default)
+                for tool_call in choice.message.tool_calls:
+                    result = self.tool_handler.handle_tool_call(tool_call, on_progress=on_tool_progress)
+                    tool_responses.append({"tool_call_id": tool_call.id, "content": result})
+            else:
+                # Placeholder for future parallel tool execution
+                # (Currently, still sequential)
+                for tool_call in choice.message.tool_calls:
+                    result = self.tool_handler.handle_tool_call(tool_call, on_progress=on_tool_progress)
+                    tool_responses.append({"tool_call_id": tool_call.id, "content": result})
 
             # Store usage info in usage_history, linked to the next assistant message index
             assistant_idx = len([m for m in messages if m.get('role') == 'assistant'])
