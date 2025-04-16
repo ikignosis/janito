@@ -1,6 +1,6 @@
 # 🚀 Janito: Agent
 
-Janito is an AI-powered command-line and web-based assistant that operates like a thoughtful human developer. It interprets your natural language instructions, analyzes project context, and applies changes with the same care and stepwise reasoning as an experienced engineer. Janito’s design prioritizes transparency, interactive clarification, and granular control—mirroring the best practices and decision patterns of real-world software development. Whether editing code, managing files, or validating changes, Janito ensures every action is understandable, reviewable, and aligned with developer intent.
+Janito is an AI-powered command-line and web-based assistant that operates like a thoughtful human developer. It interprets your natural language instructions, analyzes project context, and applies changes with the same care and stepwise reasoning as an experienced engineer. Janito’s design is inspired by the patterns and best practices established by senior human engineers, ensuring that its actions reflect real-world expertise. The assistant prioritizes transparency, interactive clarification, and granular control—mirroring the decision-making processes of experienced professionals. Whether editing code, managing files, or validating changes, Janito ensures every action is understandable, reviewable, and aligned with developer intent.
 
 ---
 
