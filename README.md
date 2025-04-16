@@ -36,7 +36,7 @@ Janito is a command-line and web-based tool designed to **edit code and manage f
 ## 📦 Installation
 
 ### Requirements
-- Python 3.11+
+- Python 3.10+
 
 ...
 
