@@ -1,23 +1,26 @@
 [project]
 name = "janito"
 version = "1.2.1"
-description = "An agent framework with built-in tools."
+description = "A natural programming language tool."
 authors = [
     { name = "João Pinto", email = "joao.pinto@gmail.com" }
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.11"
 dependencies = [
-    "rich",
-    "openai",
+    "beautifulsoup4",
     "flask",
+    "jinja2",
+    "openai",
     "pathspec",
-    "beautifulsoup4"
+    "prompt_toolkit",
+    "requests",
+    "rich"
 ]
 license = { text = "MIT" }
 readme = "README.md"
 keywords = ["agent", "framework", "tools", "automation"]
 classifiers = [
-    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent"
 ]

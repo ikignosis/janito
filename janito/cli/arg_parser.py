@@ -4,8 +4,9 @@ import argparse
 def create_parser():
     parser = argparse.ArgumentParser(description="OpenRouter API call using OpenAI Python SDK")
     parser.add_argument("prompt", type=str, nargs="?", help="Prompt to send to the model")
-    parser.add_argument("--single-tool", action="store_true", help="Disable parallel tool calls (forces sequential tool execution)")
+
     parser.add_argument("--max-tokens", type=int, default=None, help="Maximum tokens for model response (overrides config, default: 200000)")
+    parser.add_argument("--max-tools", type=int, default=None, help="Maximum number of tool calls allowed within a chat session (default: unlimited)")
     parser.add_argument("--model", type=str, default=None, help="Model name to use for this session (overrides config, does not persist)")
     parser.add_argument("--max-rounds", type=int, default=None, help="Maximum number of agent rounds per prompt (overrides config, default: 50)")
 

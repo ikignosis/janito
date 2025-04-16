@@ -1,4 +1,4 @@
-# 🚀 Janito: Natural Language Code Editing Agent
+# 🚀 Janito: A Natural Programming Language Tool
 
 ## ⚡ Quick Start
 
@@ -19,7 +19,7 @@ python -m janito.web
 
 ---
 
-Janito is a command-line and web-based AI agent designed to **edit code and manage files** using natural language instructions.
+Janito is a command-line and web-based tool designed to **edit code and manage files** using natural language instructions.
 
 ---
 
@@ -36,7 +36,7 @@ Janito is a command-line and web-based AI agent designed to **edit code and mana
 ## 📦 Installation
 
 ### Requirements
-- Python 3.8+
+- Python 3.11+
 
 ...
 
@@ -53,12 +53,17 @@ Janito is a command-line and web-based AI agent designed to **edit code and mana
 | `temperature`       | Sampling temperature (float, e.g., 0.0 - 2.0)                                              | CLI `--temperature` or config                                    | 0.2                                        |
 | `max_tokens`        | Maximum tokens for model response                                                          | CLI `--max-tokens` or config                                    | 200000                                     |
 | `max_rounds`        | Maximum number of agent rounds per prompt/session                                         | CLI `--max-rounds` or config                                    | 50                                         |
+| `max_tools`         | Maximum number of tool calls allowed within a chat session                              | CLI `--max-tools` or config                                      | _None_ (unlimited)                         |
 | `disable_tools`     | Disable tool use (no tools passed to agent)                                                | CLI `--disable-tools`                                            | _False_                                     |
-| `single_tool`      | Disable parallel tool calls (forces sequential tool execution)                            | CLI `--single-tool`                                              | _False_                                     |
+
+
+#### Tool Call Limits
+
+- You can use `--max-tools` to limit the total number of tool calls allowed in a chat session. If the limit is reached, further tool calls will be prevented.
 
 #### Tool Call Parallelism
 
-- By default, Janito may execute multiple tool calls in parallel if supported. Use `--single-tool` to force sequential tool execution (disables parallel tool calls for this session).
+
 
 #### System Prompt Precedence
 

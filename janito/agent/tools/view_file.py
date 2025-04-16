@@ -17,7 +17,7 @@ def view_file(
       - EndLine (integer): Last line to view (inclusive, 1-indexed, and cannot be more than 200 lines from StartLine).
       - IncludeSummaryOfOtherLines (boolean): If true, also return a summary of other lines.
     """
-    print_info(f"📂 view_file | Path: {format_path(AbsolutePath)} | StartLine: {StartLine} | EndLine: {EndLine} | IncludeSummary: {IncludeSummaryOfOtherLines}")
+    print_info(f"📂 view_file | Path: {format_path(AbsolutePath)} | Lines ({StartLine}-{EndLine}) | IncludeSummary: {IncludeSummaryOfOtherLines}")
     if not os.path.isfile(AbsolutePath):
         print_error(f"❌ Not a file: {AbsolutePath}")
         return ""

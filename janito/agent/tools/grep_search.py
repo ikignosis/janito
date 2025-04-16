@@ -26,7 +26,15 @@ def grep_search(
         includes = ["*"]
     else:
         includes = Includes
-    print_info(f"🔎 grep_search | Path: {SearchPath} | Query: '{Query}' | CaseInsensitive: {CaseInsensitive} | MatchPerLine: {MatchPerLine} | Includes: {includes}")
+    # Build concise param string
+    params = [f"Path: {SearchPath}", f"Query: '{Query}'"]
+    if CaseInsensitive:
+        params.append("CaseInsensitive: True")
+    if not MatchPerLine:
+        params.append("MatchPerLine: False")
+    if Includes is not None and Includes != ["*"]:
+        params.append(f"Includes: {includes}")
+    print_info(f"🔎 grep_search | " + " | ".join(params))
 
     import re
     results = []

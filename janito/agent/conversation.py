@@ -19,6 +19,9 @@ class ConversationHandler:
         self.usage_history = []
 
     def handle_conversation(self, messages, max_rounds=50, on_content=None, on_tool_progress=None, verbose_response=False, spinner=False, max_tokens=None):
+        from janito.agent.runtime_config import runtime_config
+        max_tools = runtime_config.get('max_tools', None)
+        tool_calls_made = 0
         if not messages:
             raise ValueError("No prompt provided in messages")
 
@@ -107,17 +110,13 @@ class ConversationHandler:
 
             from janito.agent.runtime_config import runtime_config
             tool_responses = []
-            if runtime_config.get('single_tool', False):
-                # Sequential tool execution (default)
-                for tool_call in choice.message.tool_calls:
-                    result = self.tool_handler.handle_tool_call(tool_call, on_progress=on_tool_progress)
-                    tool_responses.append({"tool_call_id": tool_call.id, "content": result})
-            else:
-                # Placeholder for future parallel tool execution
-                # (Currently, still sequential)
-                for tool_call in choice.message.tool_calls:
-                    result = self.tool_handler.handle_tool_call(tool_call, on_progress=on_tool_progress)
-                    tool_responses.append({"tool_call_id": tool_call.id, "content": result})
+            # Sequential tool execution (default, only mode)
+            for tool_call in choice.message.tool_calls:
+                if max_tools is not None and tool_calls_made >= max_tools:
+                    raise MaxRoundsExceededError(f"Maximum number of tool calls ({max_tools}) reached in this chat session.")
+                result = self.tool_handler.handle_tool_call(tool_call, on_progress=on_tool_progress)
+                tool_responses.append({"tool_call_id": tool_call.id, "content": result})
+                tool_calls_made += 1
 
             # Store usage info in usage_history, linked to the next assistant message index
             assistant_idx = len([m for m in messages if m.get('role') == 'assistant'])

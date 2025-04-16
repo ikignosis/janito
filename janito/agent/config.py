@@ -84,7 +84,7 @@ class BaseConfig:
     def all(self):
         return self._data
 
-    def get_template_context(self):
+
         """
         Returns a dictionary suitable for passing as Jinja2 template variables.
         Merges the nested 'template' dict (if present) and all flat 'template.*' keys.

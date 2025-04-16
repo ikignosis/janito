@@ -11,14 +11,25 @@ def find_by_name(
     Excludes: list = None,
     Extensions: list = None,
     FullPath: bool = False,
-    MaxDepth: int = None,
+    Recursive: bool = False,
     Type: str = "any"
 ) -> str:
     # Show start info message
-    info_msg = (
-        f"🔍 find_by_name | Dir: {SearchDirectory} | Pattern: {Pattern} | Extensions: {Extensions if Extensions else 'Any'} | "
-        f"Excludes: {Excludes if Excludes else 'None'} | MaxDepth: {MaxDepth if MaxDepth is not None else 'Unlimited'} | Type: {Type}"
-    )
+    # Only print args that do not have their default value
+    args = [f"Dir: {SearchDirectory}"]
+    if Pattern != "*":
+        args.append(f"Pattern: {Pattern}")
+    if Extensions not in (None, []):
+        args.append(f"Extensions: {Extensions}")
+    if Excludes not in (None, []):
+        args.append(f"Excludes: {Excludes}")
+    if Recursive:
+        args.append(f"Recursive: {Recursive}")
+    if FullPath:
+        args.append(f"FullPath: {FullPath}")
+    if Type != "any":
+        args.append(f"Type: {Type}")
+    info_msg = "🔍 find_by_name | " + " | ".join(args)
     print_info(info_msg)
 
     """
@@ -30,7 +41,7 @@ def find_by_name(
       - Excludes (list of string, optional): Glob patterns to exclude from results.
       - Extensions (list of string, optional): File extensions to include (without dot).
       - FullPath (boolean, optional): If true, pattern matches the full path; otherwise, just the filename.
-      - MaxDepth (integer, optional): Maximum directory depth to search.
+      - Recursive (boolean, optional): If true, search subdirectories recursively. If false, only search the top-level directory.
       - Pattern (string, optional): Glob pattern to match filenames.
       - SearchDirectory (string, required): Directory to search within.
       - Type (string, optional): Filter by 'file', 'directory', or 'any'.
@@ -42,14 +53,17 @@ def find_by_name(
     matches = []
     # Always ignore files/dirs matching .gitignore patterns
     ignore_patterns = load_gitignore_patterns()
-    root_depth = SearchDirectory.rstrip(os.sep).count(os.sep)
     try:
-        for root, dirs, files in os.walk(SearchDirectory):
-            # MaxDepth check
-            if MaxDepth is not None:
-                current_depth = root.rstrip(os.sep).count(os.sep) - root_depth
-                if current_depth >= MaxDepth:
-                    dirs[:] = []  # Don't descend further
+        if Recursive:
+            walker = os.walk(SearchDirectory)
+        else:
+            # Only yield the top-level directory
+            def walker_once(directory):
+                for root, dirs, files in os.walk(directory):
+                    yield root, dirs, files
+                    break
+            walker = walker_once(SearchDirectory)
+        for root, dirs, files in walker:
             # Filter out ignored files/dirs (from .gitignore)
             dirs, files = filter_ignored(root, dirs, files, ignore_patterns)
             # Exclude patterns (user-specified)

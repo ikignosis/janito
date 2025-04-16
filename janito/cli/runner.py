@@ -31,8 +31,7 @@ def run_cli(args):
         sys.exit(0)
 
     role = args.role or unified_config.get("role", "software engineer")
-    # Set single_tool mode in runtime_config if requested
-    runtime_config.set('single_tool', getattr(args, 'single_tool', False))
+
     # Ensure runtime_config is updated so chat shell sees the role
     if args.role:
         runtime_config.set('role', args.role)
@@ -40,6 +39,10 @@ def run_cli(args):
     # Set runtime_config['model'] if --model is provided (highest priority, session only)
     if getattr(args, 'model', None):
         runtime_config.set('model', args.model)
+
+    # Set runtime_config['max_tools'] if --max-tools is provided
+    if getattr(args, 'max_tools', None) is not None:
+        runtime_config.set('max_tools', args.max_tools)
 
     # New logic for --system-file
     system_prompt = None
