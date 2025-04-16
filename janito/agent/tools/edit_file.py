@@ -47,8 +47,11 @@ def edit_file(
                 print_info(f"! TargetContent not found")
                 return f"Info: TargetContent not found: {target}"
             if content.count(target) > 1:
-                print_error(f"! TargetContent is not unique")
-                return f"Error: TargetContent is not unique: {target}"
+                # Find all line numbers (1-indexed) where target appears
+                lines = content.splitlines()
+                found_lines = [i+1 for i, line in enumerate(lines) if target in line]
+                print_error(f"! TargetContent is not unique; found at lines: {found_lines}")
+                return f"Error: TargetContent is not unique: {target}. Found at lines: {found_lines}"
             content = content.replace(target, replacement, 1)
     with open(TargetFile, "w", encoding="utf-8") as f:
         f.write(content)

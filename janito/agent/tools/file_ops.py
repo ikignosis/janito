@@ -5,6 +5,7 @@ from janito.agent.tools.rich_utils import print_info, print_success, print_error
 
 @ToolHandler.register_tool
 def create_file(path: str, content: str, overwrite: bool = False) -> str:
+    updating = os.path.exists(path) and not os.path.isdir(path)
     if os.path.exists(path):
         if os.path.isdir(path):
             print_error("❌ Error: is a directory")
@@ -12,15 +13,27 @@ def create_file(path: str, content: str, overwrite: bool = False) -> str:
         if not overwrite:
             print_error(f"❗ Error: file '{path}' exists and overwrite is False")
             return f"❗ Cannot create file: '{path}' already exists and overwrite is False."
-    print_info(f"📝 Creating file: '{format_path(path)}' ... ")
+    if updating and overwrite:
+        print_info(f"📝 Updating file: '{format_path(path)}' ... ")
+    else:
+        print_info(f"📝 Creating file: '{format_path(path)}' ... ")
     try:
+        old_lines = None
+        if updating and overwrite:
+            with open(path, 'r', encoding='utf-8') as f:
+                old_lines = sum(1 for _ in f)
         with open(path, "w", encoding="utf-8") as f:
             f.write(content)
         print_success("✅ Success")
-        return f"✅ Successfully created the file at '{path}'."
+        if old_lines is not None:
+            new_lines = content.count('\n') + 1 if content else 0
+            return f"✅ Successfully updated the file at '{path}' ({old_lines} > {new_lines} lines)."
+        else:
+            return f"✅ Successfully created the file at '{path}'."
     except Exception as e:
         print_error(f"❌ Error: {e}")
         return f"❌ Failed to create the file at '{path}': {e}"
+
 
 @ToolHandler.register_tool
 def remove_file(path: str) -> str:

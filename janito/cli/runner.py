@@ -79,10 +79,12 @@ def run_cli(args):
     # Always get model from unified_config (which checks runtime_config first)
     model = unified_config.get('model')
     base_url = unified_config.get('base_url', 'https://openrouter.ai/api/v1')
+    azure_openai_api_version = unified_config.get('azure_openai_api_version', '2023-05-15')
     # Handle --enable-tools flag
     from janito.agent.tool_handler import ToolHandler
     tool_handler = ToolHandler(verbose=args.verbose_tools, enable_tools=not getattr(args, 'disable_tools', False))
-    agent = Agent(api_key=api_key, model=model, system_prompt=system_prompt, verbose_tools=args.verbose_tools, base_url=base_url, tool_handler=tool_handler)
+    use_azure_openai = unified_config.get('use_azure_openai', False)
+    agent = Agent(api_key=api_key, model=model, system_prompt=system_prompt, verbose_tools=args.verbose_tools, base_url=base_url, tool_handler=tool_handler, azure_openai_api_version=azure_openai_api_version, use_azure_openai=use_azure_openai)
 
     # Save runtime max_tokens override if provided
     if args.max_tokens is not None:

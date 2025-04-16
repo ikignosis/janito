@@ -19,10 +19,22 @@ class Agent:
         system_prompt: str | None = None,
         verbose_tools: bool = False,
         tool_handler = None,
-        base_url: str = "https://openrouter.ai/api/v1"
+        base_url: str = "https://openrouter.ai/api/v1",
+        azure_openai_api_version: str = "2023-05-15",
+        use_azure_openai: bool = False
     ):
         """
         Initialize the Agent.
+
+        Args:
+            api_key: API key for OpenAI-compatible service.
+            model: Model name to use.
+            system_prompt: Optional system prompt override.
+            verbose_tools: Enable verbose tool call logging.
+            tool_handler: Optional custom ToolHandler instance.
+            base_url: API base URL.
+            azure_openai_api_version: Azure OpenAI API version (default: "2023-05-15").
+            use_azure_openai: Whether to use Azure OpenAI client (default: False).
 
         Args:
             api_key: API key for OpenAI-compatible service.
@@ -35,12 +47,12 @@ class Agent:
         self.api_key = api_key
         self.model = model
         self.system_prompt = system_prompt
-        if os.environ.get("USE_AZURE_OPENAI"):
+        if use_azure_openai:
             from openai import AzureOpenAI
             self.client = AzureOpenAI(
                 api_key=api_key,
-                azure_endpoint=os.environ.get("AZURE_OPENAI_ENDPOINT"),
-                api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2023-05-15"),
+                azure_endpoint=base_url,
+                api_version=azure_openai_api_version,
             )
         else:
             self.client = OpenAI(
