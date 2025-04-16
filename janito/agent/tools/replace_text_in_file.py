@@ -35,7 +35,7 @@ def replace_text_in_file(file_path: str, search_text: str, replacement_text: str
 
     count = content.count(search_text)
     if count == 0:
-        print_info(f"ℹ️ Search text not found in file.")
+        print_info(f"ℹ️  Search text not found in file.")
         return f"ℹ️ No occurrences of search text found in '{file_path}'."
     if replace_all:
         new_content = content.replace(search_text, replacement_text)

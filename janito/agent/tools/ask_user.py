@@ -11,7 +11,8 @@ def ask_user(question: str) -> str:
     """
     Ask the user a question and return their response.
 
-    question: The question to ask the user
+    Args:
+        question (str): The question to ask the user.
     """
     from rich import print as rich_print
     from rich.panel import Panel

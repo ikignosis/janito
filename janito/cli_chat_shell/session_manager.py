@@ -6,26 +6,22 @@ from datetime import datetime
 def load_last_summary(path='.janito/last_conversation.json'):
     if not os.path.exists(path):
         return None
-    try:
-        with open(path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        return data
-    except Exception:
-        return None
+    with open(path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    return data
+
 
 
 def load_last_conversation(path='.janito/last_conversation.json'):
     if not os.path.exists(path):
         return [], [], None
-    try:
-        with open(path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-        messages = data.get('messages', [])
-        prompts = data.get('prompts', [])
-        usage = data.get('last_usage_info')
-        return messages, prompts, usage
-    except Exception:
-        return [], [], None
+    with open(path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    messages = data.get('messages', [])
+    prompts = data.get('prompts', [])
+    usage = data.get('last_usage_info')
+    return messages, prompts, usage
+
 
 
 def save_conversation(messages, prompts, usage_info=None, path='.janito/last_conversation.json'):

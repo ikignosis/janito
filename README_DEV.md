@@ -68,6 +68,51 @@ If you forget to document a parameter, you will see an error like:
 ValueError: Parameter 'count' in tool 'my_tool' is missing a description in the docstring.
 ```
 
+## Tool Reference
+
+### Built-in Tools
+
+- `find_files`: Search for files matching a pattern in directories.
+- `get_lines`: Retrieve specific lines from files for efficient context.
+- `py_compile_file`: Validate Python files for syntax correctness.
+- `replace_text_in_file`: Replace exact text fragments in files.
+- `search_files`: Search for text patterns across files.
+- `python_exec`: Execute Python code and capture output.
+- And more, see `janito/agent/tools/` for the full list.
+
+### Directory Listing Tool
+
+- Use the `list_directory` tool to list the contents of a directory up to a specified depth. Returns name, type (file/dir), last modified time, and path for each entry.
+
+### Python File Validation Tool
+
+- Use the `py_compile_file` tool to validate a Python file by compiling it with Python's built-in `py_compile` module. This tool is recommended for checking Python files after making changes, ensuring syntax correctness before running or deploying code.
+- **Usage:**
+  - Provide the path to the Python file you want to validate.
+  - Optionally, set `doraise` to `True` (default) to raise exceptions on errors.
+  - Returns a success message if the file is valid, or error details if compilation fails.
+
+## Tool Call Limits
+
+- You can use `--max-tools` to limit the total number of tool calls allowed in a chat session. If the limit is reached, further tool calls will be prevented.
+
+## System Prompt Precedence
+
+- If `--system-file` is provided, the file's content is used as the system prompt.
+- Otherwise, if `--system-prompt` or the config value is set, that string is used.
+- Otherwise, a default prompt is used.
+
+## Interactive Shell Config Commands
+
+Within the interactive chat shell, you can use special commands:
+- `/config show` — Show effective configuration (local, global, defaults)
+- `/config set local key=value` — Set a local config value
+- `/config set global key=value` — Set a global config value
+- `/continue` — Restore the last saved conversation
+- `/reset` — Reset conversation history
+- `/system` — Show the current system prompt
+- `/help` — Show help message
+
 ## Summary
 
 - Always provide type hints and parameter descriptions.

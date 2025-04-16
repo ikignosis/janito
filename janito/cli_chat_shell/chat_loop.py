@@ -51,7 +51,7 @@ def start_chat_shell(agent, continue_session=False, max_rounds=50):
     if agent.system_prompt and not any(m.get('role') == 'system' for m in messages):
         messages.insert(0, {"role": "system", "content": agent.system_prompt})
 
-    print_welcome(console, version=__version__)
+    print_welcome(console, version=__version__, continued=continue_session)
 
     # Toolbar references
     def get_messages():

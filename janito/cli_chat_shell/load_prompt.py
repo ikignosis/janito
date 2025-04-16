@@ -7,7 +7,7 @@ def load_prompt(filename=None):
     """
     if filename is None:
         # Default prompt file path (can be customized)
-        filename = os.path.join(os.path.dirname(__file__), '../render_prompt/templates/system_instructions.j2')
+        filename = os.path.join(os.path.dirname(__file__), '../agent/templates/system_instructions.j2')
     filename = os.path.abspath(filename)
     if not os.path.exists(filename):
         raise FileNotFoundError(f"Prompt file not found: {filename}")

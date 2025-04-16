@@ -150,7 +150,7 @@ def handle_config_commands(args):
                 # Special case for system_prompt: show template file if None
                 if key == "system_prompt" and value is None:
                     from pathlib import Path
-                    template_path = Path(__file__).parent.parent / "templates" / "system_instructions.j2"
+                    template_path = Path(__file__).parent / "agent" / "templates" / "system_instructions.j2"
                     print(f"{key} = (default template path: {home_shorten(str(template_path))})")
                 else:
                     print(f"{key} = {value}")

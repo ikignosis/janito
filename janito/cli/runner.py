@@ -44,16 +44,17 @@ def run_cli(args):
     if getattr(args, 'max_tools', None) is not None:
         runtime_config.set('max_tools', args.max_tools)
 
+    # Set trust mode if enabled
+    if getattr(args, 'trust', False):
+        runtime_config.set('trust', True)
+
     # New logic for --system-file
     system_prompt = None
     if getattr(args, 'system_file', None):
-        try:
-            with open(args.system_file, 'r', encoding='utf-8') as f:
-                system_prompt = f.read()
-            runtime_config.set('system_prompt_file', args.system_file)
-        except Exception as e:
-            print(f"[red]Failed to read system prompt file:[/red] {e}")
-            sys.exit(1)
+        with open(args.system_file, 'r', encoding='utf-8') as f:
+            system_prompt = f.read()
+        runtime_config.set('system_prompt_file', args.system_file)
+
     else:
         system_prompt = args.system_prompt or unified_config.get("system_prompt")
         if args.system_prompt:
@@ -82,7 +83,7 @@ def run_cli(args):
     azure_openai_api_version = unified_config.get('azure_openai_api_version', '2023-05-15')
     # Handle --enable-tools flag
     from janito.agent.tool_handler import ToolHandler
-    tool_handler = ToolHandler(verbose=args.verbose_tools, enable_tools=not getattr(args, 'disable_tools', False))
+    tool_handler = ToolHandler(verbose=args.verbose_tools, enable_tools=not getattr(args, 'no_tools', False))
     use_azure_openai = unified_config.get('use_azure_openai', False)
     agent = Agent(api_key=api_key, model=model, system_prompt=system_prompt, verbose_tools=args.verbose_tools, base_url=base_url, tool_handler=tool_handler, azure_openai_api_version=azure_openai_api_version, use_azure_openai=use_azure_openai)
 

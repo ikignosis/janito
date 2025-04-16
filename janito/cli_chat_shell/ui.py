@@ -30,10 +30,11 @@ def print_summary(console, data, continue_session):
         console.print("[bold yellow]Type /continue to restore the last saved conversation.[/bold yellow]")
 
 
-def print_welcome(console, version=None):
+def print_welcome(console, version=None, continued=False):
     version_str = f" (v{version})" if version else ""
     console.print(f"[bold green]Welcome to Janito{version_str}! Entering chat mode. Type /exit to exit.[/bold green]")
-    console.print("[yellow]To resume your previous conversation, type /continue at any time.[/yellow]")
+    if not continued:
+        console.print("[yellow]To resume your previous conversation, type /continue at any time.[/yellow]")
 
 
 def get_toolbar_func(messages_ref, last_usage_info_ref, last_elapsed_ref, model_name=None, role_ref=None):
@@ -68,10 +69,8 @@ def get_toolbar_func(messages_ref, last_usage_info_ref, last_elapsed_ref, model_
         from prompt_toolkit.application import get_app
 
         # Compose first line with Model and Role
-        try:
-            width = get_app().output.get_size().columns
-        except Exception:
-            width = 80  # fallback default
+        width = get_app().output.get_size().columns
+
 
         model_part = f" Model:  <model>{model_name}</model>" if model_name else ""
         role_part = ""
@@ -87,7 +86,7 @@ def get_toolbar_func(messages_ref, last_usage_info_ref, last_elapsed_ref, model_
             first_line_parts.append(role_part)
         first_line = " | ".join(first_line_parts)
 
-        help_part = "<b>/help</b> for help"
+        help_part = "<b>/help</b> for help | <b>F12</b>: just do it"
 
         total_len = len(left) + len(help_part) + 3  # separators and spaces
         if first_line:
@@ -110,6 +109,7 @@ def get_toolbar_func(messages_ref, last_usage_info_ref, last_elapsed_ref, model_
 
 
 def get_prompt_session(get_toolbar_func, mem_history):
+    from prompt_toolkit.key_binding import KeyBindings
     style = Style.from_dict({
         'bottom-toolbar': 'bg:#333333 #ffffff',
         'b': 'bold',
@@ -125,9 +125,18 @@ def get_prompt_session(get_toolbar_func, mem_history):
 '': 'bg:#000080 #ffffff',
     })
 
+    kb = KeyBindings()
+
+    @kb.add('f12')
+    def _(event):
+        """When F12 is pressed, send 'just do it' as input immediately."""
+        buf = event.app.current_buffer
+        buf.text = 'just do it'
+        buf.validate_and_handle()
+
     session = PromptSession(
         multiline=False,
-        key_bindings=KeyBindings(),
+        key_bindings=kb,
         editing_mode=EditingMode.EMACS,
         bottom_toolbar=get_toolbar_func,
         style=style,

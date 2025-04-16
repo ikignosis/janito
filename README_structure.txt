@@ -29,6 +29,7 @@ This file provides an overview of the project's structure, including key directo
             - gitignore_utils.py
             - python_exec.py
             - py_compile.py
+            - remove_directory.py
             - replace_text_in_file.py
             - rich_live.py
             - rich_utils.py
@@ -47,7 +48,7 @@ This file provides an overview of the project's structure, including key directo
         - ui.py
         - ui.py.bak
         - __init__.py
-    - templates/               — Jinja2 templates for system instructions, etc.
+    - templates/               — Jinja2 templates for system instructions, etc. (now under agent/templates/)
         - system_instructions.j2
     - web/                     — Web interface and related modules
         - app.py
@@ -66,7 +67,7 @@ This file provides an overview of the project's structure, including key directo
     - structure.md.bak
 - README.md                    — Main project readme
 - README_structure.txt         — (This file) Project structure overview
-- README_DEV.md                — Developer-focused documentation
+- README_DEV.md                — Developer-focused documentation (includes tool/class descriptions, code-specific details)
 - CHANGELOG.md                 — Project changelog
 - LICENSE                      — License file
 - pyproject.toml               — Project build/configuration

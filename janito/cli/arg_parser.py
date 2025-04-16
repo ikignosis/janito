@@ -22,7 +22,7 @@ def create_parser():
     parser.add_argument("--verbose-response", action="store_true", help="Pretty print the full response object")
     parser.add_argument("--show-system", action="store_true", help="Show model, parameters, system prompt, and tool definitions, then exit")
     parser.add_argument("--verbose-tools", action="store_true", help="Print tool call parameters and results")
-    parser.add_argument("--disable-tools", action="store_true", default=False, help="Disable tool use (default: enabled)")
+    parser.add_argument("-n", "--no-tools", action="store_true", default=False, help="Disable tool use (default: enabled)")
     parser.add_argument("--set-local-config", type=str, default=None, help='Set a local config key-value pair, format "key=val"')
     parser.add_argument("--set-global-config", type=str, default=None, help='Set a global config key-value pair, format "key=val"')
     parser.add_argument("--run-config", type=str, action='append', default=None, help='Set a runtime (in-memory only) config key-value pair, format "key=val". Can be repeated.')
@@ -34,4 +34,5 @@ def create_parser():
     parser.add_argument("--web", action="store_true", help="Launch the Janito web server instead of CLI")
     parser.add_argument("--config-reset-local", action="store_true", help="Remove the local config file (~/.janito/config.json)")
     parser.add_argument("--config-reset-global", action="store_true", help="Remove the global config file (~/.janito/config.json)")
+    parser.add_argument("--trust", action="store_true", help="Enable trust mode: suppresses run_bash_command output, only shows output file locations.")
     return parser

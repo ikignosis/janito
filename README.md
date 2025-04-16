@@ -1,6 +1,6 @@
 # 🚀 Janito: Agent
 
-Janito is an AI-powered command-line and web-based assistant that operates like a thoughtful human developer. It interprets your natural language instructions, analyzes project context, and applies changes with the same care and stepwise reasoning as an experienced engineer. Janito’s design is inspired by the patterns and best practices established by senior human engineers, ensuring that its actions reflect real-world expertise. The assistant prioritizes transparency, interactive clarification, and granular control—mirroring the decision-making processes of experienced professionals. Whether editing code, managing files, or validating changes, Janito ensures every action is understandable, reviewable, and aligned with developer intent.
+Janito is an AI-powered assistant for the command line and web that interprets natural language instructions to edit code, manage files, and analyze projects using patterns and tools designed by experienced software engineers. It prioritizes transparency, interactive clarification, and precise, reviewable changes.
 
 ---
 
@@ -95,4 +95,23 @@ Verbose/debugging flags:
 
 
 
-...
+---
+
+## 🧩 System Prompt & Role
+
+Janito operates using a system prompt template that defines its behavior, communication style, and capabilities. By default, Janito assumes the role of a "software engineer"—this means its responses and actions are tailored to the expectations and best practices of professional software engineering.
+
+- **Role:** You can customize the agent's role (e.g., "data scientist", "DevOps engineer") using the `--role` flag or config. The default is `software engineer`.
+- **System Prompt Template:** The system prompt is rendered from a Jinja2 template (see `janito/agent/templates/system_instructions.j2` (now located directly under the agent directory)). This template governs how the agent interprets instructions, interacts with files, and communicates with users.
+- **Customization:** Advanced users can override the system prompt with the `--system-prompt` flag (raw string), or point to a custom file using `--system-file`.
+
+The default template ensures the agent:
+- Prioritizes safe, reviewable, and minimal changes
+- Asks for clarification when instructions are ambiguous
+- Provides concise plans before taking action
+- Documents any changes made
+
+For more details or to customize the prompt, see the template file at `janito/agent/templates/system_instructions.j2`.
+
+---
+

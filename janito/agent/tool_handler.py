@@ -192,46 +192,38 @@ class ToolHandler:
         args = json.loads(tool_call.function.arguments)
         if self.verbose:
             print(f"[Tool Call] {tool_call.function.name} called with arguments: {args}")
+        import inspect
+        sig = inspect.signature(func)
+        if on_progress:
+            on_progress({
+                'event': 'start',
+                'call_id': call_id,
+                'tool': tool_call.function.name,
+                'args': args
+            })
+        if 'on_progress' in sig.parameters and on_progress is not None:
+            args['on_progress'] = on_progress
         try:
-            import inspect
-            sig = inspect.signature(func)
-            if on_progress:
-                on_progress({
-                    'event': 'start',
-                    'call_id': call_id,
-                    'tool': tool_call.function.name,
-                    'args': args
-                })
-            if 'on_progress' in sig.parameters and on_progress is not None:
-                args['on_progress'] = on_progress
             result = func(**args)
-            if self.verbose:
-                preview = result
-                if isinstance(result, str):
-                    lines = result.splitlines()
-                    if len(lines) > 10:
-                        preview = "\n".join(lines[:10]) + "\n... (truncated)"
-                    elif len(result) > 500:
-                        preview = result[:500] + "... (truncated)"
-                print(f"[Tool Result] {tool_call.function.name} returned:\n{preview}")
-            if on_progress:
-                on_progress({
-                    'event': 'finish',
-                    'call_id': call_id,
-                    'tool': tool_call.function.name,
-                    'args': args,
-                    'result': result
-                })
-            return result
         except Exception as e:
-            tb = traceback.format_exc()
-            if on_progress:
-                on_progress({
-                    'event': 'finish',
-                    'call_id': call_id,
-                    'tool': tool_call.function.name,
-                    'args': args,
-                    'error': str(e),
-                    'traceback': tb
-                })
-            return f"Error running tool {tool_call.function.name}: {e}"
+            import traceback
+            error_message = f"[Tool Error] {type(e).__name__}: {e}\n" + traceback.format_exc()
+            result = error_message
+        if self.verbose:
+            preview = result
+            if isinstance(result, str):
+                lines = result.splitlines()
+                if len(lines) > 10:
+                    preview = "\n".join(lines[:10]) + "\n... (truncated)"
+                elif len(result) > 500:
+                    preview = result[:500] + "... (truncated)"
+            print(f"[Tool Result] {tool_call.function.name} returned:\n{preview}")
+        if on_progress:
+            on_progress({
+                'event': 'finish',
+                'call_id': call_id,
+                'tool': tool_call.function.name,
+                'args': args,
+                'result': result
+            })
+        return result

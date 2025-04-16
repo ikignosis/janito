@@ -7,7 +7,7 @@ from janito.agent.conversation import ConversationHandler
 from janito.agent.tool_handler import ToolHandler
 
 class Agent:
-    """LLM Agent capable of handling conversations and tool calls."""
+    """Agent capable of handling conversations and tool calls."""
 
     REFERER = "www.janito.dev"
     TITLE = "Janito"
@@ -24,7 +24,7 @@ class Agent:
         use_azure_openai: bool = False
     ):
         """
-        Initialize the Agent.
+        Initialize Agent,
 
         Args:
             api_key: API key for OpenAI-compatible service.
@@ -109,5 +109,5 @@ class Agent:
                 else:
                     print("Max retries reached. Raising error.")
                     raise
-            except Exception:
+
                 raise

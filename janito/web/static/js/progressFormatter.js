@@ -9,7 +9,7 @@ const toolFormatters = {
   view_file: formatViewFile,
   find_files: formatFindFiles,
   search_text: formatFindFiles,  // similar output
-  bash_exec: formatBashExec,
+  run_bash_command: formatRunBashCommand,
   fetch_url: formatFetchUrl,
   create_file: formatCreateFile,
   create_directory: formatCreateDirectory,
@@ -86,7 +86,7 @@ function formatFindFiles(progress) {
   return '';
 }
 
-function formatBashExec(progress) {
+function formatRunBashCommand(progress) {
   if(progress.event === 'start') return 'Running command';
   if(progress.event === 'finish') {
     const codeMatch = progress.result && progress.result.match(/returncode: ([-\d]+)/);

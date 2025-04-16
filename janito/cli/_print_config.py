@@ -59,7 +59,7 @@ def print_full_config(local_config, global_config, unified_config, config_defaul
         if default_items:
             print_magenta("[green]🟢 Defaults (not set in config files)[/green]")
             from pathlib import Path
-            template_path = Path(__file__).parent.parent / "templates" / "system_instructions.j2"
+            template_path = Path(__file__).parent / "agent" / "templates" / "system_instructions.j2"
             for key, value in default_items.items():
                 if key == "system_prompt" and value is None:
                     print_info(f"{key} = (default template path: {home_shorten(str(template_path))})")
