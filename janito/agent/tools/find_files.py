@@ -2,6 +2,7 @@ import os
 import fnmatch
 from janito.agent.tool_handler import ToolHandler
 from janito.agent.tools.rich_utils import print_info, print_success, print_error
+from janito.agent.tools.utils import expand_path, display_path
 
 @ToolHandler.register_tool
 def find_files(
@@ -20,10 +21,13 @@ def find_files(
     Returns:
         str: Newline-separated list of matching file paths, with summary and warnings if truncated.
     """
-    print_info(f"🔍 find_files | Dir: {directory} | Pattern: {pattern} | Recursive: {recursive} | Max: {max_results}")
+    original_directory = directory
+    directory = expand_path(directory)
+    disp_dir = display_path(original_directory, directory)
+    print_info(f"🔍 find_files | Dir: {disp_dir} | Pattern: {pattern} | Recursive: {recursive} | Max: {max_results}")
     # Input validation
     if not os.path.isdir(directory):
-        print_error(f"❌ Not a directory: {directory}")
+        print_error(f"❌ Not a directory: {disp_dir}")
         return ""
     if not isinstance(max_results, int) or max_results <= 0:
         print_error(f"❌ Invalid max_results value: {max_results}")
@@ -50,9 +54,9 @@ def find_files(
         print_error(f"❌ Error during file search: {e}")
         return ""
     print_success(f"✅ Found {len(matches)} file(s)")
+    # Display matches using display_path
     result = f"Total files found: {len(matches)}\n"
-    result += "\n".join(matches)
+    result += "\n".join([display_path(original_directory + m[len(directory):] if m.startswith(directory) else m, m) for m in matches])
     if len(matches) == max_results:
         result += "\n# WARNING: Results truncated at max_results. There may be more matching files."
     return result
-

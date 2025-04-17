@@ -14,7 +14,7 @@ class ToolBase(ABC):
         """
         pass
 
-    def on_progress(self, message: str):
+    def update_progress(self, message: str):
         """
         Report progress. Subclasses can override this to customize progress reporting.
         """

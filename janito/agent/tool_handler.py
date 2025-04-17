@@ -1,18 +1,27 @@
 import os
 import json
 import traceback
+from janito.agent.tools.tool_base import ToolBase
 
 class ToolHandler:
     _tool_registry = {}
 
     @classmethod
-    def register_tool(cls, func):
+    def register_tool(cls, tool):
         import inspect
         import typing
         from typing import get_origin, get_args
 
-        name = func.__name__
-        description = func.__doc__ or ""
+        # support classes deriving from ToolBase
+        if isinstance(tool, type) and issubclass(tool, ToolBase):
+            instance = tool()
+            func = instance.call
+            name = tool.__name__
+            description = tool.__doc__ or func.__doc__ or ""
+        else:
+            func = tool
+            name = func.__name__
+            description = func.__doc__ or ""
 
         sig = inspect.signature(func)
         params_schema = {
@@ -64,12 +73,13 @@ class ToolHandler:
             if param.default is param.empty:
                 params_schema["required"].append(param_name)
 
+        # register the bound call function
         cls._tool_registry[name] = {
             "function": func,
             "description": description,
             "parameters": params_schema
         }
-        return func
+        return tool
 
 def _pytype_to_json_type(pytype):
     import typing
@@ -85,75 +95,6 @@ def _pytype_to_json_type(pytype):
         return "array"
     else:
         return "string"
-
-class ToolHandler:
-    _tool_registry = {}
-
-    @classmethod
-    def register_tool(cls, func):
-        import inspect
-        import typing
-        from typing import get_origin, get_args
-
-        name = func.__name__
-        description = func.__doc__ or ""
-
-        sig = inspect.signature(func)
-        params_schema = {
-            "type": "object",
-            "properties": {},
-            "required": []
-        }
-
-        for param_name, param in sig.parameters.items():
-            if param.annotation is param.empty:
-                raise TypeError(f"Parameter '{param_name}' in tool '{name}' is missing a type hint.")
-            param_type = param.annotation
-            schema = {}
-
-            # Handle typing.Optional, typing.List, typing.Literal, etc.
-            origin = get_origin(param_type)
-            args = get_args(param_type)
-
-            if origin is typing.Union and type(None) in args:
-                # Optional[...] type
-                main_type = args[0] if args[1] is type(None) else args[1]
-                origin = get_origin(main_type)
-                args = get_args(main_type)
-                param_type = main_type
-            else:
-                main_type = param_type
-
-            if origin is list or origin is typing.List:
-                item_type = args[0] if args else str
-                item_schema = {"type": _pytype_to_json_type(item_type)}
-                schema = {"type": "array", "items": item_schema}
-            elif origin is typing.Literal:
-                schema = {"type": _pytype_to_json_type(type(args[0])), "enum": list(args)}
-            elif main_type == int:
-                schema = {"type": "integer"}
-            elif main_type == float:
-                schema = {"type": "number"}
-            elif main_type == bool:
-                schema = {"type": "boolean"}
-            elif main_type == dict:
-                schema = {"type": "object"}
-            elif main_type == list:
-                schema = {"type": "array", "items": {"type": "string"}}
-            else:
-                schema = {"type": "string"}
-
-            # Optionally add description if available in docstring (not implemented here)
-            params_schema["properties"][param_name] = schema
-            if param.default is param.empty:
-                params_schema["required"].append(param_name)
-
-        cls._tool_registry[name] = {
-            "function": func,
-            "description": description,
-            "parameters": params_schema
-        }
-        return func
 
     def __init__(self, verbose=False, enable_tools=True):
         self.verbose = verbose

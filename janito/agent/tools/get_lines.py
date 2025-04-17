@@ -1,6 +1,7 @@
 import os
 from janito.agent.tool_handler import ToolHandler
-from janito.agent.tools.rich_utils import print_info, print_success, print_error, format_path, format_number
+from janito.agent.tools.rich_utils import print_info, print_success, print_error
+from janito.agent.tools.utils import expand_path, display_path
 
 @ToolHandler.register_tool
 def get_lines(
@@ -20,12 +21,15 @@ def get_lines(
     If both from_line and to_line are omitted, returns all lines in the file.
     It is recommended to request at least 100 lines or the full file for more efficient context building.
     """
+    original_path = file_path
+    file_path = expand_path(file_path)
+    disp_path = display_path(original_path, file_path)
     if from_line is None and to_line is None:
-        print_info(f"📂 get_lines | Path: {format_path(file_path)} | All lines requested")
+        print_info(f"📂 get_lines | Path: {disp_path} | All lines requested")
     else:
-        print_info(f"📂 get_lines | Path: {format_path(file_path)} | Lines ({from_line}-{to_line})")
+        print_info(f"📂 get_lines | Path: {disp_path} | Lines ({from_line}-{to_line})")
     if not os.path.isfile(file_path):
-        print_info(f"ℹ️ File not found: {file_path}")
+        print_info(f"ℹ️ File not found: {disp_path}")
         return ""
     with open(file_path, "r", encoding="utf-8") as f:
         lines = f.readlines()

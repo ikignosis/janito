@@ -56,6 +56,8 @@ def run_bash_command(command: str, timeout: int = 60, require_confirmation: bool
     """
     Execute a non-interactive bash command and print output live.
 
+Only non-interactive commands are supported; interactive commands (requiring user input) will not work.
+
     If require_confirmation is True, the user will be prompted to confirm execution before running the command.
 
     Args:
@@ -68,7 +70,8 @@ def run_bash_command(command: str, timeout: int = 60, require_confirmation: bool
     print_info(f"[run_bash_command] Running: {command}")
     if require_confirmation:
         # Prompt the user for confirmation directly
-        resp = input(f"Are you sure you want to run this command?\n\n{command}\n\nType 'yes' to confirm: ")
+        print_warning(f"⚠️ [bold yellow]Are you sure you want to run this command?[/bold yellow]\n\n[bold]{command}[/bold]\n\nType 'yes' to confirm:")
+        resp = input("> ")
         if resp.strip().lower() != 'yes':
             print_error("❌ Command not confirmed by user.")
             return "❌ Command not confirmed by user."
@@ -80,7 +83,7 @@ def run_bash_command(command: str, timeout: int = 60, require_confirmation: bool
     if process.is_alive():
         process.terminate()
         process.join()
-        result = {'stdout_file': '', 'stderr_file': '', 'error': f'Process timed out after {timeout} seconds.', 'returncode': -1}
+        result = {'stdout_file': '', 'stderr_file': '', 'error': f'Process timed out after {timeout} seconds. Note: Interactive commands (requiring user input) are not supported and may cause timeouts.', 'returncode': -1}
     elif not result_queue.empty():
         result = result_queue.get()
     else:

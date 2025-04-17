@@ -4,6 +4,7 @@ import fnmatch
 from janito.agent.tool_handler import ToolHandler
 from janito.agent.tools.rich_utils import print_info, print_success, print_error, format_path, format_number
 from janito.agent.tools.gitignore_utils import load_gitignore_patterns, filter_ignored
+from janito.agent.tools.utils import expand_path, display_path
 
 @ToolHandler.register_tool
 def search_files(
@@ -19,6 +20,7 @@ def search_files(
     Returns:
         str: Each match as 'filepath:lineno:linecontent', one per line.
     """
+    directory = expand_path(directory)
     print_info(f"🔎 search_files | Path: {directory} | pattern: '{pattern}'")
     results = []
     ignore_patterns = load_gitignore_patterns()
@@ -39,14 +41,14 @@ def search_files(
 
     for filepath in files_to_search:
         with open(filepath, 'r', encoding='utf-8', errors='replace') as f:
+            disp_path = display_path(os.path.relpath(filepath, os.getcwd()), filepath)
             for lineno, line in enumerate(f, start=1):
                 if regex:
                     if regex.search(line):
-                        results.append(f"{filepath}:{lineno}:{line.rstrip()}")
+                        results.append(f"{disp_path}:{lineno}:{line.rstrip()}")
                 else:
                     if pattern.lower() in line.lower():
-                        results.append(f"{filepath}:{lineno}:{line.rstrip()}")
+                        results.append(f"{disp_path}:{lineno}:{line.rstrip()}")
 
     print_success(f"✅ Found {format_number(len(results))} matches")
     return "\n".join(results)
-

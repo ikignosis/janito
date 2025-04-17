@@ -1,11 +1,13 @@
 import os
 import pathspec
+from janito.agent.tools.utils import expand_path
 
 _spec = None
 
 
 def load_gitignore_patterns(gitignore_path='.gitignore'):
     global _spec
+    gitignore_path = expand_path(gitignore_path)
     if not os.path.exists(gitignore_path):
         _spec = pathspec.PathSpec.from_lines('gitwildmatch', [])
         return _spec
@@ -17,6 +19,7 @@ def load_gitignore_patterns(gitignore_path='.gitignore'):
 
 def is_ignored(path):
     global _spec
+    path = expand_path(path)
     if _spec is None:
         _spec = load_gitignore_patterns()
     # Normalize path to be relative and use forward slashes

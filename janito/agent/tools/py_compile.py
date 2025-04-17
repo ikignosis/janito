@@ -1,5 +1,6 @@
 from janito.agent.tool_handler import ToolHandler
 from janito.agent.tools.rich_utils import print_info
+from janito.agent.tools.utils import expand_path
 import py_compile
 from typing import Optional
 
@@ -16,6 +17,7 @@ def py_compile_file(path: str, doraise: Optional[bool] = True) -> str:
     Returns:
         str: Success message or error details if compilation fails.
     """
+    path = expand_path(path)
     print_info(f"[py_compile_file] Validating Python file: {path}")
     try:
         py_compile.compile(path, doraise=doraise)
