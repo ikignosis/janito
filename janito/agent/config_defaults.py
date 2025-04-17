@@ -7,4 +7,5 @@ CONFIG_DEFAULTS = {
     "system_prompt": None,  # None means auto-generate from role
     "temperature": 0.2,
     "max_tokens": 200000,
+    "use_azure_openai": False,
 }

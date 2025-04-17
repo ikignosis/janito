@@ -64,6 +64,7 @@ CONFIG_OPTIONS = {
     "system_prompt": "Override the entire system prompt text",
     "temperature": "Sampling temperature (float, e.g., 0.0 - 2.0)",
     "max_tokens": "Maximum tokens for model response (int)",
+    "use_azure_openai": "Whether to use Azure OpenAI client (default: False)",
     # Accept template.* keys as valid config keys (for CLI validation, etc.)
     "template": "Template context dictionary for prompt rendering (nested)",
     # Note: template.* keys are validated dynamically, not statically here
