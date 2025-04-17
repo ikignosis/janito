@@ -1,6 +1,6 @@
 [project]
 name = "janito"
-version = "1.3.1"
+version = "1.3.2"
 description = "A Natural Programming Language Agent,"
 authors = [
     { name = "João Pinto", email = "joao.pinto@gmail.com" }
@@ -37,4 +37,4 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.package-data]
-"janito.templates" = ["system_instructions.j2"]
+"janito.agent.templates" = ["system_instructions.j2"]
