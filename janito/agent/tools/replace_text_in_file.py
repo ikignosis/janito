@@ -1,9 +1,9 @@
 import os
 from janito.agent.tool_handler import ToolHandler
+from janito.agent.tools.tool_base import ToolBase
 from janito.agent.tools.rich_utils import print_info, print_success, print_error
 from janito.agent.tools.utils import expand_path, display_path
 
-@ToolHandler.register_tool
 def replace_text_in_file(file_path: str, search_text: str, replacement_text: str, replace_all: bool = False) -> str:
     """
     Replace exact occurrences of a given text in a file. The match must be exact, including whitespace and indentation, to avoid breaking file syntax or formatting.
@@ -21,7 +21,7 @@ def replace_text_in_file(file_path: str, search_text: str, replacement_text: str
     search_preview = (search_text[:15] + '...') if len(search_text) > 15 else search_text
     replace_preview = (replacement_text[:15] + '...') if len(replacement_text) > 15 else replacement_text
     replace_all_msg = f" | Replace all: True" if replace_all else ""
-    print_info(f"📝 replace_text_in_file | Path: {disp_path} | Search: '{search_preview}' | Replacement: '{replace_preview}'{replace_all_msg}")
+    print_info(f"📝 Replacing text in file: '{disp_path}' | Search: '{search_preview}' | Replacement: '{replace_preview}'{replace_all_msg}")
     if not os.path.isfile(file_path):
         print_error(f"❌ File not found: {disp_path}")
         return f"❌ Error: File not found: {disp_path}"
@@ -62,5 +62,25 @@ def replace_text_in_file(file_path: str, search_text: str, replacement_text: str
     except Exception as e:
         print_error(f"❌ Error writing file: {e}")
         return f"❌ Error writing file: {e}"
-    print_success(f"✅ Replaced {replaced_count} occurrence(s) in '{disp_path}'")
-    return f"✅ Replaced {replaced_count} occurrence(s) in '{disp_path}'"
+            # Find all line numbers where replacement occurred
+    lines = content.splitlines()
+    match_lines = [i+1 for i, line in enumerate(lines) if search_text in line]
+    if replaced_count > 0:
+        if len(match_lines) == 1:
+            reference = f"{original_path}:{match_lines[0]}"
+            print_success(f"✅ Replaced 1 occurrence in '{disp_path}' at line: {match_lines[0]}")
+            return reference
+        else:
+            references = '\n'.join([f"{original_path}:{ln}" for ln in match_lines])
+            print_success(f"✅ Replaced {replaced_count} occurrence(s) in '{disp_path}' at lines: {match_lines}")
+            return references
+    else:
+        print_success(f"✅ No replacements made in '{disp_path}'")
+        return f"No replacements made in '{disp_path}'"
+
+class ReplaceTextInFileTool(ToolBase):
+    """Replace exact occurrences of a given text in a file."""
+    def call(self, file_path: str, search_text: str, replacement_text: str, replace_all: bool = False) -> str:
+        return replace_text_in_file(file_path, search_text, replacement_text, replace_all)
+
+ToolHandler.register_tool(ReplaceTextInFileTool, name="replace_text_in_file")

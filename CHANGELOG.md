@@ -5,6 +5,7 @@
 - `--max-tools` CLI/config parameter to limit the overall maximum number of tool calls within a chat session.
 
 ### Changed
+- Updated the README documentation.
 - `view_file` tool info output now shows `Lines (X-Y)` instead of `StartLine: X | EndLine: Y`.
 - "TargetContent not found" in `edit_file` tool is now an info message, not an error.
 

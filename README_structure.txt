@@ -25,6 +25,7 @@ This file provides an overview of the project's structure, including key directo
             - fetch_url.py
             - file_ops.py
             - find_files.py
+            - get_file_outline.py
             - get_lines.py
             - gitignore_utils.py
             - python_exec.py

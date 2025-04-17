@@ -2,11 +2,11 @@ import os
 import re
 import fnmatch
 from janito.agent.tool_handler import ToolHandler
+from janito.agent.tools.tool_base import ToolBase
 from janito.agent.tools.rich_utils import print_info, print_success, print_error, format_path, format_number
 from janito.agent.tools.gitignore_utils import load_gitignore_patterns, filter_ignored
 from janito.agent.tools.utils import expand_path, display_path
 
-@ToolHandler.register_tool
 def search_files(
     directory: str,
     pattern: str
@@ -21,7 +21,7 @@ def search_files(
         str: Each match as 'filepath:lineno:linecontent', one per line.
     """
     directory = expand_path(directory)
-    print_info(f"🔎 search_files | Path: {directory} | pattern: '{pattern}'")
+    print_info(f"🔎 Searching for pattern '{pattern}' in files at: '{directory}' ...")
     results = []
     ignore_patterns = load_gitignore_patterns()
     try:
@@ -52,3 +52,10 @@ def search_files(
 
     print_success(f"✅ Found {format_number(len(results))} matches")
     return "\n".join(results)
+
+class SearchFilesTool(ToolBase):
+    """Search for a text pattern in all files within a directory and return matching lines."""
+    def call(self, directory: str, pattern: str) -> str:
+        return search_files(directory, pattern)
+
+ToolHandler.register_tool(SearchFilesTool, name="search_files")

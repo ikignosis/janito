@@ -4,6 +4,7 @@ import sys
 import multiprocessing
 import io
 from typing import Callable, Optional
+from janito.agent.tools.tool_base import ToolBase
 
 
 def _run_python_code(code: str, result_queue):
@@ -20,28 +21,31 @@ def _run_python_code(code: str, result_queue):
     })
 
 
-@ToolHandler.register_tool
-def python_exec(code: str, on_progress: Optional[Callable[[dict], None]] = None) -> str:
+# Converted python_exec function into PythonExecTool subclass
+class PythonExecTool(ToolBase):
     """
     Execute Python code in a separate process and capture output.
 
     Args:
         code (str): The Python code to execute.
-        on_progress (Optional[Callable[[dict], None]]): Optional callback function for streaming progress updates (not used).
+        on_progress (Optional[Callable[[dict], None]]): Optional callback for streaming progress (not used).
 
     Returns:
-        str: A formatted message string containing stdout, stderr, and return code.
+        str: Formatted stdout, stderr, and return code.
     """
-    print_info(f"[python_exec] Executing Python code:")
-    print_info(code)
-    result_queue = multiprocessing.Queue()
-    process = multiprocessing.Process(target=_run_python_code, args=(code, result_queue))
-    process.start()
-    process.join()
-    if not result_queue.empty():
-        result = result_queue.get()
-    else:
-        result = {'stdout': '', 'stderr': 'No result returned from process.', 'returncode': -1}
-    print_info(f"[python_exec] Execution completed.")
-    print_info(f"[python_exec] Return code: {result['returncode']}")
-    return f"stdout:\n{result['stdout']}\nstderr:\n{result['stderr']}\nreturncode: {result['returncode']}"
+    def call(self, code: str, on_progress: Optional[Callable[[dict], None]] = None) -> str:
+        print_info(f"🐍 Executing Python code ...")
+        print_info(code)
+        result_queue = multiprocessing.Queue()
+        process = multiprocessing.Process(target=_run_python_code, args=(code, result_queue))
+        process.start()
+        process.join()
+        if not result_queue.empty():
+            result = result_queue.get()
+        else:
+            result = {'stdout': '', 'stderr': 'No result returned from process.', 'returncode': -1}
+        print_info(f"🐍 Python code execution completed.")
+        print_info(f"🐍 Python code return code: {result['returncode']}")
+        return f"stdout:\n{result['stdout']}\nstderr:\n{result['stderr']}\nreturncode: {result['returncode']}"
+
+ToolHandler.register_tool(PythonExecTool, name="python_exec")

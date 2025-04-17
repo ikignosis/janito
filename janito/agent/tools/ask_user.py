@@ -4,61 +4,64 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.styles import Style
+from janito.agent.tools.tool_base import ToolBase
 
-
-@ToolHandler.register_tool
-def ask_user(question: str) -> str:
+# Converted ask_user free-function into AskUserTool class
+class AskUserTool(ToolBase):
     """
     Ask the user a question and return their response.
 
     Args:
         question (str): The question to ask the user.
     """
-    from rich import print as rich_print
-    from rich.panel import Panel
+    def call(self, question: str) -> str:
+        from rich import print as rich_print
+        from rich.panel import Panel
 
-    rich_print(Panel.fit(question, title="Question", style="cyan"))
+        rich_print(Panel.fit(question, title="Question", style="cyan"))
 
-    bindings = KeyBindings()
+        bindings = KeyBindings()
 
-    mode = {'multiline': False}
+        mode = {'multiline': False}
 
-    @bindings.add('c-r')
-    def _(event):
-        # Disable reverse search
-        pass
+        @bindings.add('c-r')
+        def _(event):
+            # Disable reverse search
+            pass
 
-    style = Style.from_dict({
-        'bottom-toolbar': 'bg:#333333 #ffffff',
-        'b': 'bold',
-        'prompt': 'bold bg:#000080 #ffffff',
-    })
+        style_ = Style.from_dict({
+            'bottom-toolbar': 'bg:#333333 #ffffff',
+            'b': 'bold',
+            'prompt': 'bold bg:#000080 #ffffff',
+        })
 
-    def get_toolbar():
-        if mode['multiline']:
-            return HTML('<b>Multiline mode (Esc+Enter to submit). Type /single to switch.</b>')
-        else:
-            return HTML('<b>Single-line mode (Enter to submit). Type /multi for multiline.</b>')
+        def get_toolbar():
+            if mode['multiline']:
+                return HTML('<b>Multiline mode (Esc+Enter to submit). Type /single to switch.</b>')
+            else:
+                return HTML('<b>Single-line mode (Enter to submit). Type /multi for multiline.</b>')
 
-    session = PromptSession(
-        multiline=False,
-        key_bindings=bindings,
-        editing_mode=EditingMode.EMACS,
-        bottom_toolbar=get_toolbar,
-        style=style
-    )
+        session = PromptSession(
+            multiline=False,
+            key_bindings=bindings,
+            editing_mode=EditingMode.EMACS,
+            bottom_toolbar=get_toolbar,
+            style=style_
+        )
 
-    prompt_icon = HTML('<prompt>💬 </prompt>')
+        prompt_icon = HTML('<prompt>💬 </prompt>')
 
-    while True:
-        response = session.prompt(prompt_icon)
-        if not mode['multiline'] and response.strip() == '/multi':
-            mode['multiline'] = True
-            session.multiline = True
-            continue
-        elif mode['multiline'] and response.strip() == '/single':
-            mode['multiline'] = False
-            session.multiline = False
-            continue
-        else:
-            return response
+        while True:
+            response = session.prompt(prompt_icon)
+            if not mode['multiline'] and response.strip() == '/multi':
+                mode['multiline'] = True
+                session.multiline = True
+                continue
+            elif mode['multiline'] and response.strip() == '/single':
+                mode['multiline'] = False
+                session.multiline = False
+                continue
+            else:
+                return response
+
+ToolHandler.register_tool(AskUserTool, name="ask_user")

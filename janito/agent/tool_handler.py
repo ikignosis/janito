@@ -6,21 +6,32 @@ from janito.agent.tools.tool_base import ToolBase
 class ToolHandler:
     _tool_registry = {}
 
+    def __init__(self, verbose=False, enable_tools=True):
+        self.verbose = verbose
+        self.tools = []
+        self.enable_tools = enable_tools
+
     @classmethod
-    def register_tool(cls, tool):
+    def register_tool(cls, tool=None, *, name: str = None):
+        # allow optional name override for PascalCase tool naming
+        if tool is None:
+            return lambda t: cls.register_tool(t, name=name)
         import inspect
         import typing
         from typing import get_origin, get_args
 
+        override_name = name
         # support classes deriving from ToolBase
         if isinstance(tool, type) and issubclass(tool, ToolBase):
             instance = tool()
             func = instance.call
-            name = tool.__name__
+            default_name = tool.__name__
+            name = override_name or default_name
             description = tool.__doc__ or func.__doc__ or ""
         else:
             func = tool
-            name = func.__name__
+            default_name = func.__name__
+            name = override_name or default_name
             description = func.__doc__ or ""
 
         sig = inspect.signature(func)
@@ -80,26 +91,6 @@ class ToolHandler:
             "parameters": params_schema
         }
         return tool
-
-def _pytype_to_json_type(pytype):
-    import typing
-    if pytype == int:
-        return "integer"
-    elif pytype == float:
-        return "number"
-    elif pytype == bool:
-        return "boolean"
-    elif pytype == dict:
-        return "object"
-    elif pytype == list or pytype == typing.List:
-        return "array"
-    else:
-        return "string"
-
-    def __init__(self, verbose=False, enable_tools=True):
-        self.verbose = verbose
-        self.tools = []
-        self.enable_tools = enable_tools
 
     def register(self, func):
         self.tools.append(func)
@@ -168,3 +159,18 @@ def _pytype_to_json_type(pytype):
                 'result': result
             })
         return result
+
+def _pytype_to_json_type(pytype):
+    import typing
+    if pytype == int:
+        return "integer"
+    elif pytype == float:
+        return "number"
+    elif pytype == bool:
+        return "boolean"
+    elif pytype == dict:
+        return "object"
+    elif pytype == list or pytype == typing.List:
+        return "array"
+    else:
+        return "string"
