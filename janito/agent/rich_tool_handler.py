@@ -30,10 +30,10 @@ class MessageHandler:
                 self._handle_progress(message)
             elif msg_type == "stdout":
                 from rich.text import Text
-                self.console.print(Text(message, style="on green", no_wrap=True, overflow=None), end="")
+                self.console.print(Text(message, style="on #003300", no_wrap=True, overflow=None), end="")
             elif msg_type == "stderr":
                 from rich.text import Text
-                self.console.print(Text(message, style="on red", no_wrap=True, overflow=None), end="")
+                self.console.print(Text(message, style="on #330000", no_wrap=True, overflow=None), end="")
             else:
                 raise NotImplementedError(f"Unsupported message type: {msg_type}")
         else:
