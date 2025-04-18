@@ -15,7 +15,7 @@ class FindFilesTool(ToolBase):
             return os.path.relpath(path)
         disp_path = _display_path(directory)
         rec = "recursively" if recursive else "non-recursively"
-        print_info(f"\U0001F50D Searching '{disp_path}' for pattern '{pattern}' ({rec}, max {max_results})")
+        print_info(f"\U0001F50D Searching '{disp_path}' for pattern '{pattern}' ({rec}, max {max_results})", end="")
         self.update_progress(f"Searching for files in {directory} matching {pattern}")
         matches = []
         for root, dirs, files in os.walk(directory):

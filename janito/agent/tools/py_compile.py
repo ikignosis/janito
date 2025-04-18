@@ -7,7 +7,7 @@ import py_compile
 class PyCompileTool(ToolBase):
     """Validate a Python file by compiling it with py_compile."""
     def call(self, file_path: str, doraise: Optional[bool] = True) -> str:
-        print_info(f"[py_compile] Compiling Python file: {file_path}")
+        print_info(f"[py_compile] Compiling Python file: {file_path}", end="")
         self.update_progress(f"Compiling Python file: {file_path}")
         try:
             py_compile.compile(file_path, doraise=doraise)

@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.4.1] - 2025-04-19
+### Changed
+- Updated project version to 1.4.1.
+- See RELEASE_NOTES_1.4.md for details.
+
+## [Unreleased]
+
+### Changed
+- Conversation spinner now formats word counts with 'k'/'m' suffixes for improved readability.
+- fetch_url tool: Improved output formatting for status and success messages.
+- file_ops tool: Enhanced success messages for file creation and updating, now showing line counts and clearer feedback.
+
+### Removed
+- file_ops tool: Removed the RemoveFileTool class.
+
 
 ## [1.4.0] - 2025-04-18
 

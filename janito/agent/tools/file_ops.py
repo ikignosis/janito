@@ -31,11 +31,11 @@ class CreateFileTool(ToolBase):
                 old_lines = sum(1 for _ in f)
         with open(path, "w", encoding="utf-8") as f:
             f.write(content)
-        print_success("✅ Success")
-        if old_lines is not None:
-            new_lines = content.count('\n') + 1 if content else 0
-            return f"✅ Successfully updated the file at '{disp_path}' ({old_lines} > {new_lines} lines)."
         new_lines = content.count('\n') + 1 if content else 0
+        if old_lines is not None:
+            print_success(f"✅ Successfully updated the file at '{disp_path}' ({old_lines} > {new_lines} lines).")
+            return f"✅ Successfully updated the file at '{disp_path}' ({old_lines} > {new_lines} lines)."
+        print_success(f"✅ Successfully created the file at '{disp_path}' ({new_lines} lines).")
         return f"✅ Successfully created the file at '{disp_path}' ({new_lines} lines)."
 
 class CreateDirectoryTool(ToolBase):
@@ -58,57 +58,3 @@ class CreateDirectoryTool(ToolBase):
             if not os.path.isdir(path):
                 print_error(f"❌ Path '{disp_path}' exists and is not a directory.")
                 return f"❌ Path '{disp_path}' exists and is not a directory."
-            if not overwrite:
-                print_error(f"❗ Directory '{disp_path}' already exists and overwrite is False.")
-                return f"❗ Directory '{disp_path}' already exists and overwrite is False."
-            # Remove existing directory if overwrite is True
-            shutil.rmtree(path)
-            print_info(f"🗑️  Removed existing directory: '{disp_path}'")
-        os.makedirs(path, exist_ok=True)
-        print_success(f"✅ Created directory: '{disp_path}'")
-        return f"✅ Successfully created directory at '{disp_path}'."
-
-class RemoveFileTool(ToolBase):
-    """
-    Remove a file at the specified path.
-    """
-    def call(self, path: str) -> str:
-        original_path = path
-        path = expand_path(path)
-        disp_path = display_path(original_path, path)
-        print_info(f"🗑️  Removing file: '{disp_path}' ... ")
-        os.remove(path)
-        print_success("✅ Success")
-        return f"✅ Successfully deleted the file at '{disp_path}'."
-
-class MoveFileTool(ToolBase):
-    """
-    Move or rename a file from source to destination.
-    """
-    def call(self, source_path: str, destination_path: str, overwrite: bool = False) -> str:
-        orig_source = source_path
-        orig_dest = destination_path
-        source_path = expand_path(source_path)
-        destination_path = expand_path(destination_path)
-        disp_source = display_path(orig_source, source_path)
-        disp_dest = display_path(orig_dest, destination_path)
-        print_info(f"🚚 Moving '{disp_source}' to '{disp_dest}' ... ")
-        if not os.path.exists(source_path):
-            print_error(f"❌ Error: source does not exist")
-            return f"❌ Source path '{disp_source}' does not exist."
-        if os.path.exists(destination_path):
-            if not overwrite:
-                print_error(f"❗ Error: destination exists and overwrite is False")
-                return f"❗ Destination path '{disp_dest}' already exists and overwrite is False."
-            if os.path.isdir(destination_path):
-                print_error(f"❌ Error: destination is a directory")
-                return f"❌ Destination path '{disp_dest}' is an existing directory."
-        shutil.move(source_path, destination_path)
-        print_success("✅ Success")
-        return f"✅ Successfully moved '{disp_source}' to '{disp_dest}'."
-
-# register tools
-ToolHandler.register_tool(CreateFileTool, name="create_file")
-ToolHandler.register_tool(CreateDirectoryTool, name="create_directory")
-ToolHandler.register_tool(RemoveFileTool, name="remove_file")
-ToolHandler.register_tool(MoveFileTool, name="move_file")

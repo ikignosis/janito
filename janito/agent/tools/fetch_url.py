@@ -8,7 +8,7 @@ from janito.agent.tools.tool_base import ToolBase
 class FetchUrlTool(ToolBase):
     """Fetch the content of a web page and extract its text."""
     def call(self, url: str, search_strings: list[str] = None) -> str:
-        print_info(f"🌐 Fetching URL: {url} ... ")
+        print_info(f"🌐 Fetching URL: {url} ... ", end="")
         response = requests.get(url, timeout=10)
         response.raise_for_status()
         self.update_progress(f"Fetched URL with status {response.status_code}")
@@ -29,7 +29,7 @@ class FetchUrlTool(ToolBase):
             else:
                 text = "No matches found for the provided search strings."
 
-        print_success("\u2705 Success")
+        print_success("✅ Success")
         return text
 
 ToolHandler.register_tool(FetchUrlTool, name="fetch_url")

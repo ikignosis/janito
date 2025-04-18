@@ -1,5 +1,8 @@
 # Release Notes – Version 1.4
 
+## 1.4.1 (2025-04-19)
+- Maintenance release: version bump and documentation updates for 1.4.1.
+
 This document tracks notable changes, enhancements, and fixes for the 1.4 release cycle. Release date: 17/04/2025.
 
 ## Added

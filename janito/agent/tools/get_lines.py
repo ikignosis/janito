@@ -28,6 +28,9 @@ class GetLinesTool(ToolBase):
                 print_success(f" ✅ {len(lines)} lines read")
             return ''.join(selected)
         except Exception as e:
+            if isinstance(e, FileNotFoundError):
+                print_error(f"❗ not found")
+                return "❗ not found"
             print_error(f" ❌ Error: {e}")
             return f"Error reading file: {e}"
 
