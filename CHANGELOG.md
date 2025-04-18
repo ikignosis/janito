@@ -16,6 +16,15 @@
 - file_ops tool: Removed the RemoveFileTool class.
 
 
+## [1.5.x] - 2025-04-18
+
+### Added
+- Instructions in README for obtaining an API key from OpenRouter.
+- Reference to Azure OpenAI usage and new AZURE_OPENAI.md file.
+
+### Changed
+- Minor improvements to output and warning messages in various tool files (fetch_url, file_ops, find_files, get_file_outline, get_lines, py_compile, python_exec, remove_directory, replace_text_in_file, search_files).
+
 ## [1.4.0] - 2025-04-18
 
 ### Added

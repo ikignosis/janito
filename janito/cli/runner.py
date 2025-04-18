@@ -81,11 +81,7 @@ def run_cli(args):
     model = unified_config.get('model')
     base_url = unified_config.get('base_url', 'https://openrouter.ai/api/v1')
     azure_openai_api_version = unified_config.get('azure_openai_api_version', '2023-05-15')
-    # Handle --enable-tools flag
-    from janito.agent.tool_handler import ToolHandler
-    tool_handler = ToolHandler(verbose=args.verbose_tools, enable_tools=not getattr(args, 'no_tools', False))
-    use_azure_openai = unified_config.get('use_azure_openai', False)
-    agent = Agent(api_key=api_key, model=model, system_prompt=system_prompt, verbose_tools=args.verbose_tools, base_url=base_url, tool_handler=tool_handler, azure_openai_api_version=azure_openai_api_version, use_azure_openai=use_azure_openai)
+    agent = Agent(api_key=api_key, model=model, system_prompt=system_prompt, verbose_tools=args.verbose_tools, base_url=base_url, azure_openai_api_version=azure_openai_api_version, use_azure_openai=unified_config.get('use_azure_openai', False))
 
     # Save runtime max_tokens override if provided
     if args.max_tokens is not None:
@@ -100,10 +96,10 @@ def run_cli(args):
     prompt = args.prompt
 
     console = Console()
+    from janito.agent.rich_tool_handler import MessageHandler
+    message_handler = MessageHandler()
 
-    def on_content(data):
-        content = data.get("content", "")
-        console.print(Markdown(content))
+    # Removed on_content logic; use message_handler pattern only
 
     messages = []
     if agent.system_prompt:
@@ -116,7 +112,7 @@ def run_cli(args):
             max_rounds = runtime_config.get('max_rounds', 50)
             response = agent.chat(
                 messages,
-                on_content=on_content,
+                message_handler=message_handler,
                 spinner=True,
                 max_rounds=max_rounds,
             )

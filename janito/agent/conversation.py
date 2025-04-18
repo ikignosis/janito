@@ -1,4 +1,5 @@
 import json
+from janito.agent.tool_registry import get_tool_schemas
 
 class MaxRoundsExceededError(Exception):
     pass
@@ -12,21 +13,17 @@ class ProviderError(Exception):
         super().__init__(message)
 
 class ConversationHandler:
-    def __init__(self, client, model, tool_handler):
+    def __init__(self, client, model):
         self.client = client
         self.model = model
-        self.tool_handler = tool_handler
         self.usage_history = []
 
-    def handle_conversation(self, messages, max_rounds=50, on_content=None, on_tool_progress=None, verbose_response=False, spinner=False, max_tokens=None):
+    def handle_conversation(self, messages, max_rounds=50, message_handler=None, verbose_response=False, spinner=False, max_tokens=None):
         from janito.agent.runtime_config import runtime_config
         max_tools = runtime_config.get('max_tools', None)
         tool_calls_made = 0
         if not messages:
             raise ValueError("No prompt provided in messages")
-
-        from rich.console import Console
-        console = Console()
 
         from janito.agent.runtime_config import unified_config
 
@@ -43,7 +40,9 @@ class ConversationHandler:
 
         for _ in range(max_rounds):
             if spinner:
-                                # Calculate word count for all messages
+                from rich.console import Console
+                console = Console()
+                # Calculate word count for all messages
                 word_count = sum(len(str(m.get('content', '')).split()) for m in messages if 'content' in m)
                 def format_count(n):
                     if n >= 1_000_000:
@@ -51,7 +50,7 @@ class ConversationHandler:
                     elif n >= 1_000:
                         return f"{n/1_000:.1f}k"
                     return str(n)
-                                # Count message types
+                # Count message types
                 user_msgs = sum(1 for m in messages if m.get('role') == 'user')
                 assistant_msgs = sum(1 for m in messages if m.get('role') == 'assistant')
                 tool_msgs = sum(1 for m in messages if m.get('role') == 'tool')
@@ -68,7 +67,7 @@ class ConversationHandler:
                     response = self.client.chat.completions.create(
                         model=self.model,
                         messages=messages,
-                        tools=self.tool_handler.get_tool_schemas(),
+                        tools=get_tool_schemas(),
                         tool_choice="auto",
                         temperature=0.2,
                         max_tokens=resolved_max_tokens
@@ -79,7 +78,7 @@ class ConversationHandler:
                 response = self.client.chat.completions.create(
                     model=self.model,
                     messages=messages,
-                    tools=self.tool_handler.get_tool_schemas(),
+                    tools=get_tool_schemas(),
                     tool_choice="auto",
                     temperature=0.2,
                     max_tokens=resolved_max_tokens
@@ -111,9 +110,9 @@ class ConversationHandler:
             else:
                 usage_info = None
 
-            # Call the on_content callback if provided and content is not None
-            if on_content is not None and choice.message.content is not None:
-                on_content({"content": choice.message.content})
+            # Route content through the unified message handler if provided
+            if message_handler is not None and choice.message.content:
+                message_handler.handle_message(choice.message.content, msg_type="content")
 
             # If no tool calls, return the assistant's message and usage info
             if not choice.message.tool_calls:
@@ -132,7 +131,8 @@ class ConversationHandler:
             for tool_call in choice.message.tool_calls:
                 if max_tools is not None and tool_calls_made >= max_tools:
                     raise MaxRoundsExceededError(f"Maximum number of tool calls ({max_tools}) reached in this chat session.")
-                result = self.tool_handler.handle_tool_call(tool_call, on_progress=on_tool_progress)
+                from janito.agent.tool_registry import handle_tool_call
+                result = handle_tool_call(tool_call, message_handler=message_handler)
                 tool_responses.append({"tool_call_id": tool_call.id, "content": result})
                 tool_calls_made += 1
 

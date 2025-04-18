@@ -8,6 +8,12 @@ class ToolBase(ABC):
         self.progress_messages = []
         self._progress_callback = None  # Will be set by ToolHandler if available
 
+    def report_stdout(self, message: str):
+        self.update_progress({"type": "stdout", "message": message})
+
+    def report_stderr(self, message: str):
+        self.update_progress({"type": "stderr", "message": message})
+
     @abstractmethod
     def call(self, **kwargs):
         """
@@ -15,10 +21,19 @@ class ToolBase(ABC):
         """
         pass
 
-    def update_progress(self, message: str):
+    def update_progress(self, progress: dict):
         """
         Report progress. Subclasses can override this to customize progress reporting.
         """
-        self.progress_messages.append(message)
+        self.progress_messages.append(progress)
         if hasattr(self, '_progress_callback') and self._progress_callback:
-            self._progress_callback({'event': 'progress', 'message': message})
+            self._progress_callback(progress)
+
+    def report_info(self, message: str):
+        self.update_progress({"type": "info", "message": message})
+
+    def report_success(self, message: str):
+        self.update_progress({"type": "success", "message": message})
+
+    def report_error(self, message: str):
+        self.update_progress({"type": "error", "message": message})

@@ -1,17 +1,18 @@
 import requests
 from typing import Optional
 from bs4 import BeautifulSoup
-from janito.agent.tool_handler import ToolHandler
-from janito.agent.tools.rich_utils import print_info, print_success, print_error
+from janito.agent.tool_registry import register_tool
+
 from janito.agent.tools.tool_base import ToolBase
 
+@register_tool(name="fetch_url")
 class FetchUrlTool(ToolBase):
     """Fetch the content of a web page and extract its text."""
     def call(self, url: str, search_strings: list[str] = None) -> str:
-        print_info(f"🌐 Fetching URL: {url} ... ", end="")
+        self.report_info(f"🌐 Fetching URL: {url} ... ")
         response = requests.get(url, timeout=10)
         response.raise_for_status()
-        self.update_progress(f"Fetched URL with status {response.status_code}")
+        self.update_progress({'event': 'progress', 'message': f"Fetched URL with status {response.status_code}"})
         soup = BeautifulSoup(response.text, 'html.parser')
         text = soup.get_text(separator='\n')
 
@@ -29,7 +30,6 @@ class FetchUrlTool(ToolBase):
             else:
                 text = "No matches found for the provided search strings."
 
-        print_success("✅ Result")
+        self.report_success("✅ Result")
         return text
 
-ToolHandler.register_tool(FetchUrlTool, name="fetch_url")

@@ -4,7 +4,7 @@ import os
 import json
 from openai import OpenAI
 from janito.agent.conversation import ConversationHandler
-from janito.agent.tool_handler import ToolHandler
+from janito.agent.tool_registry import register_tool, handle_tool_call, get_tool_schemas
 
 class Agent:
     """Agent capable of handling conversations and tool calls."""
@@ -18,31 +18,21 @@ class Agent:
         model: str = None,
         system_prompt: str | None = None,
         verbose_tools: bool = False,
-        tool_handler = None,
         base_url: str = "https://openrouter.ai/api/v1",
         azure_openai_api_version: str = "2023-05-15",
         use_azure_openai: bool = False
     ):
         """
-        Initialize Agent,
+        Initialize Agent.
 
         Args:
             api_key: API key for OpenAI-compatible service.
             model: Model name to use.
             system_prompt: Optional system prompt override.
             verbose_tools: Enable verbose tool call logging.
-            tool_handler: Optional custom ToolHandler instance.
             base_url: API base URL.
             azure_openai_api_version: Azure OpenAI API version (default: "2023-05-15").
             use_azure_openai: Whether to use Azure OpenAI client (default: False).
-
-        Args:
-            api_key: API key for OpenAI-compatible service.
-            model: Model name to use.
-            system_prompt: Optional system prompt override.
-            verbose_tools: Enable verbose tool call logging.
-            tool_handler: Optional custom ToolHandler instance.
-            base_url: API base URL.
         """
         self.api_key = api_key
         self.model = model
@@ -63,20 +53,16 @@ class Agent:
                     "X-Title": self.TITLE
                 }
             )
-        if tool_handler is not None:
-            self.tool_handler = tool_handler
-        else:
-            self.tool_handler = ToolHandler(verbose=verbose_tools)
 
         self.conversation_handler = ConversationHandler(
-            self.client, self.model, self.tool_handler
+            self.client, self.model
         )
 
     @property
     def usage_history(self):
         return self.conversation_handler.usage_history
 
-    def chat(self, messages, on_content=None, on_tool_progress=None, verbose_response=False, spinner=False, max_tokens=None, max_rounds=50):
+    def chat(self, messages, message_handler=None, verbose_response=False, spinner=False, max_tokens=None, max_rounds=50):
         import time
         from janito.agent.conversation import ProviderError
 
@@ -86,8 +72,7 @@ class Agent:
                 return self.conversation_handler.handle_conversation(
                     messages,
                     max_rounds=max_rounds,
-                    on_content=on_content,
-                    on_tool_progress=on_tool_progress,
+                    message_handler=message_handler,
                     verbose_response=verbose_response,
                     spinner=spinner,
                     max_tokens=max_tokens

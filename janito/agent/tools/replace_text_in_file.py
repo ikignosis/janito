@@ -1,6 +1,8 @@
 from janito.agent.tools.tool_base import ToolBase
-from janito.agent.tool_handler import ToolHandler
-from janito.agent.tools.rich_utils import print_info, print_success, print_error, format_path
+from janito.agent.tool_registry import register_tool
+
+@register_tool(name="replace_text_in_file")
+
 
 class ReplaceTextInFileTool(ToolBase):
     """Replace exact occurrences of a given text in a file.
@@ -25,8 +27,8 @@ NOTE: Indentation (leading whitespace) must be included in both search_text and 
         # Show only concise info (lengths, not full content)
         search_preview = (search_text[:20] + '...') if len(search_text) > 20 else search_text
         replace_preview = (replacement_text[:20] + '...') if len(replacement_text) > 20 else replacement_text
-        print_info(f"📝 Replacing in {filename}: '{search_preview}'  '{replace_preview}' ({action})", end="")
-        self.update_progress(f"Replacing text in {file_path}")
+        self.report_info(f"📝 Replacing in {filename}: '{search_preview}'  '{replace_preview}' ({action})")
+
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
@@ -37,7 +39,7 @@ NOTE: Indentation (leading whitespace) must be included in both search_text and 
             else:
                 occurrences = content.count(search_text)
                 if occurrences > 1:
-                    print_error(f" ❌ Error: Search text is not unique ({occurrences} occurrences found). Provide more detailed context.")
+                    self.report_error(f" ❌ Error: Search text is not unique ({occurrences} occurrences found). Provide more detailed context.")
                     return f"Error: Search text is not unique ({occurrences} occurrences found) in {file_path}. Provide more detailed context for unique replacement."
                 replaced_count = 1 if occurrences == 1 else 0
                 new_content = content.replace(search_text, replacement_text, 1)
@@ -46,7 +48,7 @@ NOTE: Indentation (leading whitespace) must be included in both search_text and 
             warning = ''
             if replaced_count == 0:
                 warning = " [Warning: Search text not found in file]"
-            print_success(f" ✅ {replaced_count} replaced{warning}")
+            self.report_success(f" ✅ {replaced_count} replaced{warning}")
             # Indentation check for agent warning
             def leading_ws(line):
                 import re
@@ -60,7 +62,6 @@ NOTE: Indentation (leading whitespace) must be included in both search_text and 
             return f"Text replaced in {file_path}{warning}{indent_warning}"
 
         except Exception as e:
-            print_error(f" ❌ Error: {e}")
+            self.report_error(f" ❌ Error: {e}")
             return f"Error replacing text: {e}"
 
-ToolHandler.register_tool(ReplaceTextInFileTool, name="replace_text_in_file")

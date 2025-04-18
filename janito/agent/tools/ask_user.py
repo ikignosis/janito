@@ -1,9 +1,20 @@
 from janito.agent.tools.tool_base import ToolBase
-from janito.agent.tools.rich_utils import print_info, print_success
+from janito.agent.tool_registry import register_tool
 
+@register_tool(name="ask_user")
 class AskUserTool(ToolBase):
     """Ask the user a question and return their response."""
     def call(self, question: str) -> str:
+        """
+        Ask the user a question and return their response.
+
+        Args:
+            question (str): The question to ask the user.
+
+        Returns:
+            str: The user's response.
+        """
+
         from rich import print as rich_print
         from rich.panel import Panel
         from prompt_toolkit import PromptSession
@@ -57,5 +68,4 @@ class AskUserTool(ToolBase):
                 return response
 
 
-from janito.agent.tool_handler import ToolHandler
-ToolHandler.register_tool(AskUserTool, name="ask_user")
+from janito.agent.tool_registry import register_tool

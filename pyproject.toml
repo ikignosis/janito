@@ -8,6 +8,7 @@ authors = [
 requires-python = ">=3.10"
 dependencies = [
     "beautifulsoup4",
+    "docstring-parser",
     "flask",
     "jinja2",
     "openai",

@@ -1,7 +1,7 @@
-from flask import Flask, request, Response, send_from_directory, session, jsonify
+from flask import Flask, request, Response, send_from_directory, session, jsonify, render_template
 from queue import Queue
 import json
-from janito.agent.queued_tool_handler import QueuedToolHandler
+from janito.agent.queued_message_handler import QueuedMessageHandler
 from janito.agent.agent import Agent
 from janito.agent.config import get_api_key
 from janito.render_prompt import render_system_prompt
@@ -37,15 +37,14 @@ conversation = None
 # Global event queue for streaming
 stream_queue = Queue()
 
-# Create a QueuedToolHandler with the queue
-queued_handler = QueuedToolHandler(stream_queue)
+# Create a QueuedMessageHandler with the queue
+message_handler = QueuedMessageHandler(stream_queue)
 
-# Instantiate the Agent with config-driven parameters
+# Instantiate the Agent with config-driven parameters (no tool_handler)
 agent = Agent(
     api_key=unified_config.get("api_key"),
     model=unified_config.get("model"),
-    base_url=unified_config.get("base_url"),
-    tool_handler=queued_handler
+    base_url=unified_config.get("base_url")
 )
 
 @app.route('/get_config')
@@ -145,7 +144,7 @@ def execute_stream():
         try:
             response = agent.chat(
                 conversation,
-                on_content=lambda data: stream_queue.put({"type": "content", "content": data.get("content")})
+                message_handler=message_handler
             )
             if response and 'content' in response:
                 conversation.append({"role": "assistant", "content": response['content']})

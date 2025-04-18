@@ -26,9 +26,16 @@ class MessageHandler:
                 self.console.print(message, style="bold green", end="\n")
             elif msg_type == "error":
                 self.console.print(message, style="bold red", end="\n")
+            elif msg_type == "progress":
+                self._handle_progress(message)
+            elif msg_type == "stdout":
+                from rich.text import Text
+                self.console.print(Text(message, style="green", no_wrap=True, overflow=None), end="")
+            elif msg_type == "stderr":
+                from rich.text import Text
+                self.console.print(Text(message, style="red", no_wrap=True, overflow=None), end="")
             else:
                 raise NotImplementedError(f"Unsupported message type: {msg_type}")
         else:
             # Print plain strings as markdown/markup
             self.console.print(Markdown(str(msg)))
-
