@@ -22,7 +22,7 @@ class SearchFilesTool(ToolBase):
                                 matches.append(f"{path}:{lineno}: {line.strip()}")
                 except Exception:
                     continue
-        self.report_success(f"✅ {len(matches)} matches")
+        self.report_success(f"✅ Found {len(matches)} matches")
         return '\n'.join(matches)
 
 

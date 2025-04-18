@@ -10,4 +10,9 @@ class QueuedMessageHandler:
         else:
             message = msg
             msg_type = msg_type or 'info'
-        self._queue.put(('message', message, msg_type))
+        # For normal assistant/user/info messages, emit type 'content' for frontend compatibility
+        if msg_type in ("info", "content"):
+            self._queue.put({"type": "content", "content": message})
+        else:
+            self._queue.put({"type": msg_type, "message": message})
+

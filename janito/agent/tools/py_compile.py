@@ -13,11 +13,11 @@ class PyCompileTool(ToolBase):
 
         try:
             py_compile.compile(file_path, doraise=doraise)
-            self.report_success(f"[py_compile] Compiled: {file_path}")
+            self.report_success(f" [py_compile] Compiled: {file_path}")
             return f"Compiled successfully: {file_path}"
         except py_compile.PyCompileError as e:
-            self.report_error(f"[py_compile] Compile error: {e}")
+            self.report_error(f" [py_compile] Compile error: {e}")
             return f"Compile error: {e}"
         except Exception as e:
-            self.report_error(f"[py_compile] Error: {e}")
+            self.report_error(f" [py_compile] Error: {e}")
             return f"Error: {e}"

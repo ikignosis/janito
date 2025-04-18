@@ -1,5 +1,5 @@
 import os
-from janito.agent.tools.rich_utils import print_info, print_success, print_error, print_warning, print_magenta
+from janito.rich_utils import print_info, print_warning, print_magenta
 from ._utils import home_shorten
 
 def print_config_items(items, color_label=None):

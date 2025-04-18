@@ -15,10 +15,10 @@ class GetFileOutlineTool(ToolBase):
                 lines = f.readlines()
             outline = [line.strip() for line in lines if line.strip()]
             num_items = len(outline)
-            self.report_success(f"✅ {num_items} items")
+            self.report_success(f" ✅ {num_items} items")
             return f"Outline: {num_items} items\n" + '\n'.join(outline)
         except Exception as e:
-            self.report_error(f"❌ Error reading file: {e}")
+            self.report_error(f" ❌ Error reading file: {e}")
             return f"Error reading file: {e}"
 
 

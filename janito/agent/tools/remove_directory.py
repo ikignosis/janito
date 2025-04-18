@@ -20,7 +20,7 @@ class RemoveDirectoryTool(ToolBase):
             self.report_success(f"✅ Removed: {directory}")
             return f"Directory removed: {directory}"
         except Exception as e:
-            self.report_error(f"\u274c Error removing directory: {e}")
+            self.report_error(f" ❌ Error removing directory: {e}")
             return f"Error removing directory: {e}"
 
 

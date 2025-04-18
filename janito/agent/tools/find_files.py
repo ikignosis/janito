@@ -26,7 +26,7 @@ class FindFilesTool(ToolBase):
                     break
             if not recursive:
                 break
-        self.report_success(f"✅ {len(matches)} files found")
+        self.report_success(f" ✅ {len(matches)} files found")
         return "\n".join(matches)
 
 

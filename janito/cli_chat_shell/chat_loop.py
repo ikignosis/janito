@@ -1,3 +1,4 @@
+from janito.agent.rich_tool_handler import MessageHandler
 from rich.console import Console
 from rich.markdown import Markdown
 from prompt_toolkit.history import InMemoryHistory
@@ -11,7 +12,8 @@ from janito.agent.conversation import EmptyResponseError, ProviderError
 
 
 def start_chat_shell(agent, continue_session=False, max_rounds=50):
-    console = Console()
+    message_handler = MessageHandler()
+    console = message_handler.console
 
     # Load input history
     history_list = load_input_history()
@@ -45,7 +47,7 @@ def start_chat_shell(agent, continue_session=False, max_rounds=50):
         state['messages'] = messages
         state['last_usage_info'] = last_usage_info
         state['mem_history'] = mem_history
-        console.print('[bold green]Restored last saved conversation.[/bold green]')
+        message_handler.handle_message({'type': 'success', 'message': 'Restored last saved conversation.'})
 
     # Add system prompt if needed
     if agent.system_prompt and not any(m.get('role') == 'system' for m in messages):
@@ -97,10 +99,10 @@ def start_chat_shell(agent, continue_session=False, max_rounds=50):
             try:
                 confirm = input("Do you really want to exit? (y/n): ").strip().lower()
             except KeyboardInterrupt:
-                console.print("\n[bold red]Exiting...[/bold red]")
+                message_handler.handle_message({'type': 'error', 'message': 'Exiting...'})
                 break
             if confirm == 'y':
-                console.print("[bold red]Exiting...[/bold red]")
+                message_handler.handle_message({'type': 'error', 'message': 'Exiting...'})
                 break
             else:
                 continue
@@ -121,22 +123,17 @@ def start_chat_shell(agent, continue_session=False, max_rounds=50):
         import time
         start_time = time.time()
 
-        # Define streaming content handler
-        def on_content(chunk):
-            content_piece = chunk.get('content')
-            if content_piece:
-                console.print(Markdown(content_piece))
 
         try:
-            response = agent.chat(messages, on_content=on_content, spinner=True, max_rounds=max_rounds)
+            response = agent.chat(messages, spinner=True, max_rounds=max_rounds, message_handler=message_handler)
         except KeyboardInterrupt:
-            console.print("[bold yellow]Request interrupted. Returning to prompt.[/bold yellow]")
+            message_handler.handle_message({'type': 'info', 'message': 'Request interrupted. Returning to prompt.'})
             continue
         except ProviderError as e:
-            console.print(f"[bold red]Provider error:[/bold red] {e}")
+            message_handler.handle_message({'type': 'error', 'message': f'Provider error: {e}'})
             continue
         except EmptyResponseError as e:
-            console.print(f"[bold red]Error:[/bold red] {e}")
+            message_handler.handle_message({'type': 'error', 'message': f'Error: {e}'})
             continue
         last_elapsed = time.time() - start_time
 
