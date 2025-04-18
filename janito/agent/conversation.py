@@ -51,7 +51,19 @@ class ConversationHandler:
                     elif n >= 1_000:
                         return f"{n/1_000:.1f}k"
                     return str(n)
-                spinner_msg = f"[bold green]Waiting for AI response... ({format_count(word_count)} words in conversation)"
+                                # Count message types
+                user_msgs = sum(1 for m in messages if m.get('role') == 'user')
+                assistant_msgs = sum(1 for m in messages if m.get('role') == 'assistant')
+                tool_msgs = sum(1 for m in messages if m.get('role') == 'tool')
+                # Tool uses: count tool_calls in all assistant messages
+                tool_uses = sum(len(m.get('tool_calls', [])) for m in messages if m.get('role') == 'assistant')
+                # Tool responses: tool_msgs
+                spinner_msg = (
+                    f"[bold green]Waiting for AI response... ("
+                    f"{format_count(word_count)} words, "
+                    f"{user_msgs} user, {assistant_msgs} assistant, "
+                    f"{tool_uses} tool uses, {tool_msgs} tool responses)"
+                )
                 with console.status(spinner_msg, spinner="dots") as status:
                     response = self.client.chat.completions.create(
                         model=self.model,

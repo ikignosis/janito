@@ -15,7 +15,7 @@ class RemoveDirectoryTool(ToolBase):
                 shutil.rmtree(directory)
             else:
                 os.rmdir(directory)
-            print_success(f"✅ Directory removed: {directory}")
+            print_success(f"✅ Removed: {directory}")
             return f"Directory removed: {directory}"
         except Exception as e:
             print_error(f"\u274c Error removing directory: {e}")

@@ -33,9 +33,9 @@ class CreateFileTool(ToolBase):
             f.write(content)
         new_lines = content.count('\n') + 1 if content else 0
         if old_lines is not None:
-            print_success(f"✅ Successfully updated the file at '{disp_path}' ({old_lines} > {new_lines} lines).")
+            print_success(f"✅ Updated: '{disp_path}' ({old_lines} > {new_lines} lines)")
             return f"✅ Successfully updated the file at '{disp_path}' ({old_lines} > {new_lines} lines)."
-        print_success(f"✅ Successfully created the file at '{disp_path}' ({new_lines} lines).")
+        print_success(f"✅ Created: '{disp_path}' ({new_lines} lines)")
         return f"✅ Successfully created the file at '{disp_path}' ({new_lines} lines)."
 
 class CreateDirectoryTool(ToolBase):

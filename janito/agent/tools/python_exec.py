@@ -45,7 +45,7 @@ class PythonExecTool(ToolBase):
         self.update_progress(f"Python code execution completed with return code: {result['returncode']}")
         if result['returncode'] == 0:
             from janito.agent.tools.rich_utils import print_success
-            print_success(f"✅ Python code executed successfully.")
+            print_success(f"✅ Python code executed")
         else:
             from janito.agent.tools.rich_utils import print_error
             print_error(f"\u274c Python code execution failed with return code {result['returncode']}")

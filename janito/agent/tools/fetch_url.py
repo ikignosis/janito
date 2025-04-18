@@ -29,7 +29,7 @@ class FetchUrlTool(ToolBase):
             else:
                 text = "No matches found for the provided search strings."
 
-        print_success("✅ Success")
+        print_success("✅ Result")
         return text
 
 ToolHandler.register_tool(FetchUrlTool, name="fetch_url")

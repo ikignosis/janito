@@ -20,7 +20,7 @@ class SearchFilesTool(ToolBase):
                                 matches.append(f"{path}:{lineno}: {line.strip()}")
                 except Exception:
                     continue
-        print_success(f"✅ {len(matches)} matches found")
+        print_success(f"✅ {len(matches)} matches")
         return '\n'.join(matches)
 
 ToolHandler.register_tool(SearchFilesTool, name="search_files")

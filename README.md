@@ -79,6 +79,28 @@ Other config-related CLI flags:
 - `--set-api-key KEY`            Set and save the API key globally
 - `--help-config`                Show all configuration options and exit
 
+
+### Obtaining an API Key from OpenRouter
+
+To use Janito with OpenRouter, you need an API key:
+
+1. Visit https://openrouter.ai and sign up for an account.
+2. After logging in, go to your account dashboard.
+3. Navigate to the "API Keys" section.
+4. Click "Create new key" and copy the generated API key.
+5. Set your API key in Janito using:
+   ```bash
+   python -m janito --set-api-key YOUR_OPENROUTER_KEY
+   ```
+   Or add it to your configuration file as `api_key`.
+
+**Keep your API key secure and do not share it publicly.**
+
+### Using Azure OpenAI
+
+For details on using models hosted on Azure OpenAI, see [AZURE_OPENAI.md](./AZURE_OPENAI.md).
+
+
 Session & shell options:
 
 - `--continue-session`           Continue from the last saved conversation

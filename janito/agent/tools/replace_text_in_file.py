@@ -25,7 +25,7 @@ NOTE: Indentation (leading whitespace) must be included in both search_text and 
         # Show only concise info (lengths, not full content)
         search_preview = (search_text[:20] + '...') if len(search_text) > 20 else search_text
         replace_preview = (replacement_text[:20] + '...') if len(replacement_text) > 20 else replacement_text
-        print_info(f"\U0001F4DD Replacing in {filename}: '{search_preview}'  '{replace_preview}' ({action})", end="")
+        print_info(f"📝 Replacing in {filename}: '{search_preview}'  '{replace_preview}' ({action})", end="")
         self.update_progress(f"Replacing text in {file_path}")
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
@@ -45,8 +45,7 @@ NOTE: Indentation (leading whitespace) must be included in both search_text and 
                 f.write(new_content)
             warning = ''
             if replaced_count == 0:
-                warning = f" [Warning: Search text not found in file]"
-                print_error(warning)
+                warning = " [Warning: Search text not found in file]"
             print_success(f" ✅ {replaced_count} replaced{warning}")
             # Indentation check for agent warning
             def leading_ws(line):

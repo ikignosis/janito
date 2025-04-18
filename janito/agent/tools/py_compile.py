@@ -11,7 +11,7 @@ class PyCompileTool(ToolBase):
         self.update_progress(f"Compiling Python file: {file_path}")
         try:
             py_compile.compile(file_path, doraise=doraise)
-            print_success(f"[py_compile] Compiled successfully: {file_path}")
+            print_success(f"[py_compile] Compiled: {file_path}")
             return f"Compiled successfully: {file_path}"
         except py_compile.PyCompileError as e:
             print_error(f"[py_compile] Compile error: {e}")

@@ -23,9 +23,9 @@ class GetLinesTool(ToolBase):
                 lines = f.readlines()
             selected = lines[(from_line-1 if from_line else 0):(to_line if to_line else None)]
             if from_line and to_line:
-                print_success(f" ✅ {to_line - from_line + 1} lines read")
+                print_success(f" ✅ {to_line - from_line + 1} lines")
             else:
-                print_success(f" ✅ {len(lines)} lines read")
+                print_success(f" ✅ {len(lines)} lines")
             return ''.join(selected)
         except Exception as e:
             if isinstance(e, FileNotFoundError):
