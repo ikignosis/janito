@@ -35,7 +35,7 @@ python -m janito.web
   - `replace_text_in_file`: Replace exact text fragments in files.
   - `search_files`: Search for text patterns across files.
   - `python_exec`: Execute Python code and capture output.
-  - And more, see `janito/agent/tools/` for the full list.
+  - And more built-in operations for code and file management.
 - 🌐 **Web Interface (In Development):** Upcoming simple web UI for streaming responses and tool progress.
 
 ---
@@ -54,9 +54,9 @@ Below are the supported configuration parameters and CLI flags. Some options can
 
 | Key / Flag                | Description                                                                                 | How to set                                                      | Default                                    |
 |---------------------------|---------------------------------------------------------------------------------------------|-----------------------------------------------------------------|--------------------------------------------|
-| `api_key`                 | API key for OpenAI-compatible service                                                       | `--set-api-key`, config file                                    | _None_ (required)                          |
-| `model`                   | Model name to use for this session                                                          | `--model` (session only), `--set-local-config model=...`, or `--set-global-config` | `openai/gpt-4.1`                 |
-| `base_url`                | API base URL (OpenAI-compatible endpoint)                                                   | `--set-local-config base_url=...` or `--set-global-config`      | `https://openrouter.ai/api/v1`            |
+| `api_key`                 | API key for a compatible language model service                                            | `--set-api-key`, config file                                    | _None_ (required)                          |
+| `model`                   | Model name to use for this session                                                          | `--model` (session only), `--set-local-config model=...`, or `--set-global-config` | _(example: gpt-4)_                 |
+| `base_url`                | API base URL for your language model service                                                | `--set-local-config base_url=...` or `--set-global-config`      | _(example: https://api.your-model.com)_            |
 | `role`                    | Role description for the system prompt                                                      | `--role` or config                                            | "software engineer"                     |
 | `system_prompt`           | Override the entire system prompt as a raw string                                           | `--system-prompt` or config                                   | _Default prompt_               |
 | `system_file`             | Use a plain text file as the system prompt (takes precedence over `system_prompt`)         | `--system-file` (CLI only)                                     | _None_                                     |

@@ -1,6 +1,9 @@
 # Changelog
 
-## [Unreleased]
+## [1.4.0] - 2024-06-09
+
+_Released on: 2024-06-09_
+
 ### Added
 - `--max-tools` CLI/config parameter to limit the overall maximum number of tool calls within a chat session.
 

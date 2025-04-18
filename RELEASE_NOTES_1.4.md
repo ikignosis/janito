@@ -1,24 +1,26 @@
 # Release Notes – Version 1.4
 
-This document tracks notable changes, enhancements, and fixes for the 1.4 release cycle. As this is the start of a new development cycle, details will be added as work progresses.
+This document tracks notable changes, enhancements, and fixes for the 1.4 release cycle. Release date: 17/04/2025.
 
 ## Added
-- _TBD_
+- `--max-tools` CLI/config parameter to limit the overall maximum number of tool calls within a chat session.
 
 ## Changed
-- _TBD_
+- Updated the README documentation.
+- `view_file` tool info output now shows `Lines (X-Y)` instead of `StartLine: X | EndLine: Y`.
+- "TargetContent not found" in `edit_file` tool is now an info message, not an error.
 
 ## Deprecated
-- _TBD_
+- _None_
 
 ## Removed
-- _TBD_
+- `--single-tool` CLI/config parameter and all related logic/documentation (parallel tool call disabling).
 
 ## Fixed
-- _TBD_
+- _None listed for this release._
 
 ## Security
-- _TBD_
+- _None listed for this release._
 
 ---
 

@@ -1,35 +1,27 @@
-from janito.agent.tool_handler import ToolHandler
-from prompt_toolkit import PromptSession
-from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.enums import EditingMode
-from prompt_toolkit.formatted_text import HTML
-from prompt_toolkit.styles import Style
 from janito.agent.tools.tool_base import ToolBase
+from janito.agent.tools.rich_utils import print_info, print_success
 
-# Converted ask_user free-function into AskUserTool class
 class AskUserTool(ToolBase):
-    """
-    Ask the user a question and return their response.
-
-    Args:
-        question (str): The question to ask the user.
-    """
+    """Ask the user a question and return their response."""
     def call(self, question: str) -> str:
         from rich import print as rich_print
         from rich.panel import Panel
+        from prompt_toolkit import PromptSession
+        from prompt_toolkit.key_binding import KeyBindings
+        from prompt_toolkit.enums import EditingMode
+        from prompt_toolkit.formatted_text import HTML
+        from prompt_toolkit.styles import Style
 
         rich_print(Panel.fit(question, title="Question", style="cyan"))
 
         bindings = KeyBindings()
-
         mode = {'multiline': False}
 
         @bindings.add('c-r')
         def _(event):
-            # Disable reverse search
             pass
 
-        style_ = Style.from_dict({
+        style = Style.from_dict({
             'bottom-toolbar': 'bg:#333333 #ffffff',
             'b': 'bold',
             'prompt': 'bold bg:#000080 #ffffff',
@@ -46,7 +38,7 @@ class AskUserTool(ToolBase):
             key_bindings=bindings,
             editing_mode=EditingMode.EMACS,
             bottom_toolbar=get_toolbar,
-            style=style_
+            style=style
         )
 
         prompt_icon = HTML('<prompt>💬 </prompt>')
@@ -64,4 +56,6 @@ class AskUserTool(ToolBase):
             else:
                 return response
 
+
+from janito.agent.tool_handler import ToolHandler
 ToolHandler.register_tool(AskUserTool, name="ask_user")

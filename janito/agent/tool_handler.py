@@ -13,7 +13,14 @@ class ToolHandler:
 
     @classmethod
     def register_tool(cls, tool=None, *, name: str = None):
-        # allow optional name override for PascalCase tool naming
+        """
+        Register a tool class derived from ToolBase.
+        Args:
+            tool: The tool class (must inherit from ToolBase).
+            name: Optional override for the tool name.
+        Raises:
+            TypeError: If the tool is not a subclass of ToolBase.
+        """
         if tool is None:
             return lambda t: cls.register_tool(t, name=name)
         import inspect
@@ -21,18 +28,13 @@ class ToolHandler:
         from typing import get_origin, get_args
 
         override_name = name
-        # support classes deriving from ToolBase
-        if isinstance(tool, type) and issubclass(tool, ToolBase):
-            instance = tool()
-            func = instance.call
-            default_name = tool.__name__
-            name = override_name or default_name
-            description = tool.__doc__ or func.__doc__ or ""
-        else:
-            func = tool
-            default_name = func.__name__
-            name = override_name or default_name
-            description = func.__doc__ or ""
+        if not (isinstance(tool, type) and issubclass(tool, ToolBase)):
+            raise TypeError("Tool must be a class derived from ToolBase.")
+        instance = tool()
+        func = instance.call
+        default_name = tool.__name__
+        name = override_name or default_name
+        description = tool.__doc__ or func.__doc__ or ""
 
         sig = inspect.signature(func)
         params_schema = {
@@ -79,7 +81,19 @@ class ToolHandler:
             else:
                 schema = {"type": "string"}
 
-            # Optionally add description if available in docstring (not implemented here)
+            # Add description from call method docstring if available (Google-style Args parsing)
+            if func.__doc__:
+                import re
+                doc = func.__doc__
+                args_section = re.search(r"Args:\s*(.*?)(?:\n\s*\w|Returns:|$)", doc, re.DOTALL)
+                param_descs = {}
+                if args_section:
+                    args_text = args_section.group(1)
+                    for match in re.finditer(r"(\w+) \([^)]+\): ([^\n]+)", args_text):
+                        pname, pdesc = match.groups()
+                        param_descs[pname] = pdesc.strip()
+                if param_name in param_descs:
+                    schema["description"] = param_descs[param_name]
             params_schema["properties"][param_name] = schema
             if param.default is param.empty:
                 params_schema["required"].append(param_name)
@@ -126,6 +140,11 @@ class ToolHandler:
             print(f"[Tool Call] {tool_call.function.name} called with arguments: {args}")
         import inspect
         sig = inspect.signature(func)
+        # Set progress callback on tool instance if possible
+        instance = None
+        if hasattr(func, '__self__') and isinstance(func.__self__, ToolBase):
+            instance = func.__self__
+            instance._progress_callback = on_progress
         if on_progress:
             on_progress({
                 'event': 'start',
@@ -133,8 +152,6 @@ class ToolHandler:
                 'tool': tool_call.function.name,
                 'args': args
             })
-        if 'on_progress' in sig.parameters and on_progress is not None:
-            args['on_progress'] = on_progress
         try:
             result = func(**args)
         except Exception as e:
@@ -158,6 +175,9 @@ class ToolHandler:
                 'args': args,
                 'result': result
             })
+        # Clean up progress callback
+        if instance is not None:
+            instance._progress_callback = None
         return result
 
 def _pytype_to_json_type(pytype):

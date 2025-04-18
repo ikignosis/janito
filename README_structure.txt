@@ -74,6 +74,7 @@ This file provides an overview of the project's structure, including key directo
 - pyproject.toml               — Project build/configuration
 - pyproject.toml.bak           — Backup of build/config
 - RELEASE_NOTES_1.3.md         — Release notes for version 1.3
+- RELEASE_NOTES_1.4.md         — Release notes for version 1.4
 - .gitignore                   — Git ignore rules
 
 Update this file whenever files or directories are added, removed, or significantly changed.
