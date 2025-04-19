@@ -1,14 +1,11 @@
 import sys
-import os
 from rich.console import Console
-from rich.markdown import Markdown
 from janito.render_prompt import render_system_prompt
 from janito.agent.agent import Agent
 from janito.agent.conversation import MaxRoundsExceededError, EmptyResponseError, ProviderError
 from janito.agent.runtime_config import unified_config, runtime_config
 from janito.agent.config import get_api_key
 from janito import __version__
-from rich.rule import Rule
 
 
 def format_tokens(n):

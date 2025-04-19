@@ -1,5 +1,4 @@
 import requests
-from typing import Optional
 from bs4 import BeautifulSoup
 from janito.agent.tool_registry import register_tool
 

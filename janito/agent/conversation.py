@@ -1,4 +1,3 @@
-import json
 from janito.agent.tool_registry import get_tool_schemas, handle_tool_call
 from janito.agent.runtime_config import runtime_config, unified_config
 from rich.console import Console

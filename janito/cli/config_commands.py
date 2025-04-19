@@ -1,5 +1,5 @@
 import sys
-from janito.agent.config import local_config, global_config, CONFIG_OPTIONS, get_api_key
+from janito.agent.config import local_config, global_config, CONFIG_OPTIONS
 from janito.agent.runtime_config import unified_config, runtime_config
 from janito.agent.config_defaults import CONFIG_DEFAULTS
 from rich import print

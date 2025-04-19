@@ -22,7 +22,6 @@ class GetLinesTool(ToolBase):
                 - "Error reading file: <error message>"
                 - "❗ not found"
         """
-        import os
         from janito.agent.tools.tools_utils import display_path
         disp_path = display_path(file_path)
         if from_line and to_line:
@@ -60,7 +59,7 @@ class GetLinesTool(ToolBase):
             return header + ''.join(selected)
         except Exception as e:
             if isinstance(e, FileNotFoundError):
-                self.report_error(f"❗ not found")
+                self.report_error("❗ not found")
                 return "❗ not found"
             self.report_error(f" ❌ Error: {e}")
             return f"Error reading file: {e}"

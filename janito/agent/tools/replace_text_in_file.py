@@ -49,7 +49,7 @@ NOTE: Indentation (leading whitespace) must be included in both search_text and 
             else:
                 occurrences = content.count(search_text)
                 if occurrences > 1:
-                    self.report_warning(f"⚠️ Search text is not unique.")
+                    self.report_warning("⚠️ Search text is not unique.")
                     warning_detail = "The search text is not unique. Expand your search context with surrounding lines to ensure uniqueness."
                     return f"No changes made. {warning_detail}"
                 replaced_count = 1 if occurrences == 1 else 0
@@ -64,7 +64,7 @@ NOTE: Indentation (leading whitespace) must be included in both search_text and 
             if replaced_count == 0:
                 warning = " [Warning: Search text not found in file]"
             if not file_changed:
-                self.report_warning(f" ℹ No changes made.")
+                self.report_warning(" ℹ No changes made.")
                 concise_warning = "The search text was not found. Expand your search context with surrounding lines if needed."
                 return f"No changes made. {concise_warning}"
             
@@ -84,7 +84,7 @@ NOTE: Indentation (leading whitespace) must be included in both search_text and 
             return f"Text replaced in {file_path}{warning}{indent_warning}"
 
         except Exception as e:
-            self.report_error(f" ❌ Error")
+            self.report_error(" ❌ Error")
             return f"Error replacing text: {e}"
 
 from janito.agent.tools.tools_utils import pluralize

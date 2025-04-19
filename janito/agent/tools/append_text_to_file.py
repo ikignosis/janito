@@ -21,10 +21,9 @@ class AppendTextToFileTool(ToolBase):
                 - "Warning: No text provided to append. Operation skipped."
                 - "Error appending text: <error message>"
         """
-        import os
         if not text_to_append:
             self.report_warning("⚠️ Warning: No text provided to append. Operation skipped.")
-            return f"Warning: No text provided to append. Operation skipped."
+            return "Warning: No text provided to append. Operation skipped."
         disp_path = display_path(file_path)
         self.report_info(f"📝 Appending to {disp_path} ({len(text_to_append)} chars)")
         try:

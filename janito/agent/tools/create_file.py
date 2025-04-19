@@ -29,7 +29,7 @@ class CreateFileTool(ToolBase):
         disp_path = display_path(original_path, path)
         if os.path.exists(path):
             if os.path.isdir(path):
-                self.report_error(f"❌ Error: is a directory")
+                self.report_error("❌ Error: is a directory")
                 return f"❌ Cannot create file: '{disp_path}' is an existing directory."
             if not overwrite:
                 self.report_error(f"❗ Error: file '{disp_path}' exists and overwrite is False")

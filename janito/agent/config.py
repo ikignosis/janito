@@ -1,5 +1,4 @@
 import json
-import os
 from pathlib import Path
 from threading import Lock
 from .config_defaults import CONFIG_DEFAULTS

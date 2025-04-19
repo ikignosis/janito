@@ -1,11 +1,8 @@
 """Agent module: defines the core LLM agent with tool and conversation handling."""
 
-import os
-import json
 import time
 from openai import OpenAI
 from janito.agent.conversation import ConversationHandler, ProviderError
-from janito.agent.tool_registry import register_tool, handle_tool_call, get_tool_schemas
 
 class Agent:
     """Agent capable of handling conversations and tool calls."""

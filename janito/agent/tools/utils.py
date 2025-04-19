@@ -1,5 +1,4 @@
 import os
-import sys
 
 
 def expand_path(path: str) -> str:

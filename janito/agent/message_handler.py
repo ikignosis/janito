@@ -1,4 +1,3 @@
-from janito.agent.tool_registry import register_tool, handle_tool_call, get_tool_schemas
 
 class MessageHandler:
     def __init__(self, queue, *args, **kwargs):

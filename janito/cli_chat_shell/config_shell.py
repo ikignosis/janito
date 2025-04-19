@@ -1,9 +1,6 @@
 from janito.agent.config import local_config, global_config, CONFIG_OPTIONS
 from janito.agent.config_defaults import CONFIG_DEFAULTS
 from janito.agent.runtime_config import unified_config, runtime_config
-from janito.cli._print_config import print_config_items
-from rich import print
-import sys
 
 def handle_config_shell(console, *args, **kwargs):
     """

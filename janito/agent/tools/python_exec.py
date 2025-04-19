@@ -1,15 +1,12 @@
 
 
-import sys
 import multiprocessing
 import io
-from typing import Optional
 from janito.agent.tools.tool_base import ToolBase
 from janito.agent.tool_registry import register_tool
 
 
 def _run_python_code(code: str, result_queue):
-    import traceback
     import contextlib
     stdout = io.StringIO()
     stderr = io.StringIO()
@@ -63,7 +60,7 @@ class PythonExecTool(ToolBase):
         Returns:
             str: Formatted stdout, stderr, and return code.
         """
-        self.report_info(f"🐍 Executing Python code ...")
+        self.report_info("🐍 Executing Python code ...")
         self.report_info(code)
 
         result_queue = multiprocessing.Queue()
@@ -77,7 +74,7 @@ class PythonExecTool(ToolBase):
 
         if result['returncode'] == 0:
 
-            self.report_success(f"✅ Python code executed")
+            self.report_success("✅ Python code executed")
         else:
 
             self.report_error(f"\u274c Python code execution failed with return code {result['returncode']}")

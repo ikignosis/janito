@@ -4,7 +4,6 @@ import json
 from prompt_toolkit.history import InMemoryHistory
 from janito.render_prompt import render_system_prompt
 from .load_prompt import load_prompt
-from janito.agent.config import effective_config
 
 
 def handle_exit(console, **kwargs):
@@ -171,7 +170,6 @@ def handle_role(console, *args, **kwargs):
     console.print(f"[bold green]System role updated to:[/bold green] {new_role}")
 
 
-from janito.agent.runtime_config import runtime_config
 
 COMMAND_HANDLERS = {
     "/history": handle_history,

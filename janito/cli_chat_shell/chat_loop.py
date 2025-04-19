@@ -1,6 +1,4 @@
 from janito.agent.rich_tool_handler import MessageHandler
-from rich.console import Console
-from rich.markdown import Markdown
 from prompt_toolkit.history import InMemoryHistory
 from .session_manager import load_last_conversation, load_input_history
 from .ui import print_welcome, get_toolbar_func, get_prompt_session

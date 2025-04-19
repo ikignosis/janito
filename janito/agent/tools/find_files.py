@@ -2,7 +2,6 @@ from janito.agent.tools.tool_base import ToolBase
 from janito.agent.tool_registry import register_tool
 
 
-import os
 import fnmatch
 from janito.agent.tools.gitignore_utils import filter_ignored
 

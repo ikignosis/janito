@@ -1,4 +1,4 @@
-from .config import BaseConfig, EffectiveConfig, effective_config
+from .config import BaseConfig, effective_config
 
 class RuntimeConfig(BaseConfig):
     """In-memory only config, reset on restart"""

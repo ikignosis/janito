@@ -3,10 +3,7 @@ from janito.agent.tool_registry import register_tool
 
 import subprocess
 import tempfile
-import os
 import sys
-from janito.agent.tools.tool_base import ToolBase
-from janito.agent.tool_registry import register_tool
 
 @register_tool(name="run_bash_command")
 class RunBashCommandTool(ToolBase):
