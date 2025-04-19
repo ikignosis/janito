@@ -6,6 +6,7 @@ from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.styles import Style
 from prompt_toolkit.history import InMemoryHistory
+from janito.agent.runtime_config import runtime_config
 
 
 def print_summary(console, data, continue_session):
@@ -32,7 +33,11 @@ def print_summary(console, data, continue_session):
 
 def print_welcome(console, version=None, continued=False):
     version_str = f" (v{version})" if version else ""
-    console.print(f"[bold green]Welcome to Janito{version_str}! Entering chat mode. Type /exit to exit.[/bold green]")
+    vanilla_mode = runtime_config.get('vanilla_mode', False)
+    if vanilla_mode:
+        console.print(f"[bold magenta]Welcome to Janito{version_str} in [white on magenta]VANILLA MODE[/white on magenta]! Tools, system prompt, and temperature are disabled unless overridden.[/bold magenta]")
+    else:
+        console.print(f"[bold green]Welcome to Janito{version_str}! Entering chat mode. Type /exit to exit.[/bold green]")
     if not continued:
         console.print("[yellow]To resume your previous conversation, type /continue at any time.[/yellow]")
 
@@ -67,46 +72,36 @@ def get_toolbar_func(messages_ref, last_usage_info_ref, last_elapsed_ref, model_
                 left += f", speed=<speed>{speed:.1f}</speed> tokens/sec"
 
         from prompt_toolkit.application import get_app
-
         # Compose first line with Model and Role
         width = get_app().output.get_size().columns
-
-
         model_part = f" Model:  <model>{model_name}</model>" if model_name else ""
         role_part = ""
-        if role_ref:
+        vanilla_mode = runtime_config.get('vanilla_mode', False)
+        if role_ref and not vanilla_mode:
             role = role_ref()
             if role:
                 role_part = f"Role: <b>{role}</b>"
-
         first_line_parts = []
         if model_part:
             first_line_parts.append(model_part)
         if role_part:
             first_line_parts.append(role_part)
         first_line = " | ".join(first_line_parts)
-
-        help_part = "<b>/help</b> for help | <b>F12</b>: just do it"
-
+        help_part = "<b>/help</b> for help | <b>F12</b>: Go ahead"
         total_len = len(left) + len(help_part) + 3  # separators and spaces
         if first_line:
             total_len += len(first_line) + 3
-
         if total_len < width:
             padding = ' ' * (width - total_len)
             second_line = f"{left}{padding} | {help_part}"
         else:
             second_line = f"{left} | {help_part}"
-
         if first_line:
             toolbar_text = first_line + "\n" + second_line
         else:
             toolbar_text = second_line
-
         return HTML(toolbar_text)
-
     return get_toolbar
-
 
 def get_prompt_session(get_toolbar_func, mem_history):
     from prompt_toolkit.key_binding import KeyBindings
@@ -120,20 +115,17 @@ def get_prompt_session(get_toolbar_func, mem_history):
         'tokens_out': 'ansigreen bold',
         'tokens_total': 'ansiyellow bold',
         'speed': 'ansimagenta bold',
-'right': 'bg:#005f5f #ffffff',
+        'right': 'bg:#005f5f #ffffff',
         'input': 'bg:#000080 #ffffff',
-'': 'bg:#000080 #ffffff',
+        '': 'bg:#000080 #ffffff',
     })
-
     kb = KeyBindings()
-
     @kb.add('f12')
     def _(event):
-        """When F12 is pressed, send 'just do it' as input immediately."""
+        """When F12 is pressed, send 'Go ahead' as input immediately."""
         buf = event.app.current_buffer
-        buf.text = 'just do it'
+        buf.text = 'Go ahead'
         buf.validate_and_handle()
-
     session = PromptSession(
         multiline=False,
         key_bindings=kb,
