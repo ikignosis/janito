@@ -24,3 +24,10 @@ Example:
             "/path/to/file1.py\n/path/to/file2.py"
             "Warning: Empty file pattern provided. Operation skipped."
         """
+
+# Tool Class Docstring Requirement
+
+- In addition to the `call` method docstring, each tool class must have a class-level docstring.
+- The class docstring is prepended to the tool's description in the OpenAI schema and is user-facing.
+- Write class docstrings as concise, clear summaries of the tool's purpose and behavior.
+- Avoid implementation details; focus on what the tool does for the user.

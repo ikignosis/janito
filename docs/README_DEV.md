@@ -138,3 +138,9 @@ Happy coding!
 ## Vanilla Mode (Developer Note)
 
 Vanilla mode is activated via the CLI/config (`--vanilla`). It disables all tool registration, omits the system prompt, and does not set temperature (unless explicitly provided). This is implemented as a runtime config flag (`vanilla_mode`) and does not alter the Agent or ConversationHandler API. All logic for vanilla mode is internal and backward compatible.
+
+## Tool Class Docstring
+
+- Each tool class must have a class-level docstring summarizing its purpose and behavior.
+- The class docstring is prepended to the tool's description in the OpenAI schema and is user-facing.
+- Write class docstrings clearly and concisely, as they will be shown to users.

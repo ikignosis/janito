@@ -109,3 +109,5 @@ All tools are registered automatically and can be invoked via the agent interfac
 > **Note:** When adding a new tool, follow the requirements in [../../README_DEV.md](../../README_DEV.md) for registration and documentation. Update this file with a description and usage for your tool.
 
 ---
+
+> **Note:** Tool descriptions are now generated from the tool class docstring (as a prefix) and the `call` method docstring summary. Ensure your class docstring is clear and user-facing.
