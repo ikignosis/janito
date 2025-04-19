@@ -1,5 +1,4 @@
 # Synced with pyproject.toml and actual imports
-beautifulsoup4
 flask
 jinja2
 openai
@@ -7,5 +6,4 @@ pathspec
 prompt_toolkit
 requests
 rich
-docstring-parser
-griffe>=0.36.5
+beautifulsoup4 # fetch_url tool dependency, bs4

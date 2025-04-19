@@ -54,3 +54,14 @@ def save_input_history(history_list):
     history_file = os.path.join(history_dir, f'{today_str}.json')
     with open(history_file, 'w', encoding='utf-8') as f:
         json.dump(history_list, f, indent=2)
+
+def last_conversation_exists(path='.janito/last_conversation.json'):
+    if not os.path.exists(path):
+        return False
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        messages = data.get('messages', [])
+        return bool(messages)
+    except Exception:
+        return False
