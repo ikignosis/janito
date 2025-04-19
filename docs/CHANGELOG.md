@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.5.1] - YYYY-MM-DD
+## [1.5.1] - 2025-04-19
 ### Changed
 - Refactored tool import/registry logic for improved maintainability.
 - Improved CLI chat shell UI for better user experience.
