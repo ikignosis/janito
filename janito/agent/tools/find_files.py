@@ -43,8 +43,14 @@ class FindFilesTool(ToolBase):
             if len(matches) >= max_results:
                 break
         
-        self.report_success(f" ✅ {len(matches)} {pluralize('file', len(matches))}")
-        return "\n".join(matches)
+        warning = ""
+        if len(matches) >= max_results:
+            warning = "\n⚠️ Warning: Maximum result limit reached. Some matches may not be shown."
+            suffix = " (Max Reached)"
+        else:
+            suffix = ""
+        self.report_success(f" ✅ {len(matches)} {pluralize('file', len(matches))}{suffix}")
+        return "\n".join(matches) + warning
 
 
 from janito.agent.tools.tools_utils import pluralize

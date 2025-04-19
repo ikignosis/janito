@@ -7,13 +7,14 @@ from janito.agent.tools.gitignore_utils import filter_ignored
 @register_tool(name="search_files")
 class SearchFilesTool(ToolBase):
     """Search for a text pattern in all files within a directory and return matching lines. Respects .gitignore."""
-    def call(self, directories: list[str], pattern: str) -> str:
+    def call(self, directories: list[str], pattern: str, max_results: int=100) -> str:
         """
         Search for a text pattern in all files within one or more directories and return matching lines.
 
         Args:
             directories (list[str]): List of directories to search in.
             pattern (str): Plain text substring to search for in files. (Not a regular expression or glob pattern.)
+            max_results (int): Maximum number of results to return. Defaults to 100.
 
         Returns:
             str: Matching lines from files as a newline-separated string, each formatted as 'filepath:lineno: line'. Example:
@@ -35,11 +36,19 @@ class SearchFilesTool(ToolBase):
                             for lineno, line in enumerate(f, 1):
                                 if pattern in line:
                                     matches.append(f"{path}:{lineno}: {line.strip()}")
+                                    if len(matches) >= max_results:
+                                        break
                     except Exception:
                         continue
         
-        self.report_success(f" ✅ {len(matches)} {pluralize('line', len(matches))}")
-        return '\n'.join(matches)
+        warning = ""
+        if len(matches) >= max_results:
+            warning = "\n⚠️ Warning: Maximum result limit reached. Some matches may not be shown."
+            suffix = " (Max Reached)"
+        else:
+            suffix = ""
+        self.report_success(f" ✅ {len(matches)} {pluralize('line', len(matches))}{suffix}")
+        return '\n'.join(matches) + warning
 
 
 from janito.agent.tools.tools_utils import pluralize
