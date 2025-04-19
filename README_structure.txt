@@ -18,8 +18,6 @@ Directories:
     - CONFIGURATION.md
     - MESSAGE_HANDLER_MODEL.md
     - README_DEV.md
-    - cli_model_override.md
-    - cli_reload_command.md
 - dist/
     - janito-1.5.0.tar.gz
     - janito-1.5.0-py3-none-any.whl

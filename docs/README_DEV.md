@@ -2,6 +2,9 @@
 
 This guide explains how to add a new tool (function) to the project so it can be exposed to the agent and OpenAI-compatible APIs.
 
+For a list of all built-in tools and their usage, see the [Tools Reference](../janito/agent/tools/README.md).
+For a technical overview of the system, see the [Architecture Guide](ARCHITECTURE.md).
+
 ## Requirements
 
 - **Type hints**: Every parameter must have a Python type hint.

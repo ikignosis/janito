@@ -2,6 +2,9 @@
 
 This directory contains built-in tools for file operations, shell commands, user interaction, and more. Each tool is implemented as a class inheriting from `ToolBase` and is registered with the system for dynamic invocation.
 
+For instructions on adding new tools, see the [Developer Guide](../../../docs/README_DEV.md).
+For how tools fit into the system, see the [Architecture Guide](../../../docs/ARCHITECTURE.md).
+
 ## Tool List & Descriptions
 
 ### ask_user.py

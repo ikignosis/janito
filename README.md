@@ -5,6 +5,8 @@ See [docs/CHANGELOG.md](docs/CHANGELOG.md) and [RELEASE_NOTES_1.5.md](./RELEASE_
 
 Janito is an AI-powered assistant for the command line and web that interprets natural language instructions to edit code, manage files, and analyze projects using patterns and tools designed by experienced software engineers. It prioritizes transparency, interactive clarification, and precise, reviewable changes.
 
+For a technical overview, see the [Architecture Guide](docs/ARCHITECTURE.md).
+
 ---
 
 ## ⚡ Quick Start
@@ -65,7 +67,7 @@ janito --web
 
 ### Contributing & Developer Guide
 
-If you want to extend Janito or add new tools, see [docs/README_DEV.md](docs/README_DEV.md) for developer instructions, tool registration requirements, and code style guidelines.
+If you want to extend Janito or add new tools, see the [Developer Guide](docs/README_DEV.md) for instructions, tool registration requirements, and code style guidelines. For the full list of built-in tools and their usage, see the [Tools Reference](janito/agent/tools/README.md).
 
 
 
