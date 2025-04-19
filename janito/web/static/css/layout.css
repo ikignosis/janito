@@ -1,0 +1,37 @@
+body {
+  background: #1C1C1C;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  margin: 0;
+  font-size: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.main-app-container {
+  display: flex;
+  flex-direction: row;
+  height: 80vh;
+  width: 80vw;
+  max-width: 1400px;
+  min-width: 900px;
+}
+
+.window-header {
+  background: rgba(50, 50, 50, 0.8);
+  padding: 8px 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.window-header .button {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.window-header .close { background: #DD4814; }
+.window-header .minimize { background: #C4A000; }
+.window-header .zoom { background: #4E9A06; }

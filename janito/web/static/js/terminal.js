@@ -1,4 +1,5 @@
 export function setupTerminal(onCommandSubmit) {
+
   const terminal = document.getElementById("terminal");
   let command = "";
 

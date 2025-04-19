@@ -4,7 +4,7 @@ console = Console()
 
 class MessageHandler:
     """
-    Unified message handler for all output (tool, assistant, system) using Rich for styled output.
+    Unified message handler for all output (tool, agent, system) using Rich for styled output.
     """
     def __init__(self):
         self.console = console
@@ -28,6 +28,8 @@ class MessageHandler:
                 self.console.print(message, style="bold red", end="\n")
             elif msg_type == "progress":
                 self._handle_progress(message)
+            elif msg_type == "warning":
+                self.console.print(message, style="bold yellow", end="\n")
             elif msg_type == "stdout":
                 from rich.text import Text
                 self.console.print(Text(message, style="on #003300", no_wrap=True, overflow=None), end="")
@@ -35,7 +37,8 @@ class MessageHandler:
                 from rich.text import Text
                 self.console.print(Text(message, style="on #330000", no_wrap=True, overflow=None), end="")
             else:
-                raise NotImplementedError(f"Unsupported message type: {msg_type}")
+                # Ignore unsupported message types silently
+                return
         else:
             # Print plain strings as markdown/markup
             self.console.print(Markdown(str(msg)))

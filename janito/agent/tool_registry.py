@@ -30,7 +30,9 @@ def register_tool(tool=None, *, name: str = None):
     func = instance.call
     default_name = tool.__name__
     tool_name = override_name or default_name
-    description = tool.__doc__ or func.__doc__ or ""
+    description = tool.__doc__ or func.__doc__
+    if not description:
+        raise TypeError(f"Tool '{tool_name}' is missing a docstring description (no docstring found on class or call method).")
     sig = inspect.signature(func)
     params_schema = {
         "type": "object",
@@ -119,6 +121,14 @@ def handle_tool_call(tool_call, message_handler=None, verbose=False):
         instance = func.__self__
         if message_handler:
             instance._progress_callback = message_handler.handle_message
+    # Emit tool_call event before calling the tool
+    if message_handler:
+        message_handler.handle_message({
+            'type': 'tool_call',
+            'tool': tool_call.function.name,
+            'args': args,
+            'call_id': call_id
+        })
     try:
         result = func(**args)
     except Exception as e:
@@ -127,6 +137,14 @@ def handle_tool_call(tool_call, message_handler=None, verbose=False):
         if message_handler:
             message_handler.handle_message({'type': 'error', 'message': error_message})
         result = error_message
+    # Emit tool_result event after tool execution
+    if message_handler:
+        message_handler.handle_message({
+            'type': 'tool_result',
+            'tool': tool_call.function.name,
+            'call_id': call_id,
+            'result': result
+        })
     if verbose:
         preview = result
         if isinstance(result, str):

@@ -1,0 +1,16 @@
+.fireworks {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  pointer-events: none;
+  z-index: 999;
+}
+.firework, .firework-top {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0.7;
+  box-shadow: 0 0 18px 4px #fff;
+}
+/* Add your firework animation keyframes here as needed */

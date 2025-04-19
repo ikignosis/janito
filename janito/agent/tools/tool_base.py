@@ -30,10 +30,13 @@ class ToolBase(ABC):
             self._progress_callback(progress)
 
     def report_info(self, message: str):
-        self.update_progress({"type": "info", "message": message})
+        self.update_progress({"type": "info", "tool": self.__class__.__name__, "message": message})
 
     def report_success(self, message: str):
-        self.update_progress({"type": "success", "message": message})
+        self.update_progress({"type": "success", "tool": self.__class__.__name__, "message": message})
 
     def report_error(self, message: str):
-        self.update_progress({"type": "error", "message": message})
+        self.update_progress({"type": "error", "tool": self.__class__.__name__, "message": message})
+
+    def report_warning(self, message: str):
+        self.update_progress({"type": "warning", "tool": self.__class__.__name__, "message": message})

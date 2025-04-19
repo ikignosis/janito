@@ -68,6 +68,13 @@ Remove a directory.
 - `directory` (str): Path to the directory.  
 - `recursive` (bool, optional): Remove recursively.
 
+### append_text_to_file.py
+**Description:**  
+Append the given text to the end of a file.
+**Usage:**  
+- `file_path` (str): Path to the file.  
+- `text_to_append` (str): Text to append to the file.
+
 ### replace_text_in_file.py
 **Description:**  
 Replace exact occurrences of a given text in a file.  

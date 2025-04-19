@@ -56,8 +56,8 @@ def run_cli(args):
         runtime_config.set('system_prompt_file', args.system_file)
 
     else:
-        system_prompt = args.system_prompt or unified_config.get("system_prompt")
-        if args.system_prompt:
+        system_prompt = args.system or unified_config.get("system_prompt")
+        if args.system:
             runtime_config.set('system_prompt', system_prompt)
         if system_prompt is None:
             # Pass full merged config (runtime overrides effective)
@@ -81,6 +81,17 @@ def run_cli(args):
     model = unified_config.get('model')
     base_url = unified_config.get('base_url', 'https://openrouter.ai/api/v1')
     azure_openai_api_version = unified_config.get('azure_openai_api_version', '2023-05-15')
+    # Handle vanilla mode
+    vanilla_mode = getattr(args, 'vanilla', False)
+    if vanilla_mode:
+        runtime_config.set('vanilla_mode', True)
+        system_prompt = None
+        runtime_config.set('system_prompt', None)
+        # Only set temperature if explicitly provided
+        if args.temperature is None:
+            runtime_config.set('temperature', None)
+    else:
+        runtime_config.set('vanilla_mode', False)
     agent = Agent(api_key=api_key, model=model, system_prompt=system_prompt, verbose_tools=args.verbose_tools, base_url=base_url, azure_openai_api_version=azure_openai_api_version, use_azure_openai=unified_config.get('use_azure_openai', False))
 
     # Save runtime max_tokens override if provided

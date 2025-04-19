@@ -61,3 +61,13 @@
 - Fixed: run_bash_command could hang in some scenarios; switching to thread-based output handling resolved this issue.
 
 
+
+## [1.5.x] - 2025-04-20
+
+### Improved
+- `replace_text_in_file` tool:
+  - Info message now shows only the number of lines in search and replacement text, not a preview of their content.
+  - Added a guard: if `search_text` is empty, the tool now warns and refuses to replace the entire file.
+  - The file is only written if there are actual changes (no write if nothing changes).
+  - Improved warning handling: empty search text is treated as a warning, not an error.
+  - If no changes are made, a clear info message is reported and the file is left untouched.

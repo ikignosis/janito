@@ -1,24 +1,46 @@
 # 🚀 Janito: Natural Programming Language Agent
 
+**Current Version: 1.5.x**  
+See [CHANGELOG.md](./CHANGELOG.md) and [RELEASE_NOTES_1.5.md](./RELEASE_NOTES_1.5.md) for details on the latest release.
+
 Janito is an AI-powered assistant for the command line and web that interprets natural language instructions to edit code, manage files, and analyze projects using patterns and tools designed by experienced software engineers. It prioritizes transparency, interactive clarification, and precise, reviewable changes.
 
 ---
 
 ## ⚡ Quick Start
 
+## 🖥️ Supported Human Interfaces
+Janito supports multiple ways for users to interact with the agent:
+
+- **CLI (Command Line Interface):** Run single prompts or commands directly from your terminal (e.g., `janito "Refactor the data processing module"`).
+- **CLI Chat Shell:** Start an interactive chat session in your terminal for conversational workflows (`janito`).
+- **Web Interface:** Launch a browser-based UI for chat and project management (`janito --web`).
+
+_The API is not considered a human-oriented interface and is omitted here._
+
+### 🛠️ Common CLI Modifiers
+You can alter Janito's behavior in any interface using these flags:
+
+- `--system` / `--system-file`: Override or customize the system prompt for the session.
+- `--no-tools`: Disable all tool usage (Janito will only use the language model, no file/code/shell actions).
+- `--vanilla`: Disables tools, system prompt, and temperature settings for a pure LLM chat experience.
+
+These modifiers can be combined with any interface mode for tailored workflows.
+
+
 Run a one-off prompt:
 ```bash
-python -m janito "Refactor the data processing module to improve readability."
+janito "Refactor the data processing module to improve readability."
 ```
 
 Or start the interactive chat shell:
 ```bash
-python -m janito
+janito
 ```
 
 Launch the web UI:
 ```bash
-python -m janito.web
+janito --web
 ```
 
 ---
@@ -29,17 +51,14 @@ python -m janito.web
 - 🧠 **Context-Aware:** Understands your project structure for precise edits.
 - 💬 **Interactive User Prompts:** Asks for clarification when needed.
 - 🧩 **Extensible Tooling:** Built-in tools for file operations, shell commands, directory listing, Python file validation, text replacement, code execution, and more. Recent tools include:
-  - `find_files`: Search for files matching a pattern in directories.
+  - `find_files`: Searching for files by name or pattern in directories.
   - `get_lines`: Retrieve specific lines from files for efficient context.
   - `py_compile_file`: Validate Python files for syntax correctness.
   - `replace_text_in_file`: Replace exact text fragments in files.
-  - `search_files`: Search for text patterns across files.
+  - `search_files`: Searching for text within files.
   - `python_exec`: Execute Python code and capture output.
   - And more built-in operations for code and file management.
 - 🌐 **Web Interface (In Development):** Upcoming simple web UI for streaming responses and tool progress.
-
----
-
 
 ## 📦 Installation
 
@@ -50,15 +69,7 @@ python -m janito.web
 
 ### Configuration & CLI Options
 
-Below are the supported configuration parameters and CLI flags. Some options can be set via config files, CLI flags, or both. Use `python -m janito --help` for a full list, or `python -m janito --help-config` to see all config keys and their descriptions.
-
-| Key / Flag                | Description                                                                                 | How to set                                                      | Default                                    |
-|---------------------------|---------------------------------------------------------------------------------------------|-----------------------------------------------------------------|--------------------------------------------|
-| `api_key`                 | API key for a compatible language model service                                            | `--set-api-key`, config file                                    | _None_ (required)                          |
-| `model`                   | Model name to use for this session                                                          | `--model` (session only), `--set-local-config model=...`, or `--set-global-config` | _(example: gpt-4)_                 |
-| `base_url`                | API base URL for your language model service                                                | `--set-local-config base_url=...` or `--set-global-config`      | _(example: https://api.your-model.com)_            |
-| `role`                    | Role description for the system prompt                                                      | `--role` or config                                            | "software engineer"                     |
-| `system_prompt`           | Override the entire system prompt as a raw string                                           | `--system-prompt` or config                                   | _Default prompt_               |
+See [CONFIGURATION.md](./CONFIGURATION.md) for all configuration parameters, CLI flags, and advanced usage details.
 | `system_file`             | Use a plain text file as the system prompt (takes precedence over `system_prompt`)         | `--system-file` (CLI only)                                     | _None_                                     |
 | `temperature`             | Sampling temperature (float, e.g., 0.0 - 2.0)                                              | `--temperature` or config                                      | 0.2                                        |
 | `max_tokens`              | Maximum tokens for model response                                                          | `--max-tokens` or config                                      | 200000                                     |
@@ -125,7 +136,7 @@ Janito operates using a system prompt template that defines its behavior, commun
 
 - **Role:** You can customize the agent's role (e.g., "data scientist", "DevOps engineer") using the `--role` flag or config. The default is `software engineer`.
 - **System Prompt Template:** The system prompt is rendered from a Jinja2 template (see `janito/agent/templates/system_instructions.j2` (now located directly under the agent directory)). This template governs how the agent interprets instructions, interacts with files, and communicates with users.
-- **Customization:** Advanced users can override the system prompt with the `--system-prompt` flag (raw string), or point to a custom file using `--system-file`.
+- **Customization:** Advanced users can override the system prompt with the `--system` flag (raw string), or point to a custom file using `--system-file`.
 
 The default template ensures the agent:
 - Prioritizes safe, reviewable, and minimal changes
@@ -137,3 +148,30 @@ For more details or to customize the prompt, see the template file at `janito/ag
 
 ---
 
+
+## 🥛 Vanilla Mode
+
+Janito supports a "vanilla mode" for pure LLM interaction:
+
+- No tools: Disables all tool use (no file operations, shell commands, etc.).
+- No system prompt: The LLM receives only your input, with no system prompt or role injected.
+- No temperature set: The temperature parameter is not set (unless you explicitly provide `-t`/`--temperature`).
+
+Activate vanilla mode with the CLI flag:
+
+```bash
+python -m janito --vanilla "Your prompt here"
+```
+
+Or in chat shell mode:
+
+```bash
+python -m janito --vanilla
+```
+
+Vanilla mode is ideal for:
+- Testing raw model behavior
+- Comparing LLM output with and without agent guidance
+- Ensuring no agent-side intervention or context is added
+
+> Note: Vanilla mode is a runtime switch and does not change the Agent API or class signatures. It is controlled via CLI/config only.

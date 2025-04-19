@@ -1,0 +1,45 @@
+#json-modal {
+  position: fixed;
+  left: 0; right: 0; top: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  display: none;
+}
+.modal-content {
+  background: #232b36;
+  border-radius: 10px;
+  padding: 20px;
+  min-width: 380px;
+  max-width: 80vw;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  color: #fff;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #333;
+  border-bottom: 1px solid #444;
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+}
+.modal-title {
+  font-size: 1.1em;
+  font-weight: bold;
+}
+.modal-close {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.5em;
+  cursor: pointer;
+}
+#json-modal .modal-content {
+  background: #1C1C1C;
+  color: #eee;
+  margin: 5% auto;
+  padding: 20px;
+}

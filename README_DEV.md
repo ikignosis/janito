@@ -72,11 +72,11 @@ ValueError: Parameter 'count' in tool 'my_tool' is missing a description in the 
 
 ### Built-in Tools
 
-- `find_files`: Search for files matching a pattern in directories.
+- `find_files`: Searching for files by name or pattern in directories.
 - `get_lines`: Retrieve specific lines from files for efficient context.
 - `py_compile_file`: Validate Python files for syntax correctness.
 - `replace_text_in_file`: Replace exact text fragments in files.
-- `search_files`: Search for text patterns across files.
+- `search_files`: Searching for text within files.
 - `python_exec`: Execute Python code and capture output.
 - And more, see `janito/agent/tools/` for the full list.
 
@@ -99,7 +99,7 @@ ValueError: Parameter 'count' in tool 'my_tool' is missing a description in the 
 ## System Prompt Precedence
 
 - If `--system-file` is provided, the file's content is used as the system prompt.
-- Otherwise, if `--system-prompt` or the config value is set, that string is used.
+- Otherwise, if `--system` or the config value is set, that string is used.
 - Otherwise, a default prompt is used.
 
 ## Interactive Shell Config Commands
@@ -120,3 +120,7 @@ Within the interactive chat shell, you can use special commands:
 - Registration will fail if any parameter is undocumented.
 
 Happy coding!
+
+## Vanilla Mode (Developer Note)
+
+Vanilla mode is activated via the CLI/config (`--vanilla`). It disables all tool registration, omits the system prompt, and does not set temperature (unless explicitly provided). This is implemented as a runtime config flag (`vanilla_mode`) and does not alter the Agent or ConversationHandler API. All logic for vanilla mode is internal and backward compatible.

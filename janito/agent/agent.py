@@ -55,7 +55,7 @@ class Agent:
             )
 
         self.conversation_handler = ConversationHandler(
-            self.client, self.model
+            self.client, self.model, 
         )
 
     @property

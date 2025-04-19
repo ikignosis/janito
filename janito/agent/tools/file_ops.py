@@ -33,9 +33,11 @@ class CreateFileTool(ToolBase):
             f.write(content)
         new_lines = content.count('\n') + 1 if content else 0
         if old_lines is not None:
-            self.report_success(f"✅ Updated: '{disp_path}' ({old_lines} > {new_lines} lines)")
+            from janito.agent.tools.tools_utils import pluralize
+            self.report_success(f"✅ {new_lines} {pluralize('line', new_lines)}")
             return f"✅ Successfully updated the file at '{disp_path}' ({old_lines} > {new_lines} lines)."
-        self.report_success(f"✅ Created: '{disp_path}' ({new_lines} lines)")
+        from janito.agent.tools.tools_utils import pluralize
+        self.report_success(f"✅ {new_lines} {pluralize('line', new_lines)}")
         return f"✅ Successfully created the file at '{disp_path}' ({new_lines} lines)."
 
 class CreateDirectoryTool(ToolBase):

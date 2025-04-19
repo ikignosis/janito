@@ -52,18 +52,44 @@ class ConversationHandler:
                     return str(n)
                 # Count message types
                 user_msgs = sum(1 for m in messages if m.get('role') == 'user')
-                assistant_msgs = sum(1 for m in messages if m.get('role') == 'assistant')
+                agent_msgs = sum(1 for m in messages if m.get('role') == 'agent')
                 tool_msgs = sum(1 for m in messages if m.get('role') == 'tool')
-                # Tool uses: count tool_calls in all assistant messages
-                tool_uses = sum(len(m.get('tool_calls', [])) for m in messages if m.get('role') == 'assistant')
+                # Tool uses: count tool_calls in all agent messages
+                tool_uses = sum(len(m.get('tool_calls', [])) for m in messages if m.get('role') == 'agent')
                 # Tool responses: tool_msgs
                 spinner_msg = (
                     f"[bold green]Waiting for AI response... ("
                     f"{format_count(word_count)} words, "
-                    f"{user_msgs} user, {assistant_msgs} assistant, "
+                    f"{user_msgs} user, {agent_msgs} agent, "
                     f"{tool_uses} tool uses, {tool_msgs} tool responses)"
                 )
                 with console.status(spinner_msg, spinner="dots") as status:
+                    from janito.agent.runtime_config import runtime_config
+                    if runtime_config.get('vanilla_mode', False):
+                        response = self.client.chat.completions.create(
+                            model=self.model,
+                            messages=messages,
+                            max_tokens=resolved_max_tokens
+                        )
+                    else:
+                        response = self.client.chat.completions.create(
+                            model=self.model,
+                            messages=messages,
+                            tools=get_tool_schemas(),
+                            tool_choice="auto",
+                            temperature=0.2,
+                            max_tokens=resolved_max_tokens
+                        )
+                    status.stop()
+            else:
+                from janito.agent.runtime_config import runtime_config
+                if runtime_config.get('vanilla_mode', False):
+                    response = self.client.chat.completions.create(
+                        model=self.model,
+                        messages=messages,
+                        max_tokens=resolved_max_tokens
+                    )
+                else:
                     response = self.client.chat.completions.create(
                         model=self.model,
                         messages=messages,
@@ -72,17 +98,6 @@ class ConversationHandler:
                         temperature=0.2,
                         max_tokens=resolved_max_tokens
                     )
-                    status.stop()
-                    # console.print("\r\033[2K", end="")  # Clear the spinner line removed
-            else:
-                response = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=messages,
-                    tools=get_tool_schemas(),
-                    tool_choice="auto",
-                    temperature=0.2,
-                    max_tokens=resolved_max_tokens
-                )
 
             if verbose_response:
                 import pprint
@@ -114,11 +129,11 @@ class ConversationHandler:
             if message_handler is not None and choice.message.content:
                 message_handler.handle_message(choice.message.content, msg_type="content")
 
-            # If no tool calls, return the assistant's message and usage info
+            # If no tool calls, return the agent's message and usage info
             if not choice.message.tool_calls:
-                # Store usage info in usage_history, linked to the next assistant message index
-                assistant_idx = len([m for m in messages if m.get('role') == 'assistant'])
-                self.usage_history.append({"assistant_index": assistant_idx, "usage": usage_info})
+                # Store usage info in usage_history, linked to the next agent message index
+                agent_idx = len([m for m in messages if m.get('role') == 'agent'])
+                self.usage_history.append({"agent_index": agent_idx, "usage": usage_info})
                 return {
                     "content": choice.message.content,
                     "usage": usage_info,
@@ -136,9 +151,9 @@ class ConversationHandler:
                 tool_responses.append({"tool_call_id": tool_call.id, "content": result})
                 tool_calls_made += 1
 
-            # Store usage info in usage_history, linked to the next assistant message index
-            assistant_idx = len([m for m in messages if m.get('role') == 'assistant'])
-            self.usage_history.append({"assistant_index": assistant_idx, "usage": usage_info})
+            # Store usage info in usage_history, linked to the next agent message index
+            agent_idx = len([m for m in messages if m.get('role') == 'agent'])
+            self.usage_history.append({"agent_index": agent_idx, "usage": usage_info})
             messages.append({"role": "assistant", "content": choice.message.content, "tool_calls": [tc.to_dict() for tc in choice.message.tool_calls]})
 
             for tr in tool_responses:

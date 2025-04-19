@@ -11,7 +11,9 @@ from janito.agent.tool_registry import register_tool
 @register_tool(name="run_bash_command")
 class RunBashCommandTool(ToolBase):
     """
-    Execute a non-interactive bash command and capture live output.
+    Execute a non-interactive command using the bash shell and capture live output.
+
+    This tool explicitly invokes the 'bash' shell (not just the system default shell), so it requires bash to be installed and available in the system PATH. On Windows, this will only work if bash is available (e.g., via WSL, Git Bash, or similar).
 
     Args:
         command (str): The bash command to execute.
@@ -23,6 +25,9 @@ class RunBashCommandTool(ToolBase):
         str: File paths and line counts for stdout and stderr.
     """
     def call(self, command: str, timeout: int = 60, require_confirmation: bool = False, interactive: bool = False) -> str:
+        if not command.strip():
+            self.report_warning("⚠️ Warning: Empty command provided. Operation skipped.")
+            return "Warning: Empty command provided. Operation skipped."
         self.report_info(f"🖥️  Running bash command: {command}\n")
         if interactive:
             self.report_info("⚠️  Warning: This command might be interactive, require user input, and might hang.")
@@ -32,8 +37,9 @@ class RunBashCommandTool(ToolBase):
         try:
             with tempfile.NamedTemporaryFile(mode='w+', prefix='run_bash_stdout_', delete=False, encoding='utf-8') as stdout_file, \
                  tempfile.NamedTemporaryFile(mode='w+', prefix='run_bash_stderr_', delete=False, encoding='utf-8') as stderr_file:
+                # Use bash explicitly for command execution
                 process = subprocess.Popen(
-                    command, shell=True,
+                    ["bash", "-c", command],
                     stdout=stdout_file,
                     stderr=stderr_file,
                     text=True

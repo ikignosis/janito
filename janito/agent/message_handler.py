@@ -9,7 +9,7 @@ class MessageHandler:
         return super().handle_tool_call(tool_call)
 
     def handle_message(self, msg, msg_type=None):
-        # Unified: send content (assistant/LLM) messages to the frontend
+        # Unified: send content (agent/LLM) messages to the frontend
         if isinstance(msg, dict):
             msg_type = msg.get('type', 'info')
             message = msg.get('message', '')

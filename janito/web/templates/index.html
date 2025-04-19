@@ -4,7 +4,10 @@
 <link rel="icon" href="/favicon.ico" type="image/x-icon" />
 <meta charset="UTF-8" />
 <title>Terminal Landing Page</title>
-<link rel="stylesheet" href="/static/style.css">
+<link rel="stylesheet" href="/static/css/layout.css">
+<link rel="stylesheet" href="/static/css/terminal.css">
+<link rel="stylesheet" href="/static/css/modal.css">
+<link rel="stylesheet" href="/static/css/sidebar.css">
 
 <!-- Prism.js syntax highlighting -->
 <link href="https://cdn.jsdelivr.net/npm/prismjs@1/themes/prism-tomorrow.min.css" rel="stylesheet" />
@@ -18,13 +21,15 @@
 <script type="module" src="/static/js/main.js"></script>
 </head>
 <body>
-<div class="terminal-window">
-  <div class="window-header">
+<div class="main-app-container">
+  <div class="terminal-window">
+    <div class="window-header">
     <span class="button close"></span>
     <span class="button minimize"></span>
     <span class="button zoom"></span>
   </div>
   <div class="terminal" id="terminal">
+  <div id="tool-progress-bar" style="display:none;"></div>
     <div class="welcome-box">
 Welcome to Janito – Your AI Coding Assistant!<br>
 Type your question or command below and press Enter.<br>
@@ -48,15 +53,11 @@ Type <code>/help</code> for a list of available commands.<br>
       <pre id="json-modal-content" style="white-space: pre-wrap;"></pre>
     </div>
   </div>
-</div>
-</div>
-<div class="fireworks">
-  <div class="firework"></div>
-  <div class="firework"></div>
-  <div class="firework"></div>
-  <div class="firework-top"></div>
-  <div class="firework-top"></div>
-  <div class="firework-top"></div>
+  </div> <!-- end terminal-window -->
+  <div id="tool-activity-sidebar">
+    <div class="sidebar-header">Tool Activity</div>
+    <div id="tool-activity-content"></div>
+  </div>
 </div>
 </body>
 </html>

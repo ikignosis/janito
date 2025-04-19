@@ -2,7 +2,7 @@ import { createContentModal, showContentPopup, showPopup } from "./modal.js";
 import { setupTerminal } from "./terminal.js";
 import { sendCommandStream } from "./stream.js";
 import { handleToolProgress } from "./toolProgress.js";
-import { setupSessionControls } from "../js/sessionControl.js";
+import { setupSessionControls } from "./sessionControl.js";
 
 window.contentStore = [];
 window.showContentPopup = showContentPopup;
@@ -130,12 +130,19 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
 
     await sendCommandStream(command, (data) => {
+      console.log('[DEBUG] Received event:', data);
       if(data.type === "content" && data.content) {
         terminalApi.appendOutput(data.content);
-      } else if(data.type === "tool_progress") {
-        handleToolProgress(data.data, document.getElementById("terminal"));
-      } else if(data.type === "error") {
-        terminalApi.appendOutput("Error: " + data.error);
+      } else if([
+        "tool_call",
+        "tool_result",
+        "info",
+        "success",
+        "error",
+        "stdout",
+        "stderr"
+      ].includes(data.type)) {
+        handleToolProgress(data);
       }
     });
 

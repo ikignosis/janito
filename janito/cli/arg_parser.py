@@ -12,7 +12,7 @@ def create_parser():
 
     # Mutually exclusive group for system prompt options
     group = parser.add_mutually_exclusive_group()
-    group.add_argument("-s", "--system-prompt", type=str, default=None, help="Optional system prompt as a raw string.")
+    group.add_argument("-s", "--system", type=str, default=None, help="Optional system prompt as a raw string.")
     group.add_argument("--system-file", type=str, default=None, help="Path to a plain text file to use as the system prompt (no template rendering, takes precedence over --system-prompt)")
 
     parser.add_argument("-r", "--role", type=str, default=None, help="Role description for the default system prompt")
@@ -35,4 +35,5 @@ def create_parser():
     parser.add_argument("--config-reset-local", action="store_true", help="Remove the local config file (~/.janito/config.json)")
     parser.add_argument("--config-reset-global", action="store_true", help="Remove the global config file (~/.janito/config.json)")
     parser.add_argument("--trust", action="store_true", help="Enable trust mode: suppresses run_bash_command output, only shows output file locations.")
+    parser.add_argument("--vanilla", action="store_true", default=False, help="Vanilla mode: disables tools, system prompt, and temperature (unless -t is set)")
     return parser
