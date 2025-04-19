@@ -35,6 +35,13 @@ class AskUserTool(ToolBase):
         def _(event):
             pass
 
+        @bindings.add('f12')
+        def _(event):
+            """When F12 is pressed, send 'Go ahead' as input immediately."""
+            buf = event.app.current_buffer
+            buf.text = 'Go ahead'
+            buf.validate_and_handle()
+
         style = Style.from_dict({
             'bottom-toolbar': 'bg:#333333 #ffffff',
             'b': 'bold',
@@ -42,10 +49,11 @@ class AskUserTool(ToolBase):
         })
 
         def get_toolbar():
+            f12_hint = " Press <b>F12</b> to auto-fill 'Go ahead' and submit."
             if mode['multiline']:
-                return HTML('<b>Multiline mode (Esc+Enter to submit). Type /single to switch.</b>')
+                return HTML(f'<b>Multiline mode (Esc+Enter to submit). Type /single to switch.</b>{f12_hint}')
             else:
-                return HTML('<b>Single-line mode (Enter to submit). Type /multi for multiline.</b>')
+                return HTML(f'<b>Single-line mode (Enter to submit). Type /multi for multiline.</b>{f12_hint}')
 
         session = PromptSession(
             multiline=False,
