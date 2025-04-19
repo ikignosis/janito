@@ -15,7 +15,7 @@ def register_tool(tool=None, *, name: str = None):
     func = instance.call
     default_name = tool.__name__
     tool_name = override_name or default_name
-    schema = generate_openai_function_schema(func, tool_name)
+    schema = generate_openai_function_schema(func, tool_name, tool_class=tool)
     _tool_registry[tool_name] = {
         "function": func,
         "description": schema["description"],

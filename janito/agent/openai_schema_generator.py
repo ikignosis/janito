@@ -78,7 +78,7 @@ def _type_to_json_schema(tp):
         return {"type": "string"}
     return {"type": "string"}
 
-def generate_openai_function_schema(func, tool_name: str):
+def generate_openai_function_schema(func, tool_name: str, tool_class=None):
     """
     Generates an OpenAI-compatible function schema for a callable.
     Raises ValueError if the return type is not explicitly str.
@@ -89,6 +89,12 @@ def generate_openai_function_schema(func, tool_name: str):
         raise ValueError(f"Tool '{tool_name}' must have an explicit return type of 'str'. Found: {sig.return_annotation}")
     docstring = func.__doc__
     summary, param_descs, _ = _parse_docstring(docstring)
+    # Prepend the tool class docstring if available
+    class_doc = tool_class.__doc__.strip() if tool_class and tool_class.__doc__ else ""
+    if class_doc:
+        description = f"{class_doc}\n\n{summary}" if summary else class_doc
+    else:
+        description = summary
     # Check that all parameters in the signature have documentation
     undocumented = [name for name, param in sig.parameters.items() if name != "self" and name not in param_descs]
     if undocumented:
@@ -107,7 +113,7 @@ def generate_openai_function_schema(func, tool_name: str):
             required.append(name)
     return {
         "name": tool_name,
-        "description": summary,
+        "description": description,
         "parameters": {
             "type": "object",
             "properties": properties,

@@ -3,7 +3,7 @@ from janito.agent.tool_registry import register_tool
 
 @register_tool(name="ask_user")
 class AskUserTool(ToolBase):
-    """Ask the user a question and return their response."""
+    """Request clarification or input from the user whenever there is uncertainty, ambiguity, missing information, or multiple valid options. Returns the user's response as a string."""
     def call(self, question: str) -> str:
         """
         Ask the user a question and return their response.
