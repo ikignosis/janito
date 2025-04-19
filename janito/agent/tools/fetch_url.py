@@ -9,8 +9,6 @@ class FetchUrlTool(ToolBase):
     """Fetch the content of a web page and extract its text."""
     def call(self, url: str, search_strings: list[str] = None) -> str:
         """
-        Fetch the content of a web page and extract its text.
-
         Args:
             url (str): The URL of the web page to fetch.
             search_strings (list[str], optional): Strings to search for in the page content.
