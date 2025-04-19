@@ -54,7 +54,7 @@ class ConversationHandler:
                 agent_msgs = sum(1 for m in messages if m.get('role') == 'agent')
                 tool_msgs = sum(1 for m in messages if m.get('role') == 'tool')
                 # Tool uses: count tool_calls in all agent messages
-                tool_uses = sum(len(m.get('tool_calls', [])) for m in messages if m.get('role') == 'agent')
+                tool_uses = sum(len(m.get('tool_calls', [])) for m in messages if m.get('role') == 'assistant')
                 # Tool responses: tool_msgs
                 spinner_msg = (
                     f"[bold green]Waiting for AI response... ("
