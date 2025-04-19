@@ -35,5 +35,5 @@ def create_parser():
     parser.add_argument("--config-reset-local", action="store_true", help="Remove the local config file (~/.janito/config.json)")
     parser.add_argument("--config-reset-global", action="store_true", help="Remove the global config file (~/.janito/config.json)")
     parser.add_argument("--trust", action="store_true", help="Enable trust mode: suppresses run_bash_command output, only shows output file locations.")
-    parser.add_argument("--vanilla", action="store_true", default=False, help="Vanilla mode: disables tools, system prompt, and temperature (unless -t is set)")
+    parser.add_argument("-V", "--vanilla", action="store_true", default=False, help="Vanilla mode: disables tools, system prompt, and temperature (unless -t is set)")
     return parser

@@ -103,4 +103,6 @@ Search for a text pattern in all files within a directory and return matching li
 
 All tools are registered automatically and can be invoked via the agent interface. For implementation details, see each tool's Python file.
 
+> **Note:** When adding a new tool, follow the requirements in [../../README_DEV.md](../../README_DEV.md) for registration and documentation. Update this file with a description and usage for your tool.
+
 ---

@@ -9,3 +9,7 @@
 - If no changes are made, a clear info message is reported and the file is left untouched.
 
 These changes make the tool safer, more predictable, and provide clearer feedback for users.
+
+## New Feature: Vanilla Mode
+
+- Added "vanilla mode" to the agent, allowing operation without any external tools or plugins. This mode is useful for minimal, dependency-free usage and testing scenarios.

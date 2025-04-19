@@ -2,21 +2,24 @@ Project Structure
 =================
 
 Root Files:
-- ARCHITECTURE.md
-- AZURE_OPENAI.md
-- CHANGELOG.md
-- CONFIGURATION.md
 - LICENSE
-- MESSAGE_HANDLER_MODEL.md
 - pyproject.toml
 - README.md
-- README_DEV.md
 - RELEASE_NOTES_1.3.md
 - RELEASE_NOTES_1.4.md
 - RELEASE_NOTES_1.5.md
 - requirements.txt
 
 Directories:
+- docs/
+    - ARCHITECTURE.md
+    - AZURE_OPENAI.md
+    - CHANGELOG.md
+    - CONFIGURATION.md
+    - MESSAGE_HANDLER_MODEL.md
+    - README_DEV.md
+    - cli_model_override.md
+    - cli_reload_command.md
 - dist/
     - janito-1.5.0.tar.gz
     - janito-1.5.0-py3-none-any.whl

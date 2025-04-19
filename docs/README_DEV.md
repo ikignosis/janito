@@ -44,6 +44,8 @@ def my_tool(filename: str, count: int) -> None:
 
 3. **Descriptions are required** for all parameters. If a parameter is missing a description, registration will fail with an error.
 
+4. **Document your tool**: Update `janito/agent/tools/README.md` with a short description and usage for your new tool.
+
 ## Docstring Style
 
 - Use the **Google style** for docstrings:
@@ -107,9 +109,9 @@ ValueError: Parameter 'count' in tool 'my_tool' is missing a description in the 
 
 ## System Prompt Precedence
 
-- If `--system-file` is provided, the file's content is used as the system prompt.
+- If `--system-file` is provided, the file's content is used as the system prompt (highest priority).
 - Otherwise, if `--system` or the config value is set, that string is used.
-- Otherwise, a default prompt is used.
+- Otherwise, a default prompt is used from the template at `janito/agent/templates/system_instructions.j2`.
 
 ## Interactive Shell Config Commands
 

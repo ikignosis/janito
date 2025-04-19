@@ -51,7 +51,7 @@ class ConversationHandler:
                     return str(n)
                 # Count message types
                 user_msgs = sum(1 for m in messages if m.get('role') == 'user')
-                agent_msgs = sum(1 for m in messages if m.get('role') == 'agent')
+                agent_msgs = sum(1 for m in messages if m.get('role') == 'assistant')
                 tool_msgs = sum(1 for m in messages if m.get('role') == 'tool')
                 # Tool uses: count tool_calls in all agent messages
                 tool_uses = sum(len(m.get('tool_calls', [])) for m in messages if m.get('role') == 'assistant')

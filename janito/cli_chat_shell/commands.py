@@ -171,6 +171,8 @@ def handle_role(console, *args, **kwargs):
     console.print(f"[bold green]System role updated to:[/bold green] {new_role}")
 
 
+from janito.agent.runtime_config import runtime_config
+
 COMMAND_HANDLERS = {
     "/history": handle_history,
     "/continue": handle_continue,
@@ -180,12 +182,17 @@ COMMAND_HANDLERS = {
     "/help": handle_help,
     "/multi": handle_multi,
     "/system": handle_system,
-    "/role": handle_role,
+}
+
+if not runtime_config.get('vanilla_mode', False):
+    COMMAND_HANDLERS["/role"] = handle_role
+
+COMMAND_HANDLERS.update({
     "/clear": handle_clear,
     "/reset": handle_reset,
     "/config": handle_config_shell,
     "/reload": handle_reload,
-}
+})
 
 
 def handle_command(command, console, **kwargs):
