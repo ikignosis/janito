@@ -1,5 +1,6 @@
 """Main CLI entry point for Janito."""
 
+import janito.agent.tool_auto_imports
 from janito.cli.arg_parser import create_parser
 from janito.cli.config_commands import handle_config_commands
 from janito.cli.logging_setup import setup_verbose_logging
