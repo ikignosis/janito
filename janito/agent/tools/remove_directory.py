@@ -18,7 +18,9 @@ class RemoveDirectoryTool(ToolBase):
             recursive (bool, optional): Remove recursively if True. Defaults to False.
 
         Returns:
-            str: Status message indicating result.
+            str: Status message indicating result. Example:
+                - "Directory removed: /path/to/dir"
+                - "Error removing directory: <error message>"
         """
         self.report_info(f"🗃️  Removing directory: {directory} (recursive={recursive})")
 
@@ -27,7 +29,7 @@ class RemoveDirectoryTool(ToolBase):
                 shutil.rmtree(directory)
             else:
                 os.rmdir(directory)
-            from janito.agent.tools.tools_utils import pluralize
+            
             self.report_success(f"✅ 1 {pluralize('directory', 1)}")
             return f"Directory removed: {directory}"
         except Exception as e:
@@ -35,3 +37,4 @@ class RemoveDirectoryTool(ToolBase):
             return f"Error removing directory: {e}"
 
 
+from janito.agent.tools.tools_utils import pluralize

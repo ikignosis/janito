@@ -5,14 +5,22 @@ from janito.agent.tool_registry import register_tool
 class AppendTextToFileTool(ToolBase):
     """
     Append the given text to the end of a file.
-
-    Args:
-        file_path (str): Path to the file.
-        text_to_append (str): Text to append to the file.
-    Returns:
-        str: Status message.
     """
     def call(self, file_path: str, text_to_append: str) -> str:
+        """
+        Append the given text to the end of a file.
+
+        Append the given text to the end of a file.
+
+        Args:
+            file_path (str): Path to the file where text will be appended.
+            text_to_append (str): The text content to append to the file.
+        Returns:
+            str: Status message. Example formats:
+                - "Appended 3 lines to /path/to/file.txt"
+                - "Warning: No text provided to append. Operation skipped."
+                - "Error appending text: <error message>"
+        """
         import os
         if not text_to_append:
             self.report_warning("⚠️ Warning: No text provided to append. Operation skipped.")
@@ -22,11 +30,13 @@ class AppendTextToFileTool(ToolBase):
         try:
             with open(file_path, 'a', encoding='utf-8') as f:
                 f.write(text_to_append)
-            from janito.agent.tools.tools_utils import pluralize
-            self.report_success(f"✅ 1 {pluralize('file', 1)}")
-            return f"Text appended to {file_path}"
+            
+            num_lines = text_to_append.count('\n') + (1 if text_to_append else 0)
+            self.report_success(f"✅ {num_lines} {pluralize('line', num_lines)} appended")
+            return f"Appended {num_lines} {pluralize('line', num_lines)} to {file_path}"
         except Exception as e:
             self.report_error(f"❌ Error: {e}")
             return f"Error appending text: {e}"
 # Use display_path for consistent path reporting
 from janito.agent.tools.tools_utils import display_path
+from janito.agent.tools.tools_utils import pluralize

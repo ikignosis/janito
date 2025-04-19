@@ -21,7 +21,10 @@ NOTE: Indentation (leading whitespace) must be included in both search_text and 
             replacement_text (str): Replacement text. Must include desired indentation (leading whitespace).
             replace_all (bool): If True, replace all occurrences; otherwise, only the first occurrence.
         Returns:
-            str: Status message.
+            str: Status message. Example:
+                - "Text replaced in /path/to/file"
+                - "No changes made. [Warning: Search text not found in file] Please review the original file."
+                - "Error replacing text: <error message>"
         """
         from janito.agent.tools.tools_utils import display_path
         disp_path = display_path(file_path)
@@ -47,11 +50,7 @@ NOTE: Indentation (leading whitespace) must be included in both search_text and 
                 occurrences = content.count(search_text)
                 if occurrences > 1:
                     self.report_warning(f"⚠️ Search text is not unique.")
-                    warning_detail = (
-                        f"Strong Warning: Search text is not unique ({occurrences} occurrences found). No replacement was performed. "
-                        f"To avoid incorrect replacements, ALWAYS read the entire file before making any assumptions or edits. "
-                        f"Provide a more complete and unique search content based on the full file context."
-                    )
+                    warning_detail = "The search text is not unique. Expand your search context with surrounding lines to ensure uniqueness."
                     return f"No changes made. {warning_detail}"
                 replaced_count = 1 if occurrences == 1 else 0
                 new_content = content.replace(search_text, replacement_text, 1)
@@ -66,11 +65,9 @@ NOTE: Indentation (leading whitespace) must be included in both search_text and 
                 warning = " [Warning: Search text not found in file]"
             if not file_changed:
                 self.report_warning(f" ℹ No changes made.")
-                strong_warning = (" Strong Warning: No changes were made. "
-                                  "To avoid incorrect assumptions or edits, ALWAYS read the entire file before proceeding. "
-                                  "Ensure your search pattern is correct and present in the file.")
-                return f"No changes made{warning}. Please review the original file.{strong_warning}"
-            from janito.agent.tools.tools_utils import pluralize
+                concise_warning = "The search text was not found. Expand your search context with surrounding lines if needed."
+                return f"No changes made. {concise_warning}"
+            
             self.report_success(f" ✅ {replaced_count} {pluralize('block', replaced_count)} replaced")
             # Indentation check for agent warning
             def leading_ws(line):
@@ -90,3 +87,4 @@ NOTE: Indentation (leading whitespace) must be included in both search_text and 
             self.report_error(f" ❌ Error")
             return f"Error replacing text: {e}"
 
+from janito.agent.tools.tools_utils import pluralize

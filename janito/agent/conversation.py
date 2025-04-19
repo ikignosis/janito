@@ -1,5 +1,8 @@
 import json
-from janito.agent.tool_registry import get_tool_schemas
+from janito.agent.tool_registry import get_tool_schemas, handle_tool_call
+from janito.agent.runtime_config import runtime_config, unified_config
+from rich.console import Console
+import pprint
 
 class MaxRoundsExceededError(Exception):
     pass
@@ -19,13 +22,10 @@ class ConversationHandler:
         self.usage_history = []
 
     def handle_conversation(self, messages, max_rounds=50, message_handler=None, verbose_response=False, spinner=False, max_tokens=None):
-        from janito.agent.runtime_config import runtime_config
         max_tools = runtime_config.get('max_tools', None)
         tool_calls_made = 0
         if not messages:
             raise ValueError("No prompt provided in messages")
-
-        from janito.agent.runtime_config import unified_config
 
         # Resolve max_tokens priority: runtime param > config > default
         resolved_max_tokens = max_tokens
@@ -40,7 +40,6 @@ class ConversationHandler:
 
         for _ in range(max_rounds):
             if spinner:
-                from rich.console import Console
                 console = Console()
                 # Calculate word count for all messages
                 word_count = sum(len(str(m.get('content', '')).split()) for m in messages if 'content' in m)
@@ -64,7 +63,6 @@ class ConversationHandler:
                     f"{tool_uses} tool uses, {tool_msgs} tool responses)"
                 )
                 with console.status(spinner_msg, spinner="dots") as status:
-                    from janito.agent.runtime_config import runtime_config
                     if runtime_config.get('vanilla_mode', False):
                         response = self.client.chat.completions.create(
                             model=self.model,
@@ -82,7 +80,6 @@ class ConversationHandler:
                         )
                     status.stop()
             else:
-                from janito.agent.runtime_config import runtime_config
                 if runtime_config.get('vanilla_mode', False):
                     response = self.client.chat.completions.create(
                         model=self.model,
@@ -100,7 +97,6 @@ class ConversationHandler:
                     )
 
             if verbose_response:
-                import pprint
                 pprint.pprint(response)
 
             # Check for provider errors
@@ -140,13 +136,11 @@ class ConversationHandler:
                     "usage_history": self.usage_history
                 }
 
-            from janito.agent.runtime_config import runtime_config
             tool_responses = []
             # Sequential tool execution (default, only mode)
             for tool_call in choice.message.tool_calls:
                 if max_tools is not None and tool_calls_made >= max_tools:
                     raise MaxRoundsExceededError(f"Maximum number of tool calls ({max_tools}) reached in this chat session.")
-                from janito.agent.tool_registry import handle_tool_call
                 result = handle_tool_call(tool_call, message_handler=message_handler)
                 tool_responses.append({"tool_call_id": tool_call.id, "content": result})
                 tool_calls_made += 1

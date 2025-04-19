@@ -72,13 +72,22 @@ ValueError: Parameter 'count' in tool 'my_tool' is missing a description in the 
 
 ### Built-in Tools
 
-- `find_files`: Searching for files by name or pattern in directories.
+- `find_files`: Find files in directories matching a pattern (supports recursion and result limits).
 - `get_lines`: Retrieve specific lines from files for efficient context.
-- `py_compile_file`: Validate Python files for syntax correctness.
-- `replace_text_in_file`: Replace exact text fragments in files.
-- `search_files`: Searching for text within files.
-- `python_exec`: Execute Python code and capture output.
-- And more, see `janito/agent/tools/` for the full list.
+- `get_file_outline`: Get a structural outline of a file (non-empty lines).
+- `append_text_to_file`: Append text to the end of a file.
+- `replace_text_in_file`: Replace exact text fragments in files (with optional replace-all).
+- `create_file`: Create or update a file with given content.
+- `remove_file`: Remove a file from the filesystem.
+- `create_directory`: Create a new directory (with optional overwrite).
+- `remove_directory`: Remove a directory (with optional recursion).
+- `search_files`: Search for a text pattern in all files within directories and return matching lines.
+- `python_exec`: Execute arbitrary Python code and capture output.
+- `py_compile`: Validate Python files for syntax correctness using Python's built-in compiler.
+- `run_bash_command`: Execute bash commands and capture live output (with timeout and confirmation options).
+- `ask_user`: Prompt the user for input or clarification interactively.
+- `fetch_url`: Fetch the content of a web page and extract its text (with optional search strings).
+- For implementation details, see `janito/agent/tools/`.
 
 ### Directory Listing Tool
 

@@ -17,7 +17,10 @@ class FetchUrlTool(ToolBase):
             search_strings (list[str], optional): Strings to search for in the page content.
 
         Returns:
-            str: Extracted text content from the web page.
+            str: Extracted text content from the web page, or a warning message. Example:
+                - "<main text content...>"
+                - "No lines found for the provided search strings."
+                - "Warning: Empty URL provided. Operation skipped."
         """
         if not url.strip():
             self.report_warning("⚠️ Warning: Empty URL provided. Operation skipped.")

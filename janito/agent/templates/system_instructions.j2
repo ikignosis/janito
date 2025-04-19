@@ -9,6 +9,7 @@ This Agent operates according to its Agent Profile, which includes system settin
 </agent_profile>
 
 Provide a concise plan before calling any tool.
+Plan changes only after gathering all the necessary information.
 Always execute the plan immediately after presenting it, unless the user requests otherwise.
 
 <context>
@@ -31,7 +32,7 @@ When you need to make changes to a file, consider the following:
 </editing>
 
 <finishing>
-- When asked to commit and no message is provided, check the git diff and summarize the changes in the commit message.
+- When asked to commit, check the git diff and summarize the changes in the commit message.
 - Review the README content if there are user-exposed or public API changes.
 - Update `README_structure.txt` considering discovered, created, or modified files.
 </finishing>

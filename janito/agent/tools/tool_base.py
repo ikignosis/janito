@@ -17,6 +17,15 @@ class ToolBase(ABC):
     @abstractmethod
     def call(self, **kwargs):
         """
+        Abstract call method for tool execution. Should be overridden by subclasses.
+
+        Args:
+            **kwargs: Arbitrary keyword arguments for the tool.
+
+        Returns:
+            Any: The result of the tool execution.
+        """
+        """
         Trigger the tool's action. Must be implemented by subclasses.
         """
         pass

@@ -16,7 +16,11 @@ class GetLinesTool(ToolBase):
             to_line (int, optional): Ending line number (1-based). If None, reads to the end of the file. If both are None, the entire file is returned.
 
         Returns:
-            str: The requested lines from the file as a string, followed by a footer indicating the total number of lines in the file.
+            str: File content with a header indicating the file name and line range. Example:
+                - "---\nFile: /path/to/file.py | Lines: 1-10 (of 100)\n---\n<lines...>"
+                - "---\nFile: /path/to/file.py | All lines (total: 100)\n---\n<all lines...>"
+                - "Error reading file: <error message>"
+                - "❗ not found"
         """
         import os
         from janito.agent.tools.tools_utils import display_path
@@ -35,18 +39,25 @@ class GetLinesTool(ToolBase):
             if from_line and to_line:
                 requested = to_line - from_line + 1
                 if selected_len < requested:
-                    from janito.agent.tools.tools_utils import pluralize
-                    self.report_success(f" ✅ {selected_len} {pluralize('line', selected_len)} (end reached)")
+                    
+                    self.report_success(f" ✅ {selected_len} {pluralize('line', selected_len)} (end)")
                 elif to_line < total_lines:
-                    from janito.agent.tools.tools_utils import pluralize
-                    self.report_success(f" ✅ {selected_len} {pluralize('line', selected_len)} (more available)")
+                    
+                    self.report_success(f" ✅ {selected_len} {pluralize('line', selected_len)} ({total_lines - to_line} lines available)")
                 else:
-                    from janito.agent.tools.tools_utils import pluralize
-                    self.report_success(f" ✅ {selected_len} {pluralize('line', selected_len)} (end reached)")
+                    
+                    self.report_success(f" ✅ {selected_len} {pluralize('line', selected_len)} (end)")
             else:
-                from janito.agent.tools.tools_utils import pluralize
+                
                 self.report_success(f" ✅ {selected_len} {pluralize('line', selected_len)} (full file)")
-            return ''.join(selected) + f"\n---\nTotal lines in file: {total_lines}\n"
+            # Prepare header
+            if from_line and to_line:
+                header = f"---\nFile: {disp_path} | Lines: {from_line}-{to_line} (of {total_lines})\n---\n"
+            elif from_line:
+                header = f"---\nFile: {disp_path} | Lines: {from_line}-END (of {total_lines})\n---\n"
+            else:
+                header = f"---\nFile: {disp_path} | All lines (total: {total_lines})\n---\n"
+            return header + ''.join(selected)
         except Exception as e:
             if isinstance(e, FileNotFoundError):
                 self.report_error(f"❗ not found")
@@ -55,3 +66,4 @@ class GetLinesTool(ToolBase):
             return f"Error reading file: {e}"
 
 
+from janito.agent.tools.tools_utils import pluralize

@@ -1,6 +1,7 @@
 import sys
-from janito.agent.config import local_config, global_config
+from janito.agent.config import local_config, global_config, CONFIG_OPTIONS, get_api_key
 from janito.agent.runtime_config import unified_config, runtime_config
+from janito.agent.config_defaults import CONFIG_DEFAULTS
 from rich import print
 from ._utils import home_shorten
 
@@ -22,7 +23,6 @@ def handle_config_commands(args):
                 sys.exit(1)
             runtime_config.set(key, val.strip())
     if args.set_local_config:
-        from janito.agent.config import CONFIG_OPTIONS
         try:
             key, val = args.set_local_config.split("=", 1)
         except ValueError:
@@ -39,7 +39,6 @@ def handle_config_commands(args):
         did_something = True
 
     if args.set_global_config:
-        from janito.agent.config import CONFIG_OPTIONS
         try:
             key, val = args.set_global_config.split("=", 1)
         except ValueError:
@@ -83,15 +82,13 @@ def handle_config_commands(args):
         global_items = {}
 
         # Collect and group keys
-        from janito.agent.config_defaults import CONFIG_DEFAULTS
         local_keys = set(local_config.all().keys())
         global_keys = set(global_config.all().keys())
         all_keys = set(CONFIG_DEFAULTS.keys()) | global_keys | local_keys
         if not (local_keys or global_keys):
             print("No configuration found.")
         else:
-            from janito.agent.config import get_api_key
-            from janito.agent.runtime_config import unified_config
+            # Imports previously inside block to avoid circular import at module level
             # Handle template as nested dict
             for key in sorted(local_keys):
                 if key == "template":

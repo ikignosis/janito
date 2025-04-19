@@ -7,6 +7,8 @@ from janito.agent.config import get_api_key
 from janito.render_prompt import render_system_prompt
 import os
 import threading
+import traceback
+import sys
 
 from janito.agent.runtime_config import unified_config
 
@@ -50,7 +52,7 @@ agent = Agent(
 @app.route('/get_config')
 def get_config():
     # Expose full config for the web app: defaults, effective, runtime (mask api_key)
-    from janito.agent.runtime_config import unified_config
+    from janito.agent.runtime_config import unified_config  # Kept here: avoids circular import at module level
     from janito.agent.config_defaults import CONFIG_DEFAULTS
     # Start with defaults
     config = dict(CONFIG_DEFAULTS)
@@ -155,7 +157,6 @@ def execute_stream():
             except Exception as e:
                 print(f"Error saving conversation: {e}")
         except Exception as e:
-            import traceback
             tb = traceback.format_exc()
             stream_queue.put({"type": "error", "error": str(e), "traceback": tb})
         finally:
@@ -173,7 +174,6 @@ def execute_stream():
             else:
                 message = json.dumps(content)
             yield f"data: {message}\n\n"
-            import sys
             sys.stdout.flush()
 
     return Response(

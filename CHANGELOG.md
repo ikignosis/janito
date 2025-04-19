@@ -1,5 +1,8 @@
 # Changelog
 
+## [1.5.0] - YYYY-MM-DD
+- Updated project version to 1.5.0.
+
 ## [1.4.1] - 2025-04-19
 ### Changed
 - Updated project version to 1.4.1.

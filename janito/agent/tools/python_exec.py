@@ -41,6 +41,26 @@ class PythonExecTool(ToolBase):
             code (str): The Python code to execute.
 
         Returns:
+            str: Formatted output including stdout, stderr, and return code. Example:
+                - "stdout:\n<output>\nstderr:\n<errors>\nreturncode: 0"
+                - "stdout:\n\nstderr:\nNo result returned from process.\nreturncode: -1"
+        """
+        """
+        Execute arbitrary Python code, including exact calculations, getting the current date, time, and more.
+
+        Args:
+            code (str): The Python code to execute.
+
+        Returns:
+            str: Formatted stdout, stderr, and return code.
+        """
+        """
+        Execute arbitrary Python code, including exact calculations, getting the current date, time, and more.
+
+        Args:
+            code (str): The Python code to execute.
+
+        Returns:
             str: Formatted stdout, stderr, and return code.
         """
         self.report_info(f"🐍 Executing Python code ...")

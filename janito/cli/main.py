@@ -20,7 +20,7 @@ def main():
     parser = create_parser()
     args = parser.parse_args()
 
-    from janito.agent.config import CONFIG_OPTIONS
+    from janito.agent.config import CONFIG_OPTIONS  # Kept here: avoids circular import at module level
     from janito.agent.config_defaults import CONFIG_DEFAULTS
     import sys
     if getattr(args, "help_config", False):
@@ -33,7 +33,7 @@ def main():
     handle_config_commands(args)
     setup_verbose_logging(args)
     if getattr(args, 'web', False):
-        import subprocess
+        import subprocess  # Only needed if launching web
         subprocess.run(['python', '-m', 'janito.web'])
     else:
         run_cli(args)

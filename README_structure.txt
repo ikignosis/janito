@@ -18,8 +18,8 @@ Root Files:
 
 Directories:
 - dist/
-    - janito-1.4.1.tar.gz
-    - janito-1.4.1-py3-none-any.whl
+    - janito-1.5.0.tar.gz
+    - janito-1.5.0-py3-none-any.whl
 - docs/
     - cli_model_override.md
     - cli_reload_command.md
@@ -47,3 +47,4 @@ Directories:
             - index.html
 - tools/
     - release.ps1, release.sh
+- janito/agent/openai_schema_generator.py  # OpenAI function schema generator logic

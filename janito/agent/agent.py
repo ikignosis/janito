@@ -2,8 +2,9 @@
 
 import os
 import json
+import time
 from openai import OpenAI
-from janito.agent.conversation import ConversationHandler
+from janito.agent.conversation import ConversationHandler, ProviderError
 from janito.agent.tool_registry import register_tool, handle_tool_call, get_tool_schemas
 
 class Agent:
@@ -38,6 +39,7 @@ class Agent:
         self.model = model
         self.system_prompt = system_prompt
         if use_azure_openai:
+            # Import inside conditional to avoid requiring AzureOpenAI unless needed
             from openai import AzureOpenAI
             self.client = AzureOpenAI(
                 api_key=api_key,
@@ -63,8 +65,6 @@ class Agent:
         return self.conversation_handler.usage_history
 
     def chat(self, messages, message_handler=None, verbose_response=False, spinner=False, max_tokens=None, max_rounds=50):
-        import time
-        from janito.agent.conversation import ProviderError
 
         max_retries = 5
         for attempt in range(1, max_retries + 1):

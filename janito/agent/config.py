@@ -2,6 +2,7 @@ import json
 import os
 from pathlib import Path
 from threading import Lock
+from .config_defaults import CONFIG_DEFAULTS
 
 
 class SingletonMeta(type):
@@ -97,7 +98,6 @@ class BaseConfig:
 
 
 # Import defaults for reference
-from .config_defaults import CONFIG_DEFAULTS
 
 class EffectiveConfig:
     """Read-only merged view of local and global configs"""
@@ -106,7 +106,6 @@ class EffectiveConfig:
         self.global_cfg = global_cfg
 
     def get(self, key, default=None):
-        from .config_defaults import CONFIG_DEFAULTS
         for cfg in (self.local_cfg, self.global_cfg):
             val = cfg.get(key)
             if val is not None:

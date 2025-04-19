@@ -25,6 +25,30 @@ class RunBashCommandTool(ToolBase):
         str: File paths and line counts for stdout and stderr.
     """
     def call(self, command: str, timeout: int = 60, require_confirmation: bool = False, interactive: bool = False) -> str:
+        """
+        Execute a bash command and capture live output.
+
+        Args:
+            command (str): The bash command to execute.
+            timeout (int, optional): Timeout in seconds for the command. Defaults to 60.
+            require_confirmation (bool, optional): If True, require user confirmation before running. Defaults to False.
+            interactive (bool, optional): If True, warns that the command may require user interaction. Defaults to False.
+
+        Returns:
+            str: Output and status message.
+        """
+        """
+        Execute a bash command and capture live output.
+
+        Args:
+            command (str): The bash command to execute.
+            timeout (int, optional): Timeout in seconds for the command. Defaults to 60.
+            require_confirmation (bool, optional): If True, require user confirmation before running. Defaults to False.
+            interactive (bool, optional): If True, warns that the command may require user interaction. Defaults to False.
+
+        Returns:
+            str: Output and status message.
+        """
         if not command.strip():
             self.report_warning("⚠️ Warning: Empty command provided. Operation skipped.")
             return "Warning: Empty command provided. Operation skipped."

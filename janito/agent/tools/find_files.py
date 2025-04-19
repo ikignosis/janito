@@ -4,22 +4,24 @@ from janito.agent.tool_registry import register_tool
 
 import os
 import fnmatch
+from janito.agent.tools.gitignore_utils import filter_ignored
 
 @register_tool(name="find_files")
 class FindFilesTool(ToolBase):
-    """Find files in a directory matching a pattern."""
+
     def call(self, directories: list[str], pattern: str, recursive: bool=False, max_results: int=100) -> str:
         """
-        Find files in one or more directories matching a pattern.
+        Find files in one or more directories matching a pattern. Respects .gitignore.
 
         Args:
-            directories (list[str]): List of directories to search in.
-            pattern (str): File pattern to match. Uses Unix shell-style wildcards (fnmatch), e.g., '*.py', 'data_??.csv', '[a-z]*.txt'.
-            recursive (bool, optional): Whether to search recursively in subdirectories. Defaults to False.
-            max_results (int, optional): Maximum number of results to return. Defaults to 100.
-
+            directories: List of directories to search in.
+            pattern: File pattern to match. Uses Unix shell-style wildcards (fnmatch), e.g. '*.py', 'data_??.csv', '[a-z]*.txt'.
+            recursive: Whether to search recursively in subdirectories. Defaults to False.
+            max_results: Maximum number of results to return. Defaults to 100.
         Returns:
-            str: List of matching file paths as a newline-separated string.
+            Newline-separated list of matching file paths. Example:
+            "/path/to/file1.py\n/path/to/file2.py"
+            "Warning: Empty file pattern provided. Operation skipped."
         """
         import os
         if not pattern:
@@ -32,6 +34,7 @@ class FindFilesTool(ToolBase):
             disp_path = display_path(directory)
             self.report_info(f"🔍 Searching for files '{pattern}' in '{disp_path}'")
             for root, dirs, files in os.walk(directory):
+                dirs, files = filter_ignored(root, dirs, files)
                 for filename in fnmatch.filter(files, pattern):
                     matches.append(os.path.join(root, filename))
                     if len(matches) >= max_results:
@@ -40,8 +43,9 @@ class FindFilesTool(ToolBase):
                     break
             if len(matches) >= max_results:
                 break
-        from janito.agent.tools.tools_utils import pluralize
+        
         self.report_success(f" ✅ {len(matches)} {pluralize('file', len(matches))}")
         return "\n".join(matches)
 
 
+from janito.agent.tools.tools_utils import pluralize

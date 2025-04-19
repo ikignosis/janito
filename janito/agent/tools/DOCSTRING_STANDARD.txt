@@ -1,0 +1,26 @@
+# Docstring Format Standard for Tools
+
+All tool `call` methods must use the following docstring style for schema compatibility and consistency:
+
+- Use a single docstring in the `call` method describing Args and Returns.
+- Args: List each parameter as `name: description` (omit type hints if present in signature).
+- No blank lines between Args entries.
+- Returns: Single line description, followed by examples if needed (no list markers).
+- Keep formatting simple and consistent for schema compatibility.
+
+Example:
+
+    def call(self, directories: list[str], pattern: str, recursive: bool=False, max_results: int=100) -> str:
+        """
+        Find files in one or more directories matching a pattern.
+
+        Args:
+            directories: List of directories to search in.
+            pattern: File pattern to match. Uses Unix shell-style wildcards (fnmatch), e.g. '*.py', 'data_??.csv', '[a-z]*.txt'.
+            recursive: Whether to search recursively in subdirectories. Defaults to False.
+            max_results: Maximum number of results to return. Defaults to 100.
+        Returns:
+            Newline-separated list of matching file paths. Example:
+            "/path/to/file1.py\n/path/to/file2.py"
+            "Warning: Empty file pattern provided. Operation skipped."
+        """

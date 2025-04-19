@@ -15,7 +15,9 @@ class GetFileOutlineTool(ToolBase):
             file_path (str): Path to the file.
 
         Returns:
-            str: Outline of the file's structure.
+            str: Outline of the file's structure, starting with a summary line. Example:
+                - "Outline: 5 items\nclass MyClass:\ndef my_function():\n..."
+                - "Error reading file: <error message>"
         """
         from janito.agent.tools.tools_utils import display_path
         disp_path = display_path(file_path)
@@ -26,7 +28,7 @@ class GetFileOutlineTool(ToolBase):
                 lines = f.readlines()
             outline = [line.strip() for line in lines if line.strip()]
             num_items = len(outline)
-            from janito.agent.tools.tools_utils import pluralize
+            
             self.report_success(f" ✅ {num_items} {pluralize('item', num_items)}")
             return f"Outline: {num_items} items\n" + '\n'.join(outline)
         except Exception as e:
@@ -34,3 +36,4 @@ class GetFileOutlineTool(ToolBase):
             return f"Error reading file: {e}"
 
 
+from janito.agent.tools.tools_utils import pluralize

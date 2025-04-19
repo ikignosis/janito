@@ -1,22 +1,8 @@
 # janito/agent/tool_registry.py
 import json
-import typing
-import inspect
 from janito.agent.tools.tool_base import ToolBase
 
-def _pytype_to_json_type(pytype):
-    if pytype == int:
-        return "integer"
-    elif pytype == float:
-        return "number"
-    elif pytype == bool:
-        return "boolean"
-    elif pytype == dict:
-        return "object"
-    elif pytype == list or pytype == typing.List:
-        return "array"
-    else:
-        return "string"
+from janito.agent.openai_schema_generator import generate_openai_function_schema
 
 _tool_registry = {}
 
@@ -30,66 +16,13 @@ def register_tool(tool=None, *, name: str = None):
     func = instance.call
     default_name = tool.__name__
     tool_name = override_name or default_name
-    description = tool.__doc__ or func.__doc__
-    if not description:
-        raise TypeError(f"Tool '{tool_name}' is missing a docstring description (no docstring found on class or call method).")
-    sig = inspect.signature(func)
-    params_schema = {
-        "type": "object",
-        "properties": {},
-        "required": []
-    }
-    for param_name, param in sig.parameters.items():
-        if param.annotation is param.empty:
-            raise TypeError(f"Parameter '{param_name}' in tool '{tool_name}' is missing a type hint.")
-        param_type = param.annotation
-        schema = {}
-        origin = typing.get_origin(param_type)
-        args = typing.get_args(param_type)
-        if origin is typing.Union and type(None) in args:
-            main_type = args[0] if args[1] is type(None) else args[1]
-            origin = typing.get_origin(main_type)
-            args = typing.get_args(main_type)
-            param_type = main_type
-        else:
-            main_type = param_type
-        if origin is list or origin is typing.List:
-            item_type = args[0] if args else str
-            item_schema = {"type": _pytype_to_json_type(item_type)}
-            schema = {"type": "array", "items": item_schema}
-        elif origin is typing.Literal:
-            schema = {"type": _pytype_to_json_type(type(args[0])), "enum": list(args)}
-        elif main_type == int:
-            schema = {"type": "integer"}
-        elif main_type == float:
-            schema = {"type": "number"}
-        elif main_type == bool:
-            schema = {"type": "boolean"}
-        elif main_type == dict:
-            schema = {"type": "object"}
-        elif main_type == list:
-            schema = {"type": "array", "items": {"type": "string"}}
-        else:
-            schema = {"type": "string"}
-        # Add description from call method docstring if available
-        if func.__doc__:
-            try:
-                import docstring_parser
-                parsed = docstring_parser.parse(func.__doc__)
-                param_descs = {p.arg_name: p.description.strip() if p.description else '' for p in parsed.params}
-            except ImportError:
-                raise ImportError("docstring_parser must be installed to parse parameter descriptions.")
-            if param_name in param_descs and param_descs[param_name]:
-                schema["description"] = param_descs[param_name]
-            else:
-                raise TypeError(f"Parameter '{param_name}' in tool '{tool_name}' is missing a docstring description.")
-        params_schema["properties"][param_name] = schema
-        if param.default is param.empty:
-            params_schema["required"].append(param_name)
+    schema = generate_openai_function_schema(func, tool_name)
+
+
     _tool_registry[tool_name] = {
         "function": func,
-        "description": description,
-        "parameters": params_schema
+        "description": schema["description"],
+        "parameters": schema["parameters"]
     }
     return tool
 
@@ -132,7 +65,7 @@ def handle_tool_call(tool_call, message_handler=None, verbose=False):
     try:
         result = func(**args)
     except Exception as e:
-        import traceback
+        import traceback  # Kept here: only needed on error
         error_message = f"[Tool Error] {type(e).__name__}: {e}\n" + traceback.format_exc()
         if message_handler:
             message_handler.handle_message({'type': 'error', 'message': error_message})

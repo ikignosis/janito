@@ -12,7 +12,10 @@ class AskUserTool(ToolBase):
             question (str): The question to ask the user.
 
         Returns:
-            str: The user's response.
+            str: The user's response as a string. Example:
+                - "Yes"
+                - "No"
+                - "Some detailed answer..."
         """
 
         from rich import print as rich_print
