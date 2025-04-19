@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.5.2] - 2025-04-19
+### Changed
+- Updated janito/agent/tools/find_files.py and search_files.py.
+
 ## [1.5.1] - 2025-04-19
 ### Changed
 - Refactored tool import/registry logic for improved maintainability.
