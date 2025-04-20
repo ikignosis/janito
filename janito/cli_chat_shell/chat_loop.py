@@ -51,8 +51,10 @@ def start_chat_shell(profile_manager, continue_session=False, max_rounds=50):
         )
 
     # Add system prompt if needed
-    if agent.system_prompt and not any(m.get("role") == "system" for m in messages):
-        messages.insert(0, {"role": "system", "content": agent.system_prompt})
+    if agent.system_prompt_template and not any(
+        m.get("role") == "system" for m in messages
+    ):
+        messages.insert(0, {"role": "system", "content": agent.system_prompt_template})
 
     print_welcome(console, version=__version__, continued=continue_session)
 
@@ -78,8 +80,8 @@ def start_chat_shell(profile_manager, continue_session=False, max_rounds=50):
             role_ref=lambda: (
                 "*using custom system prompt*"
                 if (
-                    runtime_config.get("system_prompt")
-                    or runtime_config.get("system_prompt_file")
+                    runtime_config.get("system_prompt_template")
+                    or runtime_config.get("system_prompt_template_file")
                 )
                 else (runtime_config.get("role") or effective_config.get("role"))
             ),

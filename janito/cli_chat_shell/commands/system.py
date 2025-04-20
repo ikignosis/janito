@@ -3,7 +3,7 @@ from janito.agent.runtime_config import runtime_config
 
 def handle_system(console, **kwargs):
     profile_manager = kwargs.get("profile_manager")
-    prompt = profile_manager.system_prompt if profile_manager else None
+    prompt = profile_manager.system_prompt_template if profile_manager else None
     if not prompt and profile_manager:
         prompt = profile_manager.render_prompt()
     console.print(f"[bold magenta]System Prompt:[/bold magenta]\n{prompt}")
@@ -23,7 +23,7 @@ def handle_role(console, *args, **kwargs):
     for msg in state["messages"]:
         if msg.get("role") == "system":
             msg["content"] = (
-                profile_manager.system_prompt if profile_manager else new_role
+                profile_manager.system_prompt_template if profile_manager else new_role
             )
             found = True
             break
@@ -52,7 +52,9 @@ def handle_style(console, *args, **kwargs):
     for msg in state["messages"]:
         if msg.get("role") == "system":
             msg["content"] = (
-                profile_manager.system_prompt if profile_manager else msg["content"]
+                profile_manager.system_prompt_template
+                if profile_manager
+                else msg["content"]
             )
             found = True
             break
@@ -62,7 +64,9 @@ def handle_style(console, *args, **kwargs):
             {
                 "role": "system",
                 "content": (
-                    profile_manager.system_prompt if profile_manager else new_style
+                    profile_manager.system_prompt_template
+                    if profile_manager
+                    else new_style
                 ),
             },
         )

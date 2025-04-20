@@ -82,7 +82,7 @@ See [janito/agent/tools/README.md](../janito/agent/tools/README.md) for a list o
 
 - If `--system-file` is provided, the file's content is used as the system prompt (highest priority).
 - Otherwise, if `--system` or the config value is set, that string is used.
-- Otherwise, a default prompt is used from the template at `janito/agent/templates/system_instructions.j2`.
+- Otherwise, a default prompt is used from the template at `janito/agent/templates/system_prompt_template.j2`.
 
 ## Interactive Shell Config Commands
 
@@ -97,7 +97,7 @@ Within the interactive chat shell, you can use special commands:
 
 ## Installing the Development Version
 
-See [USING_DEV_VERSION.md](USING_DEV_VERSION.md) for instructions on installing and using the latest development version of this project from GitHub.
+See [USING_DEV_VERSION.md](USING_DEV_VERSION.md) for system_prompt_template on installing and using the latest development version of this project from GitHub.
 
 ## Summary
 

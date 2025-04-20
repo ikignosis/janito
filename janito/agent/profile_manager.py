@@ -1,5 +1,5 @@
 from janito.agent.agent import Agent
-from janito.render_prompt import render_system_prompt, get_platform_name
+from janito.render_prompt import render_system_prompt_template, get_platform_name
 
 
 class AgentProfileManager:
@@ -9,23 +9,23 @@ class AgentProfileManager:
         model=None,
         role="software engineer",
         interaction_style="default",
-        interaction_mode="single_shot",
+        interaction_mode="prompt",
         **agent_kwargs,
     ):
         self.role = role
         self.interaction_style = interaction_style
         self.interaction_mode = interaction_mode
         self.platform = get_platform_name()
-        self.system_prompt = self.render_prompt()
+        self.system_prompt_template = self.render_prompt()
         self.agent = Agent(
             api_key=api_key,
             model=model,
-            system_prompt=self.system_prompt,
+            system_prompt_template=self.system_prompt_template,
             **agent_kwargs,
         )
 
     def render_prompt(self):
-        return render_system_prompt(
+        return render_system_prompt_template(
             self.role,
             interaction_style=self.interaction_style,
             interaction_mode=self.interaction_mode,
@@ -49,8 +49,8 @@ class AgentProfileManager:
         self.refresh_prompt()
 
     def refresh_prompt(self):
-        self.system_prompt = self.render_prompt()
-        self.agent.system_prompt = self.system_prompt
+        self.system_prompt_template = self.render_prompt()
+        self.agent.system_prompt_template = self.system_prompt_template
 
     def chat(self, *args, **kwargs):
         # Explicitly forward verbose_response and verbose_events if present

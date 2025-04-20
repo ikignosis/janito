@@ -24,10 +24,10 @@ def get_platform_name() -> str:
     return sys_platform
 
 
-def render_system_prompt(
+def render_system_prompt_template(
     role: str,
     interaction_style: str = "default",
-    interaction_mode: str = "single_shot",
+    interaction_mode: str = "prompt",
     platform_name: str = None,
 ) -> str:
     """
@@ -49,9 +49,9 @@ def render_system_prompt(
 
     # Determine main template filename
     if main_style == "technical":
-        main_template = "system_instructions_technical.j2"
+        main_template = "system_prompt_template_technical.j2"
     else:
-        main_template = "system_instructions.j2"
+        main_template = "system_prompt_template.j2"
 
     # Platform detection
     if platform_name is None:
@@ -82,17 +82,17 @@ def render_system_prompt(
 
 if __name__ == "__main__":
     # Example: technical-autocommit
-    prompt = render_system_prompt(
+    prompt = render_system_prompt_template(
         "software engineer",
         interaction_style="technical-autocommit",
-        interaction_mode="single_shot",
+        interaction_mode="prompt",
     )
     print(prompt)
 
 # Combinatorial style system:
 # - interaction_style can be e.g. 'technical-autocommit'
 # - The first part is the main style, subsequent parts are feature extensions.
-# - Each feature template (system_instructions_<feature>.j2) must use `{% extends parent_template %}` for dynamic inheritance.
+# - Each feature template (system_prompt_template_<feature>.j2) must use `{% extends parent_template %}` for dynamic inheritance.
 # - Main styles are in templates/profiles/, features in templates/features/.
 # - The 'platform' variable is always passed to templates (windows, linux, darwin, etc.).
 # - See README_structure.txt for documentation.

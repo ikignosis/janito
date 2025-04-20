@@ -58,7 +58,7 @@ CONFIG_OPTIONS = {
     "model": "Model name to use (e.g., 'openai/gpt-4.1')",
     "base_url": "API base URL (OpenAI-compatible endpoint)",
     "role": "Role description for the Agent Profile (e.g., 'software engineer')",
-    "system_prompt": "Override the entire Agent Profile prompt text",
+    "system_prompt_template": "Override the entire Agent Profile prompt text",
     "temperature": "Sampling temperature (float, e.g., 0.0 - 2.0)",
     "max_tokens": "Maximum tokens for model response (int)",
     "use_azure_openai": "Whether to use Azure OpenAI client (default: False)",

@@ -1,9 +1,9 @@
-# 🚀 Janito: Natural Programming Language Agent
+# 🚀 Janito: Natural Language Programming Agent
 
 **Current Version: 1.6 (dev)**  
 See [CHANGELOG.md](./CHANGELOG.md) and [RELEASE_NOTES_1.6.md](./RELEASE_NOTES_1.6.md) for details on the latest release.
 
-Janito is an AI-powered assistant for the command line and web that interprets natural language instructions to edit code, manage files, and analyze projects using patterns and tools designed by experienced software engineers. It prioritizes transparency, interactive clarification, and precise, reviewable changes.
+Janito is an AI-powered assistant for the command line and web that interprets natural language system_prompt_template to edit code, manage files, and analyze projects using patterns and tools designed by experienced software engineers. It prioritizes transparency, interactive clarification, and precise, reviewable changes.
 
 For a technical overview, see the [Architecture Guide](docs/ARCHITECTURE.md).
 
@@ -67,7 +67,7 @@ janito --web
 
 ### Contributing & Developer Guide
 
-If you want to extend Janito or add new tools, see the [Developer Guide](docs/README_DEV.md) for instructions, tool registration requirements, and code style guidelines. For the full list of built-in tools and their usage, see the [Tools Reference](janito/agent/tools/README.md).
+If you want to extend Janito or add new tools, see the [Developer Guide](docs/README_DEV.md) for system_prompt_template, tool registration requirements, and code style guidelines. For the full list of built-in tools and their usage, see the [Tools Reference](janito/agent/tools/README.md).
 
 
 
@@ -109,16 +109,16 @@ For details on using models hosted on Azure OpenAI, see [docs/AZURE_OPENAI.md](d
 Janito operates using a system prompt template that defines its behavior, communication style, and capabilities. By default, Janito assumes the role of a "software engineer"—this means its responses and actions are tailored to the expectations and best practices of professional software engineering.
 
 - **Role:** You can customize the agent's role (e.g., "data scientist", "DevOps engineer") using the `--role` flag or config. The default is `software engineer`.
-- **System Prompt Template:** The system prompt is rendered from a Jinja2 template (see `janito/agent/templates/system_instructions.j2`). This template governs how the agent interprets instructions, interacts with files, and communicates with users.
+- **System Prompt Template:** The system prompt is rendered from a Jinja2 template (see `janito/agent/templates/system_prompt_template.j2`). This template governs how the agent interprets system_prompt_template, interacts with files, and communicates with users.
 - **Customization & Precedence:** Advanced users can override the system prompt with the `--system` flag (raw string), or point to a custom file using `--system-file`. The precedence is: `--system-file` > `--system`/config > default template.
 
 The default template ensures the agent:
 - Prioritizes safe, reviewable, and minimal changes
-- Asks for clarification when instructions are ambiguous
+- Asks for clarification when system_prompt_template are ambiguous
 - Provides concise plans before taking action
 - Documents any changes made
 
-For more details or to customize the prompt, see the template file at `janito/agent/templates/system_instructions.j2` and the architecture overview in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+For more details or to customize the prompt, see the template file at `janito/agent/templates/system_prompt_template.j2` and the architecture overview in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ---
 
@@ -160,7 +160,7 @@ Janito now uses a dedicated `AgentProfileManager` class to manage user profiles,
 
 ### Multiple System Prompt Templates
 - The system prompt template is now selected based on the interaction style (e.g., `default` or `technical`).
-- Templates are located in `janito/agent/templates/` (see `system_instructions.j2` and `system_instructions_technical.j2`).
+- Templates are located in `janito/agent/templates/` (see `system_prompt_template.j2` and `system_prompt_template_technical.j2`).
 - You can switch interaction styles at runtime using the profile manager, enabling different agent behaviors for different user needs.
 
 This separation ensures that the LLM Agent remains focused on language model interaction and tool execution, while all profile, role, and prompt logic is managed at a higher level.

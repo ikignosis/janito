@@ -7,9 +7,9 @@ Below are the supported configuration parameters and CLI flags. Some options can
 | `api_key`                 | API key for a compatible language model service                                            | `--set-api-key`, config file                                    | _None_ (required)                          |
 | `model`                   | Model name to use for this session                                                          | `--model` (session only), `--set-local-config model=...`, or `--set-global-config` | _(example: gpt-4)_                 |
 | `base_url`                | API base URL for your language model service                                                | `--set-local-config base_url=...` or `--set-global-config`      | _(example: https://api.your-model.com)_            |
-| `role`                    | Role description for the system prompt                                                      | `--role` or config                                            | "software engineer"                     |
-| `system_prompt`           | Override the entire system prompt as a raw string                                           | `--system` or config                                   | _Default prompt_               |
-| `system_file`             | Use a plain text file as the system prompt (takes precedence over `system_prompt`)         | `--system-file` (CLI only)                                     | _None_                                     |
+| `role`                    | Role description for the system_prompt_template                                                      | `--role` or config                                            | "software engineer"                     |
+| `system_prompt_template`           | Override the entire system_prompt_template as a raw string                                           | `--system` or config                                   | _Default prompt_               |
+| `system_file`             | Use a plain text file as the system_prompt_template (takes precedence over `system_prompt_template`)         | `--system-file` (CLI only)                                     | _None_                                     |
 | `temperature`             | Sampling temperature (float, e.g., 0.0 - 2.0)                                              | `--temperature` or config                                      | 0.2                                        |
 | `max_tokens`              | Maximum tokens for model response                                                          | `--max-tokens` or config                                      | 200000                                     |
 | `max_rounds`              | Maximum number of agent rounds per prompt/session                                          | `--max-rounds` or config                                      | 50                                         |
@@ -61,13 +61,13 @@ Verbose/debugging flags:
 - `--verbose-http-raw`           Enable raw HTTP wire-level logging
 - `--verbose-response`           Pretty print the full response object
 - `--verbose-tools`              Print tool call parameters and results
-- `--show-system`                Show model, parameters, system prompt, and tool definitions, then exit
+- `--show-system`                Show model, parameters, system_prompt_template, and tool definitions, then exit
 - `--version`                    Show program's version number and exit
 
 | `interaction_style`         | Interaction style for the Agent Profile (e.g., 'default' or 'technical') | `--set-local-config interaction_style=technical` or `--set-global-config` | "default" |
 
 **Note:**
-- The `interaction_style` key controls the agent's overall behavior and system prompt style. Supported values are `default` (concise, general-purpose) and `technical` (strict, workflow-oriented for developers/engineers).
+- The `interaction_style` key controls the agent's overall behavior and system_prompt_template style. Supported values are `default` (concise, general-purpose) and `technical` (strict, workflow-oriented for developers/engineers).
 - You can set this globally in `~/.janito/config.json` or locally in `.janito/config.json` in your project.
 - CLI flag: `--style` overrides config for the current session.
 

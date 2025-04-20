@@ -6,8 +6,8 @@ def handle_reload(console, *args, **kwargs):
     filename = args[0] if args else None
     try:
         prompt_text = load_prompt(filename)
-        if hasattr(agent, "system_prompt"):
-            agent.system_prompt = prompt_text
+        if hasattr(agent, "system_prompt_template"):
+            agent.system_prompt_template = prompt_text
         # Update the first system message in the conversation if present
         messages = state.get("messages") if state else None
         if messages:

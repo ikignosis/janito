@@ -10,7 +10,7 @@ from queue import Queue
 import json
 from janito.agent.queued_message_handler import QueuedMessageHandler
 from janito.agent.agent import Agent
-from janito.render_prompt import render_system_prompt
+from janito.render_prompt import render_system_prompt_template
 import os
 import threading
 import traceback
@@ -20,11 +20,11 @@ from janito.agent.runtime_config import unified_config
 
 # Render system prompt from config
 role = unified_config.get("role", "software engineer")
-system_prompt_override = unified_config.get("system_prompt")
-if system_prompt_override:
-    system_prompt = system_prompt_override
+system_prompt_template_override = unified_config.get("system_prompt_template")
+if system_prompt_template_override:
+    system_prompt_template = system_prompt_template_override
 else:
-    system_prompt = render_system_prompt(role)
+    system_prompt_template = render_system_prompt_template(role)
 
 app = Flask(
     __name__,
@@ -162,7 +162,7 @@ def execute_stream():
 
     # Always start with the system prompt as the first message
     if not conversation or conversation[0]["role"] != "system":
-        conversation.insert(0, {"role": "system", "content": system_prompt})
+        conversation.insert(0, {"role": "system", "content": system_prompt_template})
 
     # Append the new user message
     conversation.append({"role": "user", "content": user_input})

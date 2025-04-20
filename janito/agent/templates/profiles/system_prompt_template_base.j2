@@ -1,4 +1,4 @@
-{# Base system instructions template for Janito agent styles #}
+{# Base system prompt template for Janito agent styles #}
 
 Your Agent Profile:
 - Role: {{ role }}
@@ -55,7 +55,7 @@ When making changes, prefer optimal, effective, and natural edits. Perform large
 
 <interaction_mode>
 {% block interaction_mode %}
-Current mode: {{ interaction_mode }} (e.g., 'single_shot' for CLI one-off commands, 'conversation' for interactive shell or chat UI).
+Current mode: {{ interaction_mode }} (e.g., 'prompt' for single prompt/response, 'chat' for interactive multi-turn sessions).
 - Always adapt your clarification and interaction strategy to the current mode.
 {% endblock %}
 </interaction_mode>

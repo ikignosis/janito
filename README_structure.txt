@@ -23,7 +23,7 @@ Directories:
     - agent/
         - agent.py, config.py, config_defaults.py, config_utils.py, content_handler.py, conversation.py, message_handler.py, openai_schema_generator.py, queued_message_handler.py, rich_tool_handler.py, runtime_config.py, tool_registry.py, __init__.py
         - templates/
-            - system_instructions.j2
+            - system_prompt_template.j2
         - tools/
             - append_text_to_file.py, ask_user.py, create_directory.py, create_file.py, fetch_url.py, find_files.py, get_file_outline.py, get_lines.py, gitignore_utils.py, move_file.py, py_compile_file.py, remove_directory.py, remove_file.py, replace_text_in_file.py, rich_live.py, run_bash_command.py, search_files.py, tools_utils.py, utils.py, __init__.py, README.md
     - cli/
@@ -55,11 +55,11 @@ Directories:
 
 
 - janito/agent/templates/profiles/: Contains base and main style templates.
-    - system_instructions_base.j2: Base system prompt template, extended by all styles.
-    - system_instructions.j2: Default system prompt template (extends base).
-    - system_instructions_technical.j2: Technical system prompt template for developer/engineer interaction style (extends base).
+    - system_prompt_template_base.j2: Base system prompt template, extended by all styles.
+    - system_prompt_template.j2: Default system prompt template (extends base).
+    - system_prompt_template_technical.j2: Technical system prompt template for developer/engineer interaction style (extends base).
 - janito/agent/templates/features/: Contains feature extension templates.
-    - system_instructions_autocommit.j2: Feature extension template for 'autocommit' (extends main style).
+    - system_prompt_template_autocommit.j2: Feature extension template for 'autocommit' (extends main style).
 - janito/render_prompt.py: Now supports combinatorial style selection (e.g., 'technical-autocommit') and template layering.
 - janito/cli_chat_shell/commands/: Now supports selecting system prompt template by agent.interaction_style ("default" or "technical").
 - janito/agent/profile_manager.py: Manages user profile, role, interaction style, and system prompt selection. Instantiates and manages the low-level Agent.

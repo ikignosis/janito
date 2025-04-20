@@ -164,6 +164,10 @@ class ConversationHandler:
             if verbose_response:
                 pprint.pprint(response)
 
+            if response is None or not getattr(response, "choices", None):
+                raise EmptyResponseError(
+                    f"No choices in response; possible API or LLM error. Raw response: {response!r}"
+                )
             choice = response.choices[0]
 
             # Extract token usage info if available

@@ -15,7 +15,7 @@ class Agent:
         self,
         api_key: str,
         model: str = None,
-        system_prompt: str | None = None,
+        system_prompt_template: str | None = None,
         verbose_tools: bool = False,
         base_url: str = "https://openrouter.ai/api/v1",
         azure_openai_api_version: str = "2023-05-15",
@@ -27,7 +27,7 @@ class Agent:
         Args:
             api_key: API key for OpenAI-compatible service.
             model: Model name to use.
-            system_prompt: Optional system prompt override.
+            system_prompt_template: Optional system prompt override.
             verbose_tools: Enable verbose tool call logging.
             base_url: API base URL.
             azure_openai_api_version: Azure OpenAI API version (default: "2023-05-15").
@@ -35,7 +35,7 @@ class Agent:
         """
         self.api_key = api_key
         self.model = model
-        self.system_prompt = system_prompt
+        self.system_prompt_template = system_prompt_template
         if use_azure_openai:
             # Import inside conditional to avoid requiring AzureOpenAI unless needed
             from openai import AzureOpenAI

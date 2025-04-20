@@ -10,7 +10,7 @@ def print_config_items(items, color_label=None):
         print_info(color_label)
     home = os.path.expanduser("~")
     for key, value in items.items():
-        if key == "system_prompt" and isinstance(value, str):
+        if key == "system_prompt_template" and isinstance(value, str):
             if value.startswith(home):
                 print(f"{key} = {home_shorten(value)}")
             else:
@@ -25,7 +25,7 @@ def print_full_config(
 ):
     """
     Print local, global, and default config values in a unified way.
-    Handles masking API keys and showing the template file for system_prompt if not set.
+    Handles masking API keys and showing the template file for system_prompt_template if not set.
     """
     local_items = {}
     global_items = {}
@@ -79,10 +79,13 @@ def print_full_config(
             from pathlib import Path
 
             template_path = (
-                Path(__file__).parent / "agent" / "templates" / "system_instructions.j2"
+                Path(__file__).parent
+                / "agent"
+                / "templates"
+                / "system_prompt_template.j2"
             )
             for key, value in default_items.items():
-                if key == "system_prompt" and value is None:
+                if key == "system_prompt_template" and value is None:
                     print_info(
                         f"{key} = (default template path: {home_shorten(str(template_path))})"
                     )

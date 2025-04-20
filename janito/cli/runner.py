@@ -51,21 +51,25 @@ def run_cli(args):
     if getattr(args, "trust", False):
         runtime_config.set("trust", True)
 
-    # New logic for --system-file
-    system_prompt = None
-    if getattr(args, "system_file", None):
-        with open(args.system_file, "r", encoding="utf-8") as f:
-            system_prompt = f.read()
-        runtime_config.set("system_prompt_file", args.system_file)
+    # New logic for --instructions-file
+    system_prompt_template = None
+    if getattr(args, "system_prompt_template_file", None):
+        with open(args.system_prompt_template_file, "r", encoding="utf-8") as f:
+            system_prompt_template = f.read()
+        runtime_config.set(
+            "system_prompt_template_file", args.system_prompt_template_file
+        )
     else:
-        system_prompt = args.system or unified_config.get("system_prompt")
-        if args.system:
-            runtime_config.set("system_prompt", system_prompt)
-        if system_prompt is None:
+        system_prompt_template = getattr(
+            args, "system_prompt_template", None
+        ) or unified_config.get("system_prompt_template")
+        if getattr(args, "system_prompt_template", None):
+            runtime_config.set("system_prompt_template", system_prompt_template)
+        if system_prompt_template is None:
             # Pass full merged config (runtime overrides effective)
-            from janito.render_prompt import render_system_prompt
+            from janito.render_prompt import render_system_prompt_template
 
-            system_prompt = render_system_prompt(role)
+            system_prompt_template = render_system_prompt_template(role)
 
     if args.show_system:
         api_key = get_api_key()
@@ -75,7 +79,10 @@ def run_cli(args):
         print("Parameters: {}")
         import json
 
-        print("System Prompt:", system_prompt or "(default system prompt not provided)")
+        print(
+            "System Prompt Template:",
+            system_prompt_template or "(default system prompt template not provided)",
+        )
         sys.exit(0)
 
     api_key = get_api_key()
@@ -89,8 +96,8 @@ def run_cli(args):
     vanilla_mode = getattr(args, "vanilla", False)
     if vanilla_mode:
         runtime_config.set("vanilla_mode", True)
-        system_prompt = None
-        runtime_config.set("system_prompt", None)
+        system_prompt_template = None
+        runtime_config.set("system_prompt_template", None)
         # Only set temperature if explicitly provided
         if args.temperature is None:
             runtime_config.set("temperature", None)
@@ -102,12 +109,11 @@ def run_cli(args):
     )
 
     # --- FIX: Set interaction_mode based on shell/CLI ---
-    # If no prompt is provided, we are in shell/chat mode, so use 'conversation'.
-    # Otherwise, use 'single_shot'.
+    # If no prompt is provided, we are in chat mode (multi-turn), otherwise prompt mode (single prompt/response).
     if not getattr(args, "prompt", None):
-        interaction_mode = "conversation"
+        interaction_mode = "chat"
     else:
-        interaction_mode = "single_shot"
+        interaction_mode = "prompt"
 
     profile_manager = AgentProfileManager(
         api_key=api_key,
@@ -140,8 +146,10 @@ def run_cli(args):
 
     message_handler = MessageHandler()
     messages = []
-    if profile_manager.system_prompt:
-        messages.append({"role": "system", "content": profile_manager.system_prompt})
+    if profile_manager.system_prompt_template:
+        messages.append(
+            {"role": "system", "content": profile_manager.system_prompt_template}
+        )
     messages.append({"role": "user", "content": prompt})
     try:
         try:
@@ -159,10 +167,10 @@ def run_cli(args):
 
                 console.print_json(json.dumps(response))
         except MaxRoundsExceededError:
-            print("[red]Max conversation rounds exceeded.[/red]")
+            console.print("[red]Max conversation rounds exceeded.[/red]")
         except ProviderError as e:
-            print(f"[red]Provider error:[/red] {e}")
+            console.print(f"[red]Provider error:[/red] {e}")
         except EmptyResponseError as e:
-            print(f"[red]Error:[/red] {e}")
+            console.print(f"[red]Error:[/red] {e}")
     except KeyboardInterrupt:
         console.print("[yellow]Interrupted by user.[/yellow]")
