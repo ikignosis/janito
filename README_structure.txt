@@ -3,8 +3,8 @@ Project Structure
 
 Root Files:
 - LICENSE
-- pyproject.toml
-- README.md
+- pyproject.toml (version: 1.6.0-dev)
+- README.md (Current Version: 1.6/dev)
 - requirements.txt
 
 

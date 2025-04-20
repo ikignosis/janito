@@ -63,3 +63,6 @@
 - Ensured trust and markdown logic is always applied consistently in rich handler.
 - Improves robustness and traceability of event routing.
 - Affected modules: janito/agent/rich_tool_handler.py, janito/agent/conversation.py, janito/agent/message_handler.py, janito/agent/queued_message_handler.py
+
+### Other
+- Bumped version to 1.6.0-dev in pyproject.toml and janito/__init__.py.
