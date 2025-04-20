@@ -180,3 +180,8 @@ def create_parser():
         help="Enable OpenAI streaming mode (yields tokens as they arrive)",
     )
     return parser
+    parser.add_argument(
+        "--verbose-stream",
+        action="store_true",
+        help="Print raw chunks as they are fetched from OpenAI (for debugging)",
+    )

@@ -166,7 +166,10 @@ def run_cli(args):
                     stream=True,
                 )
                 for chunk in response_iter:
-                    print(chunk, end="", flush=True)
+                    if getattr(args, "verbose_stream", False):
+                        print(repr(chunk), flush=True)
+                    else:
+                        print(chunk, end="", flush=True)
                 print()
             else:
                 response = profile_manager.chat(
