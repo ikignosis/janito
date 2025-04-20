@@ -2,6 +2,7 @@
 import json
 from janito.agent.tool_base import ToolBase
 from janito.agent.openai_schema_generator import generate_openai_function_schema
+import inspect
 
 _tool_registry = {}
 
@@ -13,14 +14,20 @@ def register_tool(tool=None, *, name: str = None):
     if not (isinstance(tool, type) and issubclass(tool, ToolBase)):
         raise TypeError("Tool must be a class derived from ToolBase.")
     instance = tool()
-    func = instance.call
-    default_name = tool.__name__
-    tool_name = override_name or default_name
-    schema = generate_openai_function_schema(func, tool_name, tool_class=tool)
+    if not hasattr(instance, "call") or not callable(instance.call):
+        raise TypeError(
+            f"Tool '{tool.__name__}' must implement a callable 'call' method."
+        )
+    tool_name = override_name or instance.name
+    if tool_name in _tool_registry:
+        raise ValueError(f"Tool '{tool_name}' is already registered.")
+    schema = generate_openai_function_schema(instance.call, tool_name, tool_class=tool)
     _tool_registry[tool_name] = {
-        "function": func,
+        "function": instance.call,
         "description": schema["description"],
         "parameters": schema["parameters"],
+        "class": tool,
+        "instance": instance,
     }
     return tool
 
@@ -67,6 +74,25 @@ def handle_tool_call(tool_call, message_handler=None, verbose=False):
                 "arguments": args,
             }
         )
+    # --- Argument validation start ---
+    sig = inspect.signature(func)
+    try:
+        sig.bind(**args)
+    except TypeError as e:
+        error_msg = (
+            f"Argument validation error for tool '{tool_call.function.name}': {str(e)}"
+        )
+        if message_handler:
+            message_handler.handle_message(
+                {
+                    "type": "tool_error",
+                    "tool": tool_call.function.name,
+                    "call_id": call_id,
+                    "error": error_msg,
+                }
+            )
+        raise TypeError(error_msg)
+    # --- Argument validation end ---
     try:
         result = func(**args)
         if message_handler:
