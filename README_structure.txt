@@ -44,3 +44,17 @@ Directories:
     - release.ps1, release.sh
 - janito/agent/openai_schema_generator.py
 
+
+- janito/agent/templates/system_instructions_technical.j2: Technical system prompt template for developer/engineer interaction style.
+- janito/render_prompt.py: Now supports selecting prompt template by interaction style ("default" or "technical").
+- janito/cli_chat_shell/commands.py: Now supports selecting system prompt template by agent.interaction_style ("default" or "technical").
+- janito/agent/profile_manager.py: Manages user profile, role, interaction style, and system prompt selection. Instantiates and manages the low-level Agent.
+- janito/cli_chat_shell/commands.py: Now uses AgentProfileManager for system prompt, role, and interaction style management.
+- janito/cli/runner.py: CLI now instantiates AgentProfileManager and wires interaction style and role.
+- janito/cli_chat_shell/chat_loop.py: Chat shell uses profile_manager for agent, prompt, and command handling.
+- janito/cli/arg_parser.py: Adds --style CLI argument for interaction style selection (was --interaction-style).
+- janito/cli/runner.py: Uses args.style for interaction style.
+- janito/cli_chat_shell/ui.py: Toolbar now displays current interaction style (style).
+- janito/cli_chat_shell/commands.py: Adds /style command to change interaction style at runtime.
+
+- Global and local configuration now support the `interaction_style` key ("default" or "technical") to control agent behavior and prompt style. See docs/CONFIGURATION.md and README.md for usage.

@@ -149,3 +149,42 @@ Vanilla mode is ideal for:
 - Ensuring no agent-side intervention or context is added
 
 > Note: Vanilla mode is a runtime switch and does not change the Agent API or class signatures. It is controlled via CLI/config only.
+
+## 🧑‍💻 AgentProfileManager: Profile, Role, and Prompt Management
+
+Janito now uses a dedicated `AgentProfileManager` class to manage user profiles, roles, interaction styles, and system prompt selection. This manager:
+- Stores the current role (e.g., "software engineer") and interaction style (e.g., "default", "technical").
+- Renders the system prompt from the appropriate template based on interaction style.
+- Instantiates and manages the low-level LLM Agent, passing the correct prompt.
+- Provides methods to update the role, interaction style, and refresh the prompt at runtime.
+
+### Multiple System Prompt Templates
+- The system prompt template is now selected based on the interaction style (e.g., `default` or `technical`).
+- Templates are located in `janito/agent/templates/` (see `system_instructions.j2` and `system_instructions_technical.j2`).
+- You can switch interaction styles at runtime using the profile manager, enabling different agent behaviors for different user needs.
+
+This separation ensures that the LLM Agent remains focused on language model interaction and tool execution, while all profile, role, and prompt logic is managed at a higher level.
+
+See `janito/agent/profile_manager.py` for implementation details.
+
+### Agent Interaction Style
+
+You can control the agent's behavior and prompt style globally or per-project using the `interaction_style` config key. Supported values:
+- `default`: Concise, general-purpose agent (default)
+- `technical`: Strict, workflow-oriented for technical/developer use
+
+Set globally:
+```bash
+janito --set-global-config interaction_style=technical
+```
+Or per-project (in your project root):
+```bash
+janito --set-local-config interaction_style=technical
+```
+
+You can also override for a session with the CLI flag:
+```bash
+janito --style technical
+```
+
+See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for full details.

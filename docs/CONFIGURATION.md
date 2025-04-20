@@ -63,3 +63,10 @@ Verbose/debugging flags:
 - `--verbose-tools`              Print tool call parameters and results
 - `--show-system`                Show model, parameters, system prompt, and tool definitions, then exit
 - `--version`                    Show program's version number and exit
+
+| `interaction_style`         | Interaction style for the Agent Profile (e.g., 'default' or 'technical') | `--set-local-config interaction_style=technical` or `--set-global-config` | "default" |
+
+**Note:**
+- The `interaction_style` key controls the agent's overall behavior and system prompt style. Supported values are `default` (concise, general-purpose) and `technical` (strict, workflow-oriented for developers/engineers).
+- You can set this globally in `~/.janito/config.json` or locally in `.janito/config.json` in your project.
+- CLI flag: `--style` overrides config for the current session.

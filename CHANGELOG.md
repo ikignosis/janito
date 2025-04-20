@@ -23,3 +23,17 @@
 
 ### Added
 - Added `.pre-commit-config.yaml` for code linting, formatting, and spell-checking using ruff, black, and codespell.
+
+## [Unreleased]
+### Added
+- Introduced `AgentProfileManager` for profile, role, interaction style, and system prompt management.
+- Added support for multiple system prompt templates (e.g., default and technical) selected by interaction style.
+- Refactored CLI and session logic to use the profile manager for all prompt/profile handling.
+
+### Changed
+- System prompt templating and interaction style logic are now handled outside the low-level Agent class.
+- Improved separation of concerns between LLM agent execution and user/session profile management.
+
+### Added
+- You can now set the agent's `interaction_style` ("default" or "technical") globally or per-project via config files (`~/.janito/config.json` or `.janito/config.json`).
+- Updated documentation in README.md, README_structure.txt, and docs/CONFIGURATION.md to describe the new config option and usage.

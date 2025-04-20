@@ -8,4 +8,5 @@ CONFIG_DEFAULTS = {
     "temperature": 0.2,
     "max_tokens": 200000,
     "use_azure_openai": False,
+    "interaction_style": "default",
 }
