@@ -19,10 +19,22 @@ PYTHON_TYPE_TO_JSON = {
 }
 
 
+def _type_to_json_schema(annotation):
+    if hasattr(annotation, "__origin__"):
+        if annotation.__origin__ is list or annotation.__origin__ is typing.List:
+            return {
+                "type": "array",
+                "items": _type_to_json_schema(annotation.__args__[0]),
+            }
+        if annotation.__origin__ is dict or annotation.__origin__ is typing.Dict:
+            return {"type": "object"}
+    return {"type": PYTHON_TYPE_TO_JSON.get(annotation, "string")}
+
+
 def _parse_docstring(docstring: str):
     """
     Parses a docstring to extract summary, parameter descriptions, and return description.
-    Expects Google or NumPy style docstrings.
+    Accepts Google, NumPy, and relaxed formats.
     Returns: summary, {param: description}, return_description
     """
     if not docstring:
@@ -33,19 +45,28 @@ def _parse_docstring(docstring: str):
     return_desc = ""
     in_params = False
     in_returns = False
+    param_section_headers = ("args", "arguments", "params", "parameters")
     for line in lines[1:]:
         stripped_line = line.strip()
-        if stripped_line.lower().startswith(("args:", "parameters:")):
+        if any(
+            stripped_line.lower().startswith(h + ":") or stripped_line.lower() == h
+            for h in param_section_headers
+        ):
             in_params = True
             in_returns = False
             continue
-        if stripped_line.lower().startswith("returns:"):
+        if (
+            stripped_line.lower().startswith("returns:")
+            or stripped_line.lower() == "returns"
+        ):
             in_returns = True
             in_params = False
             continue
         if in_params:
+            # Accept: name: desc, name (type): desc, name - desc, name desc
             m = re.match(
-                r"([a-zA-Z_][a-zA-Z0-9_]*)\s*(?:\(([^)]+)\))?:\s*(.+)", stripped_line
+                r"([a-zA-Z_][a-zA-Z0-9_]*)\s*(?:\(([^)]+)\))?\s*[:\-]?\s*(.+)",
+                stripped_line,
             )
             if m:
                 param, _, desc = m.groups()
@@ -59,27 +80,6 @@ def _parse_docstring(docstring: str):
             if stripped_line:
                 return_desc += (" " if return_desc else "") + stripped_line
     return summary, param_descs, return_desc
-
-
-def _type_to_json_schema(tp):
-    # Handle typing.Optional, typing.Union, typing.List, etc.
-    origin = typing.get_origin(tp)
-    args = typing.get_args(tp)
-    if origin is None:
-        return {"type": PYTHON_TYPE_TO_JSON.get(tp, "string")}
-    if origin is list or origin is typing.List:
-        item_type = args[0] if args else str
-        return {"type": "array", "items": _type_to_json_schema(item_type)}
-    if origin is dict or origin is typing.Dict:
-        return {"type": "object"}
-    if origin is typing.Union:
-        # Optional[...] is Union[..., NoneType]
-        non_none = [a for a in args if a is not type(None)]
-        if len(non_none) == 1:
-            return _type_to_json_schema(non_none[0])
-        # Otherwise, fallback
-        return {"type": "string"}
-    return {"type": "string"}
 
 
 def generate_openai_function_schema(func, tool_name: str, tool_class=None):
