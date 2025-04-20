@@ -151,11 +151,6 @@ def create_parser():
         help="Remove the global config file (~/.janito/config.json)",
     )
     parser.add_argument(
-        "--trust",
-        action="store_true",
-        help="Enable trust mode: suppress all console output (overrides config)",
-    )
-    parser.add_argument(
         "--verbose-events",
         action="store_true",
         help="Print all agent events before dispatching to the message handler (for debugging)",
@@ -166,6 +161,12 @@ def create_parser():
         action="store_true",
         default=False,
         help="Vanilla mode: disables tools, system prompt, and temperature (unless -t is set)",
+    )
+    parser.add_argument(
+        "-T",
+        "--trust-tools",
+        action="store_true",
+        help="Suppress all tool output (trusted tools mode: only shows output file locations)",
     )
     return parser
     parser.add_argument(

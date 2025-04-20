@@ -26,6 +26,7 @@ You can alter Janito's behavior in any interface using these flags:
 
 - `--system` / `--system-file`: Override or customize the system prompt for the session.
 - `--no-tools`: Disable all tool usage (Janito will only use the language model, no file/code/shell actions).
+- `--trust-tools`/`-T`: Trusted tools mode (suppresses all tool output, only shows output file locations).
 - `--vanilla`: Disables tools, system prompt, and temperature settings for a pure LLM chat experience.
 
 These modifiers can be combined with any interface mode for tailored workflows.

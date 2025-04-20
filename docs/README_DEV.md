@@ -109,10 +109,6 @@ See [USING_DEV_VERSION.md](USING_DEV_VERSION.md) for system_prompt_template on i
 
 Happy coding!
 
-## Vanilla Mode (Developer Note)
-
-Vanilla mode is activated via the CLI/config (`--vanilla`). It disables all tool registration, omits the system prompt, and does not set temperature (unless explicitly provided). This is implemented as a runtime config flag (`vanilla_mode`) and does not alter the Agent or ConversationHandler API. All logic for vanilla mode is internal and backward compatible.
-
 ## Code Style, Linting, and Pre-commit Hooks
 
 This project uses [pre-commit](https://pre-commit.com/) to enforce code style and linting automatically using [Black](https://black.readthedocs.io/en/stable/) (formatter) and [Ruff](https://docs.astral.sh/ruff/) (linter).

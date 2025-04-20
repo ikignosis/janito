@@ -47,9 +47,9 @@ def run_cli(args):
     if getattr(args, "max_tools", None) is not None:
         runtime_config.set("max_tools", args.max_tools)
 
-    # Set trust mode if enabled
-    if getattr(args, "trust", False):
-        runtime_config.set("trust", True)
+    # Set trust-tools mode if enabled
+    if getattr(args, "trust_tools", False):
+        runtime_config.set("trust_tools", True)
 
     # New logic for --instructions-file
     system_prompt_template = None

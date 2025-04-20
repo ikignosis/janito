@@ -15,7 +15,7 @@ Below are the supported configuration parameters and CLI flags. Some options can
 | `max_rounds`              | Maximum number of agent rounds per prompt/session                                          | `--max-rounds` or config                                      | 50                                         |
 | `max_tools`               | Maximum number of tool calls allowed within a chat session                                 | `--max-tools` or config                                       | _None_ (unlimited)                         |
 | `no_tools`           | Disable tool use (no tools passed to agent)                                                | `-n`, `--no-tools` (CLI only)                                   | False                                       |
-| `trust`                   | Trust mode: suppresses run_bash_command output, only shows output file locations                  | `--trust` (CLI only)                                           | False                                       |
+| `trust_tools`        | Trusted tools mode: suppresses all tool output, only shows output file locations           | `--trust-tools`, `-T` (CLI only)                                | False                                       |
 | `template` / `template.*` | Template context dictionary for prompt rendering (nested or flat keys)                     | Config only                                                    | _None_                                     |
 
 Other config-related CLI flags:

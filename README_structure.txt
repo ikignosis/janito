@@ -78,9 +78,9 @@ Directories:
 - /config shell command now warns that /restart may be required for config changes to take effect.
 - docs/CONFIGURATION.md updated to mention /restart after config changes in the shell.
 
-- CLI now supports --trust/-t flag and 'trust' config (global/local):
-    - When enabled, suppresses all console output (including rich handler output).
-    - Can be set via CLI (--trust/-t), global config, or local config.
+- CLI now supports --trust-tools/-T flag and 'trust_tools' config (global/local):
+    - When enabled, suppresses all tool output (including rich handler output), only shows output file locations.
+    - Can be set via CLI (--trust-tools/-T), global config, or local config.
     - CLI flag takes precedence over config.
     - See janito/cli/arg_parser.py, janito/agent/config.py, janito/agent/rich_tool_handler.py for implementation details.
 - CLI now supports --verbose-events:
