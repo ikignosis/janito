@@ -88,7 +88,7 @@ class ReplaceTextInFileTool(ToolBase):
                 return f"No changes made. {concise_warning}"
 
             self.report_success(
-                f" ✅ {replaced_count} {pluralize('block', replaced_count)} replaced (backup at {backup_path})"
+                f" ✅ {replaced_count} {pluralize('block', replaced_count)} replaced"
             )
 
             # Indentation check for agent warning
