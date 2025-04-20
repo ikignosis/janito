@@ -33,6 +33,9 @@ class ConversationHandler:
         spinner=False,
         max_tokens=None,
     ):
+        import time
+        import json
+
         max_tools = runtime_config.get("max_tools", None)
         tool_calls_made = 0
         if not messages:
@@ -52,73 +55,109 @@ class ConversationHandler:
             )
 
         for _ in range(max_rounds):
-            if spinner:
-                console = Console()
-                # Calculate word count for all messages
-                word_count = sum(
-                    len(str(m.get("content", "")).split())
-                    for m in messages
-                    if "content" in m
-                )
-
-                def format_count(n):
-                    if n >= 1_000_000:
-                        return f"{n/1_000_000:.1f}m"
-                    elif n >= 1_000:
-                        return f"{n/1_000:.1f}k"
-                    return str(n)
-
-                # Count message types
-                user_msgs = sum(1 for m in messages if m.get("role") == "user")
-                agent_msgs = sum(1 for m in messages if m.get("role") == "assistant")
-                tool_msgs = sum(1 for m in messages if m.get("role") == "tool")
-                # Tool uses: count tool_calls in all agent messages
-                tool_uses = sum(
-                    len(m.get("tool_calls", []))
-                    for m in messages
-                    if m.get("role") == "assistant"
-                )
-                # Tool responses: tool_msgs
-                spinner_msg = (
-                    f"[bold green]Waiting for AI response... ("
-                    f"{format_count(word_count)} words, "
-                    f"{user_msgs} user, {agent_msgs} agent, "
-                    f"{tool_uses} tool uses, {tool_msgs} tool responses)"
-                )
-                with console.status(spinner_msg, spinner="dots") as status:
-                    if runtime_config.get("vanilla_mode", False):
-                        response = self.client.chat.completions.create(
-                            model=self.model,
-                            messages=messages,
-                            max_tokens=resolved_max_tokens,
+            max_retries = 5
+            last_exception = None
+            for attempt in range(1, max_retries + 1):
+                try:
+                    if spinner:
+                        console = Console()
+                        # Calculate word count for all messages
+                        word_count = sum(
+                            len(str(m.get("content", "").split()))
+                            for m in messages
+                            if "content" in m
                         )
+
+                        def format_count(n):
+                            if n >= 1_000_000:
+                                return f"{n/1_000_000:.1f}m"
+                            elif n >= 1_000:
+                                return f"{n/1_000:.1f}k"
+                            return str(n)
+
+                        # Count message types
+                        user_msgs = sum(1 for m in messages if m.get("role") == "user")
+                        agent_msgs = sum(
+                            1 for m in messages if m.get("role") == "assistant"
+                        )
+                        tool_msgs = sum(1 for m in messages if m.get("role") == "tool")
+                        # Tool uses: count tool_calls in all agent messages
+                        tool_uses = sum(
+                            len(m.get("tool_calls", []))
+                            for m in messages
+                            if m.get("role") == "assistant"
+                        )
+                        # Tool responses: tool_msgs
+                        spinner_msg = (
+                            f"[bold green]Waiting for AI response... ("
+                            f"{format_count(word_count)} words, "
+                            f"{user_msgs} user, {agent_msgs} agent, "
+                            f"{tool_uses} tool uses, {tool_msgs} tool responses)"
+                        )
+                        with console.status(spinner_msg, spinner="dots") as status:
+                            if runtime_config.get("vanilla_mode", False):
+                                response = self.client.chat.completions.create(
+                                    model=self.model,
+                                    messages=messages,
+                                    max_tokens=resolved_max_tokens,
+                                )
+                            else:
+                                tools = get_tool_schemas()
+                                response = self.client.chat.completions.create(
+                                    model=self.model,
+                                    messages=messages,
+                                    tools=tools,
+                                    tool_choice="auto",
+                                    temperature=0.2,
+                                    max_tokens=resolved_max_tokens,
+                                )
+                            status.stop()
                     else:
-                        tools = get_tool_schemas()
-                        response = self.client.chat.completions.create(
-                            model=self.model,
-                            messages=messages,
-                            tools=tools,
-                            tool_choice="auto",
-                            temperature=0.2,
-                            max_tokens=resolved_max_tokens,
+                        if runtime_config.get("vanilla_mode", False):
+                            response = self.client.chat.completions.create(
+                                model=self.model,
+                                messages=messages,
+                                max_tokens=resolved_max_tokens,
+                            )
+                        else:
+                            response = self.client.chat.completions.create(
+                                model=self.model,
+                                messages=messages,
+                                tools=get_tool_schemas(),
+                                tool_choice="auto",
+                                temperature=0.2,
+                                max_tokens=resolved_max_tokens,
+                            )
+                    break  # Success, exit retry loop
+                except json.JSONDecodeError as e:
+                    last_exception = e
+                    if attempt < max_retries:
+                        wait_time = 2**attempt
+                        print(
+                            f"Invalid/malformed response from OpenAI (attempt {attempt}/{max_retries}). Retrying in {wait_time} seconds..."
                         )
-                    status.stop()
-            else:
-                if runtime_config.get("vanilla_mode", False):
-                    response = self.client.chat.completions.create(
-                        model=self.model,
-                        messages=messages,
-                        max_tokens=resolved_max_tokens,
-                    )
-                else:
-                    response = self.client.chat.completions.create(
-                        model=self.model,
-                        messages=messages,
-                        tools=get_tool_schemas(),
-                        tool_choice="auto",
-                        temperature=0.2,
-                        max_tokens=resolved_max_tokens,
-                    )
+                        time.sleep(wait_time)
+                    else:
+                        print(
+                            "Max retries for invalid response reached. Raising error."
+                        )
+                        raise last_exception
+                except Exception as e:
+                    # For all other exceptions, do not retry
+                    raise
+
+                    last_exception = e
+                    if attempt < max_retries:
+                        wait_time = 2**attempt
+                        print(
+                            f"Invalid/malformed response from OpenAI (attempt {attempt}/{max_retries}). Retrying in {wait_time} seconds..."
+                        )
+                        time.sleep(wait_time)
+                    else:
+                        print(
+                            "Max retries for invalid response reached. Raising error."
+                        )
+                        raise last_exception
 
             if verbose_response:
                 pprint.pprint(response)

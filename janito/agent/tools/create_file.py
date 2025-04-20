@@ -47,7 +47,9 @@ class CreateFileTool(ToolBase):
             with open(path, "r", encoding="utf-8", errors="replace") as f:
                 old_lines = sum(1 for _ in f)
         # Ensure parent directories exist
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        dir_name = os.path.dirname(path)
+        if dir_name:
+            os.makedirs(dir_name, exist_ok=True)
         with open(path, "w", encoding="utf-8", errors="replace") as f:
             f.write(content)
         new_lines = content.count("\n") + 1 if content else 0
