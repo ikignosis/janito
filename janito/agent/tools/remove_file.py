@@ -8,20 +8,16 @@ from janito.agent.tool_base import ToolBase
 class RemoveFileTool(ToolBase):
     """
     Remove a file at the specified path.
+
+    Args:
+        file_path (str): Path to the file to remove.
+    Returns:
+        str: Status message indicating the result. Example:
+            - "✅ Successfully removed the file at ..."
+            - "❗ Cannot remove file: ..."
     """
 
     def call(self, file_path: str) -> str:
-        """
-        Remove a file from the filesystem.
-
-        Args:
-            file_path (str): Path to the file to remove.
-
-        Returns:
-            str: Status message indicating the result. Example:
-                - "✅ Successfully removed the file at ..."
-                - "❗ Cannot remove file: ..."
-        """
         original_path = file_path
         path = expand_path(file_path)
         disp_path = display_path(original_path, path)

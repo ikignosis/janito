@@ -7,22 +7,20 @@ from janito.agent.tool_base import ToolBase
 
 @register_tool(name="fetch_url")
 class FetchUrlTool(ToolBase):
-    """Fetch the content of a web page and extract its text."""
+    """
+    Fetch the content of a web page and extract its text.
+
+    Args:
+        url (str): The URL of the web page to fetch.
+        search_strings (list[str], optional): Strings to search for in the page content.
+    Returns:
+        str: Extracted text content from the web page, or a warning message. Example:
+            - "<main text content...>"
+            - "No lines found for the provided search strings."
+            - "Warning: Empty URL provided. Operation skipped."
+    """
 
     def call(self, url: str, search_strings: list[str] = None) -> str:
-        """
-        Fetch the content of a web page and extract its text.
-
-        Args:
-            url (str): The URL of the web page to fetch.
-            search_strings (list[str], optional): Strings to search for in the page content.
-
-        Returns:
-            str: Extracted text content from the web page, or a warning message. Example:
-                - "<main text content...>"
-                - "No lines found for the provided search strings."
-                - "Warning: Empty URL provided. Operation skipped."
-        """
         if not url.strip():
             self.report_warning("⚠️ Warning: Empty URL provided. Operation skipped.")
             return "Warning: Empty URL provided. Operation skipped."

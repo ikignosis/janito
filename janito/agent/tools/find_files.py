@@ -8,6 +8,19 @@ from janito.agent.tools.gitignore_utils import filter_ignored
 
 @register_tool(name="find_files")
 class FindFilesTool(ToolBase):
+    """
+    Find files in one or more directories matching a pattern. Respects .gitignore.
+
+    Args:
+        directories (list[str]): List of directories to search in.
+        pattern (str): File pattern to match. Uses Unix shell-style wildcards (fnmatch), e.g. '*.py', 'data_??.csv', '[a-z]*.txt'.
+        recursive (bool, optional): Whether to search recursively in subdirectories. Defaults to False.
+        max_results (int, optional): Maximum number of results to return. Defaults to 100.
+    Returns:
+        str: Newline-separated list of matching file paths. Example:
+            "/path/to/file1.py\n/path/to/file2.py"
+            "Warning: Empty file pattern provided. Operation skipped."
+    """
 
     def call(
         self,
@@ -16,19 +29,6 @@ class FindFilesTool(ToolBase):
         recursive: bool = False,
         max_results: int = 100,
     ) -> str:
-        """
-        Find files in one or more directories matching a pattern. Respects .gitignore.
-
-        Args:
-            directories: List of directories to search in.
-            pattern: File pattern to match. Uses Unix shell-style wildcards (fnmatch), e.g. '*.py', 'data_??.csv', '[a-z]*.txt'.
-            recursive: Whether to search recursively in subdirectories. Defaults to False.
-            max_results: Maximum number of results to return. Defaults to 100.
-        Returns:
-            Newline-separated list of matching file paths. Example:
-            "/path/to/file1.py\n/path/to/file2.py"
-            "Warning: Empty file pattern provided. Operation skipped."
-        """
         import os
 
         if not pattern:

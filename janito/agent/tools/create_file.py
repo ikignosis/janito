@@ -9,22 +9,18 @@ from janito.agent.tools.tools_utils import pluralize
 class CreateFileTool(ToolBase):
     """
     Create a new file or update an existing file with the given content.
+
+    Args:
+        path (str): Path to the file to create or update.
+        content (str): Content to write to the file.
+        overwrite (bool, optional): Whether to overwrite if the file exists. Defaults to False.
+    Returns:
+        str: Status message indicating the result. Example:
+            - "✅ Successfully created the file at ..."
+            - "❗ Cannot create file: ..."
     """
 
     def call(self, path: str, content: str, overwrite: bool = False) -> str:
-        """
-        Create or update a file with the given content.
-
-        Args:
-            path (str): Path to the file to create or update.
-            content (str): Content to write to the file.
-            overwrite (bool, optional): Whether to overwrite if the file exists. Defaults to False.
-
-        Returns:
-            str: Status message indicating the result. Example:
-                - "✅ Successfully created the file at ..."
-                - "❗ Cannot create file: ..."
-        """
         original_path = path
         path = expand_path(path)
         updating = os.path.exists(path) and not os.path.isdir(path)

@@ -9,6 +9,8 @@ def test_capital_of_france():
         [sys.executable, "-m", "janito", "What is the capital of France?"],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     )
     output = result.stdout.lower()
     assert "paris" in output, f"Expected 'paris' in output, got: {output}"

@@ -5,24 +5,22 @@ from janito.agent.tools.tools_utils import pluralize
 
 @register_tool(name="get_lines")
 class GetLinesTool(ToolBase):
-    """Read lines from a file. Returns specific lines if a range is provided, or the entire file if no range is given. If both from_line and to_line are None, the entire file is returned in one call—no need to chunk or split requests when reading the full file."""
+    """
+    Read lines from a file. Returns specific lines if a range is provided, or the entire file if no range is given. If both from_line and to_line are None, the entire file is returned in one call—no need to chunk or split requests when reading the full file.
+
+    Args:
+        file_path (str): Path to the file to read lines from.
+        from_line (int, optional): Starting line number (1-based). If None, starts from the first line.
+        to_line (int, optional): Ending line number (1-based). If None, reads to the end of the file. If both are None, the entire file is returned.
+    Returns:
+        str: File content with a header indicating the file name and line range. Example:
+            - "---\nFile: /path/to/file.py | Lines: 1-10 (of 100)\n---\n<lines...>"
+            - "---\nFile: /path/to/file.py | All lines (total: 100)\n---\n<all lines...>"
+            - "Error reading file: <error message>"
+            - "❗ not found"
+    """
 
     def call(self, file_path: str, from_line: int = None, to_line: int = None) -> str:
-        """
-        Get specific lines from a file.
-
-        Args:
-            file_path (str): Path to the file to read lines from.
-            from_line (int, optional): Starting line number (1-based). If None, starts from the first line.
-            to_line (int, optional): Ending line number (1-based). If None, reads to the end of the file. If both are None, the entire file is returned.
-
-        Returns:
-            str: File content with a header indicating the file name and line range. Example:
-                - "---\nFile: /path/to/file.py | Lines: 1-10 (of 100)\n---\n<lines...>"
-                - "---\nFile: /path/to/file.py | All lines (total: 100)\n---\n<all lines...>"
-                - "Error reading file: <error message>"
-                - "❗ not found"
-        """
         from janito.agent.tools.tools_utils import display_path
 
         disp_path = display_path(file_path)

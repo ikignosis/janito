@@ -5,20 +5,18 @@ from janito.agent.tools.tools_utils import pluralize
 
 @register_tool(name="get_file_outline")
 class GetFileOutlineTool(ToolBase):
-    """Get an outline of a file's structure."""
+    """
+    Get an outline of a file's structure.
+
+    Args:
+        file_path (str): Path to the file.
+    Returns:
+        str: Outline of the file's structure, starting with a summary line. Example:
+            - "Outline: 5 items\nclass MyClass:\ndef my_function():\n..."
+            - "Error reading file: <error message>"
+    """
 
     def call(self, file_path: str) -> str:
-        """
-        Get an outline of a file's structure.
-
-        Args:
-            file_path (str): Path to the file.
-
-        Returns:
-            str: Outline of the file's structure, starting with a summary line. Example:
-                - "Outline: 5 items\nclass MyClass:\ndef my_function():\n..."
-                - "Error reading file: <error message>"
-        """
         from janito.agent.tools.tools_utils import display_path
 
         disp_path = display_path(file_path)

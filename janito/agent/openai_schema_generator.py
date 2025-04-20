@@ -45,7 +45,7 @@ def _parse_docstring(docstring: str):
             continue
         if in_params:
             m = re.match(
-                r"([a-zA-Z_][a-zA-Z0-9_]*)(?: \(([^)]+)\))?: (.+)", stripped_line
+                r"([a-zA-Z_][a-zA-Z0-9_]*)\s*(?:\(([^)]+)\))?:\s*(.+)", stripped_line
             )
             if m:
                 param, _, desc = m.groups()
@@ -93,14 +93,12 @@ def generate_openai_function_schema(func, tool_name: str, tool_class=None):
         raise ValueError(
             f"Tool '{tool_name}' must have an explicit return type of 'str'. Found: {sig.return_annotation}"
         )
-    docstring = func.__doc__
-    summary, param_descs, _ = _parse_docstring(docstring)
-    # Prepend the tool class docstring if available
+    # Only use the class docstring for schema generation
     class_doc = tool_class.__doc__.strip() if tool_class and tool_class.__doc__ else ""
-    if class_doc:
-        description = f"{class_doc}\n\n{summary}" if summary else class_doc
-    else:
-        description = summary
+    summary, param_descs, return_desc = _parse_docstring(class_doc)
+    description = summary
+    if return_desc:
+        description += f"\n\nReturns: {return_desc}"
     # Check that all parameters in the signature have documentation
     undocumented = [
         name

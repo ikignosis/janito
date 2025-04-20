@@ -10,12 +10,9 @@ import janito.agent.tools  # noqa: F401
 
 
 def main():
-    """Entry point for the Janito CLI.
+    """Unified entry point for the Janito CLI and web server."""
+    import sys
 
-    Parses command-line arguments, handles config commands, sets up logging,
-    and launches either the CLI chat shell or the web server.
-    """
-    # Ensure configs are loaded once at CLI startup
     from janito.agent.config import local_config, global_config
 
     local_config.load()
@@ -24,11 +21,8 @@ def main():
     parser = create_parser()
     args = parser.parse_args()
 
-    from janito.agent.config import (
-        CONFIG_OPTIONS,
-    )  # Kept here: avoids circular import at module level
+    from janito.agent.config import CONFIG_OPTIONS
     from janito.agent.config_defaults import CONFIG_DEFAULTS
-    import sys
 
     if getattr(args, "help_config", False):
         print("Available configuration options:\n")
@@ -42,6 +36,6 @@ def main():
     if getattr(args, "web", False):
         import subprocess  # Only needed if launching web
 
-        subprocess.run(["python", "-m", "janito.web"])
+        subprocess.run([sys.executable, "-m", "janito.web"])
     else:
         run_cli(args)

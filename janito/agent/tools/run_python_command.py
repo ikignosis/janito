@@ -7,7 +7,17 @@ from janito.agent.tool_registry import register_tool
 
 @register_tool(name="run_python_command")
 class RunPythonCommandTool(ToolBase):
-    """Tool to execute Python code in a subprocess and capture output."""
+    """
+    Tool to execute Python code in a subprocess and capture output.
+
+    Args:
+        code (str): The Python code to execute.
+        timeout (int, optional): Timeout in seconds for the command. Defaults to 60.
+        require_confirmation (bool, optional): If True, require user confirmation before running. Defaults to False.
+        interactive (bool, optional): If True, warns that the command may require user interaction. Defaults to False.
+    Returns:
+        str: File paths and line counts for stdout and stderr, or direct output if small enough.
+    """
 
     def call(
         self,
@@ -16,18 +26,6 @@ class RunPythonCommandTool(ToolBase):
         require_confirmation: bool = False,
         interactive: bool = False,
     ) -> str:
-        """
-        Execute Python code in a separate process and capture live output.
-
-        Args:
-            code (str): The Python code to execute.
-            timeout (int, optional): Timeout in seconds for the command. Defaults to 60.
-            require_confirmation (bool, optional): If True, require user confirmation before running. Defaults to False.
-            interactive (bool, optional): If True, warns that the command may require user interaction. Defaults to False.
-
-        Returns:
-            str: File paths and line counts for stdout and stderr, or direct output if small enough.
-        """
         if not code.strip():
             self.report_warning("⚠️ Warning: Empty code provided. Operation skipped.")
             return "Warning: Empty code provided. Operation skipped."

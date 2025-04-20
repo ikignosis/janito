@@ -7,21 +7,17 @@ from janito.agent.tool_base import ToolBase
 class CreateDirectoryTool(ToolBase):
     """
     Create a new directory at the specified path.
+
+    Args:
+        path (str): Path for the new directory.
+        overwrite (bool, optional): Whether to overwrite if the directory exists. Defaults to False.
+    Returns:
+        str: Status message indicating the result. Example:
+            - "✅ Successfully created the directory at ..."
+            - "❗ Cannot create directory: ..."
     """
 
     def call(self, path: str, overwrite: bool = False) -> str:
-        """
-        Create a new directory at the specified path.
-
-        Args:
-            path (str): Path for the new directory.
-            overwrite (bool, optional): Whether to overwrite if the directory exists. Defaults to False.
-
-        Returns:
-            str: Status message indicating the result. Example:
-                - "✅ Successfully created the directory at ..."
-                - "❗ Cannot create directory: ..."
-        """
         original_path = path
         path = expand_path(path)
         disp_path = display_path(original_path, path)

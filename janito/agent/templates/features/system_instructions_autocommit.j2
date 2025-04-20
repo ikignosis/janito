@@ -1,0 +1,9 @@
+{# Feature extension: autocommit #}
+{% extends parent_template %}
+
+{% block finishing %}
+{{ super() }}
+- If the 'autocommit' feature is enabled, automatically commit changes after successful operations, unless the user disables it.
+{% endblock %}
+
+{# Usage: This template is a feature extension. Use with e.g. 'technical-autocommit'. #}

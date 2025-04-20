@@ -54,8 +54,13 @@ Directories:
 - janito/agent/openai_schema_generator.py
 
 
-- janito/agent/templates/system_instructions_technical.j2: Technical system prompt template for developer/engineer interaction style.
-- janito/render_prompt.py: Now supports selecting prompt template by interaction style ("default" or "technical").
+- janito/agent/templates/profiles/: Contains base and main style templates.
+    - system_instructions_base.j2: Base system prompt template, extended by all styles.
+    - system_instructions.j2: Default system prompt template (extends base).
+    - system_instructions_technical.j2: Technical system prompt template for developer/engineer interaction style (extends base).
+- janito/agent/templates/features/: Contains feature extension templates.
+    - system_instructions_autocommit.j2: Feature extension template for 'autocommit' (extends main style).
+- janito/render_prompt.py: Now supports combinatorial style selection (e.g., 'technical-autocommit') and template layering.
 - janito/cli_chat_shell/commands/: Now supports selecting system prompt template by agent.interaction_style ("default" or "technical").
 - janito/agent/profile_manager.py: Manages user profile, role, interaction style, and system prompt selection. Instantiates and manages the low-level Agent.
 - janito/cli_chat_shell/commands/: Now uses AgentProfileManager for system prompt, role, and interaction style management.
@@ -81,3 +86,18 @@ Directories:
 - CLI now supports --verbose-events:
     - Prints all agent events before dispatching to the message handler (for debugging).
 agent/tool_base.py, 
+Combinatorial Style System:
+--------------------------
+- The agent now supports combinatorial styles using a main style (e.g., 'default', 'technical') and optional feature extensions (e.g., 'autocommit').
+- Style strings are specified as 'mainstyle-feature1-feature2', e.g., 'technical-autocommit'.
+- The main style template is extended by each feature template in order, allowing feature-specific overrides.
+- See janito/render_prompt.py for implementation and janito/agent/templates/ for template structure.
+
+- Platform detection is now included in the system prompt context (variable: platform, e.g., 'windows', 'linux', 'darwin').
+- The <platform> section in the base template instructs the agent to use platform-appropriate path conventions.
+
+## [1.6.0-dev] Ensured PYTHONUTF8 is set for all CLI and web entry points
+- janito/cli/main.py: Now sets PYTHONUTF8=1 at startup and re-execs on Windows if needed for UTF-8 safety.
+- janito/web/__main__.py: Now sets PYTHONUTF8=1 at startup and re-execs on Windows if needed.
+- janito/__main__.py: CLI entry point unchanged (delegates to janito.cli.main.main).
+- All CLI and web invocations now guarantee UTF-8 mode for Python, improving Unicode reliability on Windows.

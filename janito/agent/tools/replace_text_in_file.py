@@ -5,11 +5,23 @@ from janito.agent.tools.tools_utils import pluralize
 
 @register_tool(name="replace_text_in_file")
 class ReplaceTextInFileTool(ToolBase):
-    """Replace exact occurrences of a given text in a file.
+    """
+    Replace exact occurrences of a given text in a file.
 
     This tool is designed to make minimal, targeted changes—preferably a small region modifications—rather than rewriting large sections or the entire file. Use it for precise, context-aware edits.
 
     NOTE: Indentation (leading whitespace) must be included in both search_text and replacement_text. This tool does not automatically adjust or infer indentation; matches are exact, including whitespace.
+
+    Args:
+        file_path (str): Path to the file to modify.
+        search_text (str): The exact text to search for (including indentation).
+        replacement_text (str): The text to replace with (including indentation).
+        replace_all (bool): If True, replace all occurrences; otherwise, only the first occurrence.
+    Returns:
+        str: Status message. Example:
+            - "Text replaced in /path/to/file"
+            - "No changes made. [Warning: Search text not found in file] Please review the original file."
+            - "Error replacing text: <error message>"
     """
 
     def call(
@@ -19,20 +31,6 @@ class ReplaceTextInFileTool(ToolBase):
         replacement_text: str,
         replace_all: bool = False,
     ) -> str:
-        """
-        Replace exact occurrences of a given text in a file.
-
-        Args:
-            file_path (str): Path to the file to modify.
-            search_text (str): The exact text to search for (including indentation).
-            replacement_text (str): The text to replace with (including indentation).
-            replace_all (bool): If True, replace all occurrences; otherwise, only the first occurrence.
-        Returns:
-            str: Status message. Example:
-                - "Text replaced in /path/to/file"
-                - "No changes made. [Warning: Search text not found in file] Please review the original file."
-                - "Error replacing text: <error message>"
-        """
         from janito.agent.tools.tools_utils import display_path
 
         disp_path = display_path(file_path)
@@ -78,7 +76,7 @@ class ReplaceTextInFileTool(ToolBase):
             if replaced_count == 0:
                 warning = " [Warning: Search text not found in file]"
             if not file_changed:
-                self.report_warning(" ℹ No changes made.")
+                self.report_warning(" ℹ️ No changes made.")
                 concise_warning = "The search text was not found. Expand your search context with surrounding lines if needed."
                 return f"No changes made. {concise_warning}"
 

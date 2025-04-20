@@ -8,22 +8,27 @@ from janito.agent.tools.gitignore_utils import filter_ignored
 
 @register_tool(name="search_files")
 class SearchFilesTool(ToolBase):
-    """Search for a text pattern in all files within a directory and return matching lines. Respects .gitignore."""
+    """
+    Search for a text pattern in all files within a directory and return matching lines. Respects .gitignore.
 
-    def call(self, directories: list[str], pattern: str, max_results: int = 100) -> str:
-        """
-        Search for a text pattern in all files within one or more directories and return matching lines.
+    Args:
+        directories (list[str]): List of directories to search in.
+        pattern (str): Plain text substring to search for in files. (Not a regular expression or glob pattern.)
+        max_results (int): Maximum number of results to return. Defaults to 100.
+        recursive (bool): Whether to search recursively in subdirectories. Defaults to False.
+    Returns:
+        str: Matching lines from files as a newline-separated string, each formatted as 'filepath:lineno: line'. Example:
+            - "/path/to/file.py:10: def my_function():"
+            - "Warning: Empty search pattern provided. Operation skipped."
+    """
 
-        Args:
-            directories (list[str]): List of directories to search in.
-            pattern (str): Plain text substring to search for in files. (Not a regular expression or glob pattern.)
-            max_results (int): Maximum number of results to return. Defaults to 100.
-
-        Returns:
-            str: Matching lines from files as a newline-separated string, each formatted as 'filepath:lineno: line'. Example:
-                - "/path/to/file.py:10: def my_function():"
-                - "Warning: Empty search pattern provided. Operation skipped."
-        """
+    def call(
+        self,
+        directories: list[str],
+        pattern: str,
+        max_results: int = 100,
+        recursive: bool = False,
+    ) -> str:
         if not pattern:
             self.report_warning(
                 "⚠️ Warning: Empty search pattern provided. Operation skipped."
@@ -31,8 +36,18 @@ class SearchFilesTool(ToolBase):
             return "Warning: Empty search pattern provided. Operation skipped."
         output = []
         for directory in directories:
-            self.report_info(f"🔎 Searching for text '{pattern}' in '{directory}'")
-            for root, dirs, files in os.walk(directory):
+            self.report_info(
+                f"🔎 Searching for text '{pattern}' in '{directory}' (recursive={recursive})"
+            )
+            if recursive:
+                walker = os.walk(directory)
+            else:
+                # Only the top directory, not recursive
+                dirs, files = filter_ignored(
+                    directory, *os.walk(directory).__next__()[1:]
+                )
+                walker = [(directory, dirs, files)]
+            for root, dirs, files in walker:
                 dirs, files = filter_ignored(root, dirs, files)
                 for filename in files:
                     path = os.path.join(root, filename)

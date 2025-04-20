@@ -7,23 +7,18 @@ from janito.agent.tools.tools_utils import display_path, pluralize
 class AppendTextToFileTool(ToolBase):
     """
     Append the given text to the end of a file.
+
+    Args:
+        file_path (str): Path to the file where text will be appended.
+        text_to_append (str): The text content to append to the file.
+    Returns:
+        str: Status message. Example formats:
+            - "Appended 3 lines to /path/to/file.txt"
+            - "Warning: No text provided to append. Operation skipped."
+            - "Error appending text: <error message>"
     """
 
     def call(self, file_path: str, text_to_append: str) -> str:
-        """
-        Append the given text to the end of a file.
-
-        Append the given text to the end of a file.
-
-        Args:
-            file_path (str): Path to the file where text will be appended.
-            text_to_append (str): The text content to append to the file.
-        Returns:
-            str: Status message. Example formats:
-                - "Appended 3 lines to /path/to/file.txt"
-                - "Warning: No text provided to append. Operation skipped."
-                - "Error appending text: <error message>"
-        """
         if not text_to_append:
             self.report_warning(
                 "⚠️ Warning: No text provided to append. Operation skipped."
