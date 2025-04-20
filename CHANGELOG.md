@@ -70,3 +70,11 @@
 ### Changed
 - Updated system prompt templates to remove negated phrasing about minimal/single-region changes. Now directly encourages larger, multi-region, or reorganizational edits when appropriate, and replaces "Avoid excessive chunking" with "Avoid unnecessary splitting of text ranges" for clarity.
 - Affected files: `janito/agent/templates/profiles/system_instructions_base.j2`, `janito/agent/templates/profiles/system_instructions_technical.j2`
+
+## [Unreleased]
+### Changed
+- Updated `janito/agent/templates/features/system_instructions_autocommit.j2` to clarify autocommit behavior after successful operations.
+- Revised `janito/agent/templates/profiles/system_instructions_base.j2` and `system_instructions_technical.j2` to clarify guidance on multi-region edits and documentation updates.
+- Improved documentation in `janito/agent/tools/README.md` for tool usage and registration.
+- Enhanced `janito/agent/tools/search_files.py` for robustness and clearer warnings.
+- Reformatted `janito/cli/runner.py` for style compliance (black), no functional changes.
