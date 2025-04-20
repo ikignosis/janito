@@ -16,6 +16,7 @@ from . import run_bash_command
 from . import run_python_command
 from . import search_files
 from . import tools_utils
+from . import replace_file
 
 __all__ = [
     "ask_user",
@@ -36,4 +37,5 @@ __all__ = [
     "run_python_command",
     "search_files",
     "tools_utils",
+    "replace_file",
 ]
