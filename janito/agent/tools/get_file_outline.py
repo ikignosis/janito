@@ -10,6 +10,10 @@ class GetFileOutlineTool(ToolBase):
     """
     Get an outline of a file's structure.
 
+    Note:
+        The outline extraction for Python files is based on regular expression (regex) pattern matching for class and function definitions.
+        This approach may not capture all edge cases or non-standard code structures. For complex files, further examination or more advanced parsing may be required.
+
     Args:
         file_path (str): Path to the file.
     Returns:
@@ -78,15 +82,14 @@ class GetFileOutlineTool(ToolBase):
                             else ("method" if popped[4] else "function")
                         ),
                         "name": popped[1],
+                        # Add end line for popped item
                         "start": popped[3],
                         "end": idx,
                         "parent": popped[4],
                     }
                 )
-        # Close any remaining stack
-        last_idx = len(lines)
-        while stack:
-            popped = stack.pop()
+        # Pop any remaining items in the stack at EOF
+        for popped in stack:
             outline.append(
                 {
                     "type": (
@@ -96,15 +99,13 @@ class GetFileOutlineTool(ToolBase):
                     ),
                     "name": popped[1],
                     "start": popped[3],
-                    "end": last_idx,
+                    "end": len(lines),
                     "parent": popped[4],
                 }
             )
-        # Sort by start line
-        outline.sort(key=lambda x: x["start"])
         return outline
 
-    def _format_outline_table(self, outline_items: List[dict]) -> str:
+    def _format_outline_table(self, outline_items):
         if not outline_items:
             return "No classes or functions found."
         header = "| Type    | Name        | Start | End | Parent   |\n|---------|-------------|-------|-----|----------|"

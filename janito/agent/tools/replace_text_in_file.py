@@ -12,6 +12,8 @@ class ReplaceTextInFileTool(ToolBase):
 
     NOTE: Indentation (leading whitespace) must be included in both search_text and replacement_text. This tool does not automatically adjust or infer indentation; matches are exact, including whitespace.
 
+    SAFETY: Before making any changes, this tool creates a backup of the original file as <filename>.bak in the same directory. If you need to recover the original, simply restore from the .bak file.
+
     Args:
         file_path (str): Path to the file to modify.
         search_text (str): The exact text to search for (including indentation).
@@ -19,7 +21,7 @@ class ReplaceTextInFileTool(ToolBase):
         replace_all (bool): If True, replace all occurrences; otherwise, only the first occurrence.
     Returns:
         str: Status message. Example:
-            - "Text replaced in /path/to/file"
+            - "Text replaced in /path/to/file (backup at /path/to/file.bak)"
             - "No changes made. [Warning: Search text not found in file] Please review the original file."
             - "Error replacing text: <error message>"
     """
@@ -66,7 +68,12 @@ class ReplaceTextInFileTool(ToolBase):
                     return f"No changes made. {warning_detail}"
                 replaced_count = 1 if occurrences == 1 else 0
                 new_content = content.replace(search_text, replacement_text, 1)
+            import shutil
+
+            backup_path = file_path + ".bak"
             if new_content != content:
+                # Create a .bak backup before writing changes
+                shutil.copy2(file_path, backup_path)
                 with open(file_path, "w", encoding="utf-8", errors="replace") as f:
                     f.write(new_content)
                 file_changed = True
@@ -81,7 +88,7 @@ class ReplaceTextInFileTool(ToolBase):
                 return f"No changes made. {concise_warning}"
 
             self.report_success(
-                f" ✅ {replaced_count} {pluralize('block', replaced_count)} replaced"
+                f" ✅ {replaced_count} {pluralize('block', replaced_count)} replaced (backup at {backup_path})"
             )
 
             # Indentation check for agent warning
@@ -105,8 +112,8 @@ class ReplaceTextInFileTool(ToolBase):
             if search_indent != replace_indent:
                 indent_warning = f" [Warning: Indentation mismatch between search and replacement text: '{search_indent}' vs '{replace_indent}']"
             if "warning_detail" in locals():
-                return f"Text replaced in {file_path}{warning}{indent_warning}\n{warning_detail}"
-            return f"Text replaced in {file_path}{warning}{indent_warning}"
+                return f"Text replaced in {file_path}{warning}{indent_warning} (backup at {backup_path})\n{warning_detail}"
+            return f"Text replaced in {file_path}{warning}{indent_warning} (backup at {backup_path})"
 
         except Exception as e:
             self.report_error(" ❌ Error")
