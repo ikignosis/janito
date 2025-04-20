@@ -36,6 +36,9 @@ def filter_ignored(root, dirs, files, spec=None):
 
     def not_ignored(p):
         rel_path = os.path.relpath(os.path.join(root, p)).replace(os.sep, "/")
+        # Always ignore .git directory (like git does)
+        if rel_path == ".git" or rel_path.startswith(".git/"):
+            return False
         return not spec.match_file(rel_path)
 
     dirs[:] = [d for d in dirs if not_ignored(d)]
