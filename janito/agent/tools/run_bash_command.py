@@ -5,6 +5,7 @@ import subprocess
 import tempfile
 import sys
 
+
 @register_tool(name="run_bash_command")
 class RunBashCommandTool(ToolBase):
     """
@@ -21,7 +22,14 @@ class RunBashCommandTool(ToolBase):
     Returns:
         str: File paths and line counts for stdout and stderr.
     """
-    def call(self, command: str, timeout: int = 60, require_confirmation: bool = False, interactive: bool = False) -> str:
+
+    def call(
+        self,
+        command: str,
+        timeout: int = 60,
+        require_confirmation: bool = False,
+        interactive: bool = False,
+    ) -> str:
         """
         Execute a bash command and capture live output.
 
@@ -51,19 +59,27 @@ class RunBashCommandTool(ToolBase):
             return "Warning: Empty command provided. Operation skipped."
         self.report_info(f"🖥️  Running bash command: {command}\n")
         if interactive:
-            self.report_info("⚠️  Warning: This command might be interactive, require user input, and might hang.")
+            self.report_info(
+                "⚠️  Warning: This command might be interactive, require user input, and might hang."
+            )
 
             sys.stdout.flush()
 
         try:
-            with tempfile.NamedTemporaryFile(mode='w+', prefix='run_bash_stdout_', delete=False, encoding='utf-8') as stdout_file, \
-                 tempfile.NamedTemporaryFile(mode='w+', prefix='run_bash_stderr_', delete=False, encoding='utf-8') as stderr_file:
+            with (
+                tempfile.NamedTemporaryFile(
+                    mode="w+", prefix="run_bash_stdout_", delete=False, encoding="utf-8"
+                ) as stdout_file,
+                tempfile.NamedTemporaryFile(
+                    mode="w+", prefix="run_bash_stderr_", delete=False, encoding="utf-8"
+                ) as stderr_file,
+            ):
                 # Use bash explicitly for command execution
                 process = subprocess.Popen(
                     ["bash", "-c", command],
                     stdout=stdout_file,
                     stderr=stderr_file,
-                    text=True
+                    text=True,
                 )
                 try:
                     return_code = process.wait(timeout=timeout)
@@ -75,19 +91,19 @@ class RunBashCommandTool(ToolBase):
                 # Print live output to user
                 stdout_file.flush()
                 stderr_file.flush()
-                with open(stdout_file.name, 'r', encoding='utf-8') as out_f:
+                with open(stdout_file.name, "r", encoding="utf-8") as out_f:
                     out_f.seek(0)
                     for line in out_f:
                         self.report_stdout(line)
-                with open(stderr_file.name, 'r', encoding='utf-8') as err_f:
+                with open(stderr_file.name, "r", encoding="utf-8") as err_f:
                     err_f.seek(0)
                     for line in err_f:
                         self.report_stderr(line)
 
                 # Count lines
-                with open(stdout_file.name, 'r', encoding='utf-8') as out_f:
+                with open(stdout_file.name, "r", encoding="utf-8") as out_f:
                     stdout_lines = sum(1 for _ in out_f)
-                with open(stderr_file.name, 'r', encoding='utf-8') as err_f:
+                with open(stderr_file.name, "r", encoding="utf-8") as err_f:
                     stderr_lines = sum(1 for _ in err_f)
 
                 self.report_success(f" ✅ return code {return_code}")
@@ -96,27 +112,38 @@ class RunBashCommandTool(ToolBase):
                     warning_msg = "⚠️  Warning: This command might be interactive, require user input, and might hang.\n"
 
                 # Read output contents
-                with open(stdout_file.name, 'r', encoding='utf-8') as out_f:
+                with open(stdout_file.name, "r", encoding="utf-8") as out_f:
                     stdout_content = out_f.read()
-                with open(stderr_file.name, 'r', encoding='utf-8') as err_f:
+                with open(stderr_file.name, "r", encoding="utf-8") as err_f:
                     stderr_content = err_f.read()
 
                 # Thresholds
                 max_lines = 50
                 max_chars = 1000
-                if (stdout_lines <= max_lines and len(stdout_content) <= max_chars and
-                    stderr_lines <= max_lines and len(stderr_content) <= max_chars):
-                    result = warning_msg + f"Return code: {return_code}\n--- STDOUT ---\n{stdout_content}"
+                if (
+                    stdout_lines <= max_lines
+                    and len(stdout_content) <= max_chars
+                    and stderr_lines <= max_lines
+                    and len(stderr_content) <= max_chars
+                ):
+                    result = (
+                        warning_msg
+                        + f"Return code: {return_code}\n--- STDOUT ---\n{stdout_content}"
+                    )
                     if stderr_content.strip():
                         result += f"\n--- STDERR ---\n{stderr_content}"
                     return result
                 else:
-                    result = warning_msg + f"stdout_file: {stdout_file.name} (lines: {stdout_lines})\n"
+                    result = (
+                        warning_msg
+                        + f"stdout_file: {stdout_file.name} (lines: {stdout_lines})\n"
+                    )
                     if stderr_lines > 0 and stderr_content.strip():
-                        result += f"stderr_file: {stderr_file.name} (lines: {stderr_lines})\n"
+                        result += (
+                            f"stderr_file: {stderr_file.name} (lines: {stderr_lines})\n"
+                        )
                     result += f"returncode: {return_code}\nUse the get_lines tool to inspect the contents of these files when needed."
                     return result
         except Exception as e:
             self.report_error(f" ❌ Error: {e}")
             return f"Error running command: {e}"
-

@@ -10,8 +10,8 @@ def main():
         except ValueError:
             print(f"Invalid port number: {sys.argv[1]}")
             sys.exit(1)
-    app.app.run(host='0.0.0.0', port=port, debug=True)
+    app.app.run(host="0.0.0.0", port=port, debug=True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

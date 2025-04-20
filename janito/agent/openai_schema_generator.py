@@ -5,7 +5,6 @@ MUST BE IMPLEMENTED:
 - backward compatibility is not required
 """
 
-
 import inspect
 import re
 import typing
@@ -18,6 +17,7 @@ PYTHON_TYPE_TO_JSON = {
     list: "array",
     dict: "object",
 }
+
 
 def _parse_docstring(docstring: str):
     """
@@ -39,12 +39,14 @@ def _parse_docstring(docstring: str):
             in_params = True
             in_returns = False
             continue
-        if stripped_line.lower().startswith("returns:" ):
+        if stripped_line.lower().startswith("returns:"):
             in_returns = True
             in_params = False
             continue
         if in_params:
-            m = re.match(r"([a-zA-Z_][a-zA-Z0-9_]*)(?: \(([^)]+)\))?: (.+)", stripped_line)
+            m = re.match(
+                r"([a-zA-Z_][a-zA-Z0-9_]*)(?: \(([^)]+)\))?: (.+)", stripped_line
+            )
             if m:
                 param, _, desc = m.groups()
                 param_descs[param] = desc.strip()
@@ -57,6 +59,7 @@ def _parse_docstring(docstring: str):
             if stripped_line:
                 return_desc += (" " if return_desc else "") + stripped_line
     return summary, param_descs, return_desc
+
 
 def _type_to_json_schema(tp):
     # Handle typing.Optional, typing.Union, typing.List, etc.
@@ -78,6 +81,7 @@ def _type_to_json_schema(tp):
         return {"type": "string"}
     return {"type": "string"}
 
+
 def generate_openai_function_schema(func, tool_name: str, tool_class=None):
     """
     Generates an OpenAI-compatible function schema for a callable.
@@ -86,7 +90,9 @@ def generate_openai_function_schema(func, tool_name: str, tool_class=None):
     sig = inspect.signature(func)
     # Enforce explicit str return type
     if sig.return_annotation is inspect._empty or sig.return_annotation is not str:
-        raise ValueError(f"Tool '{tool_name}' must have an explicit return type of 'str'. Found: {sig.return_annotation}")
+        raise ValueError(
+            f"Tool '{tool_name}' must have an explicit return type of 'str'. Found: {sig.return_annotation}"
+        )
     docstring = func.__doc__
     summary, param_descs, _ = _parse_docstring(docstring)
     # Prepend the tool class docstring if available
@@ -96,9 +102,15 @@ def generate_openai_function_schema(func, tool_name: str, tool_class=None):
     else:
         description = summary
     # Check that all parameters in the signature have documentation
-    undocumented = [name for name, param in sig.parameters.items() if name != "self" and name not in param_descs]
+    undocumented = [
+        name
+        for name, param in sig.parameters.items()
+        if name != "self" and name not in param_descs
+    ]
     if undocumented:
-        raise ValueError(f"Tool '{tool_name}' is missing docstring documentation for parameter(s): {', '.join(undocumented)}")
+        raise ValueError(
+            f"Tool '{tool_name}' is missing docstring documentation for parameter(s): {', '.join(undocumented)}"
+        )
     properties = {}
     required = []
     for name, param in sig.parameters.items():
@@ -118,5 +130,5 @@ def generate_openai_function_schema(func, tool_name: str, tool_class=None):
             "type": "object",
             "properties": properties,
             "required": required,
-        }
+        },
     }

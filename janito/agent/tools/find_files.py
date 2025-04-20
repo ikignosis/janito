@@ -5,10 +5,17 @@ from janito.agent.tools.tools_utils import pluralize
 import fnmatch
 from janito.agent.tools.gitignore_utils import filter_ignored
 
+
 @register_tool(name="find_files")
 class FindFilesTool(ToolBase):
 
-    def call(self, directories: list[str], pattern: str, recursive: bool=False, max_results: int=100) -> str:
+    def call(
+        self,
+        directories: list[str],
+        pattern: str,
+        recursive: bool = False,
+        max_results: int = 100,
+    ) -> str:
         """
         Find files in one or more directories matching a pattern. Respects .gitignore.
 
@@ -23,10 +30,14 @@ class FindFilesTool(ToolBase):
             "Warning: Empty file pattern provided. Operation skipped."
         """
         import os
+
         if not pattern:
-            self.report_warning("⚠️ Warning: Empty file pattern provided. Operation skipped.")
+            self.report_warning(
+                "⚠️ Warning: Empty file pattern provided. Operation skipped."
+            )
             return "Warning: Empty file pattern provided. Operation skipped."
         from janito.agent.tools.tools_utils import display_path
+
         output = []
         for directory in directories:
             disp_path = display_path(directory)
@@ -47,7 +58,7 @@ class FindFilesTool(ToolBase):
             suffix = " (Max Reached)"
         else:
             suffix = ""
-        self.report_success(f" ✅ {len(output)} {pluralize('file', len(output))}{suffix}")
+        self.report_success(
+            f" ✅ {len(output)} {pluralize('file', len(output))}{suffix}"
+        )
         return "\n".join(output) + warning
-
-

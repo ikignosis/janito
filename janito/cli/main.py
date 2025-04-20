@@ -4,7 +4,6 @@ from janito.cli.arg_parser import create_parser
 from janito.cli.config_commands import handle_config_commands
 from janito.cli.logging_setup import setup_verbose_logging
 from janito.cli.runner import run_cli
-import janito.agent.tool_auto_imports  # Ensure all tools are registered
 
 
 def main():
@@ -15,15 +14,19 @@ def main():
     """
     # Ensure configs are loaded once at CLI startup
     from janito.agent.config import local_config, global_config
+
     local_config.load()
     global_config.load()
 
     parser = create_parser()
     args = parser.parse_args()
 
-    from janito.agent.config import CONFIG_OPTIONS  # Kept here: avoids circular import at module level
+    from janito.agent.config import (
+        CONFIG_OPTIONS,
+    )  # Kept here: avoids circular import at module level
     from janito.agent.config_defaults import CONFIG_DEFAULTS
     import sys
+
     if getattr(args, "help_config", False):
         print("Available configuration options:\n")
         for key, desc in CONFIG_OPTIONS.items():
@@ -33,8 +36,9 @@ def main():
 
     handle_config_commands(args)
     setup_verbose_logging(args)
-    if getattr(args, 'web', False):
+    if getattr(args, "web", False):
         import subprocess  # Only needed if launching web
-        subprocess.run(['python', '-m', 'janito.web'])
+
+        subprocess.run(["python", "-m", "janito.web"])
     else:
         run_cli(args)

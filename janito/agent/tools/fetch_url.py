@@ -4,9 +4,11 @@ from janito.agent.tool_registry import register_tool
 
 from janito.agent.tools.tool_base import ToolBase
 
+
 @register_tool(name="fetch_url")
 class FetchUrlTool(ToolBase):
     """Fetch the content of a web page and extract its text."""
+
     def call(self, url: str, search_strings: list[str] = None) -> str:
         """
         Fetch the content of a web page and extract its text.
@@ -27,9 +29,14 @@ class FetchUrlTool(ToolBase):
         self.report_info(f"🌐 Fetching URL: {url} ... ")
         response = requests.get(url, timeout=10)
         response.raise_for_status()
-        self.update_progress({'event': 'progress', 'message': f"Fetched URL with status {response.status_code}"})
-        soup = BeautifulSoup(response.text, 'html.parser')
-        text = soup.get_text(separator='\n')
+        self.update_progress(
+            {
+                "event": "progress",
+                "message": f"Fetched URL with status {response.status_code}",
+            }
+        )
+        soup = BeautifulSoup(response.text, "html.parser")
+        text = soup.get_text(separator="\n")
 
         if search_strings:
             filtered = []
@@ -41,10 +48,9 @@ class FetchUrlTool(ToolBase):
                     snippet = text[start:end]
                     filtered.append(snippet)
             if filtered:
-                text = '\n...\n'.join(filtered)
+                text = "\n...\n".join(filtered)
             else:
                 text = "No lines found for the provided search strings."
 
         self.report_success("✅ Result")
         return text
-

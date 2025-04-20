@@ -6,10 +6,10 @@ import shutil
 import os
 
 
-
 @register_tool(name="remove_directory")
 class RemoveDirectoryTool(ToolBase):
     """Remove a directory. If recursive=False and directory not empty, raises error."""
+
     def call(self, directory: str, recursive: bool = False) -> str:
         """
         Remove a directory.
@@ -30,11 +30,9 @@ class RemoveDirectoryTool(ToolBase):
                 shutil.rmtree(directory)
             else:
                 os.rmdir(directory)
-            
+
             self.report_success(f"✅ 1 {pluralize('directory', 1)}")
             return f"Directory removed: {directory}"
         except Exception as e:
             self.report_error(f" ❌ Error removing directory: {e}")
             return f"Error removing directory: {e}"
-
-

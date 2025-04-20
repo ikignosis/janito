@@ -4,6 +4,7 @@ import time
 from openai import OpenAI
 from janito.agent.conversation import ConversationHandler, ProviderError
 
+
 class Agent:
     """Agent capable of handling conversations and tool calls."""
 
@@ -18,7 +19,7 @@ class Agent:
         verbose_tools: bool = False,
         base_url: str = "https://openrouter.ai/api/v1",
         azure_openai_api_version: str = "2023-05-15",
-        use_azure_openai: bool = False
+        use_azure_openai: bool = False,
     ):
         """
         Initialize Agent.
@@ -38,6 +39,7 @@ class Agent:
         if use_azure_openai:
             # Import inside conditional to avoid requiring AzureOpenAI unless needed
             from openai import AzureOpenAI
+
             self.client = AzureOpenAI(
                 api_key=api_key,
                 azure_endpoint=base_url,
@@ -47,21 +49,27 @@ class Agent:
             self.client = OpenAI(
                 base_url=base_url,
                 api_key=api_key,
-                default_headers={
-                    "HTTP-Referer": self.REFERER,
-                    "X-Title": self.TITLE
-                }
+                default_headers={"HTTP-Referer": self.REFERER, "X-Title": self.TITLE},
             )
 
         self.conversation_handler = ConversationHandler(
-            self.client, self.model, 
+            self.client,
+            self.model,
         )
 
     @property
     def usage_history(self):
         return self.conversation_handler.usage_history
 
-    def chat(self, messages, message_handler=None, verbose_response=False, spinner=False, max_tokens=None, max_rounds=50):
+    def chat(
+        self,
+        messages,
+        message_handler=None,
+        verbose_response=False,
+        spinner=False,
+        max_tokens=None,
+        max_rounds=50,
+    ):
 
         max_retries = 5
         for attempt in range(1, max_retries + 1):
@@ -72,21 +80,25 @@ class Agent:
                     message_handler=message_handler,
                     verbose_response=verbose_response,
                     spinner=spinner,
-                    max_tokens=max_tokens
+                    max_tokens=max_tokens,
                 )
             except ProviderError as e:
-                error_data = getattr(e, 'error_data', {}) or {}
-                code = error_data.get('code', '')
+                error_data = getattr(e, "error_data", {}) or {}
+                code = error_data.get("code", "")
                 # Retry only on 5xx errors
                 if isinstance(code, int) and 500 <= code < 600:
                     pass
-                elif isinstance(code, str) and code.isdigit() and 500 <= int(code) < 600:
+                elif (
+                    isinstance(code, str) and code.isdigit() and 500 <= int(code) < 600
+                ):
                     code = int(code)
                 else:
                     raise
 
                 if attempt < max_retries:
-                    print(f"ProviderError with 5xx code encountered (attempt {attempt}/{max_retries}). Retrying in 5 seconds...")
+                    print(
+                        f"ProviderError with 5xx code encountered (attempt {attempt}/{max_retries}). Retrying in 5 seconds..."
+                    )
                     time.sleep(5)
                 else:
                     print("Max retries reached. Raising error.")

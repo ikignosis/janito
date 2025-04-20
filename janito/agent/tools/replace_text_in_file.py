@@ -2,17 +2,23 @@ from janito.agent.tools.tool_base import ToolBase
 from janito.agent.tool_registry import register_tool
 from janito.agent.tools.tools_utils import pluralize
 
+
 @register_tool(name="replace_text_in_file")
-
-
 class ReplaceTextInFileTool(ToolBase):
     """Replace exact occurrences of a given text in a file.
 
-This tool is designed to make minimal, targeted changes—preferably a small region modifications—rather than rewriting large sections or the entire file. Use it for precise, context-aware edits.
+    This tool is designed to make minimal, targeted changes—preferably a small region modifications—rather than rewriting large sections or the entire file. Use it for precise, context-aware edits.
 
-NOTE: Indentation (leading whitespace) must be included in both search_text and replacement_text. This tool does not automatically adjust or infer indentation; matches are exact, including whitespace.
-"""
-    def call(self, file_path: str, search_text: str, replacement_text: str, replace_all: bool = False) -> str:
+    NOTE: Indentation (leading whitespace) must be included in both search_text and replacement_text. This tool does not automatically adjust or infer indentation; matches are exact, including whitespace.
+    """
+
+    def call(
+        self,
+        file_path: str,
+        search_text: str,
+        replacement_text: str,
+        replace_all: bool = False,
+    ) -> str:
         """
         Replace exact occurrences of a given text in a file.
 
@@ -28,11 +34,18 @@ NOTE: Indentation (leading whitespace) must be included in both search_text and 
                 - "Error replacing text: <error message>"
         """
         from janito.agent.tools.tools_utils import display_path
+
         disp_path = display_path(file_path)
         action = "all occurrences" if replace_all else None
         # Show only concise info (lengths, not full content)
-        search_preview = (search_text[:20] + '...') if len(search_text) > 20 else search_text
-        replace_preview = (replacement_text[:20] + '...') if len(replacement_text) > 20 else replacement_text
+        search_preview = (
+            (search_text[:20] + "...") if len(search_text) > 20 else search_text
+        )
+        replace_preview = (
+            (replacement_text[:20] + "...")
+            if len(replacement_text) > 20
+            else replacement_text
+        )
         search_lines = len(search_text.splitlines())
         replace_lines = len(replacement_text.splitlines())
         info_msg = f"📝 Replacing in {disp_path}: {search_lines}→{replace_lines} lines"
@@ -41,7 +54,7 @@ NOTE: Indentation (leading whitespace) must be included in both search_text and 
         self.report_info(info_msg)
 
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
 
             if replace_all:
@@ -56,35 +69,47 @@ NOTE: Indentation (leading whitespace) must be included in both search_text and 
                 replaced_count = 1 if occurrences == 1 else 0
                 new_content = content.replace(search_text, replacement_text, 1)
             if new_content != content:
-                with open(file_path, 'w', encoding='utf-8') as f:
+                with open(file_path, "w", encoding="utf-8") as f:
                     f.write(new_content)
                 file_changed = True
             else:
                 file_changed = False
-            warning = ''
+            warning = ""
             if replaced_count == 0:
                 warning = " [Warning: Search text not found in file]"
             if not file_changed:
                 self.report_warning(" ℹ No changes made.")
                 concise_warning = "The search text was not found. Expand your search context with surrounding lines if needed."
                 return f"No changes made. {concise_warning}"
-            
-            self.report_success(f" ✅ {replaced_count} {pluralize('block', replaced_count)} replaced")
+
+            self.report_success(
+                f" ✅ {replaced_count} {pluralize('block', replaced_count)} replaced"
+            )
+
             # Indentation check for agent warning
             def leading_ws(line):
                 import re
+
                 m = re.match(r"^\s*", line)
-                return m.group(0) if m else ''
-            search_indent = leading_ws(search_text.splitlines()[0]) if search_text.splitlines() else ''
-            replace_indent = leading_ws(replacement_text.splitlines()[0]) if replacement_text.splitlines() else ''
-            indent_warning = ''
+                return m.group(0) if m else ""
+
+            search_indent = (
+                leading_ws(search_text.splitlines()[0])
+                if search_text.splitlines()
+                else ""
+            )
+            replace_indent = (
+                leading_ws(replacement_text.splitlines()[0])
+                if replacement_text.splitlines()
+                else ""
+            )
+            indent_warning = ""
             if search_indent != replace_indent:
                 indent_warning = f" [Warning: Indentation mismatch between search and replacement text: '{search_indent}' vs '{replace_indent}']"
-            if 'warning_detail' in locals():
+            if "warning_detail" in locals():
                 return f"Text replaced in {file_path}{warning}{indent_warning}\n{warning_detail}"
             return f"Text replaced in {file_path}{warning}{indent_warning}"
 
         except Exception as e:
             self.report_error(" ❌ Error")
             return f"Error replacing text: {e}"
-

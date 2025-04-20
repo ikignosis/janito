@@ -7,7 +7,9 @@ def setup_verbose_logging(args):
         httpx_logger = logging.getLogger("httpx")
         httpx_logger.setLevel(logging.DEBUG)
         handler = logging.StreamHandler()
-        handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
+        handler.setFormatter(
+            logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        )
         httpx_logger.addHandler(handler)
 
     if args.verbose_http_raw:
@@ -16,12 +18,16 @@ def setup_verbose_logging(args):
         httpcore_logger = logging.getLogger("httpcore")
         httpcore_logger.setLevel(logging.DEBUG)
         handler_core = logging.StreamHandler()
-        handler_core.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
+        handler_core.setFormatter(
+            logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        )
         httpcore_logger.addHandler(handler_core)
 
         # Re-add handler to httpx logger in case
         httpx_logger = logging.getLogger("httpx")
         httpx_logger.setLevel(logging.DEBUG)
         handler = logging.StreamHandler()
-        handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
+        handler.setFormatter(
+            logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        )
         httpx_logger.addHandler(handler)

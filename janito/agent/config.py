@@ -30,8 +30,6 @@ class BaseConfig:
         return self._data
 
 
-
-
 class FileConfig(BaseConfig):
     def __init__(self, path):
         super().__init__()
@@ -40,20 +38,18 @@ class FileConfig(BaseConfig):
 
     def load(self):
         if self.path.exists():
-            with open(self.path, 'r') as f:
+            with open(self.path, "r") as f:
                 self._data = json.load(f)
                 # Remove keys with value None (null in JSON)
                 self._data = {k: v for k, v in self._data.items() if v is not None}
-
 
         else:
             self._data = {}
 
     def save(self):
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.path, 'w') as f:
+        with open(self.path, "w") as f:
             json.dump(self._data, f, indent=2)
-
 
 
 CONFIG_OPTIONS = {
@@ -70,6 +66,7 @@ CONFIG_OPTIONS = {
     # Note: template.* keys are validated dynamically, not statically here
 }
 
+
 class BaseConfig:
     def __init__(self):
         self._data = {}
@@ -82,7 +79,6 @@ class BaseConfig:
 
     def all(self):
         return self._data
-
 
         """
         Returns a dictionary suitable for passing as Jinja2 template variables.
@@ -98,8 +94,10 @@ class BaseConfig:
 
 # Import defaults for reference
 
+
 class EffectiveConfig:
     """Read-only merged view of local and global configs"""
+
     def __init__(self, local_cfg, global_cfg):
         self.local_cfg = local_cfg
         self.global_cfg = global_cfg
@@ -127,10 +125,11 @@ class EffectiveConfig:
 
 # Singleton instances
 
-local_config = FileConfig(Path('.janito/config.json'))
-global_config = FileConfig(Path.home() / '.janito/config.json')
+local_config = FileConfig(Path(".janito/config.json"))
+global_config = FileConfig(Path.home() / ".janito/config.json")
 
 effective_config = EffectiveConfig(local_config, global_config)
+
 
 def get_api_key():
     """Retrieve API key from config files (local, then global)."""

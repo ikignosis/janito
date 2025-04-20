@@ -19,7 +19,9 @@ def handle_config_commands(args):
                 sys.exit(1)
             key = key.strip()
             if key not in CONFIG_OPTIONS:
-                print(f"Invalid config key: '{key}'. Supported keys are: {', '.join(CONFIG_OPTIONS.keys())}")
+                print(
+                    f"Invalid config key: '{key}'. Supported keys are: {', '.join(CONFIG_OPTIONS.keys())}"
+                )
                 sys.exit(1)
             runtime_config.set(key, val.strip())
     if args.set_local_config:
@@ -30,7 +32,9 @@ def handle_config_commands(args):
             sys.exit(1)
         key = key.strip()
         if key not in CONFIG_OPTIONS:
-            print(f"Invalid config key: '{key}'. Supported keys are: {', '.join(CONFIG_OPTIONS.keys())}")
+            print(
+                f"Invalid config key: '{key}'. Supported keys are: {', '.join(CONFIG_OPTIONS.keys())}"
+            )
             sys.exit(1)
         local_config.set(key, val.strip())
         local_config.save()
@@ -46,18 +50,20 @@ def handle_config_commands(args):
             sys.exit(1)
         key = key.strip()
         if key not in CONFIG_OPTIONS and not key.startswith("template."):
-            print(f"Invalid config key: '{key}'. Supported keys are: {', '.join(CONFIG_OPTIONS.keys())}")
+            print(
+                f"Invalid config key: '{key}'. Supported keys are: {', '.join(CONFIG_OPTIONS.keys())}"
+            )
             sys.exit(1)
-        if key.startswith('template.'):
-            subkey = key[len('template.'):]
-            template_dict = global_config.get('template', {})
+        if key.startswith("template."):
+            subkey = key[len("template.") :]
+            template_dict = global_config.get("template", {})
             template_dict[subkey] = val.strip()
-            global_config.set('template', template_dict)
+            global_config.set("template", template_dict)
             global_config.save()
             # Remove legacy flat key if present
             if key in global_config._data:
                 del global_config._data[key]
-            runtime_config.set('template', template_dict)
+            runtime_config.set("template", template_dict)
             print(f"Global config updated: template.{subkey} = {val.strip()}")
             did_something = True
         else:
@@ -102,7 +108,11 @@ def handle_config_commands(args):
                     continue
                 if key == "api_key":
                     value = local_config.get("api_key")
-                    value = value[:4] + '...' + value[-4:] if value and len(value) > 8 else ('***' if value else None)
+                    value = (
+                        value[:4] + "..." + value[-4:]
+                        if value and len(value) > 8
+                        else ("***" if value else None)
+                    )
                 else:
                     value = unified_config.get(key)
                 local_items[key] = value
@@ -118,36 +128,58 @@ def handle_config_commands(args):
                     continue
                 if key == "api_key":
                     value = global_config.get("api_key")
-                    value = value[:4] + '...' + value[-4:] if value and len(value) > 8 else ('***' if value else None)
+                    value = (
+                        value[:4] + "..." + value[-4:]
+                        if value and len(value) > 8
+                        else ("***" if value else None)
+                    )
                 else:
                     value = unified_config.get(key)
                 global_items[key] = value
 
             # Mask API key
             for cfg in (local_items, global_items):
-                if 'api_key' in cfg and cfg['api_key']:
-                    val = cfg['api_key']
-                    cfg['api_key'] = val[:4] + '...' + val[-4:] if len(val) > 8 else '***'
+                if "api_key" in cfg and cfg["api_key"]:
+                    val = cfg["api_key"]
+                    cfg["api_key"] = (
+                        val[:4] + "..." + val[-4:] if len(val) > 8 else "***"
+                    )
 
             # Print local config
             from ._print_config import print_config_items
-            print_config_items(local_items, color_label="[cyan]🏠 Local Configuration[/cyan]")
+
+            print_config_items(
+                local_items, color_label="[cyan]🏠 Local Configuration[/cyan]"
+            )
 
             # Print global config
-            print_config_items(global_items, color_label="[yellow]🌐 Global Configuration[/yellow]")
-
+            print_config_items(
+                global_items, color_label="[yellow]🌐 Global Configuration[/yellow]"
+            )
 
         # Show defaults for unset keys
         shown_keys = set(local_items.keys()) | set(global_items.keys())
-        default_items = {k: v for k, v in CONFIG_DEFAULTS.items() if k not in shown_keys and k != 'api_key'}
+        default_items = {
+            k: v
+            for k, v in CONFIG_DEFAULTS.items()
+            if k not in shown_keys and k != "api_key"
+        }
         if default_items:
             print("[green]🟢 Defaults (not set in config files)[/green]")
             for key, value in default_items.items():
                 # Special case for system_prompt: show template file if None
                 if key == "system_prompt" and value is None:
                     from pathlib import Path
-                    template_path = Path(__file__).parent / "agent" / "templates" / "system_instructions.j2"
-                    print(f"{key} = (default template path: {home_shorten(str(template_path))})")
+
+                    template_path = (
+                        Path(__file__).parent
+                        / "agent"
+                        / "templates"
+                        / "system_instructions.j2"
+                    )
+                    print(
+                        f"{key} = (default template path: {home_shorten(str(template_path))})"
+                    )
                 else:
                     print(f"{key} = {value}")
             print()
@@ -155,8 +187,9 @@ def handle_config_commands(args):
 
     import os
     from pathlib import Path
+
     if getattr(args, "config_reset_local", False):
-        local_path = Path('.janito/config.json')
+        local_path = Path(".janito/config.json")
         if local_path.exists():
             os.remove(local_path)
             print(f"Removed local config file: {local_path}")
@@ -164,7 +197,7 @@ def handle_config_commands(args):
             print(f"Local config file does not exist: {local_path}")
         sys.exit(0)
     if getattr(args, "config_reset_global", False):
-        global_path = Path.home() / '.janito/config.json'
+        global_path = Path.home() / ".janito/config.json"
         if global_path.exists():
             os.remove(global_path)
             print(f"Removed global config file: {global_path}")

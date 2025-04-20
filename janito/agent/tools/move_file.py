@@ -4,11 +4,13 @@ from janito.agent.tool_registry import register_tool
 from janito.agent.tools.utils import expand_path, display_path
 from janito.agent.tools.tool_base import ToolBase
 
+
 @register_tool(name="move_file")
 class MoveFileTool(ToolBase):
     """
     Move a file from src_path to dest_path.
     """
+
     def call(self, src_path: str, dest_path: str, overwrite: bool = False) -> str:
         """
         Move a file from src_path to dest_path.
@@ -36,7 +38,9 @@ class MoveFileTool(ToolBase):
             return f"\u274c Source path '{disp_src}' is not a file."
         if os.path.exists(dest):
             if not overwrite:
-                self.report_error(f"\u2757 Destination '{disp_dest}' exists and overwrite is False.")
+                self.report_error(
+                    f"\u2757 Destination '{disp_dest}' exists and overwrite is False."
+                )
                 return f"\u2757 Destination '{disp_dest}' already exists and overwrite is False."
             if os.path.isdir(dest):
                 self.report_error(f"\u274c Destination '{disp_dest}' is a directory.")

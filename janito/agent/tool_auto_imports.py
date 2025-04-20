@@ -10,7 +10,7 @@ TOOLS_DIR = Path(__file__).parent / "tools"
 PACKAGE_PREFIX = "janito.agent.tools."
 
 for finder, name, ispkg in pkgutil.iter_modules([str(TOOLS_DIR)]):
-    if name.startswith("_") or not name.endswith(('.py', '')):
+    if name.startswith("_") or not name.endswith((".py", "")):
         continue
     # Avoid importing __init__.py or non-python files
     if name == "__init__":

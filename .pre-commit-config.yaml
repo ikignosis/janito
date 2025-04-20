@@ -4,3 +4,8 @@ repos:
     hooks:
       - id: ruff
         args: ["--fix"]  # Optional: auto-fix issues where possible
+
+  - repo: https://github.com/psf/black
+    rev: 24.3.0  # Use the latest stable version or pin as needed
+    hooks:
+      - id: black

@@ -5,6 +5,7 @@ from janito.agent.openai_schema_generator import generate_openai_function_schema
 
 _tool_registry = {}
 
+
 def register_tool(tool=None, *, name: str = None):
     if tool is None:
         return lambda t: register_tool(t, name=name)
@@ -19,26 +20,31 @@ def register_tool(tool=None, *, name: str = None):
     _tool_registry[tool_name] = {
         "function": func,
         "description": schema["description"],
-        "parameters": schema["parameters"]
+        "parameters": schema["parameters"],
     }
     return tool
+
 
 def get_tool_schemas():
     schemas = []
     for name, entry in _tool_registry.items():
-        schemas.append({
-            "type": "function",
-            "function": {
-                "name": name,
-                "description": entry["description"],
-                "parameters": entry["parameters"]
+        schemas.append(
+            {
+                "type": "function",
+                "function": {
+                    "name": name,
+                    "description": entry["description"],
+                    "parameters": entry["parameters"],
+                },
             }
-        })
+        )
     return schemas
+
 
 def handle_tool_call(tool_call, message_handler=None, verbose=False):
     import uuid
-    call_id = getattr(tool_call, 'id', None) or str(uuid.uuid4())
+
+    call_id = getattr(tool_call, "id", None) or str(uuid.uuid4())
     tool_entry = _tool_registry.get(tool_call.function.name)
     if not tool_entry:
         return f"Unknown tool: {tool_call.function.name}"
@@ -47,35 +53,40 @@ def handle_tool_call(tool_call, message_handler=None, verbose=False):
     if verbose:
         print(f"[Tool Call] {tool_call.function.name} called with arguments: {args}")
     instance = None
-    if hasattr(func, '__self__') and isinstance(func.__self__, ToolBase):
+    if hasattr(func, "__self__") and isinstance(func.__self__, ToolBase):
         instance = func.__self__
         if message_handler:
             instance._progress_callback = message_handler.handle_message
     # Emit tool_call event before calling the tool
     if message_handler:
-        message_handler.handle_message({
-            'type': 'tool_call',
-            'tool': tool_call.function.name,
-            'call_id': call_id,
-            'arguments': args,
-        })
+        message_handler.handle_message(
+            {
+                "type": "tool_call",
+                "tool": tool_call.function.name,
+                "call_id": call_id,
+                "arguments": args,
+            }
+        )
     try:
         result = func(**args)
         if message_handler:
-            message_handler.handle_message({
-                'type': 'tool_result',
-                'tool': tool_call.function.name,
-                'call_id': call_id,
-                'result': result,
-            })
+            message_handler.handle_message(
+                {
+                    "type": "tool_result",
+                    "tool": tool_call.function.name,
+                    "call_id": call_id,
+                    "result": result,
+                }
+            )
         return result
     except Exception as e:
         if message_handler:
-            message_handler.handle_message({
-                'type': 'tool_error',
-                'tool': tool_call.function.name,
-                'call_id': call_id,
-                'error': str(e),
-            })
+            message_handler.handle_message(
+                {
+                    "type": "tool_error",
+                    "tool": tool_call.function.name,
+                    "call_id": call_id,
+                    "error": str(e),
+                }
+            )
         raise
-

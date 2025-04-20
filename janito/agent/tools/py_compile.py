@@ -5,12 +5,14 @@ from janito.agent.tool_registry import register_tool
 from typing import Optional
 import py_compile
 
+
 @register_tool(name="py_compile")
 class PyCompileTool(ToolBase):
     """
     Validate a Python file by compiling it with py_compile.
     Useful to validate python files after changing them, specially after import changes.
     """
+
     def call(self, file_path: str, doraise: Optional[bool] = True) -> str:
         """
         Compile a Python file to check for syntax errors.

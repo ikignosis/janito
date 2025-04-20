@@ -1,10 +1,13 @@
 from rich.console import Console
+
 console = Console()
+
 
 class MessageHandler:
     """
     Unified message handler for all output (tool, agent, system) using Rich for styled output.
     """
+
     def __init__(self):
         self.console = console
 
@@ -14,6 +17,7 @@ class MessageHandler:
         If dict: uses type/message. If str: uses msg_type or defaults to 'info'.
         """
         from rich.markdown import Markdown
+
         if isinstance(msg, dict):
             msg_type = msg.get("type", "info")
             message = msg.get("message", "")
@@ -31,10 +35,18 @@ class MessageHandler:
                 self.console.print(message, style="bold yellow", end="\n")
             elif msg_type == "stdout":
                 from rich.text import Text
-                self.console.print(Text(message, style="on #003300", no_wrap=True, overflow=None), end="")
+
+                self.console.print(
+                    Text(message, style="on #003300", no_wrap=True, overflow=None),
+                    end="",
+                )
             elif msg_type == "stderr":
                 from rich.text import Text
-                self.console.print(Text(message, style="on #330000", no_wrap=True, overflow=None), end="")
+
+                self.console.print(
+                    Text(message, style="on #330000", no_wrap=True, overflow=None),
+                    end="",
+                )
             else:
                 # Ignore unsupported message types silently
                 return
