@@ -1,9 +1,0 @@
-{# Feature extension: autocommit #}
-{% extends parent_template %}
-
-{% block finishing %}
-{{ super() }}
-- After doing the requested action, automatically commit changes after successful operations.
-{% endblock %}
-
-{# Usage: This template is a feature extension. Use with e.g. 'technical-autocommit'. #}

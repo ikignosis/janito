@@ -22,6 +22,20 @@ Plan changes only after gathering all the necessary information.
 Always execute the plan immediately after presenting it, unless the user requests otherwise.
 {% endblock %}
 
+<safety>
+{% block safety %}
+- Always update all references and validate the system before removing or renaming files.
+- Only remove or rename files after all dependent code has been updated and validated.
+- Prefer the following order for destructive operations:
+  1. Update all imports/references.
+  2. Validate the changes (e.g., static analysis, compilation).
+  3. Remove or rename the file.
+  4. Re-validate the system.
+- Roll back changes if any validation step fails.
+{% endblock %}
+</safety>
+
+
 <context>
 {% block context %}
 Before creating or changing any files, always explore the project structure to understand existing directories, files, and their purposes.
