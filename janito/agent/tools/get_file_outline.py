@@ -25,7 +25,7 @@ class GetFileOutlineTool(ToolBase):
         self.report_info(f"📄 Getting outline for: {disp_path}")
 
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, "r", encoding="utf-8", errors="replace") as f:
                 lines = f.readlines()
             outline = [line.strip() for line in lines if line.strip()]
             num_items = len(outline)

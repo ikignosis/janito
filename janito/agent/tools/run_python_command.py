@@ -81,27 +81,39 @@ class RunPythonCommandTool(ToolBase):
                 # Print live output to user
                 stdout_file.flush()
                 stderr_file.flush()
-                with open(stdout_file.name, "r", encoding="utf-8") as out_f:
+                with open(
+                    stdout_file.name, "r", encoding="utf-8", errors="replace"
+                ) as out_f:
                     out_f.seek(0)
                     for line in out_f:
                         self.report_stdout(line)
-                with open(stderr_file.name, "r", encoding="utf-8") as err_f:
+                with open(
+                    stderr_file.name, "r", encoding="utf-8", errors="replace"
+                ) as err_f:
                     err_f.seek(0)
                     for line in err_f:
                         self.report_stderr(line)
                 # Count lines
-                with open(stdout_file.name, "r", encoding="utf-8") as out_f:
+                with open(
+                    stdout_file.name, "r", encoding="utf-8", errors="replace"
+                ) as out_f:
                     stdout_lines = sum(1 for _ in out_f)
-                with open(stderr_file.name, "r", encoding="utf-8") as err_f:
+                with open(
+                    stderr_file.name, "r", encoding="utf-8", errors="replace"
+                ) as err_f:
                     stderr_lines = sum(1 for _ in err_f)
                 self.report_success(f" ✅ return code {return_code}")
                 warning_msg = ""
                 if interactive:
                     warning_msg = "⚠️  Warning: This code might be interactive, require user input, and might hang.\n"
                 # Read output contents
-                with open(stdout_file.name, "r", encoding="utf-8") as out_f:
+                with open(
+                    stdout_file.name, "r", encoding="utf-8", errors="replace"
+                ) as out_f:
                     stdout_content = out_f.read()
-                with open(stderr_file.name, "r", encoding="utf-8") as err_f:
+                with open(
+                    stderr_file.name, "r", encoding="utf-8", errors="replace"
+                ) as err_f:
                     stderr_content = err_f.read()
                 # Thresholds
                 max_lines = 100

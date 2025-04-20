@@ -32,7 +32,7 @@ class GetLinesTool(ToolBase):
             self.report_info(f"📄 Reading {disp_path} (all lines)")
 
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, "r", encoding="utf-8", errors="replace") as f:
                 lines = f.readlines()
             selected = lines[
                 (from_line - 1 if from_line else 0) : (to_line if to_line else None)

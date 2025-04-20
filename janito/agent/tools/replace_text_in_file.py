@@ -54,7 +54,7 @@ class ReplaceTextInFileTool(ToolBase):
         self.report_info(info_msg)
 
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, "r", encoding="utf-8", errors="replace") as f:
                 content = f.read()
 
             if replace_all:
@@ -69,7 +69,7 @@ class ReplaceTextInFileTool(ToolBase):
                 replaced_count = 1 if occurrences == 1 else 0
                 new_content = content.replace(search_text, replacement_text, 1)
             if new_content != content:
-                with open(file_path, "w", encoding="utf-8") as f:
+                with open(file_path, "w", encoding="utf-8", errors="replace") as f:
                     f.write(new_content)
                 file_changed = True
             else:

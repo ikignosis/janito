@@ -11,7 +11,7 @@ def load_gitignore_patterns(gitignore_path=".gitignore"):
     if not os.path.exists(gitignore_path):
         _spec = pathspec.PathSpec.from_lines("gitwildmatch", [])
         return _spec
-    with open(gitignore_path, "r", encoding="utf-8") as f:
+    with open(gitignore_path, "r", encoding="utf-8", errors="replace") as f:
         lines = f.readlines()
     _spec = pathspec.PathSpec.from_lines("gitwildmatch", lines)
     return _spec

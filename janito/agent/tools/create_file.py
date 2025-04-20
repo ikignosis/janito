@@ -44,9 +44,11 @@ class CreateFileTool(ToolBase):
             self.report_info(f"📝 Creating file: '{disp_path}' ... ")
         old_lines = None
         if updating and overwrite:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, "r", encoding="utf-8", errors="replace") as f:
                 old_lines = sum(1 for _ in f)
-        with open(path, "w", encoding="utf-8") as f:
+        # Ensure parent directories exist
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8", errors="replace") as f:
             f.write(content)
         new_lines = content.count("\n") + 1 if content else 0
         if old_lines is not None:
