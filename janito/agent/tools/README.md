@@ -51,7 +51,7 @@ Get specific lines from a file.
 **Description:**  
 (Utility functions for .gitignore handling, not a direct tool.)
 
-### python_exec.py
+### run_python_command.py
 **Description:**  
 Execute Python code in a separate process and capture output.  
 **Usage:**  
