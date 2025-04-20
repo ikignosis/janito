@@ -76,8 +76,10 @@ class ConversationHandler:
                                 tool_choice="auto",
                                 temperature=0.2,
                             )
-                        # FIX: Use self.client.chat(...) for streaming
-                        response_stream = self.client.chat(**openai_args)
+                        # FIX: Use .chat.completions.create for streaming
+                        response_stream = self.client.chat.completions.create(
+                            **openai_args
+                        )
                         content_accum = ""
                         for event in response_stream:
                             if verbose_stream or runtime_config.get(
@@ -132,14 +134,14 @@ class ConversationHandler:
                         )
                         with console.status(spinner_msg, spinner="dots") as status:
                             if runtime_config.get("vanilla_mode", False):
-                                response = self.client.chat(
+                                response = self.client.chat.completions.create(
                                     model=self.model,
                                     messages=messages,
                                     max_tokens=resolved_max_tokens,
                                 )
                             else:
                                 tools = get_tool_schemas()
-                                response = self.client.chat(
+                                response = self.client.chat.completions.create(
                                     model=self.model,
                                     messages=messages,
                                     tools=tools,
@@ -150,13 +152,13 @@ class ConversationHandler:
                             status.stop()
                     else:
                         if runtime_config.get("vanilla_mode", False):
-                            response = self.client.chat(
+                            response = self.client.chat.completions.create(
                                 model=self.model,
                                 messages=messages,
                                 max_tokens=resolved_max_tokens,
                             )
                         else:
-                            response = self.client.chat(
+                            response = self.client.chat.completions.create(
                                 model=self.model,
                                 messages=messages,
                                 tools=get_tool_schemas(),
