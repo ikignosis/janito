@@ -166,6 +166,13 @@ def run_cli(args):
                 import json
 
                 console.print_json(json.dumps(response))
+            else:
+                # Print the main response content
+                if response and response.get("content"):
+                    console.print(response["content"])
+            # Always print model footer in single-prompt mode
+            if model:
+                console.print(f"[dim]Response generated using {model}[/dim]")
         except MaxRoundsExceededError:
             console.print("[red]Max conversation rounds exceeded.[/red]")
         except ProviderError as e:
