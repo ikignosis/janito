@@ -5,7 +5,7 @@ from janito.agent.tools.tools_utils import pluralize
 
 @register_tool(name="get_lines")
 class GetLinesTool(ToolBase):
-    """Read lines from a file. Returns specific lines if a range is provided, or the entire file if no range is given."""
+    """Read lines from a file. Returns specific lines if a range is provided, or the entire file if no range is given. If both from_line and to_line are None, the entire file is returned in one call—no need to chunk or split requests when reading the full file."""
 
     def call(self, file_path: str, from_line: int = None, to_line: int = None) -> str:
         """

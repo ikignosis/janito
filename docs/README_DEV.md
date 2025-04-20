@@ -144,3 +144,30 @@ Vanilla mode is activated via the CLI/config (`--vanilla`). It disables all tool
 - Each tool class must have a class-level docstring summarizing its purpose and behavior.
 - The class docstring is prepended to the tool's description in the OpenAI schema and is user-facing.
 - Write class docstrings clearly and concisely, as they will be shown to users.
+
+
+## Code Style, Linting, and Pre-commit Hooks
+
+This project uses [pre-commit](https://pre-commit.com/) to enforce code style and linting automatically using [Black](https://black.readthedocs.io/en/stable/) (formatter) and [Ruff](https://docs.astral.sh/ruff/) (linter).
+
+### Setup
+1. Install pre-commit if you haven't already:
+   ```bash
+   pip install pre-commit
+   ```
+2. Install the hooks:
+   ```bash
+   pre-commit install
+   ```
+
+### Usage
+- Hooks will run automatically on `git commit`.
+- To manually check all files:
+   ```bash
+   pre-commit run --all-files
+   ```
+- If any issues are found, pre-commit will attempt to fix them or display errors to resolve.
+
+### Notes
+- Always run the hooks before pushing code to ensure consistent style and linting.
+- See `.pre-commit-config.yaml` for configuration details.

@@ -41,7 +41,7 @@ Get an outline of a file's structure (non-empty lines).
 
 ### get_lines.py
 **Description:**  
-Get specific lines from a file.  
+Get specific lines from a file. If both `from_line` and `to_line` are omitted, the entire file is returned in one call—no need to chunk or split requests when reading the full file.  
 **Usage:**  
 - `file_path` (str): Path to the file.  
 - `from_line` (int, optional): Start line (1-based).  
