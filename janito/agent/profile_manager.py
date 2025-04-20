@@ -57,4 +57,4 @@ class AgentProfileManager:
         return self.agent.chat(*args, **kwargs)
 
 
-# Supports combinatorial styles (e.g., 'technical-allcommit'), propagates interaction_mode and platform to the prompt renderer.
+# Supports combinatorial styles (e.g., 'technical-commit_all'), propagates interaction_mode and platform to the prompt renderer.

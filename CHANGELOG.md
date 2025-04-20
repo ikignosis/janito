@@ -73,7 +73,7 @@
 
 ## [Unreleased]
 ### Changed
-- Updated `janito/agent/templates/features/system_prompt_template_allcommit.j2` to clarify allcommit behavior after successful operations.
+- Updated `janito/agent/templates/features/system_prompt_template_commit_all.j2` to clarify commit_all behavior after successful operations.
 - Revised `janito/agent/templates/profiles/system_prompt_template_base.j2` and `system_prompt_template_technical.j2` to clarify guidance on multi-region edits and documentation updates.
 - Improved documentation in `janito/agent/tools/README.md` for tool usage and registration.
 - Enhanced `janito/agent/tools/search_files.py` for robustness and clearer warnings.

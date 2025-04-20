@@ -6,7 +6,7 @@ import os
 
 
 def parse_style_string(style: str) -> (str, List[str]):
-    """Parse a style string like 'technical-allcommit' into main style and features."""
+    """Parse a style string like 'technical-commit_all' into main style and features."""
     if "-" in style:
         parts = style.split("-")
         return parts[0], parts[1:]
@@ -60,7 +60,7 @@ def render_system_prompt_template(
 ) -> str:
     """
     Renders the system prompt template, supporting combinatorial styles.
-    interaction_style: e.g., 'technical', 'default', or 'technical-allcommit'.
+    interaction_style: e.g., 'technical', 'default', or 'technical-commit_all'.
     platform_name: normalized platform string (windows, linux, darwin, etc.)
     python_version: Python version string
     shell_info: Detected shell/environment string
@@ -121,16 +121,16 @@ def render_system_prompt_template(
 
 
 if __name__ == "__main__":
-    # Example: technical-allcommit
+    # Example: technical-commit_all
     prompt = render_system_prompt_template(
         "software engineer",
-        interaction_style="technical-allcommit",
+        interaction_style="technical-commit_all",
         interaction_mode="prompt",
     )
     print(prompt)
 
 # Combinatorial style system:
-# - interaction_style can be e.g. 'technical-allcommit'
+# - interaction_style can be e.g. 'technical-commit_all'
 # - The first part is the main style, subsequent parts are feature extensions.
 # - Each feature template (system_prompt_template_<feature>.j2) must use `{% extends parent_template %}` for dynamic inheritance.
 # - Main styles are in templates/profiles/, features in templates/features/.
