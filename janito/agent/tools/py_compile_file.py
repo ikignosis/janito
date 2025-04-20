@@ -24,6 +24,10 @@ class PyCompileFileTool(ToolBase):
     def call(self, file_path: str, doraise: Optional[bool] = True) -> str:
         self.report_info(f"🛠️  Compiling Python file: {file_path}")
 
+        if not (file_path.endswith(".py") or file_path.endswith(".pyw")):
+            msg = f"Error: {file_path} is not a Python (.py/.pyw) file."
+            self.report_error(f" [py_compile_file] {msg}")
+            return msg
         try:
             py_compile.compile(file_path, doraise=doraise)
             self.report_success(" ✅ Compiled")

@@ -1,4 +1,3 @@
-from . import append_text_to_file
 from . import ask_user
 from . import create_directory
 from . import create_file
@@ -19,7 +18,6 @@ from . import search_files
 from . import tools_utils
 
 __all__ = [
-    "append_text_to_file",
     "ask_user",
     "create_directory",
     "create_file",
