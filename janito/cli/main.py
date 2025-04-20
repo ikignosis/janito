@@ -4,7 +4,7 @@ from janito.cli.arg_parser import create_parser
 from janito.cli.config_commands import handle_config_commands
 from janito.cli.logging_setup import setup_verbose_logging
 from janito.cli.runner import run_cli
-import janito.agent.tool_auto_imports  # Ensure all tools are registered
+import janito.agent.tool_auto_imports  # noqa: F401  # DO NOT REMOVE: needed for tool registration side effects
 
 
 def main():

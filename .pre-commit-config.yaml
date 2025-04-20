@@ -1,11 +1,17 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.4  # Use the latest stable version or pin as needed
+    rev: v0.11.6  # Use the latest stable version or pin as needed
     hooks:
       - id: ruff
         args: ["--fix"]  # Optional: auto-fix issues where possible
 
   - repo: https://github.com/psf/black
-    rev: 24.3.0  # Use the latest stable version or pin as needed
+    rev: 25.1.0  # Use the latest stable version or pin as needed
     hooks:
       - id: black
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.1  # Use the latest stable version or pin as needed
+    hooks:
+      - id: codespell
+        args: ["--ignore-words-list=crate,te,fo"]  # Add common false positives here
