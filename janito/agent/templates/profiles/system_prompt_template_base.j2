@@ -31,7 +31,7 @@ Always execute the plan immediately after presenting it, unless the user request
 - Only remove or rename files after all dependent code has been updated and validated.
 - Prefer the following order for destructive operations:
   1. Update all imports/references.
-  2. Validate the changes (e.g., static analysis, compilation).
+  2. Validate the changes using the tools available to test the type of file changed.
   3. Remove or rename the file.
   4. Re-validate the system.
 - Roll back changes if any validation step fails.
