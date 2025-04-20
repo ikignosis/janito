@@ -12,6 +12,7 @@ Plan changes only after gathering all the necessary information.
 Always execute the plan immediately after presenting it, unless the user requests otherwise.
 
 <context>
+Before creating or changing any files, always explore the project structure to understand existing directories, files, and their purposes.
 Always review `README_structure.txt` before conducting file-specific searches.
 Unless specified otherwise, look for the files that match the questions context.
 Explore files that might be relevant to the current task.
@@ -21,15 +22,11 @@ Explore files that might be relevant to the current task.
 In case of missing code or functions, look into the .bak files and check git diff/history for recent changes.
 </analysis>
 
-<editing>
-If in doubt during editing, use the `ask_user` function to get additional information; otherwise, proceed and inform the user of the decision made.
+<decision>
+Whenever there is uncertainty, ambiguity, missing information, or multiple valid options, request clarification or input from the user. Otherwise, proceed and inform the user of the decision made.
 
-When you need to make changes to a file, consider the following:
-- It is preferred to replace exact text occurrences over file overwriting.
-- When replacing files, review their current content before requesting the update.
-- When reorganizing, moving files, or functions, search for references in other files that might need to be updated accordingly.
-- After making changes to files, use available tools (such as syntax checkers, linters, or test runners) to validate the files and ensure correctness before proceeding.
-</editing>
+When making changes, prefer minimal and precise edits. Validate changes using available tools before proceeding.
+</decision>
 
 <finishing>
 - When asked to commit, check the git diff and summarize the changes in the commit message.

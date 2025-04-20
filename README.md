@@ -1,7 +1,7 @@
 # 🚀 Janito: Natural Programming Language Agent
 
 **Current Version: 1.5.x**  
-See [docs/CHANGELOG.md](docs/CHANGELOG.md) and [RELEASE_NOTES_1.5.md](./RELEASE_NOTES_1.5.md) for details on the latest release.
+See [CHANGELOG.md](./CHANGELOG.md) and [RELEASE_NOTES_1.5.md](./RELEASE_NOTES_1.5.md) for details on the latest release.
 
 Janito is an AI-powered assistant for the command line and web that interprets natural language instructions to edit code, manage files, and analyze projects using patterns and tools designed by experienced software engineers. It prioritizes transparency, interactive clarification, and precise, reviewable changes.
 
@@ -71,7 +71,7 @@ If you want to extend Janito or add new tools, see the [Developer Guide](docs/RE
 
 
 
-For the full changelog, see [docs/CHANGELOG.md](docs/CHANGELOG.md).
+For the full changelog, see [CHANGELOG.md](./CHANGELOG.md).
 
 ...
 

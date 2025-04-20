@@ -94,13 +94,28 @@ class RunBashCommandTool(ToolBase):
                 warning_msg = ""
                 if interactive:
                     warning_msg = "⚠️  Warning: This command might be interactive, require user input, and might hang.\n"
-                return (
-                    warning_msg +
-                    f"stdout_file: {stdout_file.name} (lines: {stdout_lines})\n"
-                    f"stderr_file: {stderr_file.name} (lines: {stderr_lines})\n"
-                    f"returncode: {return_code}\n"
-                    f"Use the get_lines tool to inspect the contents of these files when needed."
-                )
+
+                # Read output contents
+                with open(stdout_file.name, 'r', encoding='utf-8') as out_f:
+                    stdout_content = out_f.read()
+                with open(stderr_file.name, 'r', encoding='utf-8') as err_f:
+                    stderr_content = err_f.read()
+
+                # Thresholds
+                max_lines = 50
+                max_chars = 1000
+                if (stdout_lines <= max_lines and len(stdout_content) <= max_chars and
+                    stderr_lines <= max_lines and len(stderr_content) <= max_chars):
+                    result = warning_msg + f"Return code: {return_code}\n--- STDOUT ---\n{stdout_content}"
+                    if stderr_content.strip():
+                        result += f"\n--- STDERR ---\n{stderr_content}"
+                    return result
+                else:
+                    result = warning_msg + f"stdout_file: {stdout_file.name} (lines: {stdout_lines})\n"
+                    if stderr_lines > 0 and stderr_content.strip():
+                        result += f"stderr_file: {stderr_file.name} (lines: {stderr_lines})\n"
+                    result += f"returncode: {return_code}\nUse the get_lines tool to inspect the contents of these files when needed."
+                    return result
         except Exception as e:
             self.report_error(f" ❌ Error: {e}")
             return f"Error running command: {e}"

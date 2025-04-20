@@ -9,6 +9,8 @@ class GetFileOutlineTool(ToolBase):
     """Get an outline of a file's structure."""
     def call(self, file_path: str) -> str:
         """
+        Get an outline of a file's structure.
+
         Args:
             file_path (str): Path to the file.
 

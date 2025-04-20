@@ -13,10 +13,12 @@ NOTE: Indentation (leading whitespace) must be included in both search_text and 
 """
     def call(self, file_path: str, search_text: str, replacement_text: str, replace_all: bool = False) -> str:
         """
+        Replace exact occurrences of a given text in a file.
+
         Args:
-            file_path (str): Path to the file.
-            search_text (str): Text to search for. Must include indentation (leading whitespace) if present in the file.
-            replacement_text (str): Replacement text. Must include desired indentation (leading whitespace).
+            file_path (str): Path to the file to modify.
+            search_text (str): The exact text to search for (including indentation).
+            replacement_text (str): The text to replace with (including indentation).
             replace_all (bool): If True, replace all occurrences; otherwise, only the first occurrence.
         Returns:
             str: Status message. Example:

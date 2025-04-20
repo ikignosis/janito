@@ -89,7 +89,7 @@ Replace exact occurrences of a given text in a file.
 
 ### run_bash_command.py
 **Description:**  
-Execute a non-interactive bash command and capture live output.  
+Execute a non-interactive bash command and capture live output. If the output is small (≤50 lines and ≤1000 characters for both stdout and stderr), the actual output is returned directly. If stderr is empty, it is omitted from the result. For larger outputs, only the file locations and line counts are returned (stderr file info is omitted if empty).  
 **Usage:**  
 - `command` (str): The bash command to run.  
 - `timeout` (int, default 60): Timeout in seconds.  

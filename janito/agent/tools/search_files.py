@@ -24,7 +24,7 @@ class SearchFilesTool(ToolBase):
         if not pattern:
             self.report_warning("⚠️ Warning: Empty search pattern provided. Operation skipped.")
             return "Warning: Empty search pattern provided. Operation skipped."
-        matches = []
+        output = []
         for directory in directories:
             self.report_info(f"🔎 Searching for text '{pattern}' in '{directory}'")
             for root, dirs, files in os.walk(directory):
@@ -35,20 +35,23 @@ class SearchFilesTool(ToolBase):
                         with open(path, 'r', encoding='utf-8', errors='ignore') as f:
                             for lineno, line in enumerate(f, 1):
                                 if pattern in line:
-                                    matches.append(f"{path}:{lineno}: {line.strip()}")
-                                    if len(matches) >= max_results:
+                                    output.append(f"{path}:{lineno}: {line.strip()}")
+                                    if len(output) >= max_results:
                                         break
                     except Exception:
                         continue
-        
+                if len(output) >= max_results:
+                    break
+            if len(output) >= max_results:
+                break
         warning = ""
-        if len(matches) >= max_results:
+        if len(output) >= max_results:
             warning = "\n⚠️ Warning: Maximum result limit reached. Some matches may not be shown."
             suffix = " (Max Reached)"
         else:
             suffix = ""
-        self.report_success(f" ✅ {len(matches)} {pluralize('line', len(matches))}{suffix}")
-        return '\n'.join(matches) + warning
+        self.report_success(f" ✅ {len(output)} {pluralize('line', len(output))}{suffix}")
+        return '\n'.join(output) + warning
 
 
 from janito.agent.tools.tools_utils import pluralize

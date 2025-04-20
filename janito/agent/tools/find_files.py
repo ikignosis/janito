@@ -27,7 +27,7 @@ class FindFilesTool(ToolBase):
             self.report_warning("⚠️ Warning: Empty file pattern provided. Operation skipped.")
             return "Warning: Empty file pattern provided. Operation skipped."
         from janito.agent.tools.tools_utils import display_path
-        matches = []
+        output = []
         rec = "recursively" if recursive else "non-recursively"
         for directory in directories:
             disp_path = display_path(directory)
@@ -35,22 +35,21 @@ class FindFilesTool(ToolBase):
             for root, dirs, files in os.walk(directory):
                 dirs, files = filter_ignored(root, dirs, files)
                 for filename in fnmatch.filter(files, pattern):
-                    matches.append(os.path.join(root, filename))
-                    if len(matches) >= max_results:
+                    output.append(os.path.join(root, filename))
+                    if len(output) >= max_results:
                         break
-                if not recursive:
+                if not recursive or len(output) >= max_results:
                     break
-            if len(matches) >= max_results:
+            if len(output) >= max_results:
                 break
-        
         warning = ""
-        if len(matches) >= max_results:
+        if len(output) >= max_results:
             warning = "\n⚠️ Warning: Maximum result limit reached. Some matches may not be shown."
             suffix = " (Max Reached)"
         else:
             suffix = ""
-        self.report_success(f" ✅ {len(matches)} {pluralize('file', len(matches))}{suffix}")
-        return "\n".join(matches) + warning
+        self.report_success(f" ✅ {len(output)} {pluralize('file', len(output))}{suffix}")
+        return "\n".join(output) + warning
 
 
 from janito.agent.tools.tools_utils import pluralize

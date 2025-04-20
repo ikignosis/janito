@@ -11,6 +11,8 @@ class RemoveDirectoryTool(ToolBase):
     """Remove a directory. If recursive=False and directory not empty, raises error."""
     def call(self, directory: str, recursive: bool = False) -> str:
         """
+        Remove a directory.
+
         Args:
             directory (str): Path to the directory to remove.
             recursive (bool, optional): Remove recursively if True. Defaults to False.

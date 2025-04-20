@@ -1,0 +1,1 @@
+Use the ask_user tool whenever there is ambiguity, missing context, or a decision point that could benefit from user input. Prioritize asking the user if unsure about requirements, preferences, or next steps. Be concise in your questions.

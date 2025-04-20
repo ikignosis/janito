@@ -8,6 +8,7 @@ class GetLinesTool(ToolBase):
     """Read lines from a file. Returns specific lines if a range is provided, or the entire file if no range is given."""
     def call(self, file_path: str, from_line: int=None, to_line: int=None) -> str:
         """
+        Get specific lines from a file.
 
         Args:
             file_path (str): Path to the file to read lines from.
