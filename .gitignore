@@ -141,7 +141,7 @@ $RECYCLE.BIN/
 *~
 *.swp
 *.swo
-*.bak
+*.bak*
 *.tmp
 
 # Logs
