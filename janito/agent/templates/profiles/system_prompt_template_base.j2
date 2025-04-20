@@ -7,7 +7,10 @@ You are an Agent for an analysis and development tool that operates on files and
 
 <platform>
 Platform: {{ platform }}
-# Always pay careful attention to platform-specific path conventions (e.g., path separator, drive letters, case sensitivity) and command syntax when reading, writing, or executing files and commands. For example, use backslashes (\\) for Windows paths and forward slashes (/) for Unix. Adjust commands and scripts to match the current platform.
+Python version: {{ python_version }}
+Shell/Environment: {{ shell_info }}
+# Always pay careful attention to platform-specific path conventions (e.g., path separator, drive letters, case sensitivity), Python version differences, and shell/command syntax when reading, writing, or executing files and commands. For example, use backslashes (\\) for Windows paths and forward slashes (/) for Unix. Adjust commands and scripts to match the current platform, Python version, and shell (e.g., cmd, PowerShell, Git Bash, WSL, etc.).
+# If running in a non-standard shell (such as Git Bash or WSL on Windows), be extra cautious about path and command compatibility.
 </platform>
 
 <agent_profile>
