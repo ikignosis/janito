@@ -1,0 +1,6 @@
+{% extends parent_template %}
+
+{% block finalization %}
+After each step which does a change, perform git commit with a clear message describing what was changed. This ensures all modifications are tracked and reversible.
+{{ super() }}
+{% endblock %}
