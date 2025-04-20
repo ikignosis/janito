@@ -32,6 +32,7 @@ class ConversationHandler:
         verbose_response=False,
         spinner=False,
         max_tokens=None,
+        verbose_events=False,
     ):
         import time
         import json
@@ -159,21 +160,9 @@ class ConversationHandler:
                         )
                         raise last_exception
 
+            # Print the response at each agent reply if verbose_response is enabled
             if verbose_response:
                 pprint.pprint(response)
-
-            # Check for provider errors
-            if hasattr(response, "error") and response.error:
-                error_msg = response.error.get("message", "Unknown provider error")
-                error_code = response.error.get("code", "unknown")
-                raise ProviderError(
-                    f"Provider error: {error_msg} (Code: {error_code})", response.error
-                )
-
-            if not response.choices:
-                raise EmptyResponseError(
-                    "The LLM API returned no choices in the response."
-                )
 
             choice = response.choices[0]
 
@@ -188,11 +177,14 @@ class ConversationHandler:
             else:
                 usage_info = None
 
+            # Print event before dispatching to message handler if verbose_events is enabled
+            event = {"type": "content", "message": choice.message.content}
+            if verbose_events:
+                print(f"[EVENT] {event}")
+
             # Route content through the unified message handler if provided
             if message_handler is not None and choice.message.content:
-                message_handler.handle_message(
-                    choice.message.content, msg_type="content"
-                )
+                message_handler.handle_message(event)
 
             # If no tool calls, return the agent's message and usage info
             if not choice.message.tool_calls:

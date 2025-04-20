@@ -4,17 +4,17 @@ class QueuedMessageHandler:
 
     def handle_message(self, msg, msg_type=None):
         # Unified: send content (agent/LLM) messages to the frontend via queue
-        if isinstance(msg, dict):
-            msg_type = msg.get("type", "info")
-            # For tool_call and tool_result, print and forward the full dict
-            if msg_type in ("tool_call", "tool_result"):
-                print(f"[QueuedMessageHandler] {msg_type}: {msg}")
-                self._queue.put(msg)
-                return
-            message = msg.get("message", "")
-        else:
-            message = msg
-            msg_type = msg_type or "info"
+        if not isinstance(msg, dict):
+            raise TypeError(
+                f"QueuedMessageHandler.handle_message expects a dict with 'type' and 'message', got {type(msg)}: {msg!r}"
+            )
+        msg_type = msg.get("type", "info")
+        # For tool_call and tool_result, print and forward the full dict
+        if msg_type in ("tool_call", "tool_result"):
+            print(f"[QueuedMessageHandler] {msg_type}: {msg}")
+            self._queue.put(msg)
+            return
+        message = msg.get("message", "")
         # For normal agent/user/info messages, emit type 'content' for frontend compatibility
         print(f"[QueuedMessageHandler] {msg_type}: {message}")
         if msg_type == "content":
