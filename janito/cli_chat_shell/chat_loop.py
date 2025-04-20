@@ -95,7 +95,7 @@ def start_chat_shell(agent, continue_session=False, max_rounds=50):
         except KeyboardInterrupt:
             console.print()  # Move to next line
             try:
-                confirm = input("Do you really want to exit? (y/n): ").strip().lower()
+                confirm = session.prompt(HTML('<prompt>Do you really want to exit? (y/n): </prompt>')).strip().lower()
             except KeyboardInterrupt:
                 message_handler.handle_message({'type': 'error', 'message': 'Exiting...'})
                 break
