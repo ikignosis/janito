@@ -37,3 +37,11 @@
 ### Added
 - You can now set the agent's `interaction_style` ("default" or "technical") globally or per-project via config files (`~/.janito/config.json` or `.janito/config.json`).
 - Updated documentation in README.md, README_structure.txt, and docs/CONFIGURATION.md to describe the new config option and usage.
+
+## [Unreleased]
+### Changed
+- Refactored and reorganized the `janito/cli_chat_shell/commands/` package:
+    - Split command handlers into logical modules: `session.py`, `system.py`, `session_control.py`, `utility.py`, `config.py`, and `history_reset.py`.
+    - `__init__.py` now acts as the command dispatcher, importing handlers from submodules.
+    - Updated `README_structure.txt` to reflect the new structure.
+- Removed legacy/backup command handler file.

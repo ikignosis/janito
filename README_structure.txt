@@ -30,8 +30,15 @@ Directories:
         - main.py, arg_parser.py, config_commands.py, logging_setup.py, runner.py, _print_config.py, _utils.py, __init__.py
     - cli_chat_shell/
         - chat_loop.py, config_shell.py, load_prompt.py, session_manager.py, ui.py, __init__.py
-    - commands/ (package, was commands.py)
-        - __init__.py: Command handlers and dispatcher for chat shell commands.
+    - cli_chat_shell/
+        - commands/
+            - __init__.py: Command dispatcher for chat shell commands.
+            - session.py: Conversation/session-related commands (e.g., /continue, /history)
+            - system.py: System prompt, role, and style commands (e.g., /system, /role, /style)
+            - session_control.py: Session control commands (e.g., /exit, /restart)
+            - utility.py: Utility commands (e.g., /help, /clear, /multi)
+            - config.py: Config and reload commands (e.g., /config, /reload)
+            - history_reset.py: Conversation reset command (e.g., /reset)
     - web/
         - app.py, __init__.py, __main__.py
         - static/
