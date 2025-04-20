@@ -69,10 +69,11 @@ class ConversationHandler:
                             max_tokens=resolved_max_tokens
                         )
                     else:
+                        tools = get_tool_schemas()
                         response = self.client.chat.completions.create(
                             model=self.model,
                             messages=messages,
-                            tools=get_tool_schemas(),
+                            tools=tools,
                             tool_choice="auto",
                             temperature=0.2,
                             max_tokens=resolved_max_tokens

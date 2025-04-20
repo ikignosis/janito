@@ -34,28 +34,28 @@ def _parse_docstring(docstring: str):
     in_params = False
     in_returns = False
     for line in lines[1:]:
-        l = line.strip()
-        if l.lower().startswith(("args:", "parameters:")):
+        stripped_line = line.strip()
+        if stripped_line.lower().startswith(("args:", "parameters:")):
             in_params = True
             in_returns = False
             continue
-        if l.lower().startswith("returns:"):
+        if stripped_line.lower().startswith("returns:" ):
             in_returns = True
             in_params = False
             continue
         if in_params:
-            m = re.match(r"([a-zA-Z_][a-zA-Z0-9_]*)(?: \(([^)]+)\))?: (.+)", l)
+            m = re.match(r"([a-zA-Z_][a-zA-Z0-9_]*)(?: \(([^)]+)\))?: (.+)", stripped_line)
             if m:
                 param, _, desc = m.groups()
                 param_descs[param] = desc.strip()
-            elif l and l[0] != "-":
+            elif stripped_line and stripped_line[0] != "-":
                 # Continuation of previous param
                 if param_descs:
                     last = list(param_descs)[-1]
-                    param_descs[last] += " " + l
+                    param_descs[last] += " " + stripped_line
         elif in_returns:
-            if l:
-                return_desc += (" " if return_desc else "") + l
+            if stripped_line:
+                return_desc += (" " if return_desc else "") + stripped_line
     return summary, param_descs, return_desc
 
 def _type_to_json_schema(tp):
