@@ -57,14 +57,12 @@ def run_cli(args):
         with open(args.system_file, "r", encoding="utf-8") as f:
             system_prompt = f.read()
         runtime_config.set("system_prompt_file", args.system_file)
-
     else:
         system_prompt = args.system or unified_config.get("system_prompt")
         if args.system:
             runtime_config.set("system_prompt", system_prompt)
         if system_prompt is None:
             # Pass full merged config (runtime overrides effective)
-
             from janito.render_prompt import render_system_prompt
 
             system_prompt = render_system_prompt(role)
@@ -81,7 +79,6 @@ def run_cli(args):
         sys.exit(0)
 
     api_key = get_api_key()
-
     # Always get model from unified_config (which checks runtime_config first)
     model = unified_config.get("model")
     base_url = unified_config.get("base_url", "https://openrouter.ai/api/v1")
@@ -99,14 +96,25 @@ def run_cli(args):
             runtime_config.set("temperature", None)
     else:
         runtime_config.set("vanilla_mode", False)
+
     interaction_style = getattr(args, "style", None) or unified_config.get(
         "interaction_style", "default"
     )
+
+    # --- FIX: Set interaction_mode based on shell/CLI ---
+    # If no prompt is provided, we are in shell/chat mode, so use 'conversation'.
+    # Otherwise, use 'single_shot'.
+    if not getattr(args, "prompt", None):
+        interaction_mode = "conversation"
+    else:
+        interaction_mode = "single_shot"
+
     profile_manager = AgentProfileManager(
         api_key=api_key,
         model=model,
         role=role,
         interaction_style=interaction_style,
+        interaction_mode=interaction_mode,
         verbose_tools=args.verbose_tools,
         base_url=base_url,
         azure_openai_api_version=azure_openai_api_version,
@@ -127,18 +135,14 @@ def run_cli(args):
         sys.exit(0)
 
     prompt = args.prompt
-
     console = Console()
     from janito.agent.rich_tool_handler import MessageHandler
 
     message_handler = MessageHandler()
-
     messages = []
     if profile_manager.system_prompt:
         messages.append({"role": "system", "content": profile_manager.system_prompt})
-
     messages.append({"role": "user", "content": prompt})
-
     try:
         try:
             max_rounds = runtime_config.get("max_rounds", 50)

@@ -15,7 +15,7 @@ class SearchFilesTool(ToolBase):
         directories (list[str]): List of directories to search in.
         pattern (str): Plain text substring to search for in files. (Not a regular expression or glob pattern.)
         max_results (int): Maximum number of results to return. Defaults to 100.
-        recursive (bool): Whether to search recursively in subdirectories. Defaults to False.
+        recursive (bool): Whether to search recursively in subdirectories. Defaults to True.
     Returns:
         str: Matching lines from files as a newline-separated string, each formatted as 'filepath:lineno: line'. Example:
             - "/path/to/file.py:10: def my_function():"
@@ -27,7 +27,7 @@ class SearchFilesTool(ToolBase):
         directories: list[str],
         pattern: str,
         max_results: int = 100,
-        recursive: bool = False,
+        recursive: bool = True,
     ) -> str:
         if not pattern:
             self.report_warning(
@@ -36,9 +36,10 @@ class SearchFilesTool(ToolBase):
             return "Warning: Empty search pattern provided. Operation skipped."
         output = []
         for directory in directories:
-            self.report_info(
-                f"🔎 Searching for text '{pattern}' in '{directory}' (recursive={recursive})"
-            )
+            info_str = f"🔎 Searching for text '{pattern}' in '{directory}'"
+            if recursive is False:  # Only show if user explicitly sets False
+                info_str += f" (recursive={recursive})"
+            self.report_info(info_str)
             if recursive:
                 walker = os.walk(directory)
             else:

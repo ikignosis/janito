@@ -101,6 +101,7 @@ Search for a text pattern in all files within a directory and return matching li
 **Usage:**  
 - `directory` (str): Directory to search.  
 - `pattern` (str): Text pattern to search for.
+- `recursive` (bool, default True): Search subdirectories (recursive by default).
 
 ---
 
