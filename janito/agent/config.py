@@ -54,6 +54,7 @@ class FileConfig(BaseConfig):
 
 CONFIG_OPTIONS = {
     "api_key": "API key for OpenAI-compatible service (required)",
+    "trust": "Trust mode: suppress all console output (bool, default: False)",
     "model": "Model name to use (e.g., 'openai/gpt-4.1')",
     "base_url": "API base URL (OpenAI-compatible endpoint)",
     "role": "Role description for the Agent Profile (e.g., 'software engineer')",

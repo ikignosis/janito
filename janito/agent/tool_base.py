@@ -27,9 +27,6 @@ class ToolBase(ABC):
         Returns:
             Any: The result of the tool execution.
         """
-        """
-        Trigger the tool's action. Must be implemented by subclasses.
-        """
         pass
 
     def update_progress(self, progress: dict):

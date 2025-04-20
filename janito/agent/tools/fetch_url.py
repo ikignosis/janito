@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from janito.agent.tool_registry import register_tool
 
-from janito.agent.tools.tool_base import ToolBase
+from janito.agent.tool_base import ToolBase
 
 
 @register_tool(name="fetch_url")

@@ -34,11 +34,6 @@ class MessageHandler:
         if trust and msg_type != "content":
             return  # Suppress all except content
         if msg_type == "content":
-            # Log for traceability (only if not in trust mode)
-            if not trust:
-                print(
-                    f"[MessageHandler] Printing content message: {message[:60]}{'...' if len(message) > 60 else ''}"
-                )
             self.console.print(Markdown(message))
         elif msg_type == "info":
             self.console.print(message, style="cyan", end="")

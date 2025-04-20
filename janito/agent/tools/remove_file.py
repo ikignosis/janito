@@ -1,7 +1,7 @@
 import os
 from janito.agent.tool_registry import register_tool
 from janito.agent.tools.utils import expand_path, display_path
-from janito.agent.tools.tool_base import ToolBase
+from janito.agent.tool_base import ToolBase
 
 
 @register_tool(name="remove_file")

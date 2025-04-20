@@ -70,3 +70,5 @@ Verbose/debugging flags:
 - The `interaction_style` key controls the agent's overall behavior and system prompt style. Supported values are `default` (concise, general-purpose) and `technical` (strict, workflow-oriented for developers/engineers).
 - You can set this globally in `~/.janito/config.json` or locally in `.janito/config.json` in your project.
 - CLI flag: `--style` overrides config for the current session.
+
+> **Note:** When changing configuration via `/config` in the shell, you may need to use `/restart` for changes to take full effect.

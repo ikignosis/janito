@@ -1,6 +1,9 @@
 import sys
 from rich.console import Console
 from janito.agent.profile_manager import AgentProfileManager
+
+# Ensure all tools are registered at startup
+import janito.agent.tools  # noqa: F401
 from janito.agent.conversation import (
     MaxRoundsExceededError,
     EmptyResponseError,
@@ -144,6 +147,8 @@ def run_cli(args):
                 message_handler=message_handler,
                 spinner=True,
                 max_rounds=max_rounds,
+                verbose_response=getattr(args, "verbose_response", False),
+                verbose_events=getattr(args, "verbose_events", False),
             )
             if args.verbose_response:
                 import json

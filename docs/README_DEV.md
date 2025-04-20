@@ -88,7 +88,7 @@ ValueError: Parameter 'count' in tool 'my_tool' is missing a description in the 
 - `remove_directory`: Remove a directory (with optional recursion).
 - `search_files`: Search for a text pattern in all files within directories and return matching lines.
 - `python_exec`: Execute arbitrary Python code and capture output.
-- `py_compile`: Validate Python files for syntax correctness using Python's built-in compiler.
+- `py_compile_file`: Validate Python files for syntax correctness using Python's built-in compiler.
 - `run_bash_command`: Execute bash commands and capture live output (with timeout and confirmation options).
 - `ask_user`: Prompt the user for input or clarification interactively.
 - `fetch_url`: Fetch the content of a web page and extract its text (with optional search strings).

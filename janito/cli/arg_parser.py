@@ -153,7 +153,12 @@ def create_parser():
     parser.add_argument(
         "--trust",
         action="store_true",
-        help="Enable trust mode: suppresses run_bash_command output, only shows output file locations.",
+        help="Enable trust mode: suppress all console output (overrides config)",
+    )
+    parser.add_argument(
+        "--verbose-events",
+        action="store_true",
+        help="Print all agent events before dispatching to the message handler (for debugging)",
     )
     parser.add_argument(
         "-V",

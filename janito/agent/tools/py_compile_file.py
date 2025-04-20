@@ -1,16 +1,15 @@
-from janito.agent.tools.tool_base import ToolBase
+from janito.agent.tool_base import ToolBase
 from janito.agent.tool_registry import register_tool
-
 
 from typing import Optional
 import py_compile
 
 
-@register_tool(name="py_compile")
-class PyCompileTool(ToolBase):
+@register_tool(name="py_compile_file")
+class PyCompileFileTool(ToolBase):
     """
     Validate a Python file by compiling it with py_compile.
-    Useful to validate python files after changing them, specially after import changes.
+    Useful to validate python files after changing them, especially after import changes.
     """
 
     def call(self, file_path: str, doraise: Optional[bool] = True) -> str:
@@ -34,8 +33,8 @@ class PyCompileTool(ToolBase):
             self.report_success(" ✅ Compiled")
             return "✅ Compiled"
         except py_compile.PyCompileError as e:
-            self.report_error(f" [py_compile] Compile error: {e}")
+            self.report_error(f" [py_compile_file] Compile error: {e}")
             return f"Compile error: {e}"
         except Exception as e:
-            self.report_error(f" [py_compile] Error: {e}")
+            self.report_error(f" [py_compile_file] Error: {e}")
             return f"Error: {e}"

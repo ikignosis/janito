@@ -1,6 +1,6 @@
 # janito/agent/tool_registry.py
 import json
-from janito.agent.tools.tool_base import ToolBase
+from janito.agent.tool_base import ToolBase
 from janito.agent.openai_schema_generator import generate_openai_function_schema
 
 _tool_registry = {}

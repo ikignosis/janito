@@ -87,9 +87,15 @@ def handle_config_shell(console, *args, **kwargs):
             local_config.save()
             runtime_config.set(key, val)
             console.print(f"[green]Local config updated:[/green] {key} = {val}")
+            console.print(
+                "[bold yellow]Please use /restart for changes to take full effect.[/bold yellow]"
+            )
         elif scope == "global":
             global_config.set(key, val)
             global_config.save()
             runtime_config.set(key, val)
             console.print(f"[green]Global config updated:[/green] {key} = {val}")
+            console.print(
+                "[bold yellow]Please use /restart for changes to take full effect.[/bold yellow]"
+            )
         return

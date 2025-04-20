@@ -69,6 +69,7 @@ class Agent:
         spinner=False,
         max_tokens=None,
         max_rounds=50,
+        verbose_events=False,
     ):
 
         max_retries = 5
@@ -81,6 +82,7 @@ class Agent:
                     verbose_response=verbose_response,
                     spinner=spinner,
                     max_tokens=max_tokens,
+                    verbose_events=verbose_events,
                 )
             except ProviderError as e:
                 error_data = getattr(e, "error_data", {}) or {}

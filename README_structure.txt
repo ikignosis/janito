@@ -12,11 +12,11 @@ Directories:
 - docs/
     - ARCHITECTURE.md
     - AZURE_OPENAI.md
-    - CHANGELOG.md (now at project root, was docs/CHANGELOG.md)
+
     - CONFIGURATION.md
     - MESSAGE_HANDLER_MODEL.md
     - README_DEV.md
-- dist/
+
 - docs/
 - janito/
     - __init__.py, __main__.py, render_prompt.py, rich_utils.py
@@ -25,7 +25,7 @@ Directories:
         - templates/
             - system_instructions.j2
         - tools/
-            - append_text_to_file.py, ask_user.py, create_directory.py, create_file.py, fetch_url.py, find_files.py, get_file_outline.py, get_lines.py, gitignore_utils.py, move_file.py, python_exec.py, py_compile.py, remove_directory.py, remove_file.py, replace_text_in_file.py, rich_live.py, run_bash_command.py, search_files.py, tools_utils.py, tool_base.py, utils.py, __init__.py, README.md
+            - append_text_to_file.py, ask_user.py, create_directory.py, create_file.py, fetch_url.py, find_files.py, get_file_outline.py, get_lines.py, gitignore_utils.py, move_file.py, py_compile_file.py, remove_directory.py, remove_file.py, replace_text_in_file.py, rich_live.py, run_bash_command.py, search_files.py, tools_utils.py, utils.py, __init__.py, README.md
     - cli/
         - main.py, arg_parser.py, config_commands.py, logging_setup.py, runner.py, _print_config.py, _utils.py, __init__.py
     - cli_chat_shell/
@@ -69,3 +69,15 @@ Directories:
 - Global and local configuration now support the `interaction_style` key ("default" or "technical") to control agent behavior and prompt style. See docs/CONFIGURATION.md and README.md for usage.
 
 - janito/cli_chat_shell/commands/: Adds /set command as an alias for /config set. Usage: /set local|global key value
+
+- /config shell command now warns that /restart may be required for config changes to take effect.
+- docs/CONFIGURATION.md updated to mention /restart after config changes in the shell.
+
+- CLI now supports --trust/-t flag and 'trust' config (global/local):
+    - When enabled, suppresses all console output (including rich handler output).
+    - Can be set via CLI (--trust/-t), global config, or local config.
+    - CLI flag takes precedence over config.
+    - See janito/cli/arg_parser.py, janito/agent/config.py, janito/agent/rich_tool_handler.py for implementation details.
+- CLI now supports --verbose-events:
+    - Prints all agent events before dispatching to the message handler (for debugging).
+agent/tool_base.py, 

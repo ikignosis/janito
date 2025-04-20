@@ -57,9 +57,9 @@ Execute Python code in a separate process and capture output.
 **Usage:**  
 - `code` (str): The Python code to execute.
 
-### py_compile.py
+### py_compile_file.py
 **Description:**  
-Validate a Python file by compiling it with py_compile.  
+Validate a Python file by compiling it with py_compile_file.  
 **Usage:**  
 - `file_path` (str): Path to the Python file.  
 - `doraise` (bool, optional): Raise exceptions on errors.

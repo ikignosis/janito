@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Refactored
+- Moved ToolBase to `janito/agent/tool_base.py` to break circular import between tool modules and registry.
+- Updated all tool and registry imports to use the new location.
+- Removed old `tools/tool_base.py` and `tool_auto_imports.py`.
+- Added `__all__` to `tools/__init__.py` for Ruff compliance.
+- All tests passing after refactor.
+
+
 ## [1.5.2] - 2025-04-19
 ### Changed
 - Updated janito/agent/tools/find_files.py and search_files.py.
@@ -45,3 +55,11 @@
     - `__init__.py` now acts as the command dispatcher, importing handlers from submodules.
     - Updated `README_structure.txt` to reflect the new structure.
 - Removed legacy/backup command handler file.
+
+## [Unreleased]
+### Changed
+- Refactored all message handlers (rich, queued, base) to require dicts with 'type' and 'message' keys. Removed support for non-dict/plain string messages; TypeError is now raised if violated.
+- Updated conversation event dispatch to always wrap content as dicts.
+- Ensured trust and markdown logic is always applied consistently in rich handler.
+- Improves robustness and traceability of event routing.
+- Affected modules: janito/agent/rich_tool_handler.py, janito/agent/conversation.py, janito/agent/message_handler.py, janito/agent/queued_message_handler.py

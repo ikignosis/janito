@@ -37,4 +37,5 @@ class AgentProfileManager:
         self.agent.system_prompt = self.system_prompt
 
     def chat(self, *args, **kwargs):
+        # Explicitly forward verbose_response and verbose_events if present
         return self.agent.chat(*args, **kwargs)
