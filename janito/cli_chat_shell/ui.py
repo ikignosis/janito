@@ -44,11 +44,11 @@ def print_welcome(console, version=None, continued=False):
     vanilla_mode = runtime_config.get("vanilla_mode", False)
     if vanilla_mode:
         console.print(
-            f"[bold magenta]Welcome to Janito{version_str} in [white on magenta]VANILLA MODE[/white on magenta]! Tools, system prompt, and temperature are disabled unless overridden.[/bold magenta]\n[cyan]Press F12 to accept the suggested next step and continue.[/cyan]"
+            f"[bold magenta]Welcome to Janito{version_str} in [white on magenta]VANILLA MODE[/white on magenta]! Tools, system prompt, and temperature are disabled unless overridden.[/bold magenta]\n[cyan]Press F12 to proceed.[/cyan]"
         )
     else:
         console.print(
-            f"[bold green]Welcome to Janito{version_str}! Entering chat mode. Type /exit to exit.[/bold green]\n[cyan]Press F12 to accept the suggested next step and continue.[/cyan]"
+            f"[bold green]Welcome to Janito{version_str}! Entering chat mode. Type /exit to exit.[/bold green]\n[cyan]Press F12 to proceed.[/cyan]"
         )
     # Only print /continue suggestion if a last conversation exists
 
@@ -112,7 +112,7 @@ def get_toolbar_func(
         if style_part:
             first_line_parts.append(style_part)
         first_line = " | ".join(first_line_parts)
-        help_part = "<b>/help</b> for help | <b>F12</b>: Go ahead"
+        help_part = "<b>/help</b> for help | <b>F12</b>: proceed"
         total_len = len(left) + len(help_part) + 3  # separators and spaces
         if first_line:
             total_len += len(first_line) + 3
@@ -153,9 +153,9 @@ def get_prompt_session(get_toolbar_func, mem_history):
 
     @kb.add("f12")
     def _(event):
-        """When F12 is pressed, send 'Go ahead' as input immediately."""
+        """When F12 is pressed, send 'proceed' as input immediately."""
         buf = event.app.current_buffer
-        buf.text = "Go ahead"
+        buf.text = "proceed"
         buf.validate_and_handle()
 
     session = PromptSession(

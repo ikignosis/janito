@@ -4,22 +4,19 @@ from janito.agent.tool_registry import register_tool
 
 @register_tool(name="ask_user")
 class AskUserTool(ToolBase):
-    """Request clarification or input from the user whenever there is uncertainty, ambiguity, missing information, or multiple valid options. Returns the user's response as a string."""
+    """
+    Request clarification or input from the user whenever there is uncertainty, ambiguity, missing information, or multiple valid options. Returns the user's response as a string.
+
+    Args:
+        question (str): The question to ask the user.
+    Returns:
+        str: The user's response as a string. Example:
+            - "Yes"
+            - "No"
+            - "Some detailed answer..."
+    """
 
     def call(self, question: str) -> str:
-        """
-        Ask the user a question and return their response.
-
-        Args:
-            question (str): The question to ask the user.
-
-        Returns:
-            str: The user's response as a string. Example:
-                - "Yes"
-                - "No"
-                - "Some detailed answer..."
-        """
-
         from rich import print as rich_print
         from rich.panel import Panel
         from prompt_toolkit import PromptSession
@@ -39,9 +36,9 @@ class AskUserTool(ToolBase):
 
         @bindings.add("f12")
         def _(event):
-            """When F12 is pressed, send 'Go ahead' as input immediately."""
+            """When F12 is pressed, send 'proceed' as input immediately."""
             buf = event.app.current_buffer
-            buf.text = "Go ahead"
+            buf.text = "proceed"
             buf.validate_and_handle()
 
         style = Style.from_dict(
@@ -53,7 +50,7 @@ class AskUserTool(ToolBase):
         )
 
         def get_toolbar():
-            f12_hint = " Press <b>F12</b> to auto-fill 'Go ahead' and submit."
+            f12_hint = " Press <b>F12</b> to auto-fill 'proceed' and submit."
             if mode["multiline"]:
                 return HTML(
                     f"<b>Multiline mode (Esc+Enter to submit). Type /single to switch.</b>{f12_hint}"

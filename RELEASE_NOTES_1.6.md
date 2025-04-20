@@ -4,7 +4,7 @@
 - 
 
 ## Improvements
-- ask_user tool now displays a status bar hint about pressing F12 to auto-fill 'Go ahead' and submit, improving user guidance.
+- ask_user tool now displays a status bar hint about pressing F12 to auto-fill 'proceed' and submit, improving user guidance.
 - 
 
 ## Bug Fixes
