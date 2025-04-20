@@ -34,6 +34,7 @@ class ConversationHandler:
         max_tokens=None,
         verbose_events=False,
         stream=False,
+        verbose_stream=False,  # New argument for verbose stream
     ):
         import time
         import json
@@ -63,7 +64,6 @@ class ConversationHandler:
                 try:
                     # STREAM MODE
                     if stream:
-                        # Prepare arguments for OpenAI call
                         openai_args = dict(
                             model=self.model,
                             messages=messages,
@@ -79,30 +79,29 @@ class ConversationHandler:
                         response_stream = self.client.chat.completions.create(
                             **openai_args
                         )
-
-                        def stream_generator():
-                            content_accum = ""
-                            for event in response_stream:
-                                delta = getattr(event.choices[0], "delta", None)
-                                if delta and getattr(delta, "content", None):
-                                    chunk = delta.content
-                                    content_accum += chunk
-                                    if message_handler:
-                                        message_handler.handle_message(
-                                            {"type": "stream", "content": chunk}
-                                        )
-                                    yield chunk
-                            # Final event (simulate normal return structure)
-                            if message_handler:
-                                message_handler.handle_message(
-                                    {"type": "stream_end", "content": content_accum}
-                                )
-
-                        return stream_generator()
+                        content_accum = ""
+                        for event in response_stream:
+                            if verbose_stream or runtime_config.get(
+                                "verbose_stream", False
+                            ):
+                                print(repr(event), flush=True)
+                            delta = getattr(event.choices[0], "delta", None)
+                            if delta and getattr(delta, "content", None):
+                                chunk = delta.content
+                                content_accum += chunk
+                                if message_handler:
+                                    message_handler.handle_message(
+                                        {"type": "stream", "content": chunk}
+                                    )
+                        # Final event (simulate normal return structure)
+                        if message_handler:
+                            message_handler.handle_message(
+                                {"type": "stream_end", "content": content_accum}
+                            )
+                        return None  # No generator, event-driven only
                     # NON-STREAM MODE
                     if spinner:
                         console = Console()
-                        # Calculate word count for all messages
                         word_count = sum(
                             len(str(m.get("content", "").split()))
                             for m in messages
@@ -116,19 +115,16 @@ class ConversationHandler:
                                 return f"{n/1_000:.1f}k"
                             return str(n)
 
-                        # Count message types
                         user_msgs = sum(1 for m in messages if m.get("role") == "user")
                         agent_msgs = sum(
                             1 for m in messages if m.get("role") == "assistant"
                         )
                         tool_msgs = sum(1 for m in messages if m.get("role") == "tool")
-                        # Tool uses: count tool_calls in all agent messages
                         tool_uses = sum(
                             len(m.get("tool_calls", []))
                             for m in messages
                             if m.get("role") == "assistant"
                         )
-                        # Tool responses: tool_msgs
                         spinner_msg = (
                             f"[bold green]Waiting for AI response... ("
                             f"{format_count(word_count)} words, "
@@ -184,7 +180,6 @@ class ConversationHandler:
                         )
                         raise last_exception
                 except Exception as e:
-                    # For all other exceptions, do not retry
                     raise
                     last_exception = e
                     if attempt < max_retries:
@@ -198,7 +193,6 @@ class ConversationHandler:
                             "Max retries for invalid response reached. Raising error."
                         )
                         raise last_exception
-            # Print the response at each agent reply if verbose_response is enabled
             if verbose_response:
                 pprint.pprint(response)
             if response is None or not getattr(response, "choices", None):
@@ -206,7 +200,6 @@ class ConversationHandler:
                     f"No choices in response; possible API or LLM error. Raw response: {response!r}"
                 )
             choice = response.choices[0]
-            # Extract token usage info if available
             usage = getattr(response, "usage", None)
             if usage:
                 usage_info = {
@@ -216,16 +209,12 @@ class ConversationHandler:
                 }
             else:
                 usage_info = None
-            # Print event before dispatching to message handler if verbose_events is enabled
             event = {"type": "content", "message": choice.message.content}
             if verbose_events:
                 print(f"[EVENT] {event}")
-            # Route content through the unified message handler if provided
             if message_handler is not None and choice.message.content:
                 message_handler.handle_message(event)
-            # If no tool calls, return the agent's message and usage info
             if not choice.message.tool_calls:
-                # Store usage info in usage_history, linked to the next agent message index
                 agent_idx = len([m for m in messages if m.get("role") == "agent"])
                 self.usage_history.append(
                     {"agent_index": agent_idx, "usage": usage_info}
@@ -236,7 +225,6 @@ class ConversationHandler:
                     "usage_history": self.usage_history,
                 }
             tool_responses = []
-            # Sequential tool execution (default, only mode)
             for tool_call in choice.message.tool_calls:
                 if max_tools is not None and tool_calls_made >= max_tools:
                     raise MaxRoundsExceededError(
@@ -245,7 +233,6 @@ class ConversationHandler:
                 result = handle_tool_call(tool_call, message_handler=message_handler)
                 tool_responses.append({"tool_call_id": tool_call.id, "content": result})
                 tool_calls_made += 1
-            # Store usage info in usage_history, linked to the next agent message index
             agent_idx = len([m for m in messages if m.get("role") == "agent"])
             self.usage_history.append({"agent_index": agent_idx, "usage": usage_info})
             messages.append(

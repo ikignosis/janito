@@ -77,7 +77,6 @@ def run_cli(args):
         model = unified_config.get("model")
         print("Model:", model)
         print("Parameters: {}")
-        import json
 
         print(
             "System Prompt Template:",
@@ -154,39 +153,18 @@ def run_cli(args):
     try:
         try:
             max_rounds = runtime_config.get("max_rounds", 50)
-            if getattr(args, "stream", False):
-                # Streaming mode: print tokens as they arrive
-                response_iter = profile_manager.chat(
-                    messages,
-                    message_handler=message_handler,
-                    spinner=True,
-                    max_rounds=max_rounds,
-                    verbose_response=getattr(args, "verbose_response", False),
-                    verbose_events=getattr(args, "verbose_events", False),
-                    stream=True,
-                )
-                for chunk in response_iter:
-                    if getattr(args, "verbose_stream", False):
-                        print(repr(chunk), flush=True)
-                    else:
-                        print(chunk, end="", flush=True)
-                print()
-            else:
-                response = profile_manager.chat(
-                    messages,
-                    message_handler=message_handler,
-                    spinner=True,
-                    max_rounds=max_rounds,
-                    verbose_response=getattr(args, "verbose_response", False),
-                    verbose_events=getattr(args, "verbose_events", False),
-                )
-                if args.verbose_response:
-                    import json
-
-                    console.print_json(json.dumps(response))
-                # Always print model footer in single-prompt mode
-                if model:
-                    console.print(f"[dim]Response generated using {model}[/dim]")
+            # Pass verbose_stream to the agent
+            profile_manager.chat(
+                messages,
+                message_handler=message_handler,
+                spinner=True,
+                max_rounds=max_rounds,
+                verbose_response=getattr(args, "verbose_response", False),
+                verbose_events=getattr(args, "verbose_events", False),
+                stream=getattr(args, "stream", False),
+                verbose_stream=getattr(args, "verbose_stream", False),
+            )
+            # No iteration or print here; all output is handled by MessageHandler and/or the agent
         except MaxRoundsExceededError:
             console.print("[red]Max conversation rounds exceeded.[/red]")
         except ProviderError as e:
