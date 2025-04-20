@@ -104,14 +104,8 @@ class RunPythonCommandTool(ToolBase):
                 with open(stderr_file.name, "r", encoding="utf-8") as err_f:
                     stderr_content = err_f.read()
                 # Thresholds
-                max_lines = 50
-                max_chars = 1000
-                if (
-                    stdout_lines <= max_lines
-                    and len(stdout_content) <= max_chars
-                    and stderr_lines <= max_lines
-                    and len(stderr_content) <= max_chars
-                ):
+                max_lines = 100
+                if stdout_lines <= max_lines and stderr_lines <= max_lines:
                     result = (
                         warning_msg
                         + f"Return code: {return_code}\n--- STDOUT ---\n{stdout_content}"

@@ -31,7 +31,7 @@ class PyCompileTool(ToolBase):
 
         try:
             py_compile.compile(file_path, doraise=doraise)
-            self.report_success("✅ Compiled")
+            self.report_success(" ✅ Compiled")
             return "✅ Compiled"
         except py_compile.PyCompileError as e:
             self.report_error(f" [py_compile] Compile error: {e}")
