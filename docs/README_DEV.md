@@ -1,53 +1,49 @@
-# Developer Guide: Creating a New Tool
+# Developer Guide: Creating a New Tool (Class-Based)
 
-This guide explains how to add a new tool (function) to the project so it can be exposed to the agent and OpenAI-compatible APIs.
+This guide explains how to add a new tool (functionality) to the project so it can be exposed to the agent and OpenAI-compatible APIs.
 
 For a list of all built-in tools and their usage, see the [Tools Reference](../janito/agent/tools/README.md).
 For a technical overview of the system, see the [Architecture Guide](ARCHITECTURE.md).
 
 ## Requirements
 
-- **Type hints**: Every parameter must have a Python type hint.
-- **Docstring**: The function must have a Google-style docstring with a description for each parameter under an `Args:` section.
-- **Parameter descriptions**: Every parameter must have a corresponding description in the docstring. If any are missing, an error will be raised at registration time.
+- **Class-based tools:** All tools must be implemented as classes inheriting from `ToolBase` (see `janito/agent/tool_base.py`).
+- **Type hints:** All parameters to the `call` method must have Python type hints.
+- **Docstrings:**
+  - The tool class must have a class-level docstring summarizing its purpose and behavior. This is user-facing.
+  - The `call` method must have a Google-style docstring with a description for each parameter under an `Args:` section.
+- **Parameter descriptions:** Every parameter must have a corresponding description in the docstring. If any are missing, registration will fail.
 
-## Example
+## Example: Creating a Tool
 
 ```python
-def my_tool(filename: str, count: int) -> None:
+from janito.agent.tool_base import ToolBase
+from janito.agent.tool_registry import register_tool
+
+@register_tool
+class MyTool(ToolBase):
     """
     Processes a file a given number of times.
-
-    Args:
-        filename (str): The path to the file to process.
-        count (int): How many times to process the file.
     """
-    # Implementation here
+
+    def call(self, filename: str, count: int) -> None:
+        """
+        Processes the specified file repeatedly.
+
+        Args:
+            filename (str): The path to the file to process.
+            count (int): How many times to process the file.
+        """
+        # Implementation here
 ```
 
 ## Steps to Add a Tool
 
-1. **Define your function** with type hints and a Google-style docstring as shown above.
-2. **Register your tool** using the `@ToolHandler.register_tool` decorator:
-
-```python
-from janito.agent.tool_handler import ToolHandler
-
-@ToolHandler.register_tool
-def my_tool(filename: str, count: int) -> None:
-    """
-    Processes a file a given number of times.
-
-    Args:
-        filename (str): The path to the file to process.
-        count (int): How many times to process the file.
-    """
-    # Implementation here
-```
-
-3. **Descriptions are required** for all parameters. If a parameter is missing a description, registration will fail with an error.
-
-4. **Document your tool**: Update `janito/agent/tools/README.md` with a short description and usage for your new tool.
+1. **Define your tool as a class** inheriting from `ToolBase`.
+2. **Add a class-level docstring** summarizing the tool's purpose (user-facing).
+3. **Implement the `call` method** with type hints and a Google-style docstring, including an `Args:` section describing every parameter.
+4. **Register your tool** by decorating the class with `@register_tool` from `janito.agent.tool_registry`.
+5. **Document your tool**: Update `janito/agent/tools/README.md` with a short description and usage for your new tool.
 
 ## Docstring Style
 
@@ -64,47 +60,19 @@ Args:
 ```
 
 - The `Args:` section must list each parameter, its type, and a description.
+- The class docstring is prepended to the tool's description in the OpenAI schema and is user-facing.
 
 ## What Happens If You Omit a Description?
 
 If you forget to document a parameter, you will see an error like:
 
 ```
-ValueError: Parameter 'count' in tool 'my_tool' is missing a description in the docstring.
+ValueError: Parameter 'count' in tool 'MyTool' is missing a description in the docstring.
 ```
 
 ## Tool Reference
 
-### Built-in Tools
-
-- `find_files`: Find files in directories matching a pattern (supports recursion and result limits).
-- `get_lines`: Retrieve specific lines from files for efficient context.
-- `get_file_outline`: Get a structural outline of a file (non-empty lines).
-- `append_text_to_file`: Append text to the end of a file.
-- `replace_text_in_file`: Replace exact text fragments in files (with optional replace-all).
-- `create_file`: Create or update a file with given content.
-- `remove_file`: Remove a file from the filesystem.
-- `create_directory`: Create a new directory (with optional overwrite).
-- `remove_directory`: Remove a directory (with optional recursion).
-- `search_files`: Search for a text pattern in all files within directories and return matching lines.
-- `python_exec`: Execute arbitrary Python code and capture output.
-- `py_compile_file`: Validate Python files for syntax correctness using Python's built-in compiler.
-- `run_bash_command`: Execute bash commands and capture live output (with timeout and confirmation options).
-- `ask_user`: Prompt the user for input or clarification interactively.
-- `fetch_url`: Fetch the content of a web page and extract its text (with optional search strings).
-- For implementation details, see `janito/agent/tools/`.
-
-### Directory Listing Tool
-
-- Use the `list_directory` tool to list the contents of a directory up to a specified depth. Returns name, type (file/dir), last modified time, and path for each entry.
-
-### Python File Validation Tool
-
-- Use the `py_compile_file` tool to validate a Python file by compiling it with Python's built-in `py_compile` module. This tool is recommended for checking Python files after making changes, ensuring syntax correctness before running or deploying code.
-- **Usage:**
-  - Provide the path to the Python file you want to validate.
-  - Optionally, set `doraise` to `True` (default) to raise exceptions on errors.
-  - Returns a success message if the file is valid, or error details if compilation fails.
+See [janito/agent/tools/README.md](../janito/agent/tools/README.md) for a list of built-in tools and their usage.
 
 ## Tool Call Limits
 
@@ -127,24 +95,23 @@ Within the interactive chat shell, you can use special commands:
 - `/system` — Show the current system prompt
 - `/help` — Show help message
 
+## Installing the Development Version
+
+See [USING_DEV_VERSION.md](USING_DEV_VERSION.md) for instructions on installing and using the latest development version of this project from GitHub.
+
 ## Summary
 
-- Always provide type hints and parameter descriptions.
-- Use Google-style docstrings.
+- Always implement tools as classes inheriting from `ToolBase`.
+- Provide type hints and parameter descriptions for the `call` method.
+- Use Google-style docstrings for both the class and the `call` method.
 - Registration will fail if any parameter is undocumented.
+- Update the tools README after adding a new tool.
 
 Happy coding!
 
 ## Vanilla Mode (Developer Note)
 
 Vanilla mode is activated via the CLI/config (`--vanilla`). It disables all tool registration, omits the system prompt, and does not set temperature (unless explicitly provided). This is implemented as a runtime config flag (`vanilla_mode`) and does not alter the Agent or ConversationHandler API. All logic for vanilla mode is internal and backward compatible.
-
-## Tool Class Docstring
-
-- Each tool class must have a class-level docstring summarizing its purpose and behavior.
-- The class docstring is prepended to the tool's description in the OpenAI schema and is user-facing.
-- Write class docstrings clearly and concisely, as they will be shown to users.
-
 
 ## Code Style, Linting, and Pre-commit Hooks
 
