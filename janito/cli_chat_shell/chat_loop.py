@@ -9,7 +9,8 @@ from janito.agent.runtime_config import runtime_config
 from janito.agent.conversation import EmptyResponseError, ProviderError
 
 
-def start_chat_shell(agent, continue_session=False, max_rounds=50):
+def start_chat_shell(profile_manager, continue_session=False, max_rounds=50):
+    agent = profile_manager.agent
     message_handler = MessageHandler()
     console = message_handler.console
 
@@ -82,6 +83,7 @@ def start_chat_shell(agent, continue_session=False, max_rounds=50):
                 )
                 else (runtime_config.get("role") or effective_config.get("role"))
             ),
+            style_ref=lambda: getattr(profile_manager, "interaction_style", "default"),
         ),
         mem_history,
     )
@@ -133,6 +135,7 @@ def start_chat_shell(agent, continue_session=False, max_rounds=50):
             result = handle_command(
                 user_input.strip(),
                 console,
+                profile_manager=profile_manager,
                 agent=agent,
                 messages=messages,
                 mem_history=mem_history,

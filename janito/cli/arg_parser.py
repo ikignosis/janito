@@ -163,3 +163,9 @@ def create_parser():
         help="Vanilla mode: disables tools, system prompt, and temperature (unless -t is set)",
     )
     return parser
+    parser.add_argument(
+        "--style",
+        type=str,
+        default=None,
+        help="Interaction style for system prompt template (e.g., default, technical)",
+    )

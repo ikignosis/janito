@@ -54,7 +54,12 @@ def print_welcome(console, version=None, continued=False):
 
 
 def get_toolbar_func(
-    messages_ref, last_usage_info_ref, last_elapsed_ref, model_name=None, role_ref=None
+    messages_ref,
+    last_usage_info_ref,
+    last_elapsed_ref,
+    model_name=None,
+    role_ref=None,
+    style_ref=None,
 ):
     def format_tokens(n):
         if n is None:
@@ -94,11 +99,18 @@ def get_toolbar_func(
             role = role_ref()
             if role:
                 role_part = f"Role: <b>{role}</b>"
+        style_part = ""
+        if style_ref:
+            style = style_ref()
+            if style:
+                style_part = f"Style: <b>{style}</b>"
         first_line_parts = []
         if model_part:
             first_line_parts.append(model_part)
         if role_part:
             first_line_parts.append(role_part)
+        if style_part:
+            first_line_parts.append(style_part)
         first_line = " | ".join(first_line_parts)
         help_part = "<b>/help</b> for help | <b>F12</b>: Go ahead"
         total_len = len(left) + len(help_part) + 3  # separators and spaces

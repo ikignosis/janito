@@ -1,7 +1,6 @@
 import sys
 from rich.console import Console
-from janito.render_prompt import render_system_prompt
-from janito.agent.agent import Agent
+from janito.agent.profile_manager import AgentProfileManager
 from janito.agent.conversation import (
     MaxRoundsExceededError,
     EmptyResponseError,
@@ -63,14 +62,15 @@ def run_cli(args):
         if system_prompt is None:
             # Pass full merged config (runtime overrides effective)
 
+            from janito.render_prompt import render_system_prompt
+
             system_prompt = render_system_prompt(role)
 
     if args.show_system:
         api_key = get_api_key()
         # Always get model from unified_config (which checks runtime_config first)
         model = unified_config.get("model")
-        agent = Agent(api_key=api_key, model=model)
-        print("Model:", agent.model)
+        print("Model:", model)
         print("Parameters: {}")
         import json
 
@@ -96,10 +96,14 @@ def run_cli(args):
             runtime_config.set("temperature", None)
     else:
         runtime_config.set("vanilla_mode", False)
-    agent = Agent(
+    interaction_style = getattr(args, "style", None) or unified_config.get(
+        "interaction_style", "default"
+    )
+    profile_manager = AgentProfileManager(
         api_key=api_key,
         model=model,
-        system_prompt=system_prompt,
+        role=role,
+        interaction_style=interaction_style,
         verbose_tools=args.verbose_tools,
         base_url=base_url,
         azure_openai_api_version=azure_openai_api_version,
@@ -115,7 +119,7 @@ def run_cli(args):
         from janito.cli_chat_shell.chat_loop import start_chat_shell
 
         start_chat_shell(
-            agent, continue_session=getattr(args, "continue_session", False)
+            profile_manager, continue_session=getattr(args, "continue_session", False)
         )
         sys.exit(0)
 
@@ -126,18 +130,16 @@ def run_cli(args):
 
     message_handler = MessageHandler()
 
-    # Removed on_content logic; use message_handler pattern only
-
     messages = []
-    if agent.system_prompt:
-        messages.append({"role": "system", "content": agent.system_prompt})
+    if profile_manager.system_prompt:
+        messages.append({"role": "system", "content": profile_manager.system_prompt})
 
     messages.append({"role": "user", "content": prompt})
 
     try:
         try:
             max_rounds = runtime_config.get("max_rounds", 50)
-            response = agent.chat(
+            response = profile_manager.chat(
                 messages,
                 message_handler=message_handler,
                 spinner=True,
