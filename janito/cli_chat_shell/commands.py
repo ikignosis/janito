@@ -4,6 +4,8 @@ import json
 from prompt_toolkit.history import InMemoryHistory
 from janito.render_prompt import render_system_prompt
 from .load_prompt import load_prompt
+from janito.agent.runtime_config import runtime_config
+from .config_shell import handle_config_shell
 
 
 def handle_exit(console, **kwargs):
@@ -137,8 +139,6 @@ def handle_multi(console, state, **kwargs):
     console.print("[bold yellow]Multiline mode activated. Provide or write your text and press Esc + Enter to submit.[/bold yellow]")
     state['paste_mode'] = True
 
-from janito.agent.runtime_config import runtime_config
-from .config_shell import handle_config_shell
 
 def handle_role(console, *args, **kwargs):
     state = kwargs.get('state')

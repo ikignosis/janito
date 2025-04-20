@@ -1,5 +1,6 @@
 from janito.agent.tools.tool_base import ToolBase
 from janito.agent.tool_registry import register_tool
+from janito.agent.tools.tools_utils import pluralize
 
 @register_tool(name="replace_text_in_file")
 
@@ -87,4 +88,3 @@ NOTE: Indentation (leading whitespace) must be included in both search_text and 
             self.report_error(" ❌ Error")
             return f"Error replacing text: {e}"
 
-from janito.agent.tools.tools_utils import pluralize

@@ -1,5 +1,6 @@
 from janito.agent.tools.tool_base import ToolBase
 from janito.agent.tool_registry import register_tool
+from janito.agent.tools.tools_utils import pluralize
 
 
 
@@ -34,6 +35,3 @@ class GetFileOutlineTool(ToolBase):
         except Exception as e:
             self.report_error(f" ❌ Error reading file: {e}")
             return f"Error reading file: {e}"
-
-
-from janito.agent.tools.tools_utils import pluralize

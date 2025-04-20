@@ -1,6 +1,6 @@
 from janito.agent.tools.tool_base import ToolBase
 from janito.agent.tool_registry import register_tool
-
+from janito.agent.tools.tools_utils import pluralize
 
 import fnmatch
 from janito.agent.tools.gitignore_utils import filter_ignored
@@ -28,7 +28,6 @@ class FindFilesTool(ToolBase):
             return "Warning: Empty file pattern provided. Operation skipped."
         from janito.agent.tools.tools_utils import display_path
         output = []
-        rec = "recursively" if recursive else "non-recursively"
         for directory in directories:
             disp_path = display_path(directory)
             self.report_info(f"🔍 Searching for files '{pattern}' in '{disp_path}'")
@@ -52,4 +51,3 @@ class FindFilesTool(ToolBase):
         return "\n".join(output) + warning
 
 
-from janito.agent.tools.tools_utils import pluralize

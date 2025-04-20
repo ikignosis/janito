@@ -1,5 +1,6 @@
 from janito.agent.tools.tool_base import ToolBase
 from janito.agent.tool_registry import register_tool
+from janito.agent.tools.tools_utils import pluralize
 
 import shutil
 import os
@@ -37,4 +38,3 @@ class RemoveDirectoryTool(ToolBase):
             return f"Error removing directory: {e}"
 
 
-from janito.agent.tools.tools_utils import pluralize

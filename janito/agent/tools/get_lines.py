@@ -1,5 +1,6 @@
 from janito.agent.tools.tool_base import ToolBase
 from janito.agent.tool_registry import register_tool
+from janito.agent.tools.tools_utils import pluralize
 
 
 
@@ -64,5 +65,3 @@ class GetLinesTool(ToolBase):
             self.report_error(f" ❌ Error: {e}")
             return f"Error reading file: {e}"
 
-
-from janito.agent.tools.tools_utils import pluralize

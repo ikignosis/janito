@@ -84,7 +84,6 @@ def handle_config_commands(args):
         # Collect and group keys
         local_keys = set(local_config.all().keys())
         global_keys = set(global_config.all().keys())
-        all_keys = set(CONFIG_DEFAULTS.keys()) | global_keys | local_keys
         if not (local_keys or global_keys):
             print("No configuration found.")
         else:

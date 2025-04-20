@@ -27,8 +27,6 @@ def print_full_config(local_config, global_config, unified_config, config_defaul
     global_items = {}
     local_keys = set(local_config.all().keys())
     global_keys = set(global_config.all().keys())
-    all_keys = set(config_defaults.keys()) | global_keys | local_keys
-    out = print_info if console is None else console.print
     if not (local_keys or global_keys):
         print_warning("No configuration found.")
     else:

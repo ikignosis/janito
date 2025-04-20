@@ -78,5 +78,3 @@ class AskUserTool(ToolBase):
             else:
                 return response
 
-
-from janito.agent.tool_registry import register_tool

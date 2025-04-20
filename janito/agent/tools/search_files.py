@@ -1,5 +1,6 @@
 from janito.agent.tools.tool_base import ToolBase
 from janito.agent.tool_registry import register_tool
+from janito.agent.tools.tools_utils import pluralize
 
 import os
 from janito.agent.tools.gitignore_utils import filter_ignored
@@ -54,4 +55,3 @@ class SearchFilesTool(ToolBase):
         return '\n'.join(output) + warning
 
 
-from janito.agent.tools.tools_utils import pluralize
