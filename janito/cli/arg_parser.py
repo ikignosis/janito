@@ -168,10 +168,15 @@ def create_parser():
         action="store_true",
         help="Suppress all tool output (trusted tools mode: only shows output file locations)",
     )
-    return parser
     parser.add_argument(
         "--style",
         type=str,
         default=None,
         help="Interaction style for system prompt template (e.g., default, technical)",
     )
+    parser.add_argument(
+        "--stream",
+        action="store_true",
+        help="Enable OpenAI streaming mode (yields tokens as they arrive)",
+    )
+    return parser

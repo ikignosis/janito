@@ -5,7 +5,7 @@ import platform
 
 
 def parse_style_string(style: str) -> (str, List[str]):
-    """Parse a style string like 'technical-autocommit' into main style and features."""
+    """Parse a style string like 'technical-allcommit' into main style and features."""
     if "-" in style:
         parts = style.split("-")
         return parts[0], parts[1:]
@@ -32,7 +32,7 @@ def render_system_prompt_template(
 ) -> str:
     """
     Renders the system prompt template, supporting combinatorial styles.
-    interaction_style: e.g., 'technical', 'default', or 'technical-autocommit'.
+    interaction_style: e.g., 'technical', 'default', or 'technical-allcommit'.
     platform_name: normalized platform string (windows, linux, darwin, etc.)
     """
     main_style, features = parse_style_string(interaction_style)
@@ -72,7 +72,7 @@ def render_system_prompt_template(
         "platform": platform_name,
     }
     for feature in features:
-        feature_template = f"system_instructions_{feature}.j2"
+        feature_template = f"system_prompt_template_{feature}.j2"
         template = env.get_template(feature_template)
         context["parent_template"] = parent_template
         rendered = template.render(**context)
@@ -81,16 +81,16 @@ def render_system_prompt_template(
 
 
 if __name__ == "__main__":
-    # Example: technical-autocommit
+    # Example: technical-allcommit
     prompt = render_system_prompt_template(
         "software engineer",
-        interaction_style="technical-autocommit",
+        interaction_style="technical-allcommit",
         interaction_mode="prompt",
     )
     print(prompt)
 
 # Combinatorial style system:
-# - interaction_style can be e.g. 'technical-autocommit'
+# - interaction_style can be e.g. 'technical-allcommit'
 # - The first part is the main style, subsequent parts are feature extensions.
 # - Each feature template (system_prompt_template_<feature>.j2) must use `{% extends parent_template %}` for dynamic inheritance.
 # - Main styles are in templates/profiles/, features in templates/features/.

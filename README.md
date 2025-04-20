@@ -192,11 +192,11 @@ See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for full details.
 
 ## 🧩 Combinatorial Style System
 
-Janito now supports combinatorial styles for system prompts, allowing you to combine a main style (such as `default` or `technical`) with one or more feature extensions (such as `autocommit`).
+Janito now supports combinatorial styles for system prompts, allowing you to combine a main style (such as `default` or `technical`) with one or more feature extensions (such as `allcommit`).
 
 - **Main style:** The base agent behavior and workflow (e.g., `default`, `technical`).
-- **Feature extensions:** Optional features that override or extend the main style (e.g., `autocommit`).
-- **Syntax:** Use a hyphen to combine, e.g., `technical-autocommit`.
+- **Feature extensions:** Optional features that override or extend the main style (e.g., `allcommit`).
+- **Syntax:** Use a hyphen to combine, e.g., `technical-allcommit`.
 
 **How it works:**
 - The main style template is loaded first.
@@ -205,10 +205,10 @@ Janito now supports combinatorial styles for system prompts, allowing you to com
 
 **Example usage:**
 ```bash
-janito --style technical-autocommit
+janito --style technical-allcommit
 ```
 
-This will apply the `technical` style with the `autocommit` feature enabled in the agent's system prompt.
+This will apply the `technical` style with the `allcommit` feature enabled in the agent's system prompt.
 
 See `janito/render_prompt.py` and `janito/agent/templates/` for implementation details and to create your own feature extensions.
 

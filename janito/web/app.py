@@ -9,7 +9,7 @@ from flask import (
 from queue import Queue
 import json
 from janito.agent.queued_message_handler import QueuedMessageHandler
-from janito.agent.agent import Agent
+from janito.agent.openai_client import Agent
 from janito.render_prompt import render_system_prompt_template
 import os
 import threading

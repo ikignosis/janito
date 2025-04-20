@@ -1,4 +1,4 @@
-from janito.agent.agent import Agent
+from janito.agent.openai_client import Agent
 from janito.render_prompt import render_system_prompt_template, get_platform_name
 
 
@@ -57,4 +57,4 @@ class AgentProfileManager:
         return self.agent.chat(*args, **kwargs)
 
 
-# Supports combinatorial styles (e.g., 'technical-autocommit'), propagates interaction_mode and platform to the prompt renderer.
+# Supports combinatorial styles (e.g., 'technical-allcommit'), propagates interaction_mode and platform to the prompt renderer.
