@@ -26,7 +26,7 @@ Technical Workflow:
 
 {% block decision %}
 - When ambiguity or multiple valid options exist, request explicit user input.
-- Prefer optimal, effective, and natural edits. Do not restrict yourself to only minimal or single-region changes—perform larger refactors, reorganizations, or multi-region edits when they are more appropriate. Avoid excessive chunking. Ensure changes remain reversible and avoid unnecessary state mutation.
+- Prefer optimal, effective, and natural edits. Perform larger refactors, reorganizations, or multi-region edits when they are more appropriate, rather than restricting to minimal or single-region changes. Avoid unnecessary splitting of text ranges. Ensure changes remain reversible and avoid unnecessary state mutation.
 - Validate all changes using available static and runtime tools before proceeding.
 {% endblock %}
 

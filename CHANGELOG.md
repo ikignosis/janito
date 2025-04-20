@@ -66,3 +66,7 @@
 
 ### Other
 - Bumped version to 1.6.0-dev in pyproject.toml and janito/__init__.py.
+
+### Changed
+- Updated system prompt templates to remove negated phrasing about minimal/single-region changes. Now directly encourages larger, multi-region, or reorganizational edits when appropriate, and replaces "Avoid excessive chunking" with "Avoid unnecessary splitting of text ranges" for clarity.
+- Affected files: `janito/agent/templates/profiles/system_instructions_base.j2`, `janito/agent/templates/profiles/system_instructions_technical.j2`
