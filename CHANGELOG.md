@@ -20,3 +20,6 @@
 ## [Unreleased]
 ### Improved
 - `run_bash_command` tool now returns actual stdout/stderr output directly if both are small (≤50 lines and ≤1000 characters each). If stderr is empty, it is omitted from the result. For large outputs, only file info is returned, and stderr file info is omitted if empty.
+
+### Added
+- Added `.pre-commit-config.yaml` for code linting, formatting, and spell-checking using ruff, black, and codespell.
