@@ -145,9 +145,9 @@ def run_cli(args):
 
     prompt = args.prompt
     console = Console()
-    from janito.agent.rich_tool_handler import MessageHandler
+    from janito.agent.rich_message_handler import RichMessageHandler
 
-    message_handler = MessageHandler()
+    message_handler = RichMessageHandler()
     messages = []
     if profile_manager.system_prompt_template:
         messages.append(

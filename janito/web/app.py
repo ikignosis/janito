@@ -10,7 +10,7 @@ from queue import Queue
 import json
 from janito.agent.queued_message_handler import QueuedMessageHandler
 from janito.agent.openai_client import Agent
-from janito.render_prompt import render_system_prompt_template
+from janito.agent.profile_manager import AgentProfileManager
 import os
 import threading
 import traceback
@@ -24,7 +24,18 @@ system_prompt_template_override = unified_config.get("system_prompt_template")
 if system_prompt_template_override:
     system_prompt_template = system_prompt_template_override
 else:
-    system_prompt_template = render_system_prompt_template(role)
+    profile_manager = AgentProfileManager(
+        api_key=unified_config.get("api_key"),
+        model=unified_config.get("model"),
+        role=role,
+        interaction_style=unified_config.get("interaction_style", "default"),
+        interaction_mode=unified_config.get("interaction_mode", "prompt"),
+        verbose_tools=unified_config.get("verbose_tools", False),
+        base_url=unified_config.get("base_url", None),
+        azure_openai_api_version=unified_config.get("azure_openai_api_version", None),
+        use_azure_openai=unified_config.get("use_azure_openai", False),
+    )
+system_prompt_template = profile_manager.render_prompt()
 
 app = Flask(
     __name__,

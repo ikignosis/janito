@@ -1,4 +1,4 @@
-class MessageHandler:
+class QueueMessageHandler:
     def __init__(self, queue, *args, **kwargs):
         self._queue = queue
 
@@ -10,7 +10,7 @@ class MessageHandler:
         # Unified: send content (agent/LLM) messages to the frontend
         if not isinstance(msg, dict):
             raise TypeError(
-                f"MessageHandler.handle_message expects a dict with 'type' and 'message', got {type(msg)}: {msg!r}"
+                f"QueueMessageHandler.handle_message expects a dict with 'type' and 'message', got {type(msg)}: {msg!r}"
             )
         msg_type = msg.get("type", "info")
         message = msg.get("message", "")

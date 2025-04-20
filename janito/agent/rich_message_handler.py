@@ -4,7 +4,7 @@ from janito.agent.runtime_config import runtime_config, unified_config
 console = Console()
 
 
-class MessageHandler:
+class RichMessageHandler:
     """
     Unified message handler for all output (tool, agent, system) using Rich for styled output.
     """
@@ -26,7 +26,7 @@ class MessageHandler:
 
         if not isinstance(msg, dict):
             raise TypeError(
-                f"MessageHandler.handle_message expects a dict with 'type' and 'message', got {type(msg)}: {msg!r}"
+                f"RichMessageHandler.handle_message expects a dict with 'type' and 'message', got {type(msg)}: {msg!r}"
             )
 
         msg_type = msg.get("type", "info")

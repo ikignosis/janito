@@ -1,13 +1,13 @@
-from janito.agent.rich_tool_handler import MessageHandler
+from janito.agent.rich_message_handler import RichMessageHandler
 from .chat_state import load_chat_state, save_chat_state
 from .chat_ui import setup_prompt_session, print_welcome_message
 from .commands import handle_command
-from janito.agent.conversation import EmptyResponseError, ProviderError
+from janito.agent.conversation_exceptions import EmptyResponseError, ProviderError
 
 
 def start_chat_shell(profile_manager, continue_session=False, max_rounds=50):
     agent = profile_manager.agent
-    message_handler = MessageHandler()
+    message_handler = RichMessageHandler()
     console = message_handler.console
 
     # Load state
