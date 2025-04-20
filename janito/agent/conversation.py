@@ -1,21 +1,16 @@
-from janito.agent.tool_registry import get_tool_schemas, handle_tool_call
-from janito.agent.runtime_config import runtime_config, unified_config
-from rich.console import Console
+from janito.agent.conversation_api import (
+    get_openai_response,
+    get_openai_stream_response,
+    retry_api_call,
+)
+from janito.agent.conversation_tool_calls import handle_tool_calls
+from janito.agent.conversation_ui import show_spinner, print_verbose_event
+from janito.agent.conversation_exceptions import (
+    MaxRoundsExceededError,
+    EmptyResponseError,
+)
+from janito.agent.runtime_config import unified_config
 import pprint
-
-
-class MaxRoundsExceededError(Exception):
-    pass
-
-
-class EmptyResponseError(Exception):
-    pass
-
-
-class ProviderError(Exception):
-    def __init__(self, message, error_data):
-        self.error_data = error_data
-        super().__init__(message)
 
 
 class ConversationHandler:
@@ -34,22 +29,14 @@ class ConversationHandler:
         max_tokens=None,
         verbose_events=False,
         stream=False,
-        verbose_stream=False,  # New argument for verbose stream
+        verbose_stream=False,
     ):
-        import time
-        import json
-
-        max_tools = runtime_config.get("max_tools", None)
-        tool_calls_made = 0
         if not messages:
             raise ValueError("No prompt provided in messages")
 
-        # Resolve max_tokens priority: runtime param > config > default
         resolved_max_tokens = max_tokens
         if resolved_max_tokens is None:
             resolved_max_tokens = unified_config.get("max_tokens", 200000)
-
-        # Ensure max_tokens is always an int (handles config/CLI string values)
         try:
             resolved_max_tokens = int(resolved_max_tokens)
         except (TypeError, ValueError):
@@ -58,142 +45,34 @@ class ConversationHandler:
             )
 
         for _ in range(max_rounds):
-            max_retries = 5
-            last_exception = None
-            for attempt in range(1, max_retries + 1):
-                try:
-                    # STREAM MODE
-                    if stream:
-                        openai_args = dict(
-                            model=self.model,
-                            messages=messages,
-                            max_tokens=resolved_max_tokens,
-                            stream=True,
-                        )
-                        if not runtime_config.get("vanilla_mode", False):
-                            openai_args.update(
-                                tools=get_tool_schemas(),
-                                tool_choice="auto",
-                                temperature=0.2,
-                            )
-                        # FIX: Use .chat.completions.create for streaming
-                        response_stream = self.client.chat.completions.create(
-                            **openai_args
-                        )
-                        content_accum = ""
-                        for event in response_stream:
-                            if verbose_stream or runtime_config.get(
-                                "verbose_stream", False
-                            ):
-                                print(repr(event), flush=True)
-                            delta = getattr(event.choices[0], "delta", None)
-                            if delta and getattr(delta, "content", None):
-                                chunk = delta.content
-                                content_accum += chunk
-                                if message_handler:
-                                    message_handler.handle_message(
-                                        {"type": "stream", "content": chunk}
-                                    )
-                        # Final event (simulate normal return structure)
-                        if message_handler:
-                            message_handler.handle_message(
-                                {"type": "stream_end", "content": content_accum}
-                            )
-                        return None  # No generator, event-driven only
-                    # NON-STREAM MODE
-                    if spinner:
-                        console = Console()
-                        word_count = sum(
-                            len(str(m.get("content", "").split()))
-                            for m in messages
-                            if "content" in m
-                        )
+            if stream:
+                # Streaming mode
+                def get_stream():
+                    return get_openai_stream_response(
+                        self.client,
+                        self.model,
+                        messages,
+                        resolved_max_tokens,
+                        verbose_stream=verbose_stream,
+                        message_handler=message_handler,
+                    )
 
-                        def format_count(n):
-                            if n >= 1_000_000:
-                                return f"{n/1_000_000:.1f}m"
-                            elif n >= 1_000:
-                                return f"{n/1_000:.1f}k"
-                            return str(n)
+                retry_api_call(get_stream)
+                return None
+            else:
+                # Non-streaming mode
+                def api_call():
+                    return get_openai_response(
+                        self.client, self.model, messages, resolved_max_tokens
+                    )
 
-                        user_msgs = sum(1 for m in messages if m.get("role") == "user")
-                        agent_msgs = sum(
-                            1 for m in messages if m.get("role") == "assistant"
-                        )
-                        tool_msgs = sum(1 for m in messages if m.get("role") == "tool")
-                        tool_uses = sum(
-                            len(m.get("tool_calls", []))
-                            for m in messages
-                            if m.get("role") == "assistant"
-                        )
-                        spinner_msg = (
-                            f"[bold green]Waiting for AI response... ("
-                            f"{format_count(word_count)} words, "
-                            f"{user_msgs} user, {agent_msgs} agent, "
-                            f"{tool_uses} tool uses, {tool_msgs} tool responses)"
-                        )
-                        with console.status(spinner_msg, spinner="dots") as status:
-                            if runtime_config.get("vanilla_mode", False):
-                                response = self.client.chat.completions.create(
-                                    model=self.model,
-                                    messages=messages,
-                                    max_tokens=resolved_max_tokens,
-                                )
-                            else:
-                                tools = get_tool_schemas()
-                                response = self.client.chat.completions.create(
-                                    model=self.model,
-                                    messages=messages,
-                                    tools=tools,
-                                    tool_choice="auto",
-                                    temperature=0.2,
-                                    max_tokens=resolved_max_tokens,
-                                )
-                            status.stop()
-                    else:
-                        if runtime_config.get("vanilla_mode", False):
-                            response = self.client.chat.completions.create(
-                                model=self.model,
-                                messages=messages,
-                                max_tokens=resolved_max_tokens,
-                            )
-                        else:
-                            response = self.client.chat.completions.create(
-                                model=self.model,
-                                messages=messages,
-                                tools=get_tool_schemas(),
-                                tool_choice="auto",
-                                temperature=0.2,
-                                max_tokens=resolved_max_tokens,
-                            )
-                    break  # Success, exit retry loop
-                except json.JSONDecodeError as e:
-                    last_exception = e
-                    if attempt < max_retries:
-                        wait_time = 2**attempt
-                        print(
-                            f"Invalid/malformed response from OpenAI (attempt {attempt}/{max_retries}). Retrying in {wait_time} seconds..."
-                        )
-                        time.sleep(wait_time)
-                    else:
-                        print(
-                            "Max retries for invalid response reached. Raising error."
-                        )
-                        raise last_exception
-                except Exception as e:
-                    raise
-                    last_exception = e
-                    if attempt < max_retries:
-                        wait_time = 2**attempt
-                        print(
-                            f"Invalid/malformed response from OpenAI (attempt {attempt}/{max_retries}). Retrying in {wait_time} seconds..."
-                        )
-                        time.sleep(wait_time)
-                    else:
-                        print(
-                            "Max retries for invalid response reached. Raising error."
-                        )
-                        raise last_exception
+                if spinner:
+                    response = show_spinner(
+                        "Waiting for AI response...", retry_api_call, api_call
+                    )
+                else:
+                    response = retry_api_call(api_call)
+
             if verbose_response:
                 pprint.pprint(response)
             if response is None or not getattr(response, "choices", None):
@@ -202,17 +81,18 @@ class ConversationHandler:
                 )
             choice = response.choices[0]
             usage = getattr(response, "usage", None)
-            if usage:
-                usage_info = {
+            usage_info = (
+                {
                     "prompt_tokens": getattr(usage, "prompt_tokens", None),
                     "completion_tokens": getattr(usage, "completion_tokens", None),
                     "total_tokens": getattr(usage, "total_tokens", None),
                 }
-            else:
-                usage_info = None
+                if usage
+                else None
+            )
             event = {"type": "content", "message": choice.message.content}
             if verbose_events:
-                print(f"[EVENT] {event}")
+                print_verbose_event(event)
             if message_handler is not None and choice.message.content:
                 message_handler.handle_message(event)
             if not choice.message.tool_calls:
@@ -225,15 +105,10 @@ class ConversationHandler:
                     "usage": usage_info,
                     "usage_history": self.usage_history,
                 }
-            tool_responses = []
-            for tool_call in choice.message.tool_calls:
-                if max_tools is not None and tool_calls_made >= max_tools:
-                    raise MaxRoundsExceededError(
-                        f"Maximum number of tool calls ({max_tools}) reached in this chat session."
-                    )
-                result = handle_tool_call(tool_call, message_handler=message_handler)
-                tool_responses.append({"tool_call_id": tool_call.id, "content": result})
-                tool_calls_made += 1
+            # Tool calls
+            tool_responses = handle_tool_calls(
+                choice.message.tool_calls, message_handler=message_handler
+            )
             agent_idx = len([m for m in messages if m.get("role") == "agent"])
             self.usage_history.append({"agent_index": agent_idx, "usage": usage_info})
             messages.append(

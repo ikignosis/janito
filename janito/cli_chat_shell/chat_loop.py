@@ -1,11 +1,7 @@
 from janito.agent.rich_tool_handler import MessageHandler
-from prompt_toolkit.history import InMemoryHistory
-from .session_manager import load_last_conversation, load_input_history
-from .ui import print_welcome, get_toolbar_func, get_prompt_session
-from janito import __version__
+from .chat_state import load_chat_state, save_chat_state
+from .chat_ui import setup_prompt_session, print_welcome_message
 from .commands import handle_command
-from janito.agent.config import effective_config
-from janito.agent.runtime_config import runtime_config
 from janito.agent.conversation import EmptyResponseError, ProviderError
 
 
@@ -14,86 +10,26 @@ def start_chat_shell(profile_manager, continue_session=False, max_rounds=50):
     message_handler = MessageHandler()
     console = message_handler.console
 
-    # Load input history
-    history_list = load_input_history()
-    mem_history = InMemoryHistory()
-    for item in history_list:
-        mem_history.append_string(item)
-
-        # Initialize chat state variables
-    messages = []
-    last_usage_info = None
-    last_elapsed = None
-
-    state = {
-        "messages": messages,
-        "mem_history": mem_history,
-        "history_list": history_list,
-        "last_usage_info": last_usage_info,
-        "last_elapsed": last_elapsed,
-    }
-
-    # Restore conversation if requested
-    if continue_session:
-        msgs, prompts, usage = load_last_conversation()
-        messages = msgs
-        last_usage_info = usage
-        mem_history = InMemoryHistory()
-        for item in prompts:
-            mem_history.append_string(item)
-        # update state dict with restored data
-
-        state["messages"] = messages
-        state["last_usage_info"] = last_usage_info
-        state["mem_history"] = mem_history
-        message_handler.handle_message(
-            {"type": "success", "message": "Restored last saved conversation."}
-        )
+    # Load state
+    state = load_chat_state(continue_session)
+    messages = state["messages"]
+    mem_history = state["mem_history"]
+    last_usage_info = state["last_usage_info"]
+    last_elapsed = state["last_elapsed"]
 
     # Add system prompt if needed
-    if agent.system_prompt_template and not any(
+    if profile_manager.system_prompt_template and not any(
         m.get("role") == "system" for m in messages
     ):
         messages.insert(0, {"role": "system", "content": agent.system_prompt_template})
 
-    print_welcome(console, version=__version__, continued=continue_session)
+    print_welcome_message(console, continued=continue_session)
 
-    # Toolbar references
-    def get_messages():
-        return messages
-
-    def get_usage():
-        return last_usage_info
-
-    def get_elapsed():
-        return last_elapsed
-
-    # Try to get model name from agent
-    model_name = getattr(agent, "model", None)
-
-    session = get_prompt_session(
-        get_toolbar_func(
-            get_messages,
-            get_usage,
-            get_elapsed,
-            model_name=model_name,
-            role_ref=lambda: (
-                "*using custom system prompt*"
-                if (
-                    runtime_config.get("system_prompt_template")
-                    or runtime_config.get("system_prompt_template_file")
-                )
-                else (runtime_config.get("role") or effective_config.get("role"))
-            ),
-            style_ref=lambda: getattr(profile_manager, "interaction_style", "default"),
-        ),
-        mem_history,
+    session = setup_prompt_session(
+        messages, last_usage_info, last_elapsed, mem_history, profile_manager, agent
     )
 
-    # Main chat loop
     while True:
-        # max_rounds is now available for use in the chat loop
-
         try:
             if state.get("paste_mode"):
                 console.print("")
@@ -153,17 +89,16 @@ def start_chat_shell(profile_manager, continue_session=False, max_rounds=50):
         mem_history.append_string(user_input)
         messages.append({"role": "user", "content": user_input})
 
-        start_time = None
         import time
 
         start_time = time.time()
 
         try:
-            response = agent.chat(
+            response = profile_manager.agent.handle_conversation(
                 messages,
-                spinner=True,
                 max_rounds=max_rounds,
                 message_handler=message_handler,
+                spinner=True,
             )
         except KeyboardInterrupt:
             message_handler.handle_message(
@@ -184,8 +119,4 @@ def start_chat_shell(profile_manager, continue_session=False, max_rounds=50):
         last_usage_info = usage
 
         # Save conversation and input history
-        from .session_manager import save_conversation, save_input_history
-
-        prompts = [h for h in mem_history.get_strings()]
-        save_conversation(messages, prompts, last_usage_info)
-        save_input_history(prompts)
+        save_chat_state(messages, mem_history, last_usage_info)
