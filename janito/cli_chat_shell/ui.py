@@ -33,9 +33,9 @@ def print_welcome(console, version=None, continued=False):
     version_str = f" (v{version})" if version else ""
     vanilla_mode = runtime_config.get('vanilla_mode', False)
     if vanilla_mode:
-        console.print(f"[bold magenta]Welcome to Janito{version_str} in [white on magenta]VANILLA MODE[/white on magenta]! Tools, system prompt, and temperature are disabled unless overridden.[/bold magenta]")
+        console.print(f"[bold magenta]Welcome to Janito{version_str} in [white on magenta]VANILLA MODE[/white on magenta]! Tools, system prompt, and temperature are disabled unless overridden.[/bold magenta]\n[cyan]Press F12 to accept the suggested next step and continue.[/cyan]")
     else:
-        console.print(f"[bold green]Welcome to Janito{version_str}! Entering chat mode. Type /exit to exit.[/bold green]")
+        console.print(f"[bold green]Welcome to Janito{version_str}! Entering chat mode. Type /exit to exit.[/bold green]\n[cyan]Press F12 to accept the suggested next step and continue.[/cyan]")
     # Only print /continue suggestion if a last conversation exists
 
 
