@@ -4,7 +4,7 @@ from janito.agent.profile_manager import AgentProfileManager
 
 # Ensure all tools are registered at startup
 import janito.agent.tools  # noqa: F401
-from janito.agent.conversation import (
+from janito.agent.conversation_exceptions import (
     MaxRoundsExceededError,
     EmptyResponseError,
     ProviderError,
@@ -67,17 +67,26 @@ def run_cli(args):
             runtime_config.set("system_prompt_template", system_prompt_template)
         if system_prompt_template is None:
             # Pass full merged config (runtime overrides effective)
-            from janito.render_prompt import render_system_prompt_template
-
-            system_prompt_template = render_system_prompt_template(role)
+            profile_manager = AgentProfileManager(
+                api_key=get_api_key(),
+                model=unified_config.get("model"),
+                role=role,
+                interaction_style=unified_config.get("interaction_style", "default"),
+                interaction_mode=unified_config.get("interaction_mode", "prompt"),
+                verbose_tools=unified_config.get("verbose_tools", False),
+                base_url=unified_config.get("base_url", None),
+                azure_openai_api_version=unified_config.get(
+                    "azure_openai_api_version", None
+                ),
+                use_azure_openai=unified_config.get("use_azure_openai", False),
+            )
+            system_prompt_template = profile_manager.render_prompt()
 
     if args.show_system:
         api_key = get_api_key()
-        # Always get model from unified_config (which checks runtime_config first)
         model = unified_config.get("model")
         print("Model:", model)
         print("Parameters: {}")
-
         print(
             "System Prompt Template:",
             system_prompt_template or "(default system prompt template not provided)",
@@ -85,7 +94,6 @@ def run_cli(args):
         sys.exit(0)
 
     api_key = get_api_key()
-    # Always get model from unified_config (which checks runtime_config first)
     model = unified_config.get("model")
     base_url = unified_config.get("base_url", "https://openrouter.ai/api/v1")
     azure_openai_api_version = unified_config.get(
@@ -97,7 +105,6 @@ def run_cli(args):
         runtime_config.set("vanilla_mode", True)
         system_prompt_template = None
         runtime_config.set("system_prompt_template", None)
-        # Only set temperature if explicitly provided
         if args.temperature is None:
             runtime_config.set("temperature", None)
     else:
@@ -107,8 +114,6 @@ def run_cli(args):
         "interaction_style", "default"
     )
 
-    # --- FIX: Set interaction_mode based on shell/CLI ---
-    # If no prompt is provided, we are in chat mode (multi-turn), otherwise prompt mode (single prompt/response).
     if not getattr(args, "prompt", None):
         interaction_mode = "chat"
     else:
@@ -125,12 +130,11 @@ def run_cli(args):
         azure_openai_api_version=azure_openai_api_version,
         use_azure_openai=unified_config.get("use_azure_openai", False),
     )
+    profile_manager.refresh_prompt()
 
-    # Save runtime max_tokens override if provided
     if args.max_tokens is not None:
         runtime_config.set("max_tokens", args.max_tokens)
 
-    # If no prompt is provided, enter shell loop mode
     if not getattr(args, "prompt", None):
         from janito.cli_chat_shell.chat_loop import start_chat_shell
 
@@ -153,8 +157,7 @@ def run_cli(args):
     try:
         try:
             max_rounds = runtime_config.get("max_rounds", 50)
-            # Pass verbose_stream to the agent
-            profile_manager.chat(
+            profile_manager.agent.handle_conversation(
                 messages,
                 message_handler=message_handler,
                 spinner=True,
@@ -164,7 +167,6 @@ def run_cli(args):
                 stream=getattr(args, "stream", False),
                 verbose_stream=getattr(args, "verbose_stream", False),
             )
-            # No iteration or print here; all output is handled by MessageHandler and/or the agent
         except MaxRoundsExceededError:
             console.print("[red]Max conversation rounds exceeded.[/red]")
         except ProviderError as e:
