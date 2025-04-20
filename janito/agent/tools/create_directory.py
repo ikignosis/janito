@@ -23,6 +23,7 @@ class CreateDirectoryTool(ToolBase):
         original_path = path
         path = expand_path(path)
         disp_path = display_path(original_path, path)
+        import os
         if os.path.exists(path):
             if not os.path.isdir(path):
                 self.report_error(f"❌ Path '{disp_path}' exists and is not a directory.")

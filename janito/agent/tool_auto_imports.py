@@ -2,4 +2,18 @@
 # This module imports all tool modules to ensure they are registered via their decorators.
 # It should be imported only where tool auto-registration is needed, to avoid circular import issues.
 
-from janito.agent.tools import search_files, run_bash_command, replace_text_in_file, remove_file, remove_directory, py_compile, run_python_command, move_file, get_lines, get_file_outline, find_files, fetch_url, create_file, create_directory, ask_user, append_text_to_file
+import importlib
+import pkgutil
+from pathlib import Path
+
+TOOLS_DIR = Path(__file__).parent / "tools"
+PACKAGE_PREFIX = "janito.agent.tools."
+
+for finder, name, ispkg in pkgutil.iter_modules([str(TOOLS_DIR)]):
+    if name.startswith("_") or not name.endswith(('.py', '')):
+        continue
+    # Avoid importing __init__.py or non-python files
+    if name == "__init__":
+        continue
+    module_name = PACKAGE_PREFIX + name
+    importlib.import_module(module_name)
