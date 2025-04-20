@@ -11,6 +11,7 @@ COMMAND_HANDLERS = {
     "/history": handle_history,
     "/continue": handle_continue,
     "/exit": handle_exit,
+    "exit": handle_exit,
     "/restart": handle_restart,
     "/help": handle_help,
     "/multi": handle_multi,

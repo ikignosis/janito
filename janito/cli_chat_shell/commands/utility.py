@@ -2,7 +2,7 @@ def handle_help(console, **kwargs):
     console.print(
         """
 [bold green]Available commands:[/bold green]
-  /exit     - Exit chat mode
+  /exit, exit     - Exit chat mode
   /restart  - Restart the CLI
   /help     - Show this help message
   /continue - Restore last saved conversation
