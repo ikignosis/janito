@@ -17,6 +17,7 @@ from . import run_python_command
 from . import search_files
 from . import tools_utils
 from . import replace_file
+from . import memory
 
 __all__ = [
     "ask_user",
@@ -38,4 +39,5 @@ __all__ = [
     "search_files",
     "tools_utils",
     "replace_file",
+    "memory",
 ]
