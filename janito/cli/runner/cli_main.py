@@ -127,8 +127,8 @@ def run_cli(args):
     messages.append({"role": "user", "content": prompt})
     try:
         try:
-            max_rounds = runtime_config.get("max_rounds", 50)
-            profile_manager.agent.handle_conversation(
+            max_rounds = 50
+            profile_manager.agent.chat(
                 messages,
                 message_handler=message_handler,
                 spinner=True,
@@ -136,7 +136,6 @@ def run_cli(args):
                 verbose_response=getattr(args, "verbose_response", False),
                 verbose_events=getattr(args, "verbose_events", False),
                 stream=getattr(args, "stream", False),
-                verbose_stream=getattr(args, "verbose_stream", False),
             )
         except MaxRoundsExceededError:
             console.print("[red]Max conversation rounds exceeded.[/red]")

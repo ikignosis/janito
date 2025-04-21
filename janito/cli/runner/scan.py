@@ -1,5 +1,5 @@
 import os
-from janito.agent.openai_client import Agent
+from janito.agent.profile_manager import AgentProfileManager
 from janito.agent.runtime_config import unified_config
 from janito.agent.config import get_api_key
 
@@ -24,15 +24,18 @@ def scan_project():
         "azure_openai_api_version", "2023-05-15"
     )
     use_azure_openai = unified_config.get("use_azure_openai", False)
-    agent = Agent(
+    profile_manager = AgentProfileManager(
         api_key=api_key,
         model=model,
-        system_prompt_template=detect_prompt,
+        role=unified_config.get("role", "software engineer"),
+        interaction_style=unified_config.get("interaction_style", "default"),
+        interaction_mode=unified_config.get("interaction_mode", "prompt"),
         verbose_tools=True,
         base_url=base_url,
         azure_openai_api_version=azure_openai_api_version,
         use_azure_openai=use_azure_openai,
     )
+    agent = profile_manager.agent
     from janito.agent.rich_message_handler import RichMessageHandler
 
     message_handler = RichMessageHandler()
@@ -42,7 +45,7 @@ def scan_project():
         messages,
         message_handler=message_handler,
         spinner=True,
-        max_rounds=10,
+        max_rounds=50,
         verbose_response=False,
         verbose_events=False,
         stream=False,

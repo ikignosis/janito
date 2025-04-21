@@ -72,6 +72,7 @@ class Agent:
         max_rounds=50,
         verbose_events=False,
         stream=False,
+        verbose_stream=False,
     ):
         """
         Start a chat conversation with the agent.
@@ -101,6 +102,7 @@ class Agent:
                     max_tokens=max_tokens,
                     verbose_events=verbose_events,
                     stream=stream,
+                    verbose_stream=verbose_stream,
                 )
             except ProviderError as e:
                 error_data = getattr(e, "error_data", {}) or {}

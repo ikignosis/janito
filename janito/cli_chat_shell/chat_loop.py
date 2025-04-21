@@ -96,7 +96,7 @@ def start_chat_shell(profile_manager, continue_session=False, max_rounds=50):
         start_time = time.time()
 
         try:
-            response = profile_manager.agent.handle_conversation(
+            response = profile_manager.agent.chat(
                 messages,
                 max_rounds=max_rounds,
                 message_handler=message_handler,

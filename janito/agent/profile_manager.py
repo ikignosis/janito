@@ -1,4 +1,3 @@
-from janito.agent.conversation import ConversationHandler
 from openai import OpenAI
 import jinja2
 from pathlib import Path
@@ -143,7 +142,15 @@ class AgentProfileManager:
                 api_key=api_key,
                 default_headers={"HTTP-Referer": self.REFERER, "X-Title": self.TITLE},
             )
-        self.agent = ConversationHandler(self.client, model)
+        from janito.agent.openai_client import Agent
+
+        self.agent = Agent(
+            api_key=api_key,
+            model=model,
+            base_url=base_url,
+            use_azure_openai=use_azure_openai,
+            azure_openai_api_version=azure_openai_api_version,
+        )
         self.system_prompt_template = None
 
     def refresh_prompt(self):

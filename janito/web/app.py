@@ -9,7 +9,6 @@ from flask import (
 from queue import Queue
 import json
 from janito.agent.queued_message_handler import QueuedMessageHandler
-from janito.agent.openai_client import Agent
 from janito.agent.profile_manager import AgentProfileManager
 import os
 import threading
@@ -60,11 +59,7 @@ stream_queue = Queue()
 message_handler = QueuedMessageHandler(stream_queue)
 
 # Instantiate the Agent with config-driven parameters (no tool_handler)
-agent = Agent(
-    api_key=unified_config.get("api_key"),
-    model=unified_config.get("model"),
-    base_url=unified_config.get("base_url"),
-)
+agent = profile_manager.agent
 
 
 @app.route("/get_config")

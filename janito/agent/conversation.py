@@ -129,4 +129,4 @@ class ConversationHandler:
                         "content": tr["content"],
                     }
                 )
-        raise MaxRoundsExceededError("Max conversation rounds exceeded")
+        raise MaxRoundsExceededError(f"Max conversation rounds exceeded ({max_rounds})")

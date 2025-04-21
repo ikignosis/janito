@@ -2,6 +2,7 @@ from .session import handle_continue, handle_history
 from .system import handle_system, handle_role, handle_style
 from .session_control import handle_exit, handle_restart
 from .utility import handle_help, handle_clear, handle_multi
+from .sum import handle_sum
 from .config import handle_reload
 from .history_reset import handle_reset
 from ..config_shell import handle_config_shell
@@ -23,6 +24,7 @@ if not runtime_config.get("vanilla_mode", False):
 
 COMMAND_HANDLERS.update(
     {
+        "/sum": handle_sum,
         "/clear": handle_clear,
         "/reset": handle_reset,
         "/config": handle_config_shell,
