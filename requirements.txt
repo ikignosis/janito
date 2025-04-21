@@ -6,3 +6,4 @@ prompt_toolkit
 requests
 rich
 beautifulsoup4 # fetch_url tool dependency, bs4
+toml
