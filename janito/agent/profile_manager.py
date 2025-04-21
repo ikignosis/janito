@@ -7,6 +7,15 @@ from janito.agent.shell_detect import detect_shell
 
 
 class AgentProfileManager:
+    def _report_template_not_found(self, template_name, search_dirs):
+        import sys
+
+        search_dirs_str = ", ".join(str(d) for d in search_dirs)
+        print(
+            f"❗ TemplateNotFound: '{template_name}'\n  Searched paths: {search_dirs_str}",
+            file=sys.stderr,
+        )
+
     REFERER = "www.janito.dev"
     TITLE = "Janito"
 
@@ -61,11 +70,8 @@ class AgentProfileManager:
             try:
                 template = env.get_template(main_template)
             except jinja2.exceptions.TemplateNotFound:
-                import sys
-
-                print(
-                    f"❗ TemplateNotFound: '{main_template}'\n  Searched paths: {profiles_dir}, {features_dir}",
-                    file=sys.stderr,
+                self._report_template_not_found(
+                    main_template, [profiles_dir, features_dir]
                 )
                 raise
             return template.render(
@@ -101,11 +107,8 @@ class AgentProfileManager:
             try:
                 template = env.get_template(feature_template)
             except jinja2.exceptions.TemplateNotFound:
-                import sys
-
-                print(
-                    f"❗ TemplateNotFound: '{feature_template}'\n  Searched paths: {profiles_dir}, {features_dir}",
-                    file=sys.stderr,
+                self._report_template_not_found(
+                    feature_template, [profiles_dir, features_dir]
                 )
                 raise
             context["parent_template"] = parent_template
