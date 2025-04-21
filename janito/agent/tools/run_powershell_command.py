@@ -13,6 +13,11 @@ class RunPowerShellCommandTool(ToolBase):
 
     This tool explicitly invokes 'powershell.exe' (on Windows) or 'pwsh' (on other platforms if available).
 
+    All commands are automatically prepended with UTF-8 output encoding:
+    $OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8;
+
+    For file output, it is recommended to use -Encoding utf8 in your PowerShell commands (e.g., Out-File -Encoding utf8) to ensure correct file encoding.
+
     Args:
         command (str): The PowerShell command to execute. This string is passed directly to PowerShell using the --Command argument (not as a script file).
         timeout (int, optional): Timeout in seconds for the command. Defaults to 60.
@@ -33,6 +38,9 @@ class RunPowerShellCommandTool(ToolBase):
         if not command.strip():
             self.report_warning("⚠️ Warning: Empty command provided. Operation skipped.")
             return "Warning: Empty command provided. Operation skipped."
+        # Prepend UTF-8 output encoding
+        encoding_prefix = "$OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; "
+        command_with_encoding = encoding_prefix + command
         self.report_info(f"🖥️  Running PowerShell command: {command}\n")
         if interactive:
             self.report_info(
@@ -68,7 +76,7 @@ class RunPowerShellCommandTool(ToolBase):
                         "-ExecutionPolicy",
                         "Bypass",
                         "-Command",
-                        command,
+                        command_with_encoding,
                     ],
                     stdout=stdout_file,
                     stderr=stderr_file,

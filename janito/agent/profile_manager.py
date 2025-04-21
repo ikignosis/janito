@@ -3,7 +3,7 @@ from openai import OpenAI
 import jinja2
 from pathlib import Path
 import platform
-import os
+from janito.agent.shell_detect import detect_shell
 
 
 class AgentProfileManager:
@@ -29,37 +29,6 @@ class AgentProfileManager:
     def get_python_version(self):
         return platform.python_version()
 
-    def get_shell_info(self):
-        shell = os.environ.get("SHELL")
-        term = os.environ.get("TERM")
-        term_program = os.environ.get("TERM_PROGRAM")
-        if shell:
-            info = shell
-        elif os.environ.get("MSYSTEM"):
-            info = f"Git Bash ({os.environ.get('MSYSTEM')})"
-        elif os.environ.get("WSL_DISTRO_NAME"):
-            info = f"WSL ({os.environ.get('WSL_DISTRO_NAME')})"
-        else:
-            comspec = os.environ.get("COMSPEC")
-            if comspec:
-                if "powershell" in comspec.lower():
-                    info = "PowerShell"
-                elif "cmd" in comspec.lower():
-                    info = "cmd.exe"
-                else:
-                    info = "Unknown shell"
-            else:
-                info = "Unknown shell"
-        if term:
-            info += f", TERM={term}"
-        if term_program and term_program.lower() == "vscode":
-            info += ", running in VSCode"
-        home_dir = os.path.expanduser("~")
-        if home_dir:
-            info += f", HOME={home_dir}"
-        return info
-        return "unknown"
-
     def render_prompt(self):
         main_style, features = self.parse_style_string(self.interaction_style)
         base_dir = Path(__file__).parent / "templates"
@@ -78,7 +47,7 @@ class AgentProfileManager:
             main_template = "system_prompt_template_default.j2"
         platform_name = self.get_platform_name()
         python_version = self.get_python_version()
-        shell_info = self.get_shell_info()
+        shell_info = detect_shell()
         if not features:
             # Inject tech.txt existence and content
             tech_txt_path = Path(".janito") / "tech.txt"
