@@ -5,7 +5,7 @@ from janito.agent.runtime_config import runtime_config
 
 
 def setup_prompt_session(
-    messages, last_usage_info, last_elapsed, mem_history, profile_manager, agent
+    messages, last_usage_info_ref, last_elapsed, mem_history, profile_manager, agent
 ):
     model_name = getattr(agent, "model", None)
 
@@ -13,7 +13,7 @@ def setup_prompt_session(
         return messages
 
     def get_usage():
-        return last_usage_info
+        return last_usage_info_ref["value"]
 
     def get_elapsed():
         return last_elapsed

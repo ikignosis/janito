@@ -1,5 +1,5 @@
 from janito.agent.rich_message_handler import RichMessageHandler
-from .chat_state import load_chat_state, save_chat_state
+from .chat_state import load_chat_state
 from .chat_ui import setup_prompt_session, print_welcome_message
 from .commands import handle_command
 from janito.agent.conversation_exceptions import EmptyResponseError, ProviderError
@@ -14,7 +14,7 @@ def start_chat_shell(profile_manager, continue_session=False, max_rounds=50):
     state = load_chat_state(continue_session)
     messages = state["messages"]
     mem_history = state["mem_history"]
-    last_usage_info = state["last_usage_info"]
+    last_usage_info_ref = {"value": state["last_usage_info"]}
     last_elapsed = state["last_elapsed"]
 
     # Add system prompt if needed
@@ -26,7 +26,7 @@ def start_chat_shell(profile_manager, continue_session=False, max_rounds=50):
     print_welcome_message(console, continued=continue_session)
 
     session = setup_prompt_session(
-        messages, last_usage_info, last_elapsed, mem_history, profile_manager, agent
+        messages, last_usage_info_ref, last_elapsed, mem_history, profile_manager, agent
     )
 
     while True:
@@ -118,7 +118,8 @@ def start_chat_shell(profile_manager, continue_session=False, max_rounds=50):
         last_elapsed = time.time() - start_time
 
         usage = response.get("usage")
-        last_usage_info = usage
+        print(f"[DEBUG] last_usage_info assigned: {usage}")
+        last_usage_info_ref["value"] = usage
 
         # Save conversation and input history
-        save_chat_state(messages, mem_history, last_usage_info)
+        # save_chat_state(messages, mem_history, last_usage_info)
