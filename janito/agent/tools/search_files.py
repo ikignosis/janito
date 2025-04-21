@@ -14,8 +14,8 @@ class SearchFilesTool(ToolBase):
     Args:
         directories (list[str]): List of directories to search in.
         pattern (str): Plain text substring to search for in files. (Not a regular expression or glob pattern.)
-        all_results (bool): If True, return all matches (no cap or warning). If False (default), cap at 100 results and warn if exceeded.
         recursive (bool): Whether to search recursively in subdirectories. Defaults to True.
+        max_depth (int, optional): Maximum directory depth to search (0 = only top-level). If None, unlimited. Defaults to None.
     Returns:
         str: Matching lines from files as a newline-separated string, each formatted as 'filepath:lineno: line'. Example:
             - "/path/to/file.py:10: def my_function():"
@@ -26,8 +26,8 @@ class SearchFilesTool(ToolBase):
         self,
         directories: list[str],
         pattern: str,
-        all_results: bool = False,
         recursive: bool = True,
+        max_depth: int = None,
     ) -> str:
         if not pattern:
             self.report_warning(
@@ -35,10 +35,9 @@ class SearchFilesTool(ToolBase):
             )
             return "Warning: Empty search pattern provided. Operation skipped."
         output = []
-        max_results = 100
         for directory in directories:
             info_str = f"🔎 Searching for text '{pattern}' in '{directory}'"
-            if recursive is False:  # Only show if user explicitly sets False
+            if recursive is False:
                 info_str += f" (recursive={recursive})"
             self.report_info(info_str)
             if recursive:
@@ -50,6 +49,14 @@ class SearchFilesTool(ToolBase):
                 )
                 walker = [(directory, dirs, files)]
             for root, dirs, files in walker:
+                # Calculate depth
+                rel_path = os.path.relpath(root, directory)
+                depth = 0 if rel_path == "." else rel_path.count(os.sep) + 1
+                if max_depth is not None and depth > max_depth:
+                    dirs[:] = []
+                    continue
+                if not recursive and depth > 0:
+                    break
                 dirs, files = filter_ignored(root, dirs, files)
                 for filename in files:
                     path = os.path.join(root, filename)
@@ -58,24 +65,7 @@ class SearchFilesTool(ToolBase):
                             for lineno, line in enumerate(f, 1):
                                 if pattern in line:
                                     output.append(f"{path}:{lineno}: {line.strip()}")
-                                    if not all_results and len(output) >= max_results:
-                                        break
                     except Exception:
                         continue
-                if not all_results and len(output) >= max_results:
-                    break
-            if not all_results and len(output) >= max_results:
-                break
-        warning = ""
-        if not all_results and len(output) >= max_results:
-            warning = (
-                "\n⚠️ Warning: Maximum result limit reached. Some matches may not be shown. "
-                "You may want to expand your search pattern or set all_results=True to see all matches."
-            )
-            suffix = " (Max Reached)"
-        else:
-            suffix = ""
-        self.report_success(
-            f" ✅ {len(output)} {pluralize('line', len(output))}{suffix}"
-        )
-        return "\n".join(output) + warning
+        self.report_success(f" ✅ {len(output)} {pluralize('line', len(output))} found")
+        return "\n".join(output)

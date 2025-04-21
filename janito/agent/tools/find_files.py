@@ -15,7 +15,7 @@ class FindFilesTool(ToolBase):
         directories (list[str]): List of directories to search in.
         pattern (str): File pattern to match. Uses Unix shell-style wildcards (fnmatch), e.g. '*.py', 'data_??.csv', '[a-z]*.txt'.
         recursive (bool, optional): Whether to search recursively in subdirectories. Defaults to False.
-        max_results (int, optional): Maximum number of results to return. Defaults to 100.
+        max_depth (int, optional): Maximum directory depth to search (0 = only top-level). If None, unlimited. Defaults to None.
     Returns:
         str: Newline-separated list of matching file paths. Example:
             "/path/to/file1.py\n/path/to/file2.py"
@@ -27,7 +27,7 @@ class FindFilesTool(ToolBase):
         directories: list[str],
         pattern: str,
         recursive: bool = False,
-        max_results: int = 100,
+        max_depth: int = None,
     ) -> str:
         import os
 
@@ -43,22 +43,18 @@ class FindFilesTool(ToolBase):
             disp_path = display_path(directory)
             self.report_info(f"🔍 Searching for files '{pattern}' in '{disp_path}'")
             for root, dirs, files in os.walk(directory):
+                # Calculate depth
+                rel_path = os.path.relpath(root, directory)
+                depth = 0 if rel_path == "." else rel_path.count(os.sep) + 1
+                if max_depth is not None and depth > max_depth:
+                    # Prune traversal
+                    dirs[:] = []
+                    continue
+                if not recursive and depth > 0:
+                    # Only top-level if not recursive
+                    break
                 dirs, files = filter_ignored(root, dirs, files)
                 for filename in fnmatch.filter(files, pattern):
                     output.append(os.path.join(root, filename))
-                    if len(output) >= max_results:
-                        break
-                if not recursive or len(output) >= max_results:
-                    break
-            if len(output) >= max_results:
-                break
-        warning = ""
-        if len(output) >= max_results:
-            warning = "\n⚠️ Warning: Maximum result limit reached. Some matches may not be shown."
-            suffix = " (Max Reached)"
-        else:
-            suffix = ""
-        self.report_success(
-            f" ✅ {len(output)} {pluralize('file', len(output))}{suffix}"
-        )
-        return "\n".join(output) + warning
+        self.report_success(f" ✅ {len(output)} {pluralize('file', len(output))} found")
+        return "\n".join(output)
