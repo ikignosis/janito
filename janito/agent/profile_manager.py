@@ -66,7 +66,7 @@ class AgentProfileManager:
         shell_info = self.get_shell_info()
         if not features:
             # Inject tech.txt existence and content
-            tech_txt_path = Path("janito") / "tech.txt"
+            tech_txt_path = Path(".janito") / "tech.txt"
             tech_txt_exists = tech_txt_path.exists()
             tech_txt_content = ""
             if tech_txt_exists:
@@ -86,7 +86,7 @@ class AgentProfileManager:
             )
         parent_template = main_template
         # Inject tech.txt existence and content for feature templates as well
-        tech_txt_path = Path("janito") / "tech.txt"
+        tech_txt_path = Path(".janito") / "tech.txt"
         tech_txt_exists = tech_txt_path.exists()
         tech_txt_content = ""
         if tech_txt_exists:
