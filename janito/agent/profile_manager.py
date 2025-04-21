@@ -65,6 +65,15 @@ class AgentProfileManager:
         python_version = self.get_python_version()
         shell_info = self.get_shell_info()
         if not features:
+            # Inject tech.txt existence and content
+            tech_txt_path = Path("janito") / "tech.txt"
+            tech_txt_exists = tech_txt_path.exists()
+            tech_txt_content = ""
+            if tech_txt_exists:
+                try:
+                    tech_txt_content = tech_txt_path.read_text(encoding="utf-8")
+                except Exception:
+                    tech_txt_content = "⚠️ Error reading janito/tech.txt."
             template = env.get_template(main_template)
             return template.render(
                 role=self.role,
@@ -72,14 +81,27 @@ class AgentProfileManager:
                 platform=platform_name,
                 python_version=python_version,
                 shell_info=shell_info,
+                tech_txt_exists=tech_txt_exists,
+                tech_txt_content=tech_txt_content,
             )
         parent_template = main_template
+        # Inject tech.txt existence and content for feature templates as well
+        tech_txt_path = Path("janito") / "tech.txt"
+        tech_txt_exists = tech_txt_path.exists()
+        tech_txt_content = ""
+        if tech_txt_exists:
+            try:
+                tech_txt_content = tech_txt_path.read_text(encoding="utf-8")
+            except Exception:
+                tech_txt_content = "⚠️ Error reading janito/tech.txt."
         context = {
             "role": self.role,
             "interaction_mode": self.interaction_mode,
             "platform": platform_name,
             "python_version": python_version,
             "shell_info": shell_info,
+            "tech_txt_exists": tech_txt_exists,
+            "tech_txt_content": tech_txt_content,
         }
         for feature in features:
             feature_template = f"system_prompt_template_{feature}.j2"

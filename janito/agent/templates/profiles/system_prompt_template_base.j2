@@ -17,6 +17,16 @@ Shell/Environment: {{ shell_info }}
 # If running in a non-standard shell (such as Git Bash or WSL on Windows), be extra cautious about path and command compatibility.
 </platform>
 
+{% if tech_txt_exists %}
+<tech>
+{% block tech_section %}
+{{ tech_txt_content }}
+{% endblock %}
+</tech>
+{% else %}
+⚠️ No tech.txt found in janito, omitting tech section.
+{% endif %}
+
 <agent_profile>
 {% block agent_profile %}
 This Agent operates according to its Agent Profile, which includes system settings, role, and tools.
@@ -41,7 +51,6 @@ Always execute the plan immediately after presenting it, unless the user request
 - Roll back changes if any validation step fails.
 {% endblock %}
 </safety_guidelines>
-
 
 <context>
 {% block context %}
