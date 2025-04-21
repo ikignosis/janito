@@ -13,9 +13,6 @@ class CreateFileTool(ToolBase):
 
     This tool will NOT overwrite existing files. If the file already exists, the operation fails and no changes are made to the file itself.
 
-    If backup=True and the file exists, a backup (.bak) will be created before returning the error, but the file will not be overwritten or modified.
-    Recommend using backup=True only in the first call to avoid redundant backups. Defaults to False.
-
     Args:
         path (str): Path to the file to create.
         content (str): Content to write to the file.
