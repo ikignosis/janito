@@ -15,7 +15,6 @@ class SearchFilesTool(ToolBase):
         directories (list[str]): List of directories to search in.
         pattern (str): Plain text substring to search for in files. (Not a regular expression or glob pattern.)
         recursive (bool): Whether to search recursively in subdirectories. Defaults to True.
-        max_depth (int, optional): Maximum directory depth to search (0 = only top-level). If None, unlimited. Defaults to None.
     Returns:
         str: Matching lines from files as a newline-separated string, each formatted as 'filepath:lineno: line'. Example:
             - "/path/to/file.py:10: def my_function():"
@@ -27,7 +26,6 @@ class SearchFilesTool(ToolBase):
         directories: list[str],
         pattern: str,
         recursive: bool = True,
-        max_depth: int = None,
     ) -> str:
         if not pattern:
             self.report_warning(
@@ -49,12 +47,8 @@ class SearchFilesTool(ToolBase):
                 )
                 walker = [(directory, dirs, files)]
             for root, dirs, files in walker:
-                # Calculate depth
                 rel_path = os.path.relpath(root, directory)
                 depth = 0 if rel_path == "." else rel_path.count(os.sep) + 1
-                if max_depth is not None and depth > max_depth:
-                    dirs[:] = []
-                    continue
                 if not recursive and depth > 0:
                     break
                 dirs, files = filter_ignored(root, dirs, files)
