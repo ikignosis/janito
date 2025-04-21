@@ -2,32 +2,16 @@ import sys
 import os
 from rich.console import Console
 from janito.agent.profile_manager import AgentProfileManager
-from janito.agent.openai_client import Agent
-
-# Ensure all tools are registered at startup
-import janito.agent.tools  # noqa: F401
+from janito.agent.runtime_config import unified_config, runtime_config
+from janito.agent.config import get_api_key
+from janito import __version__
+from .scan import scan_project
+from .config import get_system_prompt_template
 from janito.agent.conversation_exceptions import (
     MaxRoundsExceededError,
     EmptyResponseError,
     ProviderError,
 )
-from janito.agent.runtime_config import unified_config, runtime_config
-from janito.agent.config import get_api_key
-from janito import __version__
-
-
-def format_tokens(n):
-    if n is None:
-        return "?"
-    try:
-        n = int(n)
-    except (TypeError, ValueError):
-        return str(n)
-    if n >= 1_000_000:
-        return f"{n/1_000_000:.1f}m"
-    if n >= 1_000:
-        return f"{n/1_000:.1f}k"
-    return str(n)
 
 
 def run_cli(args):
@@ -37,51 +21,7 @@ def run_cli(args):
 
     # --scan: auto-detect tech/skills and save to .janito/tech.txt
     if getattr(args, "scan", False):
-        prompt_path = os.path.join(
-            os.path.dirname(__file__),
-            "..",
-            "agent",
-            "templates",
-            "detect_tech_prompt.j2",
-        )
-        prompt_path = os.path.abspath(prompt_path)
-        with open(prompt_path, "r", encoding="utf-8") as f:
-            detect_prompt = f.read()
-        api_key = get_api_key()
-        model = unified_config.get("model")
-        base_url = unified_config.get("base_url", "https://openrouter.ai/api/v1")
-        azure_openai_api_version = unified_config.get(
-            "azure_openai_api_version", "2023-05-15"
-        )
-        use_azure_openai = unified_config.get("use_azure_openai", False)
-        agent = Agent(
-            api_key=api_key,
-            model=model,
-            system_prompt_template=detect_prompt,
-            verbose_tools=True,
-            base_url=base_url,
-            azure_openai_api_version=azure_openai_api_version,
-            use_azure_openai=use_azure_openai,
-        )
-        from janito.agent.rich_message_handler import RichMessageHandler
-
-        message_handler = RichMessageHandler()
-        messages = [{"role": "system", "content": detect_prompt}]
-        print("🔍 Scanning project for relevant tech/skills...")
-        result = agent.chat(
-            messages,
-            message_handler=message_handler,
-            spinner=True,
-            max_rounds=10,
-            verbose_response=False,
-            verbose_events=False,
-            stream=False,
-        )
-        os.makedirs(".janito", exist_ok=True)
-        tech_txt = os.path.join(".janito", "tech.txt")
-        with open(tech_txt, "w", encoding="utf-8") as f:
-            f.write(result["content"].strip() + "\n")
-        print(f"✅ Tech/skills detected and saved to {tech_txt}")
+        scan_project()
         sys.exit(0)
 
     # Check for .janito/tech.txt and print a tip if missing
@@ -110,36 +50,8 @@ def run_cli(args):
     if getattr(args, "trust_tools", False):
         runtime_config.set("trust_tools", True)
 
-    # New logic for --instructions-file
-    system_prompt_template = None
-    if getattr(args, "system_prompt_template_file", None):
-        with open(args.system_prompt_template_file, "r", encoding="utf-8") as f:
-            system_prompt_template = f.read()
-        runtime_config.set(
-            "system_prompt_template_file", args.system_prompt_template_file
-        )
-    else:
-        system_prompt_template = getattr(
-            args, "system_prompt_template", None
-        ) or unified_config.get("system_prompt_template")
-        if getattr(args, "system_prompt_template", None):
-            runtime_config.set("system_prompt_template", system_prompt_template)
-        if system_prompt_template is None:
-            # Pass full merged config (runtime overrides effective)
-            profile_manager = AgentProfileManager(
-                api_key=get_api_key(),
-                model=unified_config.get("model"),
-                role=role,
-                interaction_style=unified_config.get("interaction_style", "default"),
-                interaction_mode=unified_config.get("interaction_mode", "prompt"),
-                verbose_tools=unified_config.get("verbose_tools", False),
-                base_url=unified_config.get("base_url", None),
-                azure_openai_api_version=unified_config.get(
-                    "azure_openai_api_version", None
-                ),
-                use_azure_openai=unified_config.get("use_azure_openai", False),
-            )
-            system_prompt_template = profile_manager.render_prompt()
+    # Get system prompt template (instructions/config logic)
+    system_prompt_template = get_system_prompt_template(args, role)
 
     if args.show_system:
         api_key = get_api_key()

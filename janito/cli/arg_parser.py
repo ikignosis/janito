@@ -184,4 +184,9 @@ def create_parser():
         action="store_true",
         help="Print raw chunks as they are fetched from OpenAI (for debugging)",
     )
+    parser.add_argument(
+        "--scan",
+        action="store_true",
+        help="Scan the project to auto-detect relevant tech/skills and save to .janito/tech.txt (no chat)",
+    )
     return parser

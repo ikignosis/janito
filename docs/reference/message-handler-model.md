@@ -1,6 +1,6 @@
-# Unified Message Handler Model
+# Message Handler Model
 
-This document describes the unified message handler model used in Janito for both CLI and web output. The model ensures that all output—whether from tools or from assistant/LLM content—is routed through a single, consistent API, simplifying both backend and frontend logic.
+This document describes the message handler model used in Janito for both CLI and web output. For details on the styled terminal output, see the [Rich Message Handler](rich-message-handler.md). The model ensures that all output—whether from tools or from assistant/LLM content—is routed through a single, consistent API, simplifying both backend and frontend logic.
 
 ## Overview
 
@@ -60,7 +60,6 @@ handler.handle_message("Here is your summary...", msg_type="content")
 - No need to distinguish tool/content at the backend—just use `msg_type`.
 
 ## Benefits
-- **Unified**: One code path for all output.
 - **Consistent**: Same styling and logic everywhere.
 - **Extensible**: Add more message types or custom styles easily.
 - **Simple**: Less boilerplate, easier to maintain.

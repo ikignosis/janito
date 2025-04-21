@@ -72,6 +72,7 @@ class ConversationHandler:
                     )
                 else:
                     response = retry_api_call(api_call)
+                    print("[DEBUG] OpenAI API raw response:", repr(response))
 
             if verbose_response:
                 pprint.pprint(response)
@@ -83,6 +84,8 @@ class ConversationHandler:
             usage = getattr(response, "usage", None)
             usage_info = (
                 {
+                    # DEBUG: Show usage extraction
+                    "_debug_raw_usage": getattr(response, "usage", None),
                     "prompt_tokens": getattr(usage, "prompt_tokens", None),
                     "completion_tokens": getattr(usage, "completion_tokens", None),
                     "total_tokens": getattr(usage, "total_tokens", None),

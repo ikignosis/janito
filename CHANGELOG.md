@@ -1,3 +1,17 @@
+## [1.7.0-dev] - Unreleased
+
+### Features
+- Added a [docs] optional dependency group for documentation building with MkDocs. Install with: `pip install .[docs]`
+
+### Improvements
+- _TBD_
+
+### Bug Fixes
+- _TBD_
+
+### Other Changes
+- _TBD_
+
 ## [1.6.0] - 2024-06-09
 
 ### Features

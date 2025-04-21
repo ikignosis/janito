@@ -1,6 +1,13 @@
 [project]
 name = "janito"
-version = "1.6.0"
+
+[project.optional-dependencies]
+docs = [
+    "mkdocs>=1.5.3",
+    # "mkdocs-material>=9.4.8"  # Uncomment if you want Material theme
+]
+
+version = "1.7.0-dev"
 description = "A Natural Language Programming Agent,"
 authors = [
     { name = "João Pinto", email = "joao.pinto@gmail.com" }

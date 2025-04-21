@@ -2,7 +2,8 @@
 
 import time
 from openai import OpenAI
-from janito.agent.conversation import ConversationHandler, ProviderError
+from janito.agent.conversation import ConversationHandler
+from janito.agent.conversation_exceptions import ProviderError
 
 
 class Agent:

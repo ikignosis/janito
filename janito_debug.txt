@@ -1,0 +1,30 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\lameg\AppData\Local\Programs\Python\Python312\Scripts\janito.exe\__main__.py", line 7, in <module>
+  File "C:\Users\lameg\OneDrive\janito\janito\cli\main.py", line 41, in main
+    run_cli(args)
+  File "C:\Users\lameg\OneDrive\janito\janito\cli\runner\cli_main.py", line 131, in run_cli
+    profile_manager.agent.handle_conversation(
+  File "C:\Users\lameg\OneDrive\janito\janito\agent\conversation.py", line 100, in handle_conversation
+    message_handler.handle_message(event)
+  File "C:\Users\lameg\OneDrive\janito\janito\agent\rich_message_handler.py", line 37, in handle_message
+    self.console.print(Markdown(message))
+  File "C:\Users\lameg\AppData\Local\Programs\Python\Python312\Lib\site-packages\rich\console.py", line 1692, in print
+    with self:
+  File "C:\Users\lameg\AppData\Local\Programs\Python\Python312\Lib\site-packages\rich\console.py", line 866, in __exit__
+    self._exit_buffer()
+  File "C:\Users\lameg\AppData\Local\Programs\Python\Python312\Lib\site-packages\rich\console.py", line 824, in _exit_buffer
+    self._check_buffer()
+  File "C:\Users\lameg\AppData\Local\Programs\Python\Python312\Lib\site-packages\rich\console.py", line 2033, in _check_buffer
+    self._write_buffer()
+  File "C:\Users\lameg\AppData\Local\Programs\Python\Python312\Lib\site-packages\rich\console.py", line 2069, in _write_buffer
+    legacy_windows_render(buffer, LegacyWindowsTerm(self.file))
+  File "C:\Users\lameg\AppData\Local\Programs\Python\Python312\Lib\site-packages\rich\_windows_renderer.py", line 19, in legacy_windows_render
+    term.write_text(text)
+  File "C:\Users\lameg\AppData\Local\Programs\Python\Python312\Lib\site-packages\rich\_win32_console.py", line 402, in write_text
+    self.write(text)
+  File "C:\Users\lameg\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f5fc' in position 32: character maps to <undefined>

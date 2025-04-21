@@ -4,6 +4,7 @@ from janito.agent.tool_registry import register_tool
 import subprocess
 import tempfile
 import sys
+import os
 
 
 @register_tool(name="run_bash_command")
@@ -75,6 +76,11 @@ class RunBashCommandTool(ToolBase):
                 ) as stderr_file,
             ):
                 # Use bash explicitly for command execution
+                # Set UTF-8 environment for subprocess
+                env = os.environ.copy()
+                env["PYTHONIOENCODING"] = "utf-8"
+                env["LC_ALL"] = "C.UTF-8"
+                env["LANG"] = "C.UTF-8"
                 process = subprocess.Popen(
                     ["bash", "-c", command],
                     stdout=stdout_file,

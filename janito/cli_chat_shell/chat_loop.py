@@ -118,7 +118,6 @@ def start_chat_shell(profile_manager, continue_session=False, max_rounds=50):
         last_elapsed = time.time() - start_time
 
         usage = response.get("usage")
-        print(f"[DEBUG] last_usage_info assigned: {usage}")
         last_usage_info_ref["value"] = usage
 
         # Save conversation and input history
