@@ -1,6 +1,8 @@
 import sys
+import os
 from rich.console import Console
 from janito.agent.profile_manager import AgentProfileManager
+from janito.agent.openai_client import Agent
 
 # Ensure all tools are registered at startup
 import janito.agent.tools  # noqa: F401
@@ -32,6 +34,63 @@ def run_cli(args):
     if args.version:
         print(f"janito version {__version__}")
         sys.exit(0)
+
+    # --scan: auto-detect tech/skills and save to .janito/tech.txt
+    if getattr(args, "scan", False):
+        prompt_path = os.path.join(
+            os.path.dirname(__file__),
+            "..",
+            "agent",
+            "templates",
+            "detect_tech_prompt.j2",
+        )
+        prompt_path = os.path.abspath(prompt_path)
+        with open(prompt_path, "r", encoding="utf-8") as f:
+            detect_prompt = f.read()
+        api_key = get_api_key()
+        model = unified_config.get("model")
+        base_url = unified_config.get("base_url", "https://openrouter.ai/api/v1")
+        azure_openai_api_version = unified_config.get(
+            "azure_openai_api_version", "2023-05-15"
+        )
+        use_azure_openai = unified_config.get("use_azure_openai", False)
+        agent = Agent(
+            api_key=api_key,
+            model=model,
+            system_prompt_template=detect_prompt,
+            verbose_tools=True,
+            base_url=base_url,
+            azure_openai_api_version=azure_openai_api_version,
+            use_azure_openai=use_azure_openai,
+        )
+        from janito.agent.rich_message_handler import RichMessageHandler
+
+        message_handler = RichMessageHandler()
+        messages = [{"role": "system", "content": detect_prompt}]
+        print("🔍 Scanning project for relevant tech/skills...")
+        result = agent.chat(
+            messages,
+            message_handler=message_handler,
+            spinner=True,
+            max_rounds=10,
+            verbose_response=False,
+            verbose_events=False,
+            stream=False,
+        )
+        os.makedirs(".janito", exist_ok=True)
+        tech_txt = os.path.join(".janito", "tech.txt")
+        with open(tech_txt, "w", encoding="utf-8") as f:
+            f.write(result["content"].strip() + "\n")
+        print(f"✅ Tech/skills detected and saved to {tech_txt}")
+        sys.exit(0)
+
+    # Check for .janito/tech.txt and print a tip if missing
+    tech_txt_path = os.path.join(".janito", "tech.txt")
+    if not os.path.exists(tech_txt_path):
+        print("⚠️  No tech.txt found in .janito.")
+        print(
+            "💡 Tip: Run with --scan first to auto-detect project tech/skills and improve results."
+        )
 
     role = args.role or unified_config.get("role", "software engineer")
 
