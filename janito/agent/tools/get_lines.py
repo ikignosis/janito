@@ -40,30 +40,29 @@ class GetLinesTool(ToolBase):
             if from_line and to_line:
                 requested = to_line - from_line + 1
                 if selected_len < requested:
-
                     self.report_success(
-                        f" ✅ {selected_len} {pluralize('line', selected_len)} (end)"
+                        f" ✅ {selected_len} {pluralize('line', selected_len)} (end at line {total_lines})"
                     )
                 elif to_line < total_lines:
-
                     self.report_success(
                         f" ✅ {selected_len} {pluralize('line', selected_len)} ({total_lines - to_line} lines to end)"
                     )
                 else:
-
                     self.report_success(
-                        f" ✅ {selected_len} {pluralize('line', selected_len)} (end)"
+                        f" ✅ {selected_len} {pluralize('line', selected_len)} (end at line {total_lines})"
                     )
             else:
-
                 self.report_success(
                     f" ✅ {selected_len} {pluralize('line', selected_len)} (full file)"
                 )
             # Prepare header
             if from_line and to_line:
                 header = f"---\nFile: {disp_path} | Lines: {from_line}-{to_line} (of {total_lines})\n---\n"
+                if to_line >= total_lines:
+                    header = f"---\nFile: {disp_path} | Lines: {from_line}-{to_line} (end at line {total_lines})\n---\n"
             elif from_line:
                 header = f"---\nFile: {disp_path} | Lines: {from_line}-END (of {total_lines})\n---\n"
+                header = f"---\nFile: {disp_path} | Lines: {from_line}-END (end at line {total_lines})\n---\n"
             else:
                 header = (
                     f"---\nFile: {disp_path} | All lines (total: {total_lines})\n---\n"
