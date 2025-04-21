@@ -16,7 +16,8 @@ dependencies = [
     "pathspec",
     "prompt_toolkit",
     "requests",
-    "rich"
+    "rich",
+    "toml"
 ]
 license = { text = "MIT" }
 readme = "README.md"
@@ -39,7 +40,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.package-data]
-"janito.agent.templates" = ["*.j2", "*/*.j2", "*/*/*.j2"]
+"janito.agent.templates" = ["*", "*/*", "*/*/*"]
 
 [project.optional-dependencies]
 docs = [
