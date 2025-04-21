@@ -19,6 +19,11 @@ class AgentProfileManager:
     REFERER = "www.janito.dev"
     TITLE = "Janito"
 
+    def set_role(self, new_role):
+        """Set the agent's role and force prompt re-rendering."""
+        self.role = new_role
+        self.refresh_prompt()
+
     def parse_style_string(self, style: str):
         if "-" in style:
             parts = style.split("-")
