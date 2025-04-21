@@ -151,12 +151,18 @@ def get_prompt_session(get_toolbar_func, mem_history):
     )
     kb = KeyBindings()
 
+    # F12 instruction rotation
+    _f12_instructions = ["proceed", "go ahead", "continue", "next", "okay"]
+    _f12_index = {"value": 0}
+
     @kb.add("f12")
     def _(event):
-        """When F12 is pressed, send 'proceed' as input immediately."""
+        """When F12 is pressed, rotate through a set of short instructions."""
         buf = event.app.current_buffer
-        buf.text = "proceed"
+        idx = _f12_index["value"]
+        buf.text = _f12_instructions[idx]
         buf.validate_and_handle()
+        _f12_index["value"] = (idx + 1) % len(_f12_instructions)
 
     session = PromptSession(
         multiline=False,
