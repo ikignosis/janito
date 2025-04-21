@@ -10,7 +10,6 @@ nav:
       - Quickstart & Basic Usage: guides/using.md
       - How Janito Uses Tools: guides/using_tools.md
       - Terminal Shell: guides/terminal_shell.md
-      - Costs & Value Transparency: guides/costs.md
   - Developing & Extending:
       - Developer Guide: guides/developing.md
       - Tools Developer Guide: guides/tools_developer_guide.md
@@ -26,8 +25,9 @@ nav:
           - Rich Message Handler: reference/rich-message-handler.md
       - Tools Reference: reference/tools-reference.md
   - About:
-      - Why Janito?: guides/why.md
-      - Janito vs Web Chat Agents: guides/vs_webchats.md
+      - Why Janito?: about/why.md
+      - Janito vs Web Chat Agents: about/vs_webchats.md
+      - Costs & Value Transparency: about/costs.md
   - Alternatives: alternatives.md
 # theme: readthedocs
 # For more themes, see https://squidfunk.github.io/mkdocs-material/

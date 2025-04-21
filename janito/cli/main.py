@@ -3,7 +3,7 @@
 from janito.cli.arg_parser import create_parser
 from janito.cli.config_commands import handle_config_commands
 from janito.cli.logging_setup import setup_verbose_logging
-from janito.cli.runner import run_cli
+from janito.cli.runner.cli_main import run_cli
 
 # Ensure all tools are registered at startup
 import janito.agent.tools  # noqa: F401

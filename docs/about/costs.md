@@ -8,6 +8,7 @@
 
 ## 🔄 Comparison: Subscription Models in Other Tools
 
+- ✅ **Costs Under Control:** Subscription models can help users predict their monthly expenses, providing cost certainty regardless of usage spikes.
 - 💳 **Flat Monthly Fees:** Many AI coding assistants or IDE plugins charge a monthly subscription, regardless of how much you use them.
 - 🕳️ **Opaque Value:** These tools manage the context, prompts, and API usage behind the scenes. You don’t know how much of your subscription is spent on actual model calls versus overhead or unused features.
 - 🚫 **Limited Control:** You can’t tune the context window, prompt, or tool usage to optimize for cost or value.
