@@ -31,18 +31,33 @@ class AgentProfileManager:
 
     def get_shell_info(self):
         shell = os.environ.get("SHELL")
+        term = os.environ.get("TERM")
+        term_program = os.environ.get("TERM_PROGRAM")
         if shell:
-            return shell
-        comspec = os.environ.get("COMSPEC")
-        if comspec:
-            if "powershell" in comspec.lower():
-                return "PowerShell"
-            elif "cmd" in comspec.lower():
-                return "cmd.exe"
-        if os.environ.get("MSYSTEM"):
-            return f"Git Bash ({os.environ.get('MSYSTEM')})"
-        if os.environ.get("WSL_DISTRO_NAME"):
-            return f"WSL ({os.environ.get('WSL_DISTRO_NAME')})"
+            info = shell
+        elif os.environ.get("MSYSTEM"):
+            info = f"Git Bash ({os.environ.get('MSYSTEM')})"
+        elif os.environ.get("WSL_DISTRO_NAME"):
+            info = f"WSL ({os.environ.get('WSL_DISTRO_NAME')})"
+        else:
+            comspec = os.environ.get("COMSPEC")
+            if comspec:
+                if "powershell" in comspec.lower():
+                    info = "PowerShell"
+                elif "cmd" in comspec.lower():
+                    info = "cmd.exe"
+                else:
+                    info = "Unknown shell"
+            else:
+                info = "Unknown shell"
+        if term:
+            info += f", TERM={term}"
+        if term_program and term_program.lower() == "vscode":
+            info += ", running in VSCode"
+        home_dir = os.path.expanduser("~")
+        if home_dir:
+            info += f", HOME={home_dir}"
+        return info
         return "unknown"
 
     def render_prompt(self):
