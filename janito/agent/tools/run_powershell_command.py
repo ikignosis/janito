@@ -2,7 +2,6 @@ from janito.agent.tool_base import ToolBase
 from janito.agent.tool_registry import register_tool
 
 import subprocess
-import sys
 import tempfile
 
 
@@ -53,7 +52,9 @@ class RunPowerShellCommandTool(ToolBase):
             if not confirmed:
                 self.report_warning("Execution cancelled by user.")
                 return "❌ Command execution cancelled by user."
-        shell_exe = "powershell.exe" if sys.platform.startswith("win") else "pwsh"
+        from janito.agent.platform_discovery import is_windows
+
+        shell_exe = "powershell.exe" if is_windows() else "pwsh"
         try:
             with (
                 tempfile.NamedTemporaryFile(

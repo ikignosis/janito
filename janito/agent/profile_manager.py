@@ -2,8 +2,8 @@ from janito.agent.conversation import ConversationHandler
 from openai import OpenAI
 import jinja2
 from pathlib import Path
-import platform
-from janito.agent.shell_detect import detect_shell
+from janito.agent.platform_discovery import get_platform_name, get_python_version
+from janito.agent.platform_discovery import detect_shell
 
 
 class AgentProfileManager:
@@ -25,19 +25,6 @@ class AgentProfileManager:
             return parts[0], parts[1:]
         return style, []
 
-    def get_platform_name(self):
-        sys_platform = platform.system().lower()
-        if sys_platform.startswith("win"):
-            return "windows"
-        elif sys_platform.startswith("linux"):
-            return "linux"
-        elif sys_platform.startswith("darwin"):
-            return "darwin"
-        return sys_platform
-
-    def get_python_version(self):
-        return platform.python_version()
-
     def render_prompt(self):
         main_style, features = self.parse_style_string(self.interaction_style)
         base_dir = Path(__file__).parent / "templates"
@@ -54,8 +41,8 @@ class AgentProfileManager:
             main_template = "system_prompt_template_technical.j2"
         else:
             main_template = "system_prompt_template_default.j2"
-        platform_name = self.get_platform_name()
-        python_version = self.get_python_version()
+        platform_name = get_platform_name()
+        python_version = get_python_version()
         shell_info = detect_shell()
         if not features:
             # Inject tech.txt existence and content
