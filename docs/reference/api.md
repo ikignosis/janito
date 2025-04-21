@@ -14,6 +14,10 @@ Welcome to the API reference for this project. This document provides an overvie
 
 ### janito.agent.conversation
 - **ConversationHandler**: Manages conversation state and flow.
+    - `__init__`: Initializes the handler with configuration and state.
+    - `handle_conversation`: Processes a conversation turn and updates state.
+    - `get_stream`: Retrieves a streaming response from the agent.
+    - `api_call`: Makes a direct API call for conversation handling.
 
 ### janito.agent.conversation_exceptions
 - **MaxRoundsExceededError**: Raised when conversation round limit is exceeded.
@@ -25,9 +29,17 @@ Welcome to the API reference for this project. This document provides an overvie
 
 ### janito.agent.openai_client
 - **Agent**: Main agent class for OpenAI integration.
+    - `__init__`: Initializes the agent with model and API settings.
+    - `chat`: Sends a list of messages to the LLM and returns the response.
+    - `usage_history`: Tracks and returns usage statistics.
 
 ### janito.agent.profile_manager
-- **AgentProfileManager**: Manages agent profiles.
+- **AgentProfileManager**: Manages agent profiles and prompt templates.
+    - `__init__`: Loads and initializes profile data.
+    - `set_role`: Sets the current agent role.
+    - `parse_style_string`: Parses style configuration for prompts.
+    - `render_prompt`: Renders the prompt template for the agent.
+    - `refresh_prompt`: Reloads and refreshes the prompt template.
 
 ### janito.agent.queued_message_handler
 - **QueuedMessageHandler**: Handles queued messages.
