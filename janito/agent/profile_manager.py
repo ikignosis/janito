@@ -58,7 +58,16 @@ class AgentProfileManager:
                     tech_txt_content = tech_txt_path.read_text(encoding="utf-8")
                 except Exception:
                     tech_txt_content = "⚠️ Error reading janito/tech.txt."
-            template = env.get_template(main_template)
+            try:
+                template = env.get_template(main_template)
+            except jinja2.exceptions.TemplateNotFound:
+                import sys
+
+                print(
+                    f"❗ TemplateNotFound: '{main_template}'\n  Searched paths: {profiles_dir}, {features_dir}",
+                    file=sys.stderr,
+                )
+                raise
             return template.render(
                 role=self.role,
                 interaction_mode=self.interaction_mode,
@@ -89,7 +98,16 @@ class AgentProfileManager:
         }
         for feature in features:
             feature_template = f"system_prompt_template_{feature}.j2"
-            template = env.get_template(feature_template)
+            try:
+                template = env.get_template(feature_template)
+            except jinja2.exceptions.TemplateNotFound:
+                import sys
+
+                print(
+                    f"❗ TemplateNotFound: '{feature_template}'\n  Searched paths: {profiles_dir}, {features_dir}",
+                    file=sys.stderr,
+                )
+                raise
             context["parent_template"] = parent_template
             rendered = template.render(**context)
             parent_template = feature_template
