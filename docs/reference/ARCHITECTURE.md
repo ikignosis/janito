@@ -9,7 +9,7 @@ Janito is a modular, extensible agent framework designed for interactive command
 ## Main Components
 
 - **Agent Core**: Manages conversation state, message handling, and tool invocation.
-- **Tools System**: Tools are registered via decorators and implement a standard interface for agent calls (see the [Tools Reference](TOOLS_REFERENCE.md)).
+- **Tools System**: Tools are registered via decorators and implement a standard interface for agent calls (see the Tools Reference).
 - **Message Handling**: All user and agent output is routed through a unified Rich-based message handler for consistent, styled output across CLI and web interfaces.
 - **CLI Chat Shell**: Provides an interactive prompt using `prompt_toolkit`, with session management, command parsing, and real-time output.
 - **Web App (optional)**: Shares the same agent and message handler logic for a consistent experience in browser-based chat.
@@ -28,7 +28,7 @@ Janito is a modular, extensible agent framework designed for interactive command
 
 ## Extensibility
 
-- **Adding Tools**: Implement a subclass of `ToolBase` and register it with `@register_tool`. Tools can report info, success, error, stdout, and stderr via the message handler. See the [Developer Guide](../meta/README_DEV.md) for details.
+- **Adding Tools**: Implement a subclass of `ToolBase` and register it with `@register_tool`. Tools can report info, success, error, stdout, and stderr via the message handler.
 - **Output Customization**: The Rich message handler can be extended for new message types or output styles.
 
 ---
@@ -49,4 +49,4 @@ Janito is a modular, extensible agent framework designed for interactive command
 
 ---
 
-For more details, see `README.md` and `janito/agent/` source files.
+For more details, see the Developer Guide and janito/agent/ source files.
