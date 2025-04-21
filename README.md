@@ -5,7 +5,7 @@ See [CHANGELOG.md](./CHANGELOG.md) and [RELEASE_NOTES_1.6.md](./RELEASE_NOTES_1.
 
 Janito is an AI-powered assistant for the command line and web that interprets natural language system_prompt_template to edit code, manage files, and analyze projects using patterns and tools designed by experienced software engineers. It prioritizes transparency, interactive clarification, and precise, reviewable changes.
 
-For a technical overview, see the [Architecture Guide](docs/ARCHITECTURE.md).
+For a technical overview, see the [Architecture Guide](docs/reference/architecture.md).
 
 ---
 
@@ -119,7 +119,7 @@ The default template ensures the agent:
 - Provides concise plans before taking action
 - Documents any changes made
 
-For more details or to customize the prompt, see the template file at `janito/agent/templates/system_prompt_template.j2` and the architecture overview in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+For more details or to customize the prompt, see the template file at `janito/agent/templates/system_prompt_template.j2` and the architecture overview in [docs/reference/architecture.md](docs/reference/architecture.md).
 
 ---
 
