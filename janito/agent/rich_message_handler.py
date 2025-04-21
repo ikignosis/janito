@@ -31,32 +31,40 @@ class RichMessageHandler:
 
         msg_type = msg.get("type", "info")
         message = msg.get("message", "")
+
+        def _remove_surrogates(text):
+            return "".join(c for c in text if not 0xD800 <= ord(c) <= 0xDFFF)
+
+        safe_message = (
+            _remove_surrogates(message) if isinstance(message, str) else message
+        )
+
         if trust and msg_type != "content":
             return  # Suppress all except content
         if msg_type == "content":
-            self.console.print(Markdown(message))
+            self.console.print(Markdown(safe_message))
         elif msg_type == "info":
-            self.console.print(message, style="cyan", end="")
+            self.console.print(safe_message, style="cyan", end="")
         elif msg_type == "success":
-            self.console.print(message, style="bold green", end="\n")
+            self.console.print(safe_message, style="bold green", end="\n")
         elif msg_type == "error":
-            self.console.print(message, style="bold red", end="\n")
+            self.console.print(safe_message, style="bold red", end="\n")
         elif msg_type == "progress":
-            self._handle_progress(message)
+            self._handle_progress(safe_message)
         elif msg_type == "warning":
-            self.console.print(message, style="bold yellow", end="\n")
+            self.console.print(safe_message, style="bold yellow", end="\n")
         elif msg_type == "stdout":
             from rich.text import Text
 
             self.console.print(
-                Text(message, style="on #003300", no_wrap=True, overflow=None),
+                Text(safe_message, style="on #003300", no_wrap=True, overflow=None),
                 end="",
             )
         elif msg_type == "stderr":
             from rich.text import Text
 
             self.console.print(
-                Text(message, style="on #330000", no_wrap=True, overflow=None),
+                Text(safe_message, style="on #330000", no_wrap=True, overflow=None),
                 end="",
             )
         else:

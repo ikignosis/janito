@@ -5,6 +5,7 @@ Documentation structure for Janito (updated):
 - docs/guides/installation.md: Installation instructions (PyPI, source, requirements)
 - docs/guides/using.md: Quickstart and basic usage guide
 - docs/guides/using_tools.md: How Janito uses tools and tool selection
+- docs/guides/prompt_profiles.md: System prompt profiles (TOML-based, replacing Jinja2)
 - docs/guides/terminal_shell.md: Terminal shell features and commands
 - docs/guides/costs.md: Costs and value transparency
 - docs/guides/developing.md: Guide for contributors and developers

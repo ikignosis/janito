@@ -1,6 +1,5 @@
 # Synced with pyproject.toml and actual imports
 flask
-jinja2
 openai
 pathspec
 prompt_toolkit
