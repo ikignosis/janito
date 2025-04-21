@@ -13,6 +13,7 @@ from . import remove_file
 from . import replace_text_in_file
 from . import rich_live
 from . import run_bash_command
+from . import run_powershell_command
 from . import run_python_command
 from . import search_files
 from . import tools_utils
@@ -35,6 +36,7 @@ __all__ = [
     "replace_text_in_file",
     "rich_live",
     "run_bash_command",
+    "run_powershell_command",
     "run_python_command",
     "search_files",
     "tools_utils",

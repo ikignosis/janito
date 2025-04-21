@@ -9,7 +9,8 @@ def load_prompt(filename=None):
     if filename is None:
         # Default prompt file path (can be customized)
         filename = os.path.join(
-            os.path.dirname(__file__), "../agent/templates/system_prompt_template.j2"
+            os.path.dirname(__file__),
+            "../agent/templates/system_prompt_template_default.j2",
         )
     filename = os.path.abspath(filename)
     if not os.path.exists(filename):

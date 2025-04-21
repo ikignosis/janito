@@ -39,6 +39,12 @@ class GetFileOutlineTool(ToolBase):
                 table = self._format_outline_table(outline_items)
                 self.report_success(f"✅ {len(outline_items)} items ({outline_type})")
                 return f"Outline: {len(outline_items)} items ({outline_type})\n" + table
+            elif ext == ".md":
+                outline_items = self._parse_markdown_outline(lines)
+                outline_type = "markdown"
+                table = self._format_markdown_outline_table(outline_items)
+                self.report_success(f"✅ {len(outline_items)} items ({outline_type})")
+                return f"Outline: {len(outline_items)} items ({outline_type})\n" + table
             else:
                 outline_type = "default"
                 self.report_success(f"✅ {len(lines)} lines ({outline_type})")
@@ -104,6 +110,29 @@ class GetFileOutlineTool(ToolBase):
                 }
             )
         return outline
+
+    def _parse_markdown_outline(self, lines: List[str]):
+        # Extract Markdown headers (e.g., #, ##, ###)
+        header_pat = re.compile(r"^(#+)\s+(.*)")
+        outline = []
+        for idx, line in enumerate(lines):
+            match = header_pat.match(line)
+            if match:
+                level = len(match.group(1))
+                title = match.group(2).strip()
+                outline.append({"level": level, "title": title, "line": idx + 1})
+        return outline
+
+    def _format_markdown_outline_table(self, outline_items):
+        if not outline_items:
+            return "No headers found."
+        header = "| Level | Header                          | Line |\n|-------|----------------------------------|------|"
+        rows = []
+        for item in outline_items:
+            rows.append(
+                f"| {item['level']:<5} | {item['title']:<32} | {item['line']:<4} |"
+            )
+        return header + "\n" + "\n".join(rows)
 
     def _format_outline_table(self, outline_items):
         if not outline_items:

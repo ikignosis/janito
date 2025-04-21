@@ -1,0 +1,3 @@
+✅ PowerShell command executed.
+Stdout: C:\Users\lameg\AppData\Local\Temp\tmphvix9n4m.ps1.stdout.txt (1 lines)
+Stderr: C:\Users\lameg\AppData\Local\Temp\tmphvix9n4m.ps1.stderr.txt (0 lines)

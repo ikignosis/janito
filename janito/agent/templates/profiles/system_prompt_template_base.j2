@@ -53,10 +53,11 @@ Always execute the plan immediately after presenting it, unless the user request
 
 <context>
 {% block context %}
-Before creating or changing any files, always explore the project structure to understand existing directories, files, and their purposes.
+Before answering, always examine the contents of files that are directly related to the user's question or request, and explore the project structure to understand existing directories, files, and their purposes.
 Always review `README_structure.txt` before conducting file-specific searches.
 Unless specified otherwise, look for the files that match the questions context.
 Explore files that might be relevant to the current task.
+Before providing a detailed plan, always examine the contents of files that are directly related to the user's question or request.
 {% endblock %}
 </context>
 

@@ -75,7 +75,7 @@ class AgentProfileManager:
         if main_style == "technical":
             main_template = "system_prompt_template_technical.j2"
         else:
-            main_template = "system_prompt_template.j2"
+            main_template = "system_prompt_template_default.j2"
         platform_name = self.get_platform_name()
         python_version = self.get_python_version()
         shell_info = self.get_shell_info()

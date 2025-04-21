@@ -82,7 +82,7 @@ def print_full_config(
                 Path(__file__).parent
                 / "agent"
                 / "templates"
-                / "system_prompt_template.j2"
+                / "system_prompt_template_default.j2"
             )
             for key, value in default_items.items():
                 if key == "system_prompt_template" and value is None:

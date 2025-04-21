@@ -24,6 +24,7 @@ nav:
           - Overview: reference/message-handler-model.md
           - Rich Message Handler: reference/rich-message-handler.md
       - Tools Reference: reference/tools-reference.md
+      - API Reference: reference/api.md
   - About:
       - Why Janito?: about/why.md
       - Janito vs Web Chat Agents: about/vs_webchats.md

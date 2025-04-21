@@ -175,7 +175,7 @@ def handle_config_commands(args):
                         Path(__file__).parent
                         / "agent"
                         / "templates"
-                        / "system_prompt_template.j2"
+                        / "system_prompt_template_default.j2"
                     )
                     print(
                         f"{key} = (default template path: {home_shorten(str(template_path))})"

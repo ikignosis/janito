@@ -1,6 +1,7 @@
 import subprocess
 import tempfile
 import sys
+import os
 from janito.agent.tool_base import ToolBase
 from janito.agent.tool_registry import register_tool
 
@@ -64,11 +65,14 @@ class RunPythonCommandTool(ToolBase):
             ):
                 code_file.write(code)
                 code_file.flush()
+                env = os.environ.copy()
+                env["PYTHONIOENCODING"] = "utf-8"
                 process = subprocess.Popen(
                     [sys.executable, code_file.name],
                     stdout=stdout_file,
                     stderr=stderr_file,
                     text=True,
+                    env=env,
                 )
                 try:
                     return_code = process.wait(timeout=timeout)
