@@ -69,7 +69,9 @@ def start_chat_shell(profile_manager, continue_session=False, max_rounds=50):
             else:
                 continue
 
-        if not was_paste_mode and user_input.strip().startswith("/"):
+        cmd_input = user_input.strip().lower()
+        if not was_paste_mode and (cmd_input.startswith("/") or cmd_input == "exit"):
+            # Treat both '/exit' and 'exit' as commands
             result = handle_command(
                 user_input.strip(),
                 console,
