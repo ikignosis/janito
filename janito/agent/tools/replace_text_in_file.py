@@ -8,17 +8,12 @@ class ReplaceTextInFileTool(ToolBase):
     """
     Replace exact occurrences of a given text in a file.
 
-    This tool is designed to make minimal, targeted changes—preferably a small region modifications—rather than rewriting large sections or the entire file. Use it for precise, context-aware edits.
-
-    NOTE: Indentation (leading whitespace) must be included in both search_text and replacement_text. This tool does not automatically adjust or infer indentation; matches are exact, including whitespace.
-
-    SAFETY: Before making any changes, this tool creates a backup of the original file as <filename>.bak in the same directory. If you need to recover the original, simply restore from the .bak file.
-
     Args:
         file_path (str): Path to the file to modify.
         search_text (str): The exact text to search for (including indentation).
         replacement_text (str): The text to replace with (including indentation).
         replace_all (bool): If True, replace all occurrences; otherwise, only the first occurrence.
+        backup (bool, optional): If True, create a backup (.bak) before replacing. Recommend using backup=True only in the first call to avoid redundant backups. Defaults to False.
     Returns:
         str: Status message. Example:
             - "Text replaced in /path/to/file (backup at /path/to/file.bak)"
@@ -32,6 +27,7 @@ class ReplaceTextInFileTool(ToolBase):
         search_text: str,
         replacement_text: str,
         replace_all: bool = False,
+        backup: bool = False,
     ) -> str:
         from janito.agent.tools.tools_utils import display_path
 
@@ -48,7 +44,7 @@ class ReplaceTextInFileTool(ToolBase):
         )
         search_lines = len(search_text.splitlines())
         replace_lines = len(replacement_text.splitlines())
-        info_msg = f"📝 Replacing in {disp_path}: {search_lines}→{replace_lines} lines"
+        info_msg = f"\U0001f4dd Replacing in {disp_path}: {search_lines}\u2192{replace_lines} lines"
         if action:
             info_msg += f" ({action})"
         self.report_info(info_msg)
@@ -63,7 +59,7 @@ class ReplaceTextInFileTool(ToolBase):
             else:
                 occurrences = content.count(search_text)
                 if occurrences > 1:
-                    self.report_warning("⚠️ Search text is not unique.")
+                    self.report_warning("\u26a0\ufe0f Search text is not unique.")
                     warning_detail = "The search text is not unique. Expand your search context with surrounding lines to ensure uniqueness."
                     return f"No changes made. {warning_detail}"
                 replaced_count = 1 if occurrences == 1 else 0
@@ -71,9 +67,10 @@ class ReplaceTextInFileTool(ToolBase):
             import shutil
 
             backup_path = file_path + ".bak"
-            if new_content != content:
+            if backup and new_content != content:
                 # Create a .bak backup before writing changes
                 shutil.copy2(file_path, backup_path)
+            if new_content != content:
                 with open(file_path, "w", encoding="utf-8", errors="replace") as f:
                     f.write(new_content)
                 file_changed = True
@@ -83,12 +80,12 @@ class ReplaceTextInFileTool(ToolBase):
             if replaced_count == 0:
                 warning = " [Warning: Search text not found in file]"
             if not file_changed:
-                self.report_warning(" ℹ️ No changes made.")
+                self.report_warning(" \u2139\ufe0f No changes made.")
                 concise_warning = "The search text was not found. Expand your search context with surrounding lines if needed."
                 return f"No changes made. {concise_warning}"
 
             self.report_success(
-                f" ✅ {replaced_count} {pluralize('block', replaced_count)} replaced"
+                f" \u2705 {replaced_count} {pluralize('block', replaced_count)} replaced"
             )
 
             # Indentation check for agent warning
@@ -116,5 +113,5 @@ class ReplaceTextInFileTool(ToolBase):
             return f"Text replaced in {file_path}{warning}{indent_warning} (backup at {backup_path})"
 
         except Exception as e:
-            self.report_error(" ❌ Error")
+            self.report_error(" \u274c Error")
             return f"Error replacing text: {e}"

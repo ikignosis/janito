@@ -14,11 +14,18 @@ class MoveFileTool(ToolBase):
         src_path (str): Source file path.
         dest_path (str): Destination file path.
         overwrite (bool, optional): Whether to overwrite if the destination exists. Defaults to False.
+        backup (bool, optional): If True, create a backup (.bak) of the destination before moving if it exists. Recommend using backup=True only in the first call to avoid redundant backups. Defaults to False.
     Returns:
         str: Status message indicating the result.
     """
 
-    def call(self, src_path: str, dest_path: str, overwrite: bool = False) -> str:
+    def call(
+        self,
+        src_path: str,
+        dest_path: str,
+        overwrite: bool = False,
+        backup: bool = False,
+    ) -> str:
         original_src = src_path
         original_dest = dest_path
         src = expand_path(src_path)
@@ -27,24 +34,26 @@ class MoveFileTool(ToolBase):
         disp_dest = display_path(original_dest, dest)
 
         if not os.path.exists(src):
-            self.report_error(f"❌ Source file '{disp_src}' does not exist.")
-            return f"❌ Source file '{disp_src}' does not exist."
+            self.report_error(f"\u274c Source file '{disp_src}' does not exist.")
+            return f"\u274c Source file '{disp_src}' does not exist."
         if not os.path.isfile(src):
-            self.report_error(f"❌ Source path '{disp_src}' is not a file.")
-            return f"❌ Source path '{disp_src}' is not a file."
+            self.report_error(f"\u274c Source path '{disp_src}' is not a file.")
+            return f"\u274c Source path '{disp_src}' is not a file."
         if os.path.exists(dest):
             if not overwrite:
                 self.report_error(
-                    f"❗ Destination '{disp_dest}' exists and overwrite is False."
+                    f"\u2757 Destination '{disp_dest}' exists and overwrite is False."
                 )
-                return f"❗ Destination '{disp_dest}' already exists and overwrite is False."
+                return f"\u2757 Destination '{disp_dest}' already exists and overwrite is False."
             if os.path.isdir(dest):
-                self.report_error(f"❌ Destination '{disp_dest}' is a directory.")
-                return f"❌ Destination '{disp_dest}' is a directory."
+                self.report_error(f"\u274c Destination '{disp_dest}' is a directory.")
+                return f"\u274c Destination '{disp_dest}' is a directory."
+            if backup:
+                shutil.copy2(dest, dest + ".bak")
         try:
             shutil.move(src, dest)
-            self.report_success(f"✅ File moved from '{disp_src}' to '{disp_dest}'")
-            return f"✅ Successfully moved the file from '{disp_src}' to '{disp_dest}'."
+            self.report_success(f"\u2705 File moved from '{disp_src}' to '{disp_dest}'")
+            return f"\u2705 Successfully moved the file from '{disp_src}' to '{disp_dest}'."
         except Exception as e:
-            self.report_error(f"❌ Error moving file: {e}")
-            return f"❌ Error moving file: {e}"
+            self.report_error(f"\u274c Error moving file: {e}")
+            return f"\u274c Error moving file: {e}"

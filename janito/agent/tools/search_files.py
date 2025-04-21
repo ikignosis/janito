@@ -14,7 +14,7 @@ class SearchFilesTool(ToolBase):
     Args:
         directories (list[str]): List of directories to search in.
         pattern (str): Plain text substring to search for in files. (Not a regular expression or glob pattern.)
-        max_results (int): Maximum number of results to return. Defaults to 100.
+        all_results (bool): If True, return all matches (no cap or warning). If False (default), cap at 100 results and warn if exceeded.
         recursive (bool): Whether to search recursively in subdirectories. Defaults to True.
     Returns:
         str: Matching lines from files as a newline-separated string, each formatted as 'filepath:lineno: line'. Example:
@@ -26,7 +26,7 @@ class SearchFilesTool(ToolBase):
         self,
         directories: list[str],
         pattern: str,
-        max_results: int = 100,
+        all_results: bool = False,
         recursive: bool = True,
     ) -> str:
         if not pattern:
@@ -35,6 +35,7 @@ class SearchFilesTool(ToolBase):
             )
             return "Warning: Empty search pattern provided. Operation skipped."
         output = []
+        max_results = 100
         for directory in directories:
             info_str = f"🔎 Searching for text '{pattern}' in '{directory}'"
             if recursive is False:  # Only show if user explicitly sets False
@@ -57,17 +58,20 @@ class SearchFilesTool(ToolBase):
                             for lineno, line in enumerate(f, 1):
                                 if pattern in line:
                                     output.append(f"{path}:{lineno}: {line.strip()}")
-                                    if len(output) >= max_results:
+                                    if not all_results and len(output) >= max_results:
                                         break
                     except Exception:
                         continue
-                if len(output) >= max_results:
+                if not all_results and len(output) >= max_results:
                     break
-            if len(output) >= max_results:
+            if not all_results and len(output) >= max_results:
                 break
         warning = ""
-        if len(output) >= max_results:
-            warning = "\n⚠️ Warning: Maximum result limit reached. Some matches may not be shown."
+        if not all_results and len(output) >= max_results:
+            warning = (
+                "\n⚠️ Warning: Maximum result limit reached. Some matches may not be shown. "
+                "You may want to expand your search pattern or set all_results=True to see all matches."
+            )
             suffix = " (Max Reached)"
         else:
             suffix = ""
