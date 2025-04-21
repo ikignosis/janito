@@ -2,8 +2,8 @@
 
 This guide explains how to add a new tool (functionality) to the project so it can be exposed to the agent and OpenAI-compatible APIs.
 
-For a list of all built-in tools and their usage, see the [Tools Reference](../janito/agent/tools/README.md).
-For a technical overview of the system, see the [Architecture Guide](ARCHITECTURE.md).
+For a list of all built-in tools and their usage, see the [Tools Reference](../reference/../reference/TOOLS_REFERENCE.md).
+For a technical overview of the system, see the [Architecture Guide](../reference/ARCHITECTURE.md).
 
 ## Requirements
 
@@ -72,7 +72,7 @@ ValueError: Parameter 'count' in tool 'MyTool' is missing a description in the d
 
 ## Tool Reference
 
-See [janito/agent/tools/README.md](../janito/agent/tools/README.md) for a list of built-in tools and their usage.
+See [janito/agent/tools/README.md](../reference/TOOLS_REFERENCE.md) for a list of built-in tools and their usage.
 
 ## Tool Call Limits
 
@@ -97,7 +97,7 @@ Within the interactive chat shell, you can use special commands:
 
 ## Installing the Development Version
 
-See [USING_DEV_VERSION.md](USING_DEV_VERSION.md) for system_prompt_template on installing and using the latest development version of this project from GitHub.
+See [USING_DEV_VERSION.md](../guides/USING_DEV_VERSION.md) for system_prompt_template on installing and using the latest development version of this project from GitHub.
 
 ## Summary
 

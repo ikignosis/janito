@@ -1,0 +1,32 @@
+site_name: Janito Documentation
+site_url: https://joaompinto.github.io/janito/
+docs_dir: docs
+repo_url: https://github.com/joaompinto/janito
+repo_name: GitHub
+nav:
+  - Home: index.md
+  - Using Janito:
+      - Introduction: using.md
+      - Configuration: CONFIGURATION.md
+      - Using Dev Version: USING_DEV_VERSION.md
+  - Developing Janito: developing.md
+  - Architecture: ARCHITECTURE.md
+  - Azure OpenAI: AZURE_OPENAI.md
+  - Message Handler Model: MESSAGE_HANDLER_MODEL.md
+  - Developer Guide: README_DEV.md
+  - Tools Reference: TOOLS_REFERENCE.md
+# theme: readthedocs
+# For more themes, see https://squidfunk.github.io/mkdocs-material/
+
+# Uncomment and configure if using mkdocs-material
+theme:
+  name: material
+  palette:
+    primary: 'indigo'
+    accent: 'indigo'
+
+markdown_extensions:
+  - toc
+  - tables
+  - admonition
+  - codehilite

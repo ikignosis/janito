@@ -28,4 +28,4 @@ This will install the package in "editable" mode, so changes to the source code 
 ## Notes
 
 - Always ensure you are on the correct branch (e.g., `main`) for the latest development version.
-- For further development setup (linting, pre-commit hooks, etc.), see the [Developer Guide](README_DEV.md).
+- For further development setup (linting, pre-commit hooks, etc.), see the [Developer Guide](../meta/README_DEV.md).

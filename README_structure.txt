@@ -1,6 +1,15 @@
-- janito/agent/conversation.py: Refactored to remove generator/yield logic for streaming; now uses event-driven streaming and handles --verbose-stream directly in the OpenAI stream parsing.
-- janito/cli/runner.py: Updated to remove iteration over streaming generator; all output is now handled by MessageHandler and/or the agent.
-- janito/agent/profile_manager.py: Updated to check for .janito/tech.txt (not janito/tech.txt) and forward its content to the prompt template.
-- janito/agent/templates/profiles/system_prompt_template_base.j2: Now conditionally renders a tech section if .janito/tech.txt exists, otherwise warns and omits the section.
+Documentation structure updated for Janito:
 
-Streaming is now fully event-driven, and --verbose-stream prints raw events as they are received from the OpenAI API.
+- docs/index.md: Main landing page with concise product description and feature list
+- docs/using.md: Introduction and getting started guide for users
+- docs/developing.md: Guide for contributors and developers
+- docs/CONFIGURATION.md: Configuration reference (now under 'Using Janito')
+- docs/USING_DEV_VERSION.md: Advanced usage and development environment setup (now under 'Using Janito')
+- docs/ARCHITECTURE.md: System architecture
+- docs/AZURE_OPENAI.md: Azure OpenAI integration
+- docs/MESSAGE_HANDLER_MODEL.md: Message handler model
+- docs/README_DEV.md: Developer guide
+- docs/TOOLS_REFERENCE.md: Tools reference
+- docs/imgs/: Images for documentation
+
+mkdocs.yml updated to use Material theme and new navigation structure.
