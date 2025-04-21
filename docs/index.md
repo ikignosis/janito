@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="imgs/happy-programmer.svg" alt="Janito Logo" width="180"/>
+</p>
+
 # 🤖 Janito
 
 Janito brings conversational AI 🤝 to your terminal or browser, helping you automate code review, refactoring, documentation, and project tasks with Large Language Models (LLMs).
@@ -21,7 +25,3 @@ Janito is a developer-focused agent that understands natural language instructio
 - 🧩 [Developing & Extending](guides/developing.md)
 
 ---
-
-<p align="center">
-  <img src="imgs/happy-programmer.svg" alt="Janito Logo" width="180"/>
-</p>
