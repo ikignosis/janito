@@ -1,0 +1,3 @@
+# Exclude all .bak files from the package
+exclude *.bak
+recursive-exclude * *.bak
