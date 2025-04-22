@@ -96,7 +96,7 @@ print_info "Found git tag: $CURRENT_TAG"
 
 # Check if the tag points to the current commit
 CURRENT_COMMIT=$(git rev-parse HEAD)
-TAG_COMMIT=$(git rev-parse "$CURRENT_TAG")
+TAG_COMMIT=$(git rev-list -n 1 "$CURRENT_TAG")
 if [ "$CURRENT_COMMIT" != "$TAG_COMMIT" ]; then
     print_error "Tag $CURRENT_TAG does not point to the current commit. Please update the tag or create a new one."
 fi

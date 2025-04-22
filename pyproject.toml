@@ -2,7 +2,7 @@
 name = "janito"
 
 version = "1.7.0"
-description = "A Natural Language Programming Agent,"
+description = "Natural Language Coding Agent,"
 authors = [
     { name = "João Pinto", email = "joao.pinto@gmail.com" }
 ]
@@ -40,10 +40,16 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.package-data]
-"janito.agent.templates" = ["*", "*/*", "*/*/*"]
+"janito.agent.templates" = ["*.toml", "*/*.toml", "*/*/*.toml"]
 
 [tool.setuptools.exclude-package-data]
 "*" = ["*.bak"]
+
+[tool.hatch.build]
+exclude = [
+  "*.bak",
+  "**/*.bak"
+]
 
 [project.optional-dependencies]
 docs = [
