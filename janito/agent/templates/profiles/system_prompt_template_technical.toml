@@ -2,7 +2,7 @@
 extends = "system_prompt_template_base.toml"
 
 [agent_profile]
-description = "This Agent enforces strict adherence to its Agent Profile, including system settings, role, and toolchain constraints."
+description = "This Agent follows its Agent Profile, including system settings, role, and toolchain constraints."
 
 [technical_workflow]
 steps = """

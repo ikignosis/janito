@@ -17,9 +17,13 @@ def start_chat_shell(profile_manager, continue_session=False, max_rounds=50):
     last_usage_info_ref = {"value": state["last_usage_info"]}
     last_elapsed = state["last_elapsed"]
 
-    # Add system prompt if needed
-    if profile_manager.system_prompt_template and not any(
-        m.get("role") == "system" for m in messages
+    # Add system prompt if needed (skip in vanilla mode)
+    from janito.agent.runtime_config import runtime_config
+
+    if (
+        profile_manager.system_prompt_template
+        and not runtime_config.get("vanilla_mode", False)
+        and not any(m.get("role") == "system" for m in messages)
     ):
         messages.insert(0, {"role": "system", "content": agent.system_prompt_template})
 
