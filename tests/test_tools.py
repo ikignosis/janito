@@ -104,6 +104,25 @@ def test_search_files():
         assert "needle" in result.stdout
 
 
+def test_run_bash_command_live_and_file_output():
+    # Test both stdout and stderr, and large output
+    # 1. Small output, both stdout and stderr
+    result = run_janito_semantic("run the bash command 'echo hello && echo error 1>&2'")
+    assert "hello" in result.stdout
+    assert "error" in result.stdout or "error" in result.stderr
+
+    # 2. Large output to trigger file path return (over 100 lines)
+    result = run_janito_semantic(
+        "run the bash command 'for i in $(seq 1 120); do echo line $i; done'"
+    )
+    # Should mention that output was saved to a temporary file and show some output lines
+    assert "line 1" in result.stdout
+    assert "line 120" in result.stdout
+    assert "[LARGE OUTPUT]" in result.stdout
+    assert "stdout_file:" in result.stdout
+    assert "(lines: 120)" in result.stdout
+
+
 def test_get_lines():
     with tempfile.TemporaryDirectory() as tmpdir:
         file1 = os.path.join(tmpdir, "lines.txt")
