@@ -1,3 +1,0 @@
-# Inherits from system_prompt_template_base.toml
-extends = "system_prompt_template_base.toml"
-# Default style: no overrides, inherits all blocks from base

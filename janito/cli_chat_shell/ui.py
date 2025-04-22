@@ -60,6 +60,7 @@ def get_toolbar_func(
     model_name=None,
     role_ref=None,
     style_ref=None,
+    profile_ref=None,
 ):
     def format_tokens(n):
         if n is None:
@@ -94,11 +95,16 @@ def get_toolbar_func(
         width = get_app().output.get_size().columns
         model_part = f" Model:  <model>{model_name}</model>" if model_name else ""
         role_part = ""
+        profile_part = ""
         vanilla_mode = runtime_config.get("vanilla_mode", False)
         if role_ref and not vanilla_mode:
             role = role_ref()
             if role:
                 role_part = f"Role: <b>{role}</b>"
+        if profile_ref and not vanilla_mode:
+            profile = profile_ref()
+            if profile:
+                profile_part = f"Profile: <b>{profile}</b>"
         style_part = ""
         if style_ref:
             style = style_ref()
@@ -109,6 +115,8 @@ def get_toolbar_func(
             first_line_parts.append(model_part)
         if role_part:
             first_line_parts.append(role_part)
+        if profile_part:
+            first_line_parts.append(profile_part)
         if style_part:
             first_line_parts.append(style_part)
         first_line = " | ".join(first_line_parts)

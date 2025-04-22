@@ -4,7 +4,7 @@
 - Added a [docs] optional dependency group for documentation building with MkDocs. Install with: `pip install .[docs]`
 - F12 rotation: Cycle through short instructions ('proceed', 'go ahead', 'continue', 'next', 'okay') on F12 keypress in CLI and ask_user tool.
 - Added shell detection utility and improved shell/environment handling.
-- Include all files in janito.agent.templates for packaging (including .toml files).
+- Include all files in janito.agent.templates for packaging (including .txt.j2 files).
 
 ### Improvements
 - Unified find_files and search_files signatures, set recursive=True by default, removed max_depth param, and updated docstrings for consistency.
@@ -17,7 +17,7 @@
 
 ### Bug Fixes
 - Fixed broken link to costs.md after docs reorganization.
-- Fixed pyproject.toml packaging issues.
+- Fixed pyproject.txt.j2 packaging issues.
 - Fixed CLI toolbar display by making last_usage_info reactive.
 
 ### Documentation

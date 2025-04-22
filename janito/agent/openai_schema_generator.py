@@ -107,7 +107,8 @@ def generate_openai_function_schema(func, tool_name: str, tool_class=None):
     ]
     if undocumented:
         raise ValueError(
-            f"Tool '{tool_name}' is missing docstring documentation for parameter(s): {', '.join(undocumented)}"
+            f"Tool '{tool_name}' is missing docstring documentation for parameter(s): {', '.join(undocumented)}.\n"
+            f"Parameter documentation must be provided in the Tool class docstring, not the method docstring."
         )
     properties = {}
     required = []

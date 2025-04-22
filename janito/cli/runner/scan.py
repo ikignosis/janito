@@ -28,7 +28,7 @@ def scan_project():
         api_key=api_key,
         model=model,
         role=unified_config.get("role", "software engineer"),
-        interaction_style=unified_config.get("interaction_style", "default"),
+        profile=unified_config.get("profile", "default"),
         interaction_mode=unified_config.get("interaction_mode", "prompt"),
         verbose_tools=True,
         base_url=base_url,

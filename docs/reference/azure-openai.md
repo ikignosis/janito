@@ -34,7 +34,7 @@ Janito supports models hosted on Azure OpenAI in addition to OpenAI-compatible a
 
 Here is an example of the relevant configuration keys:
 
-```toml
+```txt
 api_key = "YOUR_AZURE_OPENAI_KEY"
 base_url = "https://YOUR-RESOURCE-NAME.openai.azure.com/openai/deployments/YOUR-DEPLOYMENT-NAME"
 use_azure_openai = true

@@ -6,17 +6,22 @@ from janito.agent.tool_base import ToolBase
 
 
 class DummyTool(ToolBase):
+    """
+    Dummy tool for testing.
+
+    Args:
+        a (int): First number.
+        b (int): Second number.
+
+    Returns:
+        str: The sum as a string.
+    """
+
     name = "dummy"
 
     def call(self, a, b) -> str:
         """
-        Add two numbers as strings.
-
-        Parameters:
-            a: First number
-            b: Second number
-        Returns:
-            str: The sum as a string
+        Adds two numbers as strings.
         """
         return str(a + b)
 

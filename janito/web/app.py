@@ -27,7 +27,7 @@ else:
         api_key=unified_config.get("api_key"),
         model=unified_config.get("model"),
         role=role,
-        interaction_style=unified_config.get("interaction_style", "default"),
+        profile=unified_config.get("profile", "default"),
         interaction_mode=unified_config.get("interaction_mode", "prompt"),
         verbose_tools=unified_config.get("verbose_tools", False),
         base_url=unified_config.get("base_url", None),

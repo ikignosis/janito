@@ -7,7 +7,7 @@ def handle_help(console, **kwargs):
   /help     - Show this help message
   /continue - Restore last saved conversation
   /reset    - Reset conversation history
-  /system   - Show the system prompt
+  /prompt   - Show the system prompt
   /role     - Change the system role
   /clear    - Clear the terminal screen
   /multi    - Provide multiline input as next message

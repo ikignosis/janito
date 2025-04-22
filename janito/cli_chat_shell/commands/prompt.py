@@ -1,7 +1,7 @@
 from janito.agent.runtime_config import runtime_config
 
 
-def handle_system(console, **kwargs):
+def handle_prompt(console, **kwargs):
     profile_manager = kwargs.get("profile_manager")
     prompt = profile_manager.system_prompt_template if profile_manager else None
     if not prompt and profile_manager:
@@ -36,17 +36,17 @@ def handle_role(console, *args, **kwargs):
     console.print(f"[bold green]System role updated to:[/bold green] {new_role}")
 
 
-def handle_style(console, *args, **kwargs):
-    """/style <new_style> - Change the interaction style (e.g., default, technical)"""
+def handle_profile(console, *args, **kwargs):
+    """/profile <new_profile> - Change the interaction profile (e.g., default, technical)"""
     state = kwargs.get("state")
     profile_manager = kwargs.get("profile_manager")
     if not args:
-        current = getattr(profile_manager, "interaction_style", "default")
-        console.print(f"[bold green]Current style:[/bold green] {current}")
+        current = getattr(profile_manager, "interaction_profile", "default")
+        console.print(f"[bold green]Current profile:[/bold green] {current}")
         return
-    new_style = args[0]
+    new_profile = args[0]
     if profile_manager:
-        profile_manager.set_interaction_style(new_style)
+        profile_manager.set_interaction_profile(new_profile)
     # Update system message in conversation
     found = False
     for msg in state["messages"]:
@@ -66,8 +66,10 @@ def handle_style(console, *args, **kwargs):
                 "content": (
                     profile_manager.system_prompt_template
                     if profile_manager
-                    else new_style
+                    else new_profile
                 ),
             },
         )
-    console.print(f"[bold green]Interaction style updated to:[/bold green] {new_style}")
+    console.print(
+        f"[bold green]Interaction profile updated to:[/bold green] {new_profile}"
+    )

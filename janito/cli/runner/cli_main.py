@@ -72,9 +72,7 @@ def run_cli(args):
     else:
         runtime_config.set("vanilla_mode", False)
 
-    interaction_style = getattr(args, "style", None) or unified_config.get(
-        "interaction_style", "default"
-    )
+    profile = getattr(args, "profile", None) or unified_config.get("profile", "default")
 
     if not getattr(args, "prompt", None):
         interaction_mode = "chat"
@@ -85,7 +83,7 @@ def run_cli(args):
         api_key=api_key,
         model=model,
         role=role,
-        interaction_style=interaction_style,
+        profile=profile,
         interaction_mode=interaction_mode,
         verbose_tools=args.verbose_tools,
         base_url=base_url,

@@ -32,7 +32,7 @@ def setup_prompt_session(
                 )
                 else (runtime_config.get("role") or effective_config.get("role"))
             ),
-            style_ref=lambda: getattr(profile_manager, "interaction_style", "default"),
+            profile_ref=lambda: profile_manager.get_profile_combo(),
         ),
         mem_history,
     )

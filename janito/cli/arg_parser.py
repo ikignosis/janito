@@ -169,10 +169,10 @@ def create_parser():
         help="Suppress all tool output (trusted tools mode: only shows output file locations)",
     )
     parser.add_argument(
-        "--style",
+        "--profile",
         type=str,
         default=None,
-        help="Interaction style for system prompt template (e.g., default, technical)",
+        help="Profile for system prompt template (e.g., default, technical)",
     )
     parser.add_argument(
         "--stream",

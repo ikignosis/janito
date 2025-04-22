@@ -1,15 +1,13 @@
 from openai import OpenAI
-import toml
-from string import Template
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pathlib import Path
 from janito.agent.platform_discovery import get_platform_name, get_python_version
 from janito.agent.platform_discovery import detect_shell
+import sys
 
 
 class AgentProfileManager:
     def _report_template_not_found(self, template_name, search_dirs):
-        import sys
-
         search_dirs_str = ", ".join(str(d) for d in search_dirs)
         print(
             f"❗ TemplateNotFound: '{template_name}'\n  Searched paths: {search_dirs_str}",
@@ -24,21 +22,34 @@ class AgentProfileManager:
         self.role = new_role
         self.refresh_prompt()
 
-    def parse_style_string(self, style: str):
-        if "-" in style:
-            parts = style.split("-")
-            return parts[0], parts[1:]
-        return style, []
+    def parse_profile_string(self, profile: str):
+        # Expect profile in format communication-operational (e.g., concise-technical)
+        if "-" in profile:
+            parts = profile.split("-")
+            if len(parts) == 2:
+                return parts[0], parts[1]
+        # fallback: treat as default
+        return "concise", "technical"
 
     def render_prompt(self):
-        main_style, features = self.parse_style_string(self.interaction_style)
+        comm_style, op_style = self.parse_profile_string(self.profile)
         base_dir = Path(__file__).parent / "templates"
         profiles_dir = base_dir / "profiles"
-        # Determine which TOML profile to use
-        if main_style == "technical":
-            main_template = profiles_dir / "system_prompt_template_technical.toml"
-        else:
-            main_template = profiles_dir / "system_prompt_template_default.toml"
+        # Always use the dynamic base template
+        main_template_name = "system_prompt_template_base.txt.j2"
+        # Compose fragment filenames
+        comm_fragment = f"communication_style_{comm_style}.txt.j2"
+        op_fragment = f"operational_style_{op_style}.txt.j2"
+        comm_path = profiles_dir / comm_fragment
+        op_path = profiles_dir / op_fragment
+        # Validate existence
+        if not comm_path.exists() or not op_path.exists():
+            print(
+                f"\n[janito] ⚠️ Profile fragment(s) not found: {comm_fragment if not comm_path.exists() else ''} {op_fragment if not op_path.exists() else ''}\n[janito] Defaulting to: concise-technical\n",
+                file=sys.stderr,
+            )
+            comm_fragment = "communication_style_concise.txt.j2"
+            op_fragment = "operational_style_technical.txt.j2"
         # Gather context variables
         platform_name = get_platform_name()
         python_version = get_python_version()
@@ -59,55 +70,16 @@ class AgentProfileManager:
             "shell_info": shell_info,
             "tech_txt_exists": str(tech_txt_exists),
             "tech_txt_content": tech_txt_content,
+            "operational_style_fragment": op_fragment,
+            "communication_style_fragment": comm_fragment,
         }
-
-        # Load and merge TOML templates (handle inheritance)
-        def load_toml_with_inheritance(path):
-            data = toml.load(path)
-            if "extends" in data:
-                base_path = profiles_dir / data["extends"]
-                base_data = toml.load(base_path)
-                base_data.update({k: v for k, v in data.items() if k != "extends"})
-                return base_data
-            return data
-
-        toml_data = load_toml_with_inheritance(main_template)
-        # Merge in feature-specific TOML if any
-        for feature in features:
-            feature_template = profiles_dir / f"system_prompt_template_{feature}.toml"
-            if feature_template.exists():
-                feature_data = toml.load(feature_template)
-                toml_data.update(
-                    {k: v for k, v in feature_data.items() if k != "extends"}
-                )
-
-        # Render the TOML structure as a prompt string
-        def render_section(section):
-            if isinstance(section, dict):
-                out = []
-                for k, v in section.items():
-                    if isinstance(v, list):
-                        out.append(f"{k}:")
-                        for item in v:
-                            out.append(f"  - {item}")
-                    else:
-                        out.append(f"{k}: {v}")
-                return "\n".join(out)
-            elif isinstance(section, list):
-                return "\n".join(f"- {item}" for item in section)
-            else:
-                return str(section)
-
-        prompt_sections = []
-        for section, value in toml_data.items():
-            if section == "extends":
-                continue
-            prompt_sections.append(f"[{section}]")
-            prompt_sections.append(render_section(value))
-            prompt_sections.append("")
-        prompt_template = "\n".join(prompt_sections)
-        # Substitute variables
-        prompt = Template(prompt_template).safe_substitute(context)
+        # Set up Jinja2 environment
+        env = Environment(
+            loader=FileSystemLoader(str(profiles_dir)),
+            autoescape=select_autoescape(["txt", "j2"]),
+        )
+        template = env.get_template(main_template_name)
+        prompt = template.render(**context)
         return prompt
 
     def __init__(
@@ -115,7 +87,7 @@ class AgentProfileManager:
         api_key,
         model,
         role,
-        interaction_style,
+        profile,
         interaction_mode,
         verbose_tools,
         base_url,
@@ -125,7 +97,7 @@ class AgentProfileManager:
         self.api_key = api_key
         self.model = model
         self.role = role
-        self.interaction_style = interaction_style
+        self.profile = profile
         self.interaction_mode = interaction_mode
         self.verbose_tools = verbose_tools
         self.base_url = base_url
@@ -159,6 +131,14 @@ class AgentProfileManager:
     def refresh_prompt(self):
         self.system_prompt_template = self.render_prompt()
         self.agent.system_prompt_template = self.system_prompt_template
+
+    def get_profile_combo(self):
+        """
+        Returns the actual communication-operational style combination as a string (e.g., 'concise-technical').
+        Never returns 'default'.
+        """
+        comm_style, op_style = self.parse_profile_string(self.profile)
+        return f"{comm_style}-{op_style}"
 
 
 # All prompt rendering is now handled by AgentProfileManager.

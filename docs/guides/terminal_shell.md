@@ -39,7 +39,7 @@ You can use these commands at any time (prefix with `/` or just type the name):
 | `/continue`            | Restore last saved conversation                                  |
 | `/reset`               | Reset conversation history                                       |
 | `/history [N]`         | Show last N messages (default: 5)                                |
-| `/system`              | Show the current system prompt                                   |
+| `/prompt`              | Show the current system prompt                                   |
 | `/role <description>`  | Change the system role (e.g., "You are a code reviewer")        |
 | `/style <style>`       | Change the interaction style (e.g., "default", "technical")    |
 | `/clear`               | Clear the terminal screen                                        |

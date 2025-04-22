@@ -1,5 +1,5 @@
 from .session import handle_continue, handle_history
-from .system import handle_system, handle_role, handle_style
+from .prompt import handle_prompt, handle_role, handle_profile
 from .session_control import handle_exit, handle_restart
 from .utility import handle_help, handle_clear, handle_multi
 from .sum import handle_sum
@@ -16,7 +16,7 @@ COMMAND_HANDLERS = {
     "/restart": handle_restart,
     "/help": handle_help,
     "/multi": handle_multi,
-    "/system": handle_system,
+    "/prompt": handle_prompt,
 }
 
 if not runtime_config.get("vanilla_mode", False):
@@ -29,7 +29,7 @@ COMMAND_HANDLERS.update(
         "/reset": handle_reset,
         "/config": handle_config_shell,
         "/reload": handle_reload,
-        "/style": handle_style,
+        "/profile": handle_profile,
     }
 )
 
