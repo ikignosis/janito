@@ -20,6 +20,9 @@ class CreateFileTool(ToolBase):
             - "\u2705 Successfully created the file at ..."
     """
 
+    def call(self, path, content, overwrite=False, backup=False):
+        return self.run(path, content, overwrite=overwrite, backup=backup)
+
     def run(self, path, content, overwrite=False, backup=False):
         path = expand_path(path)
         disp_path = display_path(path)
