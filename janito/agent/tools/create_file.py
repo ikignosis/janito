@@ -14,13 +14,13 @@ class CreateFileTool(ToolBase):
         path (str): Path to the file to create or overwrite.
         content (str): Content to write to the file.
         overwrite (bool, optional): If True, overwrite the file if it exists. Defaults to False.
-        backup (bool, optional): If True, create a backup (.bak) before overwriting. Defaults to False.
+        backup (bool, optional): If True, create a backup (.bak) before overwriting. Defaults to True.
     Returns:
         str: Status message indicating the result. Example:
             - "\u2705 Successfully created the file at ..."
     """
 
-    def call(self, path, content, overwrite=False, backup=False) -> str:
+    def call(self, path, content, overwrite=False, backup=True) -> str:
         path = expand_path(path)
         disp_path = display_path(path)
         if os.path.exists(path):
