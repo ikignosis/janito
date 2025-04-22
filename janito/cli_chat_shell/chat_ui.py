@@ -33,7 +33,6 @@ def setup_prompt_session(
                 else (runtime_config.get("role") or effective_config.get("role"))
             ),
             profile_ref=lambda: profile_manager.get_profile_combo(),
-            version=__version__,
         ),
         mem_history,
     )

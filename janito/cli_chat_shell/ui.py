@@ -8,7 +8,6 @@ from janito.agent.runtime_config import runtime_config
 def print_summary(console, data, continue_session):
     if not data:
         return
-    # Removed all unused variables to satisfy linter
     console.print("[bold cyan]Last saved conversation:[/bold cyan]")
 
 
@@ -32,7 +31,6 @@ def get_toolbar_func(
     role_ref=None,
     style_ref=None,
     profile_ref=None,
-    version=None,
 ):
     def format_tokens(n):
         if n is None:
@@ -44,10 +42,7 @@ def get_toolbar_func(
         return str(n)
 
     def get_toolbar():
-        left = ""
-        if version:
-            left += f"[v{version}]  "
-        left += f" Messages:  <msg_count>{len(messages_ref())}</msg_count>"
+        left = f" Messages:  <msg_count>{len(messages_ref())}</msg_count>"
         usage = last_usage_info_ref()
         last_elapsed = last_elapsed_ref()
         if usage:
