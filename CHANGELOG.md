@@ -1,16 +1,34 @@
-## [1.7.0-dev] - Unreleased
+## [1.7.0] - 2025-04-22
 
 ### Features
 - Added a [docs] optional dependency group for documentation building with MkDocs. Install with: `pip install .[docs]`
+- F12 rotation: Cycle through short instructions ('proceed', 'go ahead', 'continue', 'next', 'okay') on F12 keypress in CLI and ask_user tool.
+- Added shell detection utility and improved shell/environment handling.
+- Include all files in janito.agent.templates for packaging (including .toml files).
 
 ### Improvements
-- _TBD_
+- Unified find_files and search_files signatures, set recursive=True by default, removed max_depth param, and updated docstrings for consistency.
+- Improved memory tool: missing key now returns warning (⚠️) instead of error (❗); updated docstring standard and tests; ensured OpenAI function schema compatibility.
+- Print template search paths to stderr on Jinja2 TemplateNotFound in CLI prompt loading.
+- Explicitly specify UTF-8 encoding in open() calls for config and web modules.
+- Set default Azure OpenAI API version everywhere for consistency.
+- Enhanced run_command stream_reader to ensure utf-8 decoding with errors=replace for live output.
+- Refactored and cleaned up code for maintainability and linting (removed unused imports, auto-formatting, etc.).
 
 ### Bug Fixes
-- _TBD_
+- Fixed broken link to costs.md after docs reorganization.
+- Fixed pyproject.toml packaging issues.
+- Fixed CLI toolbar display by making last_usage_info reactive.
+
+### Documentation
+- Major documentation overhaul: improved structure, navigation, and branding (SVG logo, architecture docs, API docs, etc.).
+- Added and updated many documentation files in docs/ directory.
+- README and docs now cross-link to each other and to janito.dev for high-level overview.
 
 ### Other Changes
-- _TBD_
+- Removed check for .janito/tech.txt in CLI runner (temporary workaround).
+- Restored files after interrupted rebase and manual backup/restore.
+- Updated packaging and requirements for consistency.
 
 ## [1.6.0] - 2024-06-09
 

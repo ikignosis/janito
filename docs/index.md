@@ -24,4 +24,7 @@ Janito is a developer-focused agent that understands natural language instructio
 - 🚦 [Usage Guide](guides/using.md)
 - 🧩 [Developing & Extending](guides/developing.md)
 
+## 📚 More Detailed Documentation
+For the most comprehensive and up-to-date documentation, see the [README on GitHub](https://github.com/joaompinto/janito/blob/main/README.md).
+
 ---
