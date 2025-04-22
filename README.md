@@ -1,4 +1,4 @@
-# 🚀 Janito: Natural Language Programming Agent
+# 🚀 Janito: Natural Language Coding Agent
 
 **Current Version: 1.7.0**  
 See [CHANGELOG.md](./CHANGELOG.md) for details on the latest release.
