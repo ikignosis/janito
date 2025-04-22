@@ -8,5 +8,6 @@ CONFIG_DEFAULTS = {
     "temperature": 0.2,
     "max_tokens": 200000,
     "use_azure_openai": False,
+    "azure_openai_api_version": "2023-05-15",
     "interaction_style": "default",
 }

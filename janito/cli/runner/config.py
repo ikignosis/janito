@@ -27,7 +27,7 @@ def get_system_prompt_template(args, role):
                 verbose_tools=unified_config.get("verbose_tools", False),
                 base_url=unified_config.get("base_url", None),
                 azure_openai_api_version=unified_config.get(
-                    "azure_openai_api_version", None
+                    "azure_openai_api_version", "2023-05-15"
                 ),
                 use_azure_openai=unified_config.get("use_azure_openai", False),
             )
