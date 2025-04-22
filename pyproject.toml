@@ -19,7 +19,7 @@ dependencies = [
     "rich",
     "toml"
 ]
-license = { text = "MIT" }
+license = "MIT"
 readme = "README.md"
 keywords = ["agent", "framework", "tools", "automation"]
 classifiers = [
