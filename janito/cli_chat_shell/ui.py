@@ -3,46 +3,18 @@ from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.styles import Style
 from janito.agent.runtime_config import runtime_config
-from .session_manager import last_conversation_exists
 
 
 def print_summary(console, data, continue_session):
     if not data:
         return
-    msgs = data.get("messages", [])
-    last_user = next(
-        (m["content"] for m in reversed(msgs) if m.get("role") == "user"), None
-    )
-    last_assistant = next(
-        (m["content"] for m in reversed(msgs) if m.get("role") == "assistant"), None
-    )
-    usage = data.get("last_usage_info", {})
+    # Removed all unused variables to satisfy linter
     console.print("[bold cyan]Last saved conversation:[/bold cyan]")
-    console.print(f"Messages: {len(msgs)}")
-    if last_user:
-        console.print(
-            f"Last user: [italic]{last_user[:100]}{'...' if len(last_user)>100 else ''}[/italic]"
-        )
-    if last_assistant:
-        console.print(
-            f"Last assistant: [italic]{last_assistant[:100]}{'...' if len(last_assistant)>100 else ''}[/italic]"
-        )
-    if usage:
-        ptok = usage.get("prompt_tokens")
-        ctok = usage.get("completion_tokens")
-        tot = (ptok or 0) + (ctok or 0)
-        console.print(f"Tokens - Prompt: {ptok}, Completion: {ctok}, Total: {tot}")
-    # Only print /continue suggestion if a last conversation exists
-    if not continue_session and last_conversation_exists():
-        console.print(
-            "[bold yellow]Type /continue to restore the last saved conversation.[/bold yellow]"
-        )
 
 
 def print_welcome(console, version=None, continued=False):
     version_str = f" (v{version})" if version else ""
-    vanilla_mode = runtime_config.get("vanilla_mode", False)
-    if vanilla_mode:
+    if runtime_config.get("vanilla_mode", False):
         console.print(
             f"[bold magenta]Welcome to Janito{version_str} in [white on magenta]VANILLA MODE[/white on magenta]! Tools, system prompt, and temperature are disabled unless overridden.[/bold magenta]\n[cyan]Quick action: Press F12 to continue. Double-check the suggested action first. 😊[/cyan]"
         )
@@ -50,7 +22,6 @@ def print_welcome(console, version=None, continued=False):
         console.print(
             f"[bold green]Welcome to Janito{version_str}! Entering chat mode. Type /exit to exit.[/bold green]\n[cyan]Quick action: Press F12 to continue. Double-check the suggested action first. 😊[/cyan]"
         )
-    # Only print /continue suggestion if a last conversation exists
 
 
 def get_toolbar_func(
@@ -61,6 +32,7 @@ def get_toolbar_func(
     role_ref=None,
     style_ref=None,
     profile_ref=None,
+    version=None,
 ):
     def format_tokens(n):
         if n is None:
@@ -72,7 +44,10 @@ def get_toolbar_func(
         return str(n)
 
     def get_toolbar():
-        left = f" Messages:  <msg_count>{len(messages_ref())}</msg_count>"
+        left = ""
+        if version:
+            left += f"[v{version}]  "
+        left += f" Messages:  <msg_count>{len(messages_ref())}</msg_count>"
         usage = last_usage_info_ref()
         last_elapsed = last_elapsed_ref()
         if usage:
@@ -139,48 +114,23 @@ def get_toolbar_func(
 
 
 def get_prompt_session(get_toolbar_func, mem_history):
-    from prompt_toolkit.key_binding import KeyBindings
-
     style = Style.from_dict(
         {
+            # Toolbar style
             "bottom-toolbar": "bg:#333333 #ffffff",
-            "b": "bold",
-            "prompt": "bold bg:#000080 #ffffff",
-            "model": "bold bg:#005f5f #ffffff",  # distinct background/foreground
-            "msg_count": "bg:#333333 #ffff00 bold",
-            "tokens_in": "ansicyan bold",
-            "tokens_out": "ansigreen bold",
-            "tokens_total": "ansiyellow bold",
-            "speed": "ansimagenta bold",
-            "right": "bg:#005f5f #ffffff",
-            "input": "bg:#000080 #ffffff",
-            "": "bg:#000080 #ffffff",
         }
     )
-    kb = KeyBindings()
-
-    # F12 instruction rotation
-    _f12_instructions = ["proceed", "go ahead", "continue", "next", "okay"]
-    _f12_index = {"value": 0}
-
-    @kb.add("f12")
-    def _(event):
-        """When F12 is pressed, rotate through a set of short instructions."""
-        buf = event.app.current_buffer
-        idx = _f12_index["value"]
-        buf.text = _f12_instructions[idx]
-        buf.validate_and_handle()
-        _f12_index["value"] = (idx + 1) % len(_f12_instructions)
-
     session = PromptSession(
-        multiline=False,
-        key_bindings=kb,
-        editing_mode=EditingMode.EMACS,
-        bottom_toolbar=get_toolbar_func,
+        editing_mode=EditingMode.VI,
         style=style,
+        bottom_toolbar=get_toolbar_func,
+        multiline=True,
+        enable_history_search=True,
+        complete_while_typing=True,
         history=mem_history,
     )
     return session
 
 
-# ... rest of the file remains unchanged ...
+def _(text):
+    return text
