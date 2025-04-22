@@ -17,7 +17,7 @@ class CreateFileTool(ToolBase):
         backup (bool, optional): If True, create a backup (.bak) before overwriting. Defaults to True.
     Returns:
         str: Status message indicating the result. Example:
-            - "\u2705 Successfully created the file at ..."
+            - "✅ Successfully created the file at ..."
     """
 
     def call(self, path, content, overwrite=False, backup=True) -> str:
@@ -25,14 +25,12 @@ class CreateFileTool(ToolBase):
         disp_path = display_path(path)
         if os.path.exists(path):
             if not overwrite:
-                return f"\u26a0\ufe0f File already exists at '{disp_path}'. Use overwrite=True to overwrite."
+                return f"⚠️ File already exists at '{disp_path}'. Use overwrite=True to overwrite."
             if backup:
                 backup_path = path + ".bak"
                 shutil.copy2(path, backup_path)
-                self.report_info(
-                    f"\U0001f4be Backup created at: '{display_path(backup_path)}'"
-                )
-            self.report_info(f"\U0001f4dd Updating file: '{disp_path}' ... ")
+                self.report_info(f"💾 Backup created at: '{display_path(backup_path)}'")
+            self.report_info(f"📝 Updating file: '{disp_path}' ... ")
             mode = "w"
             updated = True
         else:
@@ -40,15 +38,15 @@ class CreateFileTool(ToolBase):
             dir_name = os.path.dirname(path)
             if dir_name:
                 os.makedirs(dir_name, exist_ok=True)
-            self.report_info(f"\U0001f4dd Creating file: '{disp_path}' ... ")
+            self.report_info(f"📝 Creating file: '{disp_path}' ... ")
             mode = "w"
             updated = False
         with open(path, mode, encoding="utf-8", errors="replace") as f:
             f.write(content)
         new_lines = content.count("\n") + 1 if content else 0
         if updated:
-            self.report_success(f"\u2705 Updated file ({new_lines} lines).")
-            return f"\u2705 Updated file ({new_lines} lines)."
+            self.report_success(f"✅ Updated file ({new_lines} lines).")
+            return f"✅ Updated file ({new_lines} lines)."
         else:
-            self.report_success(f"\u2705 Created file ({new_lines} lines).")
-            return f"\u2705 Created file ({new_lines} lines)."
+            self.report_success(f"✅ Created file ({new_lines} lines).")
+            return f"✅ Created file ({new_lines} lines)."
