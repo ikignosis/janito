@@ -21,9 +21,6 @@ class CreateFileTool(ToolBase):
     """
 
     def call(self, path, content, overwrite=False, backup=False):
-        return self.run(path, content, overwrite=overwrite, backup=backup)
-
-    def run(self, path, content, overwrite=False, backup=False):
         path = expand_path(path)
         disp_path = display_path(path)
         if os.path.exists(path):
