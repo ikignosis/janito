@@ -38,7 +38,7 @@ class FileConfig(BaseConfig):
 
     def load(self):
         if self.path.exists():
-            with open(self.path, "r") as f:
+            with open(self.path, "r", encoding="utf-8") as f:
                 self._data = json.load(f)
                 # Remove keys with value None (null in JSON)
                 self._data = {k: v for k, v in self._data.items() if v is not None}
@@ -48,7 +48,7 @@ class FileConfig(BaseConfig):
 
     def save(self):
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.path, "w") as f:
+        with open(self.path, "w", encoding="utf-8") as f:
             json.dump(self._data, f, indent=2)
 
 

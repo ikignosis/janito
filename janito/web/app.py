@@ -144,7 +144,7 @@ def index():
 def load_conversation():
     global conversation
     try:
-        with open(conversation_file, "r") as f:
+        with open(conversation_file, "r", encoding="utf-8") as f:
             conversation = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         conversation = []
@@ -184,7 +184,7 @@ def execute_stream():
                 )
             try:
                 os.makedirs(os.path.dirname(conversation_file), exist_ok=True)
-                with open(conversation_file, "w") as f:
+                with open(conversation_file, "w", encoding="utf-8") as f:
                     json.dump(conversation, f, indent=2)
             except Exception as e:
                 print(f"Error saving conversation: {e}")
