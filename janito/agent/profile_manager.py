@@ -4,6 +4,7 @@ from pathlib import Path
 from janito.agent.platform_discovery import get_platform_name, get_python_version
 from janito.agent.platform_discovery import detect_shell
 import sys
+import itertools
 
 
 class AgentProfileManager:
@@ -139,6 +140,22 @@ class AgentProfileManager:
         """
         comm_style, op_style = self.parse_profile_string(self.profile)
         return f"{comm_style}-{op_style}"
+
+    def get_profiles_list(self):
+        """
+        Returns a list of all valid profile names as communication-operational pairs.
+        """
+        base_dir = Path(__file__).parent / "templates"
+        profiles_dir = base_dir / "profiles"
+        comm_styles = [
+            p.stem.replace("communication_style_", "")
+            for p in profiles_dir.glob("communication_style_*.txt.j2")
+        ]
+        op_styles = [
+            p.stem.replace("operational_style_", "")
+            for p in profiles_dir.glob("operational_style_*.txt.j2")
+        ]
+        return [f"{c}-{o}" for c, o in itertools.product(comm_styles, op_styles)]
 
 
 # All prompt rendering is now handled by AgentProfileManager.

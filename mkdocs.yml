@@ -10,6 +10,7 @@ nav:
       - Quickstart & Basic Usage: guides/using.md
       - How Janito Uses Tools: guides/using_tools.md
       - Terminal Shell: guides/terminal_shell.md
+      - Prompt Profiles & Styles: guides/prompt_profiles.md
   - Developing & Extending:
       - Developer Guide: guides/developing.md
       - Tools Developer Guide: guides/tools_developer_guide.md

@@ -174,17 +174,17 @@ See `janito/agent/profile_manager.py` for implementation details.
 
 ### Agent Interaction Style
 
-You can control the agent's behavior and prompt profile globally or per-project using the `interaction_profile` config key. Supported values:
+You can control the agent's behavior and prompt profile globally or per-project using the `profile` config key. See [Prompt Profiles Guide](docs/guides/prompt_profiles.md) for all available styles and combinations.
 - `default`: Concise, general-purpose agent (default)
 - `technical`: Strict, workflow-oriented for technical/developer use
 
 Set globally:
 ```bash
-janito --set-global-config interaction_profile=technical
+janito --set-global-config profile=technical
 ```
 Or per-project (in your project root):
 ```bash
-janito --set-local-config interaction_profile=technical
+janito --set-local-config profile=technical
 ```
 
 You can also override for a session with the CLI flag:

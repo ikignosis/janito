@@ -37,16 +37,30 @@ def handle_role(console, *args, **kwargs):
 
 
 def handle_profile(console, *args, **kwargs):
-    """/profile <new_profile> - Change the interaction profile (e.g., default, technical)"""
+    """/profile <new_profile> - Change the interaction profile (e.g., concise-technical)"""
     state = kwargs.get("state")
     profile_manager = kwargs.get("profile_manager")
     if not args:
-        current = getattr(profile_manager, "interaction_profile", "default")
+        current = profile_manager.get_profile_combo() if profile_manager else "default"
+        valid_profiles = profile_manager.get_profiles_list() if profile_manager else []
         console.print(f"[bold green]Current profile:[/bold green] {current}")
+        console.print(
+            f"[bold yellow]Available profiles:[/bold yellow] {', '.join(valid_profiles)}"
+        )
         return
     new_profile = args[0]
+    valid_profiles = profile_manager.get_profiles_list() if profile_manager else []
+    if new_profile not in valid_profiles:
+        console.print(
+            f"[bold red]Error: Profile '{new_profile}' does not exist.[/bold red]"
+        )
+        console.print(
+            f"[bold yellow]Available profiles:[/bold yellow] {', '.join(valid_profiles)}"
+        )
+        return
     if profile_manager:
-        profile_manager.set_interaction_profile(new_profile)
+        profile_manager.profile = new_profile
+        profile_manager.refresh_prompt()
     # Update system message in conversation
     found = False
     for msg in state["messages"]:

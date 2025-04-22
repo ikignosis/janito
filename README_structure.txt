@@ -1,6 +1,6 @@
 Project Structure (key files and directories)
 
-- janito/agent/profile_manager.py: Profile manager logic, loads and selects prompt profiles
+- janito/agent/profile_manager.py: Profile manager logic, loads and selects prompt profiles. Provides get_profile_combo() for agent profile output.
 - janito/agent/templates/profiles/: Jinja2 system prompt profiles and style fragments
     - system_prompt_template_base.txt.j2: Base profile template (dynamic, includes style fragments by variable)
     - operational_profile_*.txt.j2: Operational style fragments (default, technical, minimal, exploratory)
