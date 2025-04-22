@@ -1,5 +1,4 @@
 import sys
-import os
 from rich.console import Console
 from janito.agent.profile_manager import AgentProfileManager
 from janito.agent.runtime_config import unified_config, runtime_config
@@ -23,14 +22,6 @@ def run_cli(args):
     if getattr(args, "scan", False):
         scan_project()
         sys.exit(0)
-
-    # Check for .janito/tech.txt and print a tip if missing
-    tech_txt_path = os.path.join(".janito", "tech.txt")
-    if not os.path.exists(tech_txt_path):
-        print("⚠️  No tech.txt found in .janito.")
-        print(
-            "💡 Tip: Run with --scan first to auto-detect project tech/skills and improve results."
-        )
 
     role = args.role or unified_config.get("role", "software engineer")
 
