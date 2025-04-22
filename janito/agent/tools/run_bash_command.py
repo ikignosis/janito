@@ -88,6 +88,14 @@ class RunBashCommandTool(ToolBase):
                     stream, file_handle, report_func, content_list, line_counter
                 ):
                     for line in iter(stream.readline, ""):
+                        # Ensure robust utf-8 decoding with replacement for any errors
+                        if isinstance(line, bytes):
+                            line = line.decode("utf-8", errors="replace")
+                        else:
+                            # Defensive: re-encode and decode to ensure replacement of any stray errors
+                            line = line.encode("utf-8", errors="replace").decode(
+                                "utf-8", errors="replace"
+                            )
                         file_handle.write(line)
                         file_handle.flush()
                         report_func(line)
