@@ -148,11 +148,11 @@ class AgentProfileManager:
         base_dir = Path(__file__).parent / "templates"
         profiles_dir = base_dir / "profiles"
         comm_styles = [
-            p.stem.replace("communication_style_", "")
+            p.stem.replace("communication_style_", "").split(".", 1)[0]
             for p in profiles_dir.glob("communication_style_*.txt.j2")
         ]
         op_styles = [
-            p.stem.replace("operational_style_", "")
+            p.stem.replace("operational_style_", "").split(".", 1)[0]
             for p in profiles_dir.glob("operational_style_*.txt.j2")
         ]
         return [f"{c}-{o}" for c, o in itertools.product(comm_styles, op_styles)]

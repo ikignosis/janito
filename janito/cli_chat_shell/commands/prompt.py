@@ -45,7 +45,8 @@ def handle_profile(console, *args, **kwargs):
         valid_profiles = profile_manager.get_profiles_list() if profile_manager else []
         console.print(f"[bold green]Current profile:[/bold green] {current}")
         console.print(
-            f"[bold yellow]Available profiles:[/bold yellow] {', '.join(valid_profiles)}"
+            "[bold yellow]Available profiles:[/bold yellow]\n- "
+            + "\n- ".join(valid_profiles)
         )
         return
     new_profile = args[0]
@@ -55,7 +56,8 @@ def handle_profile(console, *args, **kwargs):
             f"[bold red]Error: Profile '{new_profile}' does not exist.[/bold red]"
         )
         console.print(
-            f"[bold yellow]Available profiles:[/bold yellow] {', '.join(valid_profiles)}"
+            "[bold yellow]Available profiles:[/bold yellow]\n- "
+            + "\n- ".join(valid_profiles)
         )
         return
     if profile_manager:
