@@ -12,7 +12,7 @@ function updateMessageCount(count) {
   const bar = document.getElementById('message-count-bar');
   if(!bar) return;
 
-  bar.textContent = `Messages: ${count}`;
+  bar.textContent = `Messages:${count}`;
 
   if(count > 0) {
     bar.style.cursor = 'pointer';
@@ -49,7 +49,7 @@ let messageCount = 0;
 function updateModelName(name) {
   const modelBar = document.getElementById('model-name-bar');
   if(modelBar) {
-    modelBar.textContent = `Model: ${name}`;
+   modelBar.textContent = ` Model:${name}`;
   }
 }
 

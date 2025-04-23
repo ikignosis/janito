@@ -56,7 +56,7 @@ class AskUserTool(ToolBase):
         )
 
         def get_toolbar():
-            f12_hint = " Press <b>F12</b> to auto-fill 'proceed' and submit."
+            f12_hint = ""
             if mode["multiline"]:
                 return HTML(
                     f"<b>Multiline mode (Esc+Enter to submit). Type /single to switch.</b>{f12_hint}"

@@ -47,7 +47,7 @@ def run_cli(args):
     if args.show_system:
         api_key = get_api_key()
         model = unified_config.get("model")
-        print("Model:", model)
+        print(" Model:", model)
         print("Parameters: {}")
         print(
             "System Prompt Template:",

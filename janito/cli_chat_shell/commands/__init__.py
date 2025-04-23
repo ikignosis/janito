@@ -4,7 +4,7 @@ from .session_control import handle_exit, handle_restart
 from .utility import handle_help, handle_clear, handle_multi
 from .sum import handle_sum
 from .config import handle_reload
-from .history_reset import handle_reset
+from .history_start import handle_start
 from ..config_shell import handle_config_shell
 from janito.agent.runtime_config import runtime_config
 
@@ -26,7 +26,7 @@ COMMAND_HANDLERS.update(
     {
         "/sum": handle_sum,
         "/clear": handle_clear,
-        "/reset": handle_reset,
+        "/start": handle_start,
         "/config": handle_config_shell,
         "/reload": handle_reload,
         "/profile": handle_profile,

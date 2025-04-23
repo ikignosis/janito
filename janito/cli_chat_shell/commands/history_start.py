@@ -2,7 +2,7 @@ from prompt_toolkit.history import InMemoryHistory
 import os
 
 
-def handle_reset(console, state, **kwargs):
+def handle_start(console, state, **kwargs):
     save_path = os.path.join(".janito", "last_conversation.json")
 
     # Clear in-memory conversation and prompt history
@@ -26,4 +26,6 @@ def handle_reset(console, state, **kwargs):
     else:
         console.print("[bold yellow]No saved conversation to delete.[/bold yellow]")
 
-    console.print("[bold green]Conversation history has been reset.[/bold green]")
+    console.print(
+        "[bold green]Conversation history has been started (context reset).[/bold green]"
+    )

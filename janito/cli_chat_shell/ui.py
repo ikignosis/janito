@@ -16,11 +16,13 @@ def print_welcome(console, version=None, continued=False):
     version_str = f" (v{version})" if version else ""
     if runtime_config.get("vanilla_mode", False):
         console.print(
-            f"[bold magenta]Welcome to Janito{version_str} in [white on magenta]VANILLA MODE[/white on magenta]! Tools, system prompt, and temperature are disabled unless overridden.[/bold magenta]\n[cyan]Press F12 to proceed.[/cyan]"
+            f"[bold magenta]Welcome to Janito{version_str} in [white on magenta]VANILLA MODE[/white on magenta]! Tools, system prompt, and temperature are disabled unless overridden.[/bold magenta]\n"
+            f"[cyan]F12 = Quick Action (follows the recommended action).[/cyan]"
         )
     else:
         console.print(
-            f"[bold green]Welcome to Janito{version_str}! Entering chat mode. Type /exit to exit.[/bold green]\n[cyan]Press F12 to proceed.[/cyan]"
+            f"[bold green]Welcome to Janito{version_str}! Entering chat mode. Type /exit to exit.[/bold green]\n"
+            f"[cyan]F12 = Quick Action (follows the recommended action).[/cyan]"
         )
 
 
@@ -49,7 +51,7 @@ def get_toolbar_func(
 
     def get_toolbar():
         width = get_app().output.get_size().columns
-        model_part = f"Model:  <model>{model_name}</model>" if model_name else ""
+        model_part = f" Model: <model>{model_name}</model>" if model_name else ""
         role_part = ""
         profile_part = ""
         vanilla_mode = runtime_config.get("vanilla_mode", False)
@@ -80,7 +82,7 @@ def get_toolbar_func(
         if style_part:
             first_line_parts.append(style_part)
         first_line = " | ".join(first_line_parts)
-        left = f" Messages:  <msg_count>{len(messages_ref())}</msg_count>"
+        left = f"Messages: <msg_count>{len(messages_ref())}</msg_count>"
         tokens_part = ""
         if (
             prompt_tokens is not None
@@ -92,7 +94,7 @@ def get_toolbar_func(
                 f"Completion: {format_tokens(completion_tokens, 'tokens_out')}, "
                 f"Total: {format_tokens(total_tokens, 'tokens_total')}"
             )
-        help_part = "<b>/help</b> for help | <b>F12</b>: proceed"
+        help_part = "<b>/help</b> for help | <b>/start</b> to start new task"
         # Compose second/status line
         second_line = f"{left}{tokens_part} | {help_part}"
         # Padding if needed

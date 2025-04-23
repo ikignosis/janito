@@ -6,7 +6,7 @@ def handle_help(console, **kwargs):
   /restart  - Restart the CLI
   /help     - Show this help message
   /continue - Restore last saved conversation
-  /reset    - Reset conversation history
+  /start    - Reset conversation history
   /prompt   - Show the system prompt
   /role     - Change the system role
   /clear    - Clear the terminal screen
