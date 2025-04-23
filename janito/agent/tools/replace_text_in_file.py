@@ -33,15 +33,6 @@ class ReplaceTextInFileTool(ToolBase):
 
         disp_path = display_path(file_path)
         action = "all occurrences" if replace_all else None
-        # Show only concise info (lengths, not full content)
-        search_preview = (
-            (search_text[:20] + "...") if len(search_text) > 20 else search_text
-        )
-        replace_preview = (
-            (replacement_text[:20] + "...")
-            if len(replacement_text) > 20
-            else replacement_text
-        )
         search_lines = len(search_text.splitlines())
         replace_lines = len(replacement_text.splitlines())
         info_msg = f"\U0001f4dd Replacing in {disp_path}: {search_lines}\u2192{replace_lines} lines"
@@ -52,6 +43,25 @@ class ReplaceTextInFileTool(ToolBase):
         try:
             with open(file_path, "r", encoding="utf-8", errors="replace") as f:
                 content = f.read()
+
+            # Find all match positions (1-based line numbers)
+            def find_match_lines(content, search_text):
+                lines = content.splitlines(keepends=True)
+                joined = "".join(lines)
+                match_lines = []
+                idx = 0
+                while True:
+                    idx = joined.find(search_text, idx)
+                    if idx == -1:
+                        break
+                    # Find line number for this match
+                    upto = joined[:idx]
+                    line_no = upto.count("\n") + 1
+                    match_lines.append(line_no)
+                    idx += 1 if not search_text else len(search_text)
+                return match_lines
+
+            match_lines = find_match_lines(content, search_text)
 
             if replace_all:
                 replaced_count = content.count(search_text)
@@ -64,11 +74,11 @@ class ReplaceTextInFileTool(ToolBase):
                     return f"No changes made. {warning_detail}"
                 replaced_count = 1 if occurrences == 1 else 0
                 new_content = content.replace(search_text, replacement_text, 1)
+
             import shutil
 
             backup_path = file_path + ".bak"
             if backup and new_content != content:
-                # Create a .bak backup before writing changes
                 shutil.copy2(file_path, backup_path)
             if new_content != content:
                 with open(file_path, "w", encoding="utf-8", errors="replace") as f:
@@ -108,9 +118,37 @@ class ReplaceTextInFileTool(ToolBase):
             indent_warning = ""
             if search_indent != replace_indent:
                 indent_warning = f" [Warning: Indentation mismatch between search and replacement text: '{search_indent}' vs '{replace_indent}']"
+
+            # Calculate line delta
+            total_lines_before = content.count("\n") + 1
+            total_lines_after = new_content.count("\n") + 1
+            line_delta = total_lines_after - total_lines_before
+            line_delta_str = (
+                f" (+{line_delta} lines)"
+                if line_delta > 0
+                else (
+                    f" ({line_delta} lines)"
+                    if line_delta < 0
+                    else " (no net line change)"
+                )
+            )
+
+            # Compose match info
+            if replaced_count > 0:
+                if replace_all:
+                    match_info = f"Matches found at lines: {', '.join(str(line) for line in match_lines)}. "
+                else:
+                    match_info = (
+                        f"Match found at line {match_lines[0]}. " if match_lines else ""
+                    )
+                details = f"Replaced {replaced_count} occurrence(s) at above line(s): {search_lines} lines replaced with {replace_lines} lines each.{line_delta_str}"
+            else:
+                match_info = ""
+                details = ""
+
             if "warning_detail" in locals():
                 return f"Text replaced in {file_path}{warning}{indent_warning} (backup at {backup_path})\n{warning_detail}"
-            return f"Text replaced in {file_path}{warning}{indent_warning} (backup at {backup_path})"
+            return f"Text replaced in {file_path}{warning}{indent_warning} (backup at {backup_path}). {match_info}{details}"
 
         except Exception as e:
             self.report_error(" \u274c Error")
