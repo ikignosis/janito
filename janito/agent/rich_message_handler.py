@@ -1,10 +1,11 @@
 from rich.console import Console
 from janito.agent.runtime_config import runtime_config, unified_config
+from janito.agent.message_handler_protocol import MessageHandlerProtocol
 
 console = Console()
 
 
-class RichMessageHandler:
+class RichMessageHandler(MessageHandlerProtocol):
     """
     Unified message handler for all output (tool, agent, system) using Rich for styled output.
     """

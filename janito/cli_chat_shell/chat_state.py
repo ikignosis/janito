@@ -9,7 +9,7 @@ from prompt_toolkit.history import InMemoryHistory
 
 def load_chat_state(continue_session: bool):
     messages = []
-    last_usage_info = None
+    last_usage_info = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
     last_elapsed = None
     history_list = load_input_history()
     mem_history = InMemoryHistory()

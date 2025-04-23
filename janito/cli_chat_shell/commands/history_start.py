@@ -9,7 +9,11 @@ def handle_start(console, state, **kwargs):
     state["messages"].clear()
     state["history_list"].clear()
     state["mem_history"] = InMemoryHistory()
-    state["last_usage_info"] = None
+    state["last_usage_info"] = {
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "total_tokens": 0,
+    }
     state["last_elapsed"] = None
 
     # Delete saved conversation file if exists

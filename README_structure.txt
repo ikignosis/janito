@@ -8,6 +8,10 @@ Project Structure (key files and directories)
 - docs/guides/prompt_profiles.md: Guide to prompt profiles and style composition
 - docs/guides/code_generation_observability.md: Documentation of the code generation observability feature (step-by-step search/result transparency)
 
+Protocols:
+- janito/agent/message_handler_protocol.py: Protocol for message handlers (handle_message).
+- janito/agent/event_handler_protocol.py: Protocol for event handlers (handle_event).
+
 Available Tools (janito/agent/tools):
 
 - ask_user

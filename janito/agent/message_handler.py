@@ -1,4 +1,7 @@
-class QueueMessageHandler:
+from janito.agent.message_handler_protocol import MessageHandlerProtocol
+
+
+class QueueMessageHandler(MessageHandlerProtocol):
     def __init__(self, queue, *args, **kwargs):
         self._queue = queue
 
