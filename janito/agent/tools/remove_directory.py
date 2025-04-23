@@ -25,9 +25,8 @@ class RemoveDirectoryTool(ToolBase):
     def call(
         self, directory: str, recursive: bool = False, backup: bool = False
     ) -> str:
-        self.report_info(
-            f"\U0001f5c3\ufe0f  Removing directory: {directory} (recursive={recursive})"
-        )
+        self.report_info(f"🗃️  Removing directory: {directory} (recursive={recursive})")
+        backup_zip = None
         try:
             if backup and os.path.exists(directory) and os.path.isdir(directory):
                 backup_zip = directory.rstrip("/\\") + ".bak.zip"
@@ -43,8 +42,11 @@ class RemoveDirectoryTool(ToolBase):
                 shutil.rmtree(directory)
             else:
                 os.rmdir(directory)
-            self.report_success(f"\u2705 1 {pluralize('directory', 1)}")
-            return f"Directory removed: {directory}"
+            self.report_success(f"✅ 1 {pluralize('directory', 1)}")
+            msg = f"Directory removed: {directory}"
+            if backup_zip:
+                msg += f" (backup at {backup_zip})"
+            return msg
         except Exception as e:
-            self.report_error(f" \u274c Error removing directory: {e}")
+            self.report_error(f" ❌ Error removing directory: {e}")
             return f"Error removing directory: {e}"

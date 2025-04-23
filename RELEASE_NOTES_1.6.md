@@ -1,7 +1,7 @@
 # Release Notes v1.6.0 (2024-06-09)
 
 ## Features
-- Added `replace_file` tool for atomic file overwrites or creation.
+- BREAKING: Removed `replace_file` tool. `create_file` now supports an `overwrite` parameter for updating files.
 - ask_user tool now displays a status bar hint about pressing F12 to auto-fill 'proceed' and submit.
 - 'exit' (no slash) now exits the shell, same as '/exit'.
 - --verbose-stream CLI flag prints raw OpenAI chunks during streaming.
@@ -25,7 +25,7 @@
 - Fixed tool registry: require callable .call, improved argument validation.
 
 ## Breaking Changes
-- Removed the `overwrite` option from the `create_file` tool. It now only creates new files and fails if the file exists.
+- BREAKING: Restored and improved the `overwrite` option for `create_file`. Use `overwrite=True` to update files if they exist.
 
 ## Other Changes
 - Refactored and reorganized CLI and agent modules for maintainability.

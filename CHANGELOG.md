@@ -33,7 +33,7 @@
 ## [1.6.0] - 2024-06-09
 
 ### Features
-- Added `replace_file` tool, which always overwrites (or creates) the file at the given path.
+- BREAKING: Removed `replace_file` tool. `create_file` now supports an `overwrite` parameter for updating files.
 - ask_user tool now displays a status bar hint about pressing F12 to auto-fill 'proceed' and submit, improving user guidance.
 - 'exit' (no slash) now exits the shell, same as '/exit'.
 - Added --verbose-stream CLI flag to print raw OpenAI chunks during streaming.
@@ -57,7 +57,7 @@
 - Fixed tool registry: require callable .call, improved argument validation.
 
 ### Other Changes
-- BREAKING: Removed the `overwrite` option from the `create_file` tool. It now only creates new files and fails if the file exists.
+- BREAKING: Restored and improved the `overwrite` option for `create_file`. Use `overwrite=True` to update files if they exist.
 - Updated documentation and tool registry to reflect these changes.
 - Refactored and reorganized CLI and agent modules for maintainability.
 - Removed obsolete and legacy files.

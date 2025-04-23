@@ -2,7 +2,8 @@
 Helpers for handling tool calls in conversation.
 """
 
-from janito.agent.tool_registry import handle_tool_call
+from janito.agent.tool_executor import ToolExecutor
+from janito.agent import tool_registry
 from .conversation_exceptions import MaxRoundsExceededError
 from janito.agent.runtime_config import runtime_config
 
@@ -16,7 +17,10 @@ def handle_tool_calls(tool_calls, message_handler=None):
             raise MaxRoundsExceededError(
                 f"Maximum number of tool calls ({max_tools}) reached in this chat session."
             )
-        result = handle_tool_call(tool_call, message_handler=message_handler)
+        tool_entry = tool_registry._tool_registry[tool_call.function.name]
+        result = ToolExecutor(message_handler=message_handler).execute(
+            tool_entry, tool_call
+        )
         tool_responses.append({"tool_call_id": tool_call.id, "content": result})
         tool_calls_made += 1
     return tool_responses

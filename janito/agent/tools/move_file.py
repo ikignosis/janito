@@ -32,28 +32,35 @@ class MoveFileTool(ToolBase):
         dest = expand_path(dest_path)
         disp_src = display_path(original_src, src)
         disp_dest = display_path(original_dest, dest)
+        backup_path = None
 
         if not os.path.exists(src):
-            self.report_error(f"\u274c Source file '{disp_src}' does not exist.")
-            return f"\u274c Source file '{disp_src}' does not exist."
+            self.report_error(f"❌ Source file '{disp_src}' does not exist.")
+            return f"❌ Source file '{disp_src}' does not exist."
         if not os.path.isfile(src):
-            self.report_error(f"\u274c Source path '{disp_src}' is not a file.")
-            return f"\u274c Source path '{disp_src}' is not a file."
+            self.report_error(f"❌ Source path '{disp_src}' is not a file.")
+            return f"❌ Source path '{disp_src}' is not a file."
         if os.path.exists(dest):
             if not overwrite:
                 self.report_error(
-                    f"\u2757 Destination '{disp_dest}' exists and overwrite is False."
+                    f"❗ Destination '{disp_dest}' exists and overwrite is False."
                 )
-                return f"\u2757 Destination '{disp_dest}' already exists and overwrite is False."
+                return f"❗ Destination '{disp_dest}' already exists and overwrite is False."
             if os.path.isdir(dest):
-                self.report_error(f"\u274c Destination '{disp_dest}' is a directory.")
-                return f"\u274c Destination '{disp_dest}' is a directory."
+                self.report_error(f"❌ Destination '{disp_dest}' is a directory.")
+                return f"❌ Destination '{disp_dest}' is a directory."
             if backup:
-                shutil.copy2(dest, dest + ".bak")
+                backup_path = dest + ".bak"
+                shutil.copy2(dest, backup_path)
         try:
             shutil.move(src, dest)
-            self.report_success(f"\u2705 File moved from '{disp_src}' to '{disp_dest}'")
-            return f"\u2705 Successfully moved the file from '{disp_src}' to '{disp_dest}'."
+            self.report_success(f"✅ File moved from '{disp_src}' to '{disp_dest}'")
+            msg = f"✅ Successfully moved the file from '{disp_src}' to '{disp_dest}'."
+            if backup_path:
+                msg += (
+                    f" (backup at {display_path(original_dest + '.bak', backup_path)})"
+                )
+            return msg
         except Exception as e:
-            self.report_error(f"\u274c Error moving file: {e}")
-            return f"\u274c Error moving file: {e}"
+            self.report_error(f"❌ Error moving file: {e}")
+            return f"❌ Error moving file: {e}"

@@ -2,13 +2,13 @@
 
 ## Overview
 
-Janito’s approach to code intelligence is designed to maximize transparency, traceability, and user alignment. We leverage methods and primitives that are familiar to developers and closely aligned with human reasoning and established tooling.
+Janito’s approach to code intelligence is designed to maximize transparency, traceability, and user alignment. We leverage methods and primitives that are familiar to developers and closely aligned with human inference and established tooling.
 
 ## Context Building with Human-like Primitives
 
 - **Search Text & Search File:**
   - We use explicit text and file search operations to build context, similar to how developers use `grep`, `find`, or IDE search.
-  - This makes every step visible and auditable, allowing users to understand and guide the assistant’s reasoning.
+  - This makes every step visible and auditable, allowing users to understand and guide the assistant’s inference.
 
 ## String Replacement over Diff
 
@@ -27,7 +27,7 @@ Janito’s approach to code intelligence is designed to maximize transparency, t
 ## Benefits of Our Approach
 
 - **Transparency:** Every step is explicit and visible to the user.
-- **Traceability:** Changes and reasoning can be audited and reviewed.
+- **Traceability:** Changes and inference can be audited and reviewed.
 - **User Alignment:** Methods are familiar to developers, reducing friction and cognitive load.
 - **Reliability:** By mirroring established developer workflows, we minimize surprises and errors.
 

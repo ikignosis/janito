@@ -5,7 +5,7 @@
 Code Generation Observability is a feature that provides users with transparent, step-by-step visibility into the assistant's code search, analysis, and generation process. This allows users to:
 
 - See which files, lines, and patterns are being searched.
-- Observe the assistant's reasoning and workflow as it investigates issues or implements features.
+- Observe the assistant's inference and workflow as it investigates issues or implements features.
 - Intervene or redirect the assistant by providing feedback at each step, improving the quality and relevance of the results.
 
 ## Benefits

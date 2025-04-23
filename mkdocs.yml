@@ -20,8 +20,10 @@ nav:
       - Code Generation Challenges: code_intelligence/code_generation_challenges.md
       - Code Generation Observability: code_intelligence/code_generation_observability.md
       - Agentic Frameworks Comparison: code_intelligence/agentic_frameworks_comparison.md
+  - Tools:
+      - Overview: tools/index.md
+      - Tools Reference: tools/tools-reference.md
   - Reference:
-      - Supported Models: supported-models.md
       - Architecture: reference/architecture.md
       - Configuration: reference/configuration.md
       - CLI Options: reference/cli-options.md
@@ -29,8 +31,8 @@ nav:
       - Message Handler Model:
           - Overview: reference/message-handler-model.md
           - Rich Message Handler: reference/rich-message-handler.md
-      - Tools Reference: reference/tools-reference.md
       - API Reference: reference/api.md
+  - Supported Models: supported-models.md
   - About:
       - Why Janito?: about/why.md
       - Janito vs Web Chat Agents: about/vs_webchats.md

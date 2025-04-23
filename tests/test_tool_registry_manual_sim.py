@@ -38,12 +38,16 @@ def make_tool_call(name, args):
 def test_handle_tool_call_wrong_params():
     tool_call = make_tool_call("dummy", {"a": 1})  # missing 'b'
     with pytest.raises(TypeError) as excinfo:
-        tool_registry.handle_tool_call(tool_call)
+        from janito.agent.tool_executor import ToolExecutor
+
+        tool_entry = tool_registry._tool_registry[tool_call.function.name]
+        ToolExecutor().execute(tool_entry, tool_call)
     print("Validation error (missing param):", excinfo.value)
 
     tool_call2 = make_tool_call("dummy", {"a": 1, "b": 2, "c": 3})  # extra 'c'
     with pytest.raises(TypeError) as excinfo2:
-        tool_registry.handle_tool_call(tool_call2)
+        tool_entry2 = tool_registry._tool_registry[tool_call2.function.name]
+        ToolExecutor().execute(tool_entry2, tool_call2)
     print("Validation error (extra param):", excinfo2.value)
 
 

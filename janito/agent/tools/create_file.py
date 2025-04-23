@@ -21,15 +21,20 @@ class CreateFileTool(ToolBase):
     """
 
     def call(self, path, content, overwrite=False, backup=True) -> str:
-        path = expand_path(path)
-        disp_path = display_path(path)
+        original_path = path
+        expanded_path = expand_path(path)
+        disp_path = display_path(original_path, expanded_path)
+        path = expanded_path
+        backup_path = None
         if os.path.exists(path):
             if not overwrite:
                 return f"⚠️ File already exists at '{disp_path}'. Use overwrite=True to overwrite."
             if backup:
                 backup_path = path + ".bak"
                 shutil.copy2(path, backup_path)
-                self.report_info(f"💾 Backup created at: '{display_path(backup_path)}'")
+                self.report_info(
+                    f"💾 Backup created at: '{display_path(original_path + '.bak', backup_path)}'"
+                )
             self.report_info(f"📝 Updating file: '{disp_path}' ... ")
             mode = "w"
             updated = True
@@ -45,8 +50,13 @@ class CreateFileTool(ToolBase):
             f.write(content)
         new_lines = content.count("\n") + 1 if content else 0
         if updated:
-            self.report_success(f"✅ Updated file ({new_lines} lines).")
-            return f"✅ Updated file ({new_lines} lines)."
+            self.report_success(f"✅ ({new_lines} lines).")
+            msg = f"✅ Updated file ({new_lines} lines)."
+            if backup_path:
+                msg += (
+                    f" (backup at {display_path(original_path + '.bak', backup_path)})"
+                )
+            return msg
         else:
-            self.report_success(f"✅ Created file ({new_lines} lines).")
+            self.report_success(f"✅ ({new_lines} lines).")
             return f"✅ Created file ({new_lines} lines)."

@@ -24,7 +24,7 @@ Janito is designed with a built-in agentic framework tailored specifically for c
   - Maintaining traceability and explicit error handling.
   - Supporting developer workflows and codebase evolution.
 - **Key Features:**
-  - Step-by-step code search and reasoning, with user-visible progress (see [Code Generation Observability](code_generation_observability.md)).
+  - Step-by-step code search and inference, with user-visible progress (see [Code Generation Observability](code_generation_observability.md)).
   - Validation and testing of code changes.
   - Awareness of code structure, dependencies, and side effects.
   - Designed for iterative, collaborative development.

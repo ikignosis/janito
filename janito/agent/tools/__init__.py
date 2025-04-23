@@ -7,7 +7,7 @@ from . import get_file_outline
 from . import get_lines
 from . import gitignore_utils
 from . import move_file
-from . import py_compile_file
+from . import validate_file_syntax
 from . import remove_directory
 from . import remove_file
 from . import replace_text_in_file
@@ -17,7 +17,6 @@ from . import run_powershell_command
 from . import run_python_command
 from . import search_files
 from . import tools_utils
-from . import replace_file
 from . import memory
 
 __all__ = [
@@ -30,7 +29,7 @@ __all__ = [
     "get_lines",
     "gitignore_utils",
     "move_file",
-    "py_compile_file",
+    "validate_file_syntax",
     "remove_directory",
     "remove_file",
     "replace_text_in_file",
@@ -40,6 +39,5 @@ __all__ = [
     "run_python_command",
     "search_files",
     "tools_utils",
-    "replace_file",
     "memory",
 ]
