@@ -135,7 +135,7 @@ def get_prompt_session(get_toolbar_func, mem_history):
             "bottom-toolbar": "bg:#333333 #ffffff",
             "model": "bold bg:#005f5f #ffffff",
             "role": "bold ansiyellow",
-            "profile": "bold ansimagenta",
+            "profile": "bold ansiyellow",
             "tokens_in": "ansicyan bold",
             "tokens_out": "ansigreen bold",
             "tokens_total": "ansiyellow bold",
