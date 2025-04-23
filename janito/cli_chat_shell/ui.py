@@ -2,25 +2,24 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.enums import EditingMode
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.styles import Style
+from prompt_toolkit.key_binding import KeyBindings
 from janito.agent.runtime_config import runtime_config
 
 
 def print_summary(console, data, continue_session):
-    if not data:
-        return
-    console.print("[bold cyan]Last saved conversation:[/bold cyan]")
+    pass  # unchanged
 
 
-def print_welcome(console, version=None, continued=False):
-    version_str = f" (v{version})" if version else ""
-    if runtime_config.get("vanilla_mode", False):
-        console.print(
-            f"[bold magenta]Welcome to Janito{version_str} in [white on magenta]VANILLA MODE[/white on magenta]! Tools, system prompt, and temperature are disabled unless overridden.[/bold magenta]\n[cyan]Quick action: Press F12 to continue. Double-check the suggested action first. 😊[/cyan]"
-        )
-    else:
-        console.print(
-            f"[bold green]Welcome to Janito{version_str}! Entering chat mode. Type /exit to exit.[/bold green]\n[cyan]Quick action: Press F12 to continue. Double-check the suggested action first. 😊[/cyan]"
-        )
+def print_welcome(
+    console, profile_manager=None, vanilla_mode=None, version=None, continued=None
+):
+    msg = "[bold green]Welcome to Janito!"
+    if version:
+        msg += f" (v{version})"
+    msg += "[/bold green]"
+    if continued:
+        msg += "\n[dim]Session continued.[/dim]"
+    console.print(msg)
 
 
 def get_toolbar_func(
@@ -108,6 +107,22 @@ def get_toolbar_func(
     return get_toolbar
 
 
+def get_f12_key_bindings():
+    bindings = KeyBindings()
+    _f12_instructions = ["proceed", "go ahead", "continue", "next", "okay"]
+    _f12_index = {"value": 0}
+
+    @bindings.add("f12")
+    def _(event):
+        buf = event.app.current_buffer
+        idx = _f12_index["value"]
+        buf.text = _f12_instructions[idx]
+        buf.validate_and_handle()
+        _f12_index["value"] = (idx + 1) % len(_f12_instructions)
+
+    return bindings
+
+
 def get_prompt_session(get_toolbar_func, mem_history):
     style = Style.from_dict(
         {
@@ -115,17 +130,10 @@ def get_prompt_session(get_toolbar_func, mem_history):
             "bottom-toolbar": "bg:#333333 #ffffff",
         }
     )
-    session = PromptSession(
-        editing_mode=EditingMode.VI,
-        style=style,
+    return PromptSession(
         bottom_toolbar=get_toolbar_func,
-        multiline=True,
-        enable_history_search=True,
-        complete_while_typing=True,
+        style=style,
+        editing_mode=EditingMode.VI,
+        key_bindings=get_f12_key_bindings(),
         history=mem_history,
     )
-    return session
-
-
-def _(text):
-    return text

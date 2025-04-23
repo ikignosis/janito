@@ -29,13 +29,14 @@ class CreateFileTool(ToolBase):
         if os.path.exists(path):
             if not overwrite:
                 return f"⚠️ File already exists at '{disp_path}'. Use overwrite=True to overwrite."
+            backup_info = ""
             if backup:
                 backup_path = path + ".bak"
                 shutil.copy2(path, backup_path)
-                self.report_info(
-                    f"💾 Backup created at: '{display_path(original_path + '.bak', backup_path)}'"
+                backup_info = (
+                    f" (backup at {display_path(original_path + '.bak', backup_path)})"
                 )
-            self.report_info(f"📝 Updating file: '{disp_path}' ... ")
+            self.report_info(f"📝 Updating file: '{disp_path}'..." + backup_info)
             mode = "w"
             updated = True
         else:
