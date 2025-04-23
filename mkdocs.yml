@@ -15,6 +15,11 @@ nav:
       - Developer Guide: guides/developing.md
       - Tools Developer Guide: guides/tools_developer_guide.md
       - Developer Toolchain Guide: meta/developer_toolchain.md
+  - Code Intelligence:
+      - Our Approach: code_intelligence/our_approach.md
+      - Code Generation Challenges: code_intelligence/code_generation_challenges.md
+      - Code Generation Observability: code_intelligence/code_generation_observability.md
+      - Agentic Frameworks Comparison: code_intelligence/agentic_frameworks_comparison.md
   - Reference:
       - Supported Models: supported-models.md
       - Architecture: reference/architecture.md
@@ -30,7 +35,7 @@ nav:
       - Why Janito?: about/why.md
       - Janito vs Web Chat Agents: about/vs_webchats.md
       - Costs & Value Transparency: about/costs.md
-  - Alternatives: alternatives.md
+  - Alternatives: ALTERNATIVES.md
 # theme: readthedocs
 # For more themes, see https://squidfunk.github.io/mkdocs-material/
 
