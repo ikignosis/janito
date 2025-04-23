@@ -141,6 +141,14 @@ def get_prompt_session(get_toolbar_func, mem_history):
             "tokens_total": "ansiyellow bold",
             "msg_count": "bg:#333333 #ffff00 bold",
             "b": "bold",
+            "prompt": "bg:#005f5f #ffffff",  # (legacy, not used)
+            # Style for prompt_toolkit input line:
+            #   - '': affects the actual user input area background (full line, most reliable)
+            #   - "input-field": also affects the input area in some prompt_toolkit versions
+            #   - <inputline> tag: only affects the prompt label, not the input area
+            "": "bg:#005fdd #ffffff",  # Blue background for the user input area (recommended)
+            "input-field": "bg:#005fdd #ffffff",  # Blue background for the user input area (optional)
+            "inputline": "bg:#005fdd #ffffff",  # Blue background for the prompt label (icon/text)
         }
     )
     return PromptSession(

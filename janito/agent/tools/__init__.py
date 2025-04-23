@@ -17,6 +17,7 @@ from . import run_python_command
 from . import search_files
 from . import tools_utils
 from . import memory
+from . import present_choices
 
 __all__ = [
     "ask_user",
@@ -39,4 +40,5 @@ __all__ = [
     "search_files",
     "tools_utils",
     "memory",
+    "present_choices",
 ]

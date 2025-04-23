@@ -85,13 +85,24 @@ def _parse_docstring(docstring: str):
 def generate_openai_function_schema(func, tool_name: str, tool_class=None):
     """
     Generates an OpenAI-compatible function schema for a callable.
-    Raises ValueError if the return type is not explicitly str.
+    Raises ValueError if the return type is not explicitly str or if any parameter is missing a type hint.
     """
     sig = inspect.signature(func)
     # Enforce explicit str return type
     if sig.return_annotation is inspect._empty or sig.return_annotation is not str:
         raise ValueError(
             f"Tool '{tool_name}' must have an explicit return type of 'str'. Found: {sig.return_annotation}"
+        )
+    # Enforce type hints for all parameters (except self)
+    missing_type_hints = [
+        name
+        for name, param in sig.parameters.items()
+        if name != "self" and param.annotation is inspect._empty
+    ]
+    if missing_type_hints:
+        raise ValueError(
+            f"Tool '{tool_name}' is missing type hints for parameter(s): {', '.join(missing_type_hints)}.\n"
+            f"All parameters must have explicit type hints for schema generation."
         )
     # Only use the class docstring for schema generation
     class_doc = tool_class.__doc__.strip() if tool_class and tool_class.__doc__ else ""
@@ -115,7 +126,7 @@ def generate_openai_function_schema(func, tool_name: str, tool_class=None):
     for name, param in sig.parameters.items():
         if name == "self":
             continue
-        annotation = param.annotation if param.annotation != inspect._empty else str
+        annotation = param.annotation
         pdesc = param_descs.get(name, "")
         schema = _type_to_json_schema(annotation)
         schema["description"] = pdesc
