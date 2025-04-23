@@ -1,5 +1,5 @@
 from janito.agent.rich_message_handler import RichMessageHandler
-from .chat_state import load_chat_state
+from .chat_state import load_chat_state, save_chat_state
 from .chat_ui import setup_prompt_session, print_welcome_message
 from .commands import handle_command
 from janito.agent.conversation_exceptions import EmptyResponseError, ProviderError
@@ -44,7 +44,7 @@ def start_chat_shell(profile_manager, continue_session=False, max_rounds=50):
                 from prompt_toolkit.formatted_text import HTML
 
                 user_input = session.prompt(
-                    HTML("<prompt>💬 </prompt>"), multiline=False
+                    HTML("<inputline>💬 </inputline>"), multiline=False
                 )
                 was_paste_mode = False
         except EOFError:
@@ -55,7 +55,10 @@ def start_chat_shell(profile_manager, continue_session=False, max_rounds=50):
             try:
                 confirm = (
                     session.prompt(
-                        HTML("<prompt>Do you really want to exit? (y/n): </prompt>")
+                        # Use <inputline> for full-line blue background, <prompt> for icon only
+                        HTML(
+                            "<inputline>Do you really want to exit? (y/n): </inputline>"
+                        )
                     )
                     .strip()
                     .lower()
@@ -125,4 +128,4 @@ def start_chat_shell(profile_manager, continue_session=False, max_rounds=50):
         last_usage_info_ref["value"] = usage
 
         # Save conversation and input history
-        # save_chat_state(messages, mem_history, last_usage_info)
+        save_chat_state(messages, mem_history, last_usage_info_ref["value"])

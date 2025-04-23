@@ -27,8 +27,16 @@ def save_conversation(
 ):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     data = {"messages": messages, "prompts": prompts, "last_usage_info": usage_info}
+
+    def usage_serializer(obj):
+        if hasattr(obj, "to_dict"):
+            return obj.to_dict()
+        if hasattr(obj, "__dict__"):
+            return obj.__dict__
+        return str(obj)
+
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
+        json.dump(data, f, indent=2, default=usage_serializer)
 
 
 def load_input_history():
