@@ -3,7 +3,6 @@ from . import create_directory
 from . import create_file
 from . import fetch_url
 from . import find_files
-from . import get_file_outline
 from . import get_lines
 from . import gitignore_utils
 from . import move_file
@@ -25,7 +24,7 @@ __all__ = [
     "create_file",
     "fetch_url",
     "find_files",
-    "get_file_outline",
+    "outline_file",
     "get_lines",
     "gitignore_utils",
     "move_file",

@@ -1,6 +1,5 @@
 from janito.agent.tool_base import ToolBase
 from janito.agent.tool_registry import register_tool
-from janito.agent.tools.tools_utils import pluralize
 
 
 @register_tool(name="replace_text_in_file")
@@ -32,12 +31,10 @@ class ReplaceTextInFileTool(ToolBase):
         from janito.agent.tools.tools_utils import display_path
 
         disp_path = display_path(file_path)
-        action = "all occurrences" if replace_all else None
+        action = "(all)" if replace_all else "(unique)"
         search_lines = len(search_text.splitlines())
         replace_lines = len(replacement_text.splitlines())
-        info_msg = f"\U0001f4dd Replacing in {disp_path}: {search_lines}\u2192{replace_lines} lines"
-        if action:
-            info_msg += f" ({action})"
+        info_msg = f"\U0001f4dd Replacing in {disp_path} {search_lines}\u2192{replace_lines} lines {action}"
         self.report_info(info_msg)
 
         try:
@@ -94,9 +91,11 @@ class ReplaceTextInFileTool(ToolBase):
                 concise_warning = "The search text was not found. Expand your search context with surrounding lines if needed."
                 return f"No changes made. {concise_warning}"
 
-            self.report_success(
-                f" \u2705 {replaced_count} {pluralize('block', replaced_count)} replaced"
-            )
+            if match_lines:
+                lines_str = ", ".join(str(line_no) for line_no in match_lines)
+                self.report_success(f" \u2705 replaced at lines {lines_str}")
+            else:
+                self.report_success(" \u2705 replaced (lines unknown)")
 
             # Indentation check for agent warning
             def leading_ws(line):

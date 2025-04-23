@@ -2,7 +2,6 @@ from janito.agent.tool_registry import register_tool
 from janito.agent.tools.utils import expand_path, display_path
 from janito.agent.tool_base import ToolBase
 import os
-import shutil
 
 
 @register_tool(name="create_directory")
@@ -12,20 +11,18 @@ class CreateDirectoryTool(ToolBase):
 
     Args:
         path (str): Path for the new directory.
-        overwrite (bool, optional): Whether to overwrite if the directory exists. Defaults to False.
+
     Returns:
         str: Status message indicating the result. Example:
             - "\u2705 Successfully created the directory at ..."
             - "\u2757 Cannot create directory: ..."
     """
 
-    def call(self, path: str, overwrite: bool = False) -> str:
+    def call(self, path: str) -> str:
         original_path = path
         path = expand_path(path)
         disp_path = display_path(original_path, path)
-        self.report_info(
-            f"\U0001f4c1 Creating directory: '{disp_path}' (overwrite={overwrite}) ... "
-        )
+        self.report_info(f"\U0001f4c1 Creating directory: '{disp_path}' ... ")
         try:
             if os.path.exists(path):
                 if not os.path.isdir(path):
@@ -33,15 +30,8 @@ class CreateDirectoryTool(ToolBase):
                         f"\u274c Path '{disp_path}' exists and is not a directory."
                     )
                     return f"\u274c Path '{disp_path}' exists and is not a directory."
-                if not overwrite:
-                    self.report_error(
-                        f"\u2757 Directory '{disp_path}' already exists (overwrite=False)"
-                    )
-                    return (
-                        f"\u2757 Cannot create directory: '{disp_path}' already exists."
-                    )
-                # Overwrite: remove existing directory
-                shutil.rmtree(path)
+                self.report_error(f"\u2757 Directory '{disp_path}' already exists.")
+                return f"\u2757 Cannot create directory: '{disp_path}' already exists."
             os.makedirs(path, exist_ok=True)
             self.report_success(f"\u2705 Directory created at '{disp_path}'")
             return f"\u2705 Successfully created the directory at '{disp_path}'."

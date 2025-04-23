@@ -19,7 +19,7 @@ Available Tools (janito/agent/tools):
 - create_file
 - fetch_url
 - find_files
-- get_file_outline
+- outline_file/
 - get_lines
 - gitignore_utils
 - move_file

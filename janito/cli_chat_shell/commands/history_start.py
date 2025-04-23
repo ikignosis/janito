@@ -28,7 +28,7 @@ def handle_start(console, state, **kwargs):
                 f"[bold red]Failed to delete saved conversation:[/bold red] {e}"
             )
     else:
-        console.print("[bold yellow]No saved conversation to delete.[/bold yellow]")
+        pass
 
     console.print(
         "[bold green]Conversation history has been started (context reset).[/bold green]"

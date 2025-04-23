@@ -82,7 +82,7 @@ def get_toolbar_func(
         if style_part:
             first_line_parts.append(style_part)
         first_line = " | ".join(first_line_parts)
-        left = f"Messages: <msg_count>{len(messages_ref())}</msg_count>"
+        left = f" Messages: <msg_count>{len(messages_ref())}</msg_count>"
         tokens_part = ""
         if (
             prompt_tokens is not None

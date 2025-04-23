@@ -48,7 +48,7 @@ class GetLinesTool(ToolBase):
                     )
                 elif to_line < total_lines:
                     self.report_success(
-                        f" ✅ {selected_len} {pluralize('line', selected_len)} ({total_lines - to_line} lines to end)"
+                        f" ✅ {selected_len} {pluralize('line', selected_len)} ({total_lines - to_line} to eof)"
                     )
             else:
                 self.report_success(
