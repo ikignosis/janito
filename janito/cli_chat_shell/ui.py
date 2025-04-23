@@ -75,10 +75,10 @@ def get_toolbar_func(
         first_line_parts = []
         if model_part:
             first_line_parts.append(model_part)
-        if role_part:
-            first_line_parts.append(role_part)
         if profile_part:
             first_line_parts.append(profile_part)
+        if role_part:
+            first_line_parts.append(role_part)
         if style_part:
             first_line_parts.append(style_part)
         first_line = " | ".join(first_line_parts)
