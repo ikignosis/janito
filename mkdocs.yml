@@ -10,8 +10,9 @@ nav:
       - Quickstart & Basic Usage: guides/using.md
       - How Janito Uses Tools: guides/using_tools.md
       - Terminal Shell: guides/terminal_shell.md
+      - One-Shot Terminal: guides/one_shot_terminal.md
       - Prompt Profiles & Styles: guides/prompt_profiles.md
-      - Prompt Design Style: Condition Before Action: guides/prompt_design_style.md
+      - Prompt Design Style: guides/prompting/prompt_design_style.md
   - Developing & Extending:
       - Developer Guide: guides/developing.md
       - Tools Developer Guide: guides/tools_developer_guide.md
@@ -23,7 +24,28 @@ nav:
       - Agentic Frameworks Comparison: code_intelligence/agentic_frameworks_comparison.md
   - Tools:
       - Overview: tools/index.md
-      - Tools Reference: tools/tools-reference.md
+      - Tools Reference:
+          - Reference Table: tools/tools-reference.md
+          - Ask User: tools/ask_user.md
+          - Create Directory: tools/create_directory.md
+          - Create File: tools/create_file.md
+          - Fetch URL: tools/fetch_url.md
+          - Find Files: tools/find_files.md
+          - Get File Outline: tools/get_file_outline.md
+          - Get Lines: tools/get_lines.md
+          - Move File: tools/move_file.md
+          - Present Choices: tools/present_choices.md
+          - Remove Directory: tools/remove_directory.md
+          - Remove File: tools/remove_file.md
+          - Replace Text In File: tools/replace_text_in_file.md
+          - Retrieve Memory: tools/retrieve_memory.md
+          - Run Bash Command: tools/run_bash_command.md
+          - Run PowerShell Command: tools/run_powershell_command.md
+          - Run Python Command: tools/run_python_command.md
+          - Search Files: tools/search_files.md
+          - Search Text: tools/search_text.md
+          - Store Memory: tools/store_memory.md
+          - Validate File Syntax: tools/validate_file_syntax.md
   - Reference:
       - Architecture: reference/architecture.md
       - Configuration: reference/configuration.md

@@ -3,14 +3,10 @@
 **Description:**
 Get an outline of a file's structure. For Python files, uses regex pattern matching for class and function definitions. May not capture all edge cases or non-standard code structures.
 
-**Parameters:**
-- `file_path` (str): Path to the file.
-
-**Returns:**
-- Outline of the file's structure, starting with a summary line. Examples:
-  - "Outline: 5 items (python)\n| Type    | Name        | Start | End | Parent   | ..."
-  - "Outline: 100 lines (default)\nFile has 100 lines."
-  - "Error reading file: <error message>"
+| Argument   | Type | Description |
+|------------|------|-------------|
+| file_path  | str  | Path to the file. |
+| **Returns**| str  | Outline of the file's structure, or error message. |
 
 **Example usage:**
 outline_file(file_path="src/main.py")

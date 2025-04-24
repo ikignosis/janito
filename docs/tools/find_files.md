@@ -3,16 +3,12 @@
 **Description:**
 Find files in one or more directories matching a pattern. Respects .gitignore.
 
-**Parameters:**
-- `directories` (list[str]): List of directories to search in.
-- `pattern` (str): File pattern to match. Uses Unix shell-style wildcards (fnmatch), e.g. '*.py', 'data_??.csv', '[a-z]*.txt'.
-- `recursive` (bool, optional): Whether to search recursively in subdirectories. Defaults to True.
-
-**Returns:**
-- Newline-separated list of matching file paths.
-- If no pattern is provided: "Warning: Empty file pattern provided. Operation skipped."
-- If no files found: returns an empty string.
-- Logs info and success messages (not returned).
+| Argument     | Type           | Description |
+|--------------|----------------|-------------|
+| directories  | list[str]      | List of directories to search in. |
+| pattern      | str            | File pattern to match. Uses Unix shell-style wildcards. |
+| recursive    | bool, optional | Whether to search recursively in subdirectories. Defaults to True. |
+| **Returns**  | str            | Newline-separated list of matching file paths, or warning if pattern is empty. |
 
 **Example usage:**
 find_files(directories=["src", "tests"], pattern="*.py", recursive=True)

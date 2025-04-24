@@ -3,16 +3,13 @@
 **Description:**
 Create a new file with the given content, or overwrite if specified.
 
-**Parameters:**
-- `path` (str): Path to the file to create or overwrite.
-- `content` (str): Content to write to the file.
-- `overwrite` (bool, optional): If True, overwrite the file if it exists. Defaults to False.
-- `backup` (bool, optional): If True, create a backup (.bak) before overwriting. Defaults to True.
-
-**Returns:**
-- Status message indicating the result. Examples:
-  - "✅ Successfully created the file at ..."
-  - "⚠️ File already exists at ... Use overwrite=True to overwrite."
+| Argument   | Type    | Description                                   |
+|------------|---------|-----------------------------------------------|
+| path       | str     | Path to the file to create or overwrite       |
+| content    | str     | Content to write to the file                  |
+| overwrite  | bool, optional | Overwrite if file exists (default: False)     |
+| backup     | bool, optional | Create .bak before overwriting (default: True)|
+| **Returns**| str     | Status message indicating the result          |
 
 **Example usage:**
 create_file(path="README.md", content="# Project", overwrite=False)

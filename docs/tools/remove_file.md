@@ -3,16 +3,11 @@
 **Description:**
 Remove a file at the specified path.
 
-**Parameters:**
-- `file_path` (str): Path to the file to remove.
-- `backup` (bool, optional): If True, create a backup (.bak) before removing. Defaults to False.
-
-**Returns:**
-- Status message indicating the result. Examples:
-  - "✅ Successfully removed the file at ..."
-  - "❗ Cannot remove file: ..."
-  - "❌ File ... does not exist."
-  - "❌ Path ... is not a file."
+| Argument   | Type | Description |
+|------------|------|-------------|
+| file_path  | str  | Path to the file to remove. |
+| backup     | bool, optional | If True, create a backup (.bak) before removing. Defaults to False. |
+| **Returns**| str  | Status message indicating the result, or error message. |
 
 **Example usage:**
 remove_file(file_path="obsolete.txt", backup=True)

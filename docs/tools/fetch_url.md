@@ -3,14 +3,11 @@
 **Description:**
 Fetch the content of a web page and extract its text.
 
-**Parameters:**
-- `url` (str): The URL of the web page to fetch.
-- `search_strings` (list[str], optional): Strings to search for in the page content.
-
-**Returns:**
-- Extracted text content from the web page.
-- If search_strings provided and no matches: "No lines found for the provided search strings."
-- If URL is empty: "Warning: Empty URL provided. Operation skipped."
+| Argument        | Type           | Description                                      |
+|-----------------|----------------|--------------------------------------------------|
+| url             | str            | The URL of the web page to fetch                 |
+| search_strings  | list[str], optional | Strings to search for in the page content    |
+| **Returns**     | str            | Extracted text content or warning message        |
 
 **Example usage:**
 fetch_url(url="https://example.com", search_strings=["main"])

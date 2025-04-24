@@ -11,20 +11,6 @@ The interactive shell lets you have a continuous conversation with Janito, just 
 - 💡 Context-aware suggestions (where supported)
 - 💾 Conversation state is saved/restored between sessions
 
-## ⚡ One-Shot Terminal Shell
-
-If you want to run a single command or prompt in the terminal shell without entering interactive mode, you can use the "one-shot" feature. This is useful for quick tasks or scripting.
-
-To use one-shot mode, simply provide your prompt as a command-line argument:
-
-```
-janito "what are the key classes of this project?"
-```
-
-Janito will process your request and exit after displaying the result.
-
-![One-Shot Terminal Shell](../imgs/terminal_one_shot.png)
-
 ---
 
 ## 📝 Built-in Commands

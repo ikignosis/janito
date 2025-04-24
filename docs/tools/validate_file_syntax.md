@@ -3,14 +3,10 @@
 **Description:**
 Validate a file for syntax issues. Supports Python (.py, .pyw), JSON (.json), and YAML (.yml, .yaml) files.
 
-**Parameters:**
-- `file_path` (str): Path to the file to validate.
-
-**Returns:**
-- Validation status message. Examples:
-  - "✅ Syntax valid"
-  - "Syntax error: <error message>"
-  - "Error: <error message>"
+| Argument   | Type | Description |
+|------------|------|-------------|
+| file_path  | str  | Path to the file to validate. |
+| **Returns**| str  | Validation status message, or error message. |
 
 **Example usage:**
 validate_file_syntax(file_path="main.py")

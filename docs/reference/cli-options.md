@@ -5,6 +5,8 @@ This page documents the command-line options that temporarily override configura
 ## 💡 Overview
 These options are useful for one-off runs, scripting, or experimentation. They take precedence over config files for the current invocation only.
 
+> ⚠️ **Warning:** Some models may not complete all required steps in a single-shot (one-off) run. If the model does not act as expected, try appending "; just do it" to your command-line prompt to encourage direct action.
+
 ## ⚙️ Options
 
 ### --max-tokens
