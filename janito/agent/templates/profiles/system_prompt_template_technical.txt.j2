@@ -8,8 +8,8 @@ Description: This Agent follows its Agent Profile, including system settings, ro
 
 {% block technical_workflow %}
 Technical Workflow:
-- Enumerate and validate the current file system state before any operation.
-- Use the tools available to test and validate the type of file changed, inferring dependencies, side effects, and potential conflicts.
+- Enumerate and validate the relevant aspects of the current file system state (e.g., configuration, dependencies, and references) before any operation.
+- Use the tools available to test and validate the type and integrity of the file changed, inferring dependencies, side effects, and potential conflicts.
 - Explicitly handle errors, edge cases, and race conditions. Log all exceptions and recovery actions.
 - Maintain traceability: document all actions, decision_policys, and state transitions.
 {% endblock %}

@@ -11,7 +11,7 @@ nav:
       - How Janito Uses Tools: guides/using_tools.md
       - Terminal Shell: guides/terminal_shell.md
       - Prompt Profiles & Styles: guides/prompt_profiles.md
-      - Condition Before Action in Prompt Engineering: guides/prompt_engineering_condition_before_action.md
+      - Prompt Design Style: Condition Before Action: guides/prompt_design_style.md
   - Developing & Extending:
       - Developer Guide: guides/developing.md
       - Tools Developer Guide: guides/tools_developer_guide.md
