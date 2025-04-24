@@ -1,9 +1,12 @@
 from janito.agent.tool_base import ToolBase
 from janito.agent.tool_registry import register_tool
-from janito.agent.tools.tools_utils import pluralize
+from janito.agent.tools.tools_utils import (
+    pluralize,
+    display_path,
+    find_files_with_extensions,
+)
 
 import fnmatch
-from janito.agent.tools.gitignore_utils import filter_ignored
 
 
 @register_tool(name="find_files")
@@ -34,19 +37,32 @@ class FindFilesTool(ToolBase):
                 "⚠️ Warning: Empty file pattern provided. Operation skipped."
             )
             return "Warning: Empty file pattern provided. Operation skipped."
-        from janito.agent.tools.tools_utils import display_path
 
         output = []
         for directory in directories:
             disp_path = display_path(directory)
             self.report_info(f"🔍 Searching for files '{pattern}' in '{disp_path}'")
-            for root, dirs, files in os.walk(directory):
-                rel_path = os.path.relpath(root, directory)
-                depth = 0 if rel_path == "." else rel_path.count(os.sep) + 1
-                if not recursive and depth > 0:
-                    break
-                dirs, files = filter_ignored(root, dirs, files)
-                for filename in fnmatch.filter(files, pattern):
-                    output.append(os.path.join(root, filename))
+            # If pattern is a simple extension (e.g. '*.py'), use the new utility
+            if (
+                pattern.startswith("*.")
+                and pattern.count("*") == 1
+                and pattern.count(".") == 1
+            ):
+                ext = pattern[1:]  # '.py'
+                files = find_files_with_extensions(
+                    [directory], [ext], recursive=recursive
+                )
+                output.extend(files)
+            else:
+                for root, dirs, files in os.walk(directory):
+                    rel_path = os.path.relpath(root, directory)
+                    depth = 0 if rel_path == "." else rel_path.count(os.sep) + 1
+                    if not recursive and depth > 0:
+                        break
+                    from janito.agent.tools.gitignore_utils import filter_ignored
+
+                    dirs, files = filter_ignored(root, dirs, files)
+                    for filename in fnmatch.filter(files, pattern):
+                        output.append(os.path.join(root, filename))
         self.report_success(f" ✅ {len(output)} {pluralize('file', len(output))} found")
         return "\n".join(output)

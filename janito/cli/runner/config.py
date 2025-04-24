@@ -31,5 +31,5 @@ def get_system_prompt_template(args, role):
                 ),
                 use_azure_openai=unified_config.get("use_azure_openai", False),
             )
-            system_prompt_template = profile_manager.render_prompt()
+            system_prompt_template = profile_manager.system_prompt_template
     return system_prompt_template

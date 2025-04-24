@@ -4,6 +4,7 @@ from . import create_file
 from . import fetch_url
 from . import find_files
 from . import get_lines
+from . import outline_file
 from . import gitignore_utils
 from . import move_file
 from . import validate_file_syntax

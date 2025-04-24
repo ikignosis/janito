@@ -5,7 +5,7 @@ def handle_prompt(console, **kwargs):
     profile_manager = kwargs.get("profile_manager")
     prompt = profile_manager.system_prompt_template if profile_manager else None
     if not prompt and profile_manager:
-        prompt = profile_manager.render_prompt()
+        prompt = profile_manager.system_prompt_template
     console.print(f"[bold magenta]System Prompt:[/bold magenta]\n{prompt}")
 
 

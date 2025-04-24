@@ -4,6 +4,7 @@ from .markdown_outline import parse_markdown_outline
 from .formatting import format_outline_table, format_markdown_outline_table
 import os
 from janito.agent.tool_base import ToolBase
+from janito.agent.tools.tools_utils import display_path
 
 
 @register_tool(name="outline_file")
@@ -15,17 +16,10 @@ class GetFileOutlineTool(ToolBase):
         file_path (str): Path to the file to outline.
     """
 
-    def report_info(self, msg):
-        pass
-
-    def report_success(self, msg):
-        pass
-
-    def report_error(self, msg):
-        pass
-
     def call(self, file_path: str) -> str:
         try:
+            # Report the filename being outlined as the first step
+            self.report_info(f"📄 Outlining file: '{display_path(file_path)}'")
             ext = os.path.splitext(file_path)[1].lower()
             with open(file_path, "r", encoding="utf-8", errors="replace") as f:
                 lines = f.readlines()

@@ -185,7 +185,7 @@ def create_parser():
         help="Print raw chunks as they are fetched from OpenAI (for debugging)",
     )
     parser.add_argument(
-        "--configure",
+        "--detect",
         action="store_true",
         help="Start project configuration: discover core technologies and save to .janito/tech.txt",
     )

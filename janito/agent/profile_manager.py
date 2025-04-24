@@ -56,21 +56,28 @@ class AgentProfileManager:
         python_version = get_python_version()
         shell_info = detect_shell()
         tech_txt_path = Path(".janito") / "tech.txt"
-        tech_txt_exists = tech_txt_path.exists()
-        tech_txt_content = ""
-        if tech_txt_exists:
+        detected_technologies_exists = tech_txt_path.exists()
+        detected_technologies = ""
+        if detected_technologies_exists:
             try:
-                tech_txt_content = tech_txt_path.read_text(encoding="utf-8")
-            except Exception:
-                tech_txt_content = "⚠️ Error reading janito/tech.txt."
+                detected_technologies = tech_txt_path.read_text(encoding="utf-8")
+            except Exception as e:
+                print(f"⚠️ Error reading .janito/tech.txt: {e}", file=sys.stderr)
+                detected_technologies = ""
+        else:
+            print(
+                "⚠️ Detected technologies file (.janito/tech.txt) not found. For improved performance, run: janito --detect",
+                file=sys.stderr,
+            )
+            detected_technologies = ""
         context = {
             "role": self.role,
             "interaction_mode": self.interaction_mode,
             "platform": platform_name,
             "python_version": python_version,
             "shell_info": shell_info,
-            "tech_txt_exists": str(tech_txt_exists),
-            "tech_txt_content": tech_txt_content,
+            "detected_technologies_exists": str(detected_technologies_exists),
+            "detected_technologies": detected_technologies,
             "operational_style_fragment": op_fragment,
             "communication_style_fragment": comm_fragment,
         }

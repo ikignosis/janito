@@ -16,8 +16,8 @@ def run_cli(args):
         print(f"janito version {__version__}")
         sys.exit(0)
 
-    # --configure: exploratory workflow to detect core technologies
-    if getattr(args, "configure", False):
+    # --detect: exploratory workflow to detect core technologies
+    if getattr(args, "detect", False):
         import os
         from rich.console import Console
 
