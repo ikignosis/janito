@@ -12,6 +12,8 @@ def handle_help(console, **kwargs):
   /clear    - Clear the terminal screen
   /multi    - Provide multiline input as next message
   /config   - Show or set configuration (see: /config show, /config set local|global key=value)
+  /termweb-logs - Show the last lines of the latest termweb logs
+  /termweb-status - Show status information about the running termweb server
 """
     )
 

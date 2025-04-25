@@ -15,6 +15,8 @@ class ValidateFileSyntaxTool(ToolBase):
       - JSON (.json)
       - YAML (.yml, .yaml)
       - PowerShell (.ps1)
+      - XML (.xml)
+      - HTML (.html, .htm) [lxml]
 
     Args:
         file_path (str): Path to the file to validate.
@@ -26,7 +28,7 @@ class ValidateFileSyntaxTool(ToolBase):
     """
 
     def call(self, file_path: str) -> str:
-        self.report_info(f"🔎 Validating syntax for: {file_path}")
+        self.report_info(f"🔎 Validating syntax for: {file_path} ...")
         ext = os.path.splitext(file_path)[1].lower()
 
         try:
@@ -68,19 +70,48 @@ class ValidateFileSyntaxTool(ToolBase):
 
                 if "[]" in analyze_result or analyze_result.strip() == "":
                     self.report_success("✅ Syntax OK")
-                    return "✅ Syntax OK"
+                    return "✅ Syntax valid"
                 else:
                     msg = (
                         f"⚠️ Warning: PowerShell syntax issues found:\n{analyze_result}"
                     )
                     self.report_warning(msg)
                     return msg
+            elif ext == ".xml":
+                try:
+                    from lxml import etree
+                except ImportError:
+                    msg = "⚠️ lxml not installed. Cannot validate XML."
+                    self.report_warning(msg)
+                    return msg
+                with open(file_path, "rb") as f:
+                    etree.parse(f)
+            elif ext in (".html", ".htm"):
+                try:
+                    from lxml import html
+                except ImportError:
+                    msg = "⚠️ lxml not installed. Cannot validate HTML."
+                    self.report_warning(msg)
+                    return msg
+                with open(file_path, "rb") as f:
+                    html.parse(f)
+                    # Strict: check for unclosed tags and mismatches
+                    # lxml.html will not raise for some malformed HTML, so check for parser errors
+                    # We use etree.HTMLParser with recover=False for strictness
+                from lxml import etree
+
+                parser = etree.HTMLParser(recover=False)
+                with open(file_path, "rb") as f:
+                    etree.parse(f, parser=parser)
+                if parser.error_log:
+                    errors = "\n".join(str(e) for e in parser.error_log)
+                    raise ValueError(f"HTML syntax errors found:\n{errors}")
             else:
                 msg = f"⚠️ Warning: Unsupported file extension: {ext}"
                 self.report_warning(msg)
                 return msg
             self.report_success("✅ Syntax OK")
-            return "✅ Syntax OK"
+            return "✅ Syntax valid"
         except Exception as e:
             msg = f"⚠️ Warning: Syntax error: {e}"
             self.report_warning(msg)

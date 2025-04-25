@@ -40,7 +40,7 @@ class RunPowerShellCommandTool(ToolBase):
         # Prepend UTF-8 output encoding
         encoding_prefix = "$OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; "
         command_with_encoding = encoding_prefix + command
-        self.report_info(f"🖥️  Running PowerShell command: {command}\n")
+        self.report_info(f"🖥️  Running PowerShell command: {command} ...\n")
         if interactive:
             self.report_info(
                 "⚠️  Warning: This command might be interactive, require user input, and might hang."

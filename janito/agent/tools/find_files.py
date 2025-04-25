@@ -41,7 +41,7 @@ class FindFilesTool(ToolBase):
         output = []
         for directory in directories:
             disp_path = display_path(directory)
-            self.report_info(f"🔍 Searching for files '{pattern}' in '{disp_path}'")
+            self.report_info(f"🔍 Searching for files '{pattern}' in '{disp_path}' ...")
             # If pattern is a simple extension (e.g. '*.py'), use the new utility
             if (
                 pattern.startswith("*.")

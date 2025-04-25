@@ -3,6 +3,7 @@ import subprocess
 import tempfile
 import time
 import http.client
+import os
 from rich.console import Console
 from janito.agent.runtime_config import runtime_config
 from janito.cli.runner._termweb_log_utils import print_termweb_logs
@@ -31,6 +32,27 @@ def start_termweb(selected_port):
     """
     console = Console()
     with console.status("[cyan]Starting web server...", spinner="dots"):
+        # Step 1: Try source path
+        app_py_path = os.path.join(os.path.dirname(__file__), "..", "termweb", "app.py")
+        app_py_path = os.path.abspath(app_py_path)
+        if not os.path.isfile(app_py_path):
+            # Step 2: Try installed package
+            try:
+                import importlib.util
+
+                spec = importlib.util.find_spec("janito.termweb.app")
+                if spec and spec.origin:
+                    app_py_path = spec.origin
+                else:
+                    app_py_path = None
+            except Exception:
+                app_py_path = None
+        if not app_py_path or not os.path.isfile(app_py_path):
+            console.print(
+                "[red][termweb][/red] Could not find app.py for termweb (tried source and installed package). Aborting startup."
+            )
+            runtime_config.set("termweb_port", None)
+            return None, False, None, None
         termweb_stdout = tempfile.NamedTemporaryFile(
             prefix="termweb_stdout_", delete=False, mode="w", encoding="utf-8"
         )
@@ -40,7 +62,7 @@ def start_termweb(selected_port):
         termweb_proc = subprocess.Popen(
             [
                 sys.executable,
-                "janito/termweb/app.py",
+                app_py_path,
                 "--port",
                 str(selected_port),
             ],
@@ -49,9 +71,9 @@ def start_termweb(selected_port):
         )
         if wait_for_termweb(selected_port, timeout=3.0):
             console.print(
-                f"[green]Started and available at http://localhost:{selected_port}[/green]"
+                f"[green]TermWeb started... Available at http://localhost:{selected_port}[/green]"
             )
-            return termweb_proc, True
+            return termweb_proc, True, termweb_stdout.name, termweb_stderr.name
         else:
             termweb_proc.terminate()
             termweb_proc.wait()
@@ -60,4 +82,4 @@ def start_termweb(selected_port):
             )
             print_termweb_logs(termweb_stdout.name, termweb_stderr.name, console)
             runtime_config.set("termweb_port", None)
-            return None, False
+            return None, False, termweb_stdout.name, termweb_stderr.name

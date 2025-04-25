@@ -4,14 +4,28 @@ from .chat_ui import setup_prompt_session, print_welcome_message
 from .commands import handle_command
 from janito.agent.conversation_exceptions import EmptyResponseError, ProviderError
 
+# Track the active prompt session for cleanup
+active_prompt_session = None
 
-def start_chat_shell(profile_manager, continue_session=False, max_rounds=50):
+
+def start_chat_shell(
+    profile_manager,
+    continue_session=False,
+    max_rounds=50,
+    termweb_stdout_path=None,
+    termweb_stderr_path=None,
+):
+    global active_prompt_session
     agent = profile_manager.agent
     message_handler = RichMessageHandler()
     console = message_handler.console
 
     # Load state
     state = load_chat_state(continue_session)
+    if termweb_stdout_path:
+        state["termweb_stdout_path"] = termweb_stdout_path
+    if termweb_stderr_path:
+        state["termweb_stderr_path"] = termweb_stderr_path
     messages = state["messages"]
     mem_history = state["mem_history"]
     last_usage_info_ref = {"value": state["last_usage_info"]}
@@ -32,6 +46,7 @@ def start_chat_shell(profile_manager, continue_session=False, max_rounds=50):
     session = setup_prompt_session(
         messages, last_usage_info_ref, last_elapsed, mem_history, profile_manager, agent
     )
+    active_prompt_session = session
 
     while True:
         try:

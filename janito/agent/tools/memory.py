@@ -25,7 +25,7 @@ class StoreMemoryTool(ToolBase):
     """
 
     def call(self, key: str, value: str) -> str:
-        self.report_info(f"Storing value for key: '{key}'")
+        self.report_info(f"Storing value for key: '{key}' ...")
         try:
             _memory_store[key] = value
             msg = f"✅ Stored value for key: '{key}'"
@@ -51,7 +51,7 @@ class RetrieveMemoryTool(ToolBase):
     """
 
     def call(self, key: str) -> str:
-        self.report_info(f"Retrieving value for key: '{key}'")
+        self.report_info(f"Retrieving value for key: '{key}' ...")
         try:
             if key in _memory_store:
                 value = _memory_store[key]

@@ -35,7 +35,9 @@ class ReplaceTextInFileTool(ToolBase):
         search_lines = len(search_text.splitlines())
         replace_lines = len(replacement_text.splitlines())
         info_msg = f"\U0001f4dd Replacing in {disp_path} {search_lines}\u2192{replace_lines} lines {action}"
-        self.report_info(info_msg)
+        self.report_info(
+            info_msg + (" ..." if not info_msg.rstrip().endswith("...") else "")
+        )
 
         try:
             with open(file_path, "r", encoding="utf-8", errors="replace") as f:

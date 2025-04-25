@@ -17,12 +17,12 @@ def print_welcome(console, version=None, continued=False):
     if runtime_config.get("vanilla_mode", False):
         console.print(
             f"[bold magenta]Welcome to Janito{version_str} in [white on magenta]VANILLA MODE[/white on magenta]! Tools, system prompt, and temperature are disabled unless overridden.[/bold magenta]\n"
-            f"[cyan]F12 = Quick Action (follows the recommended action).[/cyan]"
+            f"[cyan] F12 = Quick Action (follows the recommended action).[/cyan]"
         )
     else:
         console.print(
             f"[bold green]Welcome to Janito{version_str}! Entering chat mode. Type /exit to exit.[/bold green]\n"
-            f"[cyan]F12 = Quick Action (follows the recommended action).[/cyan]"
+            f"[cyan] F12 = Quick Action (follows the recommended action).[/cyan]"
         )
 
 
@@ -94,26 +94,33 @@ def get_toolbar_func(
                 f"Completion: {format_tokens(completion_tokens, 'tokens_out')}, "
                 f"Total: {format_tokens(total_tokens, 'tokens_total')}"
             )
-        help_part = "<b>/help</b> for help | <b>/start</b> to start new task"
-        # Compose second/status line
-        second_line = f"{left}{tokens_part} | {help_part}"
-        # Padding if needed
-        total_len = len(left) + len(tokens_part) + len(help_part) + 3
+        # Move /help and /start tips to key bindings/info line
+        # Compose second/status line (no help_part)
+        second_line = f"{left}{tokens_part}"
+        total_len = len(left) + len(tokens_part)
         if first_line:
             total_len += len(first_line) + 3
         if total_len < width:
             padding = " " * (width - total_len)
-            second_line = f"{left}{tokens_part}{padding} | {help_part}"
+            second_line = f"{left}{tokens_part}{padding}"
+        # Add key bindings info as an extra line, now including /help and /start
+        bindings_line = "<b> F12</b>: Quick Action | <b>Ctrl-Y</b>: Yes | <b>Ctrl-N</b>: No | <b>/help</b>: Help | <b>/start</b>: New Task"
         if first_line:
-            toolbar_text = first_line + "\n" + second_line
+            toolbar_text = first_line + "\n" + second_line + "\n" + bindings_line
         else:
-            toolbar_text = second_line
+            toolbar_text = second_line + "\n" + bindings_line
         return HTML(toolbar_text)
 
     return get_toolbar
 
 
-def get_f12_key_bindings():
+def get_custom_key_bindings():
+    """
+    Returns prompt_toolkit KeyBindings for custom CLI shortcuts:
+    - F12: Cycles through quick action phrases and submits.
+    - Ctrl-Y: Inserts 'Yes' and submits (for confirmation prompts).
+    - Ctrl-N: Inserts 'No' and submits (for confirmation prompts).
+    """
     bindings = KeyBindings()
     _f12_instructions = ["proceed", "go ahead", "continue", "next", "okay"]
     _f12_index = {"value": 0}
@@ -125,6 +132,18 @@ def get_f12_key_bindings():
         buf.text = _f12_instructions[idx]
         buf.validate_and_handle()
         _f12_index["value"] = (idx + 1) % len(_f12_instructions)
+
+    @bindings.add("c-y")
+    def _(event):
+        buf = event.app.current_buffer
+        buf.text = "Yes"
+        buf.validate_and_handle()
+
+    @bindings.add("c-n")
+    def _(event):
+        buf = event.app.current_buffer
+        buf.text = "No"
+        buf.validate_and_handle()
 
     return bindings
 
@@ -151,12 +170,16 @@ def get_prompt_session(get_toolbar_func, mem_history):
             "inputline": "bg:#005fdd #ffffff",  # Blue background for the prompt label (icon/text)
         }
     )
+    from .shell_command_completer import ShellCommandCompleter
+
+    completer = ShellCommandCompleter()
     return PromptSession(
         bottom_toolbar=get_toolbar_func,
         style=style,
         editing_mode=EditingMode.VI,
-        key_bindings=get_f12_key_bindings(),
+        key_bindings=get_custom_key_bindings(),
         history=mem_history,
+        completer=completer,
     )
 
 

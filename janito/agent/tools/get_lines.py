@@ -25,9 +25,9 @@ class GetLinesTool(ToolBase):
 
         disp_path = display_path(file_path)
         if from_line and to_line:
-            self.report_info(f"📄 Reading {disp_path} lines {from_line}-{to_line}")
+            self.report_info(f"📄 Reading {disp_path} lines {from_line}-{to_line} ...")
         else:
-            self.report_info(f"📄 Reading {disp_path} (all lines)")
+            self.report_info(f"📄 Reading {disp_path} (all lines) ...")
 
         try:
             with open(file_path, "r", encoding="utf-8", errors="replace") as f:
@@ -52,7 +52,7 @@ class GetLinesTool(ToolBase):
                     )
             else:
                 self.report_success(
-                    f" ✅ {selected_len} {pluralize('line', selected_len)} (full file)"
+                    f" ✅ {selected_len} {pluralize('line', selected_len)}"
                 )
             # Prepare header
             if from_line and to_line:

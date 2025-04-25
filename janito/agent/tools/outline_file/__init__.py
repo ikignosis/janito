@@ -19,7 +19,7 @@ class GetFileOutlineTool(ToolBase):
     def call(self, file_path: str) -> str:
         try:
             # Report the filename being outlined as the first step
-            self.report_info(f"📄 Outlining file: '{display_path(file_path)}'")
+            self.report_info(f"📄 Outlining file: '{display_path(file_path)}' ...")
             ext = os.path.splitext(file_path)[1].lower()
             with open(file_path, "r", encoding="utf-8", errors="replace") as f:
                 lines = f.readlines()

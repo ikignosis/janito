@@ -30,7 +30,7 @@ class RunPythonCommandTool(ToolBase):
         if not code.strip():
             self.report_warning("⚠️ Warning: Empty code provided. Operation skipped.")
             return "Warning: Empty code provided. Operation skipped."
-        self.report_info(f"🐍 Running Python code:\n{code}\n")
+        self.report_info(f"🐍 Running Python code: ...\n{code}\n")
         if interactive:
             self.report_info(
                 "⚠️  Warning: This code might be interactive, require user input, and might hang."

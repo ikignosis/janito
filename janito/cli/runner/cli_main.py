@@ -139,7 +139,15 @@ def run_cli(args):
         runtime_config.set("termweb_port", selected_port)
         from janito.cli.termweb_starter import start_termweb
 
-        termweb_proc, started = start_termweb(selected_port)
+        termweb_proc, started, termweb_stdout_path, termweb_stderr_path = start_termweb(
+            selected_port
+        )
+        # Store last running port in .janito/config.json if started
+        if started:
+            from janito.agent.config import local_config
+
+            local_config.set("termweb_last_running_port", selected_port)
+            local_config.save()
 
     # --- End termweb integration ---
     try:
@@ -149,6 +157,12 @@ def run_cli(args):
             start_chat_shell(
                 profile_manager,
                 continue_session=getattr(args, "continue_session", False),
+                termweb_stdout_path=(
+                    termweb_stdout_path if "termweb_stdout_path" in locals() else None
+                ),
+                termweb_stderr_path=(
+                    termweb_stderr_path if "termweb_stderr_path" in locals() else None
+                ),
             )
             sys.exit(0)
         # --- Prompt mode ---

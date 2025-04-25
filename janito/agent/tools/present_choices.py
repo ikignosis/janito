@@ -39,7 +39,7 @@ class PresentChoicesTool(ToolBase):
     def call(self, prompt: str, choices: List[str], multi_select: bool = False) -> str:
         if not choices:
             return "\u26a0\ufe0f No choices provided."
-        self.report_info(f"Prompting user: {prompt} (multi_select={multi_select})")
+        self.report_info(f"Prompting user: {prompt} (multi_select={multi_select}) ...")
         # Use the hand emoji as the pointer symbol
         if multi_select:
             result = questionary.checkbox(

@@ -14,7 +14,7 @@ Janito uses these tools automatically based on your prompt and context. This tab
 | **run_bash_command**  | Run a bash command and capture output.                           | `command` (str): bash command<br>`timeout` (int, optional)<br>`require_confirmation` (bool, opt.)   | File paths and line counts for output     | Requires bash (e.g., WSL or Git Bash on Windows). Use with caution.                     |
 | **find_files**        | Search for files matching a pattern.                             | `directories` (list)<br>`pattern` (str)<br>`recursive` (bool, optional)                            | List of matching file paths               | Respects .gitignore.                                                                  |
 | **get_file_outline**  | Get outline of a file's structure (classes, functions, etc.).    | `file_path` (str)                                                                                   | Outline summary                           | Useful for code navigation and analysis.                                               |
-| **get_lines**         | Read lines or full content from a file.                          | `file_path` (str)<br>`from_line` (int, optional)<br>`to_line` (int, optional)                      | File content                              | Specify line range or omit for full file.                                              |
+| **get_lines**         | Read lines or full content from a file.                          | `file_path` (str)<br>`from_line` (int, optional)<br>`to_line` (int, optional)                      | File content                              | Specify line range or omit for full content.                                              |
 | **move_file**         | Move a file to a new location.                                   | `src_path` (str)<br>`dest_path` (str)<br>`overwrite` (bool, optional)<br>`backup` (bool, optional) | Success or error message                  | Can create backup before moving.                                                       |
 | **remove_file**       | Remove a file.                                                   | `file_path` (str)<br>`backup` (bool, optional)                                                     | Success or error message                  | Can create backup before removing.                                                     |
 | **remove_directory**  | Remove a directory (optionally recursively).                     | `directory` (str)<br>`recursive` (bool, optional)<br>`backup` (bool, optional)                     | Success or error message                  | Use recursive for non-empty dirs.                                                      |
@@ -41,7 +41,7 @@ Janito uses these tools automatically based on your prompt and context. This tab
 | [Fetch URL](fetch_url.md) | Fetch and extract web page text |
 | [Find Files](find_files.md) | Search for files matching a pattern |
 | [Get File Outline](get_file_outline.md) | Outline of file structure |
-| [Get Lines](get_lines.md) | Read lines or full file content |
+| [Get Lines](get_lines.md) | Read lines or full content content |
 | [Move File](move_file.md) | Move a file |
 | [Present Choices](present_choices.md) | Present options to user |
 | [Remove Directory](remove_directory.md) | Remove a directory |

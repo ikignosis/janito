@@ -25,7 +25,9 @@ class RemoveDirectoryTool(ToolBase):
     def call(
         self, directory: str, recursive: bool = False, backup: bool = False
     ) -> str:
-        self.report_info(f"🗃️  Removing directory: {directory} (recursive={recursive})")
+        self.report_info(
+            f"🗃️  Removing directory: {directory} (recursive={recursive}) ..."
+        )
         backup_zip = None
         try:
             if backup and os.path.exists(directory) and os.path.isdir(directory):

@@ -18,9 +18,19 @@ def handle_tool_calls(tool_calls, message_handler=None):
                 f"Maximum number of tool calls ({max_tools}) reached in this chat session."
             )
         tool_entry = tool_registry._tool_registry[tool_call.function.name]
-        result = ToolExecutor(message_handler=message_handler).execute(
-            tool_entry, tool_call
-        )
-        tool_responses.append({"tool_call_id": tool_call.id, "content": result})
+        try:
+            result = ToolExecutor(message_handler=message_handler).execute(
+                tool_entry, tool_call
+            )
+            tool_responses.append({"tool_call_id": tool_call.id, "content": result})
+        except TypeError as e:
+            # Return the error as a tool result, asking to retry with correct params
+            error_msg = str(e)
+            tool_responses.append(
+                {
+                    "tool_call_id": tool_call.id,
+                    "content": f"Tool execution error: {error_msg}. Please retry with the correct parameters.",
+                }
+            )
         tool_calls_made += 1
     return tool_responses

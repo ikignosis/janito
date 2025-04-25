@@ -42,12 +42,12 @@ class SearchFilesTool(ToolBase):
             use_regex = False
         output = []
         for directory in directories:
-            info_str = (
-                f"\ud83d\udd0e Searching for pattern '{pattern}' in '{directory}'"
-            )
+            info_str = f"\ud83d\udd0e 🔍 Search for text '{pattern}' in '{directory}'"
             if recursive is False:
                 info_str += f" (recursive={recursive})"
-            self.report_info(info_str)
+            self.report_info(
+                info_str + (" ..." if not info_str.rstrip().endswith("...") else "")
+            )
             if recursive:
                 walker = os.walk(directory)
             else:

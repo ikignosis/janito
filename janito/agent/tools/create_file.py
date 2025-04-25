@@ -34,7 +34,7 @@ class CreateFileTool(ToolBase):
             if backup:
                 backup_path = path + ".bak"
                 shutil.copy2(path, backup_path)
-            self.report_info(f"📝 Updating file: '{disp_path}'...")
+            self.report_info(f"📝 Updating file: '{disp_path}' ...")
             mode = "w"
             updated = True
         else:
@@ -42,7 +42,7 @@ class CreateFileTool(ToolBase):
             dir_name = os.path.dirname(path)
             if dir_name:
                 os.makedirs(dir_name, exist_ok=True)
-            self.report_info(f"📝 Creating file: '{disp_path}' ... ")
+            self.report_info(f"📝 Creating file: '{disp_path}' ...")
             mode = "w"
             updated = False
         with open(path, mode, encoding="utf-8", errors="replace") as f:

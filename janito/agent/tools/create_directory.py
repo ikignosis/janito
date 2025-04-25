@@ -22,7 +22,7 @@ class CreateDirectoryTool(ToolBase):
         original_path = path
         path = expand_path(path)
         disp_path = display_path(original_path, path)
-        self.report_info(f"\U0001f4c1 Creating directory: '{disp_path}' ... ")
+        self.report_info(f"\U0001f4c1 Creating directory: '{disp_path}' ...")
         try:
             if os.path.exists(path):
                 if not os.path.isdir(path):
