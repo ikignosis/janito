@@ -5,6 +5,9 @@ import os
 def handle_start(console, state, **kwargs):
     save_path = os.path.join(".janito", "last_conversation.json")
 
+    # Clear the terminal screen
+    os.system("cls" if os.name == "nt" else "clear")
+
     # Clear in-memory conversation and prompt history
     state["messages"].clear()
     state["history_list"].clear()

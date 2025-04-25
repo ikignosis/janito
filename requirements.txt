@@ -1,5 +1,6 @@
 # Synced with pyproject. and actual imports
 flask
+bottle
 openai
 pathspec
 prompt_toolkit

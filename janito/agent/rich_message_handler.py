@@ -1,8 +1,41 @@
 from rich.console import Console
 from janito.agent.runtime_config import runtime_config, unified_config
 from janito.agent.message_handler_protocol import MessageHandlerProtocol
+import re
+import os
 
 console = Console()
+
+
+def _replace_filenames_with_links(markdown_text):
+    """
+    Scan markdown for filename-like patterns and replace with Markdown links to localhost if file exists and termweb_port is set.
+    """
+    port = runtime_config.get("termweb_port")
+    if not port:
+        return markdown_text  # No transformation if no port
+
+    # Pattern: words with dots and/or slashes, e.g. foo.py, path/to/file.md
+    # Avoid matching URLs or already-linked text
+    pattern = r"(?<!\w)([\w./\\-]+\.[\w]+)(?![\w/])"
+
+    def replacer(match):
+        filename = match.group(1)
+        if filename.startswith("http://") or filename.startswith("https://"):
+            return filename
+        # Normalize path
+        path = os.path.normpath(filename)
+        if os.path.exists(path):
+            abs_path = os.path.abspath(path)
+            try:
+                rel_path = os.path.relpath(abs_path, os.getcwd())
+            except ValueError:
+                rel_path = abs_path  # fallback if relpath fails
+            url = f"http://localhost:{port}/?path={abs_path}"
+            return f"[{rel_path}]({url})"
+        return filename
+
+    return re.sub(pattern, replacer, markdown_text)
 
 
 class RichMessageHandler(MessageHandlerProtocol):
@@ -43,6 +76,9 @@ class RichMessageHandler(MessageHandlerProtocol):
         if trust and msg_type != "content":
             return  # Suppress all except content
         if msg_type == "content":
+            # --- New logic: replace filenames with Markdown links ---
+            if isinstance(safe_message, str):
+                safe_message = _replace_filenames_with_links(safe_message)
             self.console.print(Markdown(safe_message))
         elif msg_type == "info":
             self.console.print(safe_message, style="cyan", end="")

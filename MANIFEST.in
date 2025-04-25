@@ -1,3 +1,6 @@
 # Exclude all .bak files from the package
 exclude *.bak
 recursive-exclude * *.bak
+
+# Include static files for termweb
+recursive-include janito/termweb/static *.*

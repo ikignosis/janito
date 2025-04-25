@@ -7,6 +7,30 @@ Janito is an AI-powered assistant for the command line and web that interprets n
 
 For a technical overview, see the [Architecture Guide](docs/reference/architecture.md).
 
+## 🧪 Experimental Feature: Termweb File Viewer
+
+Janito now includes an experimental lightweight web file viewer for use with the CLI chat shell. This feature allows you to click on file paths in the terminal (when using a Rich-compatible terminal) and instantly preview file contents in your browser—no full IDE required!
+
+### How to Use
+
+- The CLI chat shell now starts with the built-in file viewer enabled by default.
+- To disable it, use the `--no-termweb` flag:
+  ```bash
+  janito --no-termweb
+  ```
+- By default, the viewer runs at http://localhost:8088 (or the next available port up to 8100).
+- To specify a port, use `--termweb-port 8090`.
+- File paths in CLI output become clickable links that open the file in your browser.
+
+**Note:** This feature is experimental. It is intended for quick file previews and review, not for editing or production use. Feedback is welcome!
+
+### Why is this useful?
+- Enables instant file previews from the CLI without a full IDE.
+- Works with all Janito file tools and outputs that display file paths.
+- Uses the Rich library’s link markup for clickable terminal links.
+
+---
+
 ## 📖 Full Documentation & Overview
 - For structured and in-depth guides, visit the [Janito Documentation Site](https://docs.janito.dev).
 - For a high-level, user-friendly overview, see [janito.dev](https://janito.dev).
@@ -60,7 +84,7 @@ janito --web
 - 📁 **File & Directory Management:** Navigate, create, move, or remove files and folders.
 - 🧠 **Context-Aware:** Understands your project structure for precise edits.
 - 💬 **Interactive User Prompts:** Asks for clarification when needed.
-- 🧩 **Extensible Tooling:** Built-in tools for file operations, shell commands, directory and file management, Python code execution and validation, text replacement, and more.
+- 🛠️ **Extensible Tooling:** Built-in tools for file operations, shell commands, directory and file management, Python code execution and validation, text replacement, and more.
   - See [janito/agent/tools/README.md](janito/agent/tools/README.md) for the full list of built-in tools and their usage details. For the message handler model, see [docs/MESSAGE_HANDLER_MODEL.md](docs/MESSAGE_HANDLER_MODEL.md).
 - 🌐 **Web Interface (In Development):** Simple web UI for streaming responses and tool progress.
 
@@ -109,7 +133,7 @@ For details on using models hosted on Azure OpenAI, see [docs/AZURE_OPENAI.md](d
 
 ---
 
-## 🧩 System Prompt & Role
+## 🧑‍💻 System Prompt & Role
 
 Janito operates using a system prompt template that defines its behavior, communication profile, and capabilities. By default, Janito assumes the role of a "software engineer"—this means its responses and actions are tailored to the expectations and best practices of professional software engineering.
 
@@ -155,7 +179,7 @@ Vanilla mode is ideal for:
 
 > Note: Vanilla mode is a runtime switch and does not change the Agent API or class signatures. It is controlled via CLI/config only.
 
-## 🧑‍💻 AgentProfileManager: Profile, Role, and Prompt Management
+## 👨‍💻 AgentProfileManager: Profile, Role, and Prompt Management
 
 Janito now uses a dedicated `AgentProfileManager` class to manage user profiles, roles, interaction profiles, and system prompt selection. This manager:
 - Stores the current role (e.g., "software engineer") and interaction profile (e.g., "default", "technical").
@@ -194,7 +218,7 @@ janito --profile technical
 
 See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for full details.
 
-## 🧩 Combinatorial Style System
+## 🧑‍💻 Combinatorial Style System
 
 Janito now supports combinatorial profiles for system prompts, allowing you to combine a main profile (such as `default` or `technical`) with one or more feature extensions (such as `commit_all`).
 

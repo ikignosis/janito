@@ -95,6 +95,12 @@ if ($CurrentCommit -ne $TagCommit) {
 }
 
 
+# Remove site directory if it exists
+if (Test-Path "site") {
+    Print-Info "Removing site directory..."
+    Remove-Item -Recurse -Force site
+}
+
 # Build the package
 Print-Info "Removing old dist directory..."
 Remove-Item -Recurse -Force dist

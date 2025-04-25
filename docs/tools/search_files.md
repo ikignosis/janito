@@ -1,12 +1,12 @@
 # Tool: search_files
 
 **Description:**
-Search for a text pattern in all files within a directory and return matching lines. Respects .gitignore.
+Search for a text pattern (regex or plain string) in all files within a directory and return matching lines. Respects .gitignore.
 
 | Argument     | Type           | Description |
 |--------------|----------------|-------------|
 | directories  | list[str]      | List of directories to search in. |
-| pattern      | str            | Plain text substring to search for in files. (Not a regular expression or glob pattern.) |
+| pattern      | str            | Regex pattern or plain text substring to search for in files. Tries regex first, falls back to substring if regex is invalid. |
 | recursive    | bool           | Whether to search recursively in subdirectories. Defaults to True. |
 | **Returns**  | str            | Matching lines from files as a newline-separated string, or warning if pattern is empty. |
 

@@ -185,6 +185,17 @@ def create_parser():
         help="Print raw chunks as they are fetched from OpenAI (for debugging)",
     )
     parser.add_argument(
+        "--no-termweb",
+        action="store_true",
+        help="Disable the built-in lightweight web file viewer for terminal links (enabled by default)",
+    )
+    parser.add_argument(
+        "--termweb-port",
+        type=int,
+        default=8088,
+        help="Port for the termweb server (default: 8088)",
+    )
+    parser.add_argument(
         "--detect",
         action="store_true",
         help="Start project configuration: discover core technologies and save to .janito/tech.txt",

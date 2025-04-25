@@ -93,7 +93,7 @@ class ReplaceTextInFileTool(ToolBase):
 
             if match_lines:
                 lines_str = ", ".join(str(line_no) for line_no in match_lines)
-                self.report_success(f" \u2705 replaced at lines {lines_str}")
+                self.report_success(f" \u2705 replaced at {lines_str}")
             else:
                 self.report_success(" \u2705 replaced (lines unknown)")
 

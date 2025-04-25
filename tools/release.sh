@@ -102,6 +102,12 @@ if [ "$CURRENT_COMMIT" != "$TAG_COMMIT" ]; then
 fi
 
 
+# Remove site directory if it exists
+if [ -d "site" ]; then
+    print_info "Removing site directory..."
+    rm -rf site
+fi
+
 # Build the package
 print_info "Removing old dist directory..."
 rm -rf dist

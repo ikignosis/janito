@@ -3,17 +3,18 @@ from janito.agent.tool_registry import register_tool
 from janito.agent.tools.tools_utils import pluralize
 
 import os
+import re
 from janito.agent.tools.gitignore_utils import filter_ignored
 
 
 @register_tool(name="search_files")
 class SearchFilesTool(ToolBase):
     """
-    Search for a text pattern in all files within a directory and return matching lines. Respects .gitignore.
+    Search for a text pattern (regex or plain string) in all files within a directory and return matching lines. Respects .gitignore.
 
     Args:
         directories (list[str]): List of directories to search in.
-        pattern (str): Plain text substring to search for in files. (Not a regular expression or glob pattern.)
+        pattern (str): Regex pattern or plain text substring to search for in files. Tries regex first, falls back to substring if regex is invalid.
         recursive (bool): Whether to search recursively in subdirectories. Defaults to True.
     Returns:
         str: Matching lines from files as a newline-separated string, each formatted as 'filepath:lineno: line'. Example:
@@ -29,12 +30,21 @@ class SearchFilesTool(ToolBase):
     ) -> str:
         if not pattern:
             self.report_warning(
-                "⚠️ Warning: Empty search pattern provided. Operation skipped."
+                "\u26a0\ufe0f Warning: Empty search pattern provided. Operation skipped."
             )
             return "Warning: Empty search pattern provided. Operation skipped."
+        # Try compiling regex
+        try:
+            regex = re.compile(pattern)
+            use_regex = True
+        except re.error:
+            regex = None
+            use_regex = False
         output = []
         for directory in directories:
-            info_str = f"🔎 Searching for text '{pattern}' in '{directory}'"
+            info_str = (
+                f"\ud83d\udd0e Searching for pattern '{pattern}' in '{directory}'"
+            )
             if recursive is False:
                 info_str += f" (recursive={recursive})"
             self.report_info(info_str)
@@ -57,9 +67,19 @@ class SearchFilesTool(ToolBase):
                     try:
                         with open(path, "r", encoding="utf-8", errors="ignore") as f:
                             for lineno, line in enumerate(f, 1):
-                                if pattern in line:
-                                    output.append(f"{path}:{lineno}: {line.strip()}")
+                                if use_regex:
+                                    if regex.search(line):
+                                        output.append(
+                                            f"{path}:{lineno}: {line.strip()}"
+                                        )
+                                else:
+                                    if pattern in line:
+                                        output.append(
+                                            f"{path}:{lineno}: {line.strip()}"
+                                        )
                     except Exception:
                         continue
-        self.report_success(f" ✅ {len(output)} {pluralize('line', len(output))} found")
+        self.report_success(
+            f" \u2705 {len(output)} {pluralize('line', len(output))} found"
+        )
         return "\n".join(output)
