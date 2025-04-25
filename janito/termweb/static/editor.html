@@ -46,5 +46,28 @@ print("Hello, janito.dev!")
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
     <script src="/static/termweb.js"></script>
+    <script>
+    // --- Load file content via AJAX if ?path=... is present ---
+    function getQueryParam(name) {
+        const url = new URL(window.location.href);
+        return url.searchParams.get(name);
+    }
+    const filePath = getQueryParam('path');
+    if (filePath) {
+        fetch(`/api/explorer/${encodeURIComponent(filePath)}`)
+            .then(resp => resp.json())
+            .then(data => {
+                if (data.type === 'file') {
+                    document.getElementById('code').value = data.content;
+                    document.getElementById('filename-label').textContent = ' [' + data.path + ']';
+                } else if (data.error) {
+                    document.getElementById('code').value = '# Error: ' + data.error;
+                }
+            })
+            .catch(err => {
+                document.getElementById('code').value = '# Error loading file: ' + err;
+            });
+    }
+    </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-from bottle import Bottle, static_file, response
+from bottle import Bottle, static_file, response, request
 import os
 import json
 
@@ -10,6 +10,9 @@ BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 @app.route("/")
 def index():
     static_dir = os.path.join(os.path.dirname(__file__), "static")
+    file_path = request.query.get("path")
+    if file_path:
+        return static_file("editor.html", root=static_dir)
     return static_file("index.html", root=static_dir)
 
 
