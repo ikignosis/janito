@@ -7,16 +7,15 @@ Janito is an AI-powered assistant for the command line and web that interprets n
 
 For a technical overview, see the [Architecture Guide](docs/reference/architecture.md).
 
-## 🧪 Experimental Feature: Termweb File Viewer
+## 🧪 Experimental Feature: Liteweb File Viewer
 
 Janito now includes an experimental lightweight web file viewer for use with the CLI chat shell. This feature allows you to click on file paths in the terminal (when using a Rich-compatible terminal) and instantly preview file contents in your browser—no full IDE required!
 
 ### How to Use
 
-- The CLI chat shell now starts with the built-in file viewer enabled by default.
-- To disable it, use the `--no-termweb` flag:
+- Start the CLI chat shell with the `--termweb` flag:
   ```bash
-  janito --no-termweb
+  janito --termweb
   ```
 - By default, the viewer runs at http://localhost:8088 (or the next available port up to 8100).
 - To specify a port, use `--termweb-port 8090`.

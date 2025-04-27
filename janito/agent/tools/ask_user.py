@@ -16,7 +16,7 @@ class AskUserTool(ToolBase):
             - "Some detailed answer..."
     """
 
-    def call(self, question: str) -> str:
+    def run(self, question: str) -> str:
         from rich import print as rich_print
         from rich.panel import Panel
         from prompt_toolkit import PromptSession

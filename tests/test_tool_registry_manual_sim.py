@@ -19,7 +19,7 @@ class DummyTool(ToolBase):
 
     name = "dummy"
 
-    def call(self, a, b) -> str:
+    def run(self, a, b) -> str:
         """
         Adds two numbers as strings.
         """

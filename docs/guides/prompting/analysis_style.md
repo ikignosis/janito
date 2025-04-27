@@ -23,10 +23,7 @@ You are a(n) [role] with expertise in [domain]. Your task is to...
 - You are a data scientist with experience in time series analysis. Examine the dataset and summarize key trends.
 
 ## Extending with Analysis Actions
-After declaring the role and domain, extend the prompt with clear, actionable analysis instructions. For example, in the `detect_tech_prompt.j2` template, after the role declaration, the prompt specifies the analysis action:
-
-> Your task is to analyze the provided project files and identify the core technologies used in the project. This includes programming languages, frameworks, major libraries, and any notable tools or platforms. Output a concise, bullet-pointed list of the detected technologies, each on a new line. Do not include explanations or extra commentary.
-
+After declaring the role and domain, extend the prompt with clear, actionable analysis instructions. 
 ### Guidance:
 - Clearly state the analysis objective (e.g., "identify core technologies", "summarize vulnerabilities", "extract key metrics").
 - Specify the expected output format (e.g., bullet points, summary, table).

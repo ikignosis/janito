@@ -39,7 +39,7 @@ nav:
       - Why Janito?: about/why.md
       - Janito vs Web Chat Agents: about/vs_webchats.md
       - Costs & Value Transparency: about/costs.md
-  - Alternatives: ALTERNATIVES.md
+  - Alternatives: alternatives.md
 # theme: readthedocs
 # For more themes, see https://squidfunk.github.io/mkdocs-material/
 

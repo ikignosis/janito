@@ -4,37 +4,132 @@
     <link rel="icon" type="image/svg+xml" href="/static/termicon.svg">
     <link rel="shortcut icon" type="image/x-icon" href="/static/favicon.ico">
     <meta charset="UTF-8">
-    <title>TermWeb Dual Pane Editor &mdash; janito.dev</title>
+    <title>TermWeb Editor — janito.dev</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
     <link rel="stylesheet" href="/static/termweb.css">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background: #181a1b;
+            color: #eee;
+            transition: background 0.2s, color 0.2s;
+        }
+        body.light-theme {
+            background: #f5f5f5;
+            color: #222;
+        }
+        .main {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: stretch;
+            align-items: stretch;
+            min-height: 0;
+        }
+        .editor-pane {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 0;
+        }
+        .CodeMirror {
+            flex: 1 1 auto;
+            height: 100% !important;
+            min-height: 0;
+            font-size: 1.1em;
+            background: #282a36;
+            color: #f8f8f2;
+            border-radius: 0;
+            border: none;
+            transition: background 0.2s, color 0.2s;
+        }
+        body.light-theme .CodeMirror {
+            background: #fff;
+            color: #222;
+        }
+        .footer {
+            flex-shrink: 0;
+            background: #222;
+            color: #eee;
+            padding: 12px 0 8px 0;
+            text-align: center;
+            width: 100%;
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            z-index: 100;
+            transition: background 0.2s, color 0.2s;
+        }
+        body.light-theme .footer {
+            background: #eaeaea;
+            color: #222;
+        }
+        .footer ul {
+            list-style: none;
+            padding: 0;
+            margin: 8px 0 0 0;
+            display: flex;
+            justify-content: center;
+            gap: 2em;
+        }
+        .footer li {
+            display: inline;
+        }
+        .header {
+            background: #222;
+            color: #fff;
+            padding: 10px 0;
+            text-align: center;
+            font-size: 1.3em;
+            font-weight: bold;
+            position: relative;
+            transition: background 0.2s, color 0.2s;
+        }
+        body.light-theme .header {
+            background: #eaeaea;
+            color: #222;
+        }
+        .theme-switcher {
+            position: absolute;
+            right: 20px;
+            top: 10px;
+            background: #444;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 14px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.2s, color 0.2s;
+        }
+        body.light-theme .theme-switcher {
+            background: #ddd;
+            color: #222;
+        }
+    </style>
 </head>
 <body>
     <div class="header">
-        TermWeb Dual Pane Editor
+        TermWeb Editor
+        <button class="theme-switcher" id="theme-switcher">Switch to Light Theme</button>
     </div>
     <div class="main">
         <div class="editor-pane">
-            <div class="pane-header">
-                <span>Editor (CodeMirror)<span class="filename-label" id="filename-label"></span></span>
-            </div>
-            <textarea id="code" name="code"># Welcome to TermWeb!
-# This is a live CodeMirror editor.
-# Use the toggle button to show/hide the preview panel.
-
-print("Hello, janito.dev!")
-</textarea>
-        </div>
-        <div class="preview-pane" id="preview-pane">
-            <div class="pane-header">
-                <span>Preview</span>
-                <button class="toggle-btn" id="toggle-preview">Hide Preview</button>
-            </div>
-            <pre id="preview-content"></pre>
+            <textarea id="code" name="code"></textarea>
         </div>
     </div>
     <div class="footer">
         <div class="subtitle">
-            Powered by <a href="https://janito.dev" target="_blank">janito.dev</a> &mdash; AI-powered coding agent
+            Powered by <a href="https://janito.dev" target="_blank">janito.dev</a> — AI-powered coding agent
         </div>
         <ul>
             <li>🌐 <a href="https://janito.dev" target="_blank">janito.dev</a></li>
@@ -45,7 +140,7 @@ print("Hello, janito.dev!")
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
-    <script src="/static/termweb.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.js"></script>
     <script>
     // --- Load file content via AJAX if ?path=... is present ---
     function getQueryParam(name) {
@@ -53,21 +148,62 @@ print("Hello, janito.dev!")
         return url.searchParams.get(name);
     }
     const filePath = getQueryParam('path');
+    let initialContent = `# Welcome to TermWeb!\n# This is a live CodeMirror editor.\n\nprint("Hello, janito.dev!")`;
     if (filePath) {
         fetch(`/api/explorer/${encodeURIComponent(filePath)}`)
             .then(resp => resp.json())
             .then(data => {
                 if (data.type === 'file') {
-                    document.getElementById('code').value = data.content;
-                    document.getElementById('filename-label').textContent = ' [' + data.path + ']';
+                    initialContent = data.content;
+                    if (window.editorInstance) {
+                        window.editorInstance.setValue(initialContent);
+                    }
                 } else if (data.error) {
-                    document.getElementById('code').value = '# Error: ' + data.error;
+                    initialContent = '# Error: ' + data.error;
+                    if (window.editorInstance) {
+                        window.editorInstance.setValue(initialContent);
+                    }
                 }
             })
             .catch(err => {
-                document.getElementById('code').value = '# Error loading file: ' + err;
+                initialContent = '# Error loading file: ' + err;
+                if (window.editorInstance) {
+                    window.editorInstance.setValue(initialContent);
+                }
             });
     }
+    document.addEventListener('DOMContentLoaded', function() {
+        var editorInstance = CodeMirror.fromTextArea(document.getElementById('code'), {
+            lineNumbers: true,
+            mode: 'python',
+            theme: 'dracula',
+            indentUnit: 4,
+            tabSize: 4,
+        });
+        window.editorInstance = editorInstance;
+        editorInstance.setSize('100%', 'calc(100vh - 60px - 70px)'); // header/footer height
+        editorInstance.setValue(initialContent);
+
+        // Theme switcher logic
+        var themeSwitcher = document.getElementById('theme-switcher');
+        var isDark = true;
+        themeSwitcher.addEventListener('click', function() {
+            isDark = !isDark;
+            if (isDark) {
+                document.body.classList.remove('light-theme');
+                editorInstance.setOption('theme', 'dracula');
+                themeSwitcher.textContent = 'Switch to Light Theme';
+            } else {
+                document.body.classList.add('light-theme');
+                editorInstance.setOption('theme', 'default');
+                themeSwitcher.textContent = 'Switch to Dark Theme';
+            }
+        });
+        // Set initial state
+        document.body.classList.remove('light-theme');
+        editorInstance.setOption('theme', 'dracula');
+        themeSwitcher.textContent = 'Switch to Light Theme';
+    });
     </script>
 </body>
 </html>

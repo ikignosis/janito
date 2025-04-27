@@ -12,16 +12,16 @@ def register_tool(tool=None, *, name: str = None):
     if not (isinstance(tool, type) and issubclass(tool, ToolBase)):
         raise TypeError("Tool must be a class derived from ToolBase.")
     instance = tool()
-    if not hasattr(instance, "call") or not callable(instance.call):
+    if not hasattr(instance, "run") or not callable(instance.run):
         raise TypeError(
             f"Tool '{tool.__name__}' must implement a callable 'call' method."
         )
     tool_name = override_name or instance.name
     if tool_name in _tool_registry:
         raise ValueError(f"Tool '{tool_name}' is already registered.")
-    schema = generate_openai_function_schema(instance.call, tool_name, tool_class=tool)
+    schema = generate_openai_function_schema(instance.run, tool_name, tool_class=tool)
     _tool_registry[tool_name] = {
-        "function": instance.call,
+        "function": instance.run,
         "description": schema["description"],
         "parameters": schema["parameters"],
         "class": tool,

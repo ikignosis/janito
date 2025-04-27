@@ -66,13 +66,10 @@ class Agent:
         self,
         messages,
         message_handler=None,
-        verbose_response=False,
         spinner=False,
         max_tokens=None,
         max_rounds=50,
-        verbose_events=False,
         stream=False,
-        verbose_stream=False,
     ):
         """
         Start a chat conversation with the agent.
@@ -80,16 +77,16 @@ class Agent:
         Args:
             messages: List of message dicts.
             message_handler: Optional handler for streaming or event messages.
-            verbose_response: Print full response for debugging.
             spinner: Show spinner during request.
             max_tokens: Max tokens for completion.
             max_rounds: Max conversation rounds.
-            verbose_events: Print all events for debugging.
             stream: If True, enable OpenAI streaming mode (yields tokens incrementally).
         Returns:
             If stream=False: dict with 'content', 'usage', and 'usage_history'.
             If stream=True: generator yielding content chunks or events.
         """
+        from janito.agent.runtime_config import runtime_config
+
         max_retries = 5
         for attempt in range(1, max_retries + 1):
             try:
@@ -97,12 +94,12 @@ class Agent:
                     messages,
                     max_rounds=max_rounds,
                     message_handler=message_handler,
-                    verbose_response=verbose_response,
+                    verbose_response=runtime_config.get("verbose_response", False),
                     spinner=spinner,
                     max_tokens=max_tokens,
-                    verbose_events=verbose_events,
+                    verbose_events=runtime_config.get("verbose_events", False),
                     stream=stream,
-                    verbose_stream=verbose_stream,
+                    verbose_stream=runtime_config.get("verbose_stream", False),
                 )
             except ProviderError as e:
                 error_data = getattr(e, "error_data", {}) or {}

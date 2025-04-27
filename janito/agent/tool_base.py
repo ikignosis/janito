@@ -17,7 +17,7 @@ class ToolBase(ABC):
         self.update_progress({"type": "stderr", "message": message})
 
     @abstractmethod
-    def call(self, **kwargs):
+    def run(self, **kwargs):
         """
         Abstract call method for tool execution. Should be overridden by subclasses.
 

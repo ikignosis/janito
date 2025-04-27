@@ -14,6 +14,7 @@ def handle_help(console, **kwargs):
   /config   - Show or set configuration (see: /config show, /config set local|global key=value)
   /termweb-logs - Show the last lines of the latest termweb logs
   /termweb-status - Show status information about the running termweb server
+  /verbose [on|off] - Show or set verbose mode for this session
 """
     )
 

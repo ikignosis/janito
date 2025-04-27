@@ -18,7 +18,7 @@ class CreateDirectoryTool(ToolBase):
             - "\u2757 Cannot create directory: ..."
     """
 
-    def call(self, path: str) -> str:
+    def run(self, path: str) -> str:
         original_path = path
         path = expand_path(path)
         disp_path = display_path(original_path, path)

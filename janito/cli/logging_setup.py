@@ -2,8 +2,13 @@ import os
 import logging
 
 
+from janito.agent.runtime_config import runtime_config
+
+
 def setup_verbose_logging(args):
-    if args.verbose_http or args.verbose_http_raw:
+    if runtime_config.get("verbose_http", False) or runtime_config.get(
+        "verbose_http_raw", False
+    ):
         httpx_logger = logging.getLogger("httpx")
         httpx_logger.setLevel(logging.DEBUG)
         handler = logging.StreamHandler()
@@ -12,7 +17,7 @@ def setup_verbose_logging(args):
         )
         httpx_logger.addHandler(handler)
 
-    if args.verbose_http_raw:
+    if runtime_config.get("verbose_http_raw", False):
         os.environ["HTTPX_LOG_LEVEL"] = "trace"
 
         httpcore_logger = logging.getLogger("httpcore")

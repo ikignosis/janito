@@ -6,12 +6,12 @@ ToolExecutor: Responsible for executing tools, validating arguments, handling er
 import json
 import inspect
 from janito.agent.tool_base import ToolBase
+from janito.agent.runtime_config import runtime_config
 
 
 class ToolExecutor:
-    def __init__(self, message_handler=None, verbose=False):
+    def __init__(self, message_handler=None):
         self.message_handler = message_handler
-        self.verbose = verbose
 
     def execute(self, tool_entry, tool_call):
         import uuid
@@ -19,10 +19,16 @@ class ToolExecutor:
         call_id = getattr(tool_call, "id", None) or str(uuid.uuid4())
         func = tool_entry["function"]
         args = json.loads(tool_call.function.arguments)
-        if self.verbose:
+        tool_call_reason = args.pop(
+            "tool_call_reason", None
+        )  # Extract and remove 'tool_call_reason' if present
+        verbose = runtime_config.get("verbose", False)
+        if verbose:
             print(
                 f"[ToolExecutor] {tool_call.function.name} called with arguments: {args}"
             )
+        if runtime_config.get("verbose_reason", False) and tool_call_reason:
+            print(f"[ToolExecutor] Reason for call: {tool_call_reason}")
         instance = None
         if hasattr(func, "__self__") and isinstance(func.__self__, ToolBase):
             instance = func.__self__
@@ -30,14 +36,15 @@ class ToolExecutor:
                 instance._progress_callback = self.message_handler.handle_message
         # Emit tool_call event before calling the tool
         if self.message_handler:
-            self.message_handler.handle_message(
-                {
-                    "type": "tool_call",
-                    "tool": tool_call.function.name,
-                    "call_id": call_id,
-                    "arguments": args,
-                }
-            )
+            event = {
+                "type": "tool_call",
+                "tool": tool_call.function.name,
+                "call_id": call_id,
+                "arguments": args,
+            }
+            if tool_call_reason:
+                event["tool_call_reason"] = tool_call_reason
+            self.message_handler.handle_message(event)
         # Argument validation
         sig = inspect.signature(func)
         try:
@@ -45,36 +52,39 @@ class ToolExecutor:
         except TypeError as e:
             error_msg = f"Argument validation error for tool '{tool_call.function.name}': {str(e)}"
             if self.message_handler:
-                self.message_handler.handle_message(
-                    {
-                        "type": "tool_error",
-                        "tool": tool_call.function.name,
-                        "call_id": call_id,
-                        "error": error_msg,
-                    }
-                )
+                error_event = {
+                    "type": "tool_error",
+                    "tool": tool_call.function.name,
+                    "call_id": call_id,
+                    "error": error_msg,
+                }
+                if tool_call_reason:
+                    error_event["tool_call_reason"] = tool_call_reason
+                self.message_handler.handle_message(error_event)
             raise TypeError(error_msg)
         # Execute tool
         try:
             result = func(**args)
             if self.message_handler:
-                self.message_handler.handle_message(
-                    {
-                        "type": "tool_result",
-                        "tool": tool_call.function.name,
-                        "call_id": call_id,
-                        "result": result,
-                    }
-                )
+                result_event = {
+                    "type": "tool_result",
+                    "tool": tool_call.function.name,
+                    "call_id": call_id,
+                    "result": result,
+                }
+                if tool_call_reason:
+                    result_event["tool_call_reason"] = tool_call_reason
+                self.message_handler.handle_message(result_event)
             return result
         except Exception as e:
             if self.message_handler:
-                self.message_handler.handle_message(
-                    {
-                        "type": "tool_error",
-                        "tool": tool_call.function.name,
-                        "call_id": call_id,
-                        "error": str(e),
-                    }
-                )
+                error_event = {
+                    "type": "tool_error",
+                    "tool": tool_call.function.name,
+                    "call_id": call_id,
+                    "error": str(e),
+                }
+                if tool_call_reason:
+                    error_event["tool_call_reason"] = tool_call_reason
+                self.message_handler.handle_message(error_event)
             raise

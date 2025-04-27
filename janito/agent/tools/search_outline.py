@@ -3,8 +3,8 @@ from janito.agent.tool_registry import register_tool
 from janito.agent.tools.tools_utils import (
     pluralize,
     display_path,
-    find_files_with_extensions,
 )
+from janito.agent.tools.dir_walk_utils import walk_dir_with_gitignore
 from janito.agent.tools.outline_file.python_outline import parse_python_outline
 from janito.agent.tools.outline_file.markdown_outline import parse_markdown_outline
 import os
@@ -22,18 +22,17 @@ class SearchOutlineTool(ToolBase):
         pattern (str): Substring or regex to match in outline items (function/class/header names).
         file_types (list[str], optional): File extensions to include (default: ['.py', '.md']).
         regex (bool, optional): If True, use regex matching; otherwise, substring. Defaults to False.
-        recursive (bool, optional): Whether to search subdirectories. Defaults to True.
+
     Returns:
         str: Newline-separated summary of matches: file, line, symbol/type, matched text.
     """
 
-    def call(
+    def run(
         self,
         directories: list[str],
         pattern: str,
         file_types: list[str] = None,
         regex: bool = False,
-        recursive: bool = True,
     ) -> str:
         if not pattern:
             self.report_warning(
@@ -42,7 +41,12 @@ class SearchOutlineTool(ToolBase):
             return "Warning: Empty search pattern provided. Operation skipped."
         if file_types is None:
             file_types = [".py", ".md"]
-        files = find_files_with_extensions(directories, file_types, recursive=recursive)
+        files = []
+        for directory in directories:
+            for root, dirs, filenames in walk_dir_with_gitignore(directory):
+                for filename in filenames:
+                    if any(filename.lower().endswith(ext) for ext in file_types):
+                        files.append(os.path.join(root, filename))
         if not files:
             self.report_warning("No files found with supported extensions.")
             return "No files found with supported extensions."

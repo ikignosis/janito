@@ -15,10 +15,8 @@ from . import rich_live
 from . import run_bash_command
 from . import run_powershell_command
 from . import run_python_command
-from . import search_files
-from . import tools_utils
-from . import memory
 from . import present_choices
+from . import search_text
 
 __all__ = [
     "ask_user",
@@ -42,4 +40,5 @@ __all__ = [
     "tools_utils",
     "memory",
     "present_choices",
+    "search_text",
 ]

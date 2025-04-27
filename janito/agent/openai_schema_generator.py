@@ -8,6 +8,7 @@ MUST BE IMPLEMENTED:
 import inspect
 import re
 import typing
+from collections import OrderedDict
 
 PYTHON_TYPE_TO_JSON = {
     str: "string",
@@ -121,8 +122,14 @@ def generate_openai_function_schema(func, tool_name: str, tool_class=None):
             f"Tool '{tool_name}' is missing docstring documentation for parameter(s): {', '.join(undocumented)}.\n"
             f"Parameter documentation must be provided in the Tool class docstring, not the method docstring."
         )
-    properties = {}
+    properties = OrderedDict()
     required = []
+    # Inject tool_call_reason as the first required parameter
+    properties["tool_call_reason"] = {
+        "type": "string",
+        "description": "The reason or context for why this tool is being called. This is required for traceability.",
+    }
+    required.append("tool_call_reason")
     for name, param in sig.parameters.items():
         if name == "self":
             continue

@@ -27,7 +27,7 @@ class RunPowerShellCommandTool(ToolBase):
         str: Output and status message, or file paths/line counts if output is large.
     """
 
-    def call(
+    def run(
         self,
         command: str,
         timeout: int = 60,

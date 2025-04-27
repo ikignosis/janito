@@ -24,7 +24,7 @@ class RunBashCommandTool(ToolBase):
         str: File paths and line counts for stdout and stderr.
     """
 
-    def call(
+    def run(
         self,
         command: str,
         timeout: int = 60,

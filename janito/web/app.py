@@ -15,7 +15,7 @@ import threading
 import traceback
 import sys
 
-from janito.agent.runtime_config import unified_config
+from janito.agent.runtime_config import unified_config, runtime_config
 
 # Render system prompt from config
 role = unified_config.get("role", "software engineer")
@@ -27,9 +27,9 @@ else:
         api_key=unified_config.get("api_key"),
         model=unified_config.get("model"),
         role=role,
-        profile=unified_config.get("profile", "default"),
+        profile_name="base",
         interaction_mode=unified_config.get("interaction_mode", "prompt"),
-        verbose_tools=unified_config.get("verbose_tools", False),
+        verbose_tools=runtime_config.get("verbose_tools", False),
         base_url=unified_config.get("base_url", None),
         azure_openai_api_version=unified_config.get(
             "azure_openai_api_version", "2023-05-15"

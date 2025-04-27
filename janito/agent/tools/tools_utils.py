@@ -31,14 +31,14 @@ def pluralize(word: str, count: int) -> str:
     return word + "s"
 
 
-def find_files_with_extensions(directories, extensions, recursive=True):
+def find_files_with_extensions(directories, extensions, max_depth=0):
     """
     Find files in given directories with specified extensions, respecting .gitignore.
 
     Args:
         directories (list[str]): Directories to search.
         extensions (list[str]): File extensions to include (e.g., ['.py', '.md']).
-        recursive (bool): Whether to search subdirectories.
+        max_depth (int, optional): Maximum directory depth to search. If 0, unlimited.
     Returns:
         list[str]: List of matching file paths.
     """
@@ -47,8 +47,8 @@ def find_files_with_extensions(directories, extensions, recursive=True):
         for root, dirs, files in os.walk(directory):
             rel_path = os.path.relpath(root, directory)
             depth = 0 if rel_path == "." else rel_path.count(os.sep) + 1
-            if not recursive and depth > 0:
-                break
+            if max_depth > 0 and depth > max_depth:
+                continue
             dirs, files = filter_ignored(root, dirs, files)
             for filename in files:
                 if any(filename.lower().endswith(ext) for ext in extensions):

@@ -33,7 +33,6 @@ def get_toolbar_func(
     model_name=None,
     role_ref=None,
     style_ref=None,
-    profile_ref=None,
     version=None,
 ):
     from prompt_toolkit.application.current import get_app
@@ -53,16 +52,12 @@ def get_toolbar_func(
         width = get_app().output.get_size().columns
         model_part = f" Model: <model>{model_name}</model>" if model_name else ""
         role_part = ""
-        profile_part = ""
         vanilla_mode = runtime_config.get("vanilla_mode", False)
         if role_ref and not vanilla_mode:
             role = role_ref()
             if role:
                 role_part = f"Role: <role>{role}</role>"
-        if profile_ref and not vanilla_mode:
-            profile = profile_ref()
-            if profile:
-                profile_part = f"Profile: <profile>{profile}</profile>"
+
         style_part = ""
         if style_ref:
             style = style_ref()
@@ -75,8 +70,7 @@ def get_toolbar_func(
         first_line_parts = []
         if model_part:
             first_line_parts.append(model_part)
-        if profile_part:
-            first_line_parts.append(profile_part)
+
         if role_part:
             first_line_parts.append(role_part)
         if style_part:
@@ -154,7 +148,6 @@ def get_prompt_session(get_toolbar_func, mem_history):
             "bottom-toolbar": "bg:#333333 #ffffff",
             "model": "bold bg:#005f5f #ffffff",
             "role": "bold ansiyellow",
-            "profile": "bold ansiyellow",
             "tokens_in": "ansicyan bold",
             "tokens_out": "ansigreen bold",
             "tokens_total": "ansiyellow bold",

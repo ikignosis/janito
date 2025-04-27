@@ -6,6 +6,7 @@ import time
 import json
 from janito.agent.runtime_config import runtime_config
 from janito.agent.tool_registry import get_tool_schemas
+from janito.agent.conversation_exceptions import NoToolSupportError
 
 
 def get_openai_response(
@@ -87,6 +88,75 @@ def retry_api_call(api_func, max_retries=5, *args, **kwargs):
                 raise last_exception
         except Exception as e:
             last_exception = e
+            status_code = None
+            error_message = str(e)
+            retry_after = None
+            # Detect specific tool support error
+            if "No endpoints found that support tool use" in error_message:
+                print("API does not support tool use. ")
+                raise NoToolSupportError(error_message)
+            # Try to extract status code and Retry-After from known exception types or message
+            if hasattr(e, "status_code"):
+                status_code = getattr(e, "status_code")
+            elif hasattr(e, "response") and hasattr(e.response, "status_code"):
+                status_code = getattr(e.response, "status_code")
+                # Check for Retry-After header
+                if hasattr(e.response, "headers") and e.response.headers:
+                    retry_after = e.response.headers.get("Retry-After")
+            else:
+                # Try to parse from error message
+                import re
+
+                match = re.search(r"[Ee]rror code: (\d{3})", error_message)
+                if match:
+                    status_code = int(match.group(1))
+                # Try to find Retry-After in message
+                retry_after_match = re.search(
+                    r"Retry-After['\"]?:?\s*(\d+)", error_message
+                )
+                if retry_after_match:
+                    retry_after = retry_after_match.group(1)
+            # Decide retry logic based on status code
+            if status_code is not None:
+                if status_code == 429:
+                    # Use Retry-After if available, else exponential backoff
+                    if retry_after is not None:
+                        try:
+                            wait_time = int(float(retry_after))
+                        except Exception:
+                            wait_time = 2**attempt
+                    else:
+                        wait_time = 2**attempt
+                    if attempt < max_retries:
+                        print(
+                            f"OpenAI API rate limit (429) (attempt {attempt}/{max_retries}): {e}. Retrying in {wait_time} seconds..."
+                        )
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        print(
+                            "Max retries for OpenAI API rate limit reached. Raising error."
+                        )
+                        raise last_exception
+                elif 500 <= status_code < 600:
+                    # Retry on server errors
+                    if attempt < max_retries:
+                        wait_time = 2**attempt
+                        print(
+                            f"OpenAI API server error (attempt {attempt}/{max_retries}): {e}. Retrying in {wait_time} seconds..."
+                        )
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        print(
+                            "Max retries for OpenAI API server error reached. Raising error."
+                        )
+                        raise last_exception
+                elif 400 <= status_code < 500:
+                    # Do not retry on client errors (except 429)
+                    print(f"OpenAI API client error {status_code}: {e}. Not retrying.")
+                    raise last_exception
+            # If status code not detected, fallback to previous behavior
             if attempt < max_retries:
                 wait_time = 2**attempt
                 print(

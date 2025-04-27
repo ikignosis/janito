@@ -20,14 +20,14 @@ class GetLinesTool(ToolBase):
             - "❗ not found"
     """
 
-    def call(self, file_path: str, from_line: int = None, to_line: int = None) -> str:
+    def run(self, file_path: str, from_line: int = None, to_line: int = None) -> str:
         from janito.agent.tools.tools_utils import display_path
 
         disp_path = display_path(file_path)
         if from_line and to_line:
             self.report_info(f"📄 Reading {disp_path} lines {from_line}-{to_line} ...")
         else:
-            self.report_info(f"📄 Reading {disp_path} (all lines) ...")
+            self.report_info(f"📄 Reading {disp_path} all ...")
 
         try:
             with open(file_path, "r", encoding="utf-8", errors="replace") as f:

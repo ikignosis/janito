@@ -21,67 +21,22 @@ def run_cli(args):
         print(f"janito version {__version__}")
         sys.exit(0)
 
-    # --detect: exploratory workflow to detect core technologies
-    if getattr(args, "detect", False):
-        import os
-        from rich.console import Console
+    # Set vanilla mode if -V/--vanilla is passed
+    if getattr(args, "vanilla", False):
+        runtime_config.set("vanilla_mode", True)
 
-        console = Console()
-        prompt_path = os.path.abspath(
-            os.path.join(
-                os.path.dirname(__file__),
-                "..",
-                "..",
-                "agent",
-                "templates",
-                "detect_tech_prompt.j2",
-            )
-        )
-        with open(prompt_path, "r", encoding="utf-8") as f:
-            detect_prompt = f.read()
-        api_key = get_api_key()
-        model = unified_config.get("model")
-        base_url = unified_config.get("base_url", "https://openrouter.ai/api/v1")
-        azure_openai_api_version = unified_config.get(
-            "azure_openai_api_version", "2023-05-15"
-        )
-        use_azure_openai = unified_config.get("use_azure_openai", False)
-        profile_manager = AgentProfileManager(
-            api_key=api_key,
-            model=model,
-            role=unified_config.get("role", "software engineer"),
-            profile=unified_config.get("profile", "default"),
-            interaction_mode="prompt",
-            verbose_tools=True,
-            base_url=base_url,
-            azure_openai_api_version=azure_openai_api_version,
-            use_azure_openai=use_azure_openai,
-        )
-        agent = profile_manager.agent
-        from janito.agent.rich_message_handler import RichMessageHandler
-
-        message_handler = RichMessageHandler()
-        messages = [{"role": "system", "content": detect_prompt}]
-        console.print(
-            ":mag: [bold]Configuring project: discovering core technologies...[/bold]"
-        )
-        result = agent.chat(
-            messages,
-            message_handler=message_handler,
-            spinner=True,
-            max_rounds=50,
-            verbose_response=False,
-            verbose_events=False,
-            stream=False,
-        )
-        os.makedirs(".janito", exist_ok=True)
-        tech_txt = os.path.join(".janito", "tech.txt")
-        with open(tech_txt, "w", encoding="utf-8") as f:
-            f.write(result["content"].strip() + "\n")
-        console.print(
-            f"[green]:white_check_mark: Core technologies detected and saved to [bold]{tech_txt}[/bold]"
-        )
-        sys.exit(0)
+    # Normalize all verbose flags into runtime_config
+    for flag in [
+        "verbose_http",
+        "verbose_http_raw",
+        "verbose_response",
+        "verbose_reason",
+        "verbose_tools",
+        "verbose_events",
+        "verbose_stream",
+    ]:
+        if hasattr(args, flag):
+            runtime_config.set(flag, getattr(args, flag, False))
 
     role = args.role or unified_config.get("role", "software engineer")
     if args.role:
@@ -96,12 +51,12 @@ def run_cli(args):
         interaction_mode = "chat"
     else:
         interaction_mode = "prompt"
-    profile = getattr(args, "profile", None) or unified_config.get("profile", "default")
+    profile = "base"
     profile_manager = AgentProfileManager(
         api_key=get_api_key(),
         model=unified_config.get("model"),
         role=role,
-        profile=profile,
+        profile_name=profile,
         interaction_mode=interaction_mode,
         verbose_tools=args.verbose_tools,
         base_url=unified_config.get("base_url", "https://openrouter.ai/api/v1"),
@@ -111,13 +66,22 @@ def run_cli(args):
         use_azure_openai=unified_config.get("use_azure_openai", False),
     )
     profile_manager.refresh_prompt()
+    if getattr(args, "show_system", False):
+        print(profile_manager.render_prompt())
+        sys.exit(0)
     if args.max_tokens is not None:
         runtime_config.set("max_tokens", args.max_tokens)
+    if getattr(args, "verbose_reason", False):
+        runtime_config.set("verbose_reason", True)
 
     # --- Liteweb integration ---
     termweb_proc = None
     selected_port = None
-    if not getattr(args, "no_termweb", False) and interaction_mode == "chat":
+    if (
+        not getattr(args, "no_termweb", False)
+        and interaction_mode == "chat"
+        and not runtime_config.get("vanilla_mode", False)
+    ):
         default_port = 8088
         max_port = 8100
         requested_port = args.termweb_port
@@ -185,8 +149,6 @@ def run_cli(args):
                 message_handler=message_handler,
                 spinner=True,
                 max_rounds=max_rounds,
-                verbose_response=getattr(args, "verbose_response", False),
-                verbose_events=getattr(args, "verbose_events", False),
                 stream=getattr(args, "stream", False),
             )
         except MaxRoundsExceededError:

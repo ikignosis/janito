@@ -64,7 +64,7 @@ CONFIG_OPTIONS = {
     "use_azure_openai": "Whether to use Azure OpenAI client (default: False)",
     # Accept template.* keys as valid config keys (for CLI validation, etc.)
     "template": "Template context dictionary for Agent Profile prompt rendering (nested)",
-    "profile": "Interaction style for the Agent Profile (e.g., 'default' or 'technical')",
+    "profile": "Agent Profile name (only 'base' is supported)",
     # Note: template.* keys are validated dynamically, not statically here
 }
 

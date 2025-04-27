@@ -20,7 +20,7 @@ class RunPythonCommandTool(ToolBase):
         str: File paths and line counts for stdout and stderr, or direct output if small enough.
     """
 
-    def call(
+    def run(
         self,
         code: str,
         timeout: int = 60,

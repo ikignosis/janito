@@ -8,8 +8,9 @@ from janito.agent.conversation_ui import show_spinner, print_verbose_event
 from janito.agent.conversation_exceptions import (
     MaxRoundsExceededError,
     EmptyResponseError,
+    NoToolSupportError,
 )
-from janito.agent.runtime_config import unified_config
+from janito.agent.runtime_config import unified_config, runtime_config
 import pprint
 
 
@@ -18,6 +19,13 @@ class ConversationHandler:
         self.client = client
         self.model = model
         self.usage_history = []
+
+    @staticmethod
+    def remove_system_prompt(messages):
+        """
+        Return a new messages list with all system prompts removed.
+        """
+        return [msg for msg in messages if msg.get("role") != "system"]
 
     def handle_conversation(
         self,
@@ -44,37 +52,70 @@ class ConversationHandler:
                 f"max_tokens must be an integer, got: {resolved_max_tokens!r}"
             )
 
-        for _ in range(max_rounds):
-            if stream:
-                # Streaming mode
-                def get_stream():
-                    return get_openai_stream_response(
-                        self.client,
-                        self.model,
-                        messages,
-                        resolved_max_tokens,
-                        verbose_stream=verbose_stream,
-                        message_handler=message_handler,
-                    )
+        # If vanilla mode is set and max_tokens was not provided, default to 8000
+        if runtime_config.get("vanilla_mode", False) and max_tokens is None:
+            resolved_max_tokens = 8000
 
-                retry_api_call(get_stream)
-                return None
-            else:
-                # Non-streaming mode
-                def api_call():
+        for _ in range(max_rounds):
+            try:
+                if stream:
+                    # Streaming mode
+                    def get_stream():
+                        return get_openai_stream_response(
+                            self.client,
+                            self.model,
+                            messages,
+                            resolved_max_tokens,
+                            verbose_stream=runtime_config.get("verbose_stream", False),
+                            message_handler=message_handler,
+                        )
+
+                    retry_api_call(get_stream)
+                    return None
+                else:
+                    # Non-streaming mode
+                    def api_call():
+                        return get_openai_response(
+                            self.client, self.model, messages, resolved_max_tokens
+                        )
+
+                    if spinner:
+                        response = show_spinner(
+                            "Waiting for AI response...", retry_api_call, api_call
+                        )
+                    else:
+                        response = retry_api_call(api_call)
+                        print("[DEBUG] OpenAI API raw response:", repr(response))
+            except NoToolSupportError:
+                print(
+                    "⚠️ Endpoint does not support tool use. Proceeding in vanilla mode (tools disabled)."
+                )
+                runtime_config.set("vanilla_mode", True)
+                if max_tokens is None:
+                    runtime_config.set("max_tokens", 8000)
+                    resolved_max_tokens = 8000
+
+                # Remove system prompt for vanilla mode if needed (call this externally when appropriate)
+                # messages = ConversationHandler.remove_system_prompt(messages)
+                # Retry once with tools disabled
+                def api_call_vanilla():
                     return get_openai_response(
                         self.client, self.model, messages, resolved_max_tokens
                     )
 
                 if spinner:
                     response = show_spinner(
-                        "Waiting for AI response...", retry_api_call, api_call
+                        "Waiting for AI response (tools disabled)...",
+                        retry_api_call,
+                        api_call_vanilla,
                     )
                 else:
-                    response = retry_api_call(api_call)
-                    print("[DEBUG] OpenAI API raw response:", repr(response))
-
-            if verbose_response:
+                    response = retry_api_call(api_call_vanilla)
+                    print(
+                        "[DEBUG] OpenAI API raw response (tools disabled):",
+                        repr(response),
+                    )
+            if runtime_config.get("verbose_response", False):
                 pprint.pprint(response)
             if response is None or not getattr(response, "choices", None):
                 raise EmptyResponseError(
@@ -94,7 +135,7 @@ class ConversationHandler:
                 else None
             )
             event = {"type": "content", "message": choice.message.content}
-            if verbose_events:
+            if runtime_config.get("verbose_events", False):
                 print_verbose_event(event)
             if message_handler is not None and choice.message.content:
                 message_handler.handle_message(event)

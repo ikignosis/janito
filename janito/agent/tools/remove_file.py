@@ -19,7 +19,7 @@ class RemoveFileTool(ToolBase):
             - "❗ Cannot remove file: ..."
     """
 
-    def call(self, file_path: str, backup: bool = False) -> str:
+    def run(self, file_path: str, backup: bool = False) -> str:
         original_path = file_path
         path = expand_path(file_path)
         disp_path = display_path(original_path, path)

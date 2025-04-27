@@ -1,55 +1,8 @@
 from rich.console import Console
 from janito.agent.runtime_config import runtime_config, unified_config
 from janito.agent.message_handler_protocol import MessageHandlerProtocol
-import re
-import os
-import urllib.parse
 
 console = Console()
-
-
-def _replace_filenames_with_links(markdown_text):
-    """
-    Scan markdown for filename-like patterns and replace with Markdown links to localhost if file exists and termweb_port is set.
-    Skips fragments already inside Markdown links.
-    """
-    port = runtime_config.get("termweb_port")
-    if not port:
-        return markdown_text  # No transformation if no port
-
-    # Find all Markdown links and store their spans
-    link_pattern = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
-    link_spans = [m.span() for m in link_pattern.finditer(markdown_text)]
-
-    # Pattern: words with dots and/or slashes, e.g. foo.py, path/to/file.md
-    file_pattern = re.compile(r"(?<!\w)([\w./\\-]+\.[\w]+)(?![\w/])")
-
-    def is_in_link(pos):
-        for start, end in link_spans:
-            if start <= pos < end:
-                return True
-        return False
-
-    # Replace only filename-like patterns not inside Markdown links and that exist
-    result = []
-    last_idx = 0
-    for match in file_pattern.finditer(markdown_text):
-        start, end = match.span(1)
-        filename = match.group(1)
-        # Check if inside a Markdown link
-        if is_in_link(start):
-            continue
-        # Check if file exists
-        path = os.path.normpath(filename)
-        if os.path.exists(path):
-            # Append text before match
-            result.append(markdown_text[last_idx:start])
-            encoded_filename = urllib.parse.quote(filename)
-            url = f"http://localhost:{port}/?path={encoded_filename}"
-            result.append(f"[{filename}]({url})")
-            last_idx = end
-    result.append(markdown_text[last_idx:])
-    return "".join(result)
 
 
 class RichMessageHandler(MessageHandlerProtocol):
@@ -90,9 +43,6 @@ class RichMessageHandler(MessageHandlerProtocol):
         if trust and msg_type != "content":
             return  # Suppress all except content
         if msg_type == "content":
-            # --- New logic: replace filenames with Markdown links ---
-            if isinstance(safe_message, str):
-                safe_message = _replace_filenames_with_links(safe_message)
             self.console.print(Markdown(safe_message))
         elif msg_type == "info":
             self.console.print(safe_message, style="cyan", end="")

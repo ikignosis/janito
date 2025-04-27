@@ -3,8 +3,8 @@ from janito.agent.tool_registry import register_tool
 from janito.agent.tools.tools_utils import (
     pluralize,
     display_path,
-    find_files_with_extensions,
 )
+from janito.agent.tools.dir_walk_utils import walk_dir_with_gitignore
 
 import fnmatch
 
@@ -15,54 +15,47 @@ class FindFilesTool(ToolBase):
     Find files in one or more directories matching a pattern. Respects .gitignore.
 
     Args:
-        directories (list[str]): List of directories to search in.
-        pattern (str): File pattern to match. Uses Unix shell-style wildcards (fnmatch), e.g. '*.py', 'data_??.csv', '[a-z]*.txt'.
-        recursive (bool, optional): Whether to search recursively in subdirectories. Defaults to True.
+        paths (str): String of one or more paths (space-separated) to search in. Each path can be a directory.
+        pattern (str): File pattern(s) to match. Multiple patterns can be separated by spaces. Uses Unix shell-style wildcards (fnmatch), e.g. '*.py', 'data_??.csv', '[a-z]*.txt'.
+        max_depth (int, optional): Maximum directory depth to search. If 0 (default), search is recursive with no depth limit. If >0, limits recursion to that depth. Setting max_depth=1 disables recursion (only top-level directory).
+        max_results (int, optional): Maximum number of results to return. 0 means no limit (default).
     Returns:
         str: Newline-separated list of matching file paths. Example:
             "/path/to/file1.py\n/path/to/file2.py"
             "Warning: Empty file pattern provided. Operation skipped."
+            If max_results is reached, appends a note to the output.
     """
 
-    def call(
+    def run(
         self,
-        directories: list[str],
+        paths: str,
         pattern: str,
-        recursive: bool = True,
+        max_depth: int = 0,
     ) -> str:
         import os
 
         if not pattern:
             self.report_warning(
-                "⚠️ Warning: Empty file pattern provided. Operation skipped."
+                "⚠️  Warning: Empty file pattern provided. Operation skipped."
             )
             return "Warning: Empty file pattern provided. Operation skipped."
 
-        output = []
-        for directory in directories:
+        output = set()
+        patterns = pattern.split()
+        for directory in paths.split():
             disp_path = display_path(directory)
-            self.report_info(f"🔍 Searching for files '{pattern}' in '{disp_path}' ...")
-            # If pattern is a simple extension (e.g. '*.py'), use the new utility
-            if (
-                pattern.startswith("*.")
-                and pattern.count("*") == 1
-                and pattern.count(".") == 1
+            depth_msg = f" (max depth: {max_depth})" if max_depth > 0 else ""
+            self.report_info(
+                f"🔍 Searching for files '{pattern}' in '{disp_path}'{depth_msg} ..."
+            )
+            for root, dirs, files in walk_dir_with_gitignore(
+                directory, max_depth=max_depth
             ):
-                ext = pattern[1:]  # '.py'
-                files = find_files_with_extensions(
-                    [directory], [ext], recursive=recursive
-                )
-                output.extend(files)
-            else:
-                for root, dirs, files in os.walk(directory):
-                    rel_path = os.path.relpath(root, directory)
-                    depth = 0 if rel_path == "." else rel_path.count(os.sep) + 1
-                    if not recursive and depth > 0:
-                        break
-                    from janito.agent.tools.gitignore_utils import filter_ignored
-
-                    dirs, files = filter_ignored(root, dirs, files)
-                    for filename in fnmatch.filter(files, pattern):
-                        output.append(os.path.join(root, filename))
-        self.report_success(f" ✅ {len(output)} {pluralize('file', len(output))} found")
-        return "\n".join(output)
+                for pat in patterns:
+                    for filename in fnmatch.filter(files, pat):
+                        output.add(os.path.join(root, filename))
+        self.report_success(
+            f" \u2705 {len(output)} {pluralize('file', len(output))} found"
+        )
+        result = "\n".join(sorted(output))
+        return result

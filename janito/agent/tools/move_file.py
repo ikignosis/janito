@@ -19,7 +19,7 @@ class MoveFileTool(ToolBase):
         str: Status message indicating the result.
     """
 
-    def call(
+    def run(
         self,
         src_path: str,
         dest_path: str,

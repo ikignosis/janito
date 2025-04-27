@@ -27,7 +27,7 @@ class ValidateFileSyntaxTool(ToolBase):
             - "⚠️ Warning: Unsupported file extension: <ext>"
     """
 
-    def call(self, file_path: str) -> str:
+    def run(self, file_path: str) -> str:
         self.report_info(f"🔎 Validating syntax for: {file_path} ...")
         ext = os.path.splitext(file_path)[1].lower()
 
@@ -54,7 +54,7 @@ class ValidateFileSyntaxTool(ToolBase):
                 ps_tool = RunPowerShellCommandTool()
                 # Check if PSScriptAnalyzer is installed
                 check_cmd = "if (Get-Command Invoke-ScriptAnalyzer -ErrorAction SilentlyContinue) { Write-Output 'PSScriptAnalyzerAvailable' } else { Write-Output 'PSScriptAnalyzerMissing' }"
-                check_result = ps_tool.call(command=check_cmd, timeout=15)
+                check_result = ps_tool.run(command=check_cmd, timeout=15)
 
                 if "PSScriptAnalyzerMissing" in check_result:
                     msg = (
@@ -66,7 +66,7 @@ class ValidateFileSyntaxTool(ToolBase):
                     return msg
                 # Run PSScriptAnalyzer
                 analyze_cmd = f"Invoke-ScriptAnalyzer -Path '{file_path}' -Severity Error | ConvertTo-Json"
-                analyze_result = ps_tool.call(command=analyze_cmd, timeout=30)
+                analyze_result = ps_tool.run(command=analyze_cmd, timeout=30)
 
                 if "[]" in analyze_result or analyze_result.strip() == "":
                     self.report_success("✅ Syntax OK")

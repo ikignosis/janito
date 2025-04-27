@@ -62,13 +62,6 @@ janito "Prompt" --vanilla
 janito "Prompt" --trust-tools
 ```
 
-### --style
-Set the interaction style for the system prompt template.
-
-```
-janito "Prompt" --style technical
-```
-
 ### --stream, --verbose-stream
 Enable streaming output from OpenAI and print raw chunks.
 

@@ -20,7 +20,7 @@ class ReplaceTextInFileTool(ToolBase):
             - "Error replacing text: <error message>"
     """
 
-    def call(
+    def run(
         self,
         file_path: str,
         search_text: str,
@@ -34,7 +34,30 @@ class ReplaceTextInFileTool(ToolBase):
         action = "(all)" if replace_all else "(unique)"
         search_lines = len(search_text.splitlines())
         replace_lines = len(replacement_text.splitlines())
-        info_msg = f"\U0001f4dd Replacing in {disp_path} {search_lines}\u2192{replace_lines} lines {action}"
+        if replace_lines == 0:
+            info_msg = (
+                f"\U0001f4dd Replacing in {disp_path} del {search_lines} lines {action}"
+            )
+        else:
+            # Calculate line delta for info message
+            try:
+                with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+                    _content = f.read()
+                _new_content = _content.replace(
+                    search_text, replacement_text, -1 if replace_all else 1
+                )
+                _total_lines_before = _content.count("\n") + 1
+                _total_lines_after = _new_content.count("\n") + 1
+                _line_delta = _total_lines_after - _total_lines_before
+            except Exception:
+                _line_delta = replace_lines - search_lines
+            if _line_delta > 0:
+                delta_str = f"+{_line_delta} lines"
+            elif _line_delta < 0:
+                delta_str = f"{_line_delta} lines"
+            else:
+                delta_str = "+0"
+            info_msg = f"\U0001f4dd Replacing in {disp_path} {delta_str} {action}"
         self.report_info(
             info_msg + (" ..." if not info_msg.rstrip().endswith("...") else "")
         )

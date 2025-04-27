@@ -116,6 +116,9 @@ celerybeat-schedule
 # Pyre type checker
 .pyre/
 
+# Ruff cache
+.ruff_cache/
+
 # pytype
 .pytype/
 

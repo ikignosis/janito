@@ -16,7 +16,7 @@ class GetFileOutlineTool(ToolBase):
         file_path (str): Path to the file to outline.
     """
 
-    def call(self, file_path: str) -> str:
+    def run(self, file_path: str) -> str:
         try:
             # Report the filename being outlined as the first step
             self.report_info(f"📄 Outlining file: '{display_path(file_path)}' ...")

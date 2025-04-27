@@ -48,9 +48,17 @@ def start_chat_shell(
     )
     active_prompt_session = session
 
+    inject_message = state.get("inject_message")
+    if "inject_message" in state:
+        del state["inject_message"]
+
     while True:
         try:
-            if state.get("paste_mode"):
+            if inject_message is not None:
+                user_input = inject_message
+                inject_message = None
+                was_paste_mode = False
+            elif state.get("paste_mode"):
                 console.print("")
                 user_input = session.prompt("Multiline> ", multiline=True)
                 was_paste_mode = True
@@ -116,6 +124,8 @@ def start_chat_shell(
         import time
 
         start_time = time.time()
+
+        # No need to propagate verbose; ToolExecutor and others fetch from runtime_config
 
         try:
             response = profile_manager.agent.chat(

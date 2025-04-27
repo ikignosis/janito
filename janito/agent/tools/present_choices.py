@@ -36,7 +36,7 @@ class PresentChoicesTool(ToolBase):
             - If cancelled, returns 'No selection made.'
     """
 
-    def call(self, prompt: str, choices: List[str], multi_select: bool = False) -> str:
+    def run(self, prompt: str, choices: List[str], multi_select: bool = False) -> str:
         if not choices:
             return "\u26a0\ufe0f No choices provided."
         self.report_info(f"Prompting user: {prompt} (multi_select={multi_select}) ...")

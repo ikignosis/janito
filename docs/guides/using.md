@@ -27,7 +27,7 @@ janito --web
 - Use CLI flags to customize behavior (see [CLI Options](../reference/cli-options.md)).
 
 ## 📚 More Resources
-- See [Prompt Profiles & Styles](prompt_profiles.md) for all available communication and operational profiles and how to combine them.
+- See [System Prompt Profile](prompt_profiles.md) for details on the agent’s instructions and customization.
 - See [How Janito Uses Tools](using_tools.md) for details on automatic tool selection.
 - See the Supported Models page in the documentation navigation for information on LLM compatibility.
 - See [Costs & Value Transparency](../about/costs.md) for details on pricing and efficiency.

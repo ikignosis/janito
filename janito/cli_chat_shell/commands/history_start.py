@@ -3,6 +3,7 @@ import os
 
 
 def handle_start(console, state, **kwargs):
+
     save_path = os.path.join(".janito", "last_conversation.json")
 
     # Clear the terminal screen
@@ -30,8 +31,6 @@ def handle_start(console, state, **kwargs):
             console.print(
                 f"[bold red]Failed to delete saved conversation:[/bold red] {e}"
             )
-    else:
-        pass
 
     console.print(
         "[bold green]Conversation history has been started (context reset).[/bold green]"

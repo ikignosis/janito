@@ -20,7 +20,7 @@ class FetchUrlTool(ToolBase):
             - "Warning: Empty URL provided. Operation skipped."
     """
 
-    def call(self, url: str, search_strings: list[str] = None) -> str:
+    def run(self, url: str, search_strings: list[str] = None) -> str:
         if not url.strip():
             self.report_warning("⚠️ Warning: Empty URL provided. Operation skipped.")
             return "Warning: Empty URL provided. Operation skipped."

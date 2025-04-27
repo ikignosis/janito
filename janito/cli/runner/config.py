@@ -22,7 +22,7 @@ def get_system_prompt_template(args, role):
                 api_key=get_api_key(),
                 model=unified_config.get("model"),
                 role=role,
-                profile=unified_config.get("profile", "default"),
+                profile_name="base",
                 interaction_mode=unified_config.get("interaction_mode", "prompt"),
                 verbose_tools=unified_config.get("verbose_tools", False),
                 base_url=unified_config.get("base_url", None),

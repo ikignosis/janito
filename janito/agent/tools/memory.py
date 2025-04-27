@@ -24,7 +24,7 @@ class StoreMemoryTool(ToolBase):
             - "❗ Error storing value: ..."
     """
 
-    def call(self, key: str, value: str) -> str:
+    def run(self, key: str, value: str) -> str:
         self.report_info(f"Storing value for key: '{key}' ...")
         try:
             _memory_store[key] = value
@@ -50,7 +50,7 @@ class RetrieveMemoryTool(ToolBase):
             - "⚠️ No value found for key: 'notfound'"
     """
 
-    def call(self, key: str) -> str:
+    def run(self, key: str) -> str:
         self.report_info(f"Retrieving value for key: '{key}' ...")
         try:
             if key in _memory_store:

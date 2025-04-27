@@ -23,6 +23,7 @@ def create_parser():
     )
     parser.add_argument(
         "--model",
+        "-m",
         type=str,
         default=None,
         help="Model name to use for this session (overrides config, does not persist)",
@@ -81,6 +82,11 @@ def create_parser():
         "--show-system",
         action="store_true",
         help="Show model, parameters, system prompt, and tool definitions, then exit",
+    )
+    parser.add_argument(
+        "--verbose-reason",
+        action="store_true",
+        help="Print the tool call reason whenever a tool is invoked (for debugging)",
     )
     parser.add_argument(
         "--verbose-tools",
@@ -172,7 +178,7 @@ def create_parser():
         "--profile",
         type=str,
         default=None,
-        help="Profile for system prompt template (e.g., default, technical)",
+        help="Agent Profile name (only 'base' is supported)",
     )
     parser.add_argument(
         "--stream",
@@ -194,10 +200,5 @@ def create_parser():
         type=int,
         default=8088,
         help="Port for the termweb server (default: 8088)",
-    )
-    parser.add_argument(
-        "--detect",
-        action="store_true",
-        help="Start project configuration: discover core technologies and save to .janito/tech.txt",
     )
     return parser

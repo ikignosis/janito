@@ -29,7 +29,6 @@ You can use these commands at any time (prefix with `/` or just type the name):
 | `/history [N]`         | Show last N messages (default: 5)                                |
 | `/prompt`              | Show the current system prompt                                   |
 | `/role <description>`  | Change the system role (e.g., "You are a code reviewer")        |
-| `/style <style>`       | Change the interaction style (e.g., "default", "technical")    |
 | `/clear`               | Clear the terminal screen                                        |
 | `/multi`               | Enter multiline input mode (write multi-line text, Esc+Enter)    |
 | `/config`              | Show or set configuration (see: `/config show`, `/config set local|global key=value`) |

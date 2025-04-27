@@ -37,55 +37,6 @@ def handle_role(console, *args, **kwargs):
 
 
 def handle_profile(console, *args, **kwargs):
-    """/profile <new_profile> - Change the interaction profile (e.g., concise-technical)"""
-    state = kwargs.get("state")
-    profile_manager = kwargs.get("profile_manager")
-    if not args:
-        current = profile_manager.get_profile_combo() if profile_manager else "default"
-        valid_profiles = profile_manager.get_profiles_list() if profile_manager else []
-        console.print(f"[bold green]Current profile:[/bold green] {current}")
-        console.print(
-            "[bold yellow]Available profiles:[/bold yellow]\n- "
-            + "\n- ".join(valid_profiles)
-        )
-        return
-    new_profile = args[0]
-    valid_profiles = profile_manager.get_profiles_list() if profile_manager else []
-    if new_profile not in valid_profiles:
-        console.print(
-            f"[bold red]Error: Profile '{new_profile}' does not exist.[/bold red]"
-        )
-        console.print(
-            "[bold yellow]Available profiles:[/bold yellow]\n- "
-            + "\n- ".join(valid_profiles)
-        )
-        return
-    if profile_manager:
-        profile_manager.profile = new_profile
-        profile_manager.refresh_prompt()
-    # Update system message in conversation
-    found = False
-    for msg in state["messages"]:
-        if msg.get("role") == "system":
-            msg["content"] = (
-                profile_manager.system_prompt_template
-                if profile_manager
-                else msg["content"]
-            )
-            found = True
-            break
-    if not found:
-        state["messages"].insert(
-            0,
-            {
-                "role": "system",
-                "content": (
-                    profile_manager.system_prompt_template
-                    if profile_manager
-                    else new_profile
-                ),
-            },
-        )
-    console.print(
-        f"[bold green]Interaction profile updated to:[/bold green] {new_profile}"
-    )
+    """/profile - Show the current and available Agent Profile (only 'base' is supported)"""
+    console.print("[bold green]Current profile:[/bold green] base")
+    console.print("[bold yellow]Available profiles:[/bold yellow]\n- base")

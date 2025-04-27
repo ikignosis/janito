@@ -34,10 +34,9 @@ Welcome to the API reference for this project. This document provides an overvie
     - `usage_history`: Tracks and returns usage statistics.
 
 ### janito.agent.profile_manager
-- **AgentProfileManager**: Manages agent profiles and prompt templates.
+- **AgentProfileManager**: Manages agent profiles and prompt templates (currently only the "base" profile is supported).
     - `__init__`: Loads and initializes profile data.
     - `set_role`: Sets the current agent role.
-    - `parse_style_string`: Parses style configuration for prompts.
     - `render_prompt`: Renders the prompt template for the agent.
     - `refresh_prompt`: Reloads and refreshes the prompt template.
 
