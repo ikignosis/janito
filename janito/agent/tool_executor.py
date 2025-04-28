@@ -4,6 +4,7 @@ ToolExecutor: Responsible for executing tools, validating arguments, handling er
 """
 
 import json
+from janito.i18n import tr
 import inspect
 from janito.agent.tool_base import ToolBase
 from janito.agent.runtime_config import runtime_config
@@ -22,13 +23,31 @@ class ToolExecutor:
         tool_call_reason = args.pop(
             "tool_call_reason", None
         )  # Extract and remove 'tool_call_reason' if present
+        # Record tool usage
+        try:
+            from janito.agent.tool_use_tracker import ToolUseTracker
+
+            ToolUseTracker().record(tool_call.function.name, dict(args))
+        except Exception as e:
+            if runtime_config.get("verbose", False):
+                print(f"[ToolExecutor] ToolUseTracker record failed: {e}")
+
         verbose = runtime_config.get("verbose", False)
         if verbose:
             print(
-                f"[ToolExecutor] {tool_call.function.name} called with arguments: {args}"
+                tr(
+                    "[ToolExecutor] {tool_name} called with arguments: {args}",
+                    tool_name=tool_call.function.name,
+                    args=args,
+                )
             )
         if runtime_config.get("verbose_reason", False) and tool_call_reason:
-            print(f"[ToolExecutor] Reason for call: {tool_call_reason}")
+            print(
+                tr(
+                    "[ToolExecutor] Reason for call: {tool_call_reason}",
+                    tool_call_reason=tool_call_reason,
+                )
+            )
         instance = None
         if hasattr(func, "__self__") and isinstance(func.__self__, ToolBase):
             instance = func.__self__

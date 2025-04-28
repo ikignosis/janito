@@ -15,6 +15,10 @@ def start_chat_shell(
     termweb_stdout_path=None,
     termweb_stderr_path=None,
 ):
+    import janito.i18n as i18n
+    from janito.agent.runtime_config import runtime_config
+
+    i18n.set_locale(runtime_config.get("lang", "en"))
     global active_prompt_session
     agent = profile_manager.agent
     message_handler = RichMessageHandler()
@@ -36,7 +40,10 @@ def start_chat_shell(
 
     if (
         profile_manager.system_prompt_template
-        and not runtime_config.get("vanilla_mode", False)
+        and (
+            not runtime_config.get("vanilla_mode", False)
+            or runtime_config.get("system_prompt_template")
+        )
         and not any(m.get("role") == "system" for m in messages)
     ):
         messages.insert(0, {"role": "system", "content": agent.system_prompt_template})

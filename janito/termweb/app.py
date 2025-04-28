@@ -27,15 +27,29 @@ async def api_explorer_root():
     return await api_explorer(".")
 
 
-@app.route("/api/explorer/<path:path>")
+@app.route("/api/explorer/<path:path>", methods=["GET", "POST"])
 async def api_explorer(path="."):
     abs_path = os.path.abspath(os.path.join(BASE_DIR, path))
     # Security: Only allow files/dirs within BASE_DIR
     if not abs_path.startswith(BASE_DIR):
-        return jsonify({"error": "Access denied."}), 403
+        return jsonify({"error": "Acesso negado."}), 403
+
+    if request.method == "POST":
+        # Gravação de arquivo
+        if os.path.isdir(abs_path):
+            return jsonify({"error": "Não é possível gravar em um diretório."}), 400
+        try:
+            data = await request.get_json()
+            content = data.get("content", "")
+            with open(abs_path, "w", encoding="utf-8") as f:
+                f.write(content)
+            return jsonify({"success": True})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    # GET: comportamento actual
     if os.path.isdir(abs_path):
         entries = []
-        # Use walk_dir_with_gitignore for the top-level directory only
         walker = walk_dir_with_gitignore(abs_path, recursive=False)
         for root, dirs, files in walker:
             for entry in sorted(dirs):
@@ -48,7 +62,7 @@ async def api_explorer(path="."):
             content = f.read()
         return jsonify({"type": "file", "path": path, "content": content})
     else:
-        return jsonify({"error": "Not found."}), 404
+        return jsonify({"error": "Não encontrado."}), 404
 
 
 # Example WebSocket endpoint
@@ -77,5 +91,5 @@ if __name__ == "__main__":
                 port = int(sys.argv[idx + 1])
             except ValueError:
                 pass
-    print(f"Starting Quart web server on http://localhost:{port}")
+    print(f"Iniciando servidor web Quart em http://localhost:{port}")
     app.run(host="localhost", port=port, debug=True)

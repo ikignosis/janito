@@ -120,7 +120,8 @@
 <body>
     <div class="header">
         TermWeb Editor
-        <button class="theme-switcher" id="theme-switcher">Switch to Light Theme</button>
+        <button class="save-btn" id="save-btn" style="margin-right:12px;background:#4caf50;color:#fff;border:none;border-radius:4px;padding:6px 14px;cursor:pointer;font-size:1em;">Gravar</button>
+        <button class="theme-switcher" id="theme-switcher">Alternate to light theme</button>
     </div>
     <div class="main">
         <div class="editor-pane">
@@ -129,7 +130,7 @@
     </div>
     <div class="footer">
         <div class="subtitle">
-            Powered by <a href="https://janito.dev" target="_blank">janito.dev</a> — AI-powered coding agent
+            Desenvolvido por <a href="https://janito.dev" target="_blank">janito.dev</a> — agente de programação com IA
         </div>
         <ul>
             <li>🌐 <a href="https://janito.dev" target="_blank">janito.dev</a></li>
@@ -148,7 +149,7 @@
         return url.searchParams.get(name);
     }
     const filePath = getQueryParam('path');
-    let initialContent = `# Welcome to TermWeb!\n# This is a live CodeMirror editor.\n\nprint("Hello, janito.dev!")`;
+    let initialContent = `# Bem-vindo ao TermWeb!\n# Este é um editor CodeMirror ao vivo.\n\nprint("Olá, janito.dev!")`;
     if (filePath) {
         fetch(`/api/explorer/${encodeURIComponent(filePath)}`)
             .then(resp => resp.json())
@@ -166,7 +167,7 @@
                 }
             })
             .catch(err => {
-                initialContent = '# Error loading file: ' + err;
+                initialContent = '# Error ao carregar arquivo: ' + err;
                 if (window.editorInstance) {
                     window.editorInstance.setValue(initialContent);
                 }
@@ -192,17 +193,45 @@
             if (isDark) {
                 document.body.classList.remove('light-theme');
                 editorInstance.setOption('theme', 'dracula');
-                themeSwitcher.textContent = 'Switch to Light Theme';
+                themeSwitcher.textContent = 'Alternate to light theme';
             } else {
                 document.body.classList.add('light-theme');
                 editorInstance.setOption('theme', 'default');
-                themeSwitcher.textContent = 'Switch to Dark Theme';
+                themeSwitcher.textContent = 'Alternate to dark theme';
             }
         });
         // Set initial state
         document.body.classList.remove('light-theme');
         editorInstance.setOption('theme', 'dracula');
-        themeSwitcher.textContent = 'Switch to Light Theme';
+        themeSwitcher.textContent = 'Alternate to light theme';
+        // Botão de Gravar
+        var saveBtn = document.getElementById('save-btn');
+        saveBtn.addEventListener('click', function() {
+            if (!filePath) {
+                alert('Nenhum arquivo aberto para gravar.');
+                return;
+            }
+            const content = editorInstance.getValue();
+            fetch(`/api/explorer/${encodeURIComponent(filePath)}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ content }),
+            })
+            .then(resp => resp.json())
+            .then(data => {
+                if (data.success) {
+                    saveBtn.textContent = 'Gravado!';
+                    setTimeout(() => saveBtn.textContent = 'Gravar', 1200);
+                } else {
+                    alert('Error saving: ' + (data.error || 'desconhecido'));
+                }
+            })
+            .catch(err => {
+                alert('Error saving: ' + err);
+            });
+        });
     });
     </script>
 </body>

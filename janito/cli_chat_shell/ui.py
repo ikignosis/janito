@@ -4,6 +4,7 @@ from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.styles import Style
 from prompt_toolkit.key_binding import KeyBindings
 from janito.agent.runtime_config import runtime_config
+from janito.i18n import tr
 
 
 def print_summary(console, data, continue_session):
@@ -16,13 +17,13 @@ def print_welcome(console, version=None, continued=False):
     version_str = f" (v{version})" if version else ""
     if runtime_config.get("vanilla_mode", False):
         console.print(
-            f"[bold magenta]Welcome to Janito{version_str} in [white on magenta]VANILLA MODE[/white on magenta]! Tools, system prompt, and temperature are disabled unless overridden.[/bold magenta]\n"
-            f"[cyan] F12 = Quick Action (follows the recommended action).[/cyan]"
+            f"[bold magenta]{tr('Welcome to Janito{version_str} in [white on magenta]VANILLA MODE[/white on magenta]! Tools, system prompt, and temperature are disabled unless overridden.', version_str=version_str)}[/bold magenta]\n"
+            f"[cyan]{tr('F12 = Quick Action (follows the recommended action)')}[/cyan]"
         )
     else:
         console.print(
-            f"[bold green]Welcome to Janito{version_str}! Entering chat mode. Type /exit to exit.[/bold green]\n"
-            f"[cyan] F12 = Quick Action (follows the recommended action).[/cyan]"
+            f"[bold green]{tr('Welcome to Janito{version_str}! Entering chat mode. Type /exit to exit.', version_str=version_str)}[/bold green]\n"
+            f"[cyan]{tr('F12 = Quick Action (follows the recommended action)')}[/cyan]"
         )
 
 
@@ -50,19 +51,21 @@ def get_toolbar_func(
 
     def get_toolbar():
         width = get_app().output.get_size().columns
-        model_part = f" Model: <model>{model_name}</model>" if model_name else ""
+        model_part = (
+            f" {tr('Model')}: <model>{model_name}</model>" if model_name else ""
+        )
         role_part = ""
         vanilla_mode = runtime_config.get("vanilla_mode", False)
         if role_ref and not vanilla_mode:
             role = role_ref()
             if role:
-                role_part = f"Role: <role>{role}</role>"
+                role_part = f"{tr('Role')}: <role>{role}</role>"
 
         style_part = ""
         if style_ref:
             style = style_ref()
             if style:
-                style_part = f"Style: <b>{style}</b>"
+                style_part = f"{tr('Style')}: <b>{style}</b>"
         usage = last_usage_info_ref()
         prompt_tokens = usage.get("prompt_tokens") if usage else None
         completion_tokens = usage.get("completion_tokens") if usage else None
@@ -76,7 +79,7 @@ def get_toolbar_func(
         if style_part:
             first_line_parts.append(style_part)
         first_line = " | ".join(first_line_parts)
-        left = f" Messages: <msg_count>{len(messages_ref())}</msg_count>"
+        left = f" {tr('Messages')}: <msg_count>{len(messages_ref())}</msg_count>"
         tokens_part = ""
         if (
             prompt_tokens is not None
@@ -84,9 +87,9 @@ def get_toolbar_func(
             or total_tokens is not None
         ):
             tokens_part = (
-                f" | Tokens - Prompt: {format_tokens(prompt_tokens, 'tokens_in')}, "
-                f"Completion: {format_tokens(completion_tokens, 'tokens_out')}, "
-                f"Total: {format_tokens(total_tokens, 'tokens_total')}"
+                f" | {tr('Tokens')} - {tr('Prompt')}: {format_tokens(prompt_tokens, 'tokens_in')}, "
+                f"{tr('Completion')}: {format_tokens(completion_tokens, 'tokens_out')}, "
+                f"{tr('Total')}: {format_tokens(total_tokens, 'tokens_total')}"
             )
         # Move /help and /start tips to key bindings/info line
         # Compose second/status line (no help_part)
@@ -98,7 +101,13 @@ def get_toolbar_func(
             padding = " " * (width - total_len)
             second_line = f"{left}{tokens_part}{padding}"
         # Add key bindings info as an extra line, now including /help and /start
-        bindings_line = "<b> F12</b>: Quick Action | <b>Ctrl-Y</b>: Yes | <b>Ctrl-N</b>: No | <b>/help</b>: Help | <b>/start</b>: New Task"
+        bindings_line = (
+            f"<b> F12</b>: {tr('Quick Action')} | "
+            f"<b>Ctrl-Y</b>: {tr('Yes')} | "
+            f"<b>Ctrl-N</b>: {tr('No')} | "
+            f"<b>/help</b>: {tr('Help')} | "
+            f"<b>/start</b>: {tr('New Task')}"
+        )
         if first_line:
             toolbar_text = first_line + "\n" + second_line + "\n" + bindings_line
         else:

@@ -17,7 +17,10 @@ class AgentProfileManager:
     def render_prompt(self):
         base_dir = Path(__file__).parent / "templates"
         profiles_dir = base_dir / "profiles"
-        main_template_name = "system_prompt_template_base.txt.j2"
+        if getattr(self, "lang", "en") == "pt":
+            main_template_name = "system_prompt_template_base_pt.txt.j2"
+        else:
+            main_template_name = "system_prompt_template_base.txt.j2"
         platform_name = get_platform_name()
         python_version = get_python_version()
         shell_info = detect_shell()
@@ -48,6 +51,7 @@ class AgentProfileManager:
         base_url,
         azure_openai_api_version,
         use_azure_openai,
+        lang="en",
     ):
         self.api_key = api_key
         self.model = model
@@ -58,6 +62,7 @@ class AgentProfileManager:
         self.base_url = base_url
         self.azure_openai_api_version = azure_openai_api_version
         self.use_azure_openai = use_azure_openai
+        self.lang = lang
         if use_azure_openai:
             from openai import AzureOpenAI
 

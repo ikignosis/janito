@@ -52,6 +52,8 @@ def run_cli(args):
     else:
         interaction_mode = "prompt"
     profile = "base"
+    # PATCH: Pass lang from args or runtime_config to AgentProfileManager
+    lang = getattr(args, "lang", None) or runtime_config.get("lang", "en")
     profile_manager = AgentProfileManager(
         api_key=get_api_key(),
         model=unified_config.get("model"),
@@ -64,6 +66,7 @@ def run_cli(args):
             "azure_openai_api_version", "2023-05-15"
         ),
         use_azure_openai=unified_config.get("use_azure_openai", False),
+        lang=lang,
     )
     profile_manager.refresh_prompt()
     if getattr(args, "show_system", False):
@@ -137,7 +140,16 @@ def run_cli(args):
         console = Console()
         message_handler = RichMessageHandler()
         messages = []
-        if profile_manager.system_prompt_template:
+        system_prompt_override = runtime_config.get("system_prompt_template")
+        if system_prompt_override:
+            # Só adiciona system prompt se NÃO for vanilla, ou se foi explicitamente passado via --system
+            if not runtime_config.get("vanilla_mode", False) or getattr(
+                args, "system", None
+            ):
+                messages.append({"role": "system", "content": system_prompt_override})
+        elif profile_manager.system_prompt_template and not runtime_config.get(
+            "vanilla_mode", False
+        ):
             messages.append(
                 {"role": "system", "content": profile_manager.system_prompt_template}
             )

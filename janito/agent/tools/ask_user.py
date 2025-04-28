@@ -1,6 +1,15 @@
 from janito.agent.tool_base import ToolBase
 from janito.agent.tool_registry import register_tool
 
+from rich import print as rich_print
+from janito.i18n import tr
+from rich.panel import Panel
+from prompt_toolkit import PromptSession
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.enums import EditingMode
+from prompt_toolkit.formatted_text import HTML
+from prompt_toolkit.styles import Style
+
 
 @register_tool(name="ask_user")
 class AskUserTool(ToolBase):
@@ -17,15 +26,8 @@ class AskUserTool(ToolBase):
     """
 
     def run(self, question: str) -> str:
-        from rich import print as rich_print
-        from rich.panel import Panel
-        from prompt_toolkit import PromptSession
-        from prompt_toolkit.key_binding import KeyBindings
-        from prompt_toolkit.enums import EditingMode
-        from prompt_toolkit.formatted_text import HTML
-        from prompt_toolkit.styles import Style
 
-        rich_print(Panel.fit(question, title="Question", style="cyan"))
+        rich_print(Panel.fit(question, title=tr("Question"), style="cyan"))
 
         bindings = KeyBindings()
         mode = {"multiline": False}
@@ -35,7 +37,13 @@ class AskUserTool(ToolBase):
             pass
 
         # F12 instruction rotation
-        _f12_instructions = ["proceed", "go ahead", "continue", "next", "okay"]
+        _f12_instructions = [
+            tr("proceed"),
+            tr("go ahead"),
+            tr("continue"),
+            tr("next"),
+            tr("okay"),
+        ]
         _f12_index = {"value": 0}
 
         @bindings.add("f12")

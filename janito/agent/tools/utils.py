@@ -11,24 +11,23 @@ def expand_path(path: str) -> str:
     return path
 
 
-def display_path(original_path: str, expanded_path: str) -> str:
+def display_path(path: str) -> str:
     """
     Returns a user-friendly path for display:
-    - If the original path is relative, return it as-is.
-    - If the original path starts with ~, keep it as ~.
-    - Otherwise, if the expanded path is under the home directory, replace the home dir with ~.
-    - Else, show the expanded path.
+    - If the path is relative, return it as-is.
+    - If the path starts with ~, keep it as ~.
+    - If the path is under the home directory, replace the home dir with ~.
+    - Else, show the absolute path.
     """
-    # Detect relative path (POSIX or Windows)
     if not (
-        original_path.startswith("/")
-        or original_path.startswith("~")
-        or (os.name == "nt" and len(original_path) > 1 and original_path[1] == ":")
+        path.startswith("/")
+        or path.startswith("~")
+        or (os.name == "nt" and len(path) > 1 and path[1] == ":")
     ):
-        return original_path
+        return path
     home = os.path.expanduser("~")
-    if original_path.startswith("~"):
-        return original_path
-    if expanded_path.startswith(home):
-        return "~" + expanded_path[len(home) :]
-    return expanded_path
+    if path.startswith("~"):
+        return path
+    if path.startswith(home):
+        return "~" + path[len(home) :]
+    return path

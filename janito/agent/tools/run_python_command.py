@@ -4,13 +4,13 @@ import sys
 import os
 from janito.agent.tool_base import ToolBase
 from janito.agent.tool_registry import register_tool
+from janito.i18n import tr
 
 
 @register_tool(name="run_python_command")
 class RunPythonCommandTool(ToolBase):
     """
     Tool to execute Python code in a subprocess and capture output.
-
     Args:
         code (str): The Python code to execute.
         timeout (int, optional): Timeout in seconds for the command. Defaults to 60.
@@ -28,19 +28,25 @@ class RunPythonCommandTool(ToolBase):
         interactive: bool = False,
     ) -> str:
         if not code.strip():
-            self.report_warning("⚠️ Warning: Empty code provided. Operation skipped.")
-            return "Warning: Empty code provided. Operation skipped."
-        self.report_info(f"🐍 Running Python code: ...\n{code}\n")
+            self.report_warning(
+                tr("⚠️ Warning: Empty code provided. Operation skipped.")
+            )
+            return tr("Warning: Empty code provided. Operation skipped.")
+        self.report_info(tr("🐍 Running Python code: ...\n{code}\n", code=code))
         if interactive:
             self.report_info(
-                "⚠️  Warning: This code might be interactive, require user input, and might hang."
+                tr(
+                    "⚠️  Warning: This code might be interactive, require user input, and might hang."
+                )
             )
         sys.stdout.flush()
         if require_confirmation:
-            confirmed = self.confirm_action("Do you want to execute this Python code?")
+            confirmed = self.confirm_action(
+                tr("Do you want to execute this Python code?")
+            )
             if not confirmed:
-                self.report_warning("Execution cancelled by user.")
-                return "Execution cancelled by user."
+                self.report_warning(tr("Execution cancelled by user."))
+                return tr("Execution cancelled by user.")
         try:
             with (
                 tempfile.NamedTemporaryFile(
@@ -78,9 +84,12 @@ class RunPythonCommandTool(ToolBase):
                     return_code = process.wait(timeout=timeout)
                 except subprocess.TimeoutExpired:
                     process.kill()
-                    self.report_error(f" ❌ Timed out after {timeout} seconds.")
-                    return f"Code timed out after {timeout} seconds."
-                # Print live output to user
+                    self.report_error(
+                        tr(" ❌ Timed out after {timeout} seconds.", timeout=timeout)
+                    )
+                    return tr(
+                        "Code timed out after {timeout} seconds.", timeout=timeout
+                    )
                 stdout_file.flush()
                 stderr_file.flush()
                 with open(
@@ -95,7 +104,6 @@ class RunPythonCommandTool(ToolBase):
                     err_f.seek(0)
                     for line in err_f:
                         self.report_stderr(line)
-                # Count lines
                 with open(
                     stdout_file.name, "r", encoding="utf-8", errors="replace"
                 ) as out_f:
@@ -104,11 +112,14 @@ class RunPythonCommandTool(ToolBase):
                     stderr_file.name, "r", encoding="utf-8", errors="replace"
                 ) as err_f:
                     stderr_lines = sum(1 for _ in err_f)
-                self.report_success(f" ✅ return code {return_code}")
+                self.report_success(
+                    tr(" ✅ return code {return_code}", return_code=return_code)
+                )
                 warning_msg = ""
                 if interactive:
-                    warning_msg = "⚠️  Warning: This code might be interactive, require user input, and might hang.\n"
-                # Read output contents
+                    warning_msg = tr(
+                        "⚠️  Warning: This code might be interactive, require user input, and might hang.\n"
+                    )
                 with open(
                     stdout_file.name, "r", encoding="utf-8", errors="replace"
                 ) as out_f:
@@ -117,27 +128,36 @@ class RunPythonCommandTool(ToolBase):
                     stderr_file.name, "r", encoding="utf-8", errors="replace"
                 ) as err_f:
                     stderr_content = err_f.read()
-                # Thresholds
                 max_lines = 100
                 if stdout_lines <= max_lines and stderr_lines <= max_lines:
-                    result = (
-                        warning_msg
-                        + f"Return code: {return_code}\n--- STDOUT ---\n{stdout_content}"
+                    result = warning_msg + tr(
+                        "Return code: {return_code}\n--- STDOUT ---\n{stdout_content}",
+                        return_code=return_code,
+                        stdout_content=stdout_content,
                     )
                     if stderr_content.strip():
-                        result += f"\n--- STDERR ---\n{stderr_content}"
+                        result += tr(
+                            "\n--- STDERR ---\n{stderr_content}",
+                            stderr_content=stderr_content,
+                        )
                     return result
                 else:
-                    result = (
-                        warning_msg
-                        + f"stdout_file: {stdout_file.name} (lines: {stdout_lines})\n"
+                    result = warning_msg + tr(
+                        "stdout_file: {stdout_file} (lines: {stdout_lines})\n",
+                        stdout_file=stdout_file.name,
+                        stdout_lines=stdout_lines,
                     )
                     if stderr_lines > 0 and stderr_content.strip():
-                        result += (
-                            f"stderr_file: {stderr_file.name} (lines: {stderr_lines})\n"
+                        result += tr(
+                            "stderr_file: {stderr_file} (lines: {stderr_lines})\n",
+                            stderr_file=stderr_file.name,
+                            stderr_lines=stderr_lines,
                         )
-                    result += f"returncode: {return_code}\nUse the get_lines tool to inspect the contents of these files when needed."
+                    result += tr(
+                        "returncode: {return_code}\nUse the get_lines tool to inspect the contents of these files when needed.",
+                        return_code=return_code,
+                    )
                     return result
         except Exception as e:
-            self.report_error(f" ❌ Error: {e}")
-            return f"Error running code: {e}"
+            self.report_error(tr(" ❌ Error: {error}", error=e))
+            return tr("Error running code: {error}", error=e)

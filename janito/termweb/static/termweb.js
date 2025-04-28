@@ -2,7 +2,7 @@
 let explorerView = localStorage.getItem('explorerView') || 'list';
 let currentExplorerPath = '.';
 
-function getParentPath(path) {
+function getPaiPath(path) {
     // Normalize slashes
     path = (path || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
     if (!path || path === '.' || path === '') return '.';
@@ -47,34 +47,34 @@ function renderExplorer(path, pushUrl=true) {
                 return;
             }
             if (data.type === 'dir') {
-                let html = `<h3>Directory: ${data.path}</h3>`;
+                let html = `<h3>Diretório: ${data.path}</h3>`;
                 if (explorerView === 'list') {
                     html += `<ul class='explorer-list'>`;
                     if (data.path !== '.') {
-                        const parent = getParentPath(data.path);
-                        html += `<li><a href='#' data-path='${parent}' class='explorer-link'><span class='explorer-entry'><span class='explorer-icon'>\u2b06\ufe0f</span><span class='explorer-name'>(.. parent)</span></span></a></li>`;
+                        const parent = getPaiPath(data.path);
+                        html += `<li><a href='#' data-path='${parent}' class='explorer-link'><span class='explorer-entry'><span class='explorer-icon'>⬆️</span><span class='explorer-name'>(.. parent)</span></span></a></li>`;
                     }
                     for (const entry of data.entries) {
                         const entryPath = data.path === '.' ? entry.name : data.path + '/' + entry.name;
                         if (entry.is_dir) {
-                            html += `<li><a href='#' data-path='${entryPath}' class='explorer-link'><span class='explorer-entry'><span class='explorer-icon'>\ud83d\udcc1</span><span class='explorer-name'>${entry.name}</span></span></a></li>`;
+                            html += `<li><a href='#' data-path='${entryPath}' class='explorer-link'><span class='explorer-entry'><span class='explorer-icon'>📁</span><span class='explorer-name'>${entry.name}</span></span></a></li>`;
                         } else {
-                            html += `<li><a href='#' data-path='${entryPath}' class='explorer-link file-link'><span class='explorer-entry'><span class='explorer-icon'>\ud83d\udcc4</span><span class='explorer-name'>${entry.name}</span></span></a></li>`;
+                            html += `<li><a href='#' data-path='${entryPath}' class='explorer-link file-link'><span class='explorer-entry'><span class='explorer-icon'>📄</span><span class='explorer-name'>${entry.name}</span></span></a></li>`;
                         }
                     }
                     html += '</ul>';
                 } else {
                     html += `<div class='explorer-icons'>`;
                     if (data.path !== '.') {
-                        const parent = getParentPath(data.path);
-                        html += `<div class='explorer-icon'><a href='#' data-path='${parent}' class='explorer-link' title='Parent'>(..)</a></div>`;
+                        const parent = getPaiPath(data.path);
+                        html += `<div class='explorer-icon'><a href='#' data-path='${parent}' class='explorer-link' title='Pai'>(..)</a></div>`;
                     }
                     for (const entry of data.entries) {
                         const entryPath = data.path === '.' ? entry.name : data.path + '/' + entry.name;
                         if (entry.is_dir) {
-                            html += `<div class='explorer-icon'><a href='#' data-path='${entryPath}' class='explorer-link' title='${entry.name}'>\ud83d\udcc1<br>${entry.name}</a></div>`;
+                            html += `<div class='explorer-icon'><a href='#' data-path='${entryPath}' class='explorer-link' title='${entry.name}'>📁<br>${entry.name}</a></div>`;
                         } else {
-                            html += `<div class='explorer-icon'><a href='#' data-path='${entryPath}' class='explorer-link file-link' title='${entry.name}'>\ud83d\udcc4<br>${entry.name}</a></div>`;
+                            html += `<div class='explorer-icon'><a href='#' data-path='${entryPath}' class='explorer-link file-link' title='${entry.name}'>📄<br>${entry.name}</a></div>`;
                         }
                     }
                     html += '</div>';
@@ -94,17 +94,17 @@ function renderExplorer(path, pushUrl=true) {
                     if (this.classList.contains('file-link')) {
                         const preview = document.getElementById('explorer-preview');
                         if (preview) {
-                            preview.innerHTML = `<div class='spinner' style='display:inline-block;vertical-align:middle;'></div> <span style='vertical-align:middle;'>Loading file...</span>`;
+                            preview.innerHTML = `<div class='spinner' style='display:inline-block;vertical-align:middle;'></div> <span style='vertical-align:middle;'>Carregando arquivo...</span>`;
                         }
                         fetch(`/api/explorer/${encodeURIComponent(p)}`)
                             .then(resp => resp.json())
                             .then(fileData => {
                                 if (preview && fileData.type === 'file') {
                                     if (window.renderCodePreview) {
-                                        preview.innerHTML = `<h3>File: ${fileData.path}</h3><div id='explorer-codemirror-preview'></div>`;
+                                        preview.innerHTML = `<h3>Arquivo: ${fileData.path}</h3><div id='explorer-codemirror-preview'></div>`;
                                         window.renderCodePreview(document.getElementById('explorer-codemirror-preview'), fileData.content, 'python');
                                     } else {
-                                        preview.innerHTML = `<h3>File: ${fileData.path}</h3><pre class='explorer-file'>${escapeHtml(fileData.content)}</pre>`;
+                                        preview.innerHTML = `<h3>Arquivo: ${fileData.path}</h3><pre class='explorer-file'>${escapeHtml(fileData.content)}</pre>`;
                                     }
                                 }
                             });
@@ -131,7 +131,7 @@ window.renderCodePreview = function(container, content, mode) {
         var textarea = document.createElement('textarea');
         textarea.value = (typeof content === 'string') ? content : '';
         container.appendChild(textarea);
-        if (window.CodeMirror && container.offsetParent !== null) {
+        if (window.CodeMirror && container.offsetPai !== null) {
             var editor = CodeMirror.fromTextArea(textarea, {
                 lineNumbers: true,
                 mode: mode || 'python',

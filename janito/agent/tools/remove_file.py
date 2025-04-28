@@ -3,6 +3,7 @@ import shutil
 from janito.agent.tool_registry import register_tool
 from janito.agent.tools.utils import expand_path, display_path
 from janito.agent.tool_base import ToolBase
+from janito.i18n import tr
 
 
 @register_tool(name="remove_file")
@@ -22,26 +23,36 @@ class RemoveFileTool(ToolBase):
     def run(self, file_path: str, backup: bool = False) -> str:
         original_path = file_path
         path = expand_path(file_path)
-        disp_path = display_path(original_path, path)
+        disp_path = display_path(original_path)
         backup_path = None
         if not os.path.exists(path):
-            self.report_error(f"❌ File '{disp_path}' does not exist.")
-            return f"❌ File '{disp_path}' does not exist."
+            self.report_error(
+                tr("❌ File '{disp_path}' does not exist.", disp_path=disp_path)
+            )
+            return tr("❌ File '{disp_path}' does not exist.", disp_path=disp_path)
         if not os.path.isfile(path):
-            self.report_error(f"❌ Path '{disp_path}' is not a file.")
-            return f"❌ Path '{disp_path}' is not a file."
+            self.report_error(
+                tr("❌ Path '{disp_path}' is not a file.", disp_path=disp_path)
+            )
+            return tr("❌ Path '{disp_path}' is not a file.", disp_path=disp_path)
         try:
             if backup:
                 backup_path = path + ".bak"
                 shutil.copy2(path, backup_path)
             os.remove(path)
-            self.report_success(f"✅ File removed: '{disp_path}'")
-            msg = f"✅ Successfully removed the file at '{disp_path}'."
+            self.report_success(
+                tr("✅ File removed: '{disp_path}'", disp_path=disp_path)
+            )
+            msg = tr(
+                "✅ Successfully removed the file at '{disp_path}'.",
+                disp_path=disp_path,
+            )
             if backup_path:
-                msg += (
-                    f" (backup at {display_path(original_path + '.bak', backup_path)})"
+                msg += tr(
+                    " (backup at {backup_disp})",
+                    backup_disp=display_path(original_path + ".bak"),
                 )
             return msg
         except Exception as e:
-            self.report_error(f"❌ Error removing file: {e}")
-            return f"❌ Error removing file: {e}"
+            self.report_error(tr("❌ Error removing file: {error}", error=e))
+            return tr("❌ Error removing file: {error}", error=e)

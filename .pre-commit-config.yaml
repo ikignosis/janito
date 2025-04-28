@@ -15,3 +15,4 @@ repos:
     hooks:
       - id: codespell
         args: ["--ignore-words-list=crate,te,fo"]  # Add common false positives here
+        exclude: janito/i18n/pt.py

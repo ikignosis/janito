@@ -1,7 +1,7 @@
 from janito.agent.tool_base import ToolBase
 from janito.agent.tool_registry import register_tool
-from janito.agent.tools.tools_utils import pluralize
-
+from janito.agent.tools.tools_utils import pluralize, display_path
+from janito.i18n import tr
 import shutil
 import os
 import zipfile
@@ -10,41 +10,46 @@ import zipfile
 @register_tool(name="remove_directory")
 class RemoveDirectoryTool(ToolBase):
     """
-    Remove a directory. Raises error if directory not empty and not removed recursively.
+    Remove a directory.
 
     Args:
-        directory (str): Path to the directory to remove.
-
-        backup (bool, optional): If True, create a backup (.bak.zip) before removing. Recommend using backup=True only in the first call to avoid redundant backups. Defaults to False.
+        file_path (str): Path to the directory to remove.
+        recursive (bool, optional): If True, remove non-empty directories recursively (with backup). If False, only remove empty directories. Defaults to False.
     Returns:
         str: Status message indicating result. Example:
             - "Directory removed: /path/to/dir"
             - "Error removing directory: <error message>"
     """
 
-    def run(self, directory: str, backup: bool = False) -> str:
-        self.report_info(f"🗃️  Removing directory: {directory} ...")
+    def run(self, file_path: str, recursive: bool = False) -> str:
+        disp_path = display_path(file_path)
+        self.report_info(
+            tr("🗃️  Removing directory: {disp_path} ...", disp_path=disp_path)
+        )
         backup_zip = None
         try:
-            if backup and os.path.exists(directory) and os.path.isdir(directory):
-                backup_zip = directory.rstrip("/\\") + ".bak.zip"
-                with zipfile.ZipFile(backup_zip, "w", zipfile.ZIP_DEFLATED) as zipf:
-                    for root, dirs, files in os.walk(directory):
-                        for file in files:
-                            abs_path = os.path.join(root, file)
-                            rel_path = os.path.relpath(
-                                abs_path, os.path.dirname(directory)
-                            )
-                            zipf.write(abs_path, rel_path)
-            if backup:
-                shutil.rmtree(directory)
+            if recursive:
+                # Backup before recursive removal
+                if os.path.exists(file_path) and os.path.isdir(file_path):
+                    backup_zip = file_path.rstrip("/\\") + ".bak.zip"
+                    with zipfile.ZipFile(backup_zip, "w", zipfile.ZIP_DEFLATED) as zipf:
+                        for root, dirs, files in os.walk(file_path):
+                            for file in files:
+                                abs_path = os.path.join(root, file)
+                                rel_path = os.path.relpath(
+                                    abs_path, os.path.dirname(file_path)
+                                )
+                                zipf.write(abs_path, rel_path)
+                shutil.rmtree(file_path)
             else:
-                os.rmdir(directory)
-            self.report_success(f"✅ 1 {pluralize('directory', 1)}")
-            msg = f"Directory removed: {directory}"
+                os.rmdir(file_path)
+            self.report_success(
+                tr("✅ 1 {dir_word}", dir_word=pluralize("directory", 1))
+            )
+            msg = tr("Directory removed: {disp_path}", disp_path=disp_path)
             if backup_zip:
-                msg += f" (backup at {backup_zip})"
+                msg += tr(" (backup at {backup_zip})", backup_zip=backup_zip)
             return msg
         except Exception as e:
-            self.report_error(f" ❌ Error removing directory: {e}")
-            return f"Error removing directory: {e}"
+            self.report_error(tr(" ❌ Error removing directory: {error}", error=e))
+            return tr("Error removing directory: {error}", error=e)

@@ -1,6 +1,6 @@
 from janito.agent.tool_base import ToolBase
 from janito.agent.tool_registry import register_tool
-
+from janito.i18n import tr
 import subprocess
 import tempfile
 import sys
@@ -11,15 +11,12 @@ import os
 class RunBashCommandTool(ToolBase):
     """
     Execute a non-interactive command using the bash shell and capture live output.
-
     This tool explicitly invokes the 'bash' shell (not just the system default shell), so it requires bash to be installed and available in the system PATH. On Windows, this will only work if bash is available (e.g., via WSL, Git Bash, or similar).
-
     Args:
         command (str): The bash command to execute.
         timeout (int, optional): Timeout in seconds for the command. Defaults to 60.
         require_confirmation (bool, optional): If True, require user confirmation before running. Defaults to False.
         interactive (bool, optional): If True, warns that the command may require user interaction. Defaults to False. Non-interactive commands are preferred for automation and reliability.
-
     Returns:
         str: File paths and line counts for stdout and stderr.
     """
@@ -31,28 +28,21 @@ class RunBashCommandTool(ToolBase):
         require_confirmation: bool = False,
         interactive: bool = False,
     ) -> str:
-        """
-        Execute a bash command and capture live output.
-
-        Args:
-            command (str): The bash command to execute.
-            timeout (int, optional): Timeout in seconds for the command. Defaults to 60.
-            require_confirmation (bool, optional): If True, require user confirmation before running. Defaults to False.
-            interactive (bool, optional): If True, warns that the command may require user interaction. Defaults to False.
-
-        Returns:
-            str: Output and status message.
-        """
         if not command.strip():
-            self.report_warning("⚠️ Warning: Empty command provided. Operation skipped.")
-            return "Warning: Empty command provided. Operation skipped."
-        self.report_info(f"🖥️  Running bash command: {command} ...\n")
+            self.report_warning(
+                tr("⚠️ Warning: Empty command provided. Operation skipped.")
+            )
+            return tr("Warning: Empty command provided. Operation skipped.")
+        self.report_info(
+            tr("🖥️  Running bash command: {command} ...\n", command=command)
+        )
         if interactive:
             self.report_info(
-                "⚠️  Warning: This command might be interactive, require user input, and might hang."
+                tr(
+                    "⚠️  Warning: This command might be interactive, require user input, and might hang."
+                )
             )
             sys.stdout.flush()
-
         try:
             with (
                 tempfile.NamedTemporaryFile(
@@ -66,23 +56,20 @@ class RunBashCommandTool(ToolBase):
                 env["PYTHONIOENCODING"] = "utf-8"
                 env["LC_ALL"] = "C.UTF-8"
                 env["LANG"] = "C.UTF-8"
-
                 process = subprocess.Popen(
                     ["bash", "-c", command],
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     text=True,
                     encoding="utf-8",
-                    bufsize=1,  # line-buffered
+                    bufsize=1,
                     env=env,
                 )
-
                 stdout_lines = 0
                 stderr_lines = 0
                 stdout_content = []
                 stderr_content = []
                 max_lines = 100
-
                 import threading
 
                 def stream_reader(
@@ -120,29 +107,29 @@ class RunBashCommandTool(ToolBase):
                 )
                 stdout_thread.start()
                 stderr_thread.start()
-
                 try:
                     process.wait(timeout=timeout)
                 except subprocess.TimeoutExpired:
                     process.kill()
-                    self.report_error(f" ❌ Timed out after {timeout} seconds.")
-                    return f"Command timed out after {timeout} seconds."
-
+                    self.report_error(
+                        tr(" ❌ Timed out after {timeout} seconds.", timeout=timeout)
+                    )
+                    return tr(
+                        "Command timed out after {timeout} seconds.", timeout=timeout
+                    )
                 stdout_thread.join()
                 stderr_thread.join()
-
-                # Count lines
                 stdout_lines = stdout_counter[0]
                 stderr_lines = stderr_counter[0]
-
-                self.report_success(f" ✅ return code {process.returncode}")
+                self.report_success(
+                    tr(" ✅ return code {return_code}", return_code=process.returncode)
+                )
                 warning_msg = ""
                 if interactive:
-                    warning_msg = "⚠️  Warning: This command might be interactive, require user input, and might hang.\n"
-
-                # Read output contents if small
+                    warning_msg = tr(
+                        "⚠️  Warning: This command might be interactive, require user input, and might hang.\n"
+                    )
                 if stdout_lines <= max_lines and stderr_lines <= max_lines:
-                    # Read files from disk to ensure all content is included
                     with open(
                         stdout_file.name, "r", encoding="utf-8", errors="replace"
                     ) as out_f:
@@ -151,24 +138,34 @@ class RunBashCommandTool(ToolBase):
                         stderr_file.name, "r", encoding="utf-8", errors="replace"
                     ) as err_f:
                         stderr_content_str = err_f.read()
-                    result = (
-                        warning_msg
-                        + f"Return code: {process.returncode}\n--- STDOUT ---\n{stdout_content_str}"
+                    result = warning_msg + tr(
+                        "Return code: {return_code}\n--- STDOUT ---\n{stdout_content}",
+                        return_code=process.returncode,
+                        stdout_content=stdout_content_str,
                     )
                     if stderr_content_str.strip():
-                        result += f"\n--- STDERR ---\n{stderr_content_str}"
+                        result += tr(
+                            "\n--- STDERR ---\n{stderr_content}",
+                            stderr_content=stderr_content_str,
+                        )
                     return result
                 else:
-                    result = (
-                        warning_msg
-                        + f"[LARGE OUTPUT]\nstdout_file: {stdout_file.name} (lines: {stdout_lines})\n"
+                    result = warning_msg + tr(
+                        "[LARGE OUTPUT]\nstdout_file: {stdout_file} (lines: {stdout_lines})\n",
+                        stdout_file=stdout_file.name,
+                        stdout_lines=stdout_lines,
                     )
                     if stderr_lines > 0:
-                        result += (
-                            f"stderr_file: {stderr_file.name} (lines: {stderr_lines})\n"
+                        result += tr(
+                            "stderr_file: {stderr_file} (lines: {stderr_lines})\n",
+                            stderr_file=stderr_file.name,
+                            stderr_lines=stderr_lines,
                         )
-                    result += f"returncode: {process.returncode}\nUse the get_lines tool to inspect the contents of these files when needed."
+                    result += tr(
+                        "returncode: {return_code}\nUse the get_lines tool to inspect the contents of these files when needed.",
+                        return_code=process.returncode,
+                    )
                     return result
         except Exception as e:
-            self.report_error(f" ❌ Error: {e}")
-            return f"Error running command: {e}"
+            self.report_error(tr(" ❌ Error: {error}", error=e))
+            return tr("Error running command: {error}", error=e)

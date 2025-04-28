@@ -8,6 +8,7 @@ from .config import handle_reload
 from .history_start import handle_start
 from ..config_shell import handle_config_shell
 from .verbose import handle_verbose
+from .lang import handle_lang
 from janito.agent.runtime_config import runtime_config
 
 COMMAND_HANDLERS = {
@@ -26,6 +27,9 @@ COMMAND_HANDLERS = {
 
 if not runtime_config.get("vanilla_mode", False):
     COMMAND_HANDLERS["/role"] = handle_role
+
+
+COMMAND_HANDLERS["/lang"] = handle_lang
 
 COMMAND_HANDLERS.update(
     {

@@ -5,6 +5,7 @@ from .formatting import format_outline_table, format_markdown_outline_table
 import os
 from janito.agent.tool_base import ToolBase
 from janito.agent.tools.tools_utils import display_path
+from janito.i18n import tr
 
 
 @register_tool(name="outline_file")
@@ -18,8 +19,12 @@ class GetFileOutlineTool(ToolBase):
 
     def run(self, file_path: str) -> str:
         try:
-            # Report the filename being outlined as the first step
-            self.report_info(f"📄 Outlining file: '{display_path(file_path)}' ...")
+            self.report_info(
+                tr(
+                    "📄 Outlining file: '{disp_path}' ...",
+                    disp_path=display_path(file_path),
+                )
+            )
             ext = os.path.splitext(file_path)[1].lower()
             with open(file_path, "r", encoding="utf-8", errors="replace") as f:
                 lines = f.readlines()
@@ -27,18 +32,54 @@ class GetFileOutlineTool(ToolBase):
                 outline_items = parse_python_outline(lines)
                 outline_type = "python"
                 table = format_outline_table(outline_items)
-                self.report_success(f"✅ {len(outline_items)} items ({outline_type})")
-                return f"Outline: {len(outline_items)} items ({outline_type})\n" + table
+                self.report_success(
+                    tr(
+                        "✅ {count} items ({outline_type})",
+                        count=len(outline_items),
+                        outline_type=outline_type,
+                    )
+                )
+                return (
+                    tr(
+                        "Outline: {count} items ({outline_type})\n",
+                        count=len(outline_items),
+                        outline_type=outline_type,
+                    )
+                    + table
+                )
             elif ext == ".md":
                 outline_items = parse_markdown_outline(lines)
                 outline_type = "markdown"
                 table = format_markdown_outline_table(outline_items)
-                self.report_success(f"✅ {len(outline_items)} items ({outline_type})")
-                return f"Outline: {len(outline_items)} items ({outline_type})\n" + table
+                self.report_success(
+                    tr(
+                        "✅ {count} items ({outline_type})",
+                        count=len(outline_items),
+                        outline_type=outline_type,
+                    )
+                )
+                return (
+                    tr(
+                        "Outline: {count} items ({outline_type})\n",
+                        count=len(outline_items),
+                        outline_type=outline_type,
+                    )
+                    + table
+                )
             else:
                 outline_type = "default"
-                self.report_success(f"✅ {len(lines)} lines ({outline_type})")
-                return f"Outline: {len(lines)} lines ({outline_type})\nFile has {len(lines)} lines."
+                self.report_success(
+                    tr(
+                        "✅ {count} lines ({outline_type})",
+                        count=len(lines),
+                        outline_type=outline_type,
+                    )
+                )
+                return tr(
+                    "Outline: {count} lines ({outline_type})\nFile has {count} lines.",
+                    count=len(lines),
+                    outline_type=outline_type,
+                )
         except Exception as e:
-            self.report_error(f"❌ Error reading file: {e}")
-            return f"Error reading file: {e}"
+            self.report_error(tr("❌ Error reading file: {error}", error=e))
+            return tr("Error reading file: {error}", error=e)

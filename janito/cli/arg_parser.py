@@ -2,11 +2,20 @@ import argparse
 
 
 def create_parser():
+    # Adiciona --list-tools para listar ferramentas registradas
+    # (adição incremental segura)
+
     parser = argparse.ArgumentParser(
         description="OpenRouter API call using OpenAI Python SDK"
     )
     parser.add_argument(
         "prompt", type=str, nargs="?", help="Prompt to send to the model"
+    )
+    parser.add_argument(
+        "--lang",
+        type=str,
+        default=None,
+        help="Language for interface messages (e.g., en, pt). Overrides config if set.",
     )
 
     parser.add_argument(
@@ -77,6 +86,11 @@ def create_parser():
         "--verbose-response",
         action="store_true",
         help="Pretty print the full response object",
+    )
+    parser.add_argument(
+        "--list-tools",
+        action="store_true",
+        help="Lista todas as ferramentas registradas e sai.",
     )
     parser.add_argument(
         "--show-system",
@@ -200,5 +214,11 @@ def create_parser():
         type=int,
         default=8088,
         help="Port for the termweb server (default: 8088)",
+    )
+    parser.add_argument(
+        "-i",
+        "--info",
+        action="store_true",
+        help="Exibe informações básicas do programa e sai (útil para execução única em shell)",
     )
     return parser

@@ -5,8 +5,8 @@ import time
 import http.client
 import os
 from rich.console import Console
-from janito.agent.runtime_config import runtime_config
 from janito.cli.runner._termweb_log_utils import print_termweb_logs
+from janito.i18n import tr
 
 
 def wait_for_termweb(port, timeout=3.0):
@@ -38,48 +38,36 @@ def start_termweb(selected_port):
         if not os.path.isfile(app_py_path):
             # Step 2: Try installed package
             try:
-                import importlib.util
+                import janito_termweb
 
-                spec = importlib.util.find_spec("janito.termweb.app")
-                if spec and spec.origin:
-                    app_py_path = spec.origin
-                else:
-                    app_py_path = None
-            except Exception:
-                app_py_path = None
-        if not app_py_path or not os.path.isfile(app_py_path):
-            console.print(
-                "[red][termweb][/red] Could not find app.py for termweb (tried source and installed package). Aborting startup."
-            )
-            runtime_config.set("termweb_port", None)
-            return None, False, None, None
+                app_py_path = janito_termweb.__file__.replace("__init__.py", "app.py")
+            except ImportError:
+                console.print("[red]Could not find termweb app.py![/red]")
+                return None, False, None, None
         termweb_stdout = tempfile.NamedTemporaryFile(
-            prefix="termweb_stdout_", delete=False, mode="w", encoding="utf-8"
+            delete=False, mode="w+", encoding="utf-8"
         )
         termweb_stderr = tempfile.NamedTemporaryFile(
-            prefix="termweb_stderr_", delete=False, mode="w", encoding="utf-8"
+            delete=False, mode="w+", encoding="utf-8"
         )
         termweb_proc = subprocess.Popen(
-            [
-                sys.executable,
-                app_py_path,
-                "--port",
-                str(selected_port),
-            ],
+            [sys.executable, app_py_path, "--port", str(selected_port)],
             stdout=termweb_stdout,
             stderr=termweb_stderr,
         )
         if wait_for_termweb(selected_port, timeout=3.0):
             console.print(
-                f"[green]TermWeb started... Available at http://localhost:{selected_port}[/green]"
+                tr(
+                    "TermWeb started... Available at http://localhost:{selected_port}",
+                    selected_port=selected_port,
+                )
             )
             return termweb_proc, True, termweb_stdout.name, termweb_stderr.name
         else:
             termweb_proc.terminate()
             termweb_proc.wait()
             console.print(
-                f"[red][termweb][/red] Startup failed: Bottle app did not respond on port {selected_port} within 3 seconds."
+                f"[red]Failed to start TermWeb on port {selected_port}. Check logs for details.[/red]"
             )
-            print_termweb_logs(termweb_stdout.name, termweb_stderr.name, console)
-            runtime_config.set("termweb_port", None)
+            print_termweb_logs(termweb_stdout.name, termweb_stderr.name)
             return None, False, termweb_stdout.name, termweb_stderr.name

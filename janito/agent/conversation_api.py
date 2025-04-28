@@ -3,6 +3,7 @@ Handles OpenAI API calls and retry logic for conversation.
 """
 
 import time
+from janito.i18n import tr
 import json
 from janito.agent.runtime_config import runtime_config
 from janito.agent.tool_registry import get_tool_schemas
@@ -80,11 +81,16 @@ def retry_api_call(api_func, max_retries=5, *args, **kwargs):
             if attempt < max_retries:
                 wait_time = 2**attempt
                 print(
-                    f"Invalid/malformed response from OpenAI (attempt {attempt}/{max_retries}). Retrying in {wait_time} seconds..."
+                    tr(
+                        "Invalid/malformed response from OpenAI (attempt {attempt}/{max_retries}). Retrying in {wait_time} seconds...",
+                        attempt=attempt,
+                        max_retries=max_retries,
+                        wait_time=wait_time,
+                    )
                 )
                 time.sleep(wait_time)
             else:
-                print("Max retries for invalid response reached. Raising error.")
+                print(tr("Max retries for invalid response reached. Raising error."))
                 raise last_exception
         except Exception as e:
             last_exception = e
@@ -93,7 +99,7 @@ def retry_api_call(api_func, max_retries=5, *args, **kwargs):
             retry_after = None
             # Detect specific tool support error
             if "No endpoints found that support tool use" in error_message:
-                print("API does not support tool use. ")
+                print(tr("API does not support tool use."))
                 raise NoToolSupportError(error_message)
             # Try to extract status code and Retry-After from known exception types or message
             if hasattr(e, "status_code"):
@@ -129,7 +135,13 @@ def retry_api_call(api_func, max_retries=5, *args, **kwargs):
                         wait_time = 2**attempt
                     if attempt < max_retries:
                         print(
-                            f"OpenAI API rate limit (429) (attempt {attempt}/{max_retries}): {e}. Retrying in {wait_time} seconds..."
+                            tr(
+                                "OpenAI API rate limit (429) (attempt {attempt}/{max_retries}): {e}. Retrying in {wait_time} seconds...",
+                                attempt=attempt,
+                                max_retries=max_retries,
+                                e=e,
+                                wait_time=wait_time,
+                            )
                         )
                         time.sleep(wait_time)
                         continue
@@ -143,7 +155,13 @@ def retry_api_call(api_func, max_retries=5, *args, **kwargs):
                     if attempt < max_retries:
                         wait_time = 2**attempt
                         print(
-                            f"OpenAI API server error (attempt {attempt}/{max_retries}): {e}. Retrying in {wait_time} seconds..."
+                            tr(
+                                "OpenAI API server error (attempt {attempt}/{max_retries}): {e}. Retrying in {wait_time} seconds...",
+                                attempt=attempt,
+                                max_retries=max_retries,
+                                e=e,
+                                wait_time=wait_time,
+                            )
                         )
                         time.sleep(wait_time)
                         continue
@@ -154,15 +172,27 @@ def retry_api_call(api_func, max_retries=5, *args, **kwargs):
                         raise last_exception
                 elif 400 <= status_code < 500:
                     # Do not retry on client errors (except 429)
-                    print(f"OpenAI API client error {status_code}: {e}. Not retrying.")
+                    print(
+                        tr(
+                            "OpenAI API client error {status_code}: {e}. Not retrying.",
+                            status_code=status_code,
+                            e=e,
+                        )
+                    )
                     raise last_exception
             # If status code not detected, fallback to previous behavior
             if attempt < max_retries:
                 wait_time = 2**attempt
                 print(
-                    f"OpenAI API error (attempt {attempt}/{max_retries}): {e}. Retrying in {wait_time} seconds..."
+                    tr(
+                        "OpenAI API error (attempt {attempt}/{max_retries}): {e}. Retrying in {wait_time} seconds...",
+                        attempt=attempt,
+                        max_retries=max_retries,
+                        e=e,
+                        wait_time=wait_time,
+                    )
                 )
                 time.sleep(wait_time)
             else:
-                print("Max retries for OpenAI API error reached. Raising error.")
+                print(tr("Max retries for OpenAI API error reached. Raising error."))
                 raise last_exception

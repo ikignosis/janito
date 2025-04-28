@@ -3,6 +3,7 @@ import shutil
 from janito.agent.tool_registry import register_tool
 from janito.agent.tools.utils import expand_path, display_path
 from janito.agent.tool_base import ToolBase
+from janito.i18n import tr
 
 
 @register_tool(name="move_file")
@@ -30,29 +31,39 @@ class MoveFileTool(ToolBase):
         original_dest = dest_path
         src = expand_path(src_path)
         dest = expand_path(dest_path)
-        disp_src = display_path(original_src, src)
-        disp_dest = display_path(original_dest, dest)
+        disp_src = display_path(original_src)
+        disp_dest = display_path(original_dest)
         backup_path = None
-
         if not os.path.exists(src):
-            self.report_error(f"❌ Source '{disp_src}' does not exist.")
-            return f"❌ Source '{disp_src}' does not exist."
-
+            self.report_error(
+                tr("❌ Source '{disp_src}' does not exist.", disp_src=disp_src)
+            )
+            return tr("❌ Source '{disp_src}' does not exist.", disp_src=disp_src)
         is_src_file = os.path.isfile(src)
         is_src_dir = os.path.isdir(src)
         if not (is_src_file or is_src_dir):
             self.report_error(
-                f"❌ Source path '{disp_src}' is neither a file nor a directory."
+                tr(
+                    "❌ Source path '{disp_src}' is neither a file nor a directory.",
+                    disp_src=disp_src,
+                )
             )
-            return f"❌ Source path '{disp_src}' is neither a file nor a directory."
-
+            return tr(
+                "❌ Source path '{disp_src}' is neither a file nor a directory.",
+                disp_src=disp_src,
+            )
         if os.path.exists(dest):
             if not overwrite:
                 self.report_error(
-                    f"❗ Destination '{disp_dest}' exists and overwrite is False."
+                    tr(
+                        "❗ Destination '{disp_dest}' exists and overwrite is False.",
+                        disp_dest=disp_dest,
+                    )
                 )
-                return f"❗ Destination '{disp_dest}' already exists and overwrite is False."
-            # Backup logic
+                return tr(
+                    "❗ Destination '{disp_dest}' already exists and overwrite is False.",
+                    disp_dest=disp_dest,
+                )
             if backup:
                 if os.path.isfile(dest):
                     backup_path = dest + ".bak"
@@ -60,23 +71,38 @@ class MoveFileTool(ToolBase):
                 elif os.path.isdir(dest):
                     backup_path = dest.rstrip("/\\") + ".bak.zip"
                     shutil.make_archive(dest.rstrip("/\\") + ".bak", "zip", dest)
-            # Remove destination before move
             try:
                 if os.path.isfile(dest):
                     os.remove(dest)
                 elif os.path.isdir(dest):
                     shutil.rmtree(dest)
             except Exception as e:
-                self.report_error(f"❌ Error removing destination before move: {e}")
-                return f"❌ Error removing destination before move: {e}"
-
+                self.report_error(
+                    tr("❌ Error removing destination before move: {error}", error=e)
+                )
+                return tr("❌ Error removing destination before move: {error}", error=e)
         try:
             shutil.move(src, dest)
-            self.report_success(f"✅ Moved from '{disp_src}' to '{disp_dest}'")
-            msg = f"✅ Successfully moved from '{disp_src}' to '{disp_dest}'."
+            self.report_success(
+                tr(
+                    "✅ Moved from '{disp_src}' to '{disp_dest}'",
+                    disp_src=disp_src,
+                    disp_dest=disp_dest,
+                )
+            )
+            msg = tr(
+                "✅ Successfully moved from '{disp_src}' to '{disp_dest}'.",
+                disp_src=disp_src,
+                disp_dest=disp_dest,
+            )
             if backup_path:
-                msg += f" (backup at {display_path(original_dest + ('.bak' if is_src_file else '.bak.zip'), backup_path)})"
+                msg += tr(
+                    " (backup at {backup_disp})",
+                    backup_disp=display_path(
+                        original_dest + (".bak" if is_src_file else ".bak.zip")
+                    ),
+                )
             return msg
         except Exception as e:
-            self.report_error(f"❌ Error moving: {e}")
-            return f"❌ Error moving: {e}"
+            self.report_error(tr("❌ Error moving: {error}", error=e))
+            return tr("❌ Error moving: {error}", error=e)

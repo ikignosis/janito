@@ -36,6 +36,16 @@ Janito now includes an experimental lightweight web file viewer for use with the
 
 ---
 
+## Listing Available Tools
+
+To list all registered tools on the command line, use the option:
+
+```sh
+janito --list-tools
+```
+
+This will display a colorful table with the name, description, and parameters of each available tool.
+
 ## ⚡ Quick Start
 
 ## 🖥️ Supported Human Interfaces

@@ -1,40 +1,65 @@
 from janito.agent.tool_registry import register_tool
 from janito.agent.tools.utils import expand_path, display_path
 from janito.agent.tool_base import ToolBase
+from janito.i18n import tr
 import os
 
 
 @register_tool(name="create_directory")
 class CreateDirectoryTool(ToolBase):
     """
-    Create a new directory at the specified path.
-
+    Create a new directory at the specified file_path.
     Args:
-        path (str): Path for the new directory.
-
+        file_path (str): Path for the new directory.
     Returns:
         str: Status message indicating the result. Example:
-            - "\u2705 Successfully created the directory at ..."
-            - "\u2757 Cannot create directory: ..."
+            - "✅ Successfully created the directory at ..."
+            - "❗ Cannot create directory: ..."
     """
 
-    def run(self, path: str) -> str:
-        original_path = path
-        path = expand_path(path)
-        disp_path = display_path(original_path, path)
-        self.report_info(f"\U0001f4c1 Creating directory: '{disp_path}' ...")
+    def run(self, file_path: str) -> str:
+        file_path = expand_path(file_path)
+        disp_path = display_path(file_path)
+        self.report_info(
+            tr("📁 Creating directory: '{disp_path}' ...", disp_path=disp_path)
+        )
         try:
-            if os.path.exists(path):
-                if not os.path.isdir(path):
+            if os.path.exists(file_path):
+                if not os.path.isdir(file_path):
                     self.report_error(
-                        f"\u274c Path '{disp_path}' exists and is not a directory."
+                        tr(
+                            "❌ Path '{disp_path}' exists and is not a directory.",
+                            disp_path=disp_path,
+                        )
                     )
-                    return f"\u274c Path '{disp_path}' exists and is not a directory."
-                self.report_error(f"\u2757 Directory '{disp_path}' already exists.")
-                return f"\u2757 Cannot create directory: '{disp_path}' already exists."
-            os.makedirs(path, exist_ok=True)
-            self.report_success(f"\u2705 Directory created at '{disp_path}'")
-            return f"\u2705 Successfully created the directory at '{disp_path}'."
+                    return tr(
+                        "❌ Path '{disp_path}' exists and is not a directory.",
+                        disp_path=disp_path,
+                    )
+                self.report_error(
+                    tr(
+                        "❗ Directory '{disp_path}' already exists.",
+                        disp_path=disp_path,
+                    )
+                )
+                return tr(
+                    "❗ Cannot create directory: '{disp_path}' already exists.",
+                    disp_path=disp_path,
+                )
+            os.makedirs(file_path, exist_ok=True)
+            self.report_success(
+                tr("✅ Directory created at '{disp_path}'", disp_path=disp_path)
+            )
+            return tr(
+                "✅ Successfully created the directory at '{disp_path}'.",
+                disp_path=disp_path,
+            )
         except Exception as e:
-            self.report_error(f"\u274c Error creating directory '{disp_path}': {e}")
-            return f"\u274c Cannot create directory: {e}"
+            self.report_error(
+                tr(
+                    "❌ Error creating directory '{disp_path}': {error}",
+                    disp_path=disp_path,
+                    error=e,
+                )
+            )
+            return tr("❌ Cannot create directory: {error}", error=e)

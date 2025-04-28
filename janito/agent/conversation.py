@@ -49,7 +49,9 @@ class ConversationHandler:
             resolved_max_tokens = int(resolved_max_tokens)
         except (TypeError, ValueError):
             raise ValueError(
-                f"max_tokens must be an integer, got: {resolved_max_tokens!r}"
+                "max_tokens must be an integer, got: {resolved_max_tokens!r}".format(
+                    resolved_max_tokens=resolved_max_tokens
+                )
             )
 
         # If vanilla mode is set and max_tokens was not provided, default to 8000
@@ -162,12 +164,12 @@ class ConversationHandler:
                     "tool_calls": [tc.to_dict() for tc in choice.message.tool_calls],
                 }
             )
-            for tr in tool_responses:
+            for tool_response in tool_responses:
                 messages.append(
                     {
                         "role": "tool",
-                        "tool_call_id": tr["tool_call_id"],
-                        "content": tr["content"],
+                        "tool_call_id": tool_response["tool_call_id"],
+                        "content": tool_response["content"],
                     }
                 )
         raise MaxRoundsExceededError(f"Max conversation rounds exceeded ({max_rounds})")

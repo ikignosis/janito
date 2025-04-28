@@ -1,15 +1,14 @@
 import requests
 from bs4 import BeautifulSoup
 from janito.agent.tool_registry import register_tool
-
 from janito.agent.tool_base import ToolBase
+from janito.i18n import tr
 
 
 @register_tool(name="fetch_url")
 class FetchUrlTool(ToolBase):
     """
     Fetch the content of a web page and extract its text.
-
     Args:
         url (str): The URL of the web page to fetch.
         search_strings (list[str], optional): Strings to search for in the page content.
@@ -22,20 +21,21 @@ class FetchUrlTool(ToolBase):
 
     def run(self, url: str, search_strings: list[str] = None) -> str:
         if not url.strip():
-            self.report_warning("⚠️ Warning: Empty URL provided. Operation skipped.")
-            return "Warning: Empty URL provided. Operation skipped."
-        self.report_info(f"🌐 Fetching URL: {url} ...")
+            self.report_warning(tr("⚠️ Warning: Empty URL provided. Operation skipped."))
+            return tr("Warning: Empty URL provided. Operation skipped.")
+        self.report_info(tr("🌐 Fetching URL: {url} ...", url=url))
         response = requests.get(url, timeout=10)
         response.raise_for_status()
         self.update_progress(
             {
                 "event": "progress",
-                "message": f"Fetched URL with status {response.status_code}",
+                "message": tr(
+                    "Fetched URL with status {status}", status=response.status_code
+                ),
             }
         )
         soup = BeautifulSoup(response.text, "html.parser")
         text = soup.get_text(separator="\n")
-
         if search_strings:
             filtered = []
             for s in search_strings:
@@ -48,7 +48,6 @@ class FetchUrlTool(ToolBase):
             if filtered:
                 text = "\n...\n".join(filtered)
             else:
-                text = "No lines found for the provided search strings."
-
-        self.report_success("✅ Result")
+                text = tr("No lines found for the provided search strings.")
+        self.report_success(tr("✅ Result"))
         return text
