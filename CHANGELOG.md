@@ -1,3 +1,40 @@
+# Changelog
+
+## [1.8.0] - 2025-04-28
+
+### Documentation
+- Major updates and new guides added, including code intelligence, prompting, and tool usage.
+- Improved structure and clarity across docs, with new images and reference material.
+
+### Agent Core
+- Significant refactor and modularization of the event and message handling system.
+- New event-driven architecture introduced for better extensibility and maintainability.
+- Expanded protocol and handler support for agent actions.
+
+### Tools
+- Many new tools added for file, directory, and text operations, as well as improved tool documentation.
+- Enhanced tool registry and execution tracking for more robust tool management.
+
+### CLI
+- Updates to argument parsing, logging, and runner utilities for a smoother CLI experience.
+- New terminal web starter (termweb) introduced for launching a web-based terminal interface.
+
+### Termweb
+- Added a web-based terminal interface for interacting with the agent in-browser.
+- Includes static assets, quick open, and improved user experience for web terminal sessions.
+
+### Internationalization
+- Initial support for multiple languages, including Portuguese, with message files and translation structure.
+
+### Configuration & Profiles
+- Refined configuration defaults and profile management for easier setup and customization.
+
+### Miscellaneous
+- General improvements to code quality, documentation, and developer tooling.
+- Various bug fixes and minor enhancements throughout the codebase.
+
+---
+
 ## [1.7.0] - 2025-04-22
 
 ### Features
