@@ -1,13 +1,13 @@
 # 🚀 Janito: Natural Language Coding Agent
 
-**Current Version: 1.7.0**  
+**Current Version: 1.8.1**  
 See [CHANGELOG.md](./CHANGELOG.md) for details on the latest release.
 
 Janito is an AI-powered assistant for the command line and web that interprets natural language system_prompt_template to edit code, manage files, and analyze projects using patterns and tools designed by experienced software engineers. It prioritizes transparency, interactive clarification, and precise, reviewable changes.
 
 For a technical overview, see the [Architecture Guide](docs/reference/architecture.md).
 
-## 🧪 Experimental Feature: Liteweb File Viewer
+## 🧪 Experimental Feature: termweb File Viewer
 
 Janito now includes an experimental lightweight web file viewer for use with the CLI chat shell. This feature allows you to click on file paths in the terminal (when using a Rich-compatible terminal) and instantly preview file contents in your browser—no full IDE required!
 
@@ -17,6 +17,7 @@ Janito now includes an experimental lightweight web file viewer for use with the
   ```bash
   janito --termweb
   ```
+- To disable the termweb file viewer, use the `--no-termweb` flag.
 - By default, the viewer runs at http://localhost:8088 (or the next available port up to 8100).
 - To specify a port, use `--termweb-port 8090`.
 - File paths in CLI output become clickable links that open the file in your browser.
@@ -65,6 +66,7 @@ You can alter Janito's behavior in any interface using these flags:
 - `--no-tools`: Disable all tool usage (Janito will only use the language model, no file/code/shell actions).
 - `--trust-tools`/`-T`: Trusted tools mode (suppresses all tool output, only shows output file locations).
 - `--vanilla`: Disables tools, system prompt, and temperature settings for a pure LLM chat experience.
+- `--no-termweb`: Disables the termweb file viewer for terminal links.
 
 These modifiers can be combined with any interface mode for tailored workflows.
 

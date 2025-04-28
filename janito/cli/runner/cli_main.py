@@ -77,7 +77,7 @@ def run_cli(args):
     if getattr(args, "verbose_reason", False):
         runtime_config.set("verbose_reason", True)
 
-    # --- Liteweb integration ---
+    # --- termweb integration ---
     termweb_proc = None
     selected_port = None
     if (
