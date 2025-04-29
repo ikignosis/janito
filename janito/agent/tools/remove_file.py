@@ -1,7 +1,9 @@
 import os
 import shutil
 from janito.agent.tool_registry import register_tool
-from janito.agent.tools.utils import expand_path, display_path
+
+# from janito.agent.tools_utils.expand_path import expand_path
+from janito.agent.tools_utils.utils import display_path
 from janito.agent.tool_base import ToolBase
 from janito.i18n import tr
 
@@ -22,27 +24,23 @@ class RemoveFileTool(ToolBase):
 
     def run(self, file_path: str, backup: bool = False) -> str:
         original_path = file_path
-        path = expand_path(file_path)
+        path = file_path  # Using file_path as is
         disp_path = display_path(original_path)
         backup_path = None
+        # Report initial info about what is going to be removed
+        self.report_info(tr("🗑️ Removing file: '{disp_path}' ...", disp_path=disp_path))
         if not os.path.exists(path):
-            self.report_error(
-                tr("❌ File '{disp_path}' does not exist.", disp_path=disp_path)
-            )
-            return tr("❌ File '{disp_path}' does not exist.", disp_path=disp_path)
+            self.report_error(tr("❌ File does not exist."))
+            return tr("❌ File does not exist.")
         if not os.path.isfile(path):
-            self.report_error(
-                tr("❌ Path '{disp_path}' is not a file.", disp_path=disp_path)
-            )
-            return tr("❌ Path '{disp_path}' is not a file.", disp_path=disp_path)
+            self.report_error(tr("❌ Path is not a file."))
+            return tr("❌ Path is not a file.")
         try:
             if backup:
                 backup_path = path + ".bak"
                 shutil.copy2(path, backup_path)
             os.remove(path)
-            self.report_success(
-                tr("✅ File removed: '{disp_path}'", disp_path=disp_path)
-            )
+            self.report_success(tr("✅ File removed"))
             msg = tr(
                 "✅ Successfully removed the file at '{disp_path}'.",
                 disp_path=disp_path,

@@ -1,10 +1,10 @@
 from janito.agent.tool_base import ToolBase
 from janito.agent.tool_registry import register_tool
-from janito.agent.tools.tools_utils import pluralize
+from janito.agent.tools_utils.utils import pluralize
 from janito.i18n import tr
 import os
 import re
-from janito.agent.tools.gitignore_utils import filter_ignored
+from janito.agent.tools_utils.gitignore_utils import filter_ignored
 
 
 def is_binary_file(path, blocksize=1024):
@@ -83,7 +83,7 @@ class SearchTextTool(ToolBase):
         total_results = 0
         paths_list = paths.split()
         for search_path in paths_list:
-            from janito.agent.tools.tools_utils import display_path
+            from janito.agent.tools_utils.utils import display_path
 
             info_str = tr(
                 "🔍 Searching for {search_type} '{pattern}' in '{disp_path}'",

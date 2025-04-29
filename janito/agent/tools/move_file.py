@@ -1,7 +1,9 @@
 import os
 import shutil
 from janito.agent.tool_registry import register_tool
-from janito.agent.tools.utils import expand_path, display_path
+
+# from janito.agent.tools_utils.expand_path import expand_path
+from janito.agent.tools_utils.utils import display_path
 from janito.agent.tool_base import ToolBase
 from janito.i18n import tr
 
@@ -29,8 +31,8 @@ class MoveFileTool(ToolBase):
     ) -> str:
         original_src = src_path
         original_dest = dest_path
-        src = expand_path(src_path)
-        dest = expand_path(dest_path)
+        src = src_path  # Using src_path as is
+        dest = dest_path  # Using dest_path as is
         disp_src = display_path(original_src)
         disp_dest = display_path(original_dest)
         backup_path = None
@@ -82,19 +84,16 @@ class MoveFileTool(ToolBase):
                 )
                 return tr("❌ Error removing destination before move: {error}", error=e)
         try:
-            shutil.move(src, dest)
-            self.report_success(
+            self.report_info(
                 tr(
-                    "✅ Moved from '{disp_src}' to '{disp_dest}'",
+                    "📝 Moving from '{disp_src}' to '{disp_dest}' ...",
                     disp_src=disp_src,
                     disp_dest=disp_dest,
                 )
             )
-            msg = tr(
-                "✅ Successfully moved from '{disp_src}' to '{disp_dest}'.",
-                disp_src=disp_src,
-                disp_dest=disp_dest,
-            )
+            shutil.move(src, dest)
+            self.report_success(tr("✅ Move complete."))
+            msg = tr("✅ Move complete.")
             if backup_path:
                 msg += tr(
                     " (backup at {backup_disp})",

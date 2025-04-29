@@ -69,5 +69,5 @@ def start_termweb(selected_port):
             console.print(
                 f"[red]Failed to start TermWeb on port {selected_port}. Check logs for details.[/red]"
             )
-            print_termweb_logs(termweb_stdout.name, termweb_stderr.name)
+            print_termweb_logs(termweb_stdout.name, termweb_stderr.name, console)
             return None, False, termweb_stdout.name, termweb_stderr.name

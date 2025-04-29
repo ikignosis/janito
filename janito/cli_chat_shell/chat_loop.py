@@ -14,6 +14,8 @@ def start_chat_shell(
     max_rounds=50,
     termweb_stdout_path=None,
     termweb_stderr_path=None,
+    livereload_stdout_path=None,
+    livereload_stderr_path=None,
 ):
     import janito.i18n as i18n
     from janito.agent.runtime_config import runtime_config
@@ -30,6 +32,10 @@ def start_chat_shell(
         state["termweb_stdout_path"] = termweb_stdout_path
     if termweb_stderr_path:
         state["termweb_stderr_path"] = termweb_stderr_path
+    if livereload_stdout_path:
+        state["livereload_stdout_path"] = livereload_stdout_path
+    if livereload_stderr_path:
+        state["livereload_stderr_path"] = livereload_stderr_path
     messages = state["messages"]
     mem_history = state["mem_history"]
     last_usage_info_ref = {"value": state["last_usage_info"]}

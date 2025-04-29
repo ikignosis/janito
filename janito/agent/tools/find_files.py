@@ -1,7 +1,7 @@
 from janito.agent.tool_base import ToolBase
 from janito.agent.tool_registry import register_tool
-from janito.agent.tools.tools_utils import pluralize, display_path
-from janito.agent.tools.dir_walk_utils import walk_dir_with_gitignore
+from janito.agent.tools_utils.utils import pluralize, display_path
+from janito.agent.tools_utils.dir_walk_utils import walk_dir_with_gitignore
 from janito.i18n import tr
 import fnmatch
 import os
@@ -50,8 +50,15 @@ class FindFilesTool(ToolBase):
                 directory, max_depth=max_depth
             ):
                 for pat in patterns:
-                    for filename in fnmatch.filter(files, pat):
-                        output.add(os.path.join(root, filename))
+                    # Directory matching: pattern ends with '/' or '\'
+                    if pat.endswith("/") or pat.endswith("\\"):
+                        dir_pat = pat.rstrip("/\\")
+                        for d in dirs:
+                            if fnmatch.fnmatch(d, dir_pat):
+                                output.add(os.path.join(root, d) + os.sep)
+                    else:
+                        for filename in fnmatch.filter(files, pat):
+                            output.add(os.path.join(root, filename))
         self.report_success(
             tr(
                 " ✅ {count} {file_word} found",

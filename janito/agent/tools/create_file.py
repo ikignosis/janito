@@ -1,7 +1,9 @@
 import os
 import shutil
 from janito.agent.tool_registry import register_tool
-from janito.agent.tools.utils import expand_path, display_path
+
+# from janito.agent.tools_utils.expand_path import expand_path
+from janito.agent.tools_utils.utils import display_path
 from janito.agent.tool_base import ToolBase
 from janito.i18n import tr
 
@@ -21,7 +23,7 @@ class CreateFileTool(ToolBase):
     """
 
     def run(self, file_path: str, content: str, overwrite: bool = False) -> str:
-        expanded_file_path = expand_path(file_path)
+        expanded_file_path = file_path  # Using file_path as is
         disp_path = display_path(expanded_file_path)
         file_path = expanded_file_path
         backup_path = None

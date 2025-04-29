@@ -9,4 +9,6 @@ rich
 beautifulsoup4 # fetch_url tool dependency, bs4
 PyYAML # for YAML syntax validation
 lxml # for XML/HTML validation
+quart
+questionary
 

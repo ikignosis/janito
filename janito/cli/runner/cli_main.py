@@ -118,6 +118,8 @@ def run_cli(args):
 
     # --- End termweb integration ---
     try:
+        livereload_stdout_path = None
+        livereload_stderr_path = None
         if not getattr(args, "prompt", None):
             from janito.cli_chat_shell.chat_loop import start_chat_shell
 
@@ -129,6 +131,16 @@ def run_cli(args):
                 ),
                 termweb_stderr_path=(
                     termweb_stderr_path if "termweb_stderr_path" in locals() else None
+                ),
+                livereload_stdout_path=(
+                    livereload_stdout_path
+                    if "livereload_stdout_path" in locals()
+                    else None
+                ),
+                livereload_stderr_path=(
+                    livereload_stderr_path
+                    if "livereload_stderr_path" in locals()
+                    else None
                 ),
             )
             sys.exit(0)

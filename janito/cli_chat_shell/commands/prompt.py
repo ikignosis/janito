@@ -9,7 +9,7 @@ def handle_prompt(console, **kwargs):
     console.print(f"[bold magenta]System Prompt:[/bold magenta]\n{prompt}")
 
 
-def handle_role(console, *args, **kwargs):
+def handle_role(console, args=None, **kwargs):
     state = kwargs.get("state")
     profile_manager = kwargs.get("profile_manager")
     if not args:

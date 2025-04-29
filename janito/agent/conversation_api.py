@@ -10,10 +10,26 @@ from janito.agent.tool_registry import get_tool_schemas
 from janito.agent.conversation_exceptions import NoToolSupportError
 
 
+def _sanitize_utf8_surrogates(obj):
+    """
+    Recursively sanitize a dict/list/string by replacing surrogate codepoints with the unicode replacement character.
+    """
+    if isinstance(obj, str):
+        # Encode with surrogatepass, then decode with 'utf-8', replacing errors
+        return obj.encode("utf-8", "replace").decode("utf-8", "replace")
+    elif isinstance(obj, dict):
+        return {k: _sanitize_utf8_surrogates(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [_sanitize_utf8_surrogates(x) for x in obj]
+    else:
+        return obj
+
+
 def get_openai_response(
     client, model, messages, max_tokens, tools=None, tool_choice=None, temperature=None
 ):
     """Non-streaming OpenAI API call."""
+    messages = _sanitize_utf8_surrogates(messages)
     if runtime_config.get("vanilla_mode", False):
         return client.chat.completions.create(
             model=model,
@@ -43,6 +59,7 @@ def get_openai_stream_response(
     message_handler=None,
 ):
     """Streaming OpenAI API call."""
+    messages = _sanitize_utf8_surrogates(messages)
     openai_args = dict(
         model=model,
         messages=messages,

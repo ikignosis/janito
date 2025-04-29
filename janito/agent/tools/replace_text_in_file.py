@@ -29,7 +29,7 @@ class ReplaceTextInFileTool(ToolBase):
         replace_all: bool = False,
         backup: bool = False,
     ) -> str:
-        from janito.agent.tools.tools_utils import display_path
+        from janito.agent.tools_utils.utils import display_path
 
         disp_path = display_path(file_path)
         action = "(all)" if replace_all else "(unique)"

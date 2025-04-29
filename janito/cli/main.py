@@ -5,6 +5,7 @@ from janito.cli.config_commands import handle_config_commands
 from janito.cli.logging_setup import setup_verbose_logging
 from janito.cli.runner.cli_main import run_cli
 from janito.agent.runtime_config import unified_config
+from janito.cli.livereload_starter import start_livereload
 
 # Ensure all tools are registered at startup
 import janito.agent.tools  # noqa: F401
@@ -131,5 +132,16 @@ def main():
         import subprocess  # Only needed if launching web
 
         subprocess.run([sys.executable, "-m", "janito.web"])
+    elif getattr(args, "live", False):
+        port = 35729  # Default livereload port
+        livereload_proc, started, livereload_stdout_path, livereload_stderr_path = (
+            start_livereload(port)
+        )
+        try:
+            run_cli(args)
+        finally:
+            if livereload_proc:
+                livereload_proc.terminate()
+                livereload_proc.wait()
     else:
         run_cli(args)

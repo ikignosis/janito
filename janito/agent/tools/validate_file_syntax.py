@@ -4,7 +4,7 @@ from janito.i18n import tr
 import os
 import json
 import yaml
-from janito.agent.tools.utils import display_path
+from janito.agent.tools_utils.utils import display_path
 
 
 @register_tool(name="validate_file_syntax")

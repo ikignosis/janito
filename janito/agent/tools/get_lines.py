@@ -1,6 +1,6 @@
 from janito.agent.tool_base import ToolBase
 from janito.agent.tool_registry import register_tool
-from janito.agent.tools.tools_utils import pluralize
+from janito.agent.tools_utils.utils import pluralize
 from janito.i18n import tr
 
 
@@ -21,7 +21,7 @@ class GetLinesTool(ToolBase):
     """
 
     def run(self, file_path: str, from_line: int = None, to_line: int = None) -> str:
-        from janito.agent.tools.tools_utils import display_path
+        from janito.agent.tools_utils.utils import display_path
 
         disp_path = display_path(file_path)
         if from_line and to_line:
@@ -34,7 +34,7 @@ class GetLinesTool(ToolBase):
                 )
             )
         else:
-            self.report_info(tr("📖 Reading {disp_path} all", disp_path=disp_path))
+            self.report_info(tr("📖 Reading {disp_path}", disp_path=disp_path))
         try:
             with open(file_path, "r", encoding="utf-8", errors="replace") as f:
                 lines = f.readlines()

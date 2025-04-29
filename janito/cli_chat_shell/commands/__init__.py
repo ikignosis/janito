@@ -3,6 +3,7 @@ from .prompt import handle_prompt, handle_role
 from .session_control import handle_exit, handle_restart
 from .utility import handle_help, handle_clear, handle_multi
 from .termweb_log import handle_termweb_log_tail, handle_termweb_status
+from .livelogs import handle_livelogs
 from .sum import handle_sum
 from .config import handle_reload
 from .history_start import handle_start
@@ -13,6 +14,7 @@ from janito.agent.runtime_config import runtime_config
 
 COMMAND_HANDLERS = {
     "/termweb-logs": handle_termweb_log_tail,
+    "/livelogs": handle_livelogs,
     "/termweb-status": handle_termweb_status,
     "/history": handle_history,
     "/continue": handle_continue,

@@ -161,6 +161,11 @@ def create_parser():
         "--web", action="store_true", help="Launch the Janito web server instead of CLI"
     )
     parser.add_argument(
+        "--live",
+        action="store_true",
+        help="Launch the Janito live reload server for web development",
+    )
+    parser.add_argument(
         "--config-reset-local",
         action="store_true",
         help="Remove the local config file (~/.janito/config.json)",
