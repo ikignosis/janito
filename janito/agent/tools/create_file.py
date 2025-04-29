@@ -33,6 +33,9 @@ class CreateFileTool(ToolBase):
                     "⚠️ File already exists at '{disp_path}'. Use overwrite=True to overwrite.",
                     disp_path=disp_path,
                 )
+            self.report_info(
+                tr("📝 Updating file: '{disp_path}' ...", disp_path=disp_path)
+            )
             # Check ToolUseTracker for full read before overwrite
             try:
                 from janito.agent.tool_use_tracker import ToolUseTracker
@@ -50,9 +53,7 @@ class CreateFileTool(ToolBase):
                 return tr("[ToolUseTracker] Error: {e}")
             backup_path = file_path + ".bak"
             shutil.copy2(file_path, backup_path)
-            self.report_info(
-                tr("📝 Updating file: '{disp_path}' ...", disp_path=disp_path)
-            )
+
             mode = "w"
             updated = True
         else:

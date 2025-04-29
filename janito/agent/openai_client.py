@@ -64,18 +64,18 @@ class Agent:
 
     def chat(
         self,
-        messages,
+        messages=None,
         message_handler=None,
         spinner=False,
         max_tokens=None,
-        max_rounds=50,
+        max_rounds=100,
         stream=False,
     ):
         """
         Start a chat conversation with the agent.
 
         Args:
-            messages: List of message dicts.
+            messages: ConversationHistory instance or None.
             message_handler: Optional handler for streaming or event messages.
             spinner: Show spinner during request.
             max_tokens: Max tokens for completion.
@@ -86,6 +86,14 @@ class Agent:
             If stream=True: generator yielding content chunks or events.
         """
         from janito.agent.runtime_config import runtime_config
+        from janito.agent.conversation_history import ConversationHistory
+
+        if messages is None:
+            messages = ConversationHistory()
+        elif not isinstance(messages, ConversationHistory):
+            raise TypeError(
+                "Agent.chat expects a ConversationHistory instance or None."
+            )
 
         max_retries = 5
         for attempt in range(1, max_retries + 1):

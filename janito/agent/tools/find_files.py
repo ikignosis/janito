@@ -14,7 +14,7 @@ class FindFilesTool(ToolBase):
     Args:
         paths (str): String of one or more paths (space-separated) to search in. Each path can be a directory.
         pattern (str): File pattern(s) to match. Multiple patterns can be separated by spaces. Uses Unix shell-style wildcards (fnmatch), e.g. '*.py', 'data_??.csv', '[a-z]*.txt'.
-        max_depth (int, optional): Maximum directory depth to search. If 0 (default), search is recursive with no depth limit. If >0, limits recursion to that depth. Setting max_depth=1 disables recursion (only top-level directory).
+        max_depth (int, optional): Maximum directory depth to search. If None, unlimited recursion. If 0, only the top-level directory. If 1, only the root directory (matches 'find . -maxdepth 1'). If N>1, yields files in root and up to N-1 levels below root (matches 'find . -maxdepth N').
         max_results (int, optional): Maximum number of results to return. 0 means no limit (default).
     Returns:
         str: Newline-separated list of matching file paths. Example:
@@ -23,7 +23,7 @@ class FindFilesTool(ToolBase):
             If max_results is reached, appends a note to the output.
     """
 
-    def run(self, paths: str, pattern: str, max_depth: int = 0) -> str:
+    def run(self, paths: str, pattern: str, max_depth: int = None) -> str:
         if not pattern:
             self.report_warning(
                 tr("⚠️  Warning: Empty file pattern provided. Operation skipped.")
@@ -35,7 +35,7 @@ class FindFilesTool(ToolBase):
             disp_path = display_path(directory)
             depth_msg = (
                 tr(" (max depth: {max_depth})", max_depth=max_depth)
-                if max_depth > 0
+                if max_depth is not None and max_depth > 0
                 else ""
             )
             self.report_info(

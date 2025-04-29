@@ -1,7 +1,7 @@
 from janito.agent.runtime_config import runtime_config
 
 
-def handle_verbose(console, state, **kwargs):
+def handle_verbose(console, shell_state=None, **kwargs):
     """
     /verbose [on|off]
     Shows or sets verbose mode for the current shell session.

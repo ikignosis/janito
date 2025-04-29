@@ -35,6 +35,8 @@ def get_toolbar_func(
     role_ref=None,
     style_ref=None,
     version=None,
+    session_id=None,
+    history_ref=None,
 ):
     from prompt_toolkit.application.current import get_app
 
@@ -79,7 +81,8 @@ def get_toolbar_func(
         if style_part:
             first_line_parts.append(style_part)
         first_line = " | ".join(first_line_parts)
-        left = f" {tr('Messages')}: <msg_count>{len(messages_ref())}</msg_count>"
+        msg_count = len(history_ref()) if history_ref else len(messages_ref())
+        left = f" {tr('Messages')}: <msg_count>{msg_count}</msg_count>"
         tokens_part = ""
         if (
             prompt_tokens is not None
@@ -91,22 +94,27 @@ def get_toolbar_func(
                 f"{tr('Completion')}: {format_tokens(completion_tokens, 'tokens_out')}, "
                 f"{tr('Total')}: {format_tokens(total_tokens, 'tokens_total')}"
             )
-        # Move /help and /start tips to key bindings/info line
+        # Move /help and /restart tips to key bindings/info line
         # Compose second/status line (no help_part)
-        second_line = f"{left}{tokens_part}"
-        total_len = len(left) + len(tokens_part)
+        session_part = (
+            f" | Session ID: <session_id>{session_id}</session_id>"
+            if session_id
+            else ""
+        )
+        second_line = f"{left}{tokens_part}{session_part}"
+        total_len = len(left) + len(tokens_part) + len(session_part)
         if first_line:
             total_len += len(first_line) + 3
         if total_len < width:
             padding = " " * (width - total_len)
-            second_line = f"{left}{tokens_part}{padding}"
-        # Add key bindings info as an extra line, now including /help and /start
+            second_line = f"{left}{tokens_part}{session_part}{padding}"
+        # Add key bindings info as an extra line, now including /help and /restart
         bindings_line = (
             f"<b> F12</b>: {tr('Quick Action')} | "
             f"<b>Ctrl-Y</b>: {tr('Yes')} | "
             f"<b>Ctrl-N</b>: {tr('No')} | "
             f"<b>/help</b>: {tr('Help')} | "
-            f"<b>/start</b>: {tr('New Task')}"
+            f"<b>/restart</b>: {tr('Reset Conversation')}"
         )
         if first_line:
             toolbar_text = first_line + "\n" + second_line + "\n" + bindings_line
@@ -161,6 +169,7 @@ def get_prompt_session(get_toolbar_func, mem_history):
             "tokens_out": "ansigreen bold",
             "tokens_total": "ansiyellow bold",
             "msg_count": "bg:#333333 #ffff00 bold",
+            "session_id": "bg:#005f00 #ffffff bold",
             "b": "bold",
             "prompt": "bg:#005f5f #ffffff",  # (legacy, not used)
             # Style for prompt_toolkit input line:

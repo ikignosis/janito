@@ -7,7 +7,7 @@ from janito.agent.tools_utils.formatting import (
 )
 import os
 from janito.agent.tool_base import ToolBase
-from janito.agent.tools_utils.utils import display_path
+from janito.agent.tools_utils.utils import display_path, pluralize
 from janito.i18n import tr
 
 
@@ -35,7 +35,13 @@ class GetFileOutlineTool(ToolBase):
                 outline_items = parse_python_outline(lines)
                 outline_type = "python"
                 table = format_outline_table(outline_items)
-                self.report_success(tr("✅ Outline generated"))
+                self.report_success(
+                    tr(
+                        "✅ Outlined {count} {item_word}",
+                        count=len(outline_items),
+                        item_word=pluralize("item", len(outline_items)),
+                    )
+                )
                 return (
                     tr(
                         "Outline: {count} items ({outline_type})\n",
@@ -48,7 +54,13 @@ class GetFileOutlineTool(ToolBase):
                 outline_items = parse_markdown_outline(lines)
                 outline_type = "markdown"
                 table = format_markdown_outline_table(outline_items)
-                self.report_success(tr("✅ Outline generated"))
+                self.report_success(
+                    tr(
+                        "✅ Outlined {count} {item_word}",
+                        count=len(outline_items),
+                        item_word=pluralize("item", len(outline_items)),
+                    )
+                )
                 return (
                     tr(
                         "Outline: {count} items ({outline_type})\n",
@@ -59,7 +71,7 @@ class GetFileOutlineTool(ToolBase):
                 )
             else:
                 outline_type = "default"
-                self.report_success(tr("✅ Outline generated"))
+                self.report_success(tr("✅ Outlined {count} items", count=len(lines)))
                 return tr(
                     "Outline: {count} lines ({outline_type})\nFile has {count} lines.",
                     count=len(lines),

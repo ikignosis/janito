@@ -151,6 +151,37 @@ class ValidateFileSyntaxTool(ToolBase):
                     )
                     self.report_warning(msg)
                     return msg
+            elif ext == ".js":
+                import re
+
+                with open(file_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                errors = []
+                # Check for unclosed curly braces, parentheses, brackets
+                if content.count("{") != content.count("}"):
+                    errors.append("Unmatched curly braces { }")
+                if content.count("(") != content.count(")"):
+                    errors.append("Unmatched parentheses ( )")
+                if content.count("[") != content.count("]"):
+                    errors.append("Unmatched brackets [ ]")
+                # Check for unclosed string literals (single, double, backtick)
+                for quote in ["'", '"', "`"]:
+                    # Count unescaped quotes
+                    unescaped = re.findall(rf"(?<!\\){quote}", content)
+                    if len(unescaped) % 2 != 0:
+                        errors.append(f"Unclosed string literal ({quote}) detected")
+                # Check for unclosed block comments
+                if content.count("/*") != content.count("*/"):
+                    errors.append("Unclosed block comment (/* ... */)")
+                # Optionally: Check for missing semicolons (very basic, not enforced in JS)
+                # Report errors if any
+                if errors:
+                    msg = tr(
+                        "⚠️ Warning: JavaScript syntax issues found:\n{errors}",
+                        errors="\n".join(errors),
+                    )
+                    self.report_warning(msg)
+                    return msg
             else:
                 msg = tr("⚠️ Warning: Unsupported file extension: {ext}", ext=ext)
                 self.report_warning(msg)

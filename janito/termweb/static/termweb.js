@@ -16,8 +16,6 @@ function getPaiPath(path) {
 function setExplorerView(view) {
     explorerView = view;
     localStorage.setItem('explorerView', view);
-    document.getElementById('view-list').classList.toggle('active', view === 'list');
-    document.getElementById('view-icons').classList.toggle('active', view === 'icons');
 }
 
 function normalizeExplorerPath(path) {
@@ -63,22 +61,8 @@ function renderExplorer(path, pushUrl=true) {
                         }
                     }
                     html += '</ul>';
-                } else {
-                    html += `<div class='explorer-icons'>`;
-                    if (data.path !== '.') {
-                        const parent = getPaiPath(data.path);
-                        html += `<div class='explorer-icon'><a href='#' data-path='${parent}' class='explorer-link' title='Pai'>(..)</a></div>`;
-                    }
-                    for (const entry of data.entries) {
-                        const entryPath = data.path === '.' ? entry.name : data.path + '/' + entry.name;
-                        if (entry.is_dir) {
-                            html += `<div class='explorer-icon'><a href='#' data-path='${entryPath}' class='explorer-link' title='${entry.name}'>📁<br>${entry.name}</a></div>`;
-                        } else {
-                            html += `<div class='explorer-icon'><a href='#' data-path='${entryPath}' class='explorer-link file-link' title='${entry.name}'>📄<br>${entry.name}</a></div>`;
-                        }
-                    }
-                    html += '</div>';
                 }
+
                 main.innerHTML = html;
                 // Clear preview panel when changing directories
                 const preview = document.getElementById('explorer-preview');
@@ -131,7 +115,7 @@ window.renderCodePreview = function(container, content, mode) {
         var textarea = document.createElement('textarea');
         textarea.value = (typeof content === 'string') ? content : '';
         container.appendChild(textarea);
-        if (window.CodeMirror && container.offsetPai !== null) {
+        if (window.CodeMirror) {
             var editor = CodeMirror.fromTextArea(textarea, {
                 lineNumbers: true,
                 mode: mode || 'python',
@@ -140,7 +124,7 @@ window.renderCodePreview = function(container, content, mode) {
                 indentUnit: 4,
                 tabSize: 4,
             });
-            editor.setSize('100%', 'calc(60vh)');
+            editor.setSize('100%', '60vh');
             return editor;
         } else {
             container.innerHTML = '<pre>' + (content ? String(content) : '') + '</pre>';
@@ -148,7 +132,7 @@ window.renderCodePreview = function(container, content, mode) {
     } catch (e) {
         container.innerHTML = '<pre>' + (content ? String(content) : '') + '</pre>';
     }
-}
+};
 
 // Theme switcher logic
 function setTheme(dark) {
@@ -156,31 +140,28 @@ function setTheme(dark) {
         document.body.classList.add('dark-theme');
         document.body.classList.remove('light-theme');
         localStorage.setItem('theme', 'dark');
-        document.getElementById('theme-switcher').textContent = 'Switch to Light Theme';
+        var themeIcon = document.getElementById('theme-icon');
+        if (themeIcon) themeIcon.textContent = '🌙'; // Moon for dark theme
     } else {
         document.body.classList.remove('dark-theme');
         document.body.classList.add('light-theme');
         localStorage.setItem('theme', 'light');
-        document.getElementById('theme-switcher').textContent = 'Switch to Dark Theme';
+        var themeIcon = document.getElementById('theme-icon');
+        if (themeIcon) themeIcon.textContent = '☀️'; // Sun for light theme
     }
 }
 document.addEventListener('DOMContentLoaded', function() {
     // Initial theme
     var theme = localStorage.getItem('theme') || 'dark';
     setTheme(theme === 'dark');
-    document.getElementById('theme-switcher').onclick = function() {
-        setTheme(document.body.classList.contains('light-theme'));
-    };
+    var themeSwitcher = document.getElementById('theme-switcher');
+    if (themeSwitcher) {
+        themeSwitcher.onclick = function() {
+            setTheme(document.body.classList.contains('light-theme'));
+        };
+    }
+    setExplorerView('list'); // Always use list view
     renderExplorer('.')
-    setExplorerView(localStorage.getItem('explorerView') || 'list');
-    document.getElementById('view-list').onclick = function() {
-        setExplorerView('list');
-        renderExplorer('.')
-    };
-    document.getElementById('view-icons').onclick = function() {
-        setExplorerView('icons');
-        renderExplorer('.')
-    };
 });
 
 window.renderExplorer = renderExplorer;

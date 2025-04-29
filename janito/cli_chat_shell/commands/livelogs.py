@@ -1,12 +1,12 @@
-def handle_livelogs(console, args=None, state=None, **kwargs):
+def handle_livelogs(console, args=None, shell_state=None, **kwargs):
     """
     /livelogs [N] - Show the last N lines of the livereload server logs (default: 20)
     """
     lines = 20
     if args and len(args) > 0 and str(args[0]).isdigit():
         lines = int(args[0])
-    stdout_path = state.get("livereload_stdout_path") if state else None
-    stderr_path = state.get("livereload_stderr_path") if state else None
+    stdout_path = shell_state.termweb_stdout_path if shell_state else None
+    stderr_path = shell_state.livereload_stderr_path if shell_state else None
     if not stdout_path and not stderr_path:
         console.print(
             "[yellow][livereload] No livereload log files found for this session.[/yellow]"

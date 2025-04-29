@@ -3,10 +3,9 @@ def handle_help(console, **kwargs):
         """
 [bold green]Available commands:[/bold green]
   /exit, exit     - Exit chat mode
-  /restart  - Restart the CLI
+  /restart  - Start a new conversation
   /help     - Show this help message
   /continue - Restore last saved conversation
-  /start    - Reset conversation history
   /prompt   - Show the system prompt
   /role     - Change the system role
   /clear    - Clear the terminal screen
@@ -26,8 +25,9 @@ def handle_clear(console, **kwargs):
     os.system("cls" if os.name == "nt" else "clear")
 
 
-def handle_multi(console, state, **kwargs):
+def handle_multi(console, shell_state=None, **kwargs):
     console.print(
         "[bold yellow]Multiline mode activated. Provide or write your text and press Esc + Enter to submit.[/bold yellow]"
     )
-    state["paste_mode"] = True
+    if shell_state:
+        shell_state.paste_mode = True

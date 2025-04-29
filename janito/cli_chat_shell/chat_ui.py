@@ -2,18 +2,26 @@ from .ui import print_welcome, get_toolbar_func, get_prompt_session
 from janito import __version__
 from janito.agent.config import effective_config
 from janito.agent.runtime_config import runtime_config
+from .session_manager import get_session_id
 
 
 def setup_prompt_session(
-    messages, last_usage_info_ref, last_elapsed, mem_history, profile_manager, agent
+    messages,
+    last_usage_info_ref,
+    last_elapsed,
+    mem_history,
+    profile_manager,
+    agent,
+    history_ref,
 ):
     model_name = getattr(agent, "model", None)
+    session_id = get_session_id()
 
     def get_messages():
         return messages
 
     def get_usage():
-        return last_usage_info_ref["value"]
+        return last_usage_info_ref()
 
     def get_elapsed():
         return last_elapsed
@@ -32,6 +40,8 @@ def setup_prompt_session(
                 )
                 else (runtime_config.get("role") or effective_config.get("role"))
             ),
+            session_id=session_id,
+            history_ref=history_ref,
         ),
         mem_history,
     )

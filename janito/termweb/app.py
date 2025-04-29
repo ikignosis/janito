@@ -50,7 +50,7 @@ async def api_explorer(path="."):
     # GET: comportamento actual
     if os.path.isdir(abs_path):
         entries = []
-        walker = walk_dir_with_gitignore(abs_path, recursive=False)
+        walker = walk_dir_with_gitignore(abs_path, max_depth=1)
         for root, dirs, files in walker:
             for entry in sorted(dirs):
                 entries.append({"name": entry, "is_dir": True})

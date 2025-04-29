@@ -2,6 +2,35 @@ import os
 import json
 from datetime import datetime
 
+# --- Session ID generation ---
+_current_session_id = None
+
+
+def generate_session_id():
+    # Use seconds since start of year, encode as base36 for shortness
+    now = datetime.now()
+    start_of_year = datetime(now.year, 1, 1)
+    seconds = int((now - start_of_year).total_seconds())
+    chars = "0123456789abcdefghijklmnopqrstuvwxyz"
+    out = ""
+    n = seconds
+    while n:
+        n, r = divmod(n, 36)
+        out = chars[r] + out
+    return out or "0"
+
+
+def reset_session_id():
+    global _current_session_id
+    _current_session_id = None
+
+
+def get_session_id():
+    global _current_session_id
+    if _current_session_id is None:
+        _current_session_id = generate_session_id()
+    return _current_session_id
+
 
 def load_last_summary(path=".janito/last_conversation.json"):
     if not os.path.exists(path):
@@ -22,9 +51,18 @@ def load_last_conversation(path=".janito/last_conversation.json"):
     return messages, prompts, usage
 
 
-def save_conversation(
-    messages, prompts, usage_info=None, path=".janito/last_conversation.json"
-):
+def save_conversation(messages, prompts, usage_info=None, path=None):
+    # Do not save if only one message and it is a system message (noop session)
+    if (
+        isinstance(messages, list)
+        and len(messages) == 1
+        and messages[0].get("role") == "system"
+    ):
+        return
+
+    if path is None:
+        session_id = get_session_id()
+        path = os.path.join(".janito", "chat_history", f"{session_id}.json")
     os.makedirs(os.path.dirname(path), exist_ok=True)
     data = {"messages": messages, "prompts": prompts, "last_usage_info": usage_info}
 

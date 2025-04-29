@@ -9,9 +9,9 @@ def handle_reload(console, *args, **kwargs):
         if hasattr(agent, "system_prompt_template"):
             agent.system_prompt_template = prompt_text
         # Update the first system message in the conversation if present
-        messages = state.get("messages") if state else None
-        if messages:
-            for msg in messages:
+        history = state.get("history") if state else None
+        if history:
+            for msg in history:
                 if msg.get("role") == "system":
                     msg["content"] = prompt_text
                     break

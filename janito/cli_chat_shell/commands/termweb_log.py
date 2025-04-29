@@ -14,12 +14,12 @@ def is_termweb_running(port):
         return False
 
 
-def handle_termweb_log_tail(console: Console, *args, state=None, **kwargs):
+def handle_termweb_log_tail(console: Console, *args, shell_state=None, **kwargs):
     lines = 20
     if args and args[0].isdigit():
         lines = int(args[0])
-    stdout_path = state.get("termweb_stdout_path") if state else None
-    stderr_path = state.get("termweb_stderr_path") if state else None
+    stdout_path = shell_state.termweb_stdout_path if shell_state else None
+    stderr_path = shell_state.termweb_stderr_path if shell_state else None
     if not stdout_path and not stderr_path:
         console.print(
             "[yellow][termweb] No termweb log files found for this session.[/yellow]"
@@ -51,20 +51,20 @@ def handle_termweb_log_tail(console: Console, *args, state=None, **kwargs):
         console.print("[termweb] No output or errors captured in logs.")
 
 
-def handle_termweb_status(console: Console, *args, state=None, **kwargs):
-    if state is None:
+def handle_termweb_status(console: Console, *args, shell_state=None, **kwargs):
+    if shell_state is None:
         console.print(
             "[red]No shell state available. Cannot determine termweb status.[/red]"
         )
         return
-    port = state.get("termweb_port")
-    port_source = "state"
+    port = getattr(shell_state, "termweb_port", None)
+    port_source = "shell_state"
     if not port:
         port = runtime_config.get("termweb_port")
         port_source = "runtime_config"
-    pid = state.get("termweb_pid")
-    stdout_path = state.get("termweb_stdout_path")
-    stderr_path = state.get("termweb_stderr_path")
+    pid = getattr(shell_state, "termweb_pid", None)
+    stdout_path = getattr(shell_state, "termweb_stdout_path", None)
+    stderr_path = getattr(shell_state, "termweb_stderr_path", None)
     running = False
     if port:
         running = is_termweb_running(port)

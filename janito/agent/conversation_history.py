@@ -1,0 +1,47 @@
+from typing import List, Dict, Optional
+
+
+class ConversationHistory:
+    """
+    Manages the message history for a conversation, supporting OpenAI-style roles.
+    Intended to be used by ConversationHandler and chat loop for all history operations.
+    """
+
+    def __init__(self, messages: Optional[List[Dict]] = None):
+        self._messages = messages.copy() if messages else []
+
+    def add_message(self, message: Dict):
+        """Append a message dict to the history."""
+        self._messages.append(message)
+
+    def get_messages(self, role: Optional[str] = None) -> List[Dict]:
+        """
+        Return all messages, or only those matching a given role/type (e.g., 'assistant', 'user', 'tool').
+        If role is None, returns all messages.
+        """
+        if role is None:
+            return self._messages.copy()
+        return [msg for msg in self._messages if msg.get("role") == role]
+
+    def clear(self):
+        """Remove all messages from history."""
+        self._messages.clear()
+
+    def set_system_message(self, content: str):
+        """
+        Replace the first system prompt message, or insert if not present.
+        """
+        system_idx = next(
+            (i for i, m in enumerate(self._messages) if m.get("role") == "system"), None
+        )
+        system_msg = {"role": "system", "content": content}
+        if system_idx is not None:
+            self._messages[system_idx] = system_msg
+        else:
+            self._messages.insert(0, system_msg)
+
+    def __len__(self):
+        return len(self._messages)
+
+    def __getitem__(self, idx):
+        return self._messages[idx]

@@ -30,7 +30,7 @@ class ConversationHandler:
     def handle_conversation(
         self,
         messages,
-        max_rounds=50,
+        max_rounds=100,
         message_handler=None,
         verbose_response=False,
         spinner=False,
@@ -39,7 +39,15 @@ class ConversationHandler:
         stream=False,
         verbose_stream=False,
     ):
-        if not messages:
+        from janito.agent.conversation_history import ConversationHistory
+
+        # Accept either ConversationHistory or a list for backward compatibility
+        if isinstance(messages, ConversationHistory):
+            history = messages
+        else:
+            history = ConversationHistory(messages)
+
+        if len(history) == 0:
             raise ValueError("No prompt provided in messages")
 
         resolved_max_tokens = max_tokens
@@ -66,7 +74,7 @@ class ConversationHandler:
                         return get_openai_stream_response(
                             self.client,
                             self.model,
-                            messages,
+                            history.get_messages(),
                             resolved_max_tokens,
                             verbose_stream=runtime_config.get("verbose_stream", False),
                             message_handler=message_handler,
@@ -78,7 +86,10 @@ class ConversationHandler:
                     # Non-streaming mode
                     def api_call():
                         return get_openai_response(
-                            self.client, self.model, messages, resolved_max_tokens
+                            self.client,
+                            self.model,
+                            history.get_messages(),
+                            resolved_max_tokens,
                         )
 
                     if spinner:
@@ -142,9 +153,18 @@ class ConversationHandler:
             if message_handler is not None and choice.message.content:
                 message_handler.handle_message(event)
             if not choice.message.tool_calls:
-                agent_idx = len([m for m in messages if m.get("role") == "agent"])
+                agent_idx = len(
+                    [m for m in history.get_messages() if m.get("role") == "agent"]
+                )
                 self.usage_history.append(
                     {"agent_index": agent_idx, "usage": usage_info}
+                )
+                # Add assistant response to history
+                history.add_message(
+                    {
+                        "role": "assistant",
+                        "content": choice.message.content,
+                    }
                 )
                 return {
                     "content": choice.message.content,
@@ -155,9 +175,12 @@ class ConversationHandler:
             tool_responses = handle_tool_calls(
                 choice.message.tool_calls, message_handler=message_handler
             )
-            agent_idx = len([m for m in messages if m.get("role") == "agent"])
+            agent_idx = len(
+                [m for m in history.get_messages() if m.get("role") == "agent"]
+            )
             self.usage_history.append({"agent_index": agent_idx, "usage": usage_info})
-            messages.append(
+            # Add assistant response with tool calls
+            history.add_message(
                 {
                     "role": "assistant",
                     "content": choice.message.content,
@@ -165,7 +188,7 @@ class ConversationHandler:
                 }
             )
             for tool_response in tool_responses:
-                messages.append(
+                history.add_message(
                     {
                         "role": "tool",
                         "tool_call_id": tool_response["tool_call_id"],

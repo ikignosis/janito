@@ -42,6 +42,7 @@ def handle_exit(console, **kwargs):
     sys.exit(0)
 
 
-def handle_restart(console, **kwargs):
-    console.print("[bold yellow]Restarting CLI...[/bold yellow]")
-    restart_cli()
+def handle_restart(console, shell_state=None, **kwargs):
+    from .conversation_restart import handle_restart as start_new_conversation
+
+    start_new_conversation(console, shell_state=shell_state, **kwargs)

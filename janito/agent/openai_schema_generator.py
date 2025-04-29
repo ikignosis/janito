@@ -124,12 +124,15 @@ def generate_openai_function_schema(func, tool_name: str, tool_class=None):
         )
     properties = OrderedDict()
     required = []
-    # Inject tool_call_reason as the first required parameter
-    properties["tool_call_reason"] = {
-        "type": "string",
-        "description": "The reason or context for why this tool is being called. This is required for traceability.",
-    }
-    required.append("tool_call_reason")
+    # Inject tool_call_reason as the first required parameter, unless --ntt is set
+    from janito.agent.runtime_config import runtime_config
+
+    if not runtime_config.get("no_tools_tracking", False):
+        properties["tool_call_reason"] = {
+            "type": "string",
+            "description": "The reason or context for why this tool is being called. This is required for traceability.",
+        }
+        required.append("tool_call_reason")
     for name, param in sig.parameters.items():
         if name == "self":
             continue

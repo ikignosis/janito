@@ -2,6 +2,7 @@
 Helpers for handling tool calls in conversation.
 """
 
+import json
 from janito.agent.tool_executor import ToolExecutor
 from janito.agent import tool_registry
 from .conversation_exceptions import MaxRoundsExceededError
@@ -19,18 +20,20 @@ def handle_tool_calls(tool_calls, message_handler=None):
             )
         tool_entry = tool_registry._tool_registry[tool_call.function.name]
         try:
-            result = ToolExecutor(message_handler=message_handler).execute(
-                tool_entry, tool_call
-            )
-            tool_responses.append({"tool_call_id": tool_call.id, "content": result})
-        except TypeError as e:
-            # Return the error as a tool result, asking to retry with correct params
-            error_msg = str(e)
+            arguments = json.loads(tool_call.function.arguments)
+        except (TypeError, AttributeError, json.JSONDecodeError) as e:
+            error_msg = f"Invalid/malformed function parameters: {e}. Please retry with valid JSON arguments."
             tool_responses.append(
                 {
                     "tool_call_id": tool_call.id,
-                    "content": f"Tool execution error: {error_msg}. Please retry with the correct parameters.",
+                    "content": error_msg,
                 }
             )
+            tool_calls_made += 1
+            continue
+        result = ToolExecutor(message_handler=message_handler).execute(
+            tool_entry, tool_call, arguments
+        )
+        tool_responses.append({"tool_call_id": tool_call.id, "content": result})
         tool_calls_made += 1
     return tool_responses

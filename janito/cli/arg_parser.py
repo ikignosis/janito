@@ -8,8 +8,33 @@ def create_parser():
     parser = argparse.ArgumentParser(
         description="OpenRouter API call using OpenAI Python SDK"
     )
+    # The positional argument is interpreted as either a prompt or session_id depending on context
     parser.add_argument(
-        "prompt", type=str, nargs="?", help="Prompt to send to the model"
+        "input_arg",
+        type=str,
+        nargs="?",
+        help="Prompt to send to the model, or session ID if --continue is used.",
+    )
+
+    parser.add_argument(
+        "--list",
+        nargs="?",
+        type=int,
+        const=10,
+        default=None,
+        help="List the last N sessions (default: 10) and exit.",
+    )
+    parser.add_argument(
+        "--view",
+        type=str,
+        default=None,
+        help="View the content of a conversation history by session id and exit.",
+    )
+    parser.add_argument(
+        "--set-provider-config",
+        nargs=3,
+        metavar=("NAME", "KEY", "VALUE"),
+        help="Set a provider config parameter (e.g., --set-provider-config openrouter.ai api_key sk-xxx).",
     )
     parser.add_argument(
         "--lang",
@@ -154,8 +179,11 @@ def create_parser():
     )
     parser.add_argument(
         "--continue-session",
-        action="store_true",
-        help="Continue from the last saved conversation",
+        "--continue",
+        nargs="?",
+        const=True,
+        default=False,
+        help="Continue from a saved conversation. Optionally provide a session ID.",
     )
     parser.add_argument(
         "--web", action="store_true", help="Launch the Janito web server instead of CLI"
@@ -225,5 +253,10 @@ def create_parser():
         "--info",
         action="store_true",
         help="Exibe informações básicas do programa e sai (útil para execução única em shell)",
+    )
+    parser.add_argument(
+        "--ntt",
+        action="store_true",
+        help="Disable tool call reason tracking (no tools tracking)",
     )
     return parser

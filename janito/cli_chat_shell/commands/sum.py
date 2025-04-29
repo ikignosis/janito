@@ -1,4 +1,4 @@
-def handle_sum(console, state, **kwargs):
+def handle_sum(console, shell_state=None, **kwargs):
     """
     Summarize the current chat history and replace it with a summary message.
     """
@@ -7,15 +7,15 @@ def handle_sum(console, state, **kwargs):
         console.print("[bold red]Agent not provided to /sum command.[/bold red]")
         return
 
-    messages = state.get("messages", [])
-    if not messages or len(messages) < 2:
+    history = shell_state.conversation_history.get_messages()
+    if not history or len(history) < 2:
         console.print(
             "[bold yellow]Not enough conversation to summarize.[/bold yellow]"
         )
         return
 
     # Find the system message if present
-    system_msg = next((m for m in messages if m.get("role") == "system"), None)
+    system_msg = next((m for m in history if m.get("role") == "system"), None)
 
     # Prepare summary prompt
     summary_prompt = {
@@ -23,7 +23,7 @@ def handle_sum(console, state, **kwargs):
         "content": "Summarize the following conversation in a concise paragraph for context. Only output the summary, do not include any tool calls or formatting.",
     }
     # Exclude system messages for the summary context
-    convo_for_summary = [m for m in messages if m.get("role") != "system"]
+    convo_for_summary = [m for m in history if m.get("role") != "system"]
     summary_messages = [summary_prompt] + convo_for_summary
 
     try:
@@ -42,7 +42,7 @@ def handle_sum(console, state, **kwargs):
     if system_msg:
         new_history.append(system_msg)
     new_history.append({"role": "assistant", "content": summary_text})
-    state["messages"] = new_history
+    shell_state.conversation_history.set_messages(new_history)
 
     console.print(
         "[bold green]Conversation summarized and history replaced with summary.[/bold green]"

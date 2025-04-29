@@ -5,8 +5,8 @@ from .utility import handle_help, handle_clear, handle_multi
 from .termweb_log import handle_termweb_log_tail, handle_termweb_status
 from .livelogs import handle_livelogs
 from .sum import handle_sum
-from .config import handle_reload
-from .history_start import handle_start
+
+from .history_view import handle_view
 from ..config_shell import handle_config_shell
 from .verbose import handle_verbose
 from .lang import handle_lang
@@ -37,21 +37,21 @@ COMMAND_HANDLERS.update(
     {
         "/sum": handle_sum,
         "/clear": handle_clear,
-        "/start": handle_start,
+        "/restart": handle_restart,
         "/config": handle_config_shell,
-        "/reload": handle_reload,
+        "/view": handle_view,
     }
 )
 
 
-def handle_command(command, console, **kwargs):
+def handle_command(command, console, shell_state=None):
     parts = command.strip().split()
     cmd = parts[0]
     args = parts[1:]
     handler = COMMAND_HANDLERS.get(cmd)
     if handler:
-        # Pass args as a keyword argument for handlers that expect it
-        return handler(console, args=args, **kwargs)
+        # Pass shell_state and args as keyword arguments for handlers that expect them
+        return handler(console, args=args, shell_state=shell_state)
     console.print(
         f"[bold red]Invalid command: {cmd}. Type /help for a list of commands.[/bold red]"
     )

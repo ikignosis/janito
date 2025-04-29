@@ -25,6 +25,9 @@ def run_cli(args):
     if getattr(args, "vanilla", False):
         runtime_config.set("vanilla_mode", True)
 
+    # Set no_tools_tracking if --ntt is passed
+    if getattr(args, "ntt", False):
+        runtime_config.set("no_tools_tracking", True)
     # Normalize all verbose flags into runtime_config
     for flag in [
         "verbose_http",
@@ -120,12 +123,23 @@ def run_cli(args):
     try:
         livereload_stdout_path = None
         livereload_stderr_path = None
-        if not getattr(args, "prompt", None):
+        if not getattr(args, "input_arg", None) or getattr(
+            args, "continue_session", False
+        ):
             from janito.cli_chat_shell.chat_loop import start_chat_shell
 
+            # Determine continue_session and session_id
+            _cont = getattr(args, "continue_session", False)
+            if _cont:
+                continue_session = True
+                session_id = getattr(args, "input_arg", None)
+            else:
+                continue_session = False
+                session_id = None
             start_chat_shell(
                 profile_manager,
-                continue_session=getattr(args, "continue_session", False),
+                continue_session=continue_session,
+                session_id=session_id,
                 termweb_stdout_path=(
                     termweb_stdout_path if "termweb_stdout_path" in locals() else None
                 ),
@@ -145,7 +159,7 @@ def run_cli(args):
             )
             sys.exit(0)
         # --- Prompt mode ---
-        prompt = args.prompt
+        prompt = getattr(args, "input_arg", None)
         from rich.console import Console
         from janito.agent.rich_message_handler import RichMessageHandler
 
@@ -167,7 +181,7 @@ def run_cli(args):
             )
         messages.append({"role": "user", "content": prompt})
         try:
-            max_rounds = 50
+            max_rounds = 100
             profile_manager.agent.chat(
                 messages,
                 message_handler=message_handler,

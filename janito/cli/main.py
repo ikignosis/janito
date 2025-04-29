@@ -26,6 +26,77 @@ def main():
     parser = create_parser()
     args = parser.parse_args()
 
+    # Handle --set-provider-config <name> <key> <value>
+    if getattr(args, "set_provider_config", None) is not None:
+        import os
+        import json
+
+        name, key, value = args.set_provider_config
+        config_dir = os.path.expanduser("~/.janito")
+        os.makedirs(config_dir, exist_ok=True)
+        providers_path = os.path.join(config_dir, "providers.json")
+
+        # Load or initialize providers config
+        if os.path.exists(providers_path):
+            with open(providers_path, "r", encoding="utf-8") as f:
+                try:
+                    providers = json.load(f)
+                except Exception:
+                    providers = {}
+        else:
+            providers = {}
+
+        if name not in providers or not isinstance(providers[name], dict):
+            providers[name] = {}
+        providers[name][key] = value
+
+        with open(providers_path, "w", encoding="utf-8") as f:
+            json.dump(providers, f, indent=2)
+
+        print(f"Set {key} for provider '{name}' in {providers_path}.")
+        sys.exit(0)
+
+    # Handle --list [n] before anything else
+    if getattr(args, "list", None) is not None:
+        import os
+        import glob
+
+        n = args.list if args.list is not None else 10
+        history_dir = os.path.join(os.path.expanduser(".janito"), "chat_history")
+        if not os.path.exists(history_dir):
+            print("No session history found.")
+            sys.exit(0)
+        files = glob.glob(os.path.join(history_dir, "*.json"))
+        files = sorted(files, key=os.path.getmtime, reverse=True)
+        print(f"Last {n} sessions:")
+        for f in files[:n]:
+            session_id = os.path.splitext(os.path.basename(f))[0]
+            print(session_id)
+        sys.exit(0)
+
+    # Handle --view <id> to print conversation history
+    if getattr(args, "view", None) is not None:
+        import os
+        import json
+
+        history_dir = os.path.join(os.path.expanduser(".janito"), "chat_history")
+        session_file = os.path.join(history_dir, f"{args.view}.json")
+        if not os.path.exists(session_file):
+            print(f"Session '{args.view}' not found.")
+            sys.exit(1)
+        with open(session_file, "r", encoding="utf-8") as f:
+            try:
+                messages = json.load(f)
+            except Exception as e:
+                print(f"Failed to load session: {e}")
+                sys.exit(1)
+        print(f"Conversation history for session '{args.view}':\n")
+        for i, msg in enumerate(messages, 1):
+            role = msg.get("role", "?")
+            content = msg.get("content", "")
+            print(f"[{i}] {role}: {content}\n")
+        sys.exit(0)
+
     # Seleção de idioma: prioridade --lang > config.json > padrão
     lang = getattr(args, "lang", None) or unified_config.get("lang", None) or "en"
     runtime_config.set("lang", lang)

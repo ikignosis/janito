@@ -3,7 +3,6 @@
 ToolExecutor: Responsible for executing tools, validating arguments, handling errors, and reporting progress.
 """
 
-import json
 from janito.i18n import tr
 import inspect
 from janito.agent.tool_base import ToolBase
@@ -14,15 +13,18 @@ class ToolExecutor:
     def __init__(self, message_handler=None):
         self.message_handler = message_handler
 
-    def execute(self, tool_entry, tool_call):
+    def execute(self, tool_entry, tool_call, arguments):
         import uuid
 
         call_id = getattr(tool_call, "id", None) or str(uuid.uuid4())
         func = tool_entry["function"]
-        args = json.loads(tool_call.function.arguments)
-        tool_call_reason = args.pop(
-            "tool_call_reason", None
-        )  # Extract and remove 'tool_call_reason' if present
+        args = arguments
+        if runtime_config.get("no_tools_tracking", False):
+            tool_call_reason = None
+        else:
+            tool_call_reason = args.pop(
+                "tool_call_reason", None
+            )  # Extract and remove 'tool_call_reason' if present
         # Record tool usage
         try:
             from janito.agent.tool_use_tracker import ToolUseTracker
@@ -61,7 +63,7 @@ class ToolExecutor:
                 "call_id": call_id,
                 "arguments": args,
             }
-            if tool_call_reason:
+            if tool_call_reason and not runtime_config.get("no_tools_tracking", False):
                 event["tool_call_reason"] = tool_call_reason
             self.message_handler.handle_message(event)
         # Argument validation
@@ -77,7 +79,9 @@ class ToolExecutor:
                     "call_id": call_id,
                     "error": error_msg,
                 }
-                if tool_call_reason:
+                if tool_call_reason and not runtime_config.get(
+                    "no_tools_tracking", False
+                ):
                     error_event["tool_call_reason"] = tool_call_reason
                 self.message_handler.handle_message(error_event)
             raise TypeError(error_msg)
@@ -91,7 +95,9 @@ class ToolExecutor:
                     "call_id": call_id,
                     "result": result,
                 }
-                if tool_call_reason:
+                if tool_call_reason and not runtime_config.get(
+                    "no_tools_tracking", False
+                ):
                     result_event["tool_call_reason"] = tool_call_reason
                 self.message_handler.handle_message(result_event)
             return result
@@ -103,7 +109,9 @@ class ToolExecutor:
                     "call_id": call_id,
                     "error": str(e),
                 }
-                if tool_call_reason:
+                if tool_call_reason and not runtime_config.get(
+                    "no_tools_tracking", False
+                ):
                     error_event["tool_call_reason"] = tool_call_reason
                 self.message_handler.handle_message(error_event)
             raise

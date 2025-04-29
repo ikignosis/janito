@@ -23,9 +23,9 @@ You can use these commands at any time (prefix with `/` or just type the name):
 | `/exit`, `exit`        | Exit chat mode                                                   |
 | `/restart`             | Restart the CLI                                                  |
 | `/help`                | Show help message with available commands                        |
-| `/start`               | Reset conversation history / start new task                      |
+| `/restart`             | Reset conversation history / start new task                      |
 | `/continue`            | Restore last saved conversation                                  |
-| `/start`               | Reset conversation history                                       |
+| `/restart`             | Reset conversation history                                       |
 | `/history [N]`         | Show last N messages (default: 5)                                |
 | `/prompt`              | Show the current system prompt                                   |
 | `/role <description>`  | Change the system role (e.g., "You are a code reviewer")        |
@@ -51,7 +51,7 @@ This feature enhances productivity by bridging the terminal and browser, making 
 janito
 ```
 
-You’ll be dropped into a conversational prompt where you can interact with Janito step by step. Type `/help` to see available commands at any time. Use `/start` to start a new task or reset context.
+You’ll be dropped into a conversational prompt where you can interact with Janito step by step. Type `/help` to see available commands at any time. Use `/restart` to start a new task or reset context.
 
 --- 
 
