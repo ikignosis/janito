@@ -44,6 +44,11 @@ def create_parser():
     )
 
     parser.add_argument(
+        "--app-shell",
+        action="store_true",
+        help="Use the new prompt_toolkit Application-based chat shell (experimental)",
+    )
+    parser.add_argument(
         "--max-tokens",
         type=int,
         default=None,
@@ -180,10 +185,9 @@ def create_parser():
     parser.add_argument(
         "--continue-session",
         "--continue",
-        nargs="?",
-        const=True,
+        action="store_true",
         default=False,
-        help="Continue from a saved conversation. Optionally provide a session ID.",
+        help="Continue from a saved conversation. Uses the session ID from the positional argument if provided, otherwise resumes the most recent session.",
     )
     parser.add_argument(
         "--web", action="store_true", help="Launch the Janito web server instead of CLI"
@@ -252,7 +256,7 @@ def create_parser():
         "-i",
         "--info",
         action="store_true",
-        help="Exibe informações básicas do programa e sai (útil para execução única em shell)",
+        help="Show basic program info and exit (useful for one-shot shell execution)",
     )
     parser.add_argument(
         "--ntt",

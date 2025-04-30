@@ -31,7 +31,8 @@ class SearchTextTool(ToolBase):
 
     Args:
         paths (str): String of one or more paths (space-separated) to search in. Each path can be a directory or a file.
-        pattern (str): Regex pattern or plain text substring to search for in files. Tries regex first, falls back to substring if regex is invalid.
+        pattern (str): Regex pattern or plain text substring to search for in files. Must not be empty. Tries regex first, falls back to substring if regex is invalid.
+            Note: When using regex mode, special characters (such as [, ], ., *, etc.) must be escaped if you want to match them literally (e.g., use '\\[DEBUG\\]' to match the literal string '[DEBUG]').
         is_regex (bool): If True, treat pattern as regex. If False, treat as plain text. Defaults to False.
         max_depth (int, optional): Maximum directory depth to search. If 0 (default), search is recursive with no depth limit. If >0, limits recursion to that depth. Setting max_depth=1 disables recursion (only top-level directory). Ignored for file paths.
         max_results (int): Maximum number of results to return. 0 means no limit (default).
@@ -51,10 +52,10 @@ class SearchTextTool(ToolBase):
         ignore_utf8_errors: bool = True,
     ) -> str:
         if not pattern:
-            self.report_warning(
-                tr("⚠️ Warning: Empty search pattern provided. Operation skipped.")
+            self.report_error(
+                tr("Error: Empty search pattern provided. Operation aborted.")
             )
-            return tr("Warning: Empty search pattern provided. Operation skipped.")
+            return tr("Error: Empty search pattern provided. Operation aborted.")
         regex = None
         use_regex = False
         if is_regex:

@@ -126,38 +126,71 @@ def run_cli(args):
         if not getattr(args, "input_arg", None) or getattr(
             args, "continue_session", False
         ):
-            from janito.cli_chat_shell.chat_loop import start_chat_shell
+            from janito.cli_chat_shell.chat_loop.chat_loop import start_chat_shell
 
             # Determine continue_session and session_id
             _cont = getattr(args, "continue_session", False)
             if _cont:
                 continue_session = True
                 session_id = getattr(args, "input_arg", None)
+                if session_id is None:
+                    # Find the most recent session id from .janito/chat_history/*.json
+                    import os
+                    import glob
+
+                    chat_hist_dir = (
+                        os.path.join(os.path.expanduser("~"), ".janito", "chat_history")
+                        if not os.path.isabs(".janito")
+                        else os.path.join(".janito", "chat_history")
+                    )
+                    if not os.path.exists(chat_hist_dir):
+                        session_id = None
+                    else:
+                        files = glob.glob(os.path.join(chat_hist_dir, "*.json"))
+                        if files:
+                            latest = max(files, key=os.path.getmtime)
+                            session_id = os.path.splitext(os.path.basename(latest))[0]
+                        else:
+                            session_id = None
             else:
                 continue_session = False
                 session_id = None
-            start_chat_shell(
-                profile_manager,
-                continue_session=continue_session,
-                session_id=session_id,
-                termweb_stdout_path=(
-                    termweb_stdout_path if "termweb_stdout_path" in locals() else None
-                ),
-                termweb_stderr_path=(
-                    termweb_stderr_path if "termweb_stderr_path" in locals() else None
-                ),
-                livereload_stdout_path=(
-                    livereload_stdout_path
-                    if "livereload_stdout_path" in locals()
-                    else None
-                ),
-                livereload_stderr_path=(
-                    livereload_stderr_path
-                    if "livereload_stderr_path" in locals()
-                    else None
-                ),
+        import time
+
+        info_start_time = None
+        if getattr(args, "info", False):
+            info_start_time = time.time()
+        usage_info = start_chat_shell(
+            profile_manager,
+            continue_session=continue_session,
+            session_id=session_id,
+            termweb_stdout_path=(
+                termweb_stdout_path if "termweb_stdout_path" in locals() else None
+            ),
+            termweb_stderr_path=(
+                termweb_stderr_path if "termweb_stderr_path" in locals() else None
+            ),
+            livereload_stdout_path=(
+                livereload_stdout_path if "livereload_stdout_path" in locals() else None
+            ),
+            livereload_stderr_path=(
+                livereload_stderr_path if "livereload_stderr_path" in locals() else None
+            ),
+        )
+        if (
+            getattr(args, "info", False)
+            and usage_info is not None
+            and info_start_time is not None
+        ):
+            elapsed = time.time() - info_start_time
+            from rich.console import Console
+
+            console = Console()
+            total_tokens = usage_info.get("total_tokens")
+            console.print(
+                f"[bold green]Total tokens used:[/] [yellow]{total_tokens}[/yellow] [bold green]| Elapsed time:[/] [yellow]{elapsed:.2f}s[/yellow]"
             )
-            sys.exit(0)
+        sys.exit(0)
         # --- Prompt mode ---
         prompt = getattr(args, "input_arg", None)
         from rich.console import Console
@@ -180,15 +213,41 @@ def run_cli(args):
                 {"role": "system", "content": profile_manager.system_prompt_template}
             )
         messages.append({"role": "user", "content": prompt})
+        import time
+
+        info_start_time = None
+        if getattr(args, "info", False):
+            info_start_time = time.time()
         try:
             max_rounds = 100
-            profile_manager.agent.chat(
-                messages,
+            from janito.agent.conversation_history import ConversationHistory
+
+            result = profile_manager.agent.chat(
+                ConversationHistory(messages),
                 message_handler=message_handler,
                 spinner=True,
                 max_rounds=max_rounds,
                 stream=getattr(args, "stream", False),
             )
+            if (
+                getattr(args, "info", False)
+                and info_start_time is not None
+                and result is not None
+            ):
+                usage_info = result.get("usage")
+                total_tokens = usage_info.get("total_tokens") if usage_info else None
+                prompt_tokens = usage_info.get("prompt_tokens") if usage_info else None
+                completion_tokens = (
+                    usage_info.get("completion_tokens") if usage_info else None
+                )
+                elapsed = time.time() - info_start_time
+                from rich.console import Console
+
+                console = Console()
+                console.print(
+                    f"[bold green]Total tokens:[/] [yellow]{total_tokens}[/yellow] [bold green]| Input:[/] [cyan]{prompt_tokens}[/cyan] [bold green]| Output:[/] [magenta]{completion_tokens}[/magenta] [bold green]| Elapsed:[/] [yellow]{elapsed:.2f}s[/yellow]",
+                    style="dim",
+                )
         except MaxRoundsExceededError:
             console.print("[red]Max conversation rounds exceeded.[/red]")
         except ProviderError as e:

@@ -98,7 +98,6 @@ class ConversationHandler:
                         )
                     else:
                         response = retry_api_call(api_call)
-                        print("[DEBUG] OpenAI API raw response:", repr(response))
             except NoToolSupportError:
                 print(
                     "⚠️ Endpoint does not support tool use. Proceeding in vanilla mode (tools disabled)."

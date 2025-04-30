@@ -33,6 +33,16 @@ def handle_restart(console, shell_state=None, **kwargs):
 
     # Reset conversation history using its clear method
     shell_state.conversation_history.clear()
+
+    # Reset tool use tracker
+    try:
+        from janito.agent.tool_use_tracker import ToolUseTracker
+
+        ToolUseTracker.instance().clear_history()
+    except Exception as e:
+        console.print(
+            f"[bold yellow]Warning: Failed to reset tool use tracker:[/bold yellow] {e}"
+        )
     # Set system prompt from agent template if available
     if (
         hasattr(shell_state, "profile_manager")

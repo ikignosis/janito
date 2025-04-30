@@ -6,7 +6,7 @@ import subprocess
 def restart_cli():
     # Clean up prompt_toolkit session if active
     try:
-        from janito.cli_chat_shell import chat_loop
+        from janito.cli_chat_shell.chat_loop import chat_loop
 
         session = getattr(chat_loop, "active_prompt_session", None)
         if session is not None and hasattr(session, "app"):
@@ -40,9 +40,3 @@ def restart_cli():
 def handle_exit(console, **kwargs):
     console.print("[bold red]Exiting chat mode.[/bold red]")
     sys.exit(0)
-
-
-def handle_restart(console, shell_state=None, **kwargs):
-    from .conversation_restart import handle_restart as start_new_conversation
-
-    start_new_conversation(console, shell_state=shell_state, **kwargs)

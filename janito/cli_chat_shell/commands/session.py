@@ -1,26 +1,3 @@
-from prompt_toolkit.history import InMemoryHistory
-import os
-import json
-
-
-def handle_continue(console, shell_state=None, **kwargs):
-    save_path = os.path.join(".janito", "last_conversation.json")
-    if not os.path.exists(save_path):
-        console.print("[bold red]No saved conversation found.[/bold red]")
-        return
-
-    with open(save_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    if shell_state and hasattr(shell_state, "history"):
-        shell_state.history.clear()
-    if shell_state:
-        shell_state.mem_history = InMemoryHistory()
-        for item in data.get("prompts", []):
-            shell_state.mem_history.append_string(item)
-        shell_state.last_usage_info = data.get("last_usage_info")
-    console.print("[bold green]Conversation restored from last session.[/bold green]")
-
-
 def handle_history(console, shell_state=None, *args, **kwargs):
     if shell_state and hasattr(shell_state, "mem_history"):
         input_history = list(shell_state.mem_history.get_strings())

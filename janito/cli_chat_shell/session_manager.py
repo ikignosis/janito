@@ -51,6 +51,18 @@ def load_last_conversation(path=".janito/last_conversation.json"):
     return messages, prompts, usage
 
 
+def load_conversation_by_session_id(session_id):
+    path = os.path.join(".janito", "chat_history", f"{session_id}.json")
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Session file not found: {path}")
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    messages = data.get("messages", [])
+    prompts = data.get("prompts", [])
+    usage = data.get("last_usage_info")
+    return messages, prompts, usage
+
+
 def save_conversation(messages, prompts, usage_info=None, path=None):
     # Do not save if only one message and it is a system message (noop session)
     if (

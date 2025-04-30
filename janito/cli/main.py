@@ -144,37 +144,31 @@ def main():
         sys.exit(0)
 
     if getattr(args, "info", False):
-        # (mantém bloco info)
-
-        print("Janito - Agente CLI de automação")
-        print(f"Modelo: {unified_config.get('model')}")
-        print(f"Temperatura: {unified_config.get('temperature')}")
-        print(f"Max tokens: {unified_config.get('max_tokens')}")
-        # System prompt real via AgentProfileManager
-        # Prioridade: --system-file > --system > AgentProfileManager
+        # Compact, colored, single-line info output using rich
+        from janito import __version__
+        from rich.console import Console
+        from rich.text import Text
         from janito.agent.runtime_config import runtime_config
 
+        model = unified_config.get("model")
+        temperature = unified_config.get("temperature")
+        max_tokens = unified_config.get("max_tokens")
         system_prompt_val = None
-        origem = None
         if getattr(args, "system_file", None):
             try:
                 with open(args.system_file, "r", encoding="utf-8") as f:
                     system_prompt_val = f.read().strip()
                 runtime_config.set("system_prompt_template", system_prompt_val)
-                origem = "--system-file"
             except Exception as e:
-                print(f"System prompt: (error reading system-file: {e})")
+                system_prompt_val = f"(error reading system-file: {e})"
         elif getattr(args, "system", None):
             system_prompt_val = args.system
             runtime_config.set("system_prompt_template", system_prompt_val)
-            origem = "--system"
         else:
             system_prompt_val = runtime_config.get("system_prompt_template")
-            if system_prompt_val:
-                origem = "runtime_config"
-        if system_prompt_val:
-            print(f"System prompt ({origem or 'runtime_config'}): {system_prompt_val}")
-        else:
+            # if system_prompt_val:
+            #     origem = "runtime_config"
+        if not system_prompt_val:
             try:
                 from janito.agent.profile_manager import AgentProfileManager
                 from janito.agent.config import get_api_key
@@ -191,10 +185,22 @@ def main():
                 system_prompt_val = profile_manager.get_system_prompt(
                     role, interaction_mode, profile
                 )
-                print(f"System prompt (profile_manager): {system_prompt_val}")
             except Exception as e:
-                print(f"System prompt: (error obtaining from profile_manager: {e})")
-        sys.exit(0)
+                system_prompt_val = f"(error: {e})"
+
+        console = Console()
+        info_text = Text()
+        info_text.append(f"Janito v{__version__}", style="bold cyan")
+        info_text.append(" | model: ", style="white")
+        info_text.append(str(model), style="green")
+        info_text.append(" | temp: ", style="white")
+        info_text.append(str(temperature), style="yellow")
+        info_text.append(" | max_tokens: ", style="white")
+        info_text.append(str(max_tokens), style="magenta")
+        info_text.append(" | system: ", style="white")
+        info_text.append(str(system_prompt_val), style="bold blue")
+        console.print(info_text, style="dim")
+        # Previously: sys.exit(0) would exit after showing info. Now, program continues after displaying info.
 
     # ... resto do main ...
     handle_config_commands(args)

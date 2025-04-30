@@ -23,7 +23,7 @@ class FetchUrlTool(ToolBase):
         if not url.strip():
             self.report_warning(tr("⚠️ Warning: Empty URL provided. Operation skipped."))
             return tr("Warning: Empty URL provided. Operation skipped.")
-        self.report_info(tr("🌐 Fetching URL: {url} ...", url=url))
+        self.report_info(tr("🌐 Fetching URL '{url}' ...", url=url))
         response = requests.get(url, timeout=10)
         response.raise_for_status()
         self.update_progress(

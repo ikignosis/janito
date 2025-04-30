@@ -1,6 +1,7 @@
 from . import ask_user
 from . import create_directory
 from . import create_file
+from . import replace_file
 from . import fetch_url
 from . import find_files
 from . import get_lines
@@ -15,6 +16,7 @@ from . import run_powershell_command
 from . import run_python_command
 from . import present_choices
 from . import search_text
+from . import show_edit_url
 
 __all__ = [
     "ask_user",
@@ -28,6 +30,7 @@ __all__ = [
     "validate_file_syntax",
     "remove_directory",
     "remove_file",
+    "replace_file",
     "replace_text_in_file",
     "run_bash_command",
     "run_powershell_command",
@@ -36,4 +39,5 @@ __all__ = [
     "memory",
     "present_choices",
     "search_text",
+    "show_edit_url",
 ]

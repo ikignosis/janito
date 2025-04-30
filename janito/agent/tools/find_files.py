@@ -10,11 +10,12 @@ import os
 @register_tool(name="find_files")
 class FindFilesTool(ToolBase):
     """
-    Find files in one or more directories matching a pattern. Respects .gitignore.
+    Find files or directories in one or more directories matching a pattern. Respects .gitignore.
     Args:
         paths (str): String of one or more paths (space-separated) to search in. Each path can be a directory.
         pattern (str): File pattern(s) to match. Multiple patterns can be separated by spaces. Uses Unix shell-style wildcards (fnmatch), e.g. '*.py', 'data_??.csv', '[a-z]*.txt'.
-        max_depth (int, optional): Maximum directory depth to search. If None, unlimited recursion. If 0, only the top-level directory. If 1, only the root directory (matches 'find . -maxdepth 1'). If N>1, yields files in root and up to N-1 levels below root (matches 'find . -maxdepth N').
+            - If the pattern ends with '/' or '\\', only matching directory names (with trailing slash) are returned, not the files within those directories. For example, pattern '*/' will return only directories at the specified depth.
+        max_depth (int, optional): Maximum directory depth to search. If None, unlimited recursion. If 0, only the top-level directory. If 1, only the root directory (matches 'find . -maxdepth 1').
         max_results (int, optional): Maximum number of results to return. 0 means no limit (default).
     Returns:
         str: Newline-separated list of matching file paths. Example:

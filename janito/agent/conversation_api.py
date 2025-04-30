@@ -30,14 +30,16 @@ def get_openai_response(
 ):
     """Non-streaming OpenAI API call."""
     messages = _sanitize_utf8_surrogates(messages)
+    from janito.agent.conversation_exceptions import ProviderError
+
     if runtime_config.get("vanilla_mode", False):
-        return client.chat.completions.create(
+        response = client.chat.completions.create(
             model=model,
             messages=messages,
             max_tokens=max_tokens,
         )
     else:
-        return client.chat.completions.create(
+        response = client.chat.completions.create(
             model=model,
             messages=messages,
             tools=tools or get_tool_schemas(),
@@ -45,6 +47,17 @@ def get_openai_response(
             temperature=temperature if temperature is not None else 0.2,
             max_tokens=max_tokens,
         )
+    # Explicitly check for missing or empty choices (API/LLM error)
+    if (
+        not hasattr(response, "choices")
+        or response.choices is None
+        or len(response.choices) == 0
+    ):
+        raise ProviderError(
+            "No choices in response; possible API or LLM error.",
+            {"code": 502, "raw_response": str(response)},
+        )
+    return response
 
 
 def get_openai_stream_response(

@@ -41,6 +41,22 @@ class ToolUseTracker:
                         return True
         return False
 
+    def last_operation_is_full_read_or_replace(self, file_path: str) -> bool:
+        ops = self.get_operations_on_file(file_path)
+        if not ops:
+            return False
+        last = ops[-1]
+        if last["tool"] == "replace_file":
+            return True
+        if last["tool"] == "get_lines":
+            params = last["params"]
+            if params.get("from_line") is None and params.get("to_line") is None:
+                return True
+        return False
+
+    def clear_history(self):
+        self._history.clear()
+
     @classmethod
     def instance(cls):
         return cls()

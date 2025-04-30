@@ -27,14 +27,14 @@ class GetLinesTool(ToolBase):
         if from_line and to_line:
             self.report_info(
                 tr(
-                    "📖 Reading {disp_path} {from_line}-{to_line}",
+                    "📖 Reading file '{disp_path}' {from_line}-{to_line}",
                     disp_path=disp_path,
                     from_line=from_line,
                     to_line=to_line,
                 )
             )
         else:
-            self.report_info(tr("📖 Reading {disp_path}", disp_path=disp_path))
+            self.report_info(tr("📖 Reading file '{disp_path}'", disp_path=disp_path))
         try:
             with open(file_path, "r", encoding="utf-8", errors="replace") as f:
                 lines = f.readlines()

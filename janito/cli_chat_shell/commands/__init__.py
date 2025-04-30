@@ -1,6 +1,7 @@
-from .session import handle_continue, handle_history
+from .session import handle_history
 from .prompt import handle_prompt, handle_role
-from .session_control import handle_exit, handle_restart
+from .session_control import handle_exit
+from .conversation_restart import handle_restart
 from .utility import handle_help, handle_clear, handle_multi
 from .termweb_log import handle_termweb_log_tail, handle_termweb_status
 from .livelogs import handle_livelogs
@@ -17,10 +18,10 @@ COMMAND_HANDLERS = {
     "/livelogs": handle_livelogs,
     "/termweb-status": handle_termweb_status,
     "/history": handle_history,
-    "/continue": handle_continue,
     "/exit": handle_exit,
     "exit": handle_exit,
     "/restart": handle_restart,
+    "/start": handle_restart,
     "/help": handle_help,
     "/multi": handle_multi,
     "/prompt": handle_prompt,
