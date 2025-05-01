@@ -29,7 +29,7 @@ def handle_restart(console, shell_state=None, **kwargs):
             )
 
     # Clear the terminal screen
-    os.system("cls" if os.name == "nt" else "clear")
+    console.clear()
 
     # Reset conversation history using its clear method
     shell_state.conversation_history.clear()

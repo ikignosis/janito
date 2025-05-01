@@ -9,6 +9,7 @@ from janito.agent.conversation_exceptions import (
     EmptyResponseError,
     ProviderError,
 )
+from janito.cli_chat_shell.chat_loop.chat_loop import start_chat_shell
 
 
 def is_port_free(port):
@@ -87,6 +88,7 @@ def run_cli(args):
         not getattr(args, "no_termweb", False)
         and interaction_mode == "chat"
         and not runtime_config.get("vanilla_mode", False)
+        and not getattr(args, "input_arg", None)  # Prevent termweb in one-shot mode
     ):
         default_port = 8088
         max_port = 8100
@@ -97,13 +99,21 @@ def run_cli(args):
                     selected_port = port
                     break
             if selected_port is None:
-                print(
+                from rich.console import Console
+
+                console = Console()
+                console.print(
                     f"[red]No free port found for termweb in range {default_port}-{max_port}.[/red]"
                 )
                 sys.exit(1)
         else:
             if not is_port_free(requested_port):
-                print(f"[red]Port {requested_port} is not available for termweb.[/red]")
+                from rich.console import Console
+
+                console = Console()
+                console.print(
+                    f"[red]Port {requested_port} is not available for termweb.[/red]"
+                )
                 sys.exit(1)
             selected_port = requested_port
         runtime_config.set("termweb_port", selected_port)
@@ -123,11 +133,16 @@ def run_cli(args):
     try:
         livereload_stdout_path = None
         livereload_stderr_path = None
+        continue_session = False
+        session_id = None
+        if getattr(args, "input_arg", None):
+            from janito.cli.runner.one_shot import run_oneshot_mode
+
+            run_oneshot_mode(args, profile_manager, runtime_config)
+            return
         if not getattr(args, "input_arg", None) or getattr(
             args, "continue_session", False
         ):
-            from janito.cli_chat_shell.chat_loop.chat_loop import start_chat_shell
-
             # Determine continue_session and session_id
             _cont = getattr(args, "continue_session", False)
             if _cont:

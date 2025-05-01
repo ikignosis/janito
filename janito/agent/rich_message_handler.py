@@ -38,7 +38,7 @@ class RichMessageHandler(MessageHandlerProtocol):
         if msg_type == "content":
             self.console.print(Markdown(message))
         elif msg_type == "info":
-            self.console.print(message, style="cyan", end="")
+            self.console.print(f"  {message}", style="cyan", end="")
         elif msg_type == "success":
             self.console.print(message, style="bold green", end="\n")
         elif msg_type == "error":

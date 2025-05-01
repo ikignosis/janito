@@ -4,7 +4,7 @@ from janito.agent.tools_utils.dir_walk_utils import walk_dir_with_gitignore
 
 app = Quart(__name__)
 
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+BASE_DIR = os.getcwd()
 
 
 @app.route("/")
