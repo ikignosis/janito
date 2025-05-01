@@ -9,25 +9,47 @@ def parse_python_outline(lines: List[str]):
     main_pat = re.compile(r"^\s*if\s+__name__\s*==\s*[\'\"]__main__[\'\"]\s*:")
     outline = []
     stack = []  # (type, name, indent, start, parent)
+    obj_ranges = []  # (type, name, start, end, parent, indent)
+    last_top_obj = None
     for idx, line in enumerate(lines):
         class_match = class_pat.match(line)
         func_match = func_pat.match(line)
         assign_match = assign_pat.match(line)
         indent = len(line) - len(line.lstrip())
+        # If a new top-level class or function starts, close the previous one
+        if (class_match or func_match) and indent == 0 and last_top_obj:
+            # Only close if still open
+            if last_top_obj in stack:
+                stack.remove(last_top_obj)
+                obj_ranges.append(
+                    (
+                        last_top_obj[0],
+                        last_top_obj[1],
+                        last_top_obj[3],
+                        idx,
+                        last_top_obj[4],
+                        last_top_obj[2],
+                    )
+                )
+            last_top_obj = None
         if class_match:
             name = class_match.group(2)
             parent = stack[-1][1] if stack and stack[-1][0] == "class" else ""
-            stack.append(("class", name, indent, idx + 1, parent))
+            obj = ("class", name, indent, idx + 1, parent)
+            stack.append(obj)
+            if indent == 0:
+                last_top_obj = obj
         elif func_match:
             name = func_match.group(2)
-            parent = (
-                stack[-1][1]
-                if stack
-                and stack[-1][0] in ("class", "function")
-                and indent > stack[-1][2]
-                else ""
-            )
-            stack.append(("function", name, indent, idx + 1, parent))
+            parent = ""
+            for s in reversed(stack):
+                if s[0] == "class" and indent > s[2]:
+                    parent = s[1]
+                    break
+            obj = ("function", name, indent, idx + 1, parent)
+            stack.append(obj)
+            if indent == 0:
+                last_top_obj = obj
         elif assign_match and indent == 0:
             var_name = assign_match.group(2)
             var_type = "const" if var_name.isupper() else "var"
@@ -38,6 +60,7 @@ def parse_python_outline(lines: List[str]):
                     "start": idx + 1,
                     "end": idx + 1,
                     "parent": "",
+                    "docstring": "",
                 }
             )
         main_match = main_pat.match(line)
@@ -49,35 +72,39 @@ def parse_python_outline(lines: List[str]):
                     "start": idx + 1,
                     "end": idx + 1,
                     "parent": "",
+                    "docstring": "",
                 }
             )
         while stack and indent < stack[-1][2]:
             popped = stack.pop()
-            outline.append(
-                {
-                    "type": (
-                        popped[0]
-                        if popped[0] != "function" or popped[3] == 1
-                        else ("method" if popped[4] else "function")
-                    ),
-                    "name": popped[1],
-                    "start": popped[3],
-                    "end": idx,
-                    "parent": popped[4],
-                }
+            obj_ranges.append(
+                (popped[0], popped[1], popped[3], idx, popped[4], popped[2])
             )
+    # Close any remaining open objects
     for popped in stack:
+        obj_ranges.append(
+            (popped[0], popped[1], popped[3], len(lines), popped[4], popped[2])
+        )
+
+    # Now, extract docstrings for classes, functions, and methods
+    for obj in obj_ranges:
+        obj_type, name, start, end, parent, indent = obj
+        # Determine if this is a method
+        if obj_type == "function" and parent:
+            outline_type = "method"
+        elif obj_type == "function":
+            outline_type = "function"
+        else:
+            outline_type = obj_type
+        docstring = extract_docstring(lines, start, end)
         outline.append(
             {
-                "type": (
-                    popped[0]
-                    if popped[0] != "function" or popped[3] == 1
-                    else ("method" if popped[4] else "function")
-                ),
-                "name": popped[1],
-                "start": popped[3],
-                "end": len(lines),
-                "parent": popped[4],
+                "type": outline_type,
+                "name": name,
+                "start": start,
+                "end": end,
+                "parent": parent,
+                "docstring": docstring,
             }
         )
     return outline
