@@ -24,6 +24,8 @@ nav:
       - Agentic Frameworks Comparison: code_intelligence/agentic_frameworks_comparison.md
   - Tools:
       - Overview: tools/index.md
+      - Precision: tools/precision.md
+      - Natural Results: tools/natural_results.md
 
   - Reference:
       - Architecture: reference/architecture.md

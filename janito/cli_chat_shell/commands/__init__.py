@@ -6,6 +6,7 @@ from .utility import handle_help, handle_clear, handle_multi
 from .termweb_log import handle_termweb_log_tail, handle_termweb_status
 from .livelogs import handle_livelogs
 from .sum import handle_sum
+from .edit import handle_edit
 
 from .history_view import handle_view
 from ..config_shell import handle_config_shell
@@ -17,6 +18,7 @@ COMMAND_HANDLERS = {
     "/termweb-logs": handle_termweb_log_tail,
     "/livelogs": handle_livelogs,
     "/termweb-status": handle_termweb_status,
+    "/edit": handle_edit,
     "/history": handle_history,
     "/exit": handle_exit,
     "exit": handle_exit,

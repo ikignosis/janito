@@ -30,8 +30,8 @@ class FindFilesTool(ToolBase):
                 tr("⚠️  Warning: Empty file pattern provided. Operation skipped.")
             )
             return tr("Warning: Empty file pattern provided. Operation skipped.")
-        output = set()
         patterns = pattern.split()
+        results = []
         for directory in paths.split():
             disp_path = display_path(directory)
             depth_msg = (
@@ -47,6 +47,7 @@ class FindFilesTool(ToolBase):
                     depth_msg=depth_msg,
                 )
             )
+            dir_output = set()
             for root, dirs, files in walk_dir_with_gitignore(
                 directory, max_depth=max_depth
             ):
@@ -56,22 +57,24 @@ class FindFilesTool(ToolBase):
                         dir_pat = pat.rstrip("/\\")
                         for d in dirs:
                             if fnmatch.fnmatch(d, dir_pat):
-                                output.add(os.path.join(root, d) + os.sep)
+                                dir_output.add(os.path.join(root, d) + os.sep)
                     else:
                         for filename in fnmatch.filter(files, pat):
-                            output.add(os.path.join(root, filename))
-        self.report_success(
-            tr(
-                " ✅ {count} {file_word} found",
-                count=len(output),
-                file_word=pluralize("file", len(output)),
+                            dir_output.add(os.path.join(root, filename))
+            self.report_success(
+                tr(
+                    " ✅ {count} {file_word} found in {disp_path}",
+                    count=len(dir_output),
+                    file_word=pluralize("file", len(dir_output)),
+                    disp_path=disp_path,
+                )
             )
-        )
-        # If searching in '.', strip leading './' from results
-        if paths.strip() == ".":
-            output = {
-                p[2:] if (p.startswith("./") or p.startswith(".\\")) else p
-                for p in output
-            }
-        result = "\n".join(sorted(output))
+            # If searching in '.', strip leading './' from results
+            if directory.strip() == ".":
+                dir_output = {
+                    p[2:] if (p.startswith("./") or p.startswith(".\\")) else p
+                    for p in dir_output
+                }
+            results.extend(sorted(dir_output))
+        result = "\n".join(results)
         return result

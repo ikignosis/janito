@@ -36,7 +36,6 @@ __all__ = [
     "run_powershell_command",
     "run_python_command",
     "search_files",
-    "memory",
     "present_choices",
     "search_text",
     "show_edit_url",

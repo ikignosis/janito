@@ -25,8 +25,6 @@ Janito uses these tools automatically based on your prompt and context. This tab
 | **search_outline**    | Search for function/class/header names in file outlines.          | `directories` (list)<br>`pattern` (str)<br>`file_types` (list, optional)<br>`regex` (bool, optional)<br>`recursive` (bool, optional) | Summary of outline matches                | Fast context search for code and docs. Supports substring and regex.                   |
 | **ask_user**          | Request clarification or input from the user interactively.      | `question` (str)                                                                                   | User response as a string                 | Used when agent needs explicit user input.                                              |
 | **present_choices**   | Present a list of options to the user and return the selection.  | `prompt` (str)<br>`choices` (list)<br>`multi_select` (bool, optional)                              | Selected option(s)                        | Useful for interactive workflows.                                                      |
-| **retrieve_memory**   | Retrieve a value previously stored using a key.                  | `key` (str)                                                                                        | Stored value or warning                   | Used for session memory and recall.                                                    |
-| **store_memory**      | Store a value for later retrieval using a key.                   | `key` (str)<br>`value` (str)                                                                        | Success message or error                  | Used for session memory and recall.                                                    |
 | **run_powershell_command** | Run a PowerShell command and capture output.                  | `command` (str)<br>`timeout` (int, optional)<br>`require_confirmation` (bool, optional)            | Output or file paths for output           | Windows only.                                                                         |
 
 ---
@@ -47,14 +45,12 @@ Janito uses these tools automatically based on your prompt and context. This tab
 | [Remove Directory](remove_directory.md) | Remove a directory |
 | [Remove File](remove_file.md) | Remove a file |
 | [Replace Text In File](replace_text_in_file.md) | Replace exact text in a file |
-| [Retrieve Memory](retrieve_memory.md) | Retrieve stored value |
 | [Run Bash Command](run_bash_command.md) | Run a bash command |
 | [Run PowerShell Command](run_powershell_command.md) | Run a PowerShell command |
 | [Run Python Command](run_python_command.md) | Run Python code |
 | [Search Files](search_files.md) | Search for text in files |
 | [Search Outline](search_outline.md) | Search for function/class/header names in outlines |
 | [Search Text](search_text.md) | Search for text (deprecated/alias) |
-| [Store Memory](store_memory.md) | Store a value for later |
 | [Validate File Syntax](validate_file_syntax.md) | Validate file syntax |
 
 ---
