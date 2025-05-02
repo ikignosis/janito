@@ -2,8 +2,23 @@
 
 ## [1.9.0] - 2025-05-02
 
-### Added
-- _Describe new features, enhancements, and fixes here._
+### Major Changes
+- Refactored and reorganized CLI and shell modules for improved structure and maintainability. Many files were moved and renamed.
+- Expanded and modularized validation tools: added new validators for HTML, CSS, JS, Markdown, YAML, and more, with improved error handling and reporting.
+- Enhanced tool registry and execution tracking for more robust management of file, directory, and text operations.
+- Improved and expanded documentation, including new guides and detailed tool documentation.
+
+### Features
+- New and improved tools for file, directory, and text operations.
+- Added new tests for features and refactored modules.
+- Dependency updates, including the addition of lxml for HTML validation.
+
+### Improvements
+- Many formatting, linting, and code quality improvements (auto-formatting, unused import cleanup, etc.).
+- Enhanced error handling and validation across modules.
+
+### Removals
+- Removal of obsolete and redundant files.
 
 ---
 
