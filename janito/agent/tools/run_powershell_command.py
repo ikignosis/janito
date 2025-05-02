@@ -88,6 +88,7 @@ class RunPowerShellCommandTool(ToolBase):
                     text=True,
                     bufsize=1,
                     universal_newlines=True,
+                    encoding="utf-8",
                 )
 
                 stdout_lines = 0
