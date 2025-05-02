@@ -2,8 +2,11 @@ from janito.agent.rich_message_handler import RichMessageHandler
 from prompt_toolkit.history import InMemoryHistory
 from dataclasses import dataclass, field
 from typing import Optional, Any, Dict
-from ..prompt_session_setup import setup_prompt_session, print_welcome_message
-from ..commands import handle_command
+from janito.shell.prompt.session_setup import (
+    setup_prompt_session,
+    print_welcome_message,
+)
+from janito.shell.commands import handle_command
 from janito.agent.conversation_exceptions import EmptyResponseError, ProviderError
 from janito.agent.conversation_history import ConversationHistory
 from rich.console import Console
@@ -119,7 +122,7 @@ def start_chat_shell(
     console = message_handler.console
 
     # Print session id at start
-    from ..session_manager import load_conversation_by_session_id
+    from janito.shell.session.manager import load_conversation_by_session_id
 
     shell_state = ShellState()
     shell_state.profile_manager = profile_manager
@@ -185,17 +188,14 @@ def start_chat_shell(
 
     while True:
         try:
-            from janito.cli_chat_shell._utils import move_cursor_nth_line_from_bottom
 
             if shell_state.paste_mode:
-                move_cursor_nth_line_from_bottom(1)
                 user_input = session.prompt("Multiline> ", multiline=True)
                 was_paste_mode = True
                 shell_state.paste_mode = False
             else:
                 from prompt_toolkit.formatted_text import HTML
 
-                move_cursor_nth_line_from_bottom(1)
                 user_input = session.prompt(
                     HTML("<inputline>💬 </inputline>"), multiline=False
                 )
@@ -306,7 +306,3 @@ def start_chat_shell(
         # ---------------------------------------------------------------------------
 
     # After exiting the main loop, print restart info if conversation has >1 message
-    if len(conversation_history) > 1:
-        console.print(
-            f"[bold yellow]The conversation can be restarted from session id [green]{session_id}[/green][/bold yellow]"
-        )

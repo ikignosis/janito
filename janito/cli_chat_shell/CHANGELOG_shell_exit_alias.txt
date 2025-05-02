@@ -1,7 +1,0 @@
-## Change: Allow 'exit' (no slash) to quit shell like '/exit'
-
-- Both '/exit' and 'exit' now trigger the same exit logic in the shell.
-- Updated command dispatch logic in janito/cli_chat_shell/commands/__init__.py to map both '/exit' and 'exit' to handle_exit.
-- Updated help text in janito/cli_chat_shell/commands/utility.py to mention both '/exit' and 'exit'.
-- This prevents accidental messages being sent to the LLM when users type 'exit' expecting to quit.
-- Changes are atomic and reversible (see .bak backups).

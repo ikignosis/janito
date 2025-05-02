@@ -180,7 +180,7 @@ def get_prompt_session(get_toolbar_func, mem_history):
             "inputline": "bg:#005fdd #ffffff",  # Blue background for the prompt label (icon/text)
         }
     )
-    from .shell_command_completer import ShellCommandCompleter
+    from janito.shell.prompt.completer import ShellCommandCompleter
 
     completer = ShellCommandCompleter()
     return PromptSession(

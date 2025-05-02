@@ -51,7 +51,7 @@ def start_livereload(selected_port):
         else:
             livereload_proc.terminate()
             livereload_proc.wait()
-            from janito.cli.runner._livereload_log_utils import print_livereload_logs
+            from janito.cli._livereload_log_utils import print_livereload_logs
 
             console.print(
                 f"[red]Failed to start LiveReload on port {selected_port}. Check logs for details.[/red]"

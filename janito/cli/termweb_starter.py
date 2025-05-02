@@ -5,7 +5,7 @@ import time
 import http.client
 import os
 from rich.console import Console
-from janito.cli.runner._termweb_log_utils import print_termweb_logs
+from janito.cli._termweb_log_utils import print_termweb_logs
 from janito.i18n import tr
 
 

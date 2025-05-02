@@ -1,8 +1,12 @@
-from .interactive_ui import print_welcome, get_toolbar_func, get_prompt_session
+from janito.shell.ui.interactive import (
+    print_welcome,
+    get_toolbar_func,
+    get_prompt_session,
+)
 from janito import __version__
 from janito.agent.config import effective_config
 from janito.agent.runtime_config import runtime_config
-from .session_manager import get_session_id
+from janito.shell.session.manager import get_session_id
 
 
 def setup_prompt_session(

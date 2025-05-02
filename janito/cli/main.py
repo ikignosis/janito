@@ -3,7 +3,7 @@
 from janito.cli.arg_parser import create_parser
 from janito.cli.config_commands import handle_config_commands
 from janito.cli.logging_setup import setup_verbose_logging
-from janito.cli.runner.cli_main import run_cli
+from janito.cli.cli_main import run_cli
 from janito.agent.runtime_config import unified_config
 from janito.cli.livereload_starter import start_livereload
 

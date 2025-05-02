@@ -1,11 +1,11 @@
 import os
 
 
-from ..session_manager import reset_session_id
+from janito.shell.session.manager import reset_session_id
 
 
 def handle_restart(console, shell_state=None, **kwargs):
-    from ..session_manager import load_last_conversation, save_conversation
+    from janito.shell.session.manager import load_last_conversation, save_conversation
 
     reset_session_id()
     save_path = os.path.join(".janito", "last_conversation.json")
