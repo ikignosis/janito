@@ -23,9 +23,9 @@ nav:
       - Code Generation Observability: code_intelligence/code_generation_observability.md
       - Agentic Frameworks Comparison: code_intelligence/agentic_frameworks_comparison.md
   - Tools:
-      - Overview: tools/index.md
-      - Precision: tools/precision.md
-      - Natural Results: tools/natural_results.md
+      - Overview: tools_index.md
+      - Precision: tools_precision.md
+      - Natural Results: tools_natural_results.md
 
   - Reference:
       - Architecture: reference/architecture.md

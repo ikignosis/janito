@@ -3,6 +3,7 @@ from .prompt import handle_prompt, handle_role
 from .session_control import handle_exit
 from .conversation_restart import handle_restart
 from .utility import handle_help, handle_clear, handle_multi
+from .tools import handle_tools
 from .termweb_log import handle_termweb_log_tail, handle_termweb_status
 from .livelogs import handle_livelogs
 from .sum import handle_sum
@@ -27,6 +28,7 @@ COMMAND_HANDLERS = {
     "/help": handle_help,
     "/multi": handle_multi,
     "/prompt": handle_prompt,
+    "/tools": handle_tools,
     "/verbose": handle_verbose,
 }
 

@@ -1,4 +1,4 @@
-# Tool: get_file_outline (formerly outline_file)
+# Tool: get_file_outline
 
 **Description:**
 Get an outline of a file's structure. For Python files, uses regex pattern matching for class and function definitions. May not capture all edge cases or non-standard code structures.

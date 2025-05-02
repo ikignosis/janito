@@ -1,4 +1,5 @@
 from typing import List, Dict, Optional
+import json
 
 
 class ConversationHistory:
@@ -39,6 +40,11 @@ class ConversationHistory:
             self._messages[system_idx] = system_msg
         else:
             self._messages.insert(0, system_msg)
+
+    def to_json_file(self, path: str):
+        """Save the conversation history as a JSON file to the given path."""
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(self.get_messages(), f, indent=2, ensure_ascii=False)
 
     def __len__(self):
         return len(self._messages)

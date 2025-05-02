@@ -5,7 +5,7 @@ from janito.agent.tools_utils.utils import display_path
 from janito.agent.tool_base import ToolBase
 from janito.i18n import tr
 
-from janito.agent.tools.validate_syntax.validator import validate_file_syntax
+from janito.agent.tools.validate_file_syntax.core import validate_file_syntax
 
 
 @register_tool(name="replace_file")

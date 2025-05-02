@@ -9,7 +9,15 @@ from janito.shell.prompt.session_setup import (
 from janito.shell.commands import handle_command
 from janito.agent.conversation_exceptions import EmptyResponseError, ProviderError
 from janito.agent.conversation_history import ConversationHistory
+from janito.agent.tool_use_tracker import ToolUseTracker
+import janito.i18n as i18n
+from janito.agent.runtime_config import runtime_config
 from rich.console import Console
+from collections import Counter
+import os
+from janito.shell.session.manager import get_session_id
+from prompt_toolkit.formatted_text import HTML
+import time
 
 
 def chat_start_summary(conversation_history, console, last_usage_info):
@@ -51,12 +59,8 @@ def chat_start_summary(conversation_history, console, last_usage_info):
 
     # Add global tool usage stats
     try:
-        from janito.agent.tool_use_tracker import ToolUseTracker
-
         tool_history = ToolUseTracker().get_history()
         if tool_history:
-            from collections import Counter
-
             tool_counts = Counter(
                 entry["tool"] for entry in tool_history if "tool" in entry
             )
@@ -112,8 +116,6 @@ def start_chat_shell(
     livereload_stdout_path=None,
     livereload_stderr_path=None,
 ):
-    import janito.i18n as i18n
-    from janito.agent.runtime_config import runtime_config
 
     i18n.set_locale(runtime_config.get("lang", "en"))
     global active_prompt_session
@@ -151,7 +153,6 @@ def start_chat_shell(
     else:
         conversation_history = shell_state.conversation_history
         # Add system prompt if needed (skip in vanilla mode)
-        from janito.agent.runtime_config import runtime_config
 
         if (
             profile_manager.system_prompt_template
@@ -194,8 +195,6 @@ def start_chat_shell(
                 was_paste_mode = True
                 shell_state.paste_mode = False
             else:
-                from prompt_toolkit.formatted_text import HTML
-
                 user_input = session.prompt(
                     HTML("<inputline>💬 </inputline>"), multiline=False
                 )
@@ -253,8 +252,6 @@ def start_chat_shell(
         mem_history.append_string(user_input)
         conversation_history.add_message({"role": "user", "content": user_input})
 
-        import time
-
         start_time = time.time()
 
         # No need to propagate verbose; ToolExecutor and others fetch from runtime_config
@@ -305,4 +302,20 @@ def start_chat_shell(
         # Optionally, add tool messages if present in response (extend here if needed)
         # ---------------------------------------------------------------------------
 
+        # --- Save conversation history after each assistant reply ---
+        session_id_to_save = session_id if session_id else get_session_id()
+        history_dir = os.path.join(os.path.expanduser("~"), ".janito", "chat_history")
+        os.makedirs(history_dir, exist_ok=True)
+        history_path = os.path.join(history_dir, f"{session_id_to_save}.json")
+        conversation_history.to_json_file(history_path)
+        # -----------------------------------------------------------
+
     # After exiting the main loop, print restart info if conversation has >1 message
+
+    # --- Save conversation history to .janito/chat_history/(session_id).json ---
+    session_id_to_save = session_id if session_id else get_session_id()
+    history_dir = os.path.join(os.path.expanduser("~"), ".janito", "chat_history")
+    os.makedirs(history_dir, exist_ok=True)
+    history_path = os.path.join(history_dir, f"{session_id_to_save}.json")
+    conversation_history.to_json_file(history_path)
+    # -------------------------------------------------------------------------

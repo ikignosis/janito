@@ -59,14 +59,17 @@ class FindFilesTool(ToolBase):
                             if fnmatch.fnmatch(d, dir_pat):
                                 dir_output.add(os.path.join(root, d) + os.sep)
                     else:
+                        # Match files
                         for filename in fnmatch.filter(files, pat):
                             dir_output.add(os.path.join(root, filename))
+                        # Also match directories (without trailing slash)
+                        for d in fnmatch.filter(dirs, pat):
+                            dir_output.add(os.path.join(root, d))
             self.report_success(
                 tr(
-                    " ✅ {count} {file_word} found in {disp_path}",
+                    " ✅ {count} {file_word}",
                     count=len(dir_output),
                     file_word=pluralize("file", len(dir_output)),
-                    disp_path=disp_path,
                 )
             )
             # If searching in '.', strip leading './' from results
