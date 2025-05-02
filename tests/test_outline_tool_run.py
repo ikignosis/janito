@@ -37,7 +37,7 @@ def test_parse_python_outline_accuracy():
     assert a["start"] == 1 and a["end"] == 7, f"A: {a}"
     assert foo["start"] == 2 and foo["end"] == 3, f"foo: {foo}"
     assert bar["start"] == 5 and bar["end"] == 6, f"bar: {bar}"
-    assert top["start"] == 8 and top["end"] == 9, f"top: {top}"
+    assert top["start"] == 8 and top["end"] == 10, f"top: {top}"
     assert b["start"] == 11 and b["end"] == 12, f"B: {b}"
     print("parse_python_outline accuracy test passed.")
 

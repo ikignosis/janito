@@ -1,5 +1,6 @@
 from janito.i18n import tr
 import re
+from lxml import etree
 
 
 def validate_html(file_path: str) -> str:
@@ -33,18 +34,29 @@ def validate_html(file_path: str) -> str:
                 )
     lxml_error = None
     try:
-        from lxml import html
-
-        with open(file_path, "rb") as f:
-            html.parse(f)
-        from lxml import etree
-
+        # Parse HTML and collect error log
         parser = etree.HTMLParser(recover=False)
         with open(file_path, "rb") as f:
             etree.parse(f, parser=parser)
-        if parser.error_log:
-            errors = "\n".join(str(e) for e in parser.error_log)
-            lxml_error = tr("HTML syntax errors found:\n{errors}", errors=errors)
+        error_log = parser.error_log
+        # Look for tag mismatch or unclosed tag errors
+        syntax_errors = []
+        for e in error_log:
+            if (
+                "mismatch" in e.message.lower()
+                or "tag not closed" in e.message.lower()
+                or "unexpected end tag" in e.message.lower()
+                or "expected" in e.message.lower()
+            ):
+                syntax_errors.append(str(e))
+        if syntax_errors:
+            lxml_error = tr("Syntax error: {error}", error="; ".join(syntax_errors))
+        elif error_log:
+            # Other warnings
+            lxml_error = tr(
+                "HTML syntax errors found:\n{errors}",
+                errors="\n".join(str(e) for e in error_log),
+            )
     except ImportError:
         lxml_error = tr("⚠️ lxml not installed. Cannot validate HTML.")
     except Exception as e:

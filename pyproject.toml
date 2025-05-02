@@ -1,7 +1,7 @@
 [project]
 name = "janito"
 
-version = "1.9.0-dev"
+version = "1.9.0"
 description = "Natural Language Coding Agent,"
 authors = [
     { name = "João Pinto", email = "joao.pinto@gmail.com" }
@@ -17,7 +17,8 @@ dependencies = [
     "prompt_toolkit",
     "requests",
     "rich",
-    "toml"
+    "toml",
+    "lxml"
 ]
 license = "MIT"
 readme = "README.md"

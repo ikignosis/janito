@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.0] - 2025-05-02
+
+### Added
+- _Describe new features, enhancements, and fixes here._
+
+---
+
 ## [1.8.0] - 2025-04-28
 
 ### Documentation

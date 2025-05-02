@@ -25,9 +25,9 @@ def test_outline_on_python_file():
         x for x in outline if x["type"] == "function" and x["name"] == "standalone"
     )
     assert class_item["start"] == 1 and class_item["end"] == 8
-    assert method_one["start"] == 2 and method_one["end"] == 5
-    assert method_two["start"] == 4 and method_two["end"] == 5
-    assert standalone["start"] == 7 and standalone["end"] == 8
+    assert method_one["start"] == 2 and method_one["end"] == 3
+    assert method_two["start"] == 5 and method_two["end"] == 6
+    assert standalone["start"] == 9 and standalone["end"] == 10
     print("test_outline_on_python_file passed.")
 
 

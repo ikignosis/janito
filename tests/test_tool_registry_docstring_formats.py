@@ -23,7 +23,7 @@ class ToolArgs(ToolBase):
 
     name = "tool_args"
 
-    def run(self, a, b) -> str:
+    def run(self, a: int, b: int) -> str:
         return str(a + b)
 
 
@@ -43,7 +43,7 @@ class ToolArguments(ToolBase):
 
     name = "tool_arguments"
 
-    def run(self, x, y) -> str:
+    def run(self, x: int, y: int) -> str:
         return str(x * y)
 
 
@@ -63,7 +63,7 @@ class ToolParams(ToolBase):
 
     name = "tool_params"
 
-    def run(self, foo, bar) -> str:
+    def run(self, foo: int, bar: int) -> str:
         return str(foo) + str(bar)
 
 
@@ -83,7 +83,7 @@ class ToolParameters(ToolBase):
 
     name = "tool_parameters"
 
-    def run(self, p, q) -> str:
+    def run(self, p: int, q: int) -> str:
         return str(p - q)
 
 

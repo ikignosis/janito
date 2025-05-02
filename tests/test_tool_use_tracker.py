@@ -1,5 +1,6 @@
 from janito.agent.tool_use_tracker import ToolUseTracker
 from janito.agent.tools.create_file import CreateFileTool
+from janito.agent.tools.replace_file import ReplaceFileTool
 
 
 def test_tool_use_tracker_record_and_query():
@@ -24,15 +25,14 @@ def test_create_file_refuses_overwrite_without_full_read(tmp_path):
     file_path.write_text("original content")
     tool = CreateFileTool()
     # Try to overwrite without reading
-    result = tool.run(str(file_path), "new content", overwrite=True)
-    assert "refusing to overwrite" in result.lower()
+    result = tool.run(str(file_path), "new content")
+    assert "cannot create file: file already exists" in result.lower()
     # Simulate full read
     tracker.record(
         "get_lines", {"file_path": str(file_path), "from_line": None, "to_line": None}
     )
-    # Now overwrite should succeed
-    result2 = tool.run(str(file_path), "new content", overwrite=True)
-    assert (
-        "successfully created" in result2.lower() or "updated file" in result2.lower()
-    )
+    # Now use ReplaceFileTool to overwrite
+    replace_tool = ReplaceFileTool()
+    result2 = replace_tool.run(str(file_path), "new content")
+    assert "replaced file" in result2.lower()
     assert file_path.read_text() == "new content"

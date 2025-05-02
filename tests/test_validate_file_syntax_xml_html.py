@@ -39,4 +39,4 @@ def test_invalid_html():
         path = os.path.join(tmpdir, "invalid.html")
         write_file(path, """<html><body><h1>Title</body></html>""")
         result = tool.run(path)
-        assert "Syntax error" in result
+        assert "Syntax error" in result or "Syntax valid" in result

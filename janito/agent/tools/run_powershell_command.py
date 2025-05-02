@@ -3,6 +3,7 @@ from janito.agent.tool_registry import register_tool
 from janito.i18n import tr
 import subprocess
 import tempfile
+import threading
 
 
 @register_tool(name="run_powershell_command")
@@ -82,10 +83,37 @@ class RunPowerShellCommandTool(ToolBase):
                         "-Command",
                         command_with_encoding,
                     ],
-                    stdout=stdout_file,
-                    stderr=stderr_file,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
                     text=True,
+                    bufsize=1,
+                    universal_newlines=True,
                 )
+
+                stdout_lines = 0
+                stderr_lines = 0
+
+                def stream_output(stream, file_obj, report_func, count_func):
+                    nonlocal stdout_lines, stderr_lines
+                    for line in stream:
+                        file_obj.write(line)
+                        file_obj.flush()
+                        report_func(line)
+                        if count_func == "stdout":
+                            stdout_lines += 1
+                        else:
+                            stderr_lines += 1
+
+                stdout_thread = threading.Thread(
+                    target=stream_output,
+                    args=(process.stdout, stdout_file, self.report_stdout, "stdout"),
+                )
+                stderr_thread = threading.Thread(
+                    target=stream_output,
+                    args=(process.stderr, stderr_file, self.report_stderr, "stderr"),
+                )
+                stdout_thread.start()
+                stderr_thread.start()
                 try:
                     return_code = process.wait(timeout=timeout)
                 except subprocess.TimeoutExpired:
@@ -96,28 +124,11 @@ class RunPowerShellCommandTool(ToolBase):
                     return tr(
                         "Command timed out after {timeout} seconds.", timeout=timeout
                     )
+                stdout_thread.join()
+                stderr_thread.join()
                 stdout_file.flush()
                 stderr_file.flush()
-                with open(
-                    stdout_file.name, "r", encoding="utf-8", errors="replace"
-                ) as out_f:
-                    out_f.seek(0)
-                    for line in out_f:
-                        self.report_stdout(line)
-                with open(
-                    stderr_file.name, "r", encoding="utf-8", errors="replace"
-                ) as err_f:
-                    err_f.seek(0)
-                    for line in err_f:
-                        self.report_stderr(line)
-                with open(
-                    stdout_file.name, "r", encoding="utf-8", errors="replace"
-                ) as out_f:
-                    stdout_lines = sum(1 for _ in out_f)
-                with open(
-                    stderr_file.name, "r", encoding="utf-8", errors="replace"
-                ) as err_f:
-                    stderr_lines = sum(1 for _ in err_f)
+
                 self.report_success(
                     tr(" ✅ return code {return_code}", return_code=return_code)
                 )
@@ -126,6 +137,7 @@ class RunPowerShellCommandTool(ToolBase):
                     warning_msg = tr(
                         "⚠️  Warning: This command might be interactive, require user input, and might hang.\n"
                     )
+                # Read back the content for summary if not too large
                 with open(
                     stdout_file.name, "r", encoding="utf-8", errors="replace"
                 ) as out_f:
