@@ -1,4 +1,4 @@
-from janito.agent.tools.outline.python_outline import parse_python_outline
+from janito.agent.tools.get_file_outline.python_outline import parse_python_outline
 
 
 def test_no_overlap_top_level_functions_classes():

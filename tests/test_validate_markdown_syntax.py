@@ -1,5 +1,5 @@
 import os
-from janito.agent.tools.validate_file_syntax import ValidateFileSyntaxTool
+from janito.agent.tools.validate_file_syntax.core import ValidateFileSyntaxTool
 
 
 def write_temp_file(content, filename="temp_test.md"):

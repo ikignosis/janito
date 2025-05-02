@@ -2,7 +2,7 @@ import sys
 import os
 
 sys.path.insert(0, os.path.abspath("."))
-from janito.agent.tools.outline.python_outline import parse_python_outline
+from janito.agent.tools.get_file_outline.python_outline import parse_python_outline
 
 
 def test_parse_python_outline_accuracy():

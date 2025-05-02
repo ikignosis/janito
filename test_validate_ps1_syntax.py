@@ -1,4 +1,4 @@
-from janito.agent.tools.validate_file_syntax import ValidateFileSyntaxTool
+from janito.agent.tools.validate_file_syntax.core import ValidateFileSyntaxTool
 
 
 def main():
