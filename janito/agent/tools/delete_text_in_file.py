@@ -69,12 +69,7 @@ class DeleteTextInFileTool(ToolBase):
             count += 1
 
         if count == 0:
-            self.report_warning(
-                tr(
-                    "No blocks found between markers in {disp_path}.",
-                    disp_path=disp_path,
-                )
-            )
+            self.report_warning(tr("ℹ️ No blocks found between markers."))
             return tr(
                 "No blocks found between markers in {file_path}.", file_path=file_path
             )

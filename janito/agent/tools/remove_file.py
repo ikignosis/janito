@@ -28,7 +28,7 @@ class RemoveFileTool(ToolBase):
         disp_path = display_path(original_path)
         backup_path = None
         # Report initial info about what is going to be removed
-        self.report_info(tr("🗑️ Removing file: '{disp_path}' ...", disp_path=disp_path))
+        self.report_info(tr("🗑️ Removing file '{disp_path}' ...", disp_path=disp_path))
         if not os.path.exists(path):
             self.report_error(tr("❌ File does not exist."))
             return tr("❌ File does not exist.")

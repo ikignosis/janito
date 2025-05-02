@@ -24,7 +24,7 @@ class GetFileOutlineTool(ToolBase):
         try:
             self.report_info(
                 tr(
-                    "📄 Outlining file:'{disp_path}' ...",
+                    "📄 Outlining file '{disp_path}' ...",
                     disp_path=display_path(file_path),
                 )
             )

@@ -26,9 +26,7 @@ class FindFilesTool(ToolBase):
 
     def run(self, paths: str, pattern: str, max_depth: int = None) -> str:
         if not pattern:
-            self.report_warning(
-                tr("⚠️  Warning: Empty file pattern provided. Operation skipped.")
-            )
+            self.report_warning(tr("ℹ️ Empty file pattern provided."))
             return tr("Warning: Empty file pattern provided. Operation skipped.")
         patterns = pattern.split()
         results = []

@@ -28,13 +28,11 @@ class RunPythonCommandTool(ToolBase):
         interactive: bool = False,
     ) -> str:
         if not code.strip():
-            self.report_warning(
-                tr("⚠️ Warning: Empty code provided. Operation skipped.")
-            )
+            self.report_warning(tr("ℹ️ Empty code provided."))
             return tr("Warning: Empty code provided. Operation skipped.")
         self.report_info(tr("🐍 Running Python code: ...\n{code}\n", code=code))
         if interactive:
-            self.report_info(
+            self.report_warning(
                 tr(
                     "⚠️  Warning: This code might be interactive, require user input, and might hang."
                 )
@@ -45,7 +43,7 @@ class RunPythonCommandTool(ToolBase):
                 tr("Do you want to execute this Python code?")
             )
             if not confirmed:
-                self.report_warning(tr("Execution cancelled by user."))
+                self.report_warning(tr("⚠️ Execution cancelled by user."))
                 return tr("Execution cancelled by user.")
         try:
             with (

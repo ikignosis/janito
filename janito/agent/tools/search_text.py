@@ -63,12 +63,7 @@ class SearchTextTool(ToolBase):
                 regex = re.compile(pattern)
                 use_regex = True
             except re.error as e:
-                self.report_warning(
-                    tr(
-                        "Invalid regex pattern: {error}. Falling back to no results.",
-                        error=e,
-                    )
-                )
+                self.report_warning(tr("⚠️ Invalid regex pattern."))
                 return tr(
                     "Warning: Invalid regex pattern: {error}. No results.", error=e
                 )
@@ -200,7 +195,7 @@ class SearchTextTool(ToolBase):
             result += tr("\n[Note: max_results limit reached, output truncated.]")
         self.report_success(
             tr(
-                " ✅ {count} {line_word} found{limit}",
+                " ✅ {count} {line_word}{limit}",
                 count=len(output),
                 line_word=pluralize("line", len(output)),
                 limit=(" (limit reached)" if limit_reached else ""),

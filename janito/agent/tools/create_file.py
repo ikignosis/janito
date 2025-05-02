@@ -44,7 +44,7 @@ class CreateFileTool(ToolBase):
         with open(file_path, "w", encoding="utf-8", errors="replace") as f:
             f.write(content)
         new_lines = content.count("\n") + 1 if content else 0
-        self.report_success(tr("✅ {new_lines} lines.", new_lines=new_lines))
+        self.report_success(tr("✅ {new_lines} lines", new_lines=new_lines))
         # Perform syntax validation and append result
         validation_result = validate_file_syntax(file_path)
         return (

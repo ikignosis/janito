@@ -95,7 +95,7 @@ class ReplaceTextInFileTool(ToolBase):
             else:
                 occurrences = content.count(search_text)
                 if occurrences > 1:
-                    self.report_warning(tr("⚠️ Search text is not unique."))
+                    self.report_warning(tr(" ℹ️ No changes made. [not unique]"))
                     warning_detail = tr(
                         "The search text is not unique. Expand your search context with surrounding lines to ensure uniqueness."
                     )
@@ -120,7 +120,7 @@ class ReplaceTextInFileTool(ToolBase):
             if replaced_count == 0:
                 warning = tr(" [Warning: Search text not found in file]")
             if not file_changed:
-                self.report_warning(tr(" ℹ️ No changes made."))
+                self.report_warning(tr(" ℹ️ No changes made. [not found]"))
                 concise_warning = tr(
                     "The search text was not found. Expand your search context with surrounding lines if needed."
                 )

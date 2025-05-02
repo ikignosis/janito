@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 from janito.agent.tool_registry import register_tool
 from janito.agent.tool_base import ToolBase
 from janito.i18n import tr
+from janito.agent.tools_utils.utils import pluralize
 
 
 @register_tool(name="fetch_url")
@@ -21,7 +22,7 @@ class FetchUrlTool(ToolBase):
 
     def run(self, url: str, search_strings: list[str] = None) -> str:
         if not url.strip():
-            self.report_warning(tr("⚠️ Warning: Empty URL provided. Operation skipped."))
+            self.report_warning(tr("ℹ️ Empty URL provided."))
             return tr("Warning: Empty URL provided. Operation skipped.")
         self.report_info(tr("🌐 Fetching URL '{url}' ...", url=url))
         response = requests.get(url, timeout=10)
@@ -49,5 +50,12 @@ class FetchUrlTool(ToolBase):
                 text = "\n...\n".join(filtered)
             else:
                 text = tr("No lines found for the provided search strings.")
-        self.report_success(tr("✅ Result"))
+        num_lines = len(text.splitlines())
+        self.report_success(
+            tr(
+                "✅ {num_lines} {line_word}",
+                num_lines=num_lines,
+                line_word=pluralize("line", num_lines),
+            )
+        )
         return text

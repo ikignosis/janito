@@ -31,9 +31,7 @@ class RunPowerShellCommandTool(ToolBase):
         interactive: bool = False,
     ) -> str:
         if not command.strip():
-            self.report_warning(
-                tr("⚠️ Warning: Empty command provided. Operation skipped.")
-            )
+            self.report_warning(tr("ℹ️ Empty command provided."))
             return tr("Warning: Empty command provided. Operation skipped.")
         encoding_prefix = "$OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; "
         command_with_encoding = encoding_prefix + command
@@ -41,7 +39,7 @@ class RunPowerShellCommandTool(ToolBase):
             tr("🖥️ Running PowerShell command: {command} ...\n", command=command)
         )
         if interactive:
-            self.report_info(
+            self.report_warning(
                 tr(
                     "⚠️  Warning: This command might be interactive, require user input, and might hang."
                 )
@@ -54,7 +52,7 @@ class RunPowerShellCommandTool(ToolBase):
                 )
             )
             if not confirmed:
-                self.report_warning(tr("Execution cancelled by user."))
+                self.report_warning(tr("⚠️ Execution cancelled by user."))
                 return tr("❌ Command execution cancelled by user.")
         from janito.agent.platform_discovery import is_windows
 

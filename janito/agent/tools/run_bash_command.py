@@ -29,13 +29,11 @@ class RunBashCommandTool(ToolBase):
         interactive: bool = False,
     ) -> str:
         if not command.strip():
-            self.report_warning(
-                tr("⚠️ Warning: Empty command provided. Operation skipped.")
-            )
+            self.report_warning(tr("ℹ️ Empty command provided."))
             return tr("Warning: Empty command provided. Operation skipped.")
         self.report_info(tr("🖥️ Running bash command: {command} ...\n", command=command))
         if interactive:
-            self.report_info(
+            self.report_warning(
                 tr(
                     "⚠️  Warning: This command might be interactive, require user input, and might hang."
                 )
