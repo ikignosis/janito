@@ -1,4 +1,5 @@
 from janito.agent.tool_base import ToolBase
+from janito.agent.tools_utils.action_type import ActionType
 from janito.agent.tool_registry import register_tool
 from janito.i18n import tr
 import subprocess
@@ -18,7 +19,7 @@ class RunPowerShellCommandTool(ToolBase):
         command (str): The PowerShell command to execute. This string is passed directly to PowerShell using the --Command argument (not as a script file).
         timeout (int, optional): Timeout in seconds for the command. Defaults to 60.
         require_confirmation (bool, optional): If True, require user confirmation before running. Defaults to False.
-        interactive (bool, optional): If True, warns that the command may require user interaction. Defaults to False. Non-interactive commands are preferred for automation and reliability.
+        requires_user_input (bool, optional): If True, warns that the command may require user input and might hang. Defaults to False. Non-interactive commands are preferred for automation and reliability.
     Returns:
         str: Output and status message, or file paths/line counts if output is large.
     """
@@ -28,7 +29,7 @@ class RunPowerShellCommandTool(ToolBase):
         command: str,
         timeout: int = 60,
         require_confirmation: bool = False,
-        interactive: bool = False,
+        requires_user_input: bool = False,
     ) -> str:
         if not command.strip():
             self.report_warning(tr("ℹ️ Empty command provided."))
@@ -36,9 +37,10 @@ class RunPowerShellCommandTool(ToolBase):
         encoding_prefix = "$OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; "
         command_with_encoding = encoding_prefix + command
         self.report_info(
-            tr("🖥️ Running PowerShell command: {command} ...\n", command=command)
+            ActionType.EXECUTE,
+            tr("🖥️ Running PowerShell command: {command} ...\n", command=command),
         )
-        if interactive:
+        if requires_user_input:
             self.report_warning(
                 tr(
                     "⚠️  Warning: This command might be interactive, require user input, and might hang."
@@ -132,7 +134,7 @@ class RunPowerShellCommandTool(ToolBase):
                     tr(" ✅ return code {return_code}", return_code=return_code)
                 )
                 warning_msg = ""
-                if interactive:
+                if requires_user_input:
                     warning_msg = tr(
                         "⚠️  Warning: This command might be interactive, require user input, and might hang.\n"
                     )

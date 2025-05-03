@@ -11,6 +11,7 @@ from janito.agent.conversation_exceptions import (
     NoToolSupportError,
 )
 from janito.agent.runtime_config import unified_config, runtime_config
+from janito.agent.api_exceptions import ApiError
 import pprint
 
 
@@ -98,6 +99,11 @@ class ConversationHandler:
                         )
                     else:
                         response = retry_api_call(api_call)
+                    # Check for API error and do not retry if present
+                    error = getattr(response, "error", None)
+                    if error:
+                        print(f"ApiError: {error.get('message', error)}")
+                        raise ApiError(error.get("message", str(error)))
             except NoToolSupportError:
                 print(
                     "⚠️ Endpoint does not support tool use. Proceeding in vanilla mode (tools disabled)."
@@ -130,6 +136,11 @@ class ConversationHandler:
             if runtime_config.get("verbose_response", False):
                 pprint.pprint(response)
             if response is None or not getattr(response, "choices", None):
+                # Always check for error before raising EmptyResponseError
+                error = getattr(response, "error", None)
+                if error:
+                    print(f"ApiError: {error.get('message', error)}")
+                    raise ApiError(error.get("message", str(error)))
                 raise EmptyResponseError(
                     f"No choices in response; possible API or LLM error. Raw response: {response!r}"
                 )

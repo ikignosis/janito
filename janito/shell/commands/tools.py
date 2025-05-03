@@ -21,3 +21,6 @@ def handle_tools(console, args=None, shell_state=None):
         console.print(f"[red]Error loading tools: {e}[/red]")
         return
     console.print(table)
+
+
+handle_tools.help_text = "List available tools"

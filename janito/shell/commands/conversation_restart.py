@@ -1,6 +1,5 @@
 import os
 
-
 from janito.shell.session.manager import reset_session_id
 
 
@@ -70,3 +69,6 @@ def handle_restart(console, shell_state=None, **kwargs):
     console.print(
         "[bold green]Conversation history has been started (context reset).[/bold green]"
     )
+
+
+handle_restart.help_text = "Start a new conversation (reset context)"

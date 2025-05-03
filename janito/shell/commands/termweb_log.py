@@ -51,6 +51,9 @@ def handle_termweb_log_tail(console: Console, *args, shell_state=None, **kwargs)
         console.print("[termweb] No output or errors captured in logs.")
 
 
+handle_termweb_log_tail.help_text = "Show the last lines of the latest termweb logs"
+
+
 def handle_termweb_status(console: Console, *args, shell_state=None, **kwargs):
     if shell_state is None:
         console.print(
@@ -84,3 +87,8 @@ def handle_termweb_status(console: Console, *args, shell_state=None, **kwargs):
         console.print(f"  Stdout log: {stdout_path}")
     if stderr_path:
         console.print(f"  Stderr log: {stderr_path}")
+
+
+handle_termweb_status.help_text = (
+    "Show status information about the running termweb server"
+)

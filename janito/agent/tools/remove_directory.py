@@ -1,4 +1,5 @@
 from janito.agent.tool_base import ToolBase
+from janito.agent.tools_utils.action_type import ActionType
 from janito.agent.tool_registry import register_tool
 from janito.agent.tools_utils.utils import pluralize, display_path
 from janito.i18n import tr
@@ -24,7 +25,8 @@ class RemoveDirectoryTool(ToolBase):
     def run(self, file_path: str, recursive: bool = False) -> str:
         disp_path = display_path(file_path)
         self.report_info(
-            tr("🗃️ Removing directory '{disp_path}' ...", disp_path=disp_path)
+            ActionType.WRITE,
+            tr("🗃️ Removing directory '{disp_path}' ...", disp_path=disp_path),
         )
         backup_zip = None
         try:

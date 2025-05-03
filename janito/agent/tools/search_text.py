@@ -1,4 +1,5 @@
 from janito.agent.tool_base import ToolBase
+from janito.agent.tools_utils.action_type import ActionType
 from janito.agent.tool_registry import register_tool
 from janito.agent.tools_utils.utils import pluralize
 from janito.i18n import tr
@@ -33,7 +34,9 @@ class SearchTextTool(ToolBase):
         paths (str): String of one or more paths (space-separated) to search in. Each path can be a directory or a file.
         pattern (str): Regex pattern or plain text substring to search for in files. Must not be empty. Tries regex first, falls back to substring if regex is invalid.
             Note: When using regex mode, special characters (such as [, ], ., *, etc.) must be escaped if you want to match them literally (e.g., use '\\[DEBUG\\]' to match the literal string '[DEBUG]').
-        is_regex (bool): If True, treat pattern as regex. If False, treat as plain text. Defaults to False.
+        is_regex (bool): If True, treat pattern as a regular expression. If False, treat as plain text (default).
+            Only set is_regex=True if your pattern is a valid regular expression. Do NOT set is_regex=True for plain text patterns, as regex special characters (such as ., *, [, ], etc.) will be interpreted and may cause unexpected results.
+            For plain text substring search, leave is_regex as False or omit it.
         max_depth (int, optional): Maximum directory depth to search. If 0 (default), search is recursive with no depth limit. If >0, limits recursion to that depth. Setting max_depth=1 disables recursion (only top-level directory). Ignored for file paths.
         max_results (int): Maximum number of results to return. 0 means no limit (default).
         ignore_utf8_errors (bool): If True, ignore utf-8 decode errors. Defaults to True.
@@ -83,13 +86,13 @@ class SearchTextTool(ToolBase):
 
             info_str = tr(
                 "🔍 Searching for {search_type} '{pattern}' in '{disp_path}'",
-                search_type=("text-regex" if use_regex else "text"),
+                search_type=("regex" if use_regex else "text"),
                 pattern=pattern,
                 disp_path=display_path(search_path),
             )
             if max_depth > 0:
                 info_str += tr(" [max_depth={max_depth}]", max_depth=max_depth)
-            self.report_info(info_str)
+            self.report_info(ActionType.READ, info_str)
             dir_output = []
             dir_limit_reached = False
             if os.path.isfile(search_path):

@@ -9,77 +9,13 @@ from janito.shell.prompt.session_setup import (
 from janito.shell.commands import handle_command
 from janito.agent.conversation_exceptions import EmptyResponseError, ProviderError
 from janito.agent.conversation_history import ConversationHistory
-from janito.agent.tool_use_tracker import ToolUseTracker
 import janito.i18n as i18n
 from janito.agent.runtime_config import runtime_config
 from rich.console import Console
-from collections import Counter
 import os
 from janito.shell.session.manager import get_session_id
 from prompt_toolkit.formatted_text import HTML
 import time
-
-
-def chat_start_summary(conversation_history, console, last_usage_info):
-    def format_tokens(n):
-        if n is None:
-            return "-"
-        if n >= 1_000_000:
-            return f"{n/1_000_000:.2f}m"
-        elif n >= 1_000:
-            return f"{n/1_000:.2f}k"
-        return str(n)
-
-    num_messages = len(conversation_history)
-    roles = [m.get("role") for m in conversation_history.get_messages()]
-    role_counts = {role: roles.count(role) for role in set(roles)}
-    roles_str = ", ".join(
-        f"[bold]{role}[/]: {count}" for role, count in role_counts.items()
-    )
-    stats_lines = [
-        f"[cyan]Messages:[/] [bold]{num_messages}[/]",
-        f"[cyan]Roles:[/] {roles_str}",
-    ]
-    # Use last_usage_info for tokens
-    if last_usage_info:
-        prompt_tokens = last_usage_info.get("prompt_tokens")
-        completion_tokens = last_usage_info.get("completion_tokens")
-        total_tokens = last_usage_info.get("total_tokens")
-        tokens_parts = []
-        if prompt_tokens is not None:
-            tokens_parts.append(f"Prompt: [bold]{format_tokens(prompt_tokens)}[/]")
-        if completion_tokens is not None:
-            tokens_parts.append(
-                f"Completion: [bold]{format_tokens(completion_tokens)}[/]"
-            )
-        if total_tokens is not None:
-            tokens_parts.append(f"Total: [bold]{format_tokens(total_tokens)}[/]")
-        if tokens_parts:
-            stats_lines.append(f"[cyan]Tokens:[/] {', '.join(tokens_parts)}")
-
-    # Add global tool usage stats
-    try:
-        tool_history = ToolUseTracker().get_history()
-        if tool_history:
-            tool_counts = Counter(
-                entry["tool"] for entry in tool_history if "tool" in entry
-            )
-            tools_str = ", ".join(
-                f"[bold]{tool}[/]: {count}" for tool, count in tool_counts.items()
-            )
-            stats_lines.append(f"[cyan]Tools used:[/] {tools_str}")
-    except Exception:
-        pass  # Fail silently if tracker is unavailable
-
-    # Print all stats in a single line, no panel
-    # Print stats in a single line, but tokens info on a separate line if present
-    if len(stats_lines) > 2:
-        console.print(" | ".join(stats_lines[:2]))
-        console.print(stats_lines[2])
-        if len(stats_lines) > 3:
-            console.print(" | ".join(stats_lines[3:]))
-    else:
-        console.print(" | ".join(stats_lines))
 
 
 @dataclass
@@ -122,6 +58,7 @@ def start_chat_shell(
     agent = profile_manager.agent
     message_handler = RichMessageHandler()
     console = message_handler.console
+    console.clear()
 
     # Print session id at start
     from janito.shell.session.manager import load_conversation_by_session_id
@@ -259,10 +196,6 @@ def start_chat_shell(
         # Clear the screen before starting LLM conversation
         console = Console()
         console.clear()
-
-        # Print a summary of the current conversation history
-
-        chat_start_summary(conversation_history, console, shell_state.last_usage_info)
 
         try:
             response = profile_manager.agent.chat(

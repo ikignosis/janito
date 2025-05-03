@@ -14,3 +14,6 @@ def handle_lang(console, args=None, **kwargs):
     console.print(
         f"[bold green]Idioma alterado para:[/bold green] [cyan]{lang_code}[/cyan]"
     )
+
+
+handle_lang.help_text = "Change the interface language (e.g., /lang en)"

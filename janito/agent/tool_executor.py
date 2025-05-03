@@ -29,7 +29,8 @@ class ToolExecutor:
         try:
             from janito.agent.tool_use_tracker import ToolUseTracker
 
-            ToolUseTracker().record(tool_call.function.name, dict(args))
+            # Tool result will be recorded after execution below
+
         except Exception as e:
             if runtime_config.get("verbose", False):
                 print(f"[ToolExecutor] ToolUseTracker record failed: {e}")
@@ -100,6 +101,9 @@ class ToolExecutor:
                 ):
                     result_event["tool_call_reason"] = tool_call_reason
                 self.message_handler.handle_message(result_event)
+            from janito.agent.tool_use_tracker import ToolUseTracker
+
+            ToolUseTracker().record(tool_call.function.name, dict(args), result)
             return result
         except Exception as e:
             if self.message_handler:

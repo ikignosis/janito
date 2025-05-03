@@ -3,6 +3,7 @@ import tempfile
 import sys
 import os
 from janito.agent.tool_base import ToolBase
+from janito.agent.tools_utils.action_type import ActionType
 from janito.agent.tool_registry import register_tool
 from janito.i18n import tr
 
@@ -15,7 +16,7 @@ class RunPythonCommandTool(ToolBase):
         code (str): The Python code to execute.
         timeout (int, optional): Timeout in seconds for the command. Defaults to 60.
         require_confirmation (bool, optional): If True, require user confirmation before running. Defaults to False.
-        interactive (bool, optional): If True, warns that the command may require user interaction. Defaults to False.
+        requires_user_input (bool, optional): If True, warns that the code may require user input and might hang. Defaults to False.
     Returns:
         str: File paths and line counts for stdout and stderr, or direct output if small enough.
     """
@@ -25,13 +26,15 @@ class RunPythonCommandTool(ToolBase):
         code: str,
         timeout: int = 60,
         require_confirmation: bool = False,
-        interactive: bool = False,
+        requires_user_input: bool = False,
     ) -> str:
         if not code.strip():
             self.report_warning(tr("ℹ️ Empty code provided."))
             return tr("Warning: Empty code provided. Operation skipped.")
-        self.report_info(tr("🐍 Running Python code: ...\n{code}\n", code=code))
-        if interactive:
+        self.report_info(
+            ActionType.EXECUTE, tr("🐍 Running Python code: ...\n{code}\n", code=code)
+        )
+        if requires_user_input:
             self.report_warning(
                 tr(
                     "⚠️  Warning: This code might be interactive, require user input, and might hang."
@@ -114,7 +117,7 @@ class RunPythonCommandTool(ToolBase):
                     tr(" ✅ return code {return_code}", return_code=return_code)
                 )
                 warning_msg = ""
-                if interactive:
+                if requires_user_input:
                     warning_msg = tr(
                         "⚠️  Warning: This code might be interactive, require user input, and might hang.\n"
                     )

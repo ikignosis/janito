@@ -38,7 +38,16 @@ class RichMessageHandler(MessageHandlerProtocol):
         if msg_type == "content":
             self.console.print(Markdown(message))
         elif msg_type == "info":
-            self.console.print(f"  {message}", style="cyan", end="")
+            action_type = msg.get("action_type", None)
+            style = "cyan"  # default
+            action_type_name = action_type.name if action_type else None
+            if action_type_name == "READ":
+                style = "cyan"
+            elif action_type_name == "WRITE":
+                style = "magenta"
+            elif action_type_name == "EXECUTE":
+                style = "yellow"
+            self.console.print(f"  {message}", style=style, end="")
         elif msg_type == "success":
             self.console.print(message, style="bold green", end="\n")
         elif msg_type == "error":

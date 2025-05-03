@@ -1,7 +1,4 @@
 def handle_view(console, args=None, shell_state=None, **kwargs):
-    """
-    Prints the current LLM conversation history in a readable format.
-    """
     messages = shell_state.conversation_history.get_messages()
     if not messages:
         console.print("[yellow]Conversation history is empty.[/yellow]")
@@ -16,3 +13,6 @@ def handle_view(console, args=None, shell_state=None, **kwargs):
             console.print(f"   [cyan]tool_calls:[/cyan] {tool_calls}")
         if tool_call_id:
             console.print(f"   [magenta]tool_call_id:[/magenta] {tool_call_id}")
+
+
+handle_view.help_text = "Print the current LLM conversation history"

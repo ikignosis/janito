@@ -1,6 +1,7 @@
 import os
 from janito.i18n import tr
 from janito.agent.tool_base import ToolBase
+from janito.agent.tools_utils.action_type import ActionType
 from janito.agent.tool_registry import register_tool
 from janito.agent.tools_utils.utils import display_path
 
@@ -77,7 +78,8 @@ class ValidateFileSyntaxTool(ToolBase):
     def run(self, file_path: str) -> str:
         disp_path = display_path(file_path)
         self.report_info(
-            tr("🔎 Validating syntax for file '{disp_path}' ...", disp_path=disp_path)
+            ActionType.READ,
+            tr("🔎 Validating syntax for file '{disp_path}' ...", disp_path=disp_path),
         )
         result = validate_file_syntax(
             file_path,

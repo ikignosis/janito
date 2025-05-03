@@ -1,5 +1,6 @@
 from typing import List
 from janito.agent.tool_base import ToolBase
+from janito.agent.tools_utils.action_type import ActionType
 from janito.agent.tool_registry import register_tool
 from janito.i18n import tr
 import questionary
@@ -36,11 +37,12 @@ class PresentChoicesTool(ToolBase):
         if not choices:
             return tr("⚠️ No choices provided.")
         self.report_info(
+            ActionType.EXECUTE,
             tr(
                 "ℹ️ Prompting user: {prompt} (multi_select={multi_select}) ...",
                 prompt=prompt,
                 multi_select=multi_select,
-            )
+            ),
         )
         if multi_select:
             result = questionary.checkbox(

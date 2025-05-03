@@ -14,8 +14,8 @@ class ToolUseTracker:
                     cls._instance._history = []
         return cls._instance
 
-    def record(self, tool_name: str, params: Dict[str, Any]):
-        self._history.append({"tool": tool_name, "params": params})
+    def record(self, tool_name: str, params: Dict[str, Any], result: Any = None):
+        self._history.append({"tool": tool_name, "params": params, "result": result})
 
     def get_history(self) -> List[Dict[str, Any]]:
         return list(self._history)

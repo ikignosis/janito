@@ -19,3 +19,6 @@ def handle_edit(console, args=None, shell_state=None, **kwargs):
         f"[green]Opening in browser:[/green] [underline blue]{url}[/underline blue]"
     )
     webbrowser.open(url)
+
+
+handle_edit.help_text = "Open a file in the browser-based editor"

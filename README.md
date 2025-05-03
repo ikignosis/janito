@@ -71,6 +71,13 @@ You can alter Janito's behavior in any interface using these flags:
 These modifiers can be combined with any interface mode for tailored workflows.
 
 
+---
+
+## 📝 Full CLI Options Reference
+
+The full list of CLI options has been moved to its own document for clarity. Please see [docs/CLI_OPTIONS.md](docs/CLI_OPTIONS.md) for a comprehensive, up-to-date reference of all supported command-line flags and their descriptions.
+
+
 Run a one-off prompt:
 ```bash
 janito "Refactor the data processing module to improve readability."

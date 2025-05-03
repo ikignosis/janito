@@ -1,4 +1,5 @@
 from janito.agent.tool_base import ToolBase
+from janito.agent.tools_utils.action_type import ActionType
 from janito.agent.tool_registry import register_tool
 from janito.agent.tools_utils.utils import pluralize, display_path
 from janito.agent.tools_utils.dir_walk_utils import walk_dir_with_gitignore
@@ -38,12 +39,13 @@ class FindFilesTool(ToolBase):
                 else ""
             )
             self.report_info(
+                ActionType.READ,
                 tr(
                     "🔍 Searching for files '{pattern}' in '{disp_path}'{depth_msg} ...",
                     pattern=pattern,
                     disp_path=disp_path,
                     depth_msg=depth_msg,
-                )
+                ),
             )
             dir_output = set()
             for root, dirs, files in walk_dir_with_gitignore(

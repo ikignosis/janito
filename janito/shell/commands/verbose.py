@@ -2,10 +2,6 @@ from janito.agent.runtime_config import runtime_config
 
 
 def handle_verbose(console, shell_state=None, **kwargs):
-    """
-    /verbose [on|off]
-    Shows or sets verbose mode for the current shell session.
-    """
     args = kwargs.get("args", [])
     verbose = runtime_config.get("verbose", False)
     if not args:
@@ -27,3 +23,6 @@ def handle_verbose(console, shell_state=None, **kwargs):
         )
     else:
         console.print("[bold red]Usage:[/bold red] /verbose [on|off]")
+
+
+handle_verbose.help_text = "Show or set verbose mode for this session"

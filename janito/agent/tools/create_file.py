@@ -4,6 +4,7 @@ from janito.agent.tool_registry import register_tool
 # from janito.agent.tools_utils.expand_path import expand_path
 from janito.agent.tools_utils.utils import display_path
 from janito.agent.tool_base import ToolBase
+from janito.agent.tools_utils.action_type import ActionType
 from janito.i18n import tr
 
 
@@ -40,7 +41,10 @@ class CreateFileTool(ToolBase):
         dir_name = os.path.dirname(file_path)
         if dir_name:
             os.makedirs(dir_name, exist_ok=True)
-        self.report_info(tr("📝 Creating file '{disp_path}' ...", disp_path=disp_path))
+        self.report_info(
+            ActionType.WRITE,
+            tr("📝 Creating file '{disp_path}' ...", disp_path=disp_path),
+        )
         with open(file_path, "w", encoding="utf-8", errors="replace") as f:
             f.write(content)
         new_lines = content.count("\n") + 1 if content else 0

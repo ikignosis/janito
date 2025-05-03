@@ -3,6 +3,7 @@ from janito.agent.tool_registry import register_tool
 # from janito.agent.tools_utils.expand_path import expand_path
 from janito.agent.tools_utils.utils import display_path
 from janito.agent.tool_base import ToolBase
+from janito.agent.tools_utils.action_type import ActionType
 from janito.i18n import tr
 import os
 
@@ -24,7 +25,8 @@ class CreateDirectoryTool(ToolBase):
         # Using file_path as is
         disp_path = display_path(file_path)
         self.report_info(
-            tr("📁 Creating directory '{disp_path}' ...", disp_path=disp_path)
+            ActionType.WRITE,
+            tr("📁 Creating directory '{disp_path}' ...", disp_path=disp_path),
         )
         try:
             if os.path.exists(file_path):

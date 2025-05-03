@@ -6,14 +6,13 @@ from .utility import handle_help, handle_clear, handle_multi
 from .tools import handle_tools
 from .termweb_log import handle_termweb_log_tail, handle_termweb_status
 from .livelogs import handle_livelogs
-from .sum import handle_sum
 from .edit import handle_edit
-
 from .history_view import handle_view
 from janito.shell.session.config import handle_config_shell
 from .verbose import handle_verbose
 from .lang import handle_lang
 from janito.agent.runtime_config import runtime_config
+from .track import handle_track
 
 COMMAND_HANDLERS = {
     "/termweb-logs": handle_termweb_log_tail,
@@ -35,12 +34,11 @@ COMMAND_HANDLERS = {
 if not runtime_config.get("vanilla_mode", False):
     COMMAND_HANDLERS["/role"] = handle_role
 
-
 COMMAND_HANDLERS["/lang"] = handle_lang
+COMMAND_HANDLERS["/track"] = handle_track
 
 COMMAND_HANDLERS.update(
     {
-        "/sum": handle_sum,
         "/clear": handle_clear,
         "/restart": handle_restart,
         "/config": handle_config_shell,

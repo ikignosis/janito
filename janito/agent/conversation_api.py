@@ -8,6 +8,7 @@ import json
 from janito.agent.runtime_config import runtime_config
 from janito.agent.tool_registry import get_tool_schemas
 from janito.agent.conversation_exceptions import NoToolSupportError
+from janito.agent.api_exceptions import ApiError
 
 
 def _sanitize_utf8_surrogates(obj):
@@ -53,8 +54,13 @@ def get_openai_response(
         or response.choices is None
         or len(response.choices) == 0
     ):
+        # Always check for error before raising ProviderError
+        error = getattr(response, "error", None)
+        if error:
+            print(f"ApiError: {error.get('message', error)}")
+            raise ApiError(error.get("message", str(error)))
         raise ProviderError(
-            "No choices in response; possible API or LLM error.",
+            f"No choices in response; possible API or LLM error. Raw response: {response!r}",
             {"code": 502, "raw_response": str(response)},
         )
     return response
@@ -105,7 +111,16 @@ def retry_api_call(api_func, max_retries=5, *args, **kwargs):
     last_exception = None
     for attempt in range(1, max_retries + 1):
         try:
-            return api_func(*args, **kwargs)
+            response = api_func(*args, **kwargs)
+            # Check for error field in response and raise ApiError if present (do not retry)
+            error = getattr(response, "error", None)
+            if error:
+                print(f"ApiError: {error.get('message', error)}")
+                raise ApiError(error.get("message", str(error)))
+            return response
+        except ApiError:
+            # Do not retry on ApiError, just raise it
+            raise
         except json.JSONDecodeError as e:
             last_exception = e
             if attempt < max_retries:

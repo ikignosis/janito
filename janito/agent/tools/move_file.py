@@ -5,6 +5,7 @@ from janito.agent.tool_registry import register_tool
 # from janito.agent.tools_utils.expand_path import expand_path
 from janito.agent.tools_utils.utils import display_path
 from janito.agent.tool_base import ToolBase
+from janito.agent.tools_utils.action_type import ActionType
 from janito.i18n import tr
 
 
@@ -85,11 +86,12 @@ class MoveFileTool(ToolBase):
                 return tr("❌ Error removing destination before move: {error}", error=e)
         try:
             self.report_info(
+                ActionType.WRITE,
                 tr(
                     "📝 Moving from '{disp_src}' to '{disp_dest}' ...",
                     disp_src=disp_src,
                     disp_dest=disp_dest,
-                )
+                ),
             )
             shutil.move(src, dest)
             self.report_success(tr("✅ Move complete."))

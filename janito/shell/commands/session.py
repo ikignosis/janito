@@ -30,3 +30,6 @@ def handle_history(console, shell_state=None, *args, **kwargs):
             role = "user"
             content = line
         console.print(f"[bold]{idx} [{role}]:[/bold] {content}")
+
+
+handle_history.help_text = "Show input history for this session"

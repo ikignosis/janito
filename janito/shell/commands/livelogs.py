@@ -1,7 +1,4 @@
 def handle_livelogs(console, args=None, shell_state=None, **kwargs):
-    """
-    /livelogs [N] - Show the last N lines of the livereload server logs (default: 20)
-    """
     lines = 20
     if args and len(args) > 0 and str(args[0]).isdigit():
         lines = int(args[0])
@@ -38,3 +35,8 @@ def handle_livelogs(console, args=None, shell_state=None, **kwargs):
             console.print(f"[red][livereload][stderr] Error: {e}[/red]")
     if (not stdout_path or not stdout_lines) and (not stderr_path or not stderr_lines):
         console.print("[livereload] No output or errors captured in logs.")
+
+
+handle_livelogs.help_text = (
+    "Show live updates from the server log file (default: server.log)"
+)

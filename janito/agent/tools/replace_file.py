@@ -3,6 +3,7 @@ import shutil
 from janito.agent.tool_registry import register_tool
 from janito.agent.tools_utils.utils import display_path
 from janito.agent.tool_base import ToolBase
+from janito.agent.tools_utils.action_type import ActionType
 from janito.i18n import tr
 
 from janito.agent.tools.validate_file_syntax.core import validate_file_syntax
@@ -45,7 +46,10 @@ class ReplaceFileTool(ToolBase):
                 f"--- Current content of {disp_path} ---\n"
                 f"{current_content}"
             )
-        self.report_info(tr("📝 Replacing file '{disp_path}' ...", disp_path=disp_path))
+        self.report_info(
+            ActionType.WRITE,
+            tr("📝 Replacing file '{disp_path}' ...", disp_path=disp_path),
+        )
         backup_path = file_path + ".bak"
         shutil.copy2(file_path, backup_path)
         with open(file_path, "w", encoding="utf-8", errors="replace") as f:

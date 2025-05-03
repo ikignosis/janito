@@ -64,3 +64,12 @@ def run_oneshot_mode(args, profile_manager, runtime_config):
         console.print(f"[red]Provider error:[/red] {e}")
     except EmptyResponseError as e:
         console.print(f"[red]Error:[/red] {e}")
+    except Exception as e:
+        from janito.agent.api_exceptions import ApiError
+
+        if isinstance(e, ApiError) and "maximum context length" in str(e):
+            console.print(
+                f"[red]Error:[/red] {e}\n[bold yellow]Tip:[/] Try using [green]--max-tokens[/green] with a lower value."
+            )
+        else:
+            raise

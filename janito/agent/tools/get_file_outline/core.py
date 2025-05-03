@@ -7,6 +7,7 @@ from janito.agent.tools_utils.formatting import (
 )
 import os
 from janito.agent.tool_base import ToolBase
+from janito.agent.tools_utils.action_type import ActionType
 from janito.agent.tools_utils.utils import display_path, pluralize
 from janito.i18n import tr
 
@@ -23,10 +24,11 @@ class GetFileOutlineTool(ToolBase):
     def run(self, file_path: str) -> str:
         try:
             self.report_info(
+                ActionType.READ,
                 tr(
                     "📄 Outlining file '{disp_path}' ...",
                     disp_path=display_path(file_path),
-                )
+                ),
             )
             ext = os.path.splitext(file_path)[1].lower()
             with open(file_path, "r", encoding="utf-8", errors="replace") as f:

@@ -37,9 +37,14 @@ class ToolBase(ABC):
         if hasattr(self, "_progress_callback") and self._progress_callback:
             self._progress_callback(progress)
 
-    def report_info(self, message: str):
+    def report_info(self, action_type, message: str):
         self.update_progress(
-            {"type": "info", "tool": self.__class__.__name__, "message": message}
+            {
+                "type": "info",
+                "tool": self.__class__.__name__,
+                "action_type": action_type,
+                "message": message,
+            }
         )
 
     def report_success(self, message: str):

@@ -9,6 +9,9 @@ def handle_prompt(console, shell_state=None, **kwargs):
     console.print(f"[bold magenta]System Prompt:[/bold magenta]\n{prompt}")
 
 
+handle_prompt.help_text = "Show the system prompt"
+
+
 def handle_role(console, args=None, shell_state=None, **kwargs):
     profile_manager = (
         shell_state.profile_manager
@@ -38,6 +41,9 @@ def handle_role(console, args=None, shell_state=None, **kwargs):
         setattr(profile_manager, "role_name", new_role)
     runtime_config.set("role", new_role)
     console.print(f"[bold green]System role updated to:[/bold green] {new_role}")
+
+
+handle_role.help_text = "Change the system role"
 
 
 def handle_profile(console, *args, **kwargs):

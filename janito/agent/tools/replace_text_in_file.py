@@ -1,4 +1,5 @@
 from janito.agent.tool_base import ToolBase
+from janito.agent.tools_utils.action_type import ActionType
 from janito.agent.tool_registry import register_tool
 from janito.i18n import tr
 
@@ -32,7 +33,7 @@ class ReplaceTextInFileTool(ToolBase):
         from janito.agent.tools_utils.utils import display_path
 
         disp_path = display_path(file_path)
-        action = "(all)" if replace_all else "(unique)"
+        action = "(all)" if replace_all else ""
         search_lines = len(search_text.splitlines())
         replace_lines = len(replacement_text.splitlines())
         if replace_lines == 0:
@@ -67,7 +68,8 @@ class ReplaceTextInFileTool(ToolBase):
                 action=action,
             )
         self.report_info(
-            info_msg + (" ..." if not info_msg.rstrip().endswith("...") else "")
+            ActionType.WRITE,
+            info_msg + (" ..." if not info_msg.rstrip().endswith("...") else ""),
         )
         try:
             with open(file_path, "r", encoding="utf-8", errors="replace") as f:
