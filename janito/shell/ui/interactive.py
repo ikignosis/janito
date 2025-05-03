@@ -17,12 +17,10 @@ def print_welcome(console, version=None, continue_id=None):
     if runtime_config.get("vanilla_mode", False):
         console.print(
             f"[bold magenta]{tr('Welcome to Janito{version_str} in [white on magenta]VANILLA MODE[/white on magenta]! Tools, system prompt, and temperature are disabled unless overridden.', version_str=version_str)}[/bold magenta]\n"
-            f"[cyan]{tr('F12 = Quick Action (follows the recommended action)')}[/cyan]"
         )
     else:
         console.print(
             f"[bold green]{tr('Welcome to Janito{version_str}! Entering chat mode. Type /exit to exit.', version_str=version_str)}[/bold green]\n"
-            f"[cyan]{tr('F12 = Quick Action (follows the recommended action)')}[/cyan]"
         )
 
 

@@ -40,8 +40,6 @@ Below is a comprehensive list of CLI options supported by Janito. You can combin
 - `--vanilla, -V`: Vanilla mode: disables tools, system prompt, and temperature (unless -t is set).
 - `--trust-tools, -T`: Suppress all tool output (trusted tools mode: only shows output file locations).
 - `--profile PROFILE`: Agent Profile name (only 'base' is supported).
-- `--stream`: Enable OpenAI streaming mode (yields tokens as they arrive).
-- `--verbose-stream`: Print raw chunks as they are fetched from OpenAI (for debugging).
 - `--no-termweb`: Disable the built-in lightweight web file viewer for terminal links (enabled by default).
 - `--termweb-port PORT`: Port for the termweb server (default: 8088).
 - `--info, -i`: Show basic program info and exit (useful for one-shot shell execution).

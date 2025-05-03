@@ -232,16 +232,6 @@ def create_parser():
         help="Agent Profile name (only 'base' is supported)",
     )
     parser.add_argument(
-        "--stream",
-        action="store_true",
-        help="Enable OpenAI streaming mode (yields tokens as they arrive)",
-    )
-    parser.add_argument(
-        "--verbose-stream",
-        action="store_true",
-        help="Print raw chunks as they are fetched from OpenAI (for debugging)",
-    )
-    parser.add_argument(
         "--no-termweb",
         action="store_true",
         help="Disable the built-in lightweight web file viewer for terminal links (enabled by default)",

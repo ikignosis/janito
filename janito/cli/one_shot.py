@@ -3,6 +3,7 @@ from janito.agent.conversation_exceptions import (
     ProviderError,
     EmptyResponseError,
 )
+from janito.agent.api_exceptions import ApiError
 
 
 def run_oneshot_mode(args, profile_manager, runtime_config):
@@ -40,7 +41,6 @@ def run_oneshot_mode(args, profile_manager, runtime_config):
             message_handler=message_handler,
             spinner=True,
             max_rounds=max_rounds,
-            stream=getattr(args, "stream", False),
         )
         if (
             getattr(args, "info", False)
@@ -64,12 +64,12 @@ def run_oneshot_mode(args, profile_manager, runtime_config):
         console.print(f"[red]Provider error:[/red] {e}")
     except EmptyResponseError as e:
         console.print(f"[red]Error:[/red] {e}")
-    except Exception as e:
-        from janito.agent.api_exceptions import ApiError
-
-        if isinstance(e, ApiError) and "maximum context length" in str(e):
+    except ApiError as e:
+        if "maximum context length" in str(e):
             console.print(
                 f"[red]Error:[/red] {e}\n[bold yellow]Tip:[/] Try using [green]--max-tokens[/green] with a lower value."
             )
         else:
-            raise
+            console.print(f"[red]API error:[/red] {e}")
+    except Exception:
+        raise

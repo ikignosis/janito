@@ -44,8 +44,6 @@ This document lists all command-line flags and configuration options supported b
 - `-V, --vanilla`: Vanilla mode: disables tools, system prompt, and temperature (unless -t is set).
 - `-T, --trust-tools`: Suppress all tool output (trusted tools mode: only shows output file locations).
 - `--profile PROFILE`: Agent Profile name (only 'base' is supported).
-- `--stream`: Enable OpenAI streaming mode (yields tokens as they arrive).
-- `--verbose-stream`: Print raw chunks as they are fetched from OpenAI (for debugging).
 - `--no-termweb`: Disable the built-in lightweight web file viewer for terminal links (enabled by default).
 - `--termweb-port PORT`: Port for the termweb server (default: 8088).
 - `--ntt`: Disable tool call reason tracking (no tools tracking).

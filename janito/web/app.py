@@ -1,19 +1,13 @@
 from flask import (
     Flask,
     request,
-    Response,
     send_from_directory,
     jsonify,
     render_template,
 )
-from queue import Queue
 import json
-from janito.agent.queued_message_handler import QueuedMessageHandler
 from janito.agent.profile_manager import AgentProfileManager
 import os
-import threading
-import traceback
-import sys
 
 from janito.agent.runtime_config import unified_config, runtime_config
 
@@ -52,13 +46,6 @@ conversation_file = os.path.expanduser("~/.janito/last_conversation_web.json")
 
 # Initially no conversation loaded
 conversation = None
-
-
-# Global event queue for streaming
-stream_queue = Queue()
-
-# Create a QueuedMessageHandler with the queue
-message_handler = QueuedMessageHandler(stream_queue)
 
 # Instantiate the Agent with config-driven parameters (no tool_handler)
 agent = profile_manager.agent
@@ -156,65 +143,3 @@ def new_conversation():
     global conversation
     conversation = []
     return jsonify({"status": "ok"})
-
-
-@app.route("/execute_stream", methods=["POST"])
-def execute_stream():
-    data = request.get_json()
-    user_input = data.get("input", "")
-
-    global conversation
-    if conversation is None:
-        # If no conversation loaded, start a new one
-        conversation = []
-
-    # Always start with the system prompt as the first message
-    if not conversation or conversation[0]["role"] != "system":
-        conversation.insert(0, {"role": "system", "content": system_prompt_template})
-
-    # Append the new user message
-    conversation.append({"role": "user", "content": user_input})
-
-    def run_agent():
-        try:
-            response = agent.chat(conversation, message_handler=message_handler)
-            if response and "content" in response:
-                conversation.append(
-                    {"role": "assistant", "content": response["content"]}
-                )
-            try:
-                os.makedirs(os.path.dirname(conversation_file), exist_ok=True)
-                with open(conversation_file, "w", encoding="utf-8") as f:
-                    json.dump(conversation, f, indent=2)
-            except Exception as e:
-                print(f"Error saving conversation: {e}")
-        except Exception as e:
-            tb = traceback.format_exc()
-            stream_queue.put({"type": "error", "error": str(e), "traceback": tb})
-        finally:
-            stream_queue.put(None)
-
-    threading.Thread(target=run_agent, daemon=True).start()
-
-    def generate():
-        while True:
-            content = stream_queue.get()
-            if content is None:
-                break
-            if isinstance(content, tuple) and content[0] == "tool_progress":
-                message = json.dumps({"type": "tool_progress", "data": content[1]})
-            else:
-                message = json.dumps(content)
-            yield f"data: {message}\n\n"
-            sys.stdout.flush()
-
-    return Response(
-        generate(),
-        mimetype="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "X-Accel-Buffering": "no",
-            "Connection": "keep-alive",
-            "Transfer-Encoding": "chunked",
-        },
-    )

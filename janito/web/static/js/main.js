@@ -1,6 +1,5 @@
 import { createContentModal, showContentPopup, showPopup } from "./modal.js";
 import { setupTerminal } from "./terminal.js";
-import { sendCommandStream } from "./stream.js";
 import { handleToolProgress } from "./toolProgress.js";
 import { setupSessionControls } from "./sessionControl.js";
 
@@ -129,30 +128,7 @@ document.addEventListener("DOMContentLoaded", async function() {
       }
     }
 
-    await sendCommandStream(command, (data) => {
-      console.log('[DEBUG] Received event:', data);
-      if(data.type === "content" && data.content) {
-        terminalApi.appendOutput(data.content);
-      } else if([
-        "tool_call",
-        "tool_result",
-        "info",
-        "success",
-        "error",
-        "stdout",
-        "stderr"
-      ].includes(data.type)) {
-        handleToolProgress(data);
-      }
-    });
-
-    // Increment message count for user + assistant
-    messageCount += 2;
-    updateMessageCount(messageCount);
-
-      // Trigger fireworks after message submission
-      if (typeof window.launchFireworks === 'function') {
-        window.launchFireworks();
-      }
+    // Streaming removed: direct command execution is not supported in this version.
+    terminalApi.appendOutput('Streaming and live command execution are not supported.');
   });
 });

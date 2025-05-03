@@ -44,7 +44,7 @@ class RichMessageHandler(MessageHandlerProtocol):
             if action_type_name == "READ":
                 style = "cyan"
             elif action_type_name == "WRITE":
-                style = "magenta"
+                style = "bright_magenta"
             elif action_type_name == "EXECUTE":
                 style = "yellow"
             self.console.print(f"  {message}", style=style, end="")

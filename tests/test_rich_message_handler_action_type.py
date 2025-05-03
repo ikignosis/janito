@@ -1,4 +1,5 @@
 from janito.agent.rich_message_handler import RichMessageHandler
+from janito.agent.tools_utils.action_type import ActionType
 from rich.console import Console
 from io import StringIO
 
@@ -9,11 +10,11 @@ def test_rich_message_handler_action_type():
     handler = RichMessageHandler()
     handler.console = Console(file=buf, force_terminal=True, color_system="truecolor")
 
-    # Test different action_types
+    # Test different action_types (using Enum values)
     test_cases = [
-        ("READ", "cyan"),
-        ("WRITE", "magenta"),
-        ("EXECUTE", "yellow"),
+        (ActionType.READ, "cyan"),
+        (ActionType.WRITE, "magenta"),
+        (ActionType.EXECUTE, "yellow"),
         (None, "cyan"),
     ]
     for action_type, expected_color in test_cases:

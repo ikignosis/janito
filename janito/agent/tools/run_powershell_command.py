@@ -32,7 +32,7 @@ class RunPowerShellCommandTool(ToolBase):
         requires_user_input: bool = False,
     ) -> str:
         if not command.strip():
-            self.report_warning(tr("ℹ️ Empty command provided."))
+            self.report_warning(tr("\u2139\ufe0f Empty command provided."))
             return tr("Warning: Empty command provided. Operation skipped.")
         encoding_prefix = "$OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; "
         command_with_encoding = encoding_prefix + command
@@ -43,7 +43,7 @@ class RunPowerShellCommandTool(ToolBase):
         if requires_user_input:
             self.report_warning(
                 tr(
-                    "⚠️  Warning: This command might be interactive, require user input, and might hang."
+                    "\u26a0\ufe0f  Warning: This command might be interactive, require user input, and might hang."
                 )
             )
         if require_confirmation:
@@ -54,8 +54,8 @@ class RunPowerShellCommandTool(ToolBase):
                 )
             )
             if not confirmed:
-                self.report_warning(tr("⚠️ Execution cancelled by user."))
-                return tr("❌ Command execution cancelled by user.")
+                self.report_warning(tr("\u26a0\ufe0f Execution cancelled by user."))
+                return tr("\u274c Command execution cancelled by user.")
         from janito.agent.platform_discovery import is_windows
 
         shell_exe = "powershell.exe" if is_windows() else "pwsh"
@@ -120,7 +120,10 @@ class RunPowerShellCommandTool(ToolBase):
                 except subprocess.TimeoutExpired:
                     process.kill()
                     self.report_error(
-                        tr(" ❌ Timed out after {timeout} seconds.", timeout=timeout)
+                        tr(
+                            " \u274c Timed out after {timeout} seconds.",
+                            timeout=timeout,
+                        )
                     )
                     return tr(
                         "Command timed out after {timeout} seconds.", timeout=timeout
@@ -131,12 +134,12 @@ class RunPowerShellCommandTool(ToolBase):
                 stderr_file.flush()
 
                 self.report_success(
-                    tr(" ✅ return code {return_code}", return_code=return_code)
+                    tr(" \u2705 return code {return_code}", return_code=return_code)
                 )
                 warning_msg = ""
                 if requires_user_input:
                     warning_msg = tr(
-                        "⚠️  Warning: This command might be interactive, require user input, and might hang.\n"
+                        "\u26a0\ufe0f  Warning: This command might be interactive, require user input, and might hang.\n"
                     )
                 # Read back the content for summary if not too large
                 with open(
@@ -148,6 +151,8 @@ class RunPowerShellCommandTool(ToolBase):
                 ) as err_f:
                     stderr_content = err_f.read()
                 max_lines = 100
+                stdout_lines = stdout_content.count("\n")
+                stderr_lines = stderr_content.count("\n")
                 if stdout_lines <= max_lines and stderr_lines <= max_lines:
                     result = warning_msg + tr(
                         "Return code: {return_code}\n--- STDOUT ---\n{stdout_content}",
@@ -178,5 +183,5 @@ class RunPowerShellCommandTool(ToolBase):
                     )
                     return result
         except Exception as e:
-            self.report_error(tr(" ❌ Error: {error}", error=e))
+            self.report_error(tr(" \u274c Error: {error}", error=e))
             return tr("Error running command: {error}", error=e)

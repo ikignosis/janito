@@ -1,5 +1,7 @@
 from typing import List, Dict, Optional
 import json
+import sys
+import traceback
 
 
 class ConversationHistory:
@@ -13,6 +15,14 @@ class ConversationHistory:
 
     def add_message(self, message: Dict):
         """Append a message dict to the history."""
+        content = message.get("content")
+        if isinstance(content, str) and any(
+            0xD800 <= ord(ch) <= 0xDFFF for ch in content
+        ):
+            print(
+                f"Surrogate code point detected in message content: {content!r}\nStack trace:\n{''.join(traceback.format_stack())}",
+                file=sys.stderr,
+            )
         self._messages.append(message)
 
     def get_messages(self, role: Optional[str] = None) -> List[Dict]:
@@ -36,6 +46,13 @@ class ConversationHistory:
             (i for i, m in enumerate(self._messages) if m.get("role") == "system"), None
         )
         system_msg = {"role": "system", "content": content}
+        if isinstance(content, str) and any(
+            0xD800 <= ord(ch) <= 0xDFFF for ch in content
+        ):
+            print(
+                f"Surrogate code point detected in system message content: {content!r}\nStack trace:\n{''.join(traceback.format_stack())}",
+                file=sys.stderr,
+            )
         if system_idx is not None:
             self._messages[system_idx] = system_msg
         else:

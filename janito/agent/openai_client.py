@@ -69,21 +69,18 @@ class Agent:
         spinner=False,
         max_tokens=None,
         max_rounds=100,
-        stream=False,
     ):
         """
         Start a chat conversation with the agent.
 
         Args:
             messages: ConversationHistory instance or None.
-            message_handler: Optional handler for streaming or event messages.
+            message_handler: Optional handler for event messages.
             spinner: Show spinner during request.
             max_tokens: Max tokens for completion.
             max_rounds: Max conversation rounds.
-            stream: If True, enable OpenAI streaming mode (yields tokens incrementally).
         Returns:
-            If stream=False: dict with 'content', 'usage', and 'usage_history'.
-            If stream=True: generator yielding content chunks or events.
+            dict with 'content', 'usage', and 'usage_history'.
         """
         from janito.agent.runtime_config import runtime_config
         from janito.agent.conversation_history import ConversationHistory
@@ -106,8 +103,6 @@ class Agent:
                     spinner=spinner,
                     max_tokens=max_tokens,
                     verbose_events=runtime_config.get("verbose_events", False),
-                    stream=stream,
-                    verbose_stream=runtime_config.get("verbose_stream", False),
                 )
             except ProviderError as e:
                 error_data = getattr(e, "error_data", {}) or {}

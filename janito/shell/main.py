@@ -8,6 +8,7 @@ from janito.shell.prompt.session_setup import (
 )
 from janito.shell.commands import handle_command
 from janito.agent.conversation_exceptions import EmptyResponseError, ProviderError
+from janito.agent.api_exceptions import ApiError
 from janito.agent.conversation_history import ConversationHistory
 import janito.i18n as i18n
 from janito.agent.runtime_config import runtime_config
@@ -16,6 +17,7 @@ import os
 from janito.shell.session.manager import get_session_id
 from prompt_toolkit.formatted_text import HTML
 import time
+from janito.shell.input_history import UserInputHistory
 
 
 @dataclass
@@ -36,6 +38,7 @@ class ShellState:
     livereload_stderr_path: Optional[str] = None
     paste_mode: bool = False
     profile_manager: Optional[Any] = None
+    user_input_history: Optional[Any] = None
 
 
 # Track the active prompt session for cleanup
@@ -52,7 +55,6 @@ def start_chat_shell(
     livereload_stdout_path=None,
     livereload_stderr_path=None,
 ):
-
     i18n.set_locale(runtime_config.get("lang", "en"))
     global active_prompt_session
     agent = profile_manager.agent
@@ -65,6 +67,19 @@ def start_chat_shell(
 
     shell_state = ShellState()
     shell_state.profile_manager = profile_manager
+
+    # --- UserInputHistory integration ---
+    user_input_history = UserInputHistory()
+    user_input_dicts = (
+        user_input_history.load()
+    )  # List of dicts: {"input": ..., "ts": ...}
+    mem_history = shell_state.mem_history
+    for item in user_input_dicts:
+        if isinstance(item, dict) and "input" in item:
+            mem_history.append_string(item["input"])
+    shell_state.user_input_history = user_input_history
+    # ------------------------------------
+
     if continue_session and session_id:
         try:
             messages, prompts, usage = load_conversation_by_session_id(session_id)
@@ -90,7 +105,6 @@ def start_chat_shell(
     else:
         conversation_history = shell_state.conversation_history
         # Add system prompt if needed (skip in vanilla mode)
-
         if (
             profile_manager.system_prompt_template
             and (
@@ -104,7 +118,6 @@ def start_chat_shell(
             conversation_history.set_system_message(
                 profile_manager.system_prompt_template
             )
-    mem_history = shell_state.mem_history
 
     def last_usage_info_ref():
         return shell_state.last_usage_info
@@ -126,7 +139,6 @@ def start_chat_shell(
 
     while True:
         try:
-
             if shell_state.paste_mode:
                 user_input = session.prompt("Multiline> ", multiline=True)
                 was_paste_mode = True
@@ -187,6 +199,7 @@ def start_chat_shell(
             continue
 
         mem_history.append_string(user_input)
+        shell_state.user_input_history.append(user_input)
         conversation_history.add_message({"role": "user", "content": user_input})
 
         start_time = time.time()
@@ -216,6 +229,9 @@ def start_chat_shell(
             continue
         except EmptyResponseError as e:
             message_handler.handle_message({"type": "error", "message": f"Error: {e}"})
+            continue
+        except ApiError as e:
+            message_handler.handle_message({"type": "error", "message": str(e)})
             continue
         last_elapsed = time.time() - start_time
 

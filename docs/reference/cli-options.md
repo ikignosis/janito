@@ -3,6 +3,7 @@
 This page documents all command-line options for Janito. These options temporarily override configuration for a single session (do not persist changes to config files).
 
 ## 💡 Overview
+
 These options are useful for one-off runs, scripting, or experimentation. They take precedence over config files for the current invocation only.
 
 > ⚠️ **Warning:** Some models may not complete all required steps in a single-shot (one-off) run. If the model does not act as expected, try appending "; just do it" to your command-line prompt to encourage direct action.
@@ -44,18 +45,17 @@ These options are useful for one-off runs, scripting, or experimentation. They t
 | `--vanilla`, `-V` | Vanilla mode: disables tools, system prompt, and temperature (unless -t is set) |
 | `--trust-tools`, `-T` | Suppress all tool output (trusted tools mode: only shows output file locations) |
 | `--profile` | Agent Profile name (only 'base' is supported) |
-| `--stream` | Enable OpenAI streaming mode (yields tokens as they arrive) |
-| `--verbose-stream` | Print raw chunks as they are fetched from OpenAI (for debugging) |
 | `--no-termweb` | Disable the built-in lightweight web file viewer for terminal links (enabled by default) |
 | `--termweb-port` | Port for the termweb server (default: 8088) |
 | `--info`, `-i` | Show basic program info and exit (useful for one-shot shell execution) |
 
 ## 📝 Notes
+
 - These options do NOT persist changes to your configuration files.
 - For permanent changes, use `--set-local-config` or `--set-global-config`.
 - See `--help` for the full list of options.
 
-## 🧑‍💻 Usage Examples
+## 👨‍💻 Usage Examples
 
 ```sh
 janito "Prompt here" --model openai/gpt-4.1 --max-tokens 500 --temperature 0.7

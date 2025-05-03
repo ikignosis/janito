@@ -14,9 +14,11 @@ from . import replace_text_in_file
 from . import delete_text_in_file
 from . import run_bash_command
 from . import run_powershell_command
-from . import run_python_command
 from . import present_choices
 from . import search_text
+from . import python_command_runner
+from . import python_file_runner
+from . import python_stdin_runner
 
 __all__ = [
     "ask_user",
@@ -35,8 +37,9 @@ __all__ = [
     "delete_text_in_file",
     "run_bash_command",
     "run_powershell_command",
-    "run_python_command",
-    "search_files",
     "present_choices",
     "search_text",
+    "python_command_runner",
+    "python_file_runner",
+    "python_stdin_runner",
 ]

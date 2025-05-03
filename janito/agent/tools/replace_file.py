@@ -35,6 +35,10 @@ class ReplaceFileTool(ToolBase):
         # Check previous operation
         tracker = ToolUseTracker()
         if not tracker.last_operation_is_full_read_or_replace(file_path):
+            self.report_info(
+                ActionType.WRITE,
+                tr("📝 Replacing file '{disp_path}' ...", disp_path=disp_path),
+            )
             self.report_warning(tr("ℹ️ Missing full view."))
             try:
                 with open(file_path, "r", encoding="utf-8", errors="replace") as f:
@@ -42,7 +46,7 @@ class ReplaceFileTool(ToolBase):
             except Exception as e:
                 current_content = f"[Error reading file: {e}]"
             return (
-                "⚠️ [missing full view] You must fully view or replace the file before updating.\n"
+                "⚠️ [missing full view] Update was NOT performed. The full content of the file is included below for your review. Repeat the operation if you wish to proceed.\n"
                 f"--- Current content of {disp_path} ---\n"
                 f"{current_content}"
             )

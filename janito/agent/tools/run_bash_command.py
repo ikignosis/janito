@@ -30,7 +30,7 @@ class RunBashCommandTool(ToolBase):
         requires_user_input: bool = False,
     ) -> str:
         if not command.strip():
-            self.report_warning(tr("ℹ️ Empty command provided."))
+            self.report_warning(tr("\u2139\ufe0f Empty command provided."))
             return tr("Warning: Empty command provided. Operation skipped.")
         self.report_info(
             ActionType.EXECUTE,
@@ -39,7 +39,7 @@ class RunBashCommandTool(ToolBase):
         if requires_user_input:
             self.report_warning(
                 tr(
-                    "⚠️  Warning: This command might be interactive, require user input, and might hang."
+                    "\u26a0\ufe0f  Warning: This command might be interactive, require user input, and might hang."
                 )
             )
             sys.stdout.flush()
@@ -65,88 +65,45 @@ class RunBashCommandTool(ToolBase):
                     bufsize=1,
                     env=env,
                 )
-                stdout_lines = 0
-                stderr_lines = 0
-                stdout_content = []
-                stderr_content = []
-                max_lines = 100
-                import threading
-
-                def stream_reader(
-                    stream, file_handle, report_func, content_list, line_counter
-                ):
-                    for line in iter(stream.readline, ""):
-                        file_handle.write(line)
-                        file_handle.flush()
-                        report_func(line)
-                        content_list.append(line)
-                        line_counter[0] += 1
-                    stream.close()
-
-                stdout_counter = [0]
-                stderr_counter = [0]
-                stdout_thread = threading.Thread(
-                    target=stream_reader,
-                    args=(
-                        process.stdout,
-                        stdout_file,
-                        self.report_stdout,
-                        stdout_content,
-                        stdout_counter,
-                    ),
-                )
-                stderr_thread = threading.Thread(
-                    target=stream_reader,
-                    args=(
-                        process.stderr,
-                        stderr_file,
-                        self.report_stderr,
-                        stderr_content,
-                        stderr_counter,
-                    ),
-                )
-                stdout_thread.start()
-                stderr_thread.start()
                 try:
-                    process.wait(timeout=timeout)
+                    stdout_content, stderr_content = process.communicate(
+                        timeout=timeout
+                    )
                 except subprocess.TimeoutExpired:
                     process.kill()
                     self.report_error(
-                        tr(" ❌ Timed out after {timeout} seconds.", timeout=timeout)
+                        tr(
+                            " \u274c Timed out after {timeout} seconds.",
+                            timeout=timeout,
+                        )
                     )
                     return tr(
                         "Command timed out after {timeout} seconds.", timeout=timeout
                     )
-                stdout_thread.join()
-                stderr_thread.join()
-                stdout_lines = stdout_counter[0]
-                stderr_lines = stderr_counter[0]
                 self.report_success(
-                    tr(" ✅ return code {return_code}", return_code=process.returncode)
+                    tr(
+                        " \u2705 return code {return_code}",
+                        return_code=process.returncode,
+                    )
                 )
                 warning_msg = ""
                 if requires_user_input:
                     warning_msg = tr(
-                        "⚠️  Warning: This command might be interactive, require user input, and might hang.\n"
+                        "\u26a0\ufe0f  Warning: This command might be interactive, require user input, and might hang.\n"
                     )
+                max_lines = 100
+                stdout_lines = stdout_content.count("\n")
+                stderr_lines = stderr_content.count("\n")
                 if stdout_lines <= max_lines and stderr_lines <= max_lines:
-                    with open(
-                        stdout_file.name, "r", encoding="utf-8", errors="replace"
-                    ) as out_f:
-                        stdout_content_str = out_f.read()
-                    with open(
-                        stderr_file.name, "r", encoding="utf-8", errors="replace"
-                    ) as err_f:
-                        stderr_content_str = err_f.read()
                     result = warning_msg + tr(
                         "Return code: {return_code}\n--- STDOUT ---\n{stdout_content}",
                         return_code=process.returncode,
-                        stdout_content=stdout_content_str,
+                        stdout_content=stdout_content,
                     )
-                    if stderr_content_str.strip():
+                    if stderr_content.strip():
                         result += tr(
                             "\n--- STDERR ---\n{stderr_content}",
-                            stderr_content=stderr_content_str,
+                            stderr_content=stderr_content,
                         )
                     return result
                 else:
@@ -167,5 +124,5 @@ class RunBashCommandTool(ToolBase):
                     )
                     return result
         except Exception as e:
-            self.report_error(tr(" ❌ Error: {error}", error=e))
+            self.report_error(tr(" \u274c Error: {error}", error=e))
             return tr("Error running command: {error}", error=e)

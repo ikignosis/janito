@@ -37,7 +37,6 @@ def run_cli(args):
         "verbose_reason",
         "verbose_tools",
         "verbose_events",
-        "verbose_stream",
     ]:
         if hasattr(args, flag):
             runtime_config.set(flag, getattr(args, flag, False))
@@ -216,7 +215,7 @@ def run_cli(args):
         messages = []
         system_prompt_override = runtime_config.get("system_prompt_template")
         if system_prompt_override:
-            # Só adiciona system prompt se NÃO for vanilla, ou se foi explicitamente passado via --system
+            # Só adiciona system prompt se NÃO for vanilla, ou se foi explicitamente passado via --system
             if not runtime_config.get("vanilla_mode", False) or getattr(
                 args, "system", None
             ):
@@ -242,7 +241,6 @@ def run_cli(args):
                 message_handler=message_handler,
                 spinner=True,
                 max_rounds=max_rounds,
-                stream=getattr(args, "stream", False),
             )
             if (
                 getattr(args, "info", False)

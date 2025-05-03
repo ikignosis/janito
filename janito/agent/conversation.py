@@ -1,6 +1,5 @@
 from janito.agent.conversation_api import (
     get_openai_response,
-    get_openai_stream_response,
     retry_api_call,
 )
 from janito.agent.conversation_tool_calls import handle_tool_calls
@@ -37,8 +36,6 @@ class ConversationHandler:
         spinner=False,
         max_tokens=None,
         verbose_events=False,
-        stream=False,
-        verbose_stream=False,
     ):
         from janito.agent.conversation_history import ConversationHistory
 
@@ -69,44 +66,29 @@ class ConversationHandler:
 
         for _ in range(max_rounds):
             try:
-                if stream:
-                    # Streaming mode
-                    def get_stream():
-                        return get_openai_stream_response(
-                            self.client,
-                            self.model,
-                            history.get_messages(),
-                            resolved_max_tokens,
-                            verbose_stream=runtime_config.get("verbose_stream", False),
-                            message_handler=message_handler,
-                        )
+                # Non-streaming mode only
+                def api_call():
+                    return get_openai_response(
+                        self.client,
+                        self.model,
+                        history.get_messages(),
+                        resolved_max_tokens,
+                    )
 
-                    retry_api_call(get_stream)
-                    return None
+                if spinner:
+                    response = show_spinner(
+                        "Waiting for AI response...", retry_api_call, api_call
+                    )
                 else:
-                    # Non-streaming mode
-                    def api_call():
-                        return get_openai_response(
-                            self.client,
-                            self.model,
-                            history.get_messages(),
-                            resolved_max_tokens,
-                        )
-
-                    if spinner:
-                        response = show_spinner(
-                            "Waiting for AI response...", retry_api_call, api_call
-                        )
-                    else:
-                        response = retry_api_call(api_call)
-                    # Check for API error and do not retry if present
-                    error = getattr(response, "error", None)
-                    if error:
-                        print(f"ApiError: {error.get('message', error)}")
-                        raise ApiError(error.get("message", str(error)))
+                    response = retry_api_call(api_call)
+                # Check for API error and do not retry if present
+                error = getattr(response, "error", None)
+                if error:
+                    print(f"ApiError: {error.get('message', error)}")
+                    raise ApiError(error.get("message", str(error)))
             except NoToolSupportError:
                 print(
-                    "⚠️ Endpoint does not support tool use. Proceeding in vanilla mode (tools disabled)."
+                    "\u26a0\ufe0f Endpoint does not support tool use. Proceeding in vanilla mode (tools disabled)."
                 )
                 runtime_config.set("vanilla_mode", True)
                 if max_tokens is None:

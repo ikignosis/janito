@@ -29,7 +29,7 @@ def _sanitize_utf8_surrogates(obj):
 def get_openai_response(
     client, model, messages, max_tokens, tools=None, tool_choice=None, temperature=None
 ):
-    """Non-streaming OpenAI API call."""
+    """OpenAI API call."""
     messages = _sanitize_utf8_surrogates(messages)
     from janito.agent.conversation_exceptions import ProviderError
 
@@ -58,53 +58,14 @@ def get_openai_response(
         error = getattr(response, "error", None)
         if error:
             print(f"ApiError: {error.get('message', error)}")
+            print(f"Full error object: {error}")
+            print(f"Raw response: {response}")
             raise ApiError(error.get("message", str(error)))
         raise ProviderError(
             f"No choices in response; possible API or LLM error. Raw response: {response!r}",
             {"code": 502, "raw_response": str(response)},
         )
     return response
-
-
-def get_openai_stream_response(
-    client,
-    model,
-    messages,
-    max_tokens,
-    tools=None,
-    tool_choice=None,
-    temperature=None,
-    verbose_stream=False,
-    message_handler=None,
-):
-    """Streaming OpenAI API call."""
-    messages = _sanitize_utf8_surrogates(messages)
-    openai_args = dict(
-        model=model,
-        messages=messages,
-        max_tokens=max_tokens,
-        stream=True,
-    )
-    if not runtime_config.get("vanilla_mode", False):
-        openai_args.update(
-            tools=tools or get_tool_schemas(),
-            tool_choice=tool_choice or "auto",
-            temperature=temperature if temperature is not None else 0.2,
-        )
-    response_stream = client.chat.completions.create(**openai_args)
-    content_accum = ""
-    for event in response_stream:
-        if verbose_stream or runtime_config.get("verbose_stream", False):
-            print(repr(event), flush=True)
-        delta = getattr(event.choices[0], "delta", None)
-        if delta and getattr(delta, "content", None):
-            chunk = delta.content
-            content_accum += chunk
-            if message_handler:
-                message_handler.handle_message({"type": "stream", "content": chunk})
-    if message_handler:
-        message_handler.handle_message({"type": "stream_end", "content": content_accum})
-    return None
 
 
 def retry_api_call(api_func, max_retries=5, *args, **kwargs):

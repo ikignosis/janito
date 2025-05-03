@@ -23,7 +23,7 @@ def set_locale(locale):
 
 def tr(msg, **kwargs):
     """Translate message to current locale, usando hash SHA-1 da mensagem como chave."""
-    msg_hash = hashlib.sha1(msg.encode("utf-8")).hexdigest()
+    msg_hash = hashlib.sha1(msg.encode("utf-8", errors="surrogatepass")).hexdigest()
     template = _translations.get(msg_hash, msg)
     try:
         return template.format(**kwargs)

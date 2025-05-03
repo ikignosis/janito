@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.10.0-dev] - Unreleased
+
+- Added new API error handling infrastructure and exception classes.
+- Refactored conversation and OpenAI integration to remove streaming support and improve error handling/reporting.
+- Enhanced tool execution tracking, including richer event context and result recording.
+- Introduced new Python command runner tools and corresponding tests.
+- Improved CLI and shell user feedback, including action type-based message coloring.
+- Added new modules for shell input history and tool runners.
+- Various improvements and bug fixes across agent, CLI, shell, and web modules.
+- Updated and expanded test coverage for new and refactored features.
+
+
 ## [1.9.0] - 2025-05-02
 
 ### Major Changes
