@@ -1,43 +1,68 @@
 import os
 import pathspec
 
-_spec = None
 
+class GitignoreFilter:
+    """
+    Utility class for loading, interpreting, and applying .gitignore patterns to file and directory paths.
 
-def load_gitignore_patterns(gitignore_path=".gitignore"):
-    global _spec
-    if not os.path.exists(gitignore_path):
-        _spec = pathspec.PathSpec.from_lines("gitwildmatch", [])
-        return _spec
-    with open(gitignore_path, "r", encoding="utf-8", errors="replace") as f:
-        lines = f.readlines()
-    _spec = pathspec.PathSpec.from_lines("gitwildmatch", lines)
-    return _spec
+    Methods
+    -------
+    __init__(self, gitignore_path: str = ".gitignore")
+        Loads and parses .gitignore patterns from the specified path.
 
+    is_ignored(self, path: str) -> bool
+        Returns True if the given path matches any of the loaded .gitignore patterns.
 
-def is_ignored(path):
-    global _spec
-    if _spec is None:
-        _spec = load_gitignore_patterns()
-    # Normalize path to be relative and use forward slashes
-    rel_path = os.path.relpath(path).replace(os.sep, "/")
-    return _spec.match_file(rel_path)
+    filter_ignored(self, root: str, dirs: list, files: list) -> tuple[list, list]
+        Filters out ignored directories and files from the provided lists, returning only those not ignored.
+    """
 
+    def __init__(self, gitignore_path: str = ".gitignore"):
+        self.gitignore_path = os.path.abspath(gitignore_path)
+        self.base_dir = os.path.dirname(self.gitignore_path)
+        if not os.path.exists(self.gitignore_path):
+            self._spec = pathspec.PathSpec.from_lines("gitwildmatch", [])
+        else:
+            with open(
+                self.gitignore_path, "r", encoding="utf-8", errors="replace"
+            ) as f:
+                lines = f.readlines()
+            self._spec = pathspec.PathSpec.from_lines("gitwildmatch", lines)
+        # Collect directory patterns (ending with /)
+        self.dir_patterns = [
+            line.strip() for line in lines if line.strip().endswith("/")
+        ]
 
-def filter_ignored(root, dirs, files, spec=None):
-    if spec is None:
-        global _spec
-        if _spec is None:
-            _spec = load_gitignore_patterns()
-        spec = _spec
+    def is_ignored(self, path: str) -> bool:
+        """Return True if the given path is ignored by the loaded .gitignore patterns."""
+        abs_path = os.path.abspath(path)
+        rel_path = os.path.relpath(abs_path, self.base_dir).replace(os.sep, "/")
+        return self._spec.match_file(rel_path)
 
-    def not_ignored(p):
-        rel_path = os.path.relpath(os.path.join(root, p)).replace(os.sep, "/")
-        # Always ignore .git directory (like git does)
-        if rel_path == ".git" or rel_path.startswith(".git/"):
-            return False
-        return not spec.match_file(rel_path)
+    def filter_ignored(self, root: str, dirs: list, files: list) -> tuple[list, list]:
+        """
+        Filter out ignored directories and files from the provided lists.
+        Always ignores the .git directory (like git does).
+        """
 
-    dirs[:] = [d for d in dirs if not_ignored(d)]
-    files = [f for f in files if not_ignored(f)]
-    return dirs, files
+        def dir_is_ignored(d):
+            abs_path = os.path.abspath(os.path.join(root, d))
+            rel_path = os.path.relpath(abs_path, self.base_dir).replace(os.sep, "/")
+            if rel_path == ".git" or rel_path.startswith(".git/"):
+                return True
+            # Remove directory if it matches a directory pattern
+            for pat in self.dir_patterns:
+                pat_clean = pat.rstrip("/")
+                if rel_path == pat_clean or rel_path.startswith(pat_clean + "/"):
+                    return True
+            return self._spec.match_file(rel_path)
+
+        def file_is_ignored(f):
+            abs_path = os.path.abspath(os.path.join(root, f))
+            rel_path = os.path.relpath(abs_path, self.base_dir).replace(os.sep, "/")
+            return self._spec.match_file(rel_path)
+
+        dirs[:] = [d for d in dirs if not dir_is_ignored(d)]
+        files = [f for f in files if not file_is_ignored(f)]
+        return dirs, files

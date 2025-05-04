@@ -1,10 +1,7 @@
 from janito.agent.tool_registry import register_tool
 from .python_outline import parse_python_outline
 from .markdown_outline import parse_markdown_outline
-from janito.agent.tools_utils.formatting import (
-    format_outline_table,
-    format_markdown_outline_table,
-)
+from janito.agent.tools_utils.formatting import OutlineFormatter
 import os
 from janito.agent.tool_base import ToolBase
 from janito.agent.tools_utils.action_type import ActionType
@@ -36,7 +33,7 @@ class GetFileOutlineTool(ToolBase):
             if ext == ".py":
                 outline_items = parse_python_outline(lines)
                 outline_type = "python"
-                table = format_outline_table(outline_items)
+                table = OutlineFormatter.format_outline_table(outline_items)
                 self.report_success(
                     tr(
                         "✅ Outlined {count} {item_word}",
@@ -55,7 +52,7 @@ class GetFileOutlineTool(ToolBase):
             elif ext == ".md":
                 outline_items = parse_markdown_outline(lines)
                 outline_type = "markdown"
-                table = format_markdown_outline_table(outline_items)
+                table = OutlineFormatter.format_markdown_outline_table(outline_items)
                 self.report_success(
                     tr(
                         "✅ Outlined {count} {item_word}",

@@ -1,6 +1,6 @@
 # janito/agent/tool_registry.py
 from janito.agent.tool_base import ToolBase
-from janito.agent.openai_schema_generator import generate_openai_function_schema
+from janito.agent.openai_schema_generator import OpenAISchemaGenerator
 
 _tool_registry = {}
 
@@ -17,9 +17,12 @@ def register_tool(tool=None, *, name: str = None):
             f"Tool '{tool.__name__}' must implement a callable 'call' method."
         )
     tool_name = override_name or instance.name
+    # Add metadata for schema generation
+    tool._tool_run_method = instance.run
+    tool._tool_name = tool_name
     if tool_name in _tool_registry:
         raise ValueError(f"Tool '{tool_name}' is already registered.")
-    schema = generate_openai_function_schema(instance.run, tool_name, tool_class=tool)
+    schema = OpenAISchemaGenerator().generate_schema(tool)
     _tool_registry[tool_name] = {
         "function": instance.run,
         "description": schema["description"],

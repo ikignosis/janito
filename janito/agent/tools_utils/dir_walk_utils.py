@@ -1,5 +1,5 @@
 import os
-from .gitignore_utils import filter_ignored
+from .gitignore_utils import GitignoreFilter
 
 
 def walk_dir_with_gitignore(root_dir, max_depth=None):
@@ -11,6 +11,7 @@ def walk_dir_with_gitignore(root_dir, max_depth=None):
     - If max_depth=1, only the root directory (matches 'find . -maxdepth 1').
     - If max_depth=N (N>1), yields files in root and up to N-1 levels below root (matches 'find . -maxdepth N').
     """
+    gitignore = GitignoreFilter()
     for root, dirs, files in os.walk(root_dir):
         rel_path = os.path.relpath(root, root_dir)
         depth = 0 if rel_path == "." else rel_path.count(os.sep) + 1
@@ -19,5 +20,5 @@ def walk_dir_with_gitignore(root_dir, max_depth=None):
                 # For max_depth=1, only root (depth=0). For max_depth=2, root and one level below (depth=0,1).
                 if depth > 0:
                     continue
-        dirs, files = filter_ignored(root, dirs, files)
+        dirs, files = gitignore.filter_ignored(root, dirs, files)
         yield root, dirs, files

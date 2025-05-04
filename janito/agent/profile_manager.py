@@ -1,8 +1,7 @@
 from openai import OpenAI
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pathlib import Path
-from janito.agent.platform_discovery import get_platform_name, get_python_version
-from janito.agent.platform_discovery import detect_shell
+from janito.agent.platform_discovery import PlatformDiscovery
 
 
 class AgentProfileManager:
@@ -21,9 +20,10 @@ class AgentProfileManager:
             main_template_name = "system_prompt_template_base_pt.txt.j2"
         else:
             main_template_name = "system_prompt_template_base.txt.j2"
-        platform_name = get_platform_name()
-        python_version = get_python_version()
-        shell_info = detect_shell()
+        pd = PlatformDiscovery()
+        platform_name = pd.get_platform_name()
+        python_version = pd.get_python_version()
+        shell_info = pd.detect_shell()
 
         context = {
             "role": self.role,
