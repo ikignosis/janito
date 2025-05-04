@@ -51,3 +51,11 @@ docs = [
     "mkdocs>=1.5.3",
     "mkdocs-material>=9.4.8"  # Uncomment if you want Material theme
 ]
+
+[tool.ruff]
+# Ruff tool configuration
+
+[tool.ruff.lint]
+select = ["C901"]
+# Optional: Set the maximum allowed complexity (default is 10)
+# max-complexity = 10

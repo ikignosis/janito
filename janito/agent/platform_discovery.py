@@ -2,64 +2,77 @@ import platform
 import sys
 
 
+def _detect_git_bash(os_environ):
+    if os_environ.get("MSYSTEM"):
+        return f"Git Bash ({os_environ.get('MSYSTEM')})"
+    return None
+
+
+def _detect_wsl(os_environ):
+    if os_environ.get("WSL_DISTRO_NAME"):
+        shell = os_environ.get("SHELL")
+        shell_name = shell.split("/")[-1] if shell else "unknown"
+        distro = os_environ.get("WSL_DISTRO_NAME")
+        return f"{shell_name} (WSL: {distro})"
+    return None
+
+
+def _detect_powershell(subprocess_mod):
+    try:
+        result = subprocess_mod.run(
+            ["powershell.exe", "-NoProfile", "-Command", "$host.Name"],
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+        if result.returncode == 0 and "ConsoleHost" in result.stdout:
+            return "PowerShell"
+    except Exception:
+        pass
+    return None
+
+
+def _detect_shell_env(os_environ):
+    shell = os_environ.get("SHELL")
+    if shell:
+        return shell
+    return None
+
+
+def _detect_comspec(os_environ):
+    comspec = os_environ.get("COMSPEC")
+    if comspec:
+        if "powershell" in comspec.lower():
+            return "PowerShell"
+        elif "cmd" in comspec.lower():
+            return "cmd.exe"
+        else:
+            return "Unknown shell"
+    return "Unknown shell"
+
+
+def _append_term_info(shell_info, os_environ):
+    term_env = os_environ.get("TERM")
+    if term_env:
+        shell_info += f" [TERM={term_env}]"
+    term_program = os_environ.get("TERM_PROGRAM")
+    if term_program:
+        shell_info += f" [TERM_PROGRAM={term_program}]"
+    return shell_info
+
+
 def detect_shell():
     import os
     import subprocess
 
-    shell_info = None
-
-    # 1. Detect shell (prefer Git Bash if detected)
-    if os.environ.get("MSYSTEM"):
-        shell_info = f"Git Bash ({os.environ.get('MSYSTEM')})"
-    # 2. Detect WSL (before PowerShell)
-    elif os.environ.get("WSL_DISTRO_NAME"):
-        shell = os.environ.get("SHELL")
-        shell_name = shell.split("/")[-1] if shell else "unknown"
-        distro = os.environ.get("WSL_DISTRO_NAME")
-        shell_info = f"{shell_name} (WSL: {distro})"
-    else:
-        # 3. Try to detect PowerShell by running $host.Name
-        try:
-            result = subprocess.run(
-                ["powershell.exe", "-NoProfile", "-Command", "$host.Name"],
-                capture_output=True,
-                text=True,
-                timeout=2,
-            )
-            if result.returncode == 0 and "ConsoleHost" in result.stdout:
-                shell_info = "PowerShell"
-            else:
-                shell_info = None
-        except Exception:
-            shell_info = None
-
-        # 4. If not PowerShell, check SHELL
-        if not shell_info:
-            shell = os.environ.get("SHELL")
-            if shell:
-                shell_info = shell
-            else:
-                # 5. If not, check COMSPEC for PowerShell or cmd.exe
-                comspec = os.environ.get("COMSPEC")
-                if comspec:
-                    if "powershell" in comspec.lower():
-                        shell_info = "PowerShell"
-                    elif "cmd" in comspec.lower():
-                        shell_info = "cmd.exe"
-                    else:
-                        shell_info = "Unknown shell"
-                else:
-                    shell_info = "Unknown shell"
-
-    # 6. Always append TERM and TERM_PROGRAM if present
-    term_env = os.environ.get("TERM")
-    if term_env:
-        shell_info += f" [TERM={term_env}]"
-
-    term_program = os.environ.get("TERM_PROGRAM")
-    if term_program:
-        shell_info += f" [TERM_PROGRAM={term_program}]"
-
+    shell_info = (
+        _detect_git_bash(os.environ)
+        or _detect_wsl(os.environ)
+        or _detect_powershell(subprocess)
+        or _detect_shell_env(os.environ)
+        or _detect_comspec(os.environ)
+    )
+    shell_info = _append_term_info(shell_info, os.environ)
     return shell_info
 
 

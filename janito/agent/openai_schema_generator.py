@@ -32,6 +32,54 @@ def _type_to_json_schema(annotation):
     return {"type": PYTHON_TYPE_TO_JSON.get(annotation, "string")}
 
 
+def _parse_param_section(lines, param_section_headers):
+    param_descs = {}
+    in_params = False
+    for line in lines:
+        stripped_line = line.strip()
+        if any(
+            stripped_line.lower().startswith(h + ":") or stripped_line.lower() == h
+            for h in param_section_headers
+        ):
+            in_params = True
+            continue
+        if in_params:
+            m = re.match(
+                r"([a-zA-Z_][a-zA-Z0-9_]*)\s*(?:\(([^)]+)\))?\s*[:\-]?\s*(.+)",
+                stripped_line,
+            )
+            if m:
+                param, _, desc = m.groups()
+                param_descs[param] = desc.strip()
+            elif stripped_line and stripped_line[0] != "-":
+                if param_descs:
+                    last = list(param_descs)[-1]
+                    param_descs[last] += " " + stripped_line
+        if (
+            stripped_line.lower().startswith("returns:")
+            or stripped_line.lower() == "returns"
+        ):
+            break
+    return param_descs
+
+
+def _parse_return_section(lines):
+    in_returns = False
+    return_desc = ""
+    for line in lines:
+        stripped_line = line.strip()
+        if (
+            stripped_line.lower().startswith("returns:")
+            or stripped_line.lower() == "returns"
+        ):
+            in_returns = True
+            continue
+        if in_returns:
+            if stripped_line:
+                return_desc += (" " if return_desc else "") + stripped_line
+    return return_desc
+
+
 def _parse_docstring(docstring: str):
     """
     Parses a docstring to extract summary, parameter descriptions, and return description.
@@ -42,44 +90,9 @@ def _parse_docstring(docstring: str):
         return "", {}, ""
     lines = docstring.strip().split("\n")
     summary = lines[0].strip()
-    param_descs = {}
-    return_desc = ""
-    in_params = False
-    in_returns = False
     param_section_headers = ("args", "arguments", "params", "parameters")
-    for line in lines[1:]:
-        stripped_line = line.strip()
-        if any(
-            stripped_line.lower().startswith(h + ":") or stripped_line.lower() == h
-            for h in param_section_headers
-        ):
-            in_params = True
-            in_returns = False
-            continue
-        if (
-            stripped_line.lower().startswith("returns:")
-            or stripped_line.lower() == "returns"
-        ):
-            in_returns = True
-            in_params = False
-            continue
-        if in_params:
-            # Accept: name: desc, name (type): desc, name - desc, name desc
-            m = re.match(
-                r"([a-zA-Z_][a-zA-Z0-9_]*)\s*(?:\(([^)]+)\))?\s*[:\-]?\s*(.+)",
-                stripped_line,
-            )
-            if m:
-                param, _, desc = m.groups()
-                param_descs[param] = desc.strip()
-            elif stripped_line and stripped_line[0] != "-":
-                # Continuation of previous param
-                if param_descs:
-                    last = list(param_descs)[-1]
-                    param_descs[last] += " " + stripped_line
-        elif in_returns:
-            if stripped_line:
-                return_desc += (" " if return_desc else "") + stripped_line
+    param_descs = _parse_param_section(lines[1:], param_section_headers)
+    return_desc = _parse_return_section(lines[1:])
     return summary, param_descs, return_desc
 
 

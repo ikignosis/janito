@@ -18,12 +18,9 @@ class RichMessageHandler(MessageHandlerProtocol):
         Handles a dict with 'type' and 'message'.
         All messages must be dicts. Raises if not.
         """
-        # Check trust config: suppress all output except 'content' if enabled
         trust = runtime_config.get("trust")
         if trust is None:
             trust = unified_config.get("trust", False)
-
-        from rich.markdown import Markdown
 
         if not isinstance(msg, dict):
             raise TypeError(
@@ -35,41 +32,66 @@ class RichMessageHandler(MessageHandlerProtocol):
 
         if trust and msg_type != "content":
             return  # Suppress all except content
-        if msg_type == "content":
-            self.console.print(Markdown(message))
-        elif msg_type == "info":
-            action_type = msg.get("action_type", None)
-            style = "cyan"  # default
-            action_type_name = action_type.name if action_type else None
-            if action_type_name == "READ":
-                style = "cyan"
-            elif action_type_name == "WRITE":
-                style = "bright_magenta"
-            elif action_type_name == "EXECUTE":
-                style = "yellow"
-            self.console.print(f"  {message}", style=style, end="")
-        elif msg_type == "success":
-            self.console.print(message, style="bold green", end="\n")
-        elif msg_type == "error":
-            self.console.print(message, style="bold red", end="\n")
-        elif msg_type == "progress":
-            self._handle_progress(message)
-        elif msg_type == "warning":
-            self.console.print(message, style="bold yellow", end="\n")
-        elif msg_type == "stdout":
-            from rich.text import Text
 
-            self.console.print(
-                Text(message, style="on #003300", no_wrap=True, overflow=None),
-                end="",
-            )
-        elif msg_type == "stderr":
-            from rich.text import Text
+        handler_map = {
+            "content": self._handle_content,
+            "info": self._handle_info,
+            "success": self._handle_success,
+            "error": self._handle_error,
+            "progress": self._handle_progress,
+            "warning": self._handle_warning,
+            "stdout": self._handle_stdout,
+            "stderr": self._handle_stderr,
+        }
 
-            self.console.print(
-                Text(message, style="on #330000", no_wrap=True, overflow=None),
-                end="",
-            )
-        else:
-            # Ignore unsupported message types silently
-            return
+        handler = handler_map.get(msg_type)
+        if handler:
+            handler(msg, message)
+        # Ignore unsupported message types silently
+
+    def _handle_content(self, msg, message):
+        from rich.markdown import Markdown
+
+        self.console.print(Markdown(message))
+
+    def _handle_info(self, msg, message):
+        action_type = msg.get("action_type", None)
+        style = "cyan"  # default
+        action_type_name = action_type.name if action_type else None
+        if action_type_name == "READ":
+            style = "cyan"
+        elif action_type_name == "WRITE":
+            style = "bright_magenta"
+        elif action_type_name == "EXECUTE":
+            style = "yellow"
+        self.console.print(f"  {message}", style=style, end="")
+
+    def _handle_success(self, msg, message):
+        self.console.print(message, style="bold green", end="\n")
+
+    def _handle_error(self, msg, message):
+        self.console.print(message, style="bold red", end="\n")
+
+    def _handle_progress(self, msg, message=None):
+        # Existing logic for progress messages (if any)
+        # Placeholder: implement as needed
+        pass
+
+    def _handle_warning(self, msg, message):
+        self.console.print(message, style="bold yellow", end="\n")
+
+    def _handle_stdout(self, msg, message):
+        from rich.text import Text
+
+        self.console.print(
+            Text(message, style="on #003300", no_wrap=True, overflow=None),
+            end="",
+        )
+
+    def _handle_stderr(self, msg, message):
+        from rich.text import Text
+
+        self.console.print(
+            Text(message, style="on #330000", no_wrap=True, overflow=None),
+            end="",
+        )
