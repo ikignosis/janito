@@ -111,7 +111,7 @@ janito --web
 - 🧠 **Context-Aware:** Understands your project structure for precise edits.
 - 💬 **Interactive User Prompts:** Asks for clarification when needed.
 - 🛠️ **Extensible Tooling:** Built-in tools for file operations, shell commands, directory and file management, Python code execution and validation, text replacement, and more.
-  - See [janito/agent/tools/README.md](janito/agent/tools/README.md) for the full list of built-in tools and their usage details. For the message handler model, see [docs/MESSAGE_HANDLER_MODEL.md](docs/MESSAGE_HANDLER_MODEL.md).
+  - See [janito/agent/tools/README.md](janito/agent/tools/README.md) for the full list of built-in tools and their usage details. For the message handler model, see [docs/reference/message-handler-model.md](docs/reference/message-handler-model.md).
 
 ## 📦 Installation
 
@@ -121,7 +121,7 @@ janito --web
 
 ### Contributing & Developer Guide
 
-If you want to extend Janito or add new tools, see the [Developer Guide](docs/README_DEV.md) for system_prompt_template, tool registration requirements, and code profile guidelines. For the full list of built-in tools and their usage, see the [Tools Reference](janito/agent/tools/README.md).
+If you want to extend Janito or add new tools, see the [Developer Guide](docs/guides/developing.md) for system_prompt_template, tool registration requirements, and code profile guidelines. For the full list of built-in tools and their usage, see the [Tools Reference](janito/agent/tools/README.md).
 
 For the full changelog, see [CHANGELOG.md](./CHANGELOG.md).
 
@@ -151,7 +151,7 @@ To use Janito with OpenRouter, you need an API key:
 
 ### Using Azure OpenAI
 
-For details on using models hosted on Azure OpenAI, see [docs/AZURE_OPENAI.md](docs/AZURE_OPENAI.md).
+For details on using models hosted on Azure OpenAI, see [docs/reference/azure-openai.md](docs/reference/azure-openai.md).
 
 ---
 

@@ -8,7 +8,7 @@ Execute a non-interactive command using the PowerShell shell and capture live ou
 | command    | str  | The PowerShell command to execute. |
 | timeout    | int, optional | Timeout in seconds for the command. Defaults to 60. |
 | require_confirmation | bool, optional | If True, require user confirmation before running. Defaults to False. |
-| interactive | bool, optional | If True, warns that the command may require user interaction. Defaults to False. |
+| requires_user_input | bool, optional | If True, warns that the command may require user input and might hang. Defaults to False. |
 | **Returns**| str  | Output and status message, or file paths/line counts if output is large, or warning if command is empty. |
 
 **Example usage:**

@@ -45,4 +45,4 @@ Below is a comprehensive list of CLI options supported by Janito. You can combin
 - `--info, -i`: Show basic program info and exit (useful for one-shot shell execution).
 - `--ntt`: Disable tool call reason tracking (no tools tracking).
 
-For configuration details and advanced usage, see [docs/CONFIGURATION.md](CONFIGURATION.md).
+For configuration details and advanced usage, see [CONFIGURATION.md](CONFIGURATION.md).

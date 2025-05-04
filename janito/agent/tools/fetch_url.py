@@ -26,8 +26,44 @@ class FetchUrlTool(ToolBase):
             self.report_warning(tr("ℹ️ Empty URL provided."))
             return tr("Warning: Empty URL provided. Operation skipped.")
         self.report_info(ActionType.READ, tr("🌐 Fetching URL '{url}' ...", url=url))
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as http_err:
+            status_code = http_err.response.status_code if http_err.response else None
+            if status_code and 400 <= status_code < 500:
+                self.report_error(
+                    tr(
+                        "❗ HTTP {status_code} error for URL: {url}",
+                        status_code=status_code,
+                        url=url,
+                    )
+                )
+                return tr(
+                    "Warning: HTTP {status_code} error for URL: {url}",
+                    status_code=status_code,
+                    url=url,
+                )
+            else:
+                self.report_error(
+                    tr(
+                        "❗ HTTP error for URL: {url}: {err}",
+                        url=url,
+                        err=str(http_err),
+                    )
+                )
+                return tr(
+                    "Warning: HTTP error for URL: {url}: {err}",
+                    url=url,
+                    err=str(http_err),
+                )
+        except Exception as err:
+            self.report_error(
+                tr("❗ Error fetching URL: {url}: {err}", url=url, err=str(err))
+            )
+            return tr(
+                "Warning: Error fetching URL: {url}: {err}", url=url, err=str(err)
+            )
         self.update_progress(
             {
                 "event": "progress",

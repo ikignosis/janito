@@ -64,4 +64,4 @@ Janito’s precision-driven approach—using outline and search utilities to ext
 - Better use of computational resources.
 - A more scalable and robust developer experience.
 
-For more details, see the documentation for the [outline tools](get_file_outline.md) and [search tools](search_text.md).
+For more details, see the documentation for the [outline tools](tools/get_file_outline.md) and [search tools](tools/search_text.md).
