@@ -8,8 +8,8 @@ Janito uses these tools automatically based on your prompt and context. This tab
 
 | 🛠️ Tool                  | 📝 Description                                                  | 🗝️ Key Arguments                                                                                       | 🔁 Returns                                  | 🗂️ Notes                                                                                   |
 |---------------------------|------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|------------------------------------------|-----------------------------------------------------------------------------------------|
-| **create_file**           | Create a new file, or overwrite if specified.                   | `path` (str): file path<br>`content` (str): file content<br>`overwrite` (bool, optional)<br>`backup` (bool, optional) | Success or error message                  | If `overwrite=True`, updates file if it exists. Can create backup before overwriting.   |
-| **create_directory**      | Create a new directory at the specified path.                    | `path` (str): directory path<br>`overwrite` (bool, optional)                                       | Success or error message                  | Fails if directory exists unless overwrite is True.                                      |
+| **create_file**           | Create a new file. Fails if file already exists.                | `path` (str): file path<br>`content` (str): file content | Success or error message                  | Fails if file already exists.                                                         |
+| **create_directory**      | Create a new directory at the specified path.                    | `path` (str): directory path                                       | Success or error message                  | Fails if directory already exists.                                                     |
 | **fetch_url**             | Fetch and extract text from a web page.                          | `url` (str): web page URL<br>`search_strings` (list of str, optional)                               | Extracted text or warning                 | Useful for research or referencing online resources.                                    |
 | **run_bash_command**      | Run a bash command and capture output.                           | `command` (str): bash command<br>`timeout` (int, optional)<br>`require_confirmation` (bool, opt.)   | File paths and line counts for output     | Requires bash (e.g., WSL or Git Bash on Windows). Use with caution.                     |
 | **find_files**            | Search for files matching a pattern.                             | `directories` (list)<br>`pattern` (str)<br>`max_depth` (int, optional; see find_files.md for details) | List of matching file paths               | Respects .gitignore. See find_files.md for max_depth details.                         |
@@ -37,7 +37,7 @@ Janito uses these tools automatically based on your prompt and context. This tab
 |------|---------|
 | [Ask User](tools/ask_user.md) | Interactive user input |
 | [Create Directory](tools/create_directory.md) | Create a new directory |
-| [Create File](tools/create_file.md) | Create or overwrite a file |
+| [Create File](tools/create_file.md) | Create a new file |
 | [Fetch URL](tools/fetch_url.md) | Fetch and extract web page text |
 | [Find Files](tools/find_files.md) | Search for files matching a pattern |
 | [Get File Outline](tools/get_file_outline.md) | Outline of file structure |

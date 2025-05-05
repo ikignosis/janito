@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.10.0-dev] - Unreleased
+## [1.10.0] - 2025-05-05
 
 - Added new API error handling infrastructure and exception classes.
 - Refactored conversation and OpenAI integration to remove streaming support and improve error handling/reporting.
