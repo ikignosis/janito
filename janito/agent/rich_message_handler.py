@@ -5,6 +5,16 @@ from janito.agent.message_handler_protocol import MessageHandlerProtocol
 console = Console()
 
 
+def _print_metadata_if_verbose(msg):
+    if unified_config.get("verbose_messages", False):
+        # Exclude 'message' field from metadata
+        meta = {k: v for k, v in msg.items() if k != "message"}
+        if meta:
+            console.print("[bold][cyan]Message metadata:[/cyan][/bold]")
+            for k, v in meta.items():
+                console.print(f"  [green]{k}[/green]: [magenta]{v}[/magenta]")
+
+
 class RichMessageHandler(MessageHandlerProtocol):
     """
     Unified message handler for all output (tool, agent, system) using Rich for styled output.
@@ -52,6 +62,7 @@ class RichMessageHandler(MessageHandlerProtocol):
     def _handle_content(self, msg, message):
         from rich.markdown import Markdown
 
+        _print_metadata_if_verbose(msg)
         self.console.print(Markdown(message))
 
     def _handle_info(self, msg, message):
@@ -64,25 +75,31 @@ class RichMessageHandler(MessageHandlerProtocol):
             style = "bright_magenta"
         elif action_type_name == "EXECUTE":
             style = "yellow"
+        _print_metadata_if_verbose(msg)
         self.console.print(f"  {message}", style=style, end="")
 
     def _handle_success(self, msg, message):
+        _print_metadata_if_verbose(msg)
         self.console.print(message, style="bold green", end="\n")
 
     def _handle_error(self, msg, message):
+        _print_metadata_if_verbose(msg)
         self.console.print(message, style="bold red", end="\n")
 
     def _handle_progress(self, msg, message=None):
+        _print_metadata_if_verbose(msg)
         # Existing logic for progress messages (if any)
         # Placeholder: implement as needed
         pass
 
     def _handle_warning(self, msg, message):
+        _print_metadata_if_verbose(msg)
         self.console.print(message, style="bold yellow", end="\n")
 
     def _handle_stdout(self, msg, message):
         from rich.text import Text
 
+        _print_metadata_if_verbose(msg)
         self.console.print(
             Text(message, style="on #003300", no_wrap=True, overflow=None),
             end="",
@@ -91,6 +108,7 @@ class RichMessageHandler(MessageHandlerProtocol):
     def _handle_stderr(self, msg, message):
         from rich.text import Text
 
+        _print_metadata_if_verbose(msg)
         self.console.print(
             Text(message, style="on #330000", no_wrap=True, overflow=None),
             end="",

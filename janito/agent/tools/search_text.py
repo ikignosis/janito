@@ -199,10 +199,10 @@ class SearchTextTool(ToolBase):
         regex, use_regex, error_msg = self._prepare_pattern(pattern, is_regex)
         if error_msg:
             return error_msg
-        output = []
-        limit_reached = False
-        total_results = 0
         paths_list = paths.split()
+        results = []
+        total_results = 0
+        limit_reached = False
         for search_path in paths_list:
             from janito.agent.tools_utils.utils import display_path
 
@@ -227,25 +227,28 @@ class SearchTextTool(ToolBase):
                     total_results,
                     ignore_utf8_errors,
                 )
-                output.extend(dir_output)
                 total_results += len(dir_output)
                 if dir_limit_reached:
                     limit_reached = True
-                    break
-                continue
-            dir_output, dir_limit_reached = self._search_directory(
-                search_path,
-                pattern,
-                regex,
-                use_regex,
-                max_depth,
-                max_results,
-                total_results,
-                ignore_utf8_errors,
+            else:
+                dir_output, dir_limit_reached = self._search_directory(
+                    search_path,
+                    pattern,
+                    regex,
+                    use_regex,
+                    max_depth,
+                    max_results,
+                    total_results,
+                    ignore_utf8_errors,
+                )
+                total_results += len(dir_output)
+                if dir_limit_reached:
+                    limit_reached = True
+            # Format and append result for this path
+            result_str = self._format_result(
+                pattern, use_regex, dir_output, dir_limit_reached
             )
-            output.extend(dir_output)
-            total_results += len(dir_output)
-            if dir_limit_reached:
-                limit_reached = True
+            results.append(info_str + "\n" + result_str)
+            if limit_reached:
                 break
-        return self._format_result(pattern, use_regex, output, limit_reached)
+        return "\n\n".join(results)

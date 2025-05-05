@@ -3,7 +3,7 @@
 ## 💡 How Janito Handles Costs
 
 - 🆓 **No Extra Fees:** Janito is open source and does not charge any additional fees for usage.
-- 🔑 **Bring Your Own API Key:** By default, Janito uses [OpenRouter](https://openrouter.ai), but you can also connect your own OpenAI, Azure, or compatible API key. You pay only for what you use, directly to the provider.
+- 🔑 **Bring Your Own API Key:** By default, Janito uses [OpenAI](https://platform.openai.com), but you can also connect your own Azure or compatible API key. You pay only for what you use, directly to the provider.
 - 👀 **Full Visibility:** You can monitor your API usage and costs through your provider’s dashboard, with no hidden markups.
 
 ## 🔄 Comparison: Subscription Models in Other Tools

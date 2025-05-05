@@ -1,7 +1,7 @@
 [project]
 name = "janito"
 
-version = "0.10.0-dev"
+version = "1.9.0-dev"
 description = "Natural Language Coding Agent,"
 authors = [
     { name = "João Pinto", email = "joao.pinto@gmail.com" }

@@ -14,7 +14,7 @@ These options are useful for one-off runs, scripting, or experimentation. They t
 |--------|-------------|
 | `prompt` | Prompt to send to the model (positional argument) |
 | `--lang` | Language for interface messages (e.g., en, pt). Overrides config if set. |
-| `--max-tokens` | Maximum tokens for model response (overrides config, default: 200000) |
+| `--max-tokens` | Maximum tokens for model response (overrides config, default: 32000) |
 | `--max-tools` | Maximum number of tool calls allowed within a chat session (default: unlimited) |
 | `--model`, `-m` | Model name to use for this session (overrides config, does not persist) |
 | `--max-rounds` | Maximum number of agent rounds per prompt (overrides config, default: 50) |
@@ -58,7 +58,7 @@ These options are useful for one-off runs, scripting, or experimentation. They t
 ## 👨‍💻 Usage Examples
 
 ```sh
-janito "Prompt here" --model openai/gpt-4.1 --max-tokens 500 --temperature 0.7
+janito "Prompt here" --model gpt-4.1 --max-tokens 500 --temperature 0.7
 janito --list-tools
 janito "Prompt" --system "You are a helpful assistant." --no-tools
 janito --web

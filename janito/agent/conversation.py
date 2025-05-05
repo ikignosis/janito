@@ -12,6 +12,30 @@ from janito.agent.conversation_exceptions import (
 from janito.agent.runtime_config import unified_config, runtime_config
 from janito.agent.api_exceptions import ApiError
 import pprint
+from janito.agent.llm_conversation_history import LLMConversationHistory
+
+
+def get_openai_response_with_content_check(client, model, messages, max_tokens):
+    response = get_openai_response(client, model, messages, max_tokens)
+    # Check for empty assistant message content, but allow tool/function calls
+    if not hasattr(response, "choices") or not response.choices:
+        return response  # Let normal error handling occur
+    choice = response.choices[0]
+    content = getattr(choice.message, "content", None)
+    # Check for function_call (legacy OpenAI) or tool_calls (OpenAI v2 and others)
+    has_function_call = (
+        hasattr(choice.message, "function_call") and choice.message.function_call
+    )
+    has_tool_calls = hasattr(choice.message, "tool_calls") and choice.message.tool_calls
+    if (content is None or str(content).strip() == "") and not (
+        has_function_call or has_tool_calls
+    ):
+        print(
+            "[DEBUG] Empty assistant message detected with no tool/function call. Will retry. Raw response:"
+        )
+        print(repr(response))
+        raise EmptyResponseError("Empty assistant message content.")
+    return response
 
 
 class ConversationHandler:
@@ -30,7 +54,7 @@ class ConversationHandler:
     def _resolve_max_tokens(self, max_tokens):
         resolved_max_tokens = max_tokens
         if resolved_max_tokens is None:
-            resolved_max_tokens = unified_config.get("max_tokens", 200000)
+            resolved_max_tokens = unified_config.get("max_tokens", 32000)
         try:
             resolved_max_tokens = int(resolved_max_tokens)
         except (TypeError, ValueError):
@@ -45,19 +69,26 @@ class ConversationHandler:
 
     def _call_openai_api(self, history, resolved_max_tokens, spinner):
         def api_call():
-            return get_openai_response(
+            return get_openai_response_with_content_check(
                 self.client,
                 self.model,
                 history.get_messages(),
                 resolved_max_tokens,
             )
 
+        user_message_on_empty = "Received an empty message from you. Please try again."
         if spinner:
             response = show_spinner(
-                "Waiting for AI response...", retry_api_call, api_call
+                "Waiting for AI response...",
+                retry_api_call,
+                api_call,
+                history=history,
+                user_message_on_empty=user_message_on_empty,
             )
         else:
-            response = retry_api_call(api_call)
+            response = retry_api_call(
+                api_call, history=history, user_message_on_empty=user_message_on_empty
+            )
         return response
 
     def _handle_no_tool_support(self, messages, max_tokens, spinner):
@@ -70,18 +101,25 @@ class ConversationHandler:
             runtime_config.set("max_tokens", 8000)
 
         def api_call_vanilla():
-            return get_openai_response(
+            return get_openai_response_with_content_check(
                 self.client, self.model, messages, resolved_max_tokens
             )
 
+        user_message_on_empty = "Received an empty message from you. Please try again."
         if spinner:
             response = show_spinner(
                 "Waiting for AI response (tools disabled)...",
                 retry_api_call,
                 api_call_vanilla,
+                history=None,
+                user_message_on_empty=user_message_on_empty,
             )
         else:
-            response = retry_api_call(api_call_vanilla)
+            response = retry_api_call(
+                api_call_vanilla,
+                history=None,
+                user_message_on_empty=user_message_on_empty,
+            )
             print(
                 "[DEBUG] OpenAI API raw response (tools disabled):",
                 repr(response),
@@ -113,7 +151,9 @@ class ConversationHandler:
         )
         return choice, usage_info
 
-    def _handle_tool_calls(self, choice, history, message_handler, usage_info):
+    def _handle_tool_calls(
+        self, choice, history, message_handler, usage_info, tool_user=False
+    ):
         tool_responses = handle_tool_calls(
             choice.message.tool_calls, message_handler=message_handler
         )
@@ -129,7 +169,7 @@ class ConversationHandler:
         for tool_response in tool_responses:
             history.add_message(
                 {
-                    "role": "tool",
+                    "role": "user" if tool_user else "tool",
                     "tool_call_id": tool_response["tool_call_id"],
                     "content": tool_response["content"],
                 }
@@ -144,13 +184,13 @@ class ConversationHandler:
         spinner=False,
         max_tokens=None,
         verbose_events=False,
+        tool_user=False,
     ):
-        from janito.agent.conversation_history import ConversationHistory
 
-        if isinstance(messages, ConversationHistory):
+        if isinstance(messages, LLMConversationHistory):
             history = messages
         else:
-            history = ConversationHistory(messages)
+            history = LLMConversationHistory(messages)
 
         if len(history) == 0:
             raise ValueError("No prompt provided in messages")
@@ -192,5 +232,7 @@ class ConversationHandler:
                     "usage": usage_info,
                     "usage_history": self.usage_history,
                 }
-            self._handle_tool_calls(choice, history, message_handler, usage_info)
+            self._handle_tool_calls(
+                choice, history, message_handler, usage_info, tool_user=tool_user
+            )
         raise MaxRoundsExceededError(f"Max conversation rounds exceeded ({max_rounds})")

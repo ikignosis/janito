@@ -9,7 +9,7 @@ from janito.shell.prompt.session_setup import (
 from janito.shell.commands import handle_command
 from janito.agent.conversation_exceptions import EmptyResponseError, ProviderError
 from janito.agent.api_exceptions import ApiError
-from janito.agent.conversation_history import ConversationHistory
+from janito.agent.llm_conversation_history import LLMConversationHistory
 import janito.i18n as i18n
 from janito.agent.runtime_config import runtime_config
 from rich.console import Console
@@ -23,7 +23,7 @@ from janito.shell.input_history import UserInputHistory
 @dataclass
 class ShellState:
     mem_history: Any = field(default_factory=InMemoryHistory)
-    conversation_history: Any = field(default_factory=lambda: ConversationHistory())
+    conversation_history: Any = field(default_factory=lambda: LLMConversationHistory())
     last_usage_info: Dict[str, int] = field(
         default_factory=lambda: {
             "prompt_tokens": 0,
@@ -45,51 +45,19 @@ class ShellState:
 active_prompt_session = None
 
 
-def start_chat_shell(
-    profile_manager,
-    continue_session=False,
-    session_id=None,
-    max_rounds=100,
-    termweb_stdout_path=None,
-    termweb_stderr_path=None,
-    livereload_stdout_path=None,
-    livereload_stderr_path=None,
-):
-    i18n.set_locale(runtime_config.get("lang", "en"))
-    global active_prompt_session
-    agent = profile_manager.agent
-    message_handler = RichMessageHandler()
-    console = message_handler.console
-    console.clear()
-
-    # Print session id at start
+def load_session(shell_state, continue_session, session_id, profile_manager):
     from janito.shell.session.manager import load_conversation_by_session_id
-
-    shell_state = ShellState()
-    shell_state.profile_manager = profile_manager
-
-    # --- UserInputHistory integration ---
-    user_input_history = UserInputHistory()
-    user_input_dicts = (
-        user_input_history.load()
-    )  # List of dicts: {"input": ..., "ts": ...}
-    mem_history = shell_state.mem_history
-    for item in user_input_dicts:
-        if isinstance(item, dict) and "input" in item:
-            mem_history.append_string(item["input"])
-    shell_state.user_input_history = user_input_history
-    # ------------------------------------
 
     if continue_session and session_id:
         try:
             messages, prompts, usage = load_conversation_by_session_id(session_id)
         except FileNotFoundError as e:
-            console.print(f"[bold red]{str(e)}[/bold red]")
-            return
-        # Initialize ConversationHistory with loaded messages
-        shell_state.conversation_history = ConversationHistory(messages)
+            shell_state.profile_manager.agent.message_handler.console.print(
+                f"[bold red]{str(e)}[/bold red]"
+            )
+            return False
+        shell_state.conversation_history = LLMConversationHistory(messages)
         conversation_history = shell_state.conversation_history
-        # Always refresh the system prompt in the loaded history
         found = False
         for msg in conversation_history.get_messages():
             if msg.get("role") == "system":
@@ -100,11 +68,9 @@ def start_chat_shell(
             conversation_history.set_system_message(
                 profile_manager.system_prompt_template
             )
-        # Optionally set prompts/usage if needed
         shell_state.last_usage_info = usage or {}
     else:
         conversation_history = shell_state.conversation_history
-        # Add system prompt if needed (skip in vanilla mode)
         if (
             profile_manager.system_prompt_template
             and (
@@ -118,25 +84,16 @@ def start_chat_shell(
             conversation_history.set_system_message(
                 profile_manager.system_prompt_template
             )
+    return True
 
-    def last_usage_info_ref():
-        return shell_state.last_usage_info
 
-    last_elapsed = shell_state.last_elapsed
-
-    print_welcome_message(console, continue_id=session_id if continue_session else None)
-
-    session = setup_prompt_session(
-        lambda: conversation_history.get_messages(),
-        last_usage_info_ref,
-        last_elapsed,
-        mem_history,
-        profile_manager,
-        agent,
-        lambda: conversation_history,
-    )
-    active_prompt_session = session
-
+def handle_prompt_loop(
+    shell_state, session, profile_manager, agent, max_rounds, session_id
+):
+    global active_prompt_session
+    conversation_history = shell_state.conversation_history
+    message_handler = RichMessageHandler()
+    console = message_handler.console
     while True:
         try:
             if shell_state.paste_mode:
@@ -152,11 +109,10 @@ def start_chat_shell(
             console.print("\n[bold red]Exiting...[/bold red]")
             break
         except KeyboardInterrupt:
-            console.print()  # Move to next line
+            console.print()
             try:
                 confirm = (
                     session.prompt(
-                        # Use <inputline> for full-line blue background, <prompt> for icon only
                         HTML(
                             "<inputline>Do you really want to exit? (y/n): </inputline>"
                         )
@@ -179,10 +135,8 @@ def start_chat_shell(
                 break
             else:
                 continue
-
         cmd_input = user_input.strip().lower()
         if not was_paste_mode and (cmd_input.startswith("/") or cmd_input == "exit"):
-            # Treat both '/exit' and 'exit' as commands
             result = handle_command(
                 user_input.strip(),
                 console,
@@ -194,77 +148,110 @@ def start_chat_shell(
                 )
                 break
             continue
-
         if not user_input.strip():
             continue
-
-        mem_history.append_string(user_input)
+        shell_state.mem_history.append_string(user_input)
         shell_state.user_input_history.append(user_input)
         conversation_history.add_message({"role": "user", "content": user_input})
+        handle_chat(shell_state, profile_manager, agent, max_rounds, session_id)
+    # Save conversation history after exiting
+    save_conversation_history(conversation_history, session_id)
 
-        start_time = time.time()
 
-        # No need to propagate verbose; ToolExecutor and others fetch from runtime_config
+def handle_chat(shell_state, profile_manager, agent, max_rounds, session_id):
+    conversation_history = shell_state.conversation_history
+    message_handler = RichMessageHandler()
+    console = message_handler.console
+    start_time = time.time()
+    try:
+        response = profile_manager.agent.chat(
+            conversation_history,
+            max_rounds=max_rounds,
+            message_handler=message_handler,
+            spinner=True,
+        )
+    except KeyboardInterrupt:
+        message_handler.handle_message(
+            {"type": "info", "message": "Request interrupted. Returning to prompt."}
+        )
+        return
+    except ProviderError as e:
+        message_handler.handle_message(
+            {"type": "error", "message": f"Provider error: {e}"}
+        )
+        return
+    except EmptyResponseError as e:
+        message_handler.handle_message({"type": "error", "message": f"Error: {e}"})
+        return
+    except ApiError as e:
+        message_handler.handle_message({"type": "error", "message": str(e)})
+        return
+    shell_state.last_elapsed = time.time() - start_time
+    usage = response.get("usage")
+    if usage:
+        for k in ("prompt_tokens", "completion_tokens", "total_tokens"):
+            shell_state.last_usage_info[k] = usage.get(k, 0)
+    content = response.get("content")
+    if content and (
+        len(conversation_history) == 0
+        or conversation_history.get_messages()[-1].get("role") != "assistant"
+    ):
+        conversation_history.add_message({"role": "assistant", "content": content})
 
-        # Clear the screen before starting LLM conversation
-        console = Console()
-        console.clear()
 
-        try:
-            response = profile_manager.agent.chat(
-                conversation_history,
-                max_rounds=max_rounds,
-                message_handler=message_handler,
-                spinner=True,
-            )
-        except KeyboardInterrupt:
-            message_handler.handle_message(
-                {"type": "info", "message": "Request interrupted. Returning to prompt."}
-            )
-            continue
-        except ProviderError as e:
-            message_handler.handle_message(
-                {"type": "error", "message": f"Provider error: {e}"}
-            )
-            continue
-        except EmptyResponseError as e:
-            message_handler.handle_message({"type": "error", "message": f"Error: {e}"})
-            continue
-        except ApiError as e:
-            message_handler.handle_message({"type": "error", "message": str(e)})
-            continue
-        last_elapsed = time.time() - start_time
+def save_conversation_history(conversation_history, session_id):
+    from janito.shell.session.manager import get_session_id
 
-        usage = response.get("usage")
-        if usage:
-            for k in ("prompt_tokens", "completion_tokens", "total_tokens"):
-                shell_state.last_usage_info[k] = usage.get(k, 0)
-
-        # --- Ensure assistant and tool messages are added to ConversationHistory ---
-        # If the last message is not an assistant/tool, add the response content
-        content = response.get("content")
-        if content and (
-            len(conversation_history) == 0
-            or conversation_history.get_messages()[-1].get("role") != "assistant"
-        ):
-            conversation_history.add_message({"role": "assistant", "content": content})
-        # Optionally, add tool messages if present in response (extend here if needed)
-        # ---------------------------------------------------------------------------
-
-        # --- Save conversation history after each assistant reply ---
-        session_id_to_save = session_id if session_id else get_session_id()
-        history_dir = os.path.join(os.path.expanduser("~"), ".janito", "chat_history")
-        os.makedirs(history_dir, exist_ok=True)
-        history_path = os.path.join(history_dir, f"{session_id_to_save}.json")
-        conversation_history.to_json_file(history_path)
-        # -----------------------------------------------------------
-
-    # After exiting the main loop, print restart info if conversation has >1 message
-
-    # --- Save conversation history to .janito/chat_history/(session_id).json ---
-    session_id_to_save = session_id if session_id else get_session_id()
     history_dir = os.path.join(os.path.expanduser("~"), ".janito", "chat_history")
     os.makedirs(history_dir, exist_ok=True)
+    session_id_to_save = session_id if session_id else get_session_id()
     history_path = os.path.join(history_dir, f"{session_id_to_save}.json")
     conversation_history.to_json_file(history_path)
-    # -------------------------------------------------------------------------
+
+
+def start_chat_shell(
+    profile_manager,
+    continue_session=False,
+    session_id=None,
+    max_rounds=100,
+    termweb_stdout_path=None,
+    termweb_stderr_path=None,
+    livereload_stdout_path=None,
+    livereload_stderr_path=None,
+):
+    i18n.set_locale(runtime_config.get("lang", "en"))
+    global active_prompt_session
+    agent = profile_manager.agent
+    message_handler = RichMessageHandler()
+    console = message_handler.console
+    console.clear()
+    shell_state = ShellState()
+    shell_state.profile_manager = profile_manager
+    user_input_history = UserInputHistory()
+    user_input_dicts = user_input_history.load()
+    mem_history = shell_state.mem_history
+    for item in user_input_dicts:
+        if isinstance(item, dict) and "input" in item:
+            mem_history.append_string(item["input"])
+    shell_state.user_input_history = user_input_history
+    if not load_session(shell_state, continue_session, session_id, profile_manager):
+        return
+
+    def last_usage_info_ref():
+        return shell_state.last_usage_info
+
+    last_elapsed = shell_state.last_elapsed
+    print_welcome_message(console, continue_id=session_id if continue_session else None)
+    session = setup_prompt_session(
+        lambda: shell_state.conversation_history.get_messages(),
+        last_usage_info_ref,
+        last_elapsed,
+        mem_history,
+        profile_manager,
+        agent,
+        lambda: shell_state.conversation_history,
+    )
+    active_prompt_session = session
+    handle_prompt_loop(
+        shell_state, session, profile_manager, agent, max_rounds, session_id
+    )

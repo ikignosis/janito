@@ -21,6 +21,7 @@ class GitignoreFilter:
     def __init__(self, gitignore_path: str = ".gitignore"):
         self.gitignore_path = os.path.abspath(gitignore_path)
         self.base_dir = os.path.dirname(self.gitignore_path)
+        lines = []
         if not os.path.exists(self.gitignore_path):
             self._spec = pathspec.PathSpec.from_lines("gitwildmatch", [])
         else:

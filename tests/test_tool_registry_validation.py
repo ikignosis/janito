@@ -10,11 +10,11 @@ class DummyTool:
         return a + b
 
 
-def make_tool_call(name, args):
-    # Simulate a tool_call object with .function.name and .function.arguments
+def make_tool_call(name, args, id="dummy-id"):
+    # Simulate a tool_call object with .function.name, .function.arguments, and .id
     ToolCall = types.SimpleNamespace
     Function = types.SimpleNamespace
-    return ToolCall(function=Function(name=name, arguments=json.dumps(args)))
+    return ToolCall(function=Function(name=name, arguments=json.dumps(args)), id=id)
 
 
 def test_handle_tool_call_valid_args():

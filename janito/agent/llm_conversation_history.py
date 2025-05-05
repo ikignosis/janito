@@ -4,7 +4,7 @@ import sys
 import traceback
 
 
-class ConversationHistory:
+class LLMConversationHistory:
     """
     Manages the message history for a conversation, supporting OpenAI-style roles.
     Intended to be used by ConversationHandler and chat loop for all history operations.

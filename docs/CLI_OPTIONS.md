@@ -5,10 +5,10 @@ Below is a comprehensive list of CLI options supported by Janito. You can combin
 - `input_arg` (positional): Prompt to send to the model, or session ID if --continue is used.
 - `--list [N]`: List the last N sessions (default: 10) and exit.
 - `--view SESSION_ID`: View the content of a conversation history by session id and exit.
-- `--set-provider-config NAME KEY VALUE`: Set a provider config parameter (e.g., --set-provider-config openrouter.ai api_key sk-xxx).
+- `--set-provider-config NAME KEY VALUE`: Set a provider config parameter (e.g., --set-provider-config openai api_key sk-xxx).
 - `--lang LANG`: Language for interface messages (e.g., en, pt). Overrides config if set.
 - `--app-shell`: Use the new prompt_toolkit Application-based chat shell (experimental).
-- `--max-tokens N`: Maximum tokens for model response (overrides config, default: 200000).
+- `--max-tokens N`: Maximum tokens for model response (overrides config, default: 32000).
 - `--max-tools N`: Maximum number of tool calls allowed within a chat session (default: unlimited).
 - `--model, -m MODEL`: Model name to use for this session (overrides config, does not persist).
 - `--max-rounds N`: Maximum number of agent rounds per prompt (overrides config, default: 50).

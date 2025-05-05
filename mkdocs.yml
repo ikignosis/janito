@@ -42,6 +42,8 @@ nav:
       - Janito vs Web Chat Agents: about/vs_webchats.md
       - Costs & Value Transparency: about/costs.md
   - Alternatives: alternatives.md
+  - LLMProviders:
+      - LLMAuthManager (Experimental): llm_provider_driver_auth_experimental.md
 # theme: readthedocs
 # For more themes, see https://squidfunk.github.io/mkdocs-material/
 

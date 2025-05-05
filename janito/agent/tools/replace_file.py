@@ -19,6 +19,8 @@ class ReplaceFileTool(ToolBase):
     Returns:
         str: Status message indicating the result. Example:
             - "✅ Successfully replaced the file at ..."
+
+    Note: Syntax validation is automatically performed after this operation.
     """
 
     def run(self, file_path: str, content: str) -> str:

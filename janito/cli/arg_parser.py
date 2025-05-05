@@ -34,7 +34,7 @@ def create_parser():
         "--set-provider-config",
         nargs=3,
         metavar=("NAME", "KEY", "VALUE"),
-        help="Set a provider config parameter (e.g., --set-provider-config openrouter.ai api_key sk-xxx).",
+        help="Set a provider config parameter (e.g., --set-provider-config openai api_key sk-xxx).",
     )
     parser.add_argument(
         "--lang",
@@ -52,7 +52,7 @@ def create_parser():
         "--max-tokens",
         type=int,
         default=None,
-        help="Maximum tokens for model response (overrides config, default: 200000)",
+        help="Maximum tokens for model response (overrides config, default: 32000)",
     )
     parser.add_argument(
         "--max-tools",
@@ -213,6 +213,11 @@ def create_parser():
         help="Print all agent events before dispatching to the message handler (for debugging)",
     )
     parser.add_argument(
+        "--verbose-messages",
+        action="store_true",
+        help="Print every new message added to the conversation history with a colored background.",
+    )
+    parser.add_argument(
         "-V",
         "--vanilla",
         action="store_true",
@@ -252,5 +257,11 @@ def create_parser():
         "--ntt",
         action="store_true",
         help="Disable tool call reason tracking (no tools tracking)",
+    )
+    parser.add_argument(
+        "--tool-user",
+        action="store_true",
+        default=False,
+        help="When set, tool responses will use role 'user' instead of 'tool' in the conversation history.",
     )
     return parser

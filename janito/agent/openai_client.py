@@ -4,6 +4,7 @@ import time
 from openai import OpenAI
 from janito.agent.conversation import ConversationHandler
 from janito.agent.conversation_exceptions import ProviderError
+from janito.agent.llm_conversation_history import LLMConversationHistory
 
 
 class Agent:
@@ -18,7 +19,7 @@ class Agent:
         model: str = None,
         system_prompt_template: str | None = None,
         verbose_tools: bool = False,
-        base_url: str = "https://openrouter.ai/api/v1",
+        base_url: str = None,
         azure_openai_api_version: str = "2023-05-15",
         use_azure_openai: bool = False,
     ):
@@ -41,17 +42,35 @@ class Agent:
             # Import inside conditional to avoid requiring AzureOpenAI unless needed
             from openai import AzureOpenAI
 
-            self.client = AzureOpenAI(
-                api_key=api_key,
-                azure_endpoint=base_url,
-                api_version=azure_openai_api_version,
-            )
+            if base_url:
+                self.client = AzureOpenAI(
+                    api_key=api_key,
+                    azure_endpoint=base_url,
+                    api_version=azure_openai_api_version,
+                )
+            else:
+                self.client = AzureOpenAI(
+                    api_key=api_key,
+                    api_version=azure_openai_api_version,
+                )
         else:
-            self.client = OpenAI(
-                base_url=base_url,
-                api_key=api_key,
-                default_headers={"HTTP-Referer": self.REFERER, "X-Title": self.TITLE},
-            )
+            if base_url:
+                self.client = OpenAI(
+                    base_url=base_url,
+                    api_key=api_key,
+                    default_headers={
+                        "HTTP-Referer": self.REFERER,
+                        "X-Title": self.TITLE,
+                    },
+                )
+            else:
+                self.client = OpenAI(
+                    api_key=api_key,
+                    default_headers={
+                        "HTTP-Referer": self.REFERER,
+                        "X-Title": self.TITLE,
+                    },
+                )
 
         self.conversation_handler = ConversationHandler(
             self.client,
@@ -69,12 +88,13 @@ class Agent:
         spinner=False,
         max_tokens=None,
         max_rounds=100,
+        tool_user=False,
     ):
         """
         Start a chat conversation with the agent.
 
         Args:
-            messages: ConversationHistory instance or None.
+            messages: LLMConversationHistory instance or None.
             message_handler: Optional handler for event messages.
             spinner: Show spinner during request.
             max_tokens: Max tokens for completion.
@@ -83,13 +103,12 @@ class Agent:
             dict with 'content', 'usage', and 'usage_history'.
         """
         from janito.agent.runtime_config import runtime_config
-        from janito.agent.conversation_history import ConversationHistory
 
         if messages is None:
-            messages = ConversationHistory()
-        elif not isinstance(messages, ConversationHistory):
+            messages = LLMConversationHistory()
+        elif not isinstance(messages, LLMConversationHistory):
             raise TypeError(
-                "Agent.chat expects a ConversationHistory instance or None."
+                "Agent.chat expects a LLMConversationHistory instance or None."
             )
 
         max_retries = 5
@@ -103,6 +122,7 @@ class Agent:
                     spinner=spinner,
                     max_tokens=max_tokens,
                     verbose_events=runtime_config.get("verbose_events", False),
+                    tool_user=tool_user,
                 )
             except ProviderError as e:
                 error_data = getattr(e, "error_data", {}) or {}

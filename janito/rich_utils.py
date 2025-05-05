@@ -41,3 +41,19 @@ class RichPrinter:
 
     def print_magenta(self, message: str):
         self.console.print(message, style="magenta", end="\n")
+
+    def print_colored_message(self, message: str, color_index: int = 0):
+        """
+        Print a message with a cycling background color for verbose-messages.
+        """
+        bg_colors = [
+            "on blue",
+            "on green",
+            "on magenta",
+            "on cyan",
+            "on yellow",
+            "on red",
+            "on bright_black",
+        ]
+        style = f"bold white {bg_colors[color_index % len(bg_colors)]}"
+        self.console.print(message, style=style, end="\n")

@@ -7,7 +7,7 @@ from janito.i18n import tr
 import json
 from janito.agent.runtime_config import runtime_config
 from janito.agent.tool_registry import get_tool_schemas
-from janito.agent.conversation_exceptions import NoToolSupportError
+from janito.agent.conversation_exceptions import NoToolSupportError, EmptyResponseError
 from janito.agent.api_exceptions import ApiError
 
 
@@ -83,7 +83,7 @@ def _extract_status_and_retry_after(e, error_message):
         match = re.search(r"[Ee]rror code: (\d{3})", error_message)
         if match:
             status_code = int(match.group(1))
-        retry_after_match = re.search(r"Retry-After['\"]?:?\s*(\d+)", error_message)
+        retry_after_match = re.search(r"Retry-After\['\"]?:?\s*(\d+)", error_message)
         if retry_after_match:
             retry_after = retry_after_match.group(1)
     return status_code, retry_after
@@ -179,13 +179,16 @@ def _handle_general_exception(e, attempt, max_retries):
             e=e,
             wait_time=wait_time,
         )
+        print(f"[DEBUG] Exception repr: {repr(e)}")
         return None
     else:
         print(tr("Max retries for OpenAI API error reached. Raising error."))
         raise e
 
 
-def retry_api_call(api_func, max_retries=5, *args, **kwargs):
+def retry_api_call(
+    api_func, max_retries=5, *args, history=None, user_message_on_empty=None, **kwargs
+):
     for attempt in range(1, max_retries + 1):
         try:
             response = api_func(*args, **kwargs)
@@ -196,6 +199,15 @@ def retry_api_call(api_func, max_retries=5, *args, **kwargs):
             return response
         except ApiError:
             raise
+        except EmptyResponseError:
+            if history is not None and user_message_on_empty is not None:
+                print(
+                    f"[DEBUG] Adding user message to history: {user_message_on_empty}"
+                )
+                history.add_message({"role": "user", "content": user_message_on_empty})
+                continue  # Retry with updated history
+            else:
+                raise
         except json.JSONDecodeError as e:
             result = _handle_json_decode_error(e, attempt, max_retries)
             if result is not None:

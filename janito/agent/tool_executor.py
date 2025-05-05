@@ -16,7 +16,9 @@ class ToolExecutor:
     def execute(self, tool_entry, tool_call, arguments):
         import uuid
 
-        call_id = getattr(tool_call, "id", None) or str(uuid.uuid4())
+        call_id = getattr(tool_call, "id", None)
+        if call_id is None:
+            raise ValueError("Tool call is missing required 'id' from server.")
         func = tool_entry["function"]
         args = arguments
         if runtime_config.get("no_tools_tracking", False):
