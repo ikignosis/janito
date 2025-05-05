@@ -1,5 +1,12 @@
 import threading
+import os
 from typing import Any, Dict, List
+
+
+def normalize_path(path: str) -> str:
+    if not isinstance(path, str):
+        return path
+    return os.path.normcase(os.path.abspath(path))
 
 
 class ToolUseTracker:
@@ -15,24 +22,38 @@ class ToolUseTracker:
         return cls._instance
 
     def record(self, tool_name: str, params: Dict[str, Any], result: Any = None):
-        self._history.append({"tool": tool_name, "params": params, "result": result})
+        # Normalize file_path in params if present
+        norm_params = params.copy()
+        if "file_path" in norm_params:
+            norm_params["file_path"] = normalize_path(norm_params["file_path"])
+        self._history.append(
+            {"tool": tool_name, "params": norm_params, "result": result}
+        )
 
     def get_history(self) -> List[Dict[str, Any]]:
         return list(self._history)
 
     def get_operations_on_file(self, file_path: str) -> List[Dict[str, Any]]:
+        norm_file_path = normalize_path(file_path)
         ops = []
         for entry in self._history:
             params = entry["params"]
-            if any(isinstance(v, str) and file_path in v for v in params.values()):
-                ops.append(entry)
+            # Normalize any string param values for comparison
+            for v in params.values():
+                if isinstance(v, str) and normalize_path(v) == norm_file_path:
+                    ops.append(entry)
+                    break
         return ops
 
     def file_fully_read(self, file_path: str) -> bool:
+        norm_file_path = normalize_path(file_path)
         for entry in self._history:
             if entry["tool"] == "get_lines":
                 params = entry["params"]
-                if params.get("file_path") == file_path:
+                if (
+                    "file_path" in params
+                    and normalize_path(params["file_path"]) == norm_file_path
+                ):
                     # If both from_line and to_line are None, full file was read
                     if (
                         params.get("from_line") is None

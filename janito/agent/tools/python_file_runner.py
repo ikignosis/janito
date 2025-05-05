@@ -22,7 +22,7 @@ class PythonFileRunnerTool(ToolBase):
     def run(self, file_path: str, timeout: int = 60) -> str:
         self.report_info(
             ActionType.EXECUTE,
-            tr("f40d Running: python {file_path}", file_path=file_path),
+            tr("🚀 Running: python {file_path}", file_path=file_path),
         )
         try:
             with (

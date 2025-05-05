@@ -24,7 +24,7 @@ class PythonCommandRunnerTool(ToolBase):
             self.report_warning(tr("\u2139\ufe0f Empty code provided."))
             return tr("Warning: Empty code provided. Operation skipped.")
         self.report_info(
-            ActionType.EXECUTE, tr("f40d Running: python -c ...\n{code}\n", code=code)
+            ActionType.EXECUTE, tr("🐍 Running: python -c ...\n{code}\n", code=code)
         )
         try:
             with (

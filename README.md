@@ -130,7 +130,7 @@ For details on using models hosted on Azure OpenAI, see [docs/reference/azure-op
 Janito operates using a system prompt template that defines its behavior, communication profile, and capabilities. By default, Janito assumes the role of a "software engineer"—this means its responses and actions are tailored to the expectations and best practices of professional software engineering.
 
 - **Role:** You can customize the agent's role (e.g., "data scientist", "DevOps engineer") using the `--role` flag or config. The default is `software engineer`.
-- **System Prompt Template:** The system prompt is rendered from a Jinja2 template (see `janito/agent/templates/prompt_prompt_template.j2`). This template governs how the agent interprets system_prompt_template, interacts with files, and communicates with users.
+- **System Prompt Template:** The system prompt is rendered from a Jinja2 template (see `janito/agent/templates/profiles/system_prompt_template_base.txt.j2`). This template governs how the agent interprets system_prompt_template, interacts with files, and communicates with users.
 - **Customization & Precedence:** Advanced users can override the system prompt with the `--system` flag (raw string), or point to a custom file using `--system-file`. The precedence is: `--system-file` > `--system`/config > default template.
 
 The default template ensures the agent:
@@ -140,7 +140,7 @@ The default template ensures the agent:
 - Provides concise plans before taking action
 - Documents any changes made
 
-For more details or to customize the prompt, see the template file at `janito/agent/templates/prompt_prompt_template.j2` and the architecture overview in [docs/reference/architecture.md](docs/reference/architecture.md).
+For more details or to customize the prompt, see the template file at `janito/agent/templates/profiles/system_prompt_template_base.txt.j2` and the architecture overview in [docs/reference/architecture.md](docs/reference/architecture.md).
 
 ---
 

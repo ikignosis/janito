@@ -25,7 +25,7 @@ class PythonStdinRunnerTool(ToolBase):
             return tr("Warning: Empty code provided. Operation skipped.")
         self.report_info(
             ActionType.EXECUTE,
-            tr("f40d Running: python (stdin mode) ...\n{code}\n", code=code),
+            tr("⚡ Running: python (stdin mode) ...\n{code}\n", code=code),
         )
         try:
             with (
