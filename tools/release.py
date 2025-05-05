@@ -28,8 +28,24 @@ def print_error(msg):
 
 
 def check_tool(tool):
-    if shutil.which(tool) is None:
-        print_error(f"{tool} is not installed. Please install it first.")
+    if tool == "build":
+        try:
+            import importlib
+
+            if importlib.util.find_spec("build") is None:
+                print_error(
+                    f"{tool} Python module is not installed. Please install it first."
+                )
+                sys.exit(1)
+        except ImportError:
+            print_error(
+                f"{tool} Python module is not installed. Please install it first."
+            )
+            sys.exit(1)
+    else:
+        if shutil.which(tool) is None:
+            print_error(f"{tool} is not installed. Please install it first.")
+            sys.exit(1)
 
 
 def get_version_from_pyproject():
@@ -122,7 +138,8 @@ def check_tag_points_to_head(tag):
 
 
 def main():
-    check_tool("hatch")
+    build_only = "--build-only" in sys.argv
+    check_tool("build")
     check_tool("twine")
     project_version = get_version_from_pyproject()
     print_info(f"Project version from pyproject.toml: {project_version}")
@@ -130,16 +147,15 @@ def main():
     tag = get_git_tag_for_version(project_version)
     print_info(f"Found git tag: {tag}")
     check_tag_points_to_head(tag)
-    # Remove site directory if it exists
-    if os.path.isdir("site"):
-        print_info("Removing site directory...")
-        shutil.rmtree("site")
     # Remove dist directory
     if os.path.isdir("dist"):
         print_info("Removing old dist directory...")
         shutil.rmtree("dist")
     print_info("Building the package...")
-    subprocess.run(["hatch", "build"], check=True)
+    subprocess.run([sys.executable, "-m", "build"], check=True)
+    if build_only:
+        print_info("Build completed (--build-only specified). Skipping upload to PyPI.")
+        return
     print_info("Publishing to PyPI...")
     subprocess.run(["twine", "upload", "dist/*"], shell=True, check=True)
     print_info("Release process completed successfully.")
