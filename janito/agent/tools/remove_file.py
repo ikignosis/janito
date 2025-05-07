@@ -31,7 +31,7 @@ class RemoveFileTool(ToolBase):
         # Report initial info about what is going to be removed
         self.report_info(
             ActionType.WRITE,
-            tr("🗑️ Removing file '{disp_path}' ...", disp_path=disp_path),
+            tr("🗑️ Remove file '{disp_path}' ...", disp_path=disp_path),
         )
         if not os.path.exists(path):
             self.report_error(tr("❌ File does not exist."))

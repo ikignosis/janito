@@ -9,7 +9,7 @@ class GitignoreFilter:
     Methods
     -------
     __init__(self, gitignore_path: str = ".gitignore")
-        Loads and parses .gitignore patterns from the specified path.
+        Loads and parses .gitignore patterns from the specified path or finds the nearest .gitignore if a directory is given.
 
     is_ignored(self, path: str) -> bool
         Returns True if the given path matches any of the loaded .gitignore patterns.
@@ -18,8 +18,31 @@ class GitignoreFilter:
         Filters out ignored directories and files from the provided lists, returning only those not ignored.
     """
 
+    @staticmethod
+    def find_nearest_gitignore(start_path):
+        """
+        Search upward from start_path for the nearest .gitignore file.
+        Returns the path to the found .gitignore, or the default .gitignore in start_path if none found.
+        """
+        current_dir = os.path.abspath(start_path)
+        if os.path.isfile(current_dir):
+            current_dir = os.path.dirname(current_dir)
+        while True:
+            candidate = os.path.join(current_dir, ".gitignore")
+            if os.path.isfile(candidate):
+                return candidate
+            parent = os.path.dirname(current_dir)
+            if parent == current_dir:
+                # Reached filesystem root, return default .gitignore path (may not exist)
+                return os.path.join(start_path, ".gitignore")
+            current_dir = parent
+
     def __init__(self, gitignore_path: str = ".gitignore"):
-        self.gitignore_path = os.path.abspath(gitignore_path)
+        # If a directory is passed, find the nearest .gitignore up the tree
+        if os.path.isdir(gitignore_path):
+            self.gitignore_path = self.find_nearest_gitignore(gitignore_path)
+        else:
+            self.gitignore_path = os.path.abspath(gitignore_path)
         self.base_dir = os.path.dirname(self.gitignore_path)
         lines = []
         if not os.path.exists(self.gitignore_path):

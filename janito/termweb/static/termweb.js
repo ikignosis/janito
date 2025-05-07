@@ -154,12 +154,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initial theme
     var theme = localStorage.getItem('theme') || 'dark';
     setTheme(theme === 'dark');
-    var themeSwitcher = document.getElementById('theme-switcher');
-    if (themeSwitcher) {
-        themeSwitcher.onclick = function() {
-            setTheme(document.body.classList.contains('light-theme'));
-        };
-    }
     setExplorerView('list'); // Always use list view
     renderExplorer('.')
 });

@@ -26,7 +26,7 @@ class RemoveDirectoryTool(ToolBase):
         disp_path = display_path(file_path)
         self.report_info(
             ActionType.WRITE,
-            tr("🗃️ Removing directory '{disp_path}' ...", disp_path=disp_path),
+            tr("🗃️ Remove directory '{disp_path}' ...", disp_path=disp_path),
         )
         backup_zip = None
         try:

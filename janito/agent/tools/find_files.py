@@ -25,6 +25,26 @@ class FindFilesTool(ToolBase):
             If max_results is reached, appends a note to the output.
     """
 
+    def _match_directories(self, root, dirs, pat):
+        dir_output = set()
+        dir_pat = pat.rstrip("/\\")
+        for d in dirs:
+            if fnmatch.fnmatch(d, dir_pat):
+                dir_output.add(os.path.join(root, d) + os.sep)
+        return dir_output
+
+    def _match_files(self, root, files, pat):
+        file_output = set()
+        for filename in fnmatch.filter(files, pat):
+            file_output.add(os.path.join(root, filename))
+        return file_output
+
+    def _match_dirs_without_slash(self, root, dirs, pat):
+        dir_output = set()
+        for d in fnmatch.filter(dirs, pat):
+            dir_output.add(os.path.join(root, d))
+        return dir_output
+
     def run(self, paths: str, pattern: str, max_depth: int = None) -> str:
         if not pattern:
             self.report_warning(tr("ℹ️ Empty file pattern provided."))
@@ -41,7 +61,7 @@ class FindFilesTool(ToolBase):
             self.report_info(
                 ActionType.READ,
                 tr(
-                    "🔍 Searching for files '{pattern}' in '{disp_path}'{depth_msg} ...",
+                    "🔍 Search for files '{pattern}' in '{disp_path}'{depth_msg} ...",
                     pattern=pattern,
                     disp_path=disp_path,
                     depth_msg=depth_msg,
@@ -52,19 +72,13 @@ class FindFilesTool(ToolBase):
                 directory, max_depth=max_depth
             ):
                 for pat in patterns:
-                    # Directory matching: pattern ends with '/' or '\'
                     if pat.endswith("/") or pat.endswith("\\"):
-                        dir_pat = pat.rstrip("/\\")
-                        for d in dirs:
-                            if fnmatch.fnmatch(d, dir_pat):
-                                dir_output.add(os.path.join(root, d) + os.sep)
+                        dir_output.update(self._match_directories(root, dirs, pat))
                     else:
-                        # Match files
-                        for filename in fnmatch.filter(files, pat):
-                            dir_output.add(os.path.join(root, filename))
-                        # Also match directories (without trailing slash)
-                        for d in fnmatch.filter(dirs, pat):
-                            dir_output.add(os.path.join(root, d))
+                        dir_output.update(self._match_files(root, files, pat))
+                        dir_output.update(
+                            self._match_dirs_without_slash(root, dirs, pat)
+                        )
             self.report_success(
                 tr(
                     " ✅ {count} {file_word}",
@@ -72,7 +86,6 @@ class FindFilesTool(ToolBase):
                     file_word=pluralize("file", len(dir_output)),
                 )
             )
-            # If searching in '.', strip leading './' from results
             if directory.strip() == ".":
                 dir_output = {
                     p[2:] if (p.startswith("./") or p.startswith(".\\")) else p

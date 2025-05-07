@@ -2,11 +2,18 @@ from janito.i18n import tr
 import re
 from lxml import etree
 
-
 def validate_html(file_path: str) -> str:
-    warnings = []
+    html_content = _read_html_content(file_path)
+    warnings = _find_js_outside_script(html_content)
+    lxml_error = _parse_html_and_collect_errors(file_path)
+    msg = _build_result_message(warnings, lxml_error)
+    return msg
+
+def _read_html_content(file_path):
     with open(file_path, "r", encoding="utf-8") as f:
-        html_content = f.read()
+        return f.read()
+
+def _find_js_outside_script(html_content):
     script_blocks = [
         m.span()
         for m in re.finditer(
@@ -21,6 +28,7 @@ def validate_html(file_path: str) -> str:
         r"^\s*window\.\w+\s*=",
         r"^\s*\$\s*\(",
     ]
+    warnings = []
     for pat in js_patterns:
         for m in re.finditer(pat, html_content):
             in_script = False
@@ -32,14 +40,15 @@ def validate_html(file_path: str) -> str:
                 warnings.append(
                     f"Line {html_content.count(chr(10), 0, m.start())+1}: JavaScript code ('{pat}') found outside <script> tag."
                 )
+    return warnings
+
+def _parse_html_and_collect_errors(file_path):
     lxml_error = None
     try:
-        # Parse HTML and collect error log
         parser = etree.HTMLParser(recover=False)
         with open(file_path, "rb") as f:
             etree.parse(f, parser=parser)
         error_log = parser.error_log
-        # Look for tag mismatch or unclosed tag errors
         syntax_errors = []
         for e in error_log:
             if (
@@ -52,7 +61,6 @@ def validate_html(file_path: str) -> str:
         if syntax_errors:
             lxml_error = tr("Syntax error: {error}", error="; ".join(syntax_errors))
         elif error_log:
-            # Other warnings
             lxml_error = tr(
                 "HTML syntax errors found:\n{errors}",
                 errors="\n".join(str(e) for e in error_log),
@@ -61,6 +69,9 @@ def validate_html(file_path: str) -> str:
         lxml_error = tr("⚠️ lxml not installed. Cannot validate HTML.")
     except Exception as e:
         lxml_error = tr("Syntax error: {error}", error=str(e))
+    return lxml_error
+
+def _build_result_message(warnings, lxml_error):
     msg = ""
     if warnings:
         msg += (

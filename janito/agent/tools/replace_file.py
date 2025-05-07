@@ -39,7 +39,7 @@ class ReplaceFileTool(ToolBase):
         if not tracker.last_operation_is_full_read_or_replace(file_path):
             self.report_info(
                 ActionType.WRITE,
-                tr("📝 Replacing file '{disp_path}' ...", disp_path=disp_path),
+                tr("📝 Replace file '{disp_path}' ...", disp_path=disp_path),
             )
             self.report_warning(tr("ℹ️ Missing full view."))
             try:
@@ -54,7 +54,7 @@ class ReplaceFileTool(ToolBase):
             )
         self.report_info(
             ActionType.WRITE,
-            tr("📝 Replacing file '{disp_path}' ...", disp_path=disp_path),
+            tr("📝 Replace file '{disp_path}' ...", disp_path=disp_path),
         )
         backup_path = file_path + ".bak"
         shutil.copy2(file_path, backup_path)

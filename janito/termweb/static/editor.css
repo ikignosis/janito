@@ -1,9 +1,9 @@
 /* Highlight active line in CodeMirror */
 .CodeMirror-activeline-background {
-    background: #353b45 !important;
+    background: #353b45;
 }
 body.light-theme .CodeMirror-activeline-background {
-    background: #e0eaff !important;
+    background: #e0eaff;
 }
 html, body {
     height: 100%;
@@ -39,36 +39,22 @@ body.light-theme {
     flex-direction: column;
     height: 100%;
     min-height: 0;
-    padding: 0 !important;
-    margin: 0 !important;
+    padding: 0;
+    margin: 0;
 }
-.CodeMirror {
-    flex: 1 1 auto;
-    height: 100% !important;
-    min-height: 0;
-    font-size: 1.1em;
-    background: #282a36;
-    color: #f8f8f2;
-    border-radius: 0;
-    border: none;
-    transition: background 0.2s, color 0.2s;
-}
-body.light-theme .CodeMirror {
-    background: #fff;
-    color: #222;
-}
+/* Removed custom .CodeMirror background/color to use CodeMirror's theme defaults */
 .header {
     background: #222;
     color: #fff;
-    padding: 10px 24px;
-    font-size: 1.3em;
+    padding: 4px 12px;
+    font-size: 0.95em;
     font-weight: bold;
     position: relative;
     transition: background 0.2s, color 0.2s;
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    height: 56px;
+    height: 36px;
 }
 
 .header-title {
@@ -78,20 +64,39 @@ body.light-theme .CodeMirror {
     transform: translate(-50%, -50%);
     pointer-events: none;
     font-weight: bold;
-    font-size: 1.3em;
+    font-size: 1.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+}
+
+.filename-display {
+    font-weight: normal;
+    font-size: 0.98em;
+    color: #bbb;
+    margin-left: 0.5em;
+    pointer-events: auto;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    max-width: 180px;
+}
+body.light-theme .filename-display {
+    color: #666;
 }
 
 .footer {
     width: 100%;
     background: #23272b;
     color: #fff;
-    padding: 10px 24px;
+    padding: 4px 12px;
     box-sizing: border-box;
     display: flex;
     align-items: center;
     justify-content: flex-start;
     border-top: 1px solid #333;
-    min-height: 48px;
+    min-height: 28px;
+    font-size: 0.95em;
 }
 
 .save-btn {
@@ -101,7 +106,6 @@ body.light-theme .CodeMirror {
 .theme-switcher {
     margin-left: auto;
 }
-
 
 .save-btn {
     background: #4caf50;
@@ -117,8 +121,8 @@ body.light-theme .CodeMirror {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
+    height: 100%;
+    aspect-ratio: 1/1;
     font-size: 1.3em;
     line-height: 1;
     padding: 0;
@@ -139,4 +143,3 @@ body.light-theme .header {
     background: #eaeaea;
     color: #222;
 }
-

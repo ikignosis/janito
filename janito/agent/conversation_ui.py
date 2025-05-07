@@ -8,7 +8,7 @@ from rich.console import Console
 def show_spinner(message, func, *args, **kwargs):
     console = Console()
     with console.status(message, spinner="dots") as status:
-        result = func(*args, **kwargs)
+        result = func(*args, status=status, **kwargs)
         status.stop()
         return result
 

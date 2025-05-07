@@ -16,39 +16,47 @@ from .js_validator import validate_js
 from .css_validator import validate_css
 
 
+def _get_validator(ext):
+    """Return the appropriate validator function for the file extension."""
+    mapping = {
+        ".py": validate_python,
+        ".pyw": validate_python,
+        ".json": validate_json,
+        ".yml": validate_yaml,
+        ".yaml": validate_yaml,
+        ".ps1": validate_ps1,
+        ".xml": validate_xml,
+        ".html": validate_html,
+        ".htm": validate_html,
+        ".md": validate_markdown,
+        ".js": validate_js,
+        ".css": validate_css,
+    }
+    return mapping.get(ext)
+
+
+def _handle_validation_error(e, report_warning):
+    msg = tr("\u26a0\ufe0f Warning: Syntax error: {error}", error=e)
+    if report_warning:
+        report_warning(msg)
+    return msg
+
+
 def validate_file_syntax(
     file_path: str, report_info=None, report_warning=None, report_success=None
 ) -> str:
     ext = os.path.splitext(file_path)[1].lower()
+    validator = _get_validator(ext)
     try:
-        if ext in [".py", ".pyw"]:
-            return validate_python(file_path)
-        elif ext == ".json":
-            return validate_json(file_path)
-        elif ext in [".yml", ".yaml"]:
-            return validate_yaml(file_path)
-        elif ext == ".ps1":
-            return validate_ps1(file_path)
-        elif ext == ".xml":
-            return validate_xml(file_path)
-        elif ext in (".html", ".htm"):
-            return validate_html(file_path)
-        elif ext == ".md":
-            return validate_markdown(file_path)
-        elif ext == ".js":
-            return validate_js(file_path)
-        elif ext == ".css":
-            return validate_css(file_path)
+        if validator:
+            return validator(file_path)
         else:
-            msg = tr("⚠️ Warning: Unsupported file extension: {ext}", ext=ext)
+            msg = tr("\u26a0\ufe0f Warning: Unsupported file extension: {ext}", ext=ext)
             if report_warning:
                 report_warning(msg)
             return msg
     except Exception as e:
-        msg = tr("⚠️ Warning: Syntax error: {error}", error=e)
-        if report_warning:
-            report_warning(msg)
-        return msg
+        return _handle_validation_error(e, report_warning)
 
 
 @register_tool(name="validate_file_syntax")
@@ -70,16 +78,19 @@ class ValidateFileSyntaxTool(ToolBase):
         file_path (str): Path to the file to validate.
     Returns:
         str: Validation status message. Example:
-            - "✅ Syntax OK"
-            - "⚠️ Warning: Syntax error: <error message>"
-            - "⚠️ Warning: Unsupported file extension: <ext>"
+            - "\u2705 Syntax OK"
+            - "\u26a0\ufe0f Warning: Syntax error: <error message>"
+            - "\u26a0\ufe0f Warning: Unsupported file extension: <ext>"
     """
 
     def run(self, file_path: str) -> str:
         disp_path = display_path(file_path)
         self.report_info(
             ActionType.READ,
-            tr("🔎 Validating syntax for file '{disp_path}' ...", disp_path=disp_path),
+            tr(
+                "\U0001f50e Validate syntax for file '{disp_path}' ...",
+                disp_path=disp_path,
+            ),
         )
         result = validate_file_syntax(
             file_path,
@@ -87,8 +98,8 @@ class ValidateFileSyntaxTool(ToolBase):
             report_warning=self.report_warning,
             report_success=self.report_success,
         )
-        if result.startswith("✅"):
+        if result.startswith("\u2705"):
             self.report_success(result)
-        elif result.startswith("⚠️"):
-            self.report_warning(tr("⚠️ ") + result.lstrip("⚠️ "))
+        elif result.startswith("\u26a0\ufe0f"):
+            self.report_warning(tr("\u26a0\ufe0f ") + result.lstrip("\u26a0\ufe0f "))
         return result

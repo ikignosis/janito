@@ -45,7 +45,7 @@ class CreateFileTool(ToolBase):
             os.makedirs(dir_name, exist_ok=True)
         self.report_info(
             ActionType.WRITE,
-            tr("📝 Creating file '{disp_path}' ...", disp_path=disp_path),
+            tr("📝 Create file '{disp_path}' ...", disp_path=disp_path),
         )
         with open(file_path, "w", encoding="utf-8", errors="replace") as f:
             f.write(content)

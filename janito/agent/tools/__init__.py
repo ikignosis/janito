@@ -3,6 +3,7 @@ from . import create_directory
 from . import create_file
 from . import replace_file
 from . import fetch_url
+from . import open_url
 from . import find_files
 from . import get_lines
 from .get_file_outline import core  # noqa: F401,F811
@@ -25,6 +26,7 @@ __all__ = [
     "create_directory",
     "create_file",
     "fetch_url",
+    "open_url",
     "find_files",
     "GetFileOutlineTool",
     "get_lines",

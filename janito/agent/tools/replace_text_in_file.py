@@ -2,6 +2,8 @@ from janito.agent.tool_base import ToolBase
 from janito.agent.tools_utils.action_type import ActionType
 from janito.agent.tool_registry import register_tool
 from janito.i18n import tr
+import shutil
+import re
 
 
 @register_tool(name="replace_text_in_file")
@@ -36,9 +38,175 @@ class ReplaceTextInFileTool(ToolBase):
         action = "(all)" if replace_all else ""
         search_lines = len(search_text.splitlines())
         replace_lines = len(replacement_text.splitlines())
+        info_msg = self._format_info_msg(
+            disp_path,
+            search_lines,
+            replace_lines,
+            action,
+            search_text,
+            replacement_text,
+            file_path,
+        )
+        self.report_info(ActionType.WRITE, info_msg)
+        try:
+            content = self._read_file_content(file_path)
+            match_lines = self._find_match_lines(content, search_text)
+            occurrences = content.count(search_text)
+            replaced_count, new_content = self._replace_content(
+                content, search_text, replacement_text, replace_all, occurrences
+            )
+            file_changed = new_content != content
+            backup_path = file_path + ".bak"
+            if backup and file_changed:
+                self._backup_file(file_path, backup_path)
+            if file_changed:
+                self._write_file_content(file_path, new_content)
+            warning, concise_warning = self._handle_warnings(
+                replaced_count, file_changed, occurrences
+            )
+            if warning:
+                self.report_warning(warning)
+            if concise_warning:
+                return concise_warning
+            self._report_success(match_lines)
+            indent_warning = self._check_indentation(search_text, replacement_text)
+            line_delta_str = self._get_line_delta_str(content, new_content)
+            match_info, details = self._format_match_details(
+                replaced_count,
+                match_lines,
+                search_lines,
+                replace_lines,
+                line_delta_str,
+                replace_all,
+            )
+            return self._format_final_msg(
+                file_path, warning, indent_warning, backup_path, match_info, details
+            )
+        except Exception as e:
+            self.report_error(tr(" \u274c Error"))
+            return tr("Error replacing text: {error}", error=e)
+
+    def _read_file_content(self, file_path):
+        """Read the entire content of the file."""
+        with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+            return f.read()
+
+    def _find_match_lines(self, content, search_text):
+        """Find all line numbers where search_text occurs in content."""
+        lines = content.splitlines(keepends=True)
+        joined = "".join(lines)
+        match_lines = []
+        idx = 0
+        while True:
+            idx = joined.find(search_text, idx)
+            if idx == -1:
+                break
+            upto = joined[:idx]
+            line_no = upto.count("\n") + 1
+            match_lines.append(line_no)
+            idx += 1 if not search_text else len(search_text)
+        return match_lines
+
+    def _replace_content(
+        self, content, search_text, replacement_text, replace_all, occurrences
+    ):
+        """Replace occurrences of search_text with replacement_text in content."""
+        if replace_all:
+            replaced_count = content.count(search_text)
+            new_content = content.replace(search_text, replacement_text)
+        else:
+            if occurrences > 1:
+                return 0, content  # No changes made, not unique
+            replaced_count = 1 if occurrences == 1 else 0
+            new_content = content.replace(search_text, replacement_text, 1)
+        return replaced_count, new_content
+
+    def _backup_file(self, file_path, backup_path):
+        """Create a backup of the file."""
+        shutil.copy2(file_path, backup_path)
+
+    def _write_file_content(self, file_path, content):
+        """Write content to the file."""
+        with open(file_path, "w", encoding="utf-8", errors="replace") as f:
+            f.write(content)
+
+    def _handle_warnings(self, replaced_count, file_changed, occurrences):
+        """Handle and return warnings and concise warnings if needed."""
+        warning = ""
+        concise_warning = None
+        if replaced_count == 0:
+            warning = tr(" [Warning: Search text not found in file]")
+        if not file_changed:
+            self.report_warning(tr(" \u2139\ufe0f No changes made. [not found]"))
+            concise_warning = tr(
+                "No changes made. The search text was not found. Expand your search context with surrounding lines if needed."
+            )
+        if occurrences > 1 and replaced_count == 0:
+            self.report_warning(tr(" \u2139\ufe0f No changes made. [not unique]"))
+            concise_warning = tr(
+                "No changes made. The search text is not unique. Expand your search context with surrounding lines to ensure uniqueness."
+            )
+        return warning, concise_warning
+
+    def _report_success(self, match_lines):
+        """Report success with line numbers where replacements occurred."""
+        if match_lines:
+            lines_str = ", ".join(str(line_no) for line_no in match_lines)
+            self.report_success(
+                tr(" \u2705 replaced at {lines_str}", lines_str=lines_str)
+            )
+        else:
+            self.report_success(tr(" \u2705 replaced (lines unknown)"))
+
+    def _check_indentation(self, search_text, replacement_text):
+        """Check and warn if indentation differs between search and replacement text."""
+
+        def leading_ws(line):
+            m = re.match(r"^\s*", line)
+            return m.group(0) if m else ""
+
+        search_indent = (
+            leading_ws(search_text.splitlines()[0]) if search_text.splitlines() else ""
+        )
+        replace_indent = (
+            leading_ws(replacement_text.splitlines()[0])
+            if replacement_text.splitlines()
+            else ""
+        )
+        if search_indent != replace_indent:
+            return tr(
+                " [Warning: Indentation mismatch between search and replacement text: '{search_indent}' vs '{replace_indent}']",
+                search_indent=search_indent,
+                replace_indent=replace_indent,
+            )
+        return ""
+
+    def _get_line_delta_str(self, content, new_content):
+        """Return a string describing the net line change after replacement."""
+        total_lines_before = content.count("\n") + 1
+        total_lines_after = new_content.count("\n") + 1
+        line_delta = total_lines_after - total_lines_before
+        if line_delta > 0:
+            return f" (+{line_delta} lines)"
+        elif line_delta < 0:
+            return f" ({line_delta} lines)"
+        else:
+            return " (no net line change)"
+
+    def _format_info_msg(
+        self,
+        disp_path,
+        search_lines,
+        replace_lines,
+        action,
+        search_text,
+        replacement_text,
+        file_path,
+    ):
+        """Format the info message for the operation."""
         if replace_lines == 0:
-            info_msg = tr(
-                "📝 Replacing in {disp_path} del {search_lines} lines {action}",
+            return tr(
+                "📝 Replace in {disp_path} del {search_lines} lines {action}",
                 disp_path=disp_path,
                 search_lines=search_lines,
                 action=action,
@@ -48,7 +216,7 @@ class ReplaceTextInFileTool(ToolBase):
                 with open(file_path, "r", encoding="utf-8", errors="replace") as f:
                     _content = f.read()
                 _new_content = _content.replace(
-                    search_text, replacement_text, -1 if replace_all else 1
+                    search_text, replacement_text, -1 if action else 1
                 )
                 _total_lines_before = _content.count("\n") + 1
                 _total_lines_after = _new_content.count("\n") + 1
@@ -61,158 +229,57 @@ class ReplaceTextInFileTool(ToolBase):
                 delta_str = f"{_line_delta} lines"
             else:
                 delta_str = "+0"
-            info_msg = tr(
-                "📝 Replacing in {disp_path} {delta_str} {action}",
+            return tr(
+                "📝 Replace in {disp_path} {delta_str} {action}",
                 disp_path=disp_path,
                 delta_str=delta_str,
                 action=action,
             )
-        self.report_info(
-            ActionType.WRITE,
-            info_msg + (" ..." if not info_msg.rstrip().endswith("...") else ""),
-        )
-        try:
-            with open(file_path, "r", encoding="utf-8", errors="replace") as f:
-                content = f.read()
 
-            def find_match_lines(content, search_text):
-                lines = content.splitlines(keepends=True)
-                joined = "".join(lines)
-                match_lines = []
-                idx = 0
-                while True:
-                    idx = joined.find(search_text, idx)
-                    if idx == -1:
-                        break
-                    upto = joined[:idx]
-                    line_no = upto.count("\n") + 1
-                    match_lines.append(line_no)
-                    idx += 1 if not search_text else len(search_text)
-                return match_lines
-
-            match_lines = find_match_lines(content, search_text)
+    def _format_match_details(
+        self,
+        replaced_count,
+        match_lines,
+        search_lines,
+        replace_lines,
+        line_delta_str,
+        replace_all,
+    ):
+        """Format match info and details for the final message."""
+        if replaced_count > 0:
             if replace_all:
-                replaced_count = content.count(search_text)
-                new_content = content.replace(search_text, replacement_text)
-            else:
-                occurrences = content.count(search_text)
-                if occurrences > 1:
-                    self.report_warning(tr(" ℹ️ No changes made. [not unique]"))
-                    warning_detail = tr(
-                        "The search text is not unique. Expand your search context with surrounding lines to ensure uniqueness."
-                    )
-                    return tr(
-                        "No changes made. {warning_detail}",
-                        warning_detail=warning_detail,
-                    )
-                replaced_count = 1 if occurrences == 1 else 0
-                new_content = content.replace(search_text, replacement_text, 1)
-            import shutil
-
-            backup_path = file_path + ".bak"
-            if backup and new_content != content:
-                shutil.copy2(file_path, backup_path)
-            if new_content != content:
-                with open(file_path, "w", encoding="utf-8", errors="replace") as f:
-                    f.write(new_content)
-                file_changed = True
-            else:
-                file_changed = False
-            warning = ""
-            if replaced_count == 0:
-                warning = tr(" [Warning: Search text not found in file]")
-            if not file_changed:
-                self.report_warning(tr(" ℹ️ No changes made. [not found]"))
-                concise_warning = tr(
-                    "The search text was not found. Expand your search context with surrounding lines if needed."
-                )
-                return tr(
-                    "No changes made. {concise_warning}",
-                    concise_warning=concise_warning,
-                )
-            if match_lines:
-                lines_str = ", ".join(str(line_no) for line_no in match_lines)
-                self.report_success(
-                    tr(" ✅ replaced at {lines_str}", lines_str=lines_str)
+                match_info = tr(
+                    "Matches found at lines: {lines}. ",
+                    lines=", ".join(str(line) for line in match_lines),
                 )
             else:
-                self.report_success(tr(" ✅ replaced (lines unknown)"))
+                match_info = (
+                    tr("Match found at line {line}. ", line=match_lines[0])
+                    if match_lines
+                    else ""
+                )
+            details = tr(
+                "Replaced {replaced_count} occurrence(s) at above line(s): {search_lines} lines replaced with {replace_lines} lines each.{line_delta_str}",
+                replaced_count=replaced_count,
+                search_lines=search_lines,
+                replace_lines=replace_lines,
+                line_delta_str=line_delta_str,
+            )
+        else:
+            match_info = ""
+            details = ""
+        return match_info, details
 
-            def leading_ws(line):
-                import re
-
-                m = re.match(r"^\s*", line)
-                return m.group(0) if m else ""
-
-            search_indent = (
-                leading_ws(search_text.splitlines()[0])
-                if search_text.splitlines()
-                else ""
-            )
-            replace_indent = (
-                leading_ws(replacement_text.splitlines()[0])
-                if replacement_text.splitlines()
-                else ""
-            )
-            indent_warning = ""
-            if search_indent != replace_indent:
-                indent_warning = tr(
-                    " [Warning: Indentation mismatch between search and replacement text: '{search_indent}' vs '{replace_indent}']",
-                    search_indent=search_indent,
-                    replace_indent=replace_indent,
-                )
-            total_lines_before = content.count("\n") + 1
-            total_lines_after = new_content.count("\n") + 1
-            line_delta = total_lines_after - total_lines_before
-            line_delta_str = (
-                f" (+{line_delta} lines)"
-                if line_delta > 0
-                else (
-                    f" ({line_delta} lines)"
-                    if line_delta < 0
-                    else " (no net line change)"
-                )
-            )
-            if replaced_count > 0:
-                if replace_all:
-                    match_info = tr(
-                        "Matches found at lines: {lines}. ",
-                        lines=", ".join(str(line) for line in match_lines),
-                    )
-                else:
-                    match_info = (
-                        tr("Match found at line {line}. ", line=match_lines[0])
-                        if match_lines
-                        else ""
-                    )
-                details = tr(
-                    "Replaced {replaced_count} occurrence(s) at above line(s): {search_lines} lines replaced with {replace_lines} lines each.{line_delta_str}",
-                    replaced_count=replaced_count,
-                    search_lines=search_lines,
-                    replace_lines=replace_lines,
-                    line_delta_str=line_delta_str,
-                )
-            else:
-                match_info = ""
-                details = ""
-            if "warning_detail" in locals():
-                return tr(
-                    "Text replaced in {file_path}{warning}{indent_warning} (backup at {backup_path})\n{warning_detail}",
-                    file_path=file_path,
-                    warning=warning,
-                    indent_warning=indent_warning,
-                    backup_path=backup_path,
-                    warning_detail=warning_detail,
-                )
-            return tr(
-                "Text replaced in {file_path}{warning}{indent_warning} (backup at {backup_path}). {match_info}{details}",
-                file_path=file_path,
-                warning=warning,
-                indent_warning=indent_warning,
-                backup_path=backup_path,
-                match_info=match_info,
-                details=details,
-            )
-        except Exception as e:
-            self.report_error(tr(" ❌ Error"))
-            return tr("Error replacing text: {error}", error=e)
+    def _format_final_msg(
+        self, file_path, warning, indent_warning, backup_path, match_info, details
+    ):
+        """Format the final status message."""
+        return tr(
+            "Text replaced in {file_path}{warning}{indent_warning} (backup at {backup_path}). {match_info}{details}",
+            file_path=file_path,
+            warning=warning,
+            indent_warning=indent_warning,
+            backup_path=backup_path,
+            match_info=match_info,
+            details=details,
+        )

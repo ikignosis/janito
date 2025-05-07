@@ -1,26 +1,42 @@
 from janito.i18n import tr
 import re
 
-
 def validate_markdown(file_path: str) -> str:
     with open(file_path, "r", encoding="utf-8") as f:
         content = f.read()
-    errors = []
     lines = content.splitlines()
-    # Header space check
+    errors = []
+    errors.extend(_check_header_space(lines))
+    errors.extend(_check_unclosed_code_block(content))
+    errors.extend(_check_unclosed_links_images(lines))
+    errors.extend(_check_list_formatting(lines))
+    errors.extend(_check_unclosed_inline_code(content))
+    return _build_markdown_result(errors)
+
+def _check_header_space(lines):
+    errors = []
     for i, line in enumerate(lines, 1):
         if re.match(r"^#+[^ #]", line):
             errors.append(f"Line {i}: Header missing space after # | {line.strip()}")
-    # Unclosed code block
+    return errors
+
+def _check_unclosed_code_block(content):
+    errors = []
     if content.count("```") % 2 != 0:
         errors.append("Unclosed code block (```) detected")
-    # Unclosed link or image
+    return errors
+
+def _check_unclosed_links_images(lines):
+    errors = []
     for i, line in enumerate(lines, 1):
         if re.search(r"\[[^\]]*\]\([^)]+$", line):
             errors.append(
                 f"Line {i}: Unclosed link or image (missing closing parenthesis) | {line.strip()}"
             )
-    # List item formatting and blank line before new list (bulleted and numbered)
+    return errors
+
+def _check_list_formatting(lines):
+    errors = []
     for i, line in enumerate(lines, 1):
         # Skip table lines
         if line.lstrip().startswith("|"):
@@ -54,9 +70,15 @@ def validate_markdown(file_path: str) -> str:
                     errors.append(
                         f"Line {i}: Numbered list should be preceded by a blank line for compatibility with MkDocs and other Markdown parsers | {line.strip()}"
                     )
-    # Unclosed inline code
+    return errors
+
+def _check_unclosed_inline_code(content):
+    errors = []
     if content.count("`") % 2 != 0:
         errors.append("Unclosed inline code (`) detected")
+    return errors
+
+def _build_markdown_result(errors):
     if errors:
         msg = tr(
             "⚠️ Warning: Markdown syntax issues found:\n{errors}",

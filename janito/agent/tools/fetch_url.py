@@ -25,7 +25,7 @@ class FetchUrlTool(ToolBase):
         if not url.strip():
             self.report_warning(tr("ℹ️ Empty URL provided."))
             return tr("Warning: Empty URL provided. Operation skipped.")
-        self.report_info(ActionType.READ, tr("🌐 Fetching URL '{url}' ...", url=url))
+        self.report_info(ActionType.READ, tr("🌐 Fetch URL '{url}' ...", url=url))
         try:
             response = requests.get(url, timeout=10)
             response.raise_for_status()

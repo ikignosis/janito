@@ -34,7 +34,7 @@ class RunBashCommandTool(ToolBase):
             return tr("Warning: Empty command provided. Operation skipped.")
         self.report_info(
             ActionType.EXECUTE,
-            tr("🖥️ Running bash command: {command} ...\n", command=command),
+            tr("🖥️ Run bash command: {command} ...\n", command=command),
         )
         if requires_user_input:
             self.report_warning(

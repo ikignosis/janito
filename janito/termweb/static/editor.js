@@ -4,39 +4,92 @@ function getQueryParam(name) {
     return url.searchParams.get(name);
 }
 const filePath = getQueryParam('path');
-let initialContent = `# Bem-vindo ao TermWeb!\n# Este é um editor CodeMirror ao vivo.\n\nprint("Olá, janito.dev!")`;
-if (filePath) {
-    fetch(`/api/explorer/${encodeURIComponent(filePath)}`)
-        .then(resp => resp.json())
-        .then(data => {
-            if (data.type === 'file') {
-                initialContent = data.content;
-                if (window.editorInstance) {
-                    window.editorInstance.setValue(initialContent);
-                }
-            } else if (data.error) {
-                initialContent = '# Error: ' + data.error;
-                if (window.editorInstance) {
-                    window.editorInstance.setValue(initialContent);
-                }
-            }
-        })
-        .catch(err => {
-            initialContent = '# Error ao carregar arquivo: ' + err;
-            if (window.editorInstance) {
-                window.editorInstance.setValue(initialContent);
-            }
-        });
+
+// Updates the theme icon based on the current theme
+function updateThemeIcon() {
+    var icon = document.getElementById('theme-icon');
+    if (!icon) return;
+    if (document.body.classList.contains('light-theme')) {
+        icon.textContent = '☀️'; // Sun for light mode
+        icon.title = 'Switch to dark mode';
+    } else {
+        icon.textContent = '🌙'; // Moon for dark mode
+        icon.title = 'Switch to light mode';
+    }
 }
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Display filename in header if present
+    if (filePath) {
+        const filename = filePath.split(/[\\\/]/).pop();
+        const filenameDisplay = document.getElementById('filename-display');
+        if (filenameDisplay) {
+            filenameDisplay.textContent = '— ' + filePath;
+            filenameDisplay.title = filePath;
+        }
+    }
+
+    let initialContent = "";
+    if (filePath) {
+        fetch(`/api/explorer/${encodeURIComponent(filePath)}`)
+            .then(resp => resp.json())
+            .then(data => {
+                if (data.type === 'file') {
+                    initialContent = data.content;
+                    if (window.editorInstance) {
+                        window.editorInstance.setValue(initialContent);
+                    }
+                } else if (data.error) {
+                    initialContent = '# Error: ' + data.error;
+                    if (window.editorInstance) {
+                        window.editorInstance.setValue(initialContent);
+                    }
+                }
+            })
+            .catch(err => {
+                initialContent = '# Error ao carregar arquivo: ' + err;
+                if (window.editorInstance) {
+                    window.editorInstance.setValue(initialContent);
+                }
+            });
+    }
+
+    // --- Detect file extension and set CodeMirror mode ---
+    function detectMode(filename) {
+        if (!filename) return 'python';
+        const ext = filename.split('.').pop().toLowerCase();
+        const map = {
+            'py': 'python',
+            'js': 'javascript',
+            'json': 'javascript',
+            'md': 'markdown',
+            'html': {name: 'htmlmixed', scriptingModeSpec: 'django'},
+            'htm': {name: 'htmlmixed', scriptingModeSpec: 'django'},
+            'jinja': 'django',
+            'j2': 'django',
+            'jinja2': 'django',
+            'css': 'css',
+            'sh': 'shell',
+            'bash': 'shell',
+            'yml': 'yaml',
+            'yaml': 'yaml',
+        };
+        return map[ext] || 'python';
+    }
+    var initialMode = detectMode(filePath);
     var editorInstance = CodeMirror.fromTextArea(document.getElementById('code'), {
         lineNumbers: true,
-        mode: 'python',
+        mode: initialMode,
         theme: 'dracula',
         indentUnit: 4,
         tabSize: 4,
         styleActiveLine: true,
     });
+    // If file loaded later, update mode
+    if (filePath) {
+        const mode = detectMode(filePath);
+        editorInstance.setOption('mode', mode);
+    }
     window.editorInstance = editorInstance;
     // Add Ctrl-F handler for find
     editorInstance.addKeyMap({
@@ -54,6 +107,10 @@ document.addEventListener('DOMContentLoaded', function() {
         'Cmd-S': function(cm) {
             document.getElementById('save-btn').click();
             return false;
+        },
+        'Alt-W': function(cm) {
+            const current = cm.getOption('lineWrapping');
+            cm.setOption('lineWrapping', !current);
         }
     });
     // --- Custom floating find navigation panel ---
@@ -153,29 +210,26 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('resize', resizeEditor);
     setTimeout(resizeEditor, 0);
     editorInstance.setValue(initialContent);
+    updateThemeIcon();
 
-    // Theme switcher logic
-    var themeSwitcher = document.getElementById('theme-switcher');
-    var themeIcon = document.getElementById('theme-icon');
-    var isDark = true;
-    function updateThemeIcon() {
-        themeIcon.textContent = isDark ? '🌙' : '☀️';
-    }
-    themeSwitcher.addEventListener('click', function() {
-        isDark = !isDark;
-        if (isDark) {
-            document.body.classList.remove('light-theme');
-            editorInstance.setOption('theme', 'dracula');
-        } else {
-            document.body.classList.add('light-theme');
-            editorInstance.setOption('theme', 'default');
-        }
-        updateThemeIcon();
-    });
     // Set initial state
     document.body.classList.remove('light-theme');
     editorInstance.setOption('theme', 'dracula');
     updateThemeIcon();
+
+    // Theme switch button logic
+    var themeSwitcher = document.getElementById('theme-switcher');
+    if (themeSwitcher) {
+        themeSwitcher.addEventListener('click', function() {
+            var isLight = document.body.classList.toggle('light-theme');
+            if (isLight) {
+                editorInstance.setOption('theme', 'default');
+            } else {
+                editorInstance.setOption('theme', 'dracula');
+            }
+            updateThemeIcon();
+        });
+    }
     // Botão de Gravar
     var saveBtn = document.getElementById('save-btn');
     saveBtn.addEventListener('click', function() {
