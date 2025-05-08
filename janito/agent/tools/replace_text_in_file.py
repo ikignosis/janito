@@ -11,6 +11,10 @@ class ReplaceTextInFileTool(ToolBase):
     """
     Replace exact occurrences of a given text in a file.
 
+    Note:
+        To avoid syntax errors, ensure your replacement text is pre-indented as needed, matching the indentation of the
+        search text in its original location.
+
     Args:
         file_path (str): Path to the file to modify.
         search_text (str): The exact text to search for (including indentation).
@@ -69,7 +73,6 @@ class ReplaceTextInFileTool(ToolBase):
             if concise_warning:
                 return concise_warning
             self._report_success(match_lines)
-            indent_warning = self._check_indentation(search_text, replacement_text)
             line_delta_str = self._get_line_delta_str(content, new_content)
             match_info, details = self._format_match_details(
                 replaced_count,
@@ -80,7 +83,7 @@ class ReplaceTextInFileTool(ToolBase):
                 replace_all,
             )
             return self._format_final_msg(
-                file_path, warning, indent_warning, backup_path, match_info, details
+                file_path, warning, backup_path, match_info, details
             )
         except Exception as e:
             self.report_error(tr(" \u274c Error"))
@@ -157,29 +160,6 @@ class ReplaceTextInFileTool(ToolBase):
             )
         else:
             self.report_success(tr(" \u2705 replaced (lines unknown)"))
-
-    def _check_indentation(self, search_text, replacement_text):
-        """Check and warn if indentation differs between search and replacement text."""
-
-        def leading_ws(line):
-            m = re.match(r"^\s*", line)
-            return m.group(0) if m else ""
-
-        search_indent = (
-            leading_ws(search_text.splitlines()[0]) if search_text.splitlines() else ""
-        )
-        replace_indent = (
-            leading_ws(replacement_text.splitlines()[0])
-            if replacement_text.splitlines()
-            else ""
-        )
-        if search_indent != replace_indent:
-            return tr(
-                " [Warning: Indentation mismatch between search and replacement text: '{search_indent}' vs '{replace_indent}']",
-                search_indent=search_indent,
-                replace_indent=replace_indent,
-            )
-        return ""
 
     def _get_line_delta_str(self, content, new_content):
         """Return a string describing the net line change after replacement."""
@@ -270,15 +250,12 @@ class ReplaceTextInFileTool(ToolBase):
             details = ""
         return match_info, details
 
-    def _format_final_msg(
-        self, file_path, warning, indent_warning, backup_path, match_info, details
-    ):
+    def _format_final_msg(self, file_path, warning, backup_path, match_info, details):
         """Format the final status message."""
         return tr(
-            "Text replaced in {file_path}{warning}{indent_warning} (backup at {backup_path}). {match_info}{details}",
+            "Text replaced in {file_path}{warning} (backup at {backup_path}). {match_info}{details}",
             file_path=file_path,
             warning=warning,
-            indent_warning=indent_warning,
             backup_path=backup_path,
             match_info=match_info,
             details=details,

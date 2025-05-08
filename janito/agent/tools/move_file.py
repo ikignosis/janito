@@ -6,6 +6,7 @@ from janito.agent.tool_base import ToolBase
 from janito.agent.tools_utils.action_type import ActionType
 from janito.i18n import tr
 
+
 @register_tool(name="move_file")
 class MoveFileTool(ToolBase):
     """
@@ -72,7 +73,12 @@ class MoveFileTool(ToolBase):
             self.report_error(
                 tr("❌ Source '{disp_src}' does not exist.", disp_src=disp_src)
             )
-            return False, False, False, tr("❌ Source '{disp_src}' does not exist.", disp_src=disp_src)
+            return (
+                False,
+                False,
+                False,
+                tr("❌ Source '{disp_src}' does not exist.", disp_src=disp_src),
+            )
         is_src_file = os.path.isfile(src)
         is_src_dir = os.path.isdir(src)
         if not (is_src_file or is_src_dir):
@@ -82,9 +88,14 @@ class MoveFileTool(ToolBase):
                     disp_src=disp_src,
                 )
             )
-            return False, False, False, tr(
-                "❌ Source path '{disp_src}' is neither a file nor a directory.",
-                disp_src=disp_src,
+            return (
+                False,
+                False,
+                False,
+                tr(
+                    "❌ Source path '{disp_src}' is neither a file nor a directory.",
+                    disp_src=disp_src,
+                ),
             )
         return True, is_src_file, is_src_dir, None
 
@@ -118,5 +129,7 @@ class MoveFileTool(ToolBase):
                 self.report_error(
                     tr("❌ Error removing destination before move: {error}", error=e)
                 )
-                return None, tr("❌ Error removing destination before move: {error}", error=e)
+                return None, tr(
+                    "❌ Error removing destination before move: {error}", error=e
+                )
         return backup_path, None

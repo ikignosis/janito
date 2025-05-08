@@ -2,6 +2,7 @@ from janito.i18n import tr
 import re
 from lxml import etree
 
+
 def validate_html(file_path: str) -> str:
     html_content = _read_html_content(file_path)
     warnings = _find_js_outside_script(html_content)
@@ -9,9 +10,11 @@ def validate_html(file_path: str) -> str:
     msg = _build_result_message(warnings, lxml_error)
     return msg
 
+
 def _read_html_content(file_path):
     with open(file_path, "r", encoding="utf-8") as f:
         return f.read()
+
 
 def _find_js_outside_script(html_content):
     script_blocks = [
@@ -42,6 +45,7 @@ def _find_js_outside_script(html_content):
                 )
     return warnings
 
+
 def _parse_html_and_collect_errors(file_path):
     lxml_error = None
     try:
@@ -70,6 +74,7 @@ def _parse_html_and_collect_errors(file_path):
     except Exception as e:
         lxml_error = tr("Syntax error: {error}", error=str(e))
     return lxml_error
+
 
 def _build_result_message(warnings, lxml_error):
     msg = ""

@@ -2,6 +2,7 @@ import re
 from janito.agent.tools_utils.gitignore_utils import GitignoreFilter
 import os
 
+
 def is_binary_file(path, blocksize=1024):
     try:
         with open(path, "rb") as f:
@@ -18,10 +19,12 @@ def is_binary_file(path, blocksize=1024):
         return True
     return False
 
+
 def match_line(line, pattern, regex, use_regex):
     if use_regex:
         return regex and regex.search(line)
     return pattern in line
+
 
 def should_limit(max_results, total_results, match_count, count_only, dir_output):
     if max_results > 0:
@@ -29,7 +32,10 @@ def should_limit(max_results, total_results, match_count, count_only, dir_output
         return current_count >= max_results
     return False
 
-def read_file_lines(path, pattern, regex, use_regex, count_only, max_results, total_results):
+
+def read_file_lines(
+    path, pattern, regex, use_regex, count_only, max_results, total_results
+):
     dir_output = []
     dir_limit_reached = False
     match_count = 0
@@ -42,7 +48,9 @@ def read_file_lines(path, pattern, regex, use_regex, count_only, max_results, to
                         match_count += 1
                         if not count_only:
                             dir_output.append(f"{path}:{lineno}: {line.rstrip()}")
-                    if should_limit(max_results, total_results, match_count, count_only, dir_output):
+                    if should_limit(
+                        max_results, total_results, match_count, count_only, dir_output
+                    ):
                         dir_limit_reached = True
                         break
         except Exception:

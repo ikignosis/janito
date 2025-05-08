@@ -2,6 +2,7 @@ from janito.agent.config import local_config, global_config, CONFIG_OPTIONS
 from janito.agent.config_defaults import CONFIG_DEFAULTS
 from janito.agent.runtime_config import unified_config, runtime_config
 
+
 def handle_config_shell(console, *args, **kwargs):
     """
     /config show
@@ -23,13 +24,16 @@ def handle_config_shell(console, *args, **kwargs):
         _set_config(console, args)
         return
 
+
 def _print_usage(console):
     console.print(
         "[bold red]Usage:[/bold red] /config show | /config set local|global key=value | /config reset local|global"
     )
 
+
 def _show_config(console):
     from janito.cli._print_config import print_full_config
+
     print_full_config(
         local_config,
         global_config,
@@ -38,12 +42,14 @@ def _show_config(console):
         console=console,
     )
 
+
 def _reset_config(console, args):
     if len(args) < 2 or args[1] not in ("local", "global"):
         console.print("[bold red]Usage:[/bold red] /config reset local|global")
         return
     import os
     from pathlib import Path
+
     scope = args[1]
     if scope == "local":
         local_path = Path(".janito/config.json")
@@ -58,9 +64,7 @@ def _reset_config(console, args):
         global_path = Path.home() / ".janito/config.json"
         if global_path.exists():
             os.remove(global_path)
-            console.print(
-                f"[green]Removed global config file:[/green] {global_path}"
-            )
+            console.print(f"[green]Removed global config file:[/green] {global_path}")
         else:
             console.print(
                 f"[yellow]Global config file does not exist:[/yellow] {global_path}"
@@ -69,11 +73,10 @@ def _reset_config(console, args):
         "[bold yellow]Please use /restart for changes to take full effect.[/bold yellow]"
     )
 
+
 def _set_config(console, args):
     if len(args) < 3 or args[1] not in ("local", "global"):
-        console.print(
-            "[bold red]Usage:[/bold red] /config set local|global key=value"
-        )
+        console.print("[bold red]Usage:[/bold red] /config set local|global key=value")
         return
     scope = args[1]
     try:

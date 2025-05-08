@@ -1,4 +1,5 @@
 import subprocess
+import os
 import sys
 import tempfile
 import threading
@@ -6,6 +7,7 @@ from janito.agent.tool_base import ToolBase
 from janito.agent.tools_utils.action_type import ActionType
 from janito.agent.tool_registry import register_tool
 from janito.i18n import tr
+
 
 @register_tool(name="python_stdin_runner")
 class PythonStdinRunnerTool(ToolBase):
@@ -50,18 +52,24 @@ class PythonStdinRunnerTool(ToolBase):
                     bufsize=1,
                     universal_newlines=True,
                     encoding="utf-8",
-                    env={**dict(), **dict(PYTHONIOENCODING="utf-8")},
+                    env={**os.environ, "PYTHONIOENCODING": "utf-8"},
                 )
-                stdout_lines, stderr_lines = self._stream_process_output(process, stdout_file, stderr_file, code)
+                stdout_lines, stderr_lines = self._stream_process_output(
+                    process, stdout_file, stderr_file, code
+                )
                 return_code = self._wait_for_process(process, timeout)
                 if return_code is None:
-                    return tr("Code timed out after {timeout} seconds.", timeout=timeout)
+                    return tr(
+                        "Code timed out after {timeout} seconds.", timeout=timeout
+                    )
                 stdout_file.flush()
                 stderr_file.flush()
                 self.report_success(
                     tr("\u2705 Return code {return_code}", return_code=return_code)
                 )
-                return self._format_result(stdout_file.name, stderr_file.name, return_code)
+                return self._format_result(
+                    stdout_file.name, stderr_file.name, return_code
+                )
         except Exception as e:
             self.report_error(tr("\u274c Error: {error}", error=e))
             return tr("Error running code via stdin: {error}", error=e)
@@ -69,6 +77,7 @@ class PythonStdinRunnerTool(ToolBase):
     def _stream_process_output(self, process, stdout_file, stderr_file, code):
         stdout_lines = 0
         stderr_lines = 0
+
         def stream_output(stream, file_obj, report_func, count_func):
             nonlocal stdout_lines, stderr_lines
             for line in stream:
@@ -79,6 +88,7 @@ class PythonStdinRunnerTool(ToolBase):
                     stdout_lines += 1
                 else:
                     stderr_lines += 1
+
         stdout_thread = threading.Thread(
             target=stream_output,
             args=(process.stdout, stdout_file, self.report_stdout, "stdout"),
@@ -113,6 +123,7 @@ class PythonStdinRunnerTool(ToolBase):
         max_lines = 100
         stdout_lines = stdout_content.count("\n")
         stderr_lines = stderr_content.count("\n")
+
         def head_tail(text, n=10):
             lines = text.splitlines()
             if len(lines) <= 2 * n:
@@ -122,32 +133,21 @@ class PythonStdinRunnerTool(ToolBase):
                 + ["... ({} lines omitted) ...".format(len(lines) - 2 * n)]
                 + lines[-n:]
             )
+
         if stdout_lines <= max_lines and stderr_lines <= max_lines:
-            result = (
-                f"Return code: {return_code}\n--- STDOUT ---\n{stdout_content}"
-            )
+            result = f"Return code: {return_code}\n--- STDOUT ---\n{stdout_content}"
             if stderr_content.strip():
                 result += f"\n--- STDERR ---\n{stderr_content}"
             return result
         else:
-            result = (
-                f"stdout_file: {stdout_file_name} (lines: {stdout_lines})\n"
-            )
+            result = f"stdout_file: {stdout_file_name} (lines: {stdout_lines})\n"
             if stderr_lines > 0 and stderr_content.strip():
-                result += (
-                    f"stderr_file: {stderr_file_name} (lines: {stderr_lines})\n"
-                )
+                result += f"stderr_file: {stderr_file_name} (lines: {stderr_lines})\n"
             result += f"returncode: {return_code}\n"
-            result += (
-                "--- STDOUT (head/tail) ---\n"
-                + head_tail(stdout_content)
-                + "\n"
-            )
+            result += "--- STDOUT (head/tail) ---\n" + head_tail(stdout_content) + "\n"
             if stderr_content.strip():
                 result += (
-                    "--- STDERR (head/tail) ---\n"
-                    + head_tail(stderr_content)
-                    + "\n"
+                    "--- STDERR (head/tail) ---\n" + head_tail(stderr_content) + "\n"
                 )
             result += "Use the get_lines tool to inspect the contents of these files when needed."
             return result

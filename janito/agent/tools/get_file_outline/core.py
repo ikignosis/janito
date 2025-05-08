@@ -23,7 +23,7 @@ class GetFileOutlineTool(ToolBase):
             self.report_info(
                 ActionType.READ,
                 tr(
-                    "📄 Outlining file '{disp_path}' ...",
+                    "📄 Outline file '{disp_path}' ...",
                     disp_path=display_path(file_path),
                 ),
             )

@@ -3,6 +3,7 @@ from janito.agent.tools_utils.action_type import ActionType
 from janito.agent.tool_registry import register_tool
 from janito.i18n import tr
 import subprocess
+import os
 import tempfile
 import threading
 
@@ -44,6 +45,8 @@ class RunPowerShellCommandTool(ToolBase):
         return True
 
     def _launch_process(self, shell_exe, command_with_encoding):
+        env = os.environ.copy()
+        env["PYTHONIOENCODING"] = "utf-8"
         return subprocess.Popen(
             [
                 shell_exe,
@@ -59,6 +62,7 @@ class RunPowerShellCommandTool(ToolBase):
             bufsize=1,
             universal_newlines=True,
             encoding="utf-8",
+            env=env,
         )
 
     def _stream_output(self, stream, file_obj, report_func, count_func, counter):

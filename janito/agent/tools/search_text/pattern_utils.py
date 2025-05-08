@@ -2,10 +2,15 @@ import re
 from janito.i18n import tr
 from janito.agent.tools_utils.utils import pluralize
 
+
 def prepare_pattern(pattern, is_regex, report_error, report_warning):
     if not pattern:
         report_error(tr("Error: Empty search pattern provided. Operation aborted."))
-        return None, False, tr("Error: Empty search pattern provided. Operation aborted.")
+        return (
+            None,
+            False,
+            tr("Error: Empty search pattern provided. Operation aborted."),
+        )
     regex = None
     use_regex = False
     if is_regex:
@@ -14,7 +19,11 @@ def prepare_pattern(pattern, is_regex, report_error, report_warning):
             use_regex = True
         except re.error as e:
             report_warning(tr("\u26a0\ufe0f Invalid regex pattern."))
-            return None, False, tr("Warning: Invalid regex pattern: {error}. No results.", error=e)
+            return (
+                None,
+                False,
+                tr("Warning: Invalid regex pattern: {error}. No results.", error=e),
+            )
     else:
         try:
             regex = re.compile(pattern)
@@ -24,7 +33,10 @@ def prepare_pattern(pattern, is_regex, report_error, report_warning):
             use_regex = False
     return regex, use_regex, None
 
-def format_result(pattern, use_regex, output, limit_reached, count_only=False, per_file_counts=None):
+
+def format_result(
+    pattern, use_regex, output, limit_reached, count_only=False, per_file_counts=None
+):
     if count_only:
         lines = []
         total = 0
@@ -43,6 +55,7 @@ def format_result(pattern, use_regex, output, limit_reached, count_only=False, p
         if limit_reached:
             result += tr("\n[Max results reached. Output truncated.]")
         return result
+
 
 def summarize_total(all_per_file_counts):
     total = sum(count for _, count in all_per_file_counts)

@@ -6,6 +6,7 @@ from prompt_toolkit.key_binding import KeyBindings
 from janito.agent.runtime_config import runtime_config
 from janito.i18n import tr
 
+
 def print_welcome(console, version=None, continue_id=None):
     version_str = f" (v{version})" if version else ""
     # DEBUG: Show continue_id/session_id at runtime
@@ -22,6 +23,93 @@ def print_welcome(console, version=None, continue_id=None):
             f"[bold green]{tr('Welcome to Janito{version_str}! Entering chat mode. Type /exit to exit.', version_str=version_str)}[/bold green]\n"
         )
 
+
+def format_tokens(n, tag=None):
+    if n is None:
+        return "?"
+    if n < 1000:
+        val = str(n)
+    elif n < 1000000:
+        val = f"{n/1000:.1f}k"
+    else:
+        val = f"{n/1000000:.1f}M"
+    return f"<{tag}>{val}</{tag}>" if tag else val
+
+
+def assemble_first_line(model_name, role_ref, style_ref):
+    model_part = f" {tr('Model')}: <model>{model_name}</model>" if model_name else ""
+    role_part = ""
+    vanilla_mode = runtime_config.get("vanilla_mode", False)
+    if role_ref and not vanilla_mode:
+        role = role_ref()
+        if role:
+            role_part = f"{tr('Role')}: <role>{role}</role>"
+    style_part = ""
+    if style_ref:
+        style = style_ref()
+        if style:
+            style_part = f"{tr('Style')}: <b>{style}</b>"
+    first_line_parts = []
+    if model_part:
+        first_line_parts.append(model_part)
+    if role_part:
+        first_line_parts.append(role_part)
+    if style_part:
+        first_line_parts.append(style_part)
+    return " | ".join(first_line_parts)
+
+
+def assemble_second_line(
+    width,
+    last_usage_info_ref,
+    history_ref,
+    messages_ref,
+    session_id,
+    model_name,
+    role_ref,
+    style_ref,
+):
+    usage = last_usage_info_ref()
+    prompt_tokens = usage.get("prompt_tokens") if usage else None
+    completion_tokens = usage.get("completion_tokens") if usage else None
+    total_tokens = usage.get("total_tokens") if usage else None
+    msg_count = len(history_ref()) if history_ref else len(messages_ref())
+    left = f" {tr('Messages')}: <msg_count>{msg_count}</msg_count>"
+    tokens_part = ""
+    if (
+        prompt_tokens is not None
+        or completion_tokens is not None
+        or total_tokens is not None
+    ):
+        tokens_part = (
+            f" | {tr('Tokens')} - {tr('Prompt')}: {format_tokens(prompt_tokens, 'tokens_in')}, "
+            f"{tr('Completion')}: {format_tokens(completion_tokens, 'tokens_out')}, "
+            f"{tr('Total')}: {format_tokens(total_tokens, 'tokens_total')}"
+        )
+    session_part = (
+        f" | Session ID: <session_id>{session_id}</session_id>" if session_id else ""
+    )
+    second_line = f"{left}{tokens_part}{session_part}"
+    total_len = len(left) + len(tokens_part) + len(session_part)
+    first_line = assemble_first_line(model_name, role_ref, style_ref)
+    if first_line:
+        total_len += len(first_line) + 3
+    if total_len < width:
+        padding = " " * (width - total_len)
+        second_line = f"{left}{tokens_part}{session_part}{padding}"
+    return second_line
+
+
+def assemble_bindings_line():
+    return (
+        f"<b> F12</b>: {tr('Quick Action')} | "
+        f"<b>Ctrl-Y</b>: {tr('Yes')} | "
+        f"<b>Ctrl-N</b>: {tr('No')} | "
+        f"<b>/help</b>: {tr('Help')} | "
+        f"<b>/restart</b>: {tr('Reset Conversation')}"
+    )
+
+
 def get_toolbar_func(
     messages_ref,
     last_usage_info_ref,
@@ -35,87 +123,19 @@ def get_toolbar_func(
 ):
     from prompt_toolkit.application.current import get_app
 
-    def format_tokens(n, tag=None):
-        if n is None:
-            return "?"
-        if n < 1000:
-            val = str(n)
-        elif n < 1000000:
-            val = f"{n/1000:.1f}k"
-        else:
-            val = f"{n/1000000:.1f}M"
-        return f"<{tag}>{val}</{tag}>" if tag else val
-
-    def assemble_first_line():
-        model_part = (
-            f" {tr('Model')}: <model>{model_name}</model>" if model_name else ""
-        )
-        role_part = ""
-        vanilla_mode = runtime_config.get("vanilla_mode", False)
-        if role_ref and not vanilla_mode:
-            role = role_ref()
-            if role:
-                role_part = f"{tr('Role')}: <role>{role}</role>"
-        style_part = ""
-        if style_ref:
-            style = style_ref()
-            if style:
-                style_part = f"{tr('Style')}: <b>{style}</b>"
-        first_line_parts = []
-        if model_part:
-            first_line_parts.append(model_part)
-        if role_part:
-            first_line_parts.append(role_part)
-        if style_part:
-            first_line_parts.append(style_part)
-        return " | ".join(first_line_parts)
-
-    def assemble_second_line(width):
-        usage = last_usage_info_ref()
-        prompt_tokens = usage.get("prompt_tokens") if usage else None
-        completion_tokens = usage.get("completion_tokens") if usage else None
-        total_tokens = usage.get("total_tokens") if usage else None
-        msg_count = len(history_ref()) if history_ref else len(messages_ref())
-        left = f" {tr('Messages')}: <msg_count>{msg_count}</msg_count>"
-        tokens_part = ""
-        if (
-            prompt_tokens is not None
-            or completion_tokens is not None
-            or total_tokens is not None
-        ):
-            tokens_part = (
-                f" | {tr('Tokens')} - {tr('Prompt')}: {format_tokens(prompt_tokens, 'tokens_in')}, "
-                f"{tr('Completion')}: {format_tokens(completion_tokens, 'tokens_out')}, "
-                f"{tr('Total')}: {format_tokens(total_tokens, 'tokens_total')}"
-            )
-        session_part = (
-            f" | Session ID: <session_id>{session_id}</session_id>"
-            if session_id
-            else ""
-        )
-        second_line = f"{left}{tokens_part}{session_part}"
-        total_len = len(left) + len(tokens_part) + len(session_part)
-        first_line = assemble_first_line()
-        if first_line:
-            total_len += len(first_line) + 3
-        if total_len < width:
-            padding = " " * (width - total_len)
-            second_line = f"{left}{tokens_part}{session_part}{padding}"
-        return second_line
-
-    def assemble_bindings_line():
-        return (
-            f"<b> F12</b>: {tr('Quick Action')} | "
-            f"<b>Ctrl-Y</b>: {tr('Yes')} | "
-            f"<b>Ctrl-N</b>: {tr('No')} | "
-            f"<b>/help</b>: {tr('Help')} | "
-            f"<b>/restart</b>: {tr('Reset Conversation')}"
-        )
-
     def get_toolbar():
         width = get_app().output.get_size().columns
-        first_line = assemble_first_line()
-        second_line = assemble_second_line(width)
+        first_line = assemble_first_line(model_name, role_ref, style_ref)
+        second_line = assemble_second_line(
+            width,
+            last_usage_info_ref,
+            history_ref,
+            messages_ref,
+            session_id,
+            model_name,
+            role_ref,
+            style_ref,
+        )
         bindings_line = assemble_bindings_line()
         if first_line:
             toolbar_text = first_line + "\n" + second_line + "\n" + bindings_line
@@ -124,6 +144,7 @@ def get_toolbar_func(
         return HTML(toolbar_text)
 
     return get_toolbar
+
 
 def get_custom_key_bindings():
     """
@@ -158,6 +179,7 @@ def get_custom_key_bindings():
 
     return bindings
 
+
 def get_prompt_session(get_toolbar_func, mem_history):
     style = Style.from_dict(
         {
@@ -191,6 +213,7 @@ def get_prompt_session(get_toolbar_func, mem_history):
         history=mem_history,
         completer=completer,
     )
+
 
 def _(text):
     return text

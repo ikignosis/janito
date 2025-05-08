@@ -7,6 +7,7 @@ from ._utils import home_shorten
 import os
 from pathlib import Path
 
+
 def handle_run_config(args):
     if args.run_config:
         for run_item in args.run_config:
@@ -24,6 +25,7 @@ def handle_run_config(args):
             runtime_config.set(key, val.strip())
         return True
     return False
+
 
 def handle_set_local_config(args):
     if args.set_local_config:
@@ -44,6 +46,7 @@ def handle_set_local_config(args):
         print(f"Local config updated: {key} = {val.strip()}")
         return True
     return False
+
 
 def handle_set_global_config(args):
     if args.set_global_config:
@@ -78,6 +81,7 @@ def handle_set_global_config(args):
             return True
     return False
 
+
 def handle_set_api_key(args):
     if args.set_api_key:
         existing = dict(global_config.all())
@@ -89,16 +93,20 @@ def handle_set_api_key(args):
         return True
     return False
 
+
 def handle_show_config(args):
     if args.show_config:
         local_items = _collect_config_items(local_config, unified_config, True)
-        global_items = _collect_config_items(global_config, unified_config, False, set(local_items.keys()))
+        global_items = _collect_config_items(
+            global_config, unified_config, False, set(local_items.keys())
+        )
         _mask_api_keys(local_items)
         _mask_api_keys(global_items)
         _print_config_items(local_items, global_items)
         _print_default_items(local_items, global_items)
         return True
     return False
+
 
 def _collect_config_items(config, unified_config, is_local, exclude_keys=None):
     items = {}
@@ -127,19 +135,21 @@ def _collect_config_items(config, unified_config, is_local, exclude_keys=None):
         items[key] = value
     return items
 
+
 def _mask_api_keys(cfg):
     if "api_key" in cfg and cfg["api_key"]:
         val = cfg["api_key"]
         cfg["api_key"] = val[:4] + "..." + val[-4:] if len(val) > 8 else "***"
 
+
 def _print_config_items(local_items, global_items):
     from ._print_config import print_config_items
-    print_config_items(
-        local_items, color_label="[cyan]🏠 Local Configuration[/cyan]"
-    )
+
+    print_config_items(local_items, color_label="[cyan]🏠 Local Configuration[/cyan]")
     print_config_items(
         global_items, color_label="[yellow]🌐 Global Configuration[/yellow]"
     )
+
 
 def _print_default_items(local_items, global_items):
     shown_keys = set(local_items.keys()) | set(global_items.keys())
@@ -165,6 +175,7 @@ def _print_default_items(local_items, global_items):
                 print(f"{key} = {value}")
         print()
 
+
 def handle_config_reset_local(args):
     if getattr(args, "config_reset_local", False):
         local_path = Path(".janito/config.json")
@@ -175,6 +186,7 @@ def handle_config_reset_local(args):
             print(f"Local config file does not exist: {local_path}")
         sys.exit(0)
 
+
 def handle_config_reset_global(args):
     if getattr(args, "config_reset_global", False):
         global_path = Path.home() / ".janito/config.json"
@@ -184,6 +196,7 @@ def handle_config_reset_global(args):
         else:
             print(f"Global config file does not exist: {global_path}")
         sys.exit(0)
+
 
 def handle_config_commands(args):
     did_something = False

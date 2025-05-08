@@ -1,6 +1,7 @@
 from janito.i18n import tr
 import re
 
+
 def validate_markdown(file_path: str) -> str:
     with open(file_path, "r", encoding="utf-8") as f:
         content = f.read()
@@ -13,6 +14,7 @@ def validate_markdown(file_path: str) -> str:
     errors.extend(_check_unclosed_inline_code(content))
     return _build_markdown_result(errors)
 
+
 def _check_header_space(lines):
     errors = []
     for i, line in enumerate(lines, 1):
@@ -20,11 +22,13 @@ def _check_header_space(lines):
             errors.append(f"Line {i}: Header missing space after # | {line.strip()}")
     return errors
 
+
 def _check_unclosed_code_block(content):
     errors = []
     if content.count("```") % 2 != 0:
         errors.append("Unclosed code block (```) detected")
     return errors
+
 
 def _check_unclosed_links_images(lines):
     errors = []
@@ -35,42 +39,58 @@ def _check_unclosed_links_images(lines):
             )
     return errors
 
+
+def _is_table_line(line):
+    return line.lstrip().startswith("|")
+
+
+def _list_item_missing_space(line):
+    return re.match(r"^[-*+][^ \n]", line)
+
+
+def _should_skip_list_item(line):
+    stripped = line.strip()
+    return stripped.startswith("*") and stripped.endswith("*") and len(stripped) > 2
+
+
+def _needs_blank_line_before_bullet(lines, i):
+    if i <= 1:
+        return False
+    prev_line = lines[i - 2]
+    prev_is_list = bool(re.match(r"^\s*[-*+] ", prev_line))
+    return not prev_is_list and prev_line.strip() != ""
+
+
+def _needs_blank_line_before_numbered(lines, i):
+    if i <= 1:
+        return False
+    prev_line = lines[i - 2]
+    prev_is_numbered_list = bool(re.match(r"^\s*\d+\. ", prev_line))
+    return not prev_is_numbered_list and prev_line.strip() != ""
+
+
 def _check_list_formatting(lines):
     errors = []
     for i, line in enumerate(lines, 1):
-        # Skip table lines
-        if line.lstrip().startswith("|"):
+        if _is_table_line(line):
             continue
-        # List item missing space after bullet
-        if re.match(r"^[-*+][^ \n]", line):
-            stripped = line.strip()
-            if not (
-                stripped.startswith("*")
-                and stripped.endswith("*")
-                and len(stripped) > 2
-            ):
+        if _list_item_missing_space(line):
+            if not _should_skip_list_item(line):
                 errors.append(
                     f"Line {i}: List item missing space after bullet | {line.strip()}"
                 )
-        # Blank line before first item of a new bulleted list
         if re.match(r"^\s*[-*+] ", line):
-            if i > 1:
-                prev_line = lines[i - 2]
-                prev_is_list = bool(re.match(r"^\s*[-*+] ", prev_line))
-                if not prev_is_list and prev_line.strip() != "":
-                    errors.append(
-                        f"Line {i}: List should be preceded by a blank line for compatibility with MkDocs and other Markdown parsers | {line.strip()}"
-                    )
-        # Blank line before first item of a new numbered list
+            if _needs_blank_line_before_bullet(lines, i):
+                errors.append(
+                    f"Line {i}: List should be preceded by a blank line for compatibility with MkDocs and other Markdown parsers | {line.strip()}"
+                )
         if re.match(r"^\s*\d+\. ", line):
-            if i > 1:
-                prev_line = lines[i - 2]
-                prev_is_numbered_list = bool(re.match(r"^\s*\d+\. ", prev_line))
-                if not prev_is_numbered_list and prev_line.strip() != "":
-                    errors.append(
-                        f"Line {i}: Numbered list should be preceded by a blank line for compatibility with MkDocs and other Markdown parsers | {line.strip()}"
-                    )
+            if _needs_blank_line_before_numbered(lines, i):
+                errors.append(
+                    f"Line {i}: Numbered list should be preceded by a blank line for compatibility with MkDocs and other Markdown parsers | {line.strip()}"
+                )
     return errors
+
 
 def _check_unclosed_inline_code(content):
     errors = []
@@ -78,11 +98,12 @@ def _check_unclosed_inline_code(content):
         errors.append("Unclosed inline code (`) detected")
     return errors
 
+
 def _build_markdown_result(errors):
     if errors:
         msg = tr(
-            "⚠️ Warning: Markdown syntax issues found:\n{errors}",
+            "\u26a0\ufe0f Warning: Markdown syntax issues found:\n{errors}",
             errors="\n".join(errors),
         )
         return msg
-    return "✅ Syntax valid"
+    return "\u2705 Syntax valid"
