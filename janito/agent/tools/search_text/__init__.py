@@ -1,1 +1,1 @@
-# search_text package
+from .core import SearchTextTool

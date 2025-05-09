@@ -45,7 +45,7 @@ def process_file_collect(
     max_results,
     total_results,
 ):
-    file_output, file_limit_reached, match_count_list = read_file_lines(
+    actual_match_count, file_limit_reached, file_lines_output = read_file_lines(
         file_path,
         pattern,
         regex,
@@ -54,9 +54,9 @@ def process_file_collect(
         max_results,
         total_results + len(dir_output),
     )
-    dir_output.extend(file_output)
-    if match_count_list and match_count_list[0] > 0:
-        per_file_counts.append((file_path, match_count_list[0]))
+    dir_output.extend(file_lines_output)
+    if actual_match_count > 0:
+        per_file_counts.append((file_path, actual_match_count))
     return file_limit_reached
 
 

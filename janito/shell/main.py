@@ -171,8 +171,27 @@ def handle_chat(shell_state, profile_manager, agent, max_rounds, session_id):
             spinner=True,
         )
     except KeyboardInterrupt:
+        # Remove all trailing messages up to and including the previous assistant message
+        # Remove user messages after the last assistant message, then the assistant message itself
+        removed_count = 0
+        while (
+            conversation_history.last_message()
+            and conversation_history.last_message().get("role") != "assistant"
+        ):
+            conversation_history.remove_last_message()
+            removed_count += 1
+        # Remove the assistant message itself, if present
+        if (
+            conversation_history.last_message()
+            and conversation_history.last_message().get("role") == "assistant"
+        ):
+            conversation_history.remove_last_message()
+            removed_count += 1
         message_handler.handle_message(
-            {"type": "info", "message": "Request interrupted. Returning to prompt."}
+            {
+                "type": "info",
+                "message": f"\nLast turn cleared due to interruption. Returning to prompt. (removed {removed_count} last msgs)\n",
+            }
         )
         return
     except ProviderError as e:

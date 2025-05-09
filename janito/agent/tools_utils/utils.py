@@ -12,7 +12,13 @@ def display_path(path):
         str: Display path, optionally as an ANSI hyperlink.
     """
     if os.path.isabs(path):
-        disp = path
+        cwd = os.path.abspath(os.getcwd())
+        abs_path = os.path.abspath(path)
+        # Check if the absolute path is within the current working directory
+        if abs_path.startswith(cwd + os.sep):
+            disp = os.path.relpath(abs_path, cwd)
+        else:
+            disp = path
     else:
         disp = os.path.relpath(path)
     port = runtime_config.get("termweb_port")

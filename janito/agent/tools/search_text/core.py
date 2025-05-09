@@ -59,8 +59,8 @@ class SearchTextTool(ToolBase):
                 total_results,
             )
             per_file_counts = (
-                [(search_path, match_count_list[0])]
-                if match_count_list and match_count_list[0] > 0
+                [(search_path, len(match_count_list))]
+                if match_count_list and len(match_count_list) > 0
                 else []
             )
             return dir_output, dir_limit_reached, per_file_counts
@@ -84,6 +84,8 @@ class SearchTextTool(ToolBase):
         )
         if max_depth > 0:
             info_str += tr(" [max_depth={max_depth}]", max_depth=max_depth)
+        if count_only:
+            info_str += " [count]"
         self.report_info(ActionType.READ, info_str)
         if os.path.isfile(search_path):
             dir_output, dir_limit_reached, per_file_counts = self._handle_file(

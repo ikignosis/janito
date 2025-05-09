@@ -68,3 +68,15 @@ class LLMConversationHistory:
 
     def __getitem__(self, idx):
         return self._messages[idx]
+
+    def remove_last_message(self):
+        """Remove and return the last message in the history, or None if empty."""
+        if self._messages:
+            return self._messages.pop()
+        return None
+
+    def last_message(self):
+        """Return the last message in the history, or None if empty."""
+        if self._messages:
+            return self._messages[-1]
+        return None
