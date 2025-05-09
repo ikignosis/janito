@@ -22,15 +22,14 @@ def prepare_pattern(pattern, is_regex, report_error, report_warning):
             return (
                 None,
                 False,
-                tr("Warning: Invalid regex pattern: {error}. No results.", error=e),
+                tr(
+                    "Error: Invalid regex pattern: {error}. Operation aborted.", error=e
+                ),
             )
     else:
-        try:
-            regex = re.compile(pattern)
-            use_regex = True
-        except re.error:
-            regex = None
-            use_regex = False
+        # Do not compile as regex if is_regex is False; treat as plain text
+        regex = None
+        use_regex = False
     return regex, use_regex, None
 
 

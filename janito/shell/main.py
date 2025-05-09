@@ -158,6 +158,50 @@ def handle_prompt_loop(
     save_conversation_history(conversation_history, session_id)
 
 
+def handle_keyboard_interrupt(conversation_history, message_handler):
+    removed_count = 0
+    while (
+        conversation_history.last_message()
+        and conversation_history.last_message().get("role") != "assistant"
+    ):
+        conversation_history.remove_last_message()
+        removed_count += 1
+    # Remove the assistant message itself, if present
+    if (
+        conversation_history.last_message()
+        and conversation_history.last_message().get("role") == "assistant"
+    ):
+        conversation_history.remove_last_message()
+        removed_count += 1
+    message_handler.handle_message(
+        {
+            "type": "info",
+            "message": f"\nLast turn cleared due to interruption. Returning to prompt. (removed {removed_count} last msgs)\n",
+        }
+    )
+
+
+def handle_chat_error(message_handler, error_type, error):
+    if error_type == "ProviderError":
+        message_handler.handle_message(
+            {"type": "error", "message": f"Provider error: {error}"}
+        )
+    elif error_type == "EmptyResponseError":
+        message_handler.handle_message({"type": "error", "message": f"Error: {error}"})
+    elif error_type == "ApiError":
+        message_handler.handle_message({"type": "error", "message": str(error)})
+    elif error_type == "Exception":
+        import traceback
+
+        tb = traceback.format_exc()
+        message_handler.handle_message(
+            {
+                "type": "error",
+                "message": f"Unexpected error: {error}\n{tb}\nReturning to prompt.",
+            }
+        )
+
+
 def handle_chat(shell_state, profile_manager, agent, max_rounds, session_id):
     conversation_history = shell_state.conversation_history
     message_handler = RichMessageHandler()
@@ -171,39 +215,19 @@ def handle_chat(shell_state, profile_manager, agent, max_rounds, session_id):
             spinner=True,
         )
     except KeyboardInterrupt:
-        # Remove all trailing messages up to and including the previous assistant message
-        # Remove user messages after the last assistant message, then the assistant message itself
-        removed_count = 0
-        while (
-            conversation_history.last_message()
-            and conversation_history.last_message().get("role") != "assistant"
-        ):
-            conversation_history.remove_last_message()
-            removed_count += 1
-        # Remove the assistant message itself, if present
-        if (
-            conversation_history.last_message()
-            and conversation_history.last_message().get("role") == "assistant"
-        ):
-            conversation_history.remove_last_message()
-            removed_count += 1
-        message_handler.handle_message(
-            {
-                "type": "info",
-                "message": f"\nLast turn cleared due to interruption. Returning to prompt. (removed {removed_count} last msgs)\n",
-            }
-        )
+        handle_keyboard_interrupt(conversation_history, message_handler)
         return
     except ProviderError as e:
-        message_handler.handle_message(
-            {"type": "error", "message": f"Provider error: {e}"}
-        )
+        handle_chat_error(message_handler, "ProviderError", e)
         return
     except EmptyResponseError as e:
-        message_handler.handle_message({"type": "error", "message": f"Error: {e}"})
+        handle_chat_error(message_handler, "EmptyResponseError", e)
         return
     except ApiError as e:
-        message_handler.handle_message({"type": "error", "message": str(e)})
+        handle_chat_error(message_handler, "ApiError", e)
+        return
+    except Exception as e:
+        handle_chat_error(message_handler, "Exception", e)
         return
     shell_state.last_elapsed = time.time() - start_time
     usage = response.get("usage")

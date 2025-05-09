@@ -18,7 +18,7 @@ class SearchTextTool(ToolBase):
         pattern (str): Regex pattern or plain text substring to search for in files. Must not be empty. Tries regex first, falls back to substring if regex is invalid.
         is_regex (bool): If True, treat pattern as a regular expression. If False, treat as plain text (default).
         max_depth (int, optional): Maximum directory depth to search. If 0 (default), search is recursive with no depth limit. If >0, limits recursion to that depth. Setting max_depth=1 disables recursion (only top-level directory). Ignored for file paths.
-        max_results (int): Maximum number of results to return. 0 means no limit (default).
+        max_results (int, optional): Maximum number of results to return. Defaults to 100. 0 means no limit.
         count_only (bool): If True, return only the count of matches per file and total, not the matching lines. Default is False.
     Returns:
         str: If count_only is False, matching lines from files as a newline-separated string, each formatted as 'filepath:lineno: line'.
@@ -134,7 +134,7 @@ class SearchTextTool(ToolBase):
         pattern: str,
         is_regex: bool = False,
         max_depth: int = 0,
-        max_results: int = 0,
+        max_results: int = 100,
         count_only: bool = False,
     ) -> str:
         regex, use_regex, error_msg = prepare_pattern(

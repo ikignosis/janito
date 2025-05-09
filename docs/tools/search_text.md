@@ -6,8 +6,8 @@ Search for a text pattern in all files within one or more directories or file pa
 | Argument     | Type           | Description |
 |--------------|----------------|-------------|
 | paths        | str            | String of one or more paths (space-separated) to search in. Each path can be a directory or a file. |
-| pattern      | str            | Regex pattern or plain text substring to search for in files. Must not be empty. Tries regex first, falls back to substring if regex is invalid. |
-| is_regex     | bool, optional | If True, treat pattern as a regular expression. If False, treat as plain text (default). |
+| pattern      | str            | Regex pattern or plain text substring to search for in files. Must not be empty. |
+| is_regex     | bool, optional | If True, treat pattern as a regular expression. If False, always treat as plain text. Default is False. |
 | max_depth    | int, optional  | Maximum directory depth to search. If 0 (default), search is recursive with no depth limit. If >0, limits recursion to that depth. Setting max_depth=1 disables recursion (only top-level directory). Ignored for file paths. |
 | max_results  | int, optional  | Maximum number of results to return. 0 means no limit (default). |
 | ignore_utf8_errors | bool, optional | If True, ignore utf-8 decode errors. Defaults to True. |
