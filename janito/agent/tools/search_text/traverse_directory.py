@@ -15,7 +15,12 @@ def walk_directory(search_path, max_depth):
 
 
 def filter_dirs(dirs, root, gitignore_filter):
-    return [d for d in dirs if not gitignore_filter.is_ignored(os.path.join(root, d))]
+    # Always exclude directories named .git, regardless of gitignore
+    return [
+        d
+        for d in dirs
+        if d != ".git" and not gitignore_filter.is_ignored(os.path.join(root, d))
+    ]
 
 
 def process_file_count_only(
