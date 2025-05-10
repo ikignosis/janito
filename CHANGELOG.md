@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.11.0] - 2025-05-10
+
+### Summary of changes since 1.10.0
+- Improved documentation for the search_text tool arguments and clarified is_regex behavior.
+- Refined system prompt template guidelines for content exploration.
+- Set default max_results=100 in search_text tool and updated its docstring.
+- Refactored pattern handling to treat plain text when is_regex is False and improved error messages.
+- Refactored handle_chat to reduce complexity and fixed a syntax warning in the shell main chat handler.
+- General enhancements and fixes across agent, tools, and shell modules.
+- Fixed a spelling error in system_prompt_template_base.txt.j2.
+
 ## [1.10.0] - 2025-05-05
 
 - Added new API error handling infrastructure and exception classes.
