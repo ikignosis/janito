@@ -12,23 +12,24 @@
 </head>
 <body>
     <div class="header">
-    <div class="header-title">Janito Light Editor</div>
-    <span id="filename-display" class="filename-display"></span>
-    <div style="flex:1 1 auto;"></div>
-    <button class="theme-switcher" id="theme-switcher" title="Alternator tema">
-        <span id="theme-icon" aria-label="Switch theme" style="pointer-events:none;">🌙</span>
-    </button>
-</div>
-    <div class="footer">
-        <button class="save-btn" id="save-btn">Save</button>
+        <div class="header-title">Janito Light Editor</div>
+        <span id="filename-display" class="filename-display"></span>
+        <div style="flex:1 1 auto;"></div>
+        <button class="theme-switcher" id="theme-switcher" title="Alternator tema">
+            <span id="theme-icon" aria-label="Switch theme" style="pointer-events:none;">🌙</span>
+        </button>
     </div>
-    <div id="save-popup" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:#323b4c;color:#fff;padding:14px 28px;border-radius:8px;box-shadow:0 2px 12px #0007;font-size:1.1em;">Saved!</div>
     <div class="main">
         <div class="editor-pane">
             <textarea id="code" name="code"></textarea>
-            <div id="save-popup" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:#323b4c;color:#fff;padding:14px 28px;border-radius:8px;box-shadow:0 2px 12px #0007;font-size:1.1em;">Saved!</div>
+            <div id="save-popup" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:#2196f3;color:#fff;padding:14px 28px;border-radius:8px;box-shadow:0 4px 16px #1976d288;border:2px solid #1976d2;font-size:1.1em;">Saved!</div>
         </div>
     </div>
+    <div class="footer">
+        <button class="save-btn" id="save-btn">Save</button>
+        
+    </div>
+    <div id="save-popup" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;background:#2196f3;color:#fff;padding:14px 28px;border-radius:8px;box-shadow:0 4px 16px #1976d288;border:2px solid #1976d2;font-size:1.1em;">Saved!</div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/django/django.min.js"></script>

@@ -91,6 +91,8 @@ document.addEventListener('DOMContentLoaded', function() {
         editorInstance.setOption('mode', mode);
     }
     window.editorInstance = editorInstance;
+
+
     // Add Ctrl-F handler for find
     editorInstance.addKeyMap({
         'Ctrl-F': function(cm) {
