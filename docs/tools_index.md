@@ -12,7 +12,7 @@ Janito uses these tools automatically based on your prompt and context. This tab
 | **create_directory**      | Create a new directory at the specified path.                    | `path` (str): directory path                                       | Success or error message                  | Fails if directory already exists.                                                     |
 | **fetch_url**             | Fetch and extract text from a web page.                          | `url` (str): web page URL<br>`search_strings` (list of str, optional)                               | Extracted text or warning                 | Useful for research or referencing online resources.                                    |
 | **run_bash_command**      | Run a bash command and capture output.                           | `command` (str): bash command<br>`timeout` (int, optional)<br>`require_confirmation` (bool, opt.)   | File paths and line counts for output     | Requires bash (e.g., WSL or Git Bash on Windows). Use with caution.                     |
-| **find_files**            | Search for files matching a pattern.                             | `directories` (list)<br>`pattern` (str)<br>`max_depth` (int, optional; see find_files.md for details) | List of matching file paths               | Respects .gitignore. See find_files.md for max_depth details.                         |
+| **find_files**            | Search files matching a pattern.                             | `directories` (list)<br>`pattern` (str)<br>`max_depth` (int, optional; see find_files.md for details) | List of matching file paths               | Respects .gitignore. See find_files.md for max_depth details.                         |
 | **get_file_outline**      | Get outline of a file's structure (classes, functions, etc.).    | `file_path` (str)                                                                                   | Outline summary                           | Useful for code navigation and analysis.                                               |
 | **get_lines**             | Read lines or full content from a file.                          | `file_path` (str)<br>`from_line` (int, optional)<br>`to_line` (int, optional)                      | File content                              | Specify line range or omit for full content.                                              |
 | **move_file**             | Move a file to a new location.                                   | `src_path` (str)<br>`dest_path` (str)<br>`overwrite` (bool, optional)<br>`backup` (bool, optional) | Success or error message                  | Can create backup before moving.                                                       |
@@ -39,7 +39,7 @@ Janito uses these tools automatically based on your prompt and context. This tab
 | [Create Directory](tools/create_directory.md) | Create a new directory |
 | [Create File](tools/create_file.md) | Create a new file |
 | [Fetch URL](tools/fetch_url.md) | Fetch and extract web page text |
-| [Find Files](tools/find_files.md) | Search for files matching a pattern |
+| [Find Files](tools/find_files.md) | Search files matching a pattern |
 | [Get File Outline](tools/get_file_outline.md) | Outline of file structure |
 | [Get Lines](tools/get_lines.md) | Read lines or full content content |
 | [Move File](tools/move_file.md) | Move a file |

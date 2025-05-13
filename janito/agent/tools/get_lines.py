@@ -22,7 +22,7 @@ class GetLinesTool(ToolBase):
             - "---\nFile: /path/to/file.py | Lines: 1-10 (of 100)\n---\n<lines...>"
             - "---\nFile: /path/to/file.py | All lines (total: 100 (all))\n---\n<all lines...>"
             - "Error reading file: <error message>"
-            - "\u2757 not found"
+            - "❗ not found"
     """
 
     def run(self, file_path: str, from_line: int = None, to_line: int = None) -> str:
@@ -83,7 +83,7 @@ class GetLinesTool(ToolBase):
             if at_end:
                 self.report_success(
                     tr(
-                        " \u2705 {selected_len} {line_word} (end)",
+                        " ✅ {selected_len} {line_word} (end)",
                         selected_len=selected_len,
                         line_word=pluralize("line", selected_len),
                     )
@@ -91,7 +91,7 @@ class GetLinesTool(ToolBase):
             elif to_line < total_lines:
                 self.report_success(
                     tr(
-                        " \u2705 {selected_len} {line_word} ({remaining} to end)",
+                        " ✅ {selected_len} {line_word} ({remaining} to end)",
                         selected_len=selected_len,
                         line_word=pluralize("line", selected_len),
                         remaining=total_lines - to_line,
@@ -100,7 +100,7 @@ class GetLinesTool(ToolBase):
         else:
             self.report_success(
                 tr(
-                    " \u2705 {selected_len} {line_word} (all)",
+                    " ✅ {selected_len} {line_word} (all)",
                     selected_len=selected_len,
                     line_word=pluralize("line", selected_len),
                 )
@@ -143,7 +143,7 @@ class GetLinesTool(ToolBase):
     def _handle_read_error(self, e):
         """Handle file read errors and report appropriately."""
         if isinstance(e, FileNotFoundError):
-            self.report_error(tr("\u2757 not found"))
-            return tr("\u2757 not found")
-        self.report_error(tr(" \u274c Error: {error}", error=e))
+            self.report_error(tr("❗ not found"))
+            return tr("❗ not found")
+        self.report_error(tr(" ❌ Error: {error}", error=e))
         return tr("Error reading file: {error}", error=e)

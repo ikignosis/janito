@@ -45,7 +45,9 @@ class FindFilesTool(ToolBase):
             dir_output.add(os.path.join(root, d))
         return dir_output
 
-    def run(self, paths: str, pattern: str, max_depth: int = None) -> str:
+    def run(
+        self, paths: str, pattern: str, max_depth: int = None, max_results: int = 0
+    ) -> str:
         if not pattern:
             self.report_warning(tr("ℹ️ Empty file pattern provided."))
             return tr("Warning: Empty file pattern provided. Operation skipped.")
@@ -61,13 +63,15 @@ class FindFilesTool(ToolBase):
             self.report_info(
                 ActionType.READ,
                 tr(
-                    "🔍 Search for files '{pattern}' in '{disp_path}'{depth_msg} ...",
+                    "🔍 Search files '{pattern}' in '{disp_path}'{depth_msg} ...",
                     pattern=pattern,
                     disp_path=disp_path,
                     depth_msg=depth_msg,
                 ),
             )
             dir_output = set()
+            count_scanned = 0
+            limit_reached = False
             for root, dirs, files in walk_dir_with_gitignore(
                 directory, max_depth=max_depth
             ):
@@ -79,11 +83,17 @@ class FindFilesTool(ToolBase):
                         dir_output.update(
                             self._match_dirs_without_slash(root, dirs, pat)
                         )
+                if max_results > 0 and len(dir_output) >= max_results:
+                    limit_reached = True
+                    # Truncate to max_results
+                    dir_output = set(list(dir_output)[:max_results])
+                    break
             self.report_success(
                 tr(
-                    " ✅ {count} {file_word}",
+                    " ✅ {count} {file_word}{max_flag}",
                     count=len(dir_output),
                     file_word=pluralize("file", len(dir_output)),
+                    max_flag=" (max)" if limit_reached else "",
                 )
             )
             if directory.strip() == ".":

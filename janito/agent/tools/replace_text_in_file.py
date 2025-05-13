@@ -5,6 +5,8 @@ from janito.i18n import tr
 import shutil
 import re
 
+from janito.agent.tools.validate_file_syntax.core import validate_file_syntax
+
 
 @register_tool(name="replace_text_in_file")
 class ReplaceTextInFileTool(ToolBase):
@@ -82,9 +84,14 @@ class ReplaceTextInFileTool(ToolBase):
                 line_delta_str,
                 replace_all,
             )
-            return self._format_final_msg(
+            final_msg = self._format_final_msg(
                 file_path, warning, backup_path, match_info, details
             )
+            # Perform syntax validation and append result if file was changed
+            if file_changed:
+                validation_result = validate_file_syntax(file_path)
+                final_msg += f"\n{validation_result}"
+            return final_msg
         except Exception as e:
             self.report_error(tr(" \u274c Error"))
             return tr("Error replacing text: {error}", error=e)

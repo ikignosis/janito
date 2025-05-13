@@ -93,7 +93,7 @@ class ConversationHandler:
 
     def _handle_no_tool_support(self, messages, max_tokens, spinner):
         print(
-            "\u26a0\ufe0f Endpoint does not support tool use. Proceeding in vanilla mode (tools disabled)."
+            "⚠️ Endpoint does not support tool use. Proceeding in vanilla mode (tools disabled)."
         )
         runtime_config.set("vanilla_mode", True)
         resolved_max_tokens = 8000
