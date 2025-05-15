@@ -7,6 +7,7 @@ from janito.agent.tool_base import ToolBase
 from janito.agent.tools_utils.action_type import ActionType
 from janito.agent.tool_registry import register_tool
 from janito.i18n import tr
+from janito.agent.runtime_config import runtime_config
 
 
 @register_tool(name="python_file_runner")
@@ -23,23 +24,10 @@ class PythonFileRunnerTool(ToolBase):
     def run(self, file_path: str, timeout: int = 60) -> str:
         self.report_info(
             ActionType.EXECUTE,
-            tr("🚀 Running: python {file_path}", file_path=file_path),
+            tr("680 Running: python {file_path}", file_path=file_path),
         )
         try:
-            with (
-                tempfile.NamedTemporaryFile(
-                    mode="w+",
-                    prefix="python_file_stdout_",
-                    delete=False,
-                    encoding="utf-8",
-                ) as stdout_file,
-                tempfile.NamedTemporaryFile(
-                    mode="w+",
-                    prefix="python_file_stderr_",
-                    delete=False,
-                    encoding="utf-8",
-                ) as stderr_file,
-            ):
+            if runtime_config.get("all_out"):
                 process = subprocess.Popen(
                     [sys.executable, file_path],
                     stdout=subprocess.PIPE,
@@ -50,24 +38,88 @@ class PythonFileRunnerTool(ToolBase):
                     encoding="utf-8",
                     env={**os.environ, "PYTHONIOENCODING": "utf-8"},
                 )
-                stdout_lines, stderr_lines = self._stream_process_output(
-                    process, stdout_file, stderr_file
+                stdout_accum = []
+                stderr_accum = []
+
+                def read_stream(stream, report_func, accum):
+                    for line in stream:
+                        accum.append(line)
+                        report_func(line)
+
+                stdout_thread = threading.Thread(
+                    target=read_stream,
+                    args=(process.stdout, self.report_stdout, stdout_accum),
                 )
-                return_code = self._wait_for_process(process, timeout)
-                if return_code is None:
+                stderr_thread = threading.Thread(
+                    target=read_stream,
+                    args=(process.stderr, self.report_stderr, stderr_accum),
+                )
+                stdout_thread.start()
+                stderr_thread.start()
+                try:
+                    return_code = process.wait(timeout=timeout)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    self.report_error(
+                        tr("6d1 Timed out after {timeout} seconds.", timeout=timeout)
+                    )
                     return tr(
                         "Code timed out after {timeout} seconds.", timeout=timeout
                     )
-                stdout_file.flush()
-                stderr_file.flush()
+                stdout_thread.join()
+                stderr_thread.join()
                 self.report_success(
-                    tr("✅ Return code {return_code}", return_code=return_code)
+                    tr("197 Return code {return_code}", return_code=return_code)
                 )
-                return self._format_result(
-                    stdout_file.name, stderr_file.name, return_code
-                )
+                stdout = "".join(stdout_accum)
+                stderr = "".join(stderr_accum)
+                result = f"Return code: {return_code}\n--- STDOUT ---\n{stdout}"
+                if stderr and stderr.strip():
+                    result += f"\n--- STDERR ---\n{stderr}"
+                return result
+            else:
+                with (
+                    tempfile.NamedTemporaryFile(
+                        mode="w+",
+                        prefix="python_file_stdout_",
+                        delete=False,
+                        encoding="utf-8",
+                    ) as stdout_file,
+                    tempfile.NamedTemporaryFile(
+                        mode="w+",
+                        prefix="python_file_stderr_",
+                        delete=False,
+                        encoding="utf-8",
+                    ) as stderr_file,
+                ):
+                    process = subprocess.Popen(
+                        [sys.executable, file_path],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True,
+                        bufsize=1,
+                        universal_newlines=True,
+                        encoding="utf-8",
+                        env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+                    )
+                    stdout_lines, stderr_lines = self._stream_process_output(
+                        process, stdout_file, stderr_file
+                    )
+                    return_code = self._wait_for_process(process, timeout)
+                    if return_code is None:
+                        return tr(
+                            "Code timed out after {timeout} seconds.", timeout=timeout
+                        )
+                    stdout_file.flush()
+                    stderr_file.flush()
+                    self.report_success(
+                        tr("197 Return code {return_code}", return_code=return_code)
+                    )
+                    return self._format_result(
+                        stdout_file.name, stderr_file.name, return_code
+                    )
         except Exception as e:
-            self.report_error(tr("❌ Error: {error}", error=e))
+            self.report_error(tr("534 Error: {error}", error=e))
             return tr("Error running file: {error}", error=e)
 
     def _stream_process_output(self, process, stdout_file, stderr_file):
@@ -105,7 +157,7 @@ class PythonFileRunnerTool(ToolBase):
         except subprocess.TimeoutExpired:
             process.kill()
             self.report_error(
-                tr("❌ Timed out after {timeout} seconds.", timeout=timeout)
+                tr("6d1 Timed out after {timeout} seconds.", timeout=timeout)
             )
             return None
 

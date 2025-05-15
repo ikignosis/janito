@@ -18,7 +18,7 @@ def prepare_pattern(pattern, is_regex, report_error, report_warning):
             regex = re.compile(pattern)
             use_regex = True
         except re.error as e:
-            report_warning(tr("\u26a0\ufe0f Invalid regex pattern."))
+            report_warning(tr("⚠️ Invalid regex pattern."))
             return (
                 None,
                 False,

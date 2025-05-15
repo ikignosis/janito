@@ -259,6 +259,11 @@ def create_parser():
         help="Disable tool call reason tracking (no tools tracking)",
     )
     parser.add_argument(
+        "--all-out",
+        action="store_true",
+        help="Stream all output live to both the model and the screen, and do not store output in files. (use --all-out)",
+    )
+    parser.add_argument(
         "--tool-user",
         action="store_true",
         default=False,

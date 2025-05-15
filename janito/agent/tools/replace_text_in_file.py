@@ -93,7 +93,7 @@ class ReplaceTextInFileTool(ToolBase):
                 final_msg += f"\n{validation_result}"
             return final_msg
         except Exception as e:
-            self.report_error(tr(" \u274c Error"))
+            self.report_error(tr(" ❌ Error"))
             return tr("Error replacing text: {error}", error=e)
 
     def _read_file_content(self, file_path):
@@ -147,12 +147,12 @@ class ReplaceTextInFileTool(ToolBase):
         if replaced_count == 0:
             warning = tr(" [Warning: Search text not found in file]")
         if not file_changed:
-            self.report_warning(tr(" \u2139\ufe0f No changes made. [not found]"))
+            self.report_warning(tr(" ℹ️ No changes made. [not found]"))
             concise_warning = tr(
                 "No changes made. The search text was not found. Expand your search context with surrounding lines if needed."
             )
         if occurrences > 1 and replaced_count == 0:
-            self.report_warning(tr(" \u2139\ufe0f No changes made. [not unique]"))
+            self.report_warning(tr(" ℹ️ No changes made. [not unique]"))
             concise_warning = tr(
                 "No changes made. The search text is not unique. Expand your search context with surrounding lines to ensure uniqueness."
             )
@@ -162,11 +162,9 @@ class ReplaceTextInFileTool(ToolBase):
         """Report success with line numbers where replacements occurred."""
         if match_lines:
             lines_str = ", ".join(str(line_no) for line_no in match_lines)
-            self.report_success(
-                tr(" \u2705 replaced at {lines_str}", lines_str=lines_str)
-            )
+            self.report_success(tr(" ✅ replaced at {lines_str}", lines_str=lines_str))
         else:
-            self.report_success(tr(" \u2705 replaced (lines unknown)"))
+            self.report_success(tr(" ✅ replaced (lines unknown)"))
 
     def _get_line_delta_str(self, content, new_content):
         """Return a string describing the net line change after replacement."""

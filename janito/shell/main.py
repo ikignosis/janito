@@ -87,6 +87,51 @@ def load_session(shell_state, continue_session, session_id, profile_manager):
     return True
 
 
+def _handle_exit_confirmation(session, message_handler, conversation_history):
+    try:
+        confirm = (
+            session.prompt(
+                HTML("<inputline>Do you really want to exit? (y/n): </inputline>")
+            )
+            .strip()
+            .lower()
+        )
+    except KeyboardInterrupt:
+        message_handler.handle_message({"type": "error", "message": "Exiting..."})
+        return True
+    if confirm == "y":
+        message_handler.handle_message({"type": "error", "message": "Exiting..."})
+        conversation_history.add_message(
+            {"role": "system", "content": "[Session ended by user]"}
+        )
+        return True
+    return False
+
+
+def _handle_shell_command(user_input, console):
+    command = user_input.strip()[1:].strip()
+    if command:
+        console.print(f"[bold cyan]Executing shell command:[/] {command}")
+        exit_code = os.system(command)
+        console.print(f"[green]Command exited with code {exit_code}[/green]")
+    else:
+        console.print("[red]No command provided after ![/red]")
+
+
+def _handle_prompt_command(user_input, console, shell_state, conversation_history):
+    result = handle_command(
+        user_input.strip(),
+        console,
+        shell_state=shell_state,
+    )
+    if result == "exit":
+        conversation_history.add_message(
+            {"role": "system", "content": "[Session ended by user]"}
+        )
+        return True
+    return False
+
+
 def handle_prompt_loop(
     shell_state, session, profile_manager, agent, max_rounds, session_id
 ):
@@ -110,42 +155,22 @@ def handle_prompt_loop(
             break
         except KeyboardInterrupt:
             console.print()
-            try:
-                confirm = (
-                    session.prompt(
-                        HTML(
-                            "<inputline>Do you really want to exit? (y/n): </inputline>"
-                        )
-                    )
-                    .strip()
-                    .lower()
-                )
-            except KeyboardInterrupt:
-                message_handler.handle_message(
-                    {"type": "error", "message": "Exiting..."}
-                )
-                break
-            if confirm == "y":
-                message_handler.handle_message(
-                    {"type": "error", "message": "Exiting..."}
-                )
-                conversation_history.add_message(
-                    {"role": "system", "content": "[Session ended by user]"}
-                )
+            if _handle_exit_confirmation(
+                session, message_handler, conversation_history
+            ):
                 break
             else:
                 continue
+        # Handle !cmd command: execute shell command with os.system
+        if user_input.strip().startswith("!"):
+            _handle_shell_command(user_input, console)
+            continue
+
         cmd_input = user_input.strip().lower()
         if not was_paste_mode and (cmd_input.startswith("/") or cmd_input == "exit"):
-            result = handle_command(
-                user_input.strip(),
-                console,
-                shell_state=shell_state,
-            )
-            if result == "exit":
-                conversation_history.add_message(
-                    {"role": "system", "content": "[Session ended by user]"}
-                )
+            if _handle_prompt_command(
+                user_input, console, shell_state, conversation_history
+            ):
                 break
             continue
         if not user_input.strip():

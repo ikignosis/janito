@@ -125,7 +125,7 @@ class SearchTextTool(ToolBase):
         file_word = pluralize("match", count)
         self.report_success(
             tr(
-                " \u2705 {count} {file_word}{max_flag}",
+                " ✅ {count} {file_word}{max_flag}",
                 count=count,
                 file_word=file_word,
                 max_flag=" (max)" if dir_limit_reached else "",

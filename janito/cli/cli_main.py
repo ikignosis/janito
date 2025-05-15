@@ -18,32 +18,43 @@ def is_port_free(port):
         return s.connect_ex(("localhost", port)) != 0
 
 
+def _set_runtime_flags(args, flags):
+    for flag in flags:
+        if hasattr(args, flag):
+            runtime_config.set(flag, getattr(args, flag, False))
+
+
+def _set_runtime_if_present(args, attr, config_key=None):
+    if getattr(args, attr, None) is not None:
+        runtime_config.set(config_key or attr, getattr(args, attr))
+
+
 def normalize_args(args):
     if getattr(args, "vanilla", False):
         runtime_config.set("vanilla_mode", True)
     if getattr(args, "ntt", False):
         runtime_config.set("no_tools_tracking", True)
-    for flag in [
-        "verbose_http",
-        "verbose_http_raw",
-        "verbose_response",
-        "verbose_reason",
-        "verbose_tools",
-        "verbose_events",
-        "verbose_messages",
-    ]:
-        if hasattr(args, flag):
-            runtime_config.set(flag, getattr(args, flag, False))
+    if getattr(args, "all_out", False):
+        runtime_config.set("all_out", True)
+    _set_runtime_flags(
+        args,
+        [
+            "verbose_http",
+            "verbose_http_raw",
+            "verbose_response",
+            "verbose_reason",
+            "verbose_tools",
+            "verbose_events",
+            "verbose_messages",
+        ],
+    )
     if getattr(args, "trust_tools", False):
         runtime_config.set("trust_tools", True)
-    if getattr(args, "model", None):
-        runtime_config.set("model", args.model)
-    if getattr(args, "max_tools", None) is not None:
-        runtime_config.set("max_tools", args.max_tools)
+    _set_runtime_if_present(args, "model")
+    _set_runtime_if_present(args, "max_tools")
     if getattr(args, "verbose_reason", False):
         runtime_config.set("verbose_reason", True)
-    if getattr(args, "max_tokens", None) is not None:
-        runtime_config.set("max_tokens", args.max_tokens)
+    _set_runtime_if_present(args, "max_tokens")
 
 
 def setup_profile_manager(args, role, interaction_mode, profile, lang):

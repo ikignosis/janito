@@ -102,8 +102,8 @@ def _check_unclosed_inline_code(content):
 def _build_markdown_result(errors):
     if errors:
         msg = tr(
-            "\u26a0\ufe0f Warning: Markdown syntax issues found:\n{errors}",
+            "⚠️ Warning: Markdown syntax issues found:\n{errors}",
             errors="\n".join(errors),
         )
         return msg
-    return "\u2705 Syntax valid"
+    return "✅ Syntax valid"

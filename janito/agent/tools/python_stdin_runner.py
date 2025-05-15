@@ -7,6 +7,7 @@ from janito.agent.tool_base import ToolBase
 from janito.agent.tools_utils.action_type import ActionType
 from janito.agent.tool_registry import register_tool
 from janito.i18n import tr
+from janito.agent.runtime_config import runtime_config
 
 
 @register_tool(name="python_stdin_runner")
@@ -22,27 +23,14 @@ class PythonStdinRunnerTool(ToolBase):
 
     def run(self, code: str, timeout: int = 60) -> str:
         if not code.strip():
-            self.report_warning(tr("\u2139\ufe0f Empty code provided."))
+            self.report_warning(tr("ℹ️ Empty code provided."))
             return tr("Warning: Empty code provided. Operation skipped.")
         self.report_info(
             ActionType.EXECUTE,
-            tr("⚡ Running: python (stdin mode) ...\n{code}\n", code=code),
+            tr("5e1 Running: python (stdin mode) ...\n{code}\n", code=code),
         )
         try:
-            with (
-                tempfile.NamedTemporaryFile(
-                    mode="w+",
-                    prefix="python_stdin_stdout_",
-                    delete=False,
-                    encoding="utf-8",
-                ) as stdout_file,
-                tempfile.NamedTemporaryFile(
-                    mode="w+",
-                    prefix="python_stdin_stderr_",
-                    delete=False,
-                    encoding="utf-8",
-                ) as stderr_file,
-            ):
+            if runtime_config.get("all_out"):
                 process = subprocess.Popen(
                     [sys.executable],
                     stdin=subprocess.PIPE,
@@ -54,24 +42,91 @@ class PythonStdinRunnerTool(ToolBase):
                     encoding="utf-8",
                     env={**os.environ, "PYTHONIOENCODING": "utf-8"},
                 )
-                stdout_lines, stderr_lines = self._stream_process_output(
-                    process, stdout_file, stderr_file, code
+                stdout_accum = []
+                stderr_accum = []
+
+                def read_stream(stream, report_func, accum):
+                    for line in stream:
+                        accum.append(line)
+                        report_func(line)
+
+                stdout_thread = threading.Thread(
+                    target=read_stream,
+                    args=(process.stdout, self.report_stdout, stdout_accum),
                 )
-                return_code = self._wait_for_process(process, timeout)
-                if return_code is None:
+                stderr_thread = threading.Thread(
+                    target=read_stream,
+                    args=(process.stderr, self.report_stderr, stderr_accum),
+                )
+                stdout_thread.start()
+                stderr_thread.start()
+                process.stdin.write(code)
+                process.stdin.close()
+                try:
+                    return_code = process.wait(timeout=timeout)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    self.report_error(
+                        tr("6d1 Timed out after {timeout} seconds.", timeout=timeout)
+                    )
                     return tr(
                         "Code timed out after {timeout} seconds.", timeout=timeout
                     )
-                stdout_file.flush()
-                stderr_file.flush()
+                stdout_thread.join()
+                stderr_thread.join()
                 self.report_success(
-                    tr("\u2705 Return code {return_code}", return_code=return_code)
+                    tr("197 Return code {return_code}", return_code=return_code)
                 )
-                return self._format_result(
-                    stdout_file.name, stderr_file.name, return_code
-                )
+                stdout = "".join(stdout_accum)
+                stderr = "".join(stderr_accum)
+                result = f"Return code: {return_code}\n--- STDOUT ---\n{stdout}"
+                if stderr and stderr.strip():
+                    result += f"\n--- STDERR ---\n{stderr}"
+                return result
+            else:
+                with (
+                    tempfile.NamedTemporaryFile(
+                        mode="w+",
+                        prefix="python_stdin_stdout_",
+                        delete=False,
+                        encoding="utf-8",
+                    ) as stdout_file,
+                    tempfile.NamedTemporaryFile(
+                        mode="w+",
+                        prefix="python_stdin_stderr_",
+                        delete=False,
+                        encoding="utf-8",
+                    ) as stderr_file,
+                ):
+                    process = subprocess.Popen(
+                        [sys.executable],
+                        stdin=subprocess.PIPE,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True,
+                        bufsize=1,
+                        universal_newlines=True,
+                        encoding="utf-8",
+                        env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+                    )
+                    stdout_lines, stderr_lines = self._stream_process_output(
+                        process, stdout_file, stderr_file, code
+                    )
+                    return_code = self._wait_for_process(process, timeout)
+                    if return_code is None:
+                        return tr(
+                            "Code timed out after {timeout} seconds.", timeout=timeout
+                        )
+                    stdout_file.flush()
+                    stderr_file.flush()
+                    self.report_success(
+                        tr("197 Return code {return_code}", return_code=return_code)
+                    )
+                    return self._format_result(
+                        stdout_file.name, stderr_file.name, return_code
+                    )
         except Exception as e:
-            self.report_error(tr("\u274c Error: {error}", error=e))
+            self.report_error(tr("534 Error: {error}", error=e))
             return tr("Error running code via stdin: {error}", error=e)
 
     def _stream_process_output(self, process, stdout_file, stderr_file, code):
@@ -111,7 +166,7 @@ class PythonStdinRunnerTool(ToolBase):
         except subprocess.TimeoutExpired:
             process.kill()
             self.report_error(
-                tr("\u274c Timed out after {timeout} seconds.", timeout=timeout)
+                tr("6d1 Timed out after {timeout} seconds.", timeout=timeout)
             )
             return None
 

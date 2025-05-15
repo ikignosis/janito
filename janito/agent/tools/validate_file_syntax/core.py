@@ -36,7 +36,7 @@ def _get_validator(ext):
 
 
 def _handle_validation_error(e, report_warning):
-    msg = tr("\u26a0\ufe0f Warning: Syntax error: {error}", error=e)
+    msg = tr("⚠️ Warning: Syntax error: {error}", error=e)
     if report_warning:
         report_warning(msg)
     return msg
@@ -51,7 +51,7 @@ def validate_file_syntax(
         if validator:
             return validator(file_path)
         else:
-            msg = tr("\u26a0\ufe0f Warning: Unsupported file extension: {ext}", ext=ext)
+            msg = tr("⚠️ Warning: Unsupported file extension: {ext}", ext=ext)
             if report_warning:
                 report_warning(msg)
             return msg
@@ -78,9 +78,9 @@ class ValidateFileSyntaxTool(ToolBase):
         file_path (str): Path to the file to validate.
     Returns:
         str: Validation status message. Example:
-            - "\u2705 Syntax OK"
-            - "\u26a0\ufe0f Warning: Syntax error: <error message>"
-            - "\u26a0\ufe0f Warning: Unsupported file extension: <ext>"
+            - "✅ Syntax OK"
+            - "⚠️ Warning: Syntax error: <error message>"
+            - "⚠️ Warning: Unsupported file extension: <ext>"
     """
 
     def run(self, file_path: str) -> str:
@@ -98,8 +98,8 @@ class ValidateFileSyntaxTool(ToolBase):
             report_warning=self.report_warning,
             report_success=self.report_success,
         )
-        if result.startswith("\u2705"):
+        if result.startswith("✅"):
             self.report_success(result)
-        elif result.startswith("\u26a0\ufe0f"):
-            self.report_warning(tr("\u26a0\ufe0f ") + result.lstrip("\u26a0\ufe0f "))
+        elif result.startswith("⚠️"):
+            self.report_warning(tr("⚠️ ") + result.lstrip("⚠️ "))
         return result
