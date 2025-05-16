@@ -36,7 +36,8 @@ def format_tokens(n, tag=None):
     return f"<{tag}>{val}</{tag}>" if tag else val
 
 
-def assemble_first_line(model_name, role_ref, style_ref):
+def assemble_first_line(model_name, role_ref, style_ref, version=None):
+    version_part = f" Janito v{version}" if version else ""
     model_part = f" {tr('Model')}: <model>{model_name}</model>" if model_name else ""
     role_part = ""
     vanilla_mode = runtime_config.get("vanilla_mode", False)
@@ -50,6 +51,8 @@ def assemble_first_line(model_name, role_ref, style_ref):
         if style:
             style_part = f"{tr('Style')}: <b>{style}</b>"
     first_line_parts = []
+    if version_part:
+        first_line_parts.append(version_part)
     if model_part:
         first_line_parts.append(model_part)
     if role_part:
@@ -125,7 +128,9 @@ def get_toolbar_func(
 
     def get_toolbar():
         width = get_app().output.get_size().columns
-        first_line = assemble_first_line(model_name, role_ref, style_ref)
+        first_line = assemble_first_line(
+            model_name, role_ref, style_ref, version=version
+        )
         second_line = assemble_second_line(
             width,
             last_usage_info_ref,

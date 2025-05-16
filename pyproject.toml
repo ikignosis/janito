@@ -1,7 +1,7 @@
 [project]
 name = "janito"
 
-version = "1.13.0"
+version = "1.13.1"
 description = "Natural Language Coding Agent,"
 authors = [
     { name = "João Pinto", email = "joao.pinto@gmail.com" }
@@ -9,7 +9,6 @@ authors = [
 requires-python = ">=3.10"
 dependencies = [
     "beautifulsoup4",
-    "docstring-parser",
     "flask",
     "jinja2",
     "openai",
@@ -17,8 +16,10 @@ dependencies = [
     "prompt_toolkit",
     "requests",
     "rich",
-    "toml",
-    "lxml"
+    "lxml",
+    "PyYAML",
+    "quart",
+    "questionary"
 ]
 license = "MIT"
 readme = "README.md"

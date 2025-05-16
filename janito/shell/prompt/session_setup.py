@@ -44,6 +44,7 @@ def setup_prompt_session(
                 )
                 else (runtime_config.get("role") or effective_config.get("role"))
             ),
+            version=__version__,
             session_id=session_id,
             history_ref=history_ref,
         ),
