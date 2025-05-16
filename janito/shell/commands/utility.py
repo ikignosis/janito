@@ -6,6 +6,9 @@ def handle_help(console, **kwargs):
         help_text = getattr(handler, "help_text", None)
         if help_text:
             console.print(f"  {cmd} - {help_text}")
+    console.print(
+        "[bold cyan]!command[/]: Run a shell/cmd command without exiting the shell (e.g., !dir or !ls)"
+    )
 
 
 def handle_clear(console, **kwargs):
