@@ -1,6 +1,9 @@
-# 🚀 Janito: Natural Language Coding Agent
+# 🚀 Janito: Natural Language Programming Agent
 
 Janito is an AI-powered assistant for the command line and web that interprets natural language system_prompt_template to edit code, manage files, and analyze projects using patterns and tools designed by experienced software engineers. It prioritizes transparency, interactive clarification, and precise, reviewable changes.
+
+![Janito Terminal Shell Screenshot](https://github.com/joaompinto/janito/raw/main/docs/imgs/terminal_shell.png)
+
 
 For a technical overview, see the [Architecture Guide](docs/reference/architecture.md).
 
