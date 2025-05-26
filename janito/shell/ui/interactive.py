@@ -105,11 +105,11 @@ def assemble_second_line(
 
 def assemble_bindings_line():
     return (
-        f"<b> F12</b>: {tr('Quick Action')} | "
+        f" <b>F1</b>: {tr('Restart Conversation')} | "
+        f"<b>F12</b>: {tr('Do It')} | "
         f"<b>Ctrl-Y</b>: {tr('Yes')} | "
         f"<b>Ctrl-N</b>: {tr('No')} | "
-        f"<b>/help</b>: {tr('Help')} | "
-        f"<b>/restart</b>: {tr('Reset Conversation')}"
+        f"<b>/help</b>: {tr('Help')}"
     )
 
 
@@ -154,21 +154,17 @@ def get_toolbar_func(
 def get_custom_key_bindings():
     """
     Returns prompt_toolkit KeyBindings for custom CLI shortcuts:
-    - F12: Cycles through quick action phrases and submits.
+    - F12: Inserts 'Do It' and submits.
     - Ctrl-Y: Inserts 'Yes' and submits (for confirmation prompts).
     - Ctrl-N: Inserts 'No' and submits (for confirmation prompts).
     """
     bindings = KeyBindings()
-    _f12_instructions = ["proceed", "go ahead", "continue", "next", "okay"]
-    _f12_index = {"value": 0}
 
     @bindings.add("f12")
     def _(event):
         buf = event.app.current_buffer
-        idx = _f12_index["value"]
-        buf.text = _f12_instructions[idx]
+        buf.text = "Do It"
         buf.validate_and_handle()
-        _f12_index["value"] = (idx + 1) % len(_f12_instructions)
 
     @bindings.add("c-y")
     def _(event):
@@ -180,6 +176,12 @@ def get_custom_key_bindings():
     def _(event):
         buf = event.app.current_buffer
         buf.text = "No"
+        buf.validate_and_handle()
+
+    @bindings.add("f1")
+    def _(event):
+        buf = event.app.current_buffer
+        buf.text = "/restart"
         buf.validate_and_handle()
 
     return bindings

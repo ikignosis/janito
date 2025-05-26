@@ -39,9 +39,15 @@ class FileConfig(BaseConfig):
     def load(self):
         if self.path.exists():
             with open(self.path, "r", encoding="utf-8") as f:
-                self._data = json.load(f)
-                # Remove keys with value None (null in JSON)
-                self._data = {k: v for k, v in self._data.items() if v is not None}
+                try:
+                    self._data = json.load(f)
+                    # Remove keys with value None (null in JSON)
+                    self._data = {k: v for k, v in self._data.items() if v is not None}
+                except json.JSONDecodeError as e:
+                    print(
+                        f"⚠️ Warning: The config file '{self.path}' is corrupted (invalid JSON): {e}. Using empty config."
+                    )
+                    self._data = {}
 
         else:
             self._data = {}
