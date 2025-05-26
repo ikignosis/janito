@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.14.0] - 2024-06-XX
+
+### Summary of changes since 1.13.1
+- Improved configuration file robustness and error handling.
+- Updated and clarified system prompt template guidelines.
+- Refined interactive shell key bindings for better usability.
+- Renamed all references from "Natural Language Coding" to "Natural Language Programming" (see issue #1).
+- Bumped project version to v1.14.0.
+
+### Features & Improvements
+- Handle JSONDecodeError in FileConfig to prevent crashes on corrupted config files.
+- Update system prompt template for clearer instructions and guidelines.
+- Revise interactive shell key bindings: add F1 for restart, simplify F12 to "Do It", and update toolbar hints accordingly.
+
+### Refactoring
+- Rename: Natural Language Coding → Natural Language Programming (closes #1).
+
+### Maintenance
+- Bump version to v1.14.0 in pyproject.toml.
+
+
 ## [1.11.0] - 2025-05-10
 
 ### Summary of changes since 1.10.0
