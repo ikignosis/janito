@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.14.0] - 2024-06-XX
+## [1.14.0] - 2025-05-26
 
 ### Summary of changes since 1.13.1
 - Improved configuration file robustness and error handling.
