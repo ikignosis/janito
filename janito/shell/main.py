@@ -295,6 +295,7 @@ def start_chat_shell(
     console.clear()
     shell_state = ShellState()
     shell_state.profile_manager = profile_manager
+    profile_manager.refresh_prompt()
     user_input_history = UserInputHistory()
     user_input_dicts = user_input_history.load()
     mem_history = shell_state.mem_history

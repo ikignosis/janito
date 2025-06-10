@@ -3,10 +3,20 @@ from janito.agent.runtime_config import runtime_config
 
 def handle_prompt(console, shell_state=None, **kwargs):
     profile_manager = kwargs.get("profile_manager")
-    prompt = profile_manager.system_prompt_template if profile_manager else None
-    if not prompt and profile_manager:
+    if not profile_manager and shell_state and hasattr(shell_state, "profile_manager"):
+        profile_manager = shell_state.profile_manager
+    prompt = None
+    if profile_manager:
         prompt = profile_manager.system_prompt_template
-    console.print(f"[bold magenta]System Prompt:[/bold magenta]\n{prompt}")
+        if not prompt:
+            profile_manager.refresh_prompt()
+            prompt = profile_manager.system_prompt_template
+    if not prompt:
+        console.print(
+            "[bold red]System prompt is not initialized. Please check your profile configuration.[/bold red]"
+        )
+    else:
+        console.print(f"[bold magenta]System Prompt:[/bold magenta]\n{prompt}")
 
 
 handle_prompt.help_text = "Show the system prompt"
