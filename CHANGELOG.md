@@ -1,5 +1,8 @@
 # Changelog
 
+## [1.14.3] - 2025-05-26
+- Bumped project version to v1.14.3.
+
 ## [1.14.2] - 2025-05-26
 
 ### Summary of changes since 1.13.1
@@ -8,7 +11,7 @@
 - Updated and clarified system prompt template guidelines.
 - Refined interactive shell key bindings for better usability.
 - Renamed all references from "Natural Language Coding" to "Natural Language Programming" (see issue #1).
-- Bumped project version to v1.14.2.
+- Bumped project version to v1.14.3.
 
 ### Features & Improvements
 
@@ -22,7 +25,7 @@
 
 ### Maintenance
 
-- Bump version to v1.14.2 in pyproject.toml.
+- Bump version to v1.14.3 in pyproject.toml.
 
 
 ## [1.11.0] - 2025-05-10
