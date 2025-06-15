@@ -11,6 +11,10 @@
         <link rel="canonical" href="https://joaompinto.github.io/janito/guides/tools-developer-guide/">
       
       
+        <link rel="prev" href="../developing/">
+      
+      
+        <link rel="next" href="../../meta/developer-toolchain/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -392,7 +396,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../terminal_shell.md" class="md-nav__link">
+      <a href="../terminal-shell/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -414,7 +418,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../single_shot_terminal.md" class="md-nav__link">
+      <a href="../single-shot-terminal/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -436,29 +440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../prompt_profiles.md" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Prompt Profiles & Styles
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../prompting/prompt_design_style.md" class="md-nav__link">
+      <a href="../../concepts/prompt-design-style/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -484,17 +466,19 @@
       
   
   
+    
   
   
+  
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
           <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
@@ -509,7 +493,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             Developing & Extending
@@ -542,10 +526,31 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../tools_developer_guide.md" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Tools Developer Guide
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -555,6 +560,116 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#requirements" class="md-nav__link">
+    <span class="md-ellipsis">
+      Requirements
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#example-creating-a-tool" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example: Creating a Tool
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#steps-to-add-a-tool" class="md-nav__link">
+    <span class="md-ellipsis">
+      Steps to Add a Tool
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#docstring-style" class="md-nav__link">
+    <span class="md-ellipsis">
+      Docstring Style
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-happens-if-you-omit-a-description" class="md-nav__link">
+    <span class="md-ellipsis">
+      What Happens If You Omit a Description?
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tool-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tool Reference
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tool-call-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tool Call Limits
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#system-prompt-precedence" class="md-nav__link">
+    <span class="md-ellipsis">
+      System Prompt Precedence
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#interactive-shell-config-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      Interactive Shell Config Commands
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Summary
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -567,7 +682,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../meta/developer_toolchain.md" class="md-nav__link">
+      <a href="../../meta/developer-toolchain/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -690,7 +805,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../code_intelligence/our_approach.md" class="md-nav__link">
+      <a href="../../code_intelligence/our-approach/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -712,7 +827,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../code_intelligence/code_generation_challenges.md" class="md-nav__link">
+      <a href="../../code_intelligence/code-generation-challenges/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -734,7 +849,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../code_intelligence/code_generation_observability.md" class="md-nav__link">
+      <a href="../../code_intelligence/code-generation-observability/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -756,7 +871,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../code_intelligence/agentic_frameworks_comparison.md" class="md-nav__link">
+      <a href="../../code_intelligence/agentic-frameworks-comparison/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -996,6 +1111,28 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/analysis-style/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Prompt Analysis Style
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1068,7 +1205,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../about/vs_webchats.md" class="md-nav__link">
+      <a href="../../about/vs-webchats/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
