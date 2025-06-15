@@ -8,9 +8,13 @@
       
       
       
-        <link rel="canonical" href="https://joaompinto.github.io/janito/code_intelligence/code-generation-observability/">
+        <link rel="canonical" href="https://joaompinto.github.io/janito/concepts/language-model-clients/">
       
       
+        <link rel="prev" href="../">
+      
+      
+        <link rel="next" href="../../about/why/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -18,7 +22,7 @@
     
     
       
-        <title>Code Generation Observability - Janito</title>
+        <title>What Is a Language Model Client? - Janito</title>
       
     
     
@@ -70,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#code-generation-observability" class="md-skip">
+        <a href="#what-is-a-language-model-client" class="md-skip">
           Skip to content
         </a>
       
@@ -106,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Code Generation Observability
+              What Is a Language Model Client?
             
           </span>
         </div>
@@ -690,7 +694,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../our_approach.md" class="md-nav__link">
+      <a href="../../code_intelligence/our_approach.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -712,7 +716,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../code_generation_challenges.md" class="md-nav__link">
+      <a href="../../code_intelligence/code_generation_challenges.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -734,7 +738,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../code_generation_observability.md" class="md-nav__link">
+      <a href="../../code_intelligence/code_generation_observability.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -756,7 +760,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../agentic_frameworks_comparison.md" class="md-nav__link">
+      <a href="../../code_intelligence/agentic_frameworks_comparison.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -920,17 +924,19 @@
       
   
   
+    
   
   
+  
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
         
           
           <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
@@ -945,7 +951,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             Concepts
@@ -959,7 +965,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../concepts/" class="md-nav__link">
+      <a href="../" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -978,10 +984,29 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../concepts/language-model-clients/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    What Is a Language Model Client?
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -991,6 +1016,66 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-a-language-model-client" class="md-nav__link">
+    <span class="md-ellipsis">
+      What Is a Language Model Client?
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#thin-vs-thick-clients" class="md-nav__link">
+    <span class="md-ellipsis">
+      Thin vs. Thick Clients
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Thin vs. Thick Clients">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#thin-clients" class="md-nav__link">
+    <span class="md-ellipsis">
+      Thin Clients
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#thick-clients" class="md-nav__link">
+    <span class="md-ellipsis">
+      Thick Clients
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1151,8 +1236,6 @@
   
   
   
-    
-  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -1161,38 +1244,44 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#what-is-a-language-model-client" class="md-nav__link">
     <span class="md-ellipsis">
-      Overview
+      What Is a Language Model Client?
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#benefits" class="md-nav__link">
+  <a href="#thin-vs-thick-clients" class="md-nav__link">
     <span class="md-ellipsis">
-      Benefits
+      Thin vs. Thick Clients
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Thin vs. Thick Clients">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#thin-clients" class="md-nav__link">
+    <span class="md-ellipsis">
+      Thin Clients
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#example-workflow" class="md-nav__link">
+        
+          <li class="md-nav__item">
+  <a href="#thick-clients" class="md-nav__link">
     <span class="md-ellipsis">
-      Example Workflow
+      Thick Clients
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#screenshot" class="md-nav__link">
-    <span class="md-ellipsis">
-      Screenshot
-    </span>
-  </a>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1215,32 +1304,36 @@
   
 
 
-<h1 id="code-generation-observability">Code Generation Observability</h1>
-<h2 id="overview">Overview</h2>
-<p>Code Generation Observability is a feature that provides users with transparent, step-by-step visibility into the assistant's code search, analysis, and generation process. This allows users to:</p>
-<ul>
-<li>See which files, lines, and patterns are being searched.</li>
-<li>Observe the assistant's inference and workflow as it investigates issues or implements features.</li>
-<li>Intervene or redirect the assistant by providing feedback at each step, improving the quality and relevance of the results.</li>
-</ul>
-<h2 id="benefits">Benefits</h2>
-<ul>
-<li><strong>Transparency:</strong> Users understand how results are produced.</li>
-<li><strong>Debuggability:</strong> Easier to spot where misunderstandings or errors occur.</li>
-<li><strong>Control:</strong> Users can guide the assistant more effectively.</li>
-</ul>
-<h2 id="example-workflow">Example Workflow</h2>
-<p>When investigating a problem (e.g., a missing keyboard shortcut), the assistant will:</p>
-<ol>
-<li>Search for relevant keywords or patterns in the codebase.</li>
-<li>Display search results, including file names and matching lines.</li>
-<li>Summarize findings and request user input if multiple directions are possible.</li>
-<li>Continue investigation or implementation based on user feedback.</li>
-</ol>
-<h2 id="screenshot">Screenshot</h2>
-<p><img alt="Code Generation Observability Example" src="../../imgs/code-generation-observability.png" /></p>
+  <h1>What Is a Language Model Client?</h1>
+
+<h2 id="what-is-a-language-model-client">What Is a Language Model Client?</h2>
+<p>A Language Model client is a software component or application that interacts with a language model via a RESTful API. The client sends requests over HTTP(S), supplying a prompt and optional parameters, and then processes the response returned by the service. This architecture abstracts away the complexities of model hosting, scaling, and updates, allowing developers to focus on application logic.</p>
 <hr />
-<p><em>generated by janito.dev</em></p>
+<h2 id="thin-vs-thick-clients">Thin vs. Thick Clients</h2>
+<p>Language Model clients generally fall into two categories based on where and how much processing they handle: <strong>Thin Clients</strong> and <strong>Thick Clients</strong>.</p>
+<h3 id="thin-clients">Thin Clients</h3>
+<p>A thin client is designed to be lightweight and stateless. It primarily acts as a straightforward conduit that relays user prompts and parameters directly to the language model service and passes the raw response back to the application, similar to how a remote control sends commands without processing them. Key characteristics include:</p>
+<ul>
+<li><strong>Minimal Processing</strong>: Performs little to no transformation on the input prompt or the output response beyond basic formatting and validation.</li>
+<li><strong>Low Resource Usage</strong>: Requires minimal CPU and memory, making it easy to deploy in resource-constrained environments like IoT devices or edge servers.</li>
+<li><strong>Model Support</strong>: Supports both small-footprint models (e.g., <code>*-mini</code>, <code>*-nano</code>) for low-latency tasks and larger models (e.g., GPT O3 Pro, Sonnet 4 Opus) when higher accuracy or more complex reasoning is required.</li>
+<li><strong>Agentic Capabilities</strong>: Supports function calls for agentic workflows, enabling dynamic tool or API integrations that allow the client to perform actions based on LLM responses.</li>
+<li><strong>Ease of Maintenance</strong>: Simple codebase with few dependencies, leading to easier updates and debugging.</li>
+<li><strong>Self-Sufficiency</strong>: Can operate independently without bundling additional applications, ideal for lightweight deployments.</li>
+</ul>
+<p><strong>Use Case:</strong> A CLI code assistant like <strong>aider.chat</strong> or <strong>janito.dev</strong>, which runs as a command-line tool, maintains session context, refines developer prompts, handles fallbacks, and integrates with local code repositories before sending requests to the LLM and processing responses for display in the terminal.</p>
+<h3 id="thick-clients">Thick Clients</h3>
+<p>A thick client handles more logic locally before and after communicating with the LLM service. It may preprocess prompts, manage context, cache results, or post-process responses to enrich functionality. Key characteristics include:</p>
+<ul>
+<li><strong>Higher Resource Usage</strong>: Requires more CPU, memory, and possibly GPU resources, as it performs advanced processing locally.</li>
+<li><strong>Model Requirements</strong>: Typically designed to work with larger, full-weight models (e.g., GPT-4, Llama 65B), leveraging richer capabilities at the cost of increased latency and resource consumption.</li>
+<li><strong>Enhanced Functionality</strong>: Offers capabilities like local caching for rate limiting, advanced analytics on responses, or integration with other local services (e.g., databases, file systems).</li>
+<li><strong>Inter-Client Communication</strong>: Supports Model Context Protocol (MCP) or Agent-to-Agent (A2A) workflows, enabling coordination and task delegation among multiple agent instances.</li>
+<li><strong>Bundled Integration</strong>: Often bundled or coupled with desktop or web applications to provide a richer user interface and additional features.</li>
+</ul>
+<p><strong>Use Case:</strong> A desktop application that manages multi-turn conversations, maintains state across sessions, and integrates user-specific data before sending refined prompts to the LLM and processing the returned content for display.</p>
+<hr />
+<p>Next, we can explore considerations such as security, scaling, and best practices for choosing between thin and thick clients.</p>
 
 
 
