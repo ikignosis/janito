@@ -55,7 +55,7 @@ for event in agent.chat(
 To add support for a new LLM provider:
 
 1. Subclass `LLMDriver`.
-2. Implement the `_process_driver_input()` method, which consumes a DriverInput object, performs LLM generation, and emits DriverEvent objects to the output queue.
+2. Implement the `_process_input()` method, which consumes a DriverInput object, performs LLM generation, and emits DriverEvent objects to the output queue.
 3. Emit standardized events as output is generated.
 
 ## Provider-Specific Notes
