@@ -7,7 +7,6 @@
 
 - 🧩 **Bring your own model using the OpenAI-compatible API!**
 
-- 🟢 **OpenRouter** (default)
 - 🟦 **OpenAI** (api.openai.com)
 - 🟪 **Azure OpenAI**
 
@@ -31,4 +30,4 @@ Janito is compatible with most OpenAI-compatible chat models, including but not 
 
 - Some advanced features (like tool calling) require models that support OpenAI function calling.
 - Model availability and pricing depend on your provider and API key.
-- For the latest list of supported models, see your provider’s documentation or the [OpenRouter models page](https://openrouter.ai/models).
+- For the latest list of supported models, see your provider’s documentation or the [OpenAI models page](https://platform.openai.com/docs/models).

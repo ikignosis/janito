@@ -9,7 +9,7 @@ This document lists all command-line flags and configuration options supported b
 - `input_arg` (positional): Prompt to send to the model, or session ID if --continue is used.
 - `--list [N]`: List the last N sessions (default: 10) and exit.
 - `--view SESSION_ID`: View the content of a conversation history by session id and exit.
-- `--set-provider-config NAME KEY VALUE`: Set a provider config parameter (e.g., --set-provider-config openrouter.ai api_key sk-xxx).
+- `--set-provider-config NAME KEY VALUE`: Set a provider config parameter (e.g., --set-provider-config openai api_key sk-xxx).
 - `--lang LANG`: Language for interface messages (e.g., en, pt). Overrides config if set.
 - `--max-tokens N`: Maximum tokens for model response (overrides config, default: 32000).
 - `--max-tools N`: Maximum number of tool calls allowed within a chat session (default: unlimited).
