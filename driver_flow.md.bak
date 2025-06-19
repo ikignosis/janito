@@ -7,7 +7,7 @@ This document explains the updated flow for how content and tool calls are proce
 ## Flow Overview
 
 1. **Model Response Handling (Driver Layer)**
-    - The entrypoint is `OpenAIModelDriver._process_driver_input` (in `janito/drivers/openai/driver.py`).
+    - The entrypoint is `OpenAIModelDriver._process_input` (in `janito/drivers/openai/driver.py`).
     - The driver collects output from the model (including content parts, tool call suggestions, etc.), and emits a single `ResponseReceived` event (from `janito/driver_events.py`).
     - This event contains all content, tool calls, normalized timestamps, and relevant metadata.
 

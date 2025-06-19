@@ -78,7 +78,7 @@ Each tool inherits from `ToolBase` and implements a specific function:
 - **FetchUrlTool**
 - **FindFilesTool**
 - **GetFileOutlineTool**
-- **ViewFileTool**
+- **GetLinesTool**
 - **StoreMemoryTool**
 - **RetrieveMemoryTool**
 - **MoveFileTool**

@@ -17,10 +17,10 @@ For a technical overview of the system, see the Architecture Guide in the docume
 ## Example: Creating a Tool
 
 ```python
-from janito.tools.tool_base import ToolBase
-from janito.tools.adapters.local.adapter import register_local_tool
+from janito.agent.tool_base import ToolBase
+from janito.agent.tool_registry import register_tool
 
-@register_local_tool
+@register_tool
 class MyTool(ToolBase):
     """
     Processes a file a given number of times.
@@ -42,7 +42,7 @@ class MyTool(ToolBase):
 1. **Define your tool as a class** inheriting from `ToolBase`.
 2. **Add a class-level docstring** summarizing the tool's purpose (user-facing).
 3. **Implement the `run` method** with type hints and a Google-style docstring, including an `Args:` section describing every parameter.
-4. **Register your tool** by decorating the class with `@register_tool` from `janito.agent.tool_registry`. You must also set a unique class attribute `name = "your_tool_name"` to specify the registration name.
+4. **Register your tool** by decorating the class with `@register_tool` from `janito.agent.tool_registry`.
 5. **Document your tool**: Update `janito/agent/tools/README.md` with a short description and usage for your new tool.
 
 ## Docstring Style
