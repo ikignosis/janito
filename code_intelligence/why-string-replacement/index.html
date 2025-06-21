@@ -8,13 +8,13 @@
       
       
       
-        <link rel="canonical" href="https://joaompinto.github.io/janito/code_intelligence/agentic-frameworks-comparison/">
+        <link rel="canonical" href="https://joaompinto.github.io/janito/code_intelligence/why-string-replacement/">
       
       
-        <link rel="prev" href="../code-generation-observability/">
+        <link rel="prev" href="../agentic-frameworks-comparison/">
       
       
-        <link rel="next" href="../why-string-replacement/">
+        <link rel="next" href="../../guides/configuration/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -22,7 +22,7 @@
     
     
       
-        <title>Agentic Frameworks Comparison - Janito</title>
+        <title>Why String-Replacement Rules? - Janito</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#why-janito-uses-a-built-in-agentic-framework-for-code" class="md-skip">
+        <a href="#why-janito-prefers-stringreplacement-rules-over-unified-diffs" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Agentic Frameworks Comparison
+              Why String-Replacement Rules?
             
           </span>
         </div>
@@ -739,6 +739,28 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../agentic-frameworks-comparison/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Agentic Frameworks Comparison
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -755,7 +777,7 @@
           
   
   <span class="md-ellipsis">
-    Agentic Frameworks Comparison
+    Why String-Replacement Rules?
     
   </span>
   
@@ -767,7 +789,7 @@
         
   
   <span class="md-ellipsis">
-    Agentic Frameworks Comparison
+    Why String-Replacement Rules?
     
   </span>
   
@@ -799,36 +821,36 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#general-purpose-agentic-frameworks" class="md-nav__link">
+  <a href="#1-trainingsignal-alignment" class="md-nav__link">
     <span class="md-ellipsis">
-      General-purpose Agentic Frameworks
+      1 Training‑Signal Alignment
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#janitos-built-in-agentic-framework" class="md-nav__link">
+  <a href="#2-tokenbudget-efficiency" class="md-nav__link">
     <span class="md-ellipsis">
-      Janito’s Built-in Agentic Framework
+      2 Token‑Budget Efficiency
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#why-this-matters" class="md-nav__link">
+  <a href="#3-robustness-in-real-codebases" class="md-nav__link">
     <span class="md-ellipsis">
-      Why This Matters
+      3 Robustness in Real Codebases
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#conclusion" class="md-nav__link">
+  <a href="#takeaway" class="md-nav__link">
     <span class="md-ellipsis">
-      Conclusion
+      Takeaway
     </span>
   </a>
   
@@ -838,28 +860,6 @@
   
 </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../why-string-replacement/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Why String-Replacement Rules?
-    
-  </span>
-  
-
-      </a>
     </li>
   
 
@@ -1286,36 +1286,36 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#general-purpose-agentic-frameworks" class="md-nav__link">
+  <a href="#1-trainingsignal-alignment" class="md-nav__link">
     <span class="md-ellipsis">
-      General-purpose Agentic Frameworks
+      1 Training‑Signal Alignment
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#janitos-built-in-agentic-framework" class="md-nav__link">
+  <a href="#2-tokenbudget-efficiency" class="md-nav__link">
     <span class="md-ellipsis">
-      Janito’s Built-in Agentic Framework
+      2 Token‑Budget Efficiency
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#why-this-matters" class="md-nav__link">
+  <a href="#3-robustness-in-real-codebases" class="md-nav__link">
     <span class="md-ellipsis">
-      Why This Matters
+      3 Robustness in Real Codebases
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#conclusion" class="md-nav__link">
+  <a href="#takeaway" class="md-nav__link">
     <span class="md-ellipsis">
-      Conclusion
+      Takeaway
     </span>
   </a>
   
@@ -1340,44 +1340,51 @@
   
 
 
-<h1 id="why-janito-uses-a-built-in-agentic-framework-for-code">Why Janito Uses a Built-in Agentic Framework for Code</h1>
+<h1 id="why-janito-prefers-stringreplacement-rules-over-unified-diffs">Why Janito Prefers String‑Replacement Rules over Unified Diffs</h1>
 <h2 id="overview">Overview</h2>
-<p>Janito is designed with a built-in agentic framework tailored specifically for code generation, analysis, and editing. This approach is fundamentally different from most general-purpose agentic frameworks, which are typically optimized for structured data extraction and workflow automation.</p>
-<h2 id="general-purpose-agentic-frameworks">General-purpose Agentic Frameworks</h2>
-<ul>
-<li><strong>Primary Focus:</strong></li>
-<li>Extracting structured data from unstructured text (e.g., forms, tables, summaries).</li>
-<li>Automating business processes, information retrieval, or conversational flows.</li>
-<li><strong>Strengths:</strong></li>
-<li>Well-suited for tasks where the output is a set of fields, entities, or facts.</li>
-<li>Often rely on templates, schemas, or predefined extraction rules.</li>
-<li><strong>Limitations for Code:</strong></li>
-<li>Lack deep understanding of code semantics, dependencies, and context.</li>
-<li>Not designed for precise, context-aware code editing or refactoring.</li>
-<li>Struggle with the fragility and interconnectedness of code (see <a href="../code-generation-challenges/">Challenges of Code Generation and Editing for LLMs</a>).</li>
-</ul>
-<h2 id="janitos-built-in-agentic-framework">Janito’s Built-in Agentic Framework</h2>
-<ul>
-<li><strong>Primary Focus:</strong></li>
-<li>Code search, analysis, editing, and refactoring.</li>
-<li>Maintaining traceability and explicit error handling.</li>
-<li>Supporting developer workflows and codebase evolution.</li>
-<li><strong>Key Features:</strong></li>
-<li>Step-by-step code search and inference, with user-visible progress (see <a href="../code-generation-observability/">Code Generation Observability</a>).</li>
-<li>Validation and testing of code changes.</li>
-<li>Awareness of code structure, dependencies, and side effects.</li>
-<li>Designed for iterative, collaborative development.</li>
-</ul>
-<h2 id="why-this-matters">Why This Matters</h2>
-<ul>
-<li><strong>Reliability:</strong> Code changes require precision and context-awareness—mistakes can break systems.</li>
-<li><strong>Traceability:</strong> Developers need to understand and audit every change, not just the final output.</li>
-<li><strong>Developer Experience:</strong> Janito’s workflow is optimized for real-world coding, not just data extraction.</li>
-</ul>
-<h2 id="conclusion">Conclusion</h2>
-<p>Janito’s tailored agentic framework is purpose-built for the unique challenges of code generation and editing. It provides the transparency, precision, and control that developers need—going far beyond what general-purpose agentic frameworks can offer for code-centric tasks.</p>
+<p>Janito is an LLM‑driven code‑editing agent. Instead of asking the model to <strong>provide a unified diff</strong>, Janito provides tooling primitives that steer the model to emit a set of <strong>deterministic plain‑string find/replace rules</strong>, which Janito then applies atomically. This choice maximises reliability, prompt economy, and alignment with the model’s learned behaviour.</p>
 <hr />
-<p><em>generated by janito.dev</em></p>
+<h2 id="1-trainingsignal-alignment">1  Training‑Signal Alignment</h2>
+<ul>
+<li><strong>Dominant exposure to raw code.</strong> In public‑code crawls, plain source lines outnumber diff tokens by <strong>~20‑40 : 1</strong>. The model has far richer “muscle memory” for patterns like <code>foo(bar)</code> than for hunk headers such as <code>@@ -42,7 +42,8 @@</code>.</li>
+<li><strong>Micro‑edit datasets reinforce replacements.</strong> Fine‑tune corpora like <em>Google Codediffs</em> and <em>CommitPack</em> present before/after snippets aligned token‑by‑token. The most common gradient update is “substitute X with Y,” not “parse and merge a patch.”</li>
+<li><strong>Pull‑request &amp; review corpora add contextual edits.</strong> Large crawls ingest GitHub PR diffs, mailing‑list patches (e.g., LKML), and Stack Overflow suggested edits. These sources boost the model’s familiarity with diff syntax, but they remain a minority slice of the overall training mix and are often noisier than pristine source.</li>
+<li><strong>Forums &amp; step‑by‑step tutorials reinforce direct replacements.</strong> Blog posts and Q&amp;A answers frequently present code “before” and “after,” or instruct: <em>“Change <code>foo = false</code> to <code>foo = true</code> in your config.”</em> These snippets rarely include full diff headers; they mirror the granularity of plain string edits, further tuning the model toward replacement‑style transformations.</li>
+</ul>
+<blockquote>
+<p><strong>Implication:</strong> A replacement rule asks the model to perform the transformation it has practised millions of times; interpreting a diff asks it to switch to a much rarer skill.</p>
+</blockquote>
+<hr />
+<h2 id="2-tokenbudget-efficiency">2  Token‑Budget Efficiency</h2>
+<table>
+<thead>
+<tr>
+<th>Expression of the same change</th>
+<th>Typical token cost</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unified diff (6‑line hunk)</td>
+<td>~70–90 tokens</td>
+</tr>
+<tr>
+<td>Plain string‑replacement rule</td>
+<td>~10–15 tokens</td>
+</tr>
+</tbody>
+</table>
+<p>Shorter prompts leave more room for <em>actual code</em> and <em>high‑level instructions</em>, reducing context‑window pressure and latency.</p>
+<hr />
+<h2 id="3-robustness-in-real-codebases">3  Robustness in Real Codebases</h2>
+<ul>
+<li><strong>Line‑shift tolerance.</strong> If the file drifts after the diff was generated, context lines may no longer match. A string rule keyed to the target pattern still fires.</li>
+<li><strong>Noise immunity.</strong> Email trailers, MIME boundaries, or CI banners embedded in patches confuse parsers but do not affect literal pattern matching.</li>
+<li><strong>Encoding quirks.</strong> Different EOL conventions or charset mishaps break patch offsets; a plain string match usually survives them.</li>
+</ul>
+<hr />
+<h2 id="takeaway">Takeaway</h2>
+<p>Plain string‑replacement rules line up with the LLM’s most frequent training examples, use a fraction of the tokens, and sidestep brittle patch‑parsing failure modes. That is why Janito’s selected edit strategy is <strong>rule‑first</strong>.</p>
 
 
 
