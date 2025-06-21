@@ -22,10 +22,19 @@ You are a(n) [role] with expertise in [domain]. Your task is to...
 - You are a security auditor specializing in web applications. Review the configuration files for potential vulnerabilities.
 - You are a data scientist with experience in time series analysis. Examine the dataset and summarize key trends.
 
+## Extending with Analysis Actions
+After declaring the role and domain, extend the prompt with clear, actionable analysis instructions. 
+### Guidance:
+- Clearly state the analysis objective (e.g., "identify core technologies", "summarize vulnerabilities", "extract key metrics").
+- Specify the expected output format (e.g., bullet points, summary, table).
+- Avoid ambiguity—list exactly what should be included or excluded.
+- Use the condition-before-action (CBA) structure for any prerequisites or constraints.
+
 ## Best Practices
 - Always start with a clear role and domain statement.
+- Extend with explicit analysis actions and output requirements.
 - Use precise, unambiguous language.
-- Follow with condition-before-action (CBA) structure for instructions (see [Prompt Design Style](prompt_design_style.md)).
+- Follow with condition-before-action (CBA) structure for instructions (see [Prompt Design Style](../guides/prompting/prompt-design-style.md)).
 - Avoid vague roles (e.g., "expert"). Specify the field or context when possible.
 
 ---

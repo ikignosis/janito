@@ -51,7 +51,7 @@ This feature enhances productivity by bridging the terminal and browser, making 
 janito
 ```
 
-You’ll be dropped into a conversational prompt where you can interact with Janito step by step. Type `/help` to see available commands at any time. Use `/start` to start a new task or reset context.
+You’ll be dropped into a conversational prompt where you can interact with Janito step by step. Type `/help` to see available commands at any time. Use `/restart` to start a new task or reset context.
 
 --- 
 

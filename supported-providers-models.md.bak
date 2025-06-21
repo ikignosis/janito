@@ -1,4 +1,4 @@
-# Supported Models
+# Supported Providers & Models
 
 > 🚀 **Janito is optimized and tested for the default model: `gpt-4.1`.**
 > 🧪 Testing and feedback for other models is welcome!
@@ -15,7 +15,6 @@
 Janito is compatible with most OpenAI-compatible chat models, including but not limited to:
 
 - `gpt-4.1` (default)
-- Any model available via OpenRouter (Anthropic, Google, Mistral, etc.)
 - Azure-hosted OpenAI models (with correct deployment name)
 
 ## 🛠️ How to Select a Model
