@@ -1,29 +1,29 @@
-# Developing & Extending Janito
+# 🛠️ Developing & Extending Janito
 
-This guide explains how to set up Janito for development and install the latest version from GitHub.
+This guide explains how to install and use the latest development version of this project directly from GitHub.
 
-## Installing the Latest Development Version
+## Installation from GitHub Main Branch
 
-To install the most recent development version from the GitHub main branch, run:
+To install the latest development version of this project directly from the GitHub main branch, run:
 
 ```bash
-pip install git+https://github.com/janito-dev/janito.git@main
+pip install git+https://github.com/joaompinto/janito.git@main
 ```
 
-## Editable Install for Local Development
+## Editable Install (for Development)
 
-To make code changes and see them reflected immediately (without reinstalling), use an editable install:
+If you want to make changes to the code and have them reflected immediately (without reinstalling), use an editable install:
 
 ```bash
-git clone https://github.com/janito-dev/janito.git
+git clone https://github.com/joaompinto/janito.git
 cd janito
 git checkout main
 pip install -e .
 ```
 
-This installs Janito in "editable" mode, so changes to the source code are instantly available in your environment.
+This will install the package in "editable" mode, so changes to the source code are immediately available in your environment.
 
-## Additional Development Setup
+## Notes
 
-- Ensure you are on the correct branch (e.g., `main`) for the latest development version.
-- For linting, pre-commit hooks, and other developer tools, see the [Developer Toolchain Guide](../meta/developer_toolchain.md).
+- Always ensure you are on the correct branch (e.g., `main`) for the latest development version.
+- For further development setup (linting, pre-commit hooks, etc.), see the [Developer Meta Guide](../meta/README_DEV.md).
