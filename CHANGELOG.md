@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.2.0] - 2025-06-25
+## [2.3.0] - 2025-06-25
 ### Added
 - requirements-dev.txt with development dependencies (pytest, pre-commit, ruff, detect-secrets, codespell, black) for code quality and testing
 - Java outline support to get_file_outline tool, including package-private methods

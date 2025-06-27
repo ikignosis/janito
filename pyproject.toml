@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "janito"
-version = "2.2.0"
+version = "2.3.0"
 description = "A new Python package called janito."
 authors = [
     { name="João Pinto", email="lamego.pinto@gmail.com" }
