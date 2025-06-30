@@ -468,6 +468,29 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Using Profiles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1007,6 +1030,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#supported-models-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      📋 Supported Models Table
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#i-notes" class="md-nav__link">
     <span class="md-ellipsis">
       ℹ️ Notes
@@ -1341,6 +1373,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#supported-models-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      📋 Supported Models Table
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#i-notes" class="md-nav__link">
     <span class="md-ellipsis">
       ℹ️ Notes
@@ -1378,6 +1419,7 @@
 <ul>
 <li><code>gpt-4.1</code> (default)</li>
 <li>Azure-hosted OpenAI models (with correct deployment name)</li>
+<li>Google Gemini models (e.g., <code>gemini-2.5-flash</code>)</li>
 </ul>
 <h2 id="how-to-select-a-model">🛠️ How to Select a Model</h2>
 <ul>
@@ -1385,11 +1427,156 @@
   <code>janito "Prompt here" --model gpt-4.1</code></li>
 <li>Configure your API key and endpoint in the configuration file or via CLI options.</li>
 </ul>
+<h2 id="supported-models-table">📋 Supported Models Table</h2>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Status</th>
+<th>Context</th>
+<th>Max Input</th>
+<th>Max CoT</th>
+<th>Max Response</th>
+<th>Thinking</th>
+<th>Provider</th>
+<th>Reference</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>gpt-3.5-turbo</td>
+<td>Supported</td>
+<td>16385</td>
+<td>12289</td>
+<td>N/A</td>
+<td>4096</td>
+<td></td>
+<td>OpenAI</td>
+<td><a href="../janito/providers/openai/model_info.py">source</a></td>
+</tr>
+<tr>
+<td>gpt-4.1</td>
+<td>Supported</td>
+<td>1047576</td>
+<td>1014808</td>
+<td>N/A</td>
+<td>32768</td>
+<td></td>
+<td>OpenAI</td>
+<td><a href="../janito/providers/openai/model_info.py">source</a></td>
+</tr>
+<tr>
+<td>gpt-4.1-mini</td>
+<td>Supported</td>
+<td>1047576</td>
+<td>1014808</td>
+<td>N/A</td>
+<td>32768</td>
+<td></td>
+<td>OpenAI</td>
+<td><a href="../janito/providers/openai/model_info.py">source</a></td>
+</tr>
+<tr>
+<td>gpt-4.1-nano</td>
+<td>Supported</td>
+<td>1047576</td>
+<td>1014808</td>
+<td>N/A</td>
+<td>32768</td>
+<td></td>
+<td>OpenAI</td>
+<td><a href="../janito/providers/openai/model_info.py">source</a></td>
+</tr>
+<tr>
+<td>gpt-4-turbo</td>
+<td>Supported</td>
+<td>128000</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>N/A</td>
+<td></td>
+<td>OpenAI</td>
+<td><a href="../janito/providers/openai/model_info.py">source</a></td>
+</tr>
+<tr>
+<td>gpt-4o</td>
+<td>Supported</td>
+<td>128000</td>
+<td>123904</td>
+<td>N/A</td>
+<td>4096</td>
+<td></td>
+<td>OpenAI</td>
+<td><a href="../janito/providers/openai/model_info.py">source</a></td>
+</tr>
+<tr>
+<td>gpt-4o-mini</td>
+<td>Supported</td>
+<td>128000</td>
+<td>111616</td>
+<td>N/A</td>
+<td>16384</td>
+<td></td>
+<td>OpenAI</td>
+<td><a href="../janito/providers/openai/model_info.py">source</a></td>
+</tr>
+<tr>
+<td>o3-mini</td>
+<td>Supported</td>
+<td>200000</td>
+<td>100000</td>
+<td>N/A</td>
+<td>100000</td>
+<td>📖</td>
+<td>OpenAI</td>
+<td><a href="../janito/providers/openai/model_info.py">source</a></td>
+</tr>
+<tr>
+<td>o3</td>
+<td>Supported</td>
+<td>200000</td>
+<td>100000</td>
+<td>N/A</td>
+<td>100000</td>
+<td>📖</td>
+<td>OpenAI</td>
+<td><a href="../janito/providers/openai/model_info.py">source</a></td>
+</tr>
+<tr>
+<td>o4-mini</td>
+<td>Supported</td>
+<td>200000</td>
+<td>100000</td>
+<td>N/A</td>
+<td>100000</td>
+<td>📖</td>
+<td>OpenAI</td>
+<td><a href="../janito/providers/openai/model_info.py">source</a></td>
+</tr>
+<tr>
+<td>gemini-2.5-flash</td>
+<td>Supported</td>
+<td>N/A</td>
+<td>N/A</td>
+<td>24576</td>
+<td>8192</td>
+<td>✔️</td>
+<td>Google</td>
+<td><a href="../janito/providers/google/model_info.py">source</a></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Context window:</strong> 200 k tokens<br />
+<strong>Max input:</strong> 100 k tokens<br />
+<strong>Max CoT:</strong> N/A<br />
+<strong>Max response:</strong> 100 k tokens<br />
+<strong>Thinking:</strong> 📖<br />
+<strong>Driver:</strong> OpenAI</p>
 <h2 id="i-notes">ℹ️ Notes</h2>
 <ul>
 <li>Some advanced features (like tool calling) require models that support OpenAI function calling.</li>
 <li>Model availability and pricing depend on your provider and API key.</li>
-<li>For the latest list of supported models, see your provider’s documentation or the <a href="https://platform.openai.com/docs/models">OpenAI models page</a>.</li>
+<li>For the latest list of supported models, see your provider’s documentation or the <a href="https://platform.openai.com/docs/models">OpenAI models page</a> and <a href="https://ai.google.dev/gemini-api/docs/model-versions">Google Gemini documentation</a>.</li>
 </ul>
 
 

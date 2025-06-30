@@ -439,15 +439,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#launch-the-web-terminal-interface" class="md-nav__link">
-    <span class="md-ellipsis">
-      Launch the Web Terminal Interface
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -562,6 +553,29 @@
   
   <span class="md-ellipsis">
     Prompt Design Style
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Using Profiles
     
   </span>
   
@@ -1385,15 +1399,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#launch-the-web-terminal-interface" class="md-nav__link">
-    <span class="md-ellipsis">
-      Launch the Web Terminal Interface
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -1439,7 +1444,7 @@
 <h1 id="using-janito-quickstart-basic-usage">Using Janito: Quickstart &amp; Basic Usage</h1>
 <p>This guide explains how to start using Janito after installation. For an overview, see the <a href="../../">Introduction</a>. For setup, see the <a href="../installation/">Installation Guide</a> and <a href="../configuration/">Configuration Guide</a>.</p>
 <h2 id="quickstart">Quickstart</h2>
-<p>After installing Janito, you can use it from the command line or launch the web interface:</p>
+<p>After installing Janito, you can use it from the command line:</p>
 <h3 id="run-a-one-off-prompt">Run a One-Off Prompt</h3>
 <div class="codehilite"><pre><span></span><code>janito<span class="w"> </span><span class="s2">&quot;Refactor the data processing module to improve readability.&quot;</span>
 </code></pre></div>
@@ -1449,17 +1454,13 @@
 </code></pre></div>
 
 <p>Or, to enable clickable file links in your browser during the session:</p>
-<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>-w
-</code></pre></div>
-
-<h3 id="launch-the-web-terminal-interface">Launch the Web Terminal Interface</h3>
-<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>termweb
+<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>--web
 </code></pre></div>
 
 <h2 id="basic-usage-tips">Basic Usage Tips</h2>
 <ul>
 <li>Use natural language to describe what you want Janito to do (e.g., "Add type hints to all functions in utils.py").</li>
-<li>In the chat shell, use <code>/help</code> for available commands.</li>
+<li>In the chat shell, use <code>/help</code> for available commands. Use <code>/exec on</code> to enable code/shell execution tools at runtime.</li>
 <li>Use CLI flags to customize behavior (see <a href="../../reference/cli-options/">CLI Options</a>).</li>
 </ul>
 <h2 id="more-resources">More Resources</h2>

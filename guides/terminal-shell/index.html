@@ -491,6 +491,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="💻 Usage Example">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#enabling-execution-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Enabling Execution Tools
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -538,6 +553,29 @@
   
   <span class="md-ellipsis">
     Prompt Design Style
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Using Profiles
     
   </span>
   
@@ -1367,6 +1405,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="💻 Usage Example">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#enabling-execution-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Enabling Execution Tools
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -1403,6 +1456,9 @@
 <hr />
 <h2 id="built-in-commands">📝 Built-in Commands</h2>
 <p>You can use these commands at any time (prefix with <code>/</code> or just type the name):</p>
+<blockquote>
+<p><strong>Tip:</strong> Use <code>/exec on</code> to enable code/shell execution tools at runtime. Use <code>/tools</code> to see which tools are currently enabled or disabled.</p>
+</blockquote>
 <table>
 <thead>
 <tr>
@@ -1424,20 +1480,12 @@
 <td>Show help message with available commands</td>
 </tr>
 <tr>
-<td><code>/restart</code></td>
-<td>Reset conversation history / start new task</td>
-</tr>
-<tr>
 <td><code>/continue</code></td>
 <td>Restore last saved conversation</td>
 </tr>
 <tr>
-<td><code>/restart</code></td>
-<td>Reset conversation history</td>
-</tr>
-<tr>
 <td><code>/history [N]</code></td>
-<td>Show last N messages (default: 5)</td>
+<td>Show input history for this session (default: last 5 entries)</td>
 </tr>
 <tr>
 <td><code>/prompt</code></td>
@@ -1463,10 +1511,30 @@
 <td><code>/config</code></td>
 <td>Show or set configuration (see: <code>/config show</code>, <code>/config set local|global key=value</code>)</td>
 </tr>
+<tr>
+<td><code>/edit &lt;filename&gt;</code></td>
+<td>Open a file in the browser-based editor</td>
+</tr>
+<tr>
+<td><code>/view</code></td>
+<td>Print the current LLM conversation history</td>
+</tr>
+<tr>
+<td><code>/profile</code></td>
+<td>Show the current and available Agent Profile</td>
+</tr>
+<tr>
+<td><code>/execute [on|off] | /read [on|off] | /write [on|off]</code></td>
+<td>Enable or disable code/shell execution tools at runtime</td>
+</tr>
+<tr>
+<td><code>/tools</code></td>
+<td>List all registered tools and show which are enabled/disabled</td>
+</tr>
 </tbody>
 </table>
 <h2 id="clickable-file-links">🖱️ Clickable File Links</h2>
-<p>When Janito references files in its responses, the file names may appear as clickable links in supported terminals or web-based shells. To enable this, start Janito with the <code>-w</code> or <code>--web</code> flag. Clicking these links will open the file in the lightweight web file viewer (powered by <code>janito/termweb</code>, a Quart-based web file viewer).</p>
+<p>When Janito references files in its responses, the file names may appear as clickable links in supported terminals or web-based shells. To enable this, start Janito with the <code>--web</code> flag. Clicking these links will open the file in your browser for inspection.</p>
 <ul>
 <li><strong>What you can do:</strong></li>
 <li>View file contents in your browser</li>
@@ -1475,6 +1543,23 @@
 </ul>
 <p>This feature enhances productivity by bridging the terminal and browser, making it easy to inspect and act on files referenced in your conversations.</p>
 <h2 id="usage-example">💻 Usage Example</h2>
+<h3 id="enabling-execution-tools">Enabling Execution Tools</h3>
+<p>By default, tools that can execute code or shell commands are <strong>disabled</strong> for safety. To enable these tools (such as code execution, shell commands, etc.), use the <code>/execute on</code> command at any time in the shell:</p>
+<div class="codehilite"><pre><span></span><code>/execute<span class="w"> </span>on
+</code></pre></div>
+
+<p>To disable execution tools again, use:</p>
+<div class="codehilite"><pre><span></span><code>/execute<span class="w"> </span>off
+</code></pre></div>
+
+<p>You can also control read and write permissions for tools:</p>
+<ul>
+<li>To enable reading: <code>/read on</code></li>
+<li>To disable reading: <code>/read off</code></li>
+<li>To enable writing: <code>/write on</code></li>
+<li>To disable writing: <code>/write off</code></li>
+</ul>
+<p>Use <code>/tools</code> to see which tools are currently enabled or disabled.</p>
 <div class="codehilite"><pre><span></span><code>janito
 </code></pre></div>
 
