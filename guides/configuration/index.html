@@ -377,6 +377,30 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#advanced-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Advanced Configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#disabling-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Disabling Tools
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#more-information" class="md-nav__link">
     <span class="md-ellipsis">
       More Information
@@ -1043,6 +1067,30 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#advanced-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Advanced Configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#disabling-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Disabling Tools
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#more-information" class="md-nav__link">
     <span class="md-ellipsis">
       More Information
@@ -1073,6 +1121,29 @@
   
   <span class="md-ellipsis">
     CLI Options
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../disabled-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Disabling Tools
     
   </span>
   
@@ -1462,6 +1533,30 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#advanced-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Advanced Configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#disabling-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Disabling Tools
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#more-information" class="md-nav__link">
     <span class="md-ellipsis">
       More Information
@@ -1516,6 +1611,20 @@ janito<span class="w"> </span>-p<span class="w"> </span>openai<span class="w"> <
 <div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>--show-config
 </code></pre></div>
 
+<h2 id="advanced-configuration">Advanced Configuration</h2>
+<h3 id="disabling-tools">Disabling Tools</h3>
+<p>You can selectively disable specific tools to customize your workflow or enhance security:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Disable a single tool</span>
+janito<span class="w"> </span>--set<span class="w"> </span><span class="nv">disabled_tools</span><span class="o">=</span>ask_user
+
+<span class="c1"># Disable multiple tools</span>
+janito<span class="w"> </span>--set<span class="w"> </span><span class="nv">disabled_tools</span><span class="o">=</span><span class="s2">&quot;ask_user,python_code_run&quot;</span>
+
+<span class="c1"># View disabled tools</span>
+janito<span class="w"> </span>--show-config
+</code></pre></div>
+
+<p>See the <a href="../disabled-tools/">Disabling Tools Guide</a> for complete details.</p>
 <h2 id="more-information">More Information</h2>
 <ul>
 <li>See <a href="../../reference/cli-options/">CLI Options Reference</a> for all configuration flags.</li>

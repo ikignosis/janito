@@ -14,7 +14,7 @@
         <link rel="prev" href="../../guides/configuration/">
       
       
-        <link rel="next" href="../api/">
+        <link rel="next" href="../../guides/disabled-tools/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -997,6 +997,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#disabling-path-security" class="md-nav__link">
+    <span class="md-ellipsis">
+      ⚠️ Disabling Path Security
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1011,10 +1020,42 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#configuration-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      🔧 Configuration Keys
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/disabled-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Disabling Tools
+    
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -1408,6 +1449,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#disabling-path-security" class="md-nav__link">
+    <span class="md-ellipsis">
+      ⚠️ Disabling Path Security
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1417,6 +1467,15 @@
   <a href="#about-effort" class="md-nav__link">
     <span class="md-ellipsis">
       🧠 About --effort
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      🔧 Configuration Keys
     </span>
   </a>
   
@@ -1479,6 +1538,10 @@
 <td>IDE zero mode: disables system prompt &amp; all tools for raw LLM interaction</td>
 </tr>
 <tr>
+<td><code>-u</code>, <code>--unrestricted-paths</code></td>
+<td>Disable path security: allow tool arguments to use any file/directory path (DANGEROUS). See <a href="../../security/">Security</a> for details.</td>
+</tr>
+<tr>
 <td><code>-r</code>, <code>--read</code></td>
 <td>Enable tools that require read permissions (default: off)</td>
 </tr>
@@ -1536,8 +1599,7 @@
 | <code>-m MODEL</code>, <code>--model MODEL</code> | Select the model |
 | <code>-t TEMPERATURE</code>, <code>--temperature TEMPERATURE</code> | Set the temperature |
 | <code>-v</code>, <code>--verbose</code> | Print extra information before answering |
-| <code>-R</code>, <code>--raw</code> | Print the raw JSON response from the OpenAI API (if applicable) |
-| <code>--web</code> | Enable the builtin lightweight web file viewer for terminal links (disabled by default) |</p>
+| <code>-R</code>, <code>--raw</code> | Print the raw JSON response from the OpenAI API (if applicable) |</p>
 <p>| <code>--effort {low, medium, high, none}</code> | Set the reasoning effort for models that support it (low, medium, high, none) |
 | <code>-e</code>, <code>--event-log</code> | Enable event logging to the system bus |
 | <code>--event-debug</code> | Print debug info on event subscribe/submit methods |</p>
@@ -1546,6 +1608,7 @@
 janito<span class="w"> </span>-p<span class="w"> </span>google<span class="w"> </span>-m<span class="w"> </span>gemini-2.5-flash<span class="w"> </span><span class="s2">&quot;Your prompt here&quot;</span>
 janito<span class="w"> </span>--list-tools
 janito<span class="w"> </span>--web<span class="w">  </span><span class="c1"># Enable clickable file links via web viewer</span>
+janito<span class="w"> </span>-u<span class="w"> </span>-x<span class="w"> </span>--read<span class="w"> </span>--write<span class="w"> </span><span class="s2">&quot;Run a tool with unrestricted paths (DANGEROUS)&quot;</span>
 </code></pre></div>
 
 <h3 id="enabling-execution-tools">⚠️ Enabling Execution Tools</h3>
@@ -1555,6 +1618,14 @@ janito<span class="w"> </span>--web<span class="w">  </span><span class="c1"># E
 
 <blockquote>
 <p><strong>Warning:</strong> Enabling execution tools allows running arbitrary code or shell commands. Only use <code>--exec</code> if you trust your prompt and environment.</p>
+</blockquote>
+<h3 id="disabling-path-security">⚠️ Disabling Path Security</h3>
+<p>By default, all file and directory arguments to tools are restricted to the working directory (see <code>--workdir</code>). To disable this security and allow any path (including system files), use the <code>-u</code> or <code>--unrestricted-paths</code> flag:</p>
+<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>-u<span class="w"> </span><span class="s2">&quot;Do something with C:/Windows/System32/hosts&quot;</span>
+</code></pre></div>
+
+<blockquote>
+<p><strong>Warning:</strong> Disabling path security is extremely dangerous. Only use <code>--unrestricted-paths</code> if you trust your prompt, tools, and environment.</p>
 </blockquote>
 <p><em>This page is generated from the output of <code>janito --help</code>.</em></p>
 <h2 id="about-effort">🧠 About <code>--effort</code></h2>
@@ -1568,6 +1639,50 @@ janito<span class="w"> </span>--web<span class="w">  </span><span class="c1"># E
 <blockquote>
 <p><strong>Note:</strong> Not all models or providers support this option. If unsupported, the option may be ignored.</p>
 </blockquote>
+<h2 id="configuration-keys">🔧 Configuration Keys</h2>
+<p>The <code>--set</code> command supports the following configuration keys:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>provider</code></td>
+<td>Set the default provider</td>
+<td><code>--set provider=openai</code></td>
+</tr>
+<tr>
+<td><code>model</code></td>
+<td>Set the default model</td>
+<td><code>--set model=gpt-4.1</code></td>
+</tr>
+<tr>
+<td><code>max_tokens</code></td>
+<td>Set maximum tokens</td>
+<td><code>--set max_tokens=4000</code></td>
+</tr>
+<tr>
+<td><code>base_url</code></td>
+<td>Set custom API base URL</td>
+<td><code>--set base_url=https://api.example.com</code></td>
+</tr>
+<tr>
+<td><code>tool_permissions</code></td>
+<td>Set tool permission level</td>
+<td><code>--set tool_permissions=rwe</code></td>
+</tr>
+<tr>
+<td><code>disabled_tools</code></td>
+<td>Disable specific tools</td>
+<td><code>--set disabled_tools=ask_user,python_code_run</code></td>
+</tr>
+</tbody>
+</table>
+<p>For more details on disabling tools, see the <a href="../../guides/disabled-tools/">Disabling Tools Guide</a>.</p>
 
 
 
