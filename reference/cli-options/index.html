@@ -1097,9 +1097,20 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../../supported-providers-models/" class="md-nav__link">
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
         
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
@@ -1108,13 +1119,41 @@
   </span>
   
 
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            Supported Providers & Models
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../supported-providers-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
       </a>
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
   
   
   
@@ -1134,6 +1173,37 @@
     </li>
   
 
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../moonshotai-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    MoonshotAI Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
     
       
       
@@ -1150,10 +1220,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
             
   
   
@@ -1166,8 +1236,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             Concepts
           </label>
@@ -1264,10 +1334,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
             
   
   
@@ -1280,8 +1350,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_11">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             About
           </label>
@@ -1502,6 +1572,7 @@
 
 <h1 id="janito-cli-options">🏁 Janito CLI Options</h1>
 <p>This page documents all command-line options for Janito, as shown by <code>janito --help</code>. These options temporarily override configuration for a single session and do not persist changes to config files.</p>
+<p><strong>Syntax:</strong> <code>janito [options] [prompt]</code></p>
 <h2 id="overview">💡 Overview</h2>
 <p>These options are useful for one-off runs, scripting, or experimentation. They take precedence over config files for the current invocation only.</p>
 <h2 id="options">⚙️ Options</h2>
@@ -1514,8 +1585,8 @@
 </thead>
 <tbody>
 <tr>
-<td><code>user_prompt</code></td>
-<td>Prompt to submit (positional argument)</td>
+<td><code>prompt</code></td>
+<td>Prompt to submit (optional positional argument)</td>
 </tr>
 <tr>
 <td><code>-h</code>, <code>--help</code></td>
@@ -1604,7 +1675,8 @@
 | <code>-e</code>, <code>--event-log</code> | Enable event logging to the system bus |
 | <code>--event-debug</code> | Print debug info on event subscribe/submit methods |</p>
 <h2 id="usage-example">👨‍💻 Usage Example</h2>
-<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>-p<span class="w"> </span>openai<span class="w"> </span>-m<span class="w"> </span>gpt-3.5-turbo<span class="w"> </span><span class="s2">&quot;Your prompt here&quot;</span>
+<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span><span class="o">[</span>options<span class="o">]</span><span class="w"> </span><span class="o">[</span>prompt<span class="o">]</span>
+janito<span class="w"> </span>-p<span class="w"> </span>openai<span class="w"> </span>-m<span class="w"> </span>gpt-3.5-turbo<span class="w"> </span><span class="s2">&quot;Your prompt here&quot;</span>
 janito<span class="w"> </span>-p<span class="w"> </span>google<span class="w"> </span>-m<span class="w"> </span>gemini-2.5-flash<span class="w"> </span><span class="s2">&quot;Your prompt here&quot;</span>
 janito<span class="w"> </span>--list-tools
 janito<span class="w"> </span>--web<span class="w">  </span><span class="c1"># Enable clickable file links via web viewer</span>

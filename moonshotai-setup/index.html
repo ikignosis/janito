@@ -8,9 +8,13 @@
       
       
       
-        <link rel="canonical" href="https://joaompinto.github.io/janito/tools-index/">
+        <link rel="canonical" href="https://joaompinto.github.io/janito/moonshotai-setup/">
       
       
+        <link rel="prev" href="../deepseek-setup/">
+      
+      
+        <link rel="next" href="../concepts/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -18,7 +22,7 @@
     
     
       
-        <title>Tools Index - Janito</title>
+        <title>MoonshotAI Setup - Janito</title>
       
     
     
@@ -70,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#tools-index" class="md-skip">
+        <a href="#configuring-janito-for-moonshotai" class="md-skip">
           Skip to content
         </a>
       
@@ -106,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Tools Index
+              MoonshotAI Setup
             
           </span>
         </div>
@@ -978,18 +982,20 @@
       
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
         
           
           <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
@@ -1005,7 +1011,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             Supported Providers & Models
@@ -1062,10 +1068,32 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../moonshotai-setup/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    MoonshotAI Setup
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1076,6 +1104,89 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-obtain-a-moonshotai-api-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Obtain a MoonshotAI API Key
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-set-your-moonshotai-api-key-in-janito" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Set Your MoonshotAI API Key in Janito
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-select-moonshotai-as-the-provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Select MoonshotAI as the Provider
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-choose-a-moonshotai-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Choose a MoonshotAI Model
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-verify-your-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Verify Your Configuration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-api-endpoint-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. API Endpoint Information
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      7. Troubleshooting
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1366,83 +1477,65 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#available-tools" class="md-nav__link">
+  <a href="#1-obtain-a-moonshotai-api-key" class="md-nav__link">
     <span class="md-ellipsis">
-      Available Tools
+      1. Obtain a MoonshotAI API Key
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Available Tools">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#web-tools" class="md-nav__link">
-    <span class="md-ellipsis">
-      Web Tools
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Web Tools">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#open_url" class="md-nav__link">
-    <span class="md-ellipsis">
-      open_url
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#search_text" class="md-nav__link">
-    <span class="md-ellipsis">
-      search_text
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#tool-management" class="md-nav__link">
+  <a href="#2-set-your-moonshotai-api-key-in-janito" class="md-nav__link">
     <span class="md-ellipsis">
-      Tool Management
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Tool Management">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#disabling-tools" class="md-nav__link">
-    <span class="md-ellipsis">
-      Disabling Tools
+      2. Set Your MoonshotAI API Key in Janito
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#listing-available-tools" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#3-select-moonshotai-as-the-provider" class="md-nav__link">
     <span class="md-ellipsis">
-      Listing Available Tools
+      3. Select MoonshotAI as the Provider
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#4-choose-a-moonshotai-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Choose a MoonshotAI Model
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-verify-your-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Verify Your Configuration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-api-endpoint-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. API Endpoint Information
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      7. Troubleshooting
+    </span>
+  </a>
   
 </li>
       
@@ -1465,67 +1558,61 @@
   
 
 
-<h1 id="tools-index">Tools Index</h1>
-<p>Janito provides a comprehensive set of tools for file operations, code execution, web access, and more. Tools can be selectively disabled using the <a href="../guides/disabled-tools/">disabled tools configuration</a>.</p>
-<h2 id="available-tools">Available Tools</h2>
-<h3 id="web-tools">Web Tools</h3>
-<h4 id="open_url">open_url</h4>
-<p>Opens the supplied URL or local file in the default web browser.</p>
-<p><strong>Arguments:</strong></p>
+<h1 id="configuring-janito-for-moonshotai">Configuring Janito for MoonshotAI</h1>
+<p>Janito supports MoonshotAI as an LLM provider. This guide explains how to configure Janito to use MoonshotAI models.</p>
+<h2 id="1-obtain-a-moonshotai-api-key">1. Obtain a MoonshotAI API Key</h2>
 <ul>
-<li><code>url</code> (str): The URL or local file path (as a file:// URL) to open. Supports both web URLs (http, https) and local files (file://).</li>
+<li>Sign up or log in at <a href="https://platform.moonshot.ai">Moonshot AI Platform</a> to get your API key.</li>
+<li>Navigate to the API Keys section in your dashboard to create and manage your keys.</li>
 </ul>
-<p><strong>Returns:</strong></p>
-<ul>
-<li>Status message indicating the result.</li>
-</ul>
-<p><strong>Example Usage:</strong></p>
-<ul>
-<li>Open a website: <code>open_url(url="https://example.com")</code></li>
-<li>Open a local file: <code>open_url(url="file:///C:/path/to/file.html")</code></li>
-</ul>
-<p>This tool replaces the previous <code>open_html_in_browser</code> tool, and can be used for both web and local files.</p>
-<h3 id="search_text">search_text</h3>
-<p>Search for a text query in files or directories.</p>
-<p><strong>Arguments:</strong></p>
-<ul>
-<li><code>paths</code> (str): Space-separated list of file or directory paths to search in.</li>
-<li><code>query</code> (str): Text or regular expression to search for.</li>
-<li><code>use_regex</code> (bool): Treat <code>query</code> as a regex pattern (default: False).</li>
-<li><code>case_sensitive</code> (bool): Enable case-sensitive search (default: False).</li>
-<li><code>max_depth</code> (int): Maximum directory depth to search (default: 0 = unlimited).</li>
-<li><code>max_results</code> (int): Maximum matching lines to return (default: 100).</li>
-<li><code>count_only</code> (bool): Return only match counts instead of lines (default: False).</li>
-</ul>
-<p><strong>Returns:</strong></p>
-<ul>
-<li>Matching lines with file paths and line numbers, or match counts if <code>count_only=True</code>.</li>
-</ul>
-<p><strong>Example Usage:</strong></p>
-<ul>
-<li>Plain-text search: <code>search_text(paths="src", query="TODO")</code></li>
-<li>Regex search: <code>search_text(paths="src tests", query=r"def\s+\w+", use_regex=True)</code></li>
-<li>Case-insensitive count: <code>search_text(paths="docs", query="janito", case_sensitive=False, count_only=True)</code></li>
-</ul>
-<h2 id="tool-management">Tool Management</h2>
-<h3 id="disabling-tools">Disabling Tools</h3>
-<p>You can disable specific tools using configuration:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># Disable interactive prompts</span>
-janito<span class="w"> </span>--set<span class="w"> </span><span class="nv">disabled_tools</span><span class="o">=</span>ask_user
-
-<span class="c1"># Disable code execution</span>
-janito<span class="w"> </span>--set<span class="w"> </span><span class="nv">disabled_tools</span><span class="o">=</span>python_code_run,run_powershell_command
-
-<span class="c1"># View current disabled tools</span>
-janito<span class="w"> </span>--show-config
+<h2 id="2-set-your-moonshotai-api-key-in-janito">2. Set Your MoonshotAI API Key in Janito</h2>
+<p>You must specify both the API key and the provider name when configuring Janito for MoonshotAI:</p>
+<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>--set-api-key<span class="w"> </span>YOUR_MOONSHOT_API_KEY<span class="w"> </span>-p<span class="w"> </span>moonshotai
 </code></pre></div>
 
-<h3 id="listing-available-tools">Listing Available Tools</h3>
-<p>See all currently available tools:</p>
-<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>--list-tools
+<p>Replace <code>YOUR_MOONSHOT_API_KEY</code> with your actual MoonshotAI API key.</p>
+<h2 id="3-select-moonshotai-as-the-provider">3. Select MoonshotAI as the Provider</h2>
+<p>You can set MoonshotAI as your default provider:</p>
+<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>--set<span class="w"> </span><span class="nv">provider</span><span class="o">=</span>moonshotai
 </code></pre></div>
 
-<p>For complete documentation on tool disabling, see the <a href="../guides/disabled-tools/">Disabling Tools Guide</a>.</p>
+<p>Or specify it per command:</p>
+<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>-p<span class="w"> </span>moonshotai<span class="w"> </span><span class="s2">&quot;Your prompt here&quot;</span>
+</code></pre></div>
+
+<h2 id="4-choose-a-moonshotai-model">4. Choose a MoonshotAI Model</h2>
+<p>Janito supports the following MoonshotAI models:</p>
+<ul>
+<li><code>kimi-k2-0711-preview</code> (default) - Advanced reasoning model with 128k context window</li>
+<li><code>kimi-k1-8k</code> - Standard model with 8k context window</li>
+<li><code>kimi-k1-32k</code> - Standard model with 32k context window</li>
+<li><code>kimi-k1-128k</code> - Standard model with 128k context window</li>
+</ul>
+<p>To select a model:</p>
+<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>-p<span class="w"> </span>moonshotai<span class="w"> </span>-m<span class="w"> </span>kimi-k1-32k<span class="w"> </span><span class="s2">&quot;Your prompt here&quot;</span>
+</code></pre></div>
+
+<h2 id="5-verify-your-configuration">5. Verify Your Configuration</h2>
+<p>Show your current configuration:</p>
+<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>--show-config
+</code></pre></div>
+
+<h2 id="6-api-endpoint-information">6. API Endpoint Information</h2>
+<p>MoonshotAI uses an OpenAI-compatible API endpoint:</p>
+<ul>
+<li><strong>Base URL</strong>: <code>https://api.moonshot.ai/v1</code></li>
+<li><strong>Authentication</strong>: Bearer token (API key)</li>
+<li><strong>Format</strong>: OpenAI API format</li>
+</ul>
+<h2 id="7-troubleshooting">7. Troubleshooting</h2>
+<ul>
+<li>Ensure your API key is correct and has sufficient credits.</li>
+<li>If you encounter issues, use <code>janito --list-providers</code> to verify MoonshotAI is available.</li>
+<li>Check your API key permissions and rate limits in the Moonshot AI Platform dashboard.</li>
+<li>For more help, see the main <a href="../guides/configuration/">Configuration Guide</a> or run <code>janito --help</code>.</li>
+</ul>
+<hr />
+<p>For more details on supported models and features, see <a href="../supported-providers-models/">Supported Providers &amp; Models</a>.</p>
 
 
 

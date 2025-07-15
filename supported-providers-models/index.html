@@ -22,7 +22,7 @@
     
     
       
-        <title>Supported Providers & Models - Janito</title>
+        <title>Overview - Janito</title>
       
     
     
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Supported Providers & Models
+              Overview
             
           </span>
         </div>
@@ -986,6 +986,46 @@
   
   
   
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Supported Providers & Models
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            Supported Providers & Models
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
     <li class="md-nav__item md-nav__item--active">
       
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
@@ -999,7 +1039,7 @@
   
   
   <span class="md-ellipsis">
-    Supported Providers & Models
+    Overview
     
   </span>
   
@@ -1012,7 +1052,7 @@
   
   
   <span class="md-ellipsis">
-    Supported Providers & Models
+    Overview
     
   </span>
   
@@ -1077,9 +1117,10 @@
     </li>
   
 
-    
-      
-      
+              
+            
+              
+                
   
   
   
@@ -1099,6 +1140,37 @@
     </li>
   
 
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../moonshotai-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    MoonshotAI Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
     
       
       
@@ -1115,10 +1187,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
             
   
   
@@ -1131,8 +1203,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             Concepts
           </label>
@@ -1229,10 +1301,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
             
   
   
@@ -1245,8 +1317,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_11">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             About
           </label>
@@ -1710,6 +1782,17 @@
 <td>MoonshotAI</td>
 <td><a href="../janito/providers/moonshotai/model_info.py">source</a></td>
 </tr>
+<tr>
+<td>moonshotai/kimi-k2-instruct</td>
+<td>Supported</td>
+<td>128000</td>
+<td>122880</td>
+<td>N/A</td>
+<td>4096</td>
+<td></td>
+<td>Groq</td>
+<td><a href="../janito/providers/groq/model_info.py">source</a></td>
+</tr>
 </tbody>
 </table>
 <p><strong>Context window:</strong> 200 k tokens<br />
@@ -1780,6 +1863,14 @@
 <p><strong>Usage:</strong>
 - Use provider name <code>moonshotai</code> in CLI/config. Model selection as shown above.</p>
 <hr />
+<h3 id="groq">groq</h3>
+<p><strong>Description:</strong> Groq AI models via OpenAI-compatible API endpoint.</p>
+<p><strong>Models:</strong>
+- moonshotai/kimi-k2-instruct: Kimi K2 Instruct model by Moonshot AI, hosted via Groq</p>
+<p><strong>Auth:</strong>
+- Uses API key via credential manager.</p>
+<p><strong>Usage:</strong>
+- Use provider name <code>groq</code> in CLI/config. Model selection as shown above.</p>
 
 
 
