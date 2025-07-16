@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#supported-providers-models" class="md-skip">
+        <a href="#supported-providers-and-models" class="md-skip">
           Skip to content
         </a>
       
@@ -1075,36 +1075,45 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#model-types" class="md-nav__link">
+  <a href="#openai" class="md-nav__link">
     <span class="md-ellipsis">
-      🤖 Model Types
+      OpenAI
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-to-select-a-model" class="md-nav__link">
+  <a href="#google" class="md-nav__link">
     <span class="md-ellipsis">
-      🛠️ How to Select a Model
+      Google
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#supported-models-table" class="md-nav__link">
+  <a href="#anthropic" class="md-nav__link">
     <span class="md-ellipsis">
-      📋 Supported Models Table
+      Anthropic
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#i-notes" class="md-nav__link">
+  <a href="#moonshotai" class="md-nav__link">
     <span class="md-ellipsis">
-      ℹ️ Notes
+      MoonshotAI
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#groq" class="md-nav__link">
+    <span class="md-ellipsis">
+      Groq
     </span>
   </a>
   
@@ -1269,6 +1278,29 @@
   
   <span class="md-ellipsis">
     Prompt Analysis Style
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/human-guided-ai/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Human-Guided AI Principle
     
   </span>
   
@@ -1450,36 +1482,45 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#model-types" class="md-nav__link">
+  <a href="#openai" class="md-nav__link">
     <span class="md-ellipsis">
-      🤖 Model Types
+      OpenAI
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-to-select-a-model" class="md-nav__link">
+  <a href="#google" class="md-nav__link">
     <span class="md-ellipsis">
-      🛠️ How to Select a Model
+      Google
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#supported-models-table" class="md-nav__link">
+  <a href="#anthropic" class="md-nav__link">
     <span class="md-ellipsis">
-      📋 Supported Models Table
+      Anthropic
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#i-notes" class="md-nav__link">
+  <a href="#moonshotai" class="md-nav__link">
     <span class="md-ellipsis">
-      ℹ️ Notes
+      MoonshotAI
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#groq" class="md-nav__link">
+    <span class="md-ellipsis">
+      Groq
     </span>
   </a>
   
@@ -1504,373 +1545,37 @@
   
 
 
-<h1 id="supported-providers-models">Supported Providers &amp; Models</h1>
-<blockquote>
-<p>🚀 <strong>Janito is optimized and tested for the default model: <code>gpt-4.1</code>.</strong>
-🧪 Testing and feedback for other models is welcome!</p>
-</blockquote>
-<h2 id="model-types">🤖 Model Types</h2>
-<p>Janito is compatible with most OpenAI-compatible chat models, including but not limited to:</p>
+<h1 id="supported-providers-and-models">Supported Providers and Models</h1>
+<p>This page lists the supported providers and their available models.</p>
+<h2 id="openai">OpenAI</h2>
 <ul>
-<li>OpenAI models like <code>gpt-4.1</code> (default)</li>
-<li>Azure-hosted OpenAI models (with correct deployment name)</li>
-<li>Google Gemini models (e.g., <code>gemini-2.5-flash</code>)</li>
-<li>Anthropic Claude models</li>
-<li>Moonshot AI models (e.g., <code>kimi-k2-0711-preview</code>)</li>
+<li>GPT-3.5 Turbo</li>
+<li>GPT-4</li>
+<li>GPT-4 Turbo</li>
 </ul>
-<h2 id="how-to-select-a-model">🛠️ How to Select a Model</h2>
+<h2 id="google">Google</h2>
 <ul>
-<li>Use the <code>--model</code> CLI option to specify the model for a session:
-  <code>janito "Prompt here" --model gpt-4.1 --provider openai</code></li>
-<li>Configure your API key and endpoint in the configuration file or via CLI options.</li>
+<li>Gemini Pro</li>
+<li>Gemini 1.5 Pro</li>
 </ul>
-<h2 id="supported-models-table">📋 Supported Models Table</h2>
-<table>
-<thead>
-<tr>
-<th>Model</th>
-<th>Status</th>
-<th>Context</th>
-<th>Max Input</th>
-<th>Max CoT</th>
-<th>Max Response</th>
-<th>Thinking</th>
-<th>Provider</th>
-<th>Reference</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>gpt-3.5-turbo</td>
-<td>Supported</td>
-<td>16385</td>
-<td>12289</td>
-<td>N/A</td>
-<td>4096</td>
-<td></td>
-<td>OpenAI</td>
-<td><a href="../janito/providers/openai/model_info.py">source</a></td>
-</tr>
-<tr>
-<td>gpt-4.1</td>
-<td>Supported</td>
-<td>1047576</td>
-<td>1014808</td>
-<td>N/A</td>
-<td>32768</td>
-<td></td>
-<td>OpenAI</td>
-<td><a href="../janito/providers/openai/model_info.py">source</a></td>
-</tr>
-<tr>
-<td>gpt-4.1-mini</td>
-<td>Supported</td>
-<td>1047576</td>
-<td>1014808</td>
-<td>N/A</td>
-<td>32768</td>
-<td></td>
-<td>OpenAI</td>
-<td><a href="../janito/providers/openai/model_info.py">source</a></td>
-</tr>
-<tr>
-<td>gpt-4.1-nano</td>
-<td>Supported</td>
-<td>1047576</td>
-<td>1014808</td>
-<td>N/A</td>
-<td>32768</td>
-<td></td>
-<td>OpenAI</td>
-<td><a href="../janito/providers/openai/model_info.py">source</a></td>
-</tr>
-<tr>
-<td>gpt-4-turbo</td>
-<td>Supported</td>
-<td>128000</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td></td>
-<td>OpenAI</td>
-<td><a href="../janito/providers/openai/model_info.py">source</a></td>
-</tr>
-<tr>
-<td>gpt-4o</td>
-<td>Supported</td>
-<td>128000</td>
-<td>123904</td>
-<td>N/A</td>
-<td>4096</td>
-<td></td>
-<td>OpenAI</td>
-<td><a href="../janito/providers/openai/model_info.py">source</a></td>
-</tr>
-<tr>
-<td>gpt-4o-mini</td>
-<td>Supported</td>
-<td>128000</td>
-<td>111616</td>
-<td>N/A</td>
-<td>16384</td>
-<td></td>
-<td>OpenAI</td>
-<td><a href="../janito/providers/openai/model_info.py">source</a></td>
-</tr>
-<tr>
-<td>o3-mini</td>
-<td>Supported</td>
-<td>200000</td>
-<td>100000</td>
-<td>N/A</td>
-<td>100000</td>
-<td>📖</td>
-<td>OpenAI</td>
-<td><a href="../janito/providers/openai/model_info.py">source</a></td>
-</tr>
-<tr>
-<td>o3</td>
-<td>Supported</td>
-<td>200000</td>
-<td>100000</td>
-<td>N/A</td>
-<td>100000</td>
-<td>📖</td>
-<td>OpenAI</td>
-<td><a href="../janito/providers/openai/model_info.py">source</a></td>
-</tr>
-<tr>
-<td>o4-mini</td>
-<td>Supported</td>
-<td>200000</td>
-<td>100000</td>
-<td>N/A</td>
-<td>100000</td>
-<td>📖</td>
-<td>OpenAI</td>
-<td><a href="../janito/providers/openai/model_info.py">source</a></td>
-</tr>
-<tr>
-<td>gemini-2.5-flash</td>
-<td>Supported</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>24576</td>
-<td>8192</td>
-<td>✔️</td>
-<td>Google</td>
-<td><a href="../janito/providers/google/model_info.py">source</a></td>
-</tr>
-<tr>
-<td>gemini-2.5-pro</td>
-<td>Supported</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>196608</td>
-<td>65536</td>
-<td>✔️</td>
-<td>Google</td>
-<td><a href="../janito/providers/google/model_info.py">source</a></td>
-</tr>
-<tr>
-<td>claude-opus-4-20250514</td>
-<td>Supported</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>32000</td>
-<td></td>
-<td>Anthropic</td>
-<td><a href="../janito/providers/anthropic/model_info.py">source</a></td>
-</tr>
-<tr>
-<td>claude-sonnet-4-20250514</td>
-<td>Supported</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>64000</td>
-<td></td>
-<td>Anthropic</td>
-<td><a href="../janito/providers/anthropic/model_info.py">source</a></td>
-</tr>
-<tr>
-<td>claude-3-7-sonnet-20250219</td>
-<td>Supported</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>64000</td>
-<td></td>
-<td>Anthropic</td>
-<td><a href="../janito/providers/anthropic/model_info.py">source</a></td>
-</tr>
-<tr>
-<td>claude-3-5-haiku-20241022</td>
-<td>Supported</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>8192</td>
-<td></td>
-<td>Anthropic</td>
-<td><a href="../janito/providers/anthropic/model_info.py">source</a></td>
-</tr>
-<tr>
-<td>claude-3-5-sonnet-20241022</td>
-<td>Supported</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>8192</td>
-<td></td>
-<td>Anthropic</td>
-<td><a href="../janito/providers/anthropic/model_info.py">source</a></td>
-</tr>
-<tr>
-<td>claude-3-haiku-20240307</td>
-<td>Supported</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>N/A</td>
-<td>4096</td>
-<td></td>
-<td>Anthropic</td>
-<td><a href="../janito/providers/anthropic/model_info.py">source</a></td>
-</tr>
-<tr>
-<td>kimi-k2-0711-preview</td>
-<td>Supported</td>
-<td>128000</td>
-<td>127000</td>
-<td>N/A</td>
-<td>8000</td>
-<td></td>
-<td>MoonshotAI</td>
-<td><a href="../janito/providers/moonshotai/model_info.py">source</a></td>
-</tr>
-<tr>
-<td>kimi-k1-8k</td>
-<td>Supported</td>
-<td>8000</td>
-<td>6000</td>
-<td>N/A</td>
-<td>2000</td>
-<td></td>
-<td>MoonshotAI</td>
-<td><a href="../janito/providers/moonshotai/model_info.py">source</a></td>
-</tr>
-<tr>
-<td>kimi-k1-32k</td>
-<td>Supported</td>
-<td>32000</td>
-<td>28000</td>
-<td>N/A</td>
-<td>4000</td>
-<td></td>
-<td>MoonshotAI</td>
-<td><a href="../janito/providers/moonshotai/model_info.py">source</a></td>
-</tr>
-<tr>
-<td>kimi-k1-128k</td>
-<td>Supported</td>
-<td>128000</td>
-<td>120000</td>
-<td>N/A</td>
-<td>8000</td>
-<td></td>
-<td>MoonshotAI</td>
-<td><a href="../janito/providers/moonshotai/model_info.py">source</a></td>
-</tr>
-<tr>
-<td>moonshotai/kimi-k2-instruct</td>
-<td>Supported</td>
-<td>128000</td>
-<td>122880</td>
-<td>N/A</td>
-<td>4096</td>
-<td></td>
-<td>Groq</td>
-<td><a href="../janito/providers/groq/model_info.py">source</a></td>
-</tr>
-</tbody>
-</table>
-<p><strong>Context window:</strong> 200 k tokens<br />
-<strong>Max input:</strong> 100 k tokens<br />
-<strong>Max CoT:</strong> N/A<br />
-<strong>Max response:</strong> 100 k tokens<br />
-<strong>Thinking:</strong> 📖<br />
-<strong>Driver:</strong> OpenAI</p>
-<h2 id="i-notes">ℹ️ Notes</h2>
+<h2 id="anthropic">Anthropic</h2>
 <ul>
-<li>Some advanced features (like tool calling) require models that support OpenAI function calling.</li>
-<li>Model availability and pricing depend on your provider and API key.</li>
-<li>For the latest list of supported models, see your provider’s documentation or the <a href="https://platform.openai.com/docs/models">OpenAI models page</a>, <a href="https://ai.google.dev/gemini-api/docs/model-versions">Google Gemini documentation</a>, and <a href="https://www.anthropic.com/docs/api/reference">Anthropic Claude documentation</a>.</li>
+<li>Claude 2</li>
+<li>Claude 3 Opus</li>
+<li>Claude 3 Sonnet</li>
+<li>Claude 3 Haiku</li>
 </ul>
-<hr />
-<h1 id="provider-details">Provider Details</h1>
-<h3 id="provider-parameters-config">Provider Parameters (<code>config</code>)</h3>
-<p>All LLM providers support an optional <code>config</code> dictionary for provider-specific settings. You can pass this dictionary to the provider constructor:</p>
-<div class="codehilite"><pre><span></span><code><span class="n">provider</span> <span class="o">=</span> <span class="n">OpenAIProvider</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;gpt-4o&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;base_url&quot;</span><span class="p">:</span> <span class="s2">&quot;https://api.example.com/v1&quot;</span><span class="p">})</span>
-</code></pre></div>
-
+<h2 id="moonshotai">MoonshotAI</h2>
 <ul>
-<li>For <code>openai</code> and compatible providers, you can set <code>base_url</code> to use a custom endpoint.</li>
-<li>For Azure, additional options like <code>endpoint</code> and <code>api_version</code> may be supported as keys within <code>config</code>.</li>
+<li>Moonshot-v1-8k</li>
+<li>Moonshot-v1-32k</li>
 </ul>
-<hr />
-<h3 id="anthropic">anthropic</h3>
-<p><strong>Description:</strong> Anthropic Claude v3 (Opus, Sonnet, Haiku), via official Anthropic API.</p>
-<p><strong>Models:</strong>
-- claude-3-opus-20240229: Most advanced, very high context and reasoning.
-- claude-3-sonnet-20240229: Fast, large-context, good for chat.
-- claude-3-haiku-20240307: Fastest, cheap, smaller context.</p>
-<p><strong>Auth:</strong>
-- Expects official Claude API key via credential system only (environment variables are not supported).</p>
-<p><strong>Usage:</strong>
-- Use provider name <code>anthropic</code> in CLI/config. Model selection applies as above.</p>
-<hr />
-<h3 id="azure_openai">azure_openai</h3>
-<p><strong>Description:</strong> Azure-hosted OpenAI models (API-compatible, may require endpoint and version)</p>
-<p><strong>Models:</strong>
-- azure-gpt-35-turbo: GPT-3.5 family turbo, hosted via Azure.
-- azure-gpt-4: GPT-4 model, hosted via Azure.</p>
-<p><strong>Auth:</strong>
-- Expects API key and Azure endpoint via credential manager only (environment variables are not supported).</p>
-<p><strong>Usage:</strong>
-- Use provider name <code>azure_openai</code> in CLI/config. Model selection as shown above.</p>
-<hr />
-<h3 id="google">google</h3>
-<p><strong>Description:</strong> Google Gemini models via OpenAI-compatible API endpoint.</p>
-<p><strong>Models:</strong>
-- gemini-2.5-flash: Flash model, suitable for chat and general use.
-- gemini-2.5-pro: Pro model, larger context and higher throughput.
-- gemini-2.5-flash-lite-preview-06-17: Flash Lite preview model.</p>
-<p><strong>Auth:</strong>
-- Uses API key via credential manager.</p>
-<p><strong>Usage:</strong>
-- Use provider name <code>google</code> in CLI/config. Model selection as shown above.</p>
-<hr />
-<h3 id="moonshotai">moonshotai</h3>
-<p><strong>Description:</strong> Moonshot AI models via OpenAI-compatible API endpoint.</p>
-<p><strong>Models:</strong>
-- kimi-k2-0711-preview: Advanced reasoning model with 128k context window
-- kimi-k1-8k: Standard model with 8k context window
-- kimi-k1-32k: Standard model with 32k context window<br />
-- kimi-k1-128k: Standard model with 128k context window</p>
-<p><strong>Auth:</strong>
-- Uses API key via credential manager.</p>
-<p><strong>Usage:</strong>
-- Use provider name <code>moonshotai</code> in CLI/config. Model selection as shown above.</p>
-<hr />
-<h3 id="groq">groq</h3>
-<p><strong>Description:</strong> Groq AI models via OpenAI-compatible API endpoint.</p>
-<p><strong>Models:</strong>
-- moonshotai/kimi-k2-instruct: Kimi K2 Instruct model by Moonshot AI, hosted via Groq</p>
-<p><strong>Auth:</strong>
-- Uses API key via credential manager.</p>
-<p><strong>Usage:</strong>
-- Use provider name <code>groq</code> in CLI/config. Model selection as shown above.</p>
+<h2 id="groq">Groq</h2>
+<ul>
+<li>Llama-3-8b-8192</li>
+<li>Llama-3-70b-8192</li>
+</ul>
+<!-- Removed links to model_info.py files for all providers to avoid broken references. -->
 
 
 

@@ -359,9 +359,18 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-configuration-file" class="md-nav__link">
+  <a href="#2-using-custom-configuration-files" class="md-nav__link">
     <span class="md-ellipsis">
-      3. Configuration File
+      2. Using Custom Configuration Files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-default-configuration-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Default Configuration File
     </span>
   </a>
   
@@ -1049,9 +1058,18 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-configuration-file" class="md-nav__link">
+  <a href="#2-using-custom-configuration-files" class="md-nav__link">
     <span class="md-ellipsis">
-      3. Configuration File
+      2. Using Custom Configuration Files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-default-configuration-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Default Configuration File
     </span>
   </a>
   
@@ -1405,6 +1423,29 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/human-guided-ai/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Human-Guided AI Principle
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1585,9 +1626,18 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-configuration-file" class="md-nav__link">
+  <a href="#2-using-custom-configuration-files" class="md-nav__link">
     <span class="md-ellipsis">
-      3. Configuration File
+      2. Using Custom Configuration Files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-default-configuration-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Default Configuration File
     </span>
   </a>
   
@@ -1668,8 +1718,17 @@ janito<span class="w"> </span>-p<span class="w"> </span>openai<span class="w"> <
 <li>Use <code>-m MODEL_NAME</code> to select a model for the provider.</li>
 <li>See <a href="../../reference/cli-options/">CLI Options</a> for the full list of flags.</li>
 </ul>
-<h2 id="3-configuration-file">3. Configuration File</h2>
-<p>Janito uses a <code>config.json</code> file located in the <code>.janito</code> directory under your home folder for persistent settings.</p>
+<h2 id="2-using-custom-configuration-files">2. Using Custom Configuration Files</h2>
+<p>You can use the <code>-c NAME</code> or <code>--config NAME</code> option to load and save configuration from a custom file:</p>
+<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>-c<span class="w"> </span>myproject<span class="w"> </span><span class="s2">&quot;Prompt for my project&quot;</span>
+</code></pre></div>
+
+<p>This will use the config file at:
+- Windows: <code>C:\Users\&lt;YourUser&gt;\.janito\configs\myproject.json</code>
+- Linux/macOS: <code>/home/&lt;youruser&gt;/.janito/configs/myproject.json</code></p>
+<p>If the file does not exist, it will be created automatically when you save settings.</p>
+<h2 id="3-default-configuration-file">3. Default Configuration File</h2>
+<p>By default, Janito uses a <code>config.json</code> file located in the <code>.janito</code> directory under your home folder for persistent settings.</p>
 <p><strong>Path:</strong></p>
 <ul>
 <li>Windows: <code>C:\Users\&lt;YourUser&gt;\.janito\config.json</code></li>
@@ -1681,6 +1740,7 @@ janito<span class="w"> </span>-p<span class="w"> </span>openai<span class="w"> <
 <div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>--show-config
 </code></pre></div>
 
+<p>This will display the config file path at the top. If you use <code>-c NAME</code>, this will show the configuration for that custom file and its path.</p>
 <h2 id="advanced-configuration">Advanced Configuration</h2>
 <h3 id="disabling-tools">Disabling Tools</h3>
 <p>You can selectively disable specific tools to customize your workflow or enhance security:</p>

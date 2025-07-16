@@ -2,7 +2,7 @@
 CLI:
     requirements: config manager
         --set
-        --show-config
+        --show-config   # shows config file path and current config
 
     requirements: provider registry
         --list-providers

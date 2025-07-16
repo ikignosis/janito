@@ -1405,6 +1405,29 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/human-guided-ai/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Human-Guided AI Principle
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1774,7 +1797,7 @@ janito<span class="w"> </span>--set<span class="w"> </span><span class="nv">disa
 </code></pre></div>
 
 <h3 id="via-configuration-file">Via Configuration File</h3>
-<p>Edit your <code>config.json</code> file (located in <code>~/.janito/config.json</code>) and add the <code>disabled_tools</code> key:</p>
+<p>Edit your configuration file (by default <code>~/.janito/config.json</code>, or a custom file if using <code>-c NAME</code> such as <code>~/.janito/configs/NAME.json</code>) and add the <code>disabled_tools</code> key:</p>
 <div class="codehilite"><pre><span></span><code><span class="p">{</span>
 <span class="w">  </span><span class="nt">&quot;disabled_tools&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ask_user,python_code_run&quot;</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;provider&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;openai&quot;</span><span class="p">,</span>
@@ -1782,13 +1805,15 @@ janito<span class="w"> </span>--set<span class="w"> </span><span class="nv">disa
 <span class="p">}</span>
 </code></pre></div>
 
+<p>If you use <code>-c NAME</code>, the disabled tools will be saved and loaded from that custom config file.</p>
 <h2 id="viewing-disabled-tools">Viewing Disabled Tools</h2>
 <p>Check which tools are currently disabled:</p>
 <div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>--show-config
 </code></pre></div>
 
-<p>This will display a section showing your disabled tools, for example:</p>
-<div class="codehilite"><pre><span></span><code><span class="n">Disabled</span><span class="w"> </span><span class="n">tools</span><span class="p">:</span><span class="w"> </span><span class="n">ask_user</span><span class="p">,</span><span class="w"> </span><span class="n">python_code_run</span>
+<p>This will display the config file path and a section showing your disabled tools, for example:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">Config</span><span class="w"> </span><span class="n">file</span><span class="p">:</span><span class="w"> </span><span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">youruser</span><span class="o">/.</span><span class="n">janito</span><span class="o">/</span><span class="n">config</span><span class="o">.</span><span class="n">json</span>
+<span class="n">Disabled</span><span class="w"> </span><span class="n">tools</span><span class="p">:</span><span class="w"> </span><span class="n">ask_user</span><span class="p">,</span><span class="w"> </span><span class="n">python_code_run</span>
 </code></pre></div>
 
 <h2 id="listing-available-tools">Listing Available Tools</h2>
@@ -1854,8 +1879,8 @@ janito<span class="w"> </span>--set<span class="w"> </span><span class="nv">disa
 </ul>
 <h3 id="configuration-not-persisting">Configuration Not Persisting</h3>
 <ul>
-<li>Verify the config file path: <code>janito --show-config</code> shows the location</li>
-<li>Check file permissions for your <code>~/.janito/config.json</code> file</li>
+<li>Verify the config file path: <code>janito --show-config</code> shows the config file location at the top (if using <code>-c NAME</code>, it will show the custom config file)</li>
+<li>Check file permissions for your config file</li>
 <li>Ensure no syntax errors in the JSON configuration</li>
 </ul>
 

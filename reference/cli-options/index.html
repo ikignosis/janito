@@ -1312,6 +1312,29 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/human-guided-ai/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Human-Guided AI Principle
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -1571,7 +1594,7 @@
 
 
 <h1 id="janito-cli-options">🏁 Janito CLI Options</h1>
-<p>This page documents all command-line options for Janito, as shown by <code>janito --help</code>. These options temporarily override configuration for a single session and do not persist changes to config files.</p>
+<p>This page documents all command-line options for Janito, as shown by <code>janito --help</code>. These options temporarily override configuration for a single session and do not persist changes to config files unless you use <code>--set</code> or a custom config file with <code>-c</code>.</p>
 <p><strong>Syntax:</strong> <code>janito [options] [prompt]</code></p>
 <h2 id="overview">💡 Overview</h2>
 <p>These options are useful for one-off runs, scripting, or experimentation. They take precedence over config files for the current invocation only.</p>
@@ -1591,6 +1614,10 @@
 <tr>
 <td><code>-h</code>, <code>--help</code></td>
 <td>Show this help message and exit</td>
+</tr>
+<tr>
+<td><code>-c NAME</code>, <code>--config NAME</code></td>
+<td>Use custom configuration file <code>~/.janito/configs/NAME.json</code> instead of the default config.json</td>
 </tr>
 <tr>
 <td><code>--verbose-api</code></td>
@@ -1638,7 +1665,11 @@
 </tr>
 <tr>
 <td><code>--show-config</code></td>
-<td>Show the current config</td>
+<td>Show the current config and config file path</td>
+</tr>
+<tr>
+<td><code>--list-config</code></td>
+<td>List all config files (default and custom)</td>
 </tr>
 <tr>
 <td><code>--list-providers</code></td>
@@ -1653,7 +1684,7 @@
 <td>Set API key for the provider (requires -p PROVIDER)</td>
 </tr>
 <tr>
-<td><code>--set [PROVIDER_NAME.]KEY=VALUE</code></td>
+<td><code>--set KEY=VALUE</code></td>
 <td>Set a config key</td>
 </tr>
 <tr>
@@ -1664,20 +1695,44 @@
 <td><code>-S</code>, <code>--show-system</code></td>
 <td>Show the resolved system prompt for the main agent</td>
 </tr>
+<tr>
+<td><code>-p PROVIDER</code>, <code>--provider PROVIDER</code></td>
+<td>Select the provider</td>
+</tr>
+<tr>
+<td><code>-m MODEL</code>, <code>--model MODEL</code></td>
+<td>Select the model</td>
+</tr>
+<tr>
+<td><code>-t TEMPERATURE</code>, <code>--temperature TEMPERATURE</code></td>
+<td>Set the temperature</td>
+</tr>
+<tr>
+<td><code>-v</code>, <code>--verbose</code></td>
+<td>Print extra information before answering</td>
+</tr>
+<tr>
+<td><code>-R</code>, <code>--raw</code></td>
+<td>Print the raw JSON response from the OpenAI API (if applicable)</td>
+</tr>
+<tr>
+<td><code>--effort {low, medium, high, none}</code></td>
+<td>Set the reasoning effort for models that support it (low, medium, high, none)</td>
+</tr>
+<tr>
+<td><code>-e</code>, <code>--event-log</code></td>
+<td>Enable event logging to the system bus</td>
+</tr>
+<tr>
+<td><code>--event-debug</code></td>
+<td>Print debug info on event subscribe/submit methods</td>
+</tr>
 </tbody>
 </table>
-<p>| <code>-p PROVIDER</code>, <code>--provider PROVIDER</code> | Select the provider |
-| <code>-m MODEL</code>, <code>--model MODEL</code> | Select the model |
-| <code>-t TEMPERATURE</code>, <code>--temperature TEMPERATURE</code> | Set the temperature |
-| <code>-v</code>, <code>--verbose</code> | Print extra information before answering |
-| <code>-R</code>, <code>--raw</code> | Print the raw JSON response from the OpenAI API (if applicable) |</p>
-<p>| <code>--effort {low, medium, high, none}</code> | Set the reasoning effort for models that support it (low, medium, high, none) |
-| <code>-e</code>, <code>--event-log</code> | Enable event logging to the system bus |
-| <code>--event-debug</code> | Print debug info on event subscribe/submit methods |</p>
 <h2 id="usage-example">👨‍💻 Usage Example</h2>
 <div class="codehilite"><pre><span></span><code>janito<span class="w"> </span><span class="o">[</span>options<span class="o">]</span><span class="w"> </span><span class="o">[</span>prompt<span class="o">]</span>
 janito<span class="w"> </span>-p<span class="w"> </span>openai<span class="w"> </span>-m<span class="w"> </span>gpt-3.5-turbo<span class="w"> </span><span class="s2">&quot;Your prompt here&quot;</span>
-janito<span class="w"> </span>-p<span class="w"> </span>google<span class="w"> </span>-m<span class="w"> </span>gemini-2.5-flash<span class="w"> </span><span class="s2">&quot;Your prompt here&quot;</span>
+janito<span class="w"> </span>-c<span class="w"> </span>myproject<span class="w"> </span>-p<span class="w"> </span>openai<span class="w"> </span><span class="s2">&quot;Prompt for my project (uses ~/.janito/configs/myproject.json)&quot;</span>
 janito<span class="w"> </span>--list-tools
 janito<span class="w"> </span>--web<span class="w">  </span><span class="c1"># Enable clickable file links via web viewer</span>
 janito<span class="w"> </span>-u<span class="w"> </span>-x<span class="w"> </span>--read<span class="w"> </span>--write<span class="w"> </span><span class="s2">&quot;Run a tool with unrestricted paths (DANGEROUS)&quot;</span>
@@ -1745,7 +1800,7 @@ janito<span class="w"> </span>-u<span class="w"> </span>-x<span class="w"> </spa
 <tr>
 <td><code>tool_permissions</code></td>
 <td>Set tool permission level</td>
-<td><code>--set tool_permissions=rwe</code></td>
+<td><code>--set tool_permissions=rwx</code></td>
 </tr>
 <tr>
 <td><code>disabled_tools</code></td>
