@@ -8,22 +8,28 @@
       
       
       
+        <link rel="canonical" href="https://ikignosis.github.io/janito/guides/configuration/">
       
       
+        <link rel="prev" href="../../code_intelligence/why-string-replacement/">
       
-      <link rel="icon" href="/janito/assets/images/favicon.png">
+      
+        <link rel="next" href="../../reference/cli-options/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.12">
     
     
       
-        <title>Janito</title>
+        <title>Configuration - Janito</title>
       
     
     
-      <link rel="stylesheet" href="/janito/assets/stylesheets/main.2afb09e1.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.2afb09e1.min.css">
       
         
-        <link rel="stylesheet" href="/janito/assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -42,7 +48,7 @@
       
     
     
-    <script>__md_scope=new URL("/janito/",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -67,6 +73,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#configuration-guide" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -79,7 +90,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="/janito/." title="Janito" class="md-header__button md-logo" aria-label="Janito" data-md-component="logo">
+    <a href="../.." title="Janito" class="md-header__button md-logo" aria-label="Janito" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -99,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              
+              Configuration
             
           </span>
         </div>
@@ -215,7 +226,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="/janito/." title="Janito" class="md-nav__button md-logo" aria-label="Janito" data-md-component="logo">
+    <a href="../.." title="Janito" class="md-nav__button md-logo" aria-label="Janito" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -245,7 +256,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -267,7 +278,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/guides/installation/" class="md-nav__link">
+      <a href="../installation/" class="md-nav__link">
         
   
   
@@ -286,10 +297,32 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="/janito/guides/configuration/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Configuration
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -300,6 +333,95 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-command-line-options-recommended-for-most-users" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Command-Line Options (Recommended for Most Users)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-using-custom-configuration-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Using Custom Configuration Files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-default-configuration-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Default Configuration File
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#viewing-effective-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Viewing Effective Configuration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Advanced Configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#disabling-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Disabling Tools
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#more-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      More Information
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -349,7 +471,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/guides/using/" class="md-nav__link">
+      <a href="../using/" class="md-nav__link">
         
   
   
@@ -372,7 +494,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/guides/using_tools/" class="md-nav__link">
+      <a href="../using_tools/" class="md-nav__link">
         
   
   
@@ -395,7 +517,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/guides/terminal-shell/" class="md-nav__link">
+      <a href="../terminal-shell/" class="md-nav__link">
         
   
   
@@ -418,7 +540,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/guides/single-shot-terminal/" class="md-nav__link">
+      <a href="../single-shot-terminal/" class="md-nav__link">
         
   
   
@@ -441,7 +563,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/concepts/prompt-design-style/" class="md-nav__link">
+      <a href="../../concepts/prompt-design-style/" class="md-nav__link">
         
   
   
@@ -464,7 +586,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/guides/profiles/" class="md-nav__link">
+      <a href="../profiles/" class="md-nav__link">
         
   
   
@@ -532,7 +654,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/guides/developing/" class="md-nav__link">
+      <a href="../developing/" class="md-nav__link">
         
   
   
@@ -555,7 +677,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/guides/tools-developer-guide/" class="md-nav__link">
+      <a href="../tools-developer-guide/" class="md-nav__link">
         
   
   
@@ -578,7 +700,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/meta/developer-toolchain/" class="md-nav__link">
+      <a href="../../meta/developer-toolchain/" class="md-nav__link">
         
   
   
@@ -646,7 +768,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/tools-precision/" class="md-nav__link">
+      <a href="../../tools-precision/" class="md-nav__link">
         
   
   
@@ -707,7 +829,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/code_intelligence/our-approach/" class="md-nav__link">
+      <a href="../../code_intelligence/our-approach/" class="md-nav__link">
         
   
   
@@ -730,7 +852,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/code_intelligence/code-generation-challenges/" class="md-nav__link">
+      <a href="../../code_intelligence/code-generation-challenges/" class="md-nav__link">
         
   
   
@@ -753,7 +875,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/code_intelligence/code-generation-observability/" class="md-nav__link">
+      <a href="../../code_intelligence/code-generation-observability/" class="md-nav__link">
         
   
   
@@ -776,7 +898,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/code_intelligence/agentic-frameworks-comparison/" class="md-nav__link">
+      <a href="../../code_intelligence/agentic-frameworks-comparison/" class="md-nav__link">
         
   
   
@@ -799,7 +921,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/code_intelligence/why-string-replacement/" class="md-nav__link">
+      <a href="../../code_intelligence/why-string-replacement/" class="md-nav__link">
         
   
   
@@ -834,18 +956,20 @@
       
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
         
           
           <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
@@ -861,7 +985,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             Reference
@@ -872,10 +996,32 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="/janito/guides/configuration/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Configuration
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -886,6 +1032,95 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-command-line-options-recommended-for-most-users" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Command-Line Options (Recommended for Most Users)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-using-custom-configuration-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Using Custom Configuration Files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-default-configuration-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Default Configuration File
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#viewing-effective-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Viewing Effective Configuration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Advanced Configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#disabling-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Disabling Tools
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#more-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      More Information
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -898,7 +1133,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/reference/cli-options/" class="md-nav__link">
+      <a href="../../reference/cli-options/" class="md-nav__link">
         
   
   
@@ -921,7 +1156,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/guides/disabled-tools/" class="md-nav__link">
+      <a href="../disabled-tools/" class="md-nav__link">
         
   
   
@@ -944,7 +1179,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/reference/api/" class="md-nav__link">
+      <a href="../../reference/api/" class="md-nav__link">
         
   
   
@@ -1012,7 +1247,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/supported-providers-models/" class="md-nav__link">
+      <a href="../../supported-providers-models/" class="md-nav__link">
         
   
   
@@ -1035,7 +1270,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/deepseek-setup/" class="md-nav__link">
+      <a href="../../deepseek-setup/" class="md-nav__link">
         
   
   
@@ -1058,7 +1293,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/moonshotai-setup/" class="md-nav__link">
+      <a href="../../moonshotai-setup/" class="md-nav__link">
         
   
   
@@ -1126,7 +1361,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/concepts/" class="md-nav__link">
+      <a href="../../concepts/" class="md-nav__link">
         
   
   
@@ -1149,7 +1384,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/concepts/language-model-clients/" class="md-nav__link">
+      <a href="../../concepts/language-model-clients/" class="md-nav__link">
         
   
   
@@ -1172,7 +1407,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/concepts/analysis-style/" class="md-nav__link">
+      <a href="../../concepts/analysis-style/" class="md-nav__link">
         
   
   
@@ -1195,7 +1430,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/concepts/human-guided-ai/" class="md-nav__link">
+      <a href="../../concepts/human-guided-ai/" class="md-nav__link">
         
   
   
@@ -1263,7 +1498,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/about/why/" class="md-nav__link">
+      <a href="../../about/why/" class="md-nav__link">
         
   
   
@@ -1286,7 +1521,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/about/vs-webchats/" class="md-nav__link">
+      <a href="../../about/vs-webchats/" class="md-nav__link">
         
   
   
@@ -1309,7 +1544,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/about/costs/" class="md-nav__link">
+      <a href="../../about/costs/" class="md-nav__link">
         
   
   
@@ -1332,7 +1567,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/alternatives/" class="md-nav__link">
+      <a href="../../alternatives/" class="md-nav__link">
         
   
   
@@ -1372,6 +1607,85 @@
   
   
   
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-command-line-options-recommended-for-most-users" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Command-Line Options (Recommended for Most Users)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-using-custom-configuration-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Using Custom Configuration Files
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-default-configuration-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Default Configuration File
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#viewing-effective-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Viewing Effective Configuration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Advanced Configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#disabling-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Disabling Tools
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#more-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      More Information
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -1383,8 +1697,83 @@
             <div class="md-content" data-md-component="content">
               <article class="md-content__inner md-typeset">
                 
-  <h1>404 - Not found</h1>
+                  
 
+
+  
+  
+
+
+<h1 id="configuration-guide">Configuration Guide</h1>
+<p>Janito can be configured using command-line options, environment variables, or configuration files. This guide shows you how to set up API keys, select providers and models, and adjust other settings.</p>
+<h2 id="1-command-line-options-recommended-for-most-users">1. Command-Line Options (Recommended for Most Users)</h2>
+<p>Set API keys, providers, and models directly when running Janito:</p>
+<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>--set-api-key<span class="w"> </span>YOUR_API_KEY<span class="w"> </span>-p<span class="w"> </span>PROVIDER_NAME
+janito<span class="w"> </span>--set<span class="w"> </span><span class="nv">provider</span><span class="o">=</span>openai
+janito<span class="w"> </span>-p<span class="w"> </span>openai<span class="w"> </span>-m<span class="w"> </span>gpt-3.5-turbo<span class="w"> </span><span class="s2">&quot;Your prompt here&quot;</span>
+</code></pre></div>
+
+<ul>
+<li>Use <code>-p PROVIDER_NAME</code> to select a provider.</li>
+<li>Use <code>-m MODEL_NAME</code> to select a model for the provider.</li>
+<li>See <a href="../../reference/cli-options/">CLI Options</a> for the full list of flags.</li>
+</ul>
+<h2 id="2-using-custom-configuration-files">2. Using Custom Configuration Files</h2>
+<p>You can use the <code>-c NAME</code> or <code>--config NAME</code> option to load and save configuration from a custom file:</p>
+<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>-c<span class="w"> </span>myproject<span class="w"> </span><span class="s2">&quot;Prompt for my project&quot;</span>
+</code></pre></div>
+
+<p>This will use the config file at:
+- Windows: <code>C:\Users\&lt;YourUser&gt;\.janito\configs\myproject.json</code>
+- Linux/macOS: <code>/home/&lt;youruser&gt;/.janito/configs/myproject.json</code></p>
+<p>If the file does not exist, it will be created automatically when you save settings.</p>
+<h2 id="3-default-configuration-file">3. Default Configuration File</h2>
+<p>By default, Janito uses a <code>config.json</code> file located in the <code>.janito</code> directory under your home folder for persistent settings.</p>
+<p><strong>Path:</strong></p>
+<ul>
+<li>Windows: <code>C:\Users\&lt;YourUser&gt;\.janito\config.json</code></li>
+<li>Linux/macOS: <code>/home/&lt;youruser&gt;/.janito/config.json</code></li>
+</ul>
+<p>You can edit this file directly or use Janito CLI commands to update your configuration.</p>
+<h2 id="viewing-effective-configuration">Viewing Effective Configuration</h2>
+<p>Show the current configuration with:</p>
+<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>--show-config
+</code></pre></div>
+
+<p>This will display the config file path at the top. If you use <code>-c NAME</code>, this will show the configuration for that custom file and its path.</p>
+<h2 id="advanced-configuration">Advanced Configuration</h2>
+<h3 id="disabling-tools">Disabling Tools</h3>
+<p>You can selectively disable specific tools to customize your workflow or enhance security:</p>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Disable a single tool</span>
+janito<span class="w"> </span>--set<span class="w"> </span><span class="nv">disabled_tools</span><span class="o">=</span>ask_user
+
+<span class="c1"># Disable multiple tools</span>
+janito<span class="w"> </span>--set<span class="w"> </span><span class="nv">disabled_tools</span><span class="o">=</span><span class="s2">&quot;ask_user,python_code_run&quot;</span>
+
+<span class="c1"># View disabled tools</span>
+janito<span class="w"> </span>--show-config
+</code></pre></div>
+
+<p>See the <a href="../disabled-tools/">Disabling Tools Guide</a> for complete details.</p>
+<h2 id="more-information">More Information</h2>
+<ul>
+<li>See <a href="../../reference/cli-options/">CLI Options Reference</a> for all configuration flags.</li>
+<li>For provider-specific settings, see the <a href="../../supported-providers-models/">Supported Providers &amp; Models</a> page.</li>
+<li>For troubleshooting, use <code>janito --help</code> or consult the <a href="../using/">Usage Guide</a>.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
               </article>
             </div>
           
@@ -1420,10 +1809,10 @@
     
     
       
-      <script id="__config" type="application/json">{"base": "/janito/", "features": [], "search": "/janito/assets/javascripts/workers/search.f8cc74c7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.f8cc74c7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="/janito/assets/javascripts/bundle.c8b220af.min.js"></script>
+      <script src="../../assets/javascripts/bundle.c8b220af.min.js"></script>
       
     
   </body>

@@ -1,0 +1,24 @@
+
+CLI:
+    requirements: config manager
+        --set
+        --show-config   # shows config file path and current config
+
+    requirements: provider registry
+        --list-providers
+
+    requirements: provider instance (based on config mgr default_provider or from -p modifier)
+        --list-models
+
+    requirements: driver config, driver instance
+        run mode
+
+
+    janito [modifiders] [setters/getters] [user prompt]
+        modifiers: [--provider xpto ] [--model xpto] -  modifiers can affect both setters/getters and run mode
+        setters/getters: show/list/set  (--set*/--list*/--show*, --set-api-key)
+            --set-api-key <API_KEY>: sets the API key for authentication or provider access. Requires -p (provider) to be specified—there is no default fallback. Always prints the updated credentials file path on success.
+        when no setter or getter is provided, then we go into run mode:
+            - single_shot: when user prompt was provided in cmd line
+            - chat_mode: - no user prompt provide
+
