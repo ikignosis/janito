@@ -8,13 +8,9 @@
       
       
       
-        <link rel="canonical" href="https://ikignosis.github.io/janito/supported-providers-models/">
+        <link rel="canonical" href="https://ikignosis.github.io/janito/cerebras-setup/">
       
       
-        <link rel="prev" href="../reference/api/">
-      
-      
-        <link rel="next" href="../deepseek-setup/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -22,7 +18,7 @@
     
     
       
-        <title>Overview - Janito</title>
+        <title>Cerebras Setup Guide - Janito</title>
       
     
     
@@ -74,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#supported-providers-and-models" class="md-skip">
+        <a href="#cerebras-setup-guide" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +106,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Overview
+              Cerebras Setup Guide
             
           </span>
         </div>
@@ -947,19 +943,17 @@
       
   
   
-    
   
   
-  
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
           <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
@@ -974,7 +968,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             Supported Providers & Models
@@ -985,31 +979,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Overview
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../supported-providers-models/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1019,89 +992,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#openai" class="md-nav__link">
-    <span class="md-ellipsis">
-      OpenAI
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#google" class="md-nav__link">
-    <span class="md-ellipsis">
-      Google
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#anthropic" class="md-nav__link">
-    <span class="md-ellipsis">
-      Anthropic
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#moonshotai" class="md-nav__link">
-    <span class="md-ellipsis">
-      MoonshotAI
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#alibaba" class="md-nav__link">
-    <span class="md-ellipsis">
-      Alibaba
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#zai" class="md-nav__link">
-    <span class="md-ellipsis">
-      Z.AI
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cerebras" class="md-nav__link">
-    <span class="md-ellipsis">
-      Cerebras
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1469,63 +1359,54 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#openai" class="md-nav__link">
+  <a href="#prerequisites" class="md-nav__link">
     <span class="md-ellipsis">
-      OpenAI
+      Prerequisites
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#google" class="md-nav__link">
+  <a href="#getting-an-api-key" class="md-nav__link">
     <span class="md-ellipsis">
-      Google
+      Getting an API Key
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#anthropic" class="md-nav__link">
+  <a href="#configuration" class="md-nav__link">
     <span class="md-ellipsis">
-      Anthropic
+      Configuration
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#moonshotai" class="md-nav__link">
+  <a href="#usage" class="md-nav__link">
     <span class="md-ellipsis">
-      MoonshotAI
+      Usage
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#alibaba" class="md-nav__link">
+  <a href="#available-models" class="md-nav__link">
     <span class="md-ellipsis">
-      Alibaba
+      Available Models
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#zai" class="md-nav__link">
+  <a href="#troubleshooting" class="md-nav__link">
     <span class="md-ellipsis">
-      Z.AI
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cerebras" class="md-nav__link">
-    <span class="md-ellipsis">
-      Cerebras
+      Troubleshooting
     </span>
   </a>
   
@@ -1550,68 +1431,49 @@
   
 
 
-<h1 id="supported-providers-and-models">Supported Providers and Models</h1>
-<p>This page lists the supported providers and their available models.</p>
-<h2 id="openai">OpenAI</h2>
+<h1 id="cerebras-setup-guide">Cerebras Setup Guide</h1>
+<p>This guide will help you set up Janito to use Cerebras as an LLM provider.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ol>
+<li>A Cerebras account</li>
+<li>An API key from Cerebras</li>
+</ol>
+<h2 id="getting-an-api-key">Getting an API Key</h2>
+<ol>
+<li>Visit the <a href="https://api.cerebras.ai/">Cerebras API Keys page</a></li>
+<li>Log in to your account</li>
+<li>Generate a new API key</li>
+<li>Copy the API key for use in Janito</li>
+</ol>
+<h2 id="configuration">Configuration</h2>
+<p>To configure Janito to use Cerebras, you need to set your API key:</p>
+<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>--set-api-key<span class="w"> </span>YOUR_CEREBRAS_API_KEY<span class="w"> </span>-p<span class="w"> </span>cerebras
+</code></pre></div>
+
+<p>Replace <code>YOUR_CEREBRAS_API_KEY</code> with the API key you obtained from Cerebras.</p>
+<h2 id="usage">Usage</h2>
+<p>After setting up your API key, you can use Cerebras models with Janito:</p>
+<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>-p<span class="w"> </span>cerebras<span class="w"> </span><span class="s2">&quot;Hello, how are you?&quot;</span>
+</code></pre></div>
+
+<p>By default, Janito will use the <code>qwen-3-coder-480b</code> model. You can specify a different model if needed:</p>
+<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>-p<span class="w"> </span>cerebras<span class="w"> </span>-m<span class="w"> </span>qwen-3-coder-480b<span class="w"> </span><span class="s2">&quot;Explain quantum computing&quot;</span>
+</code></pre></div>
+
+<h2 id="available-models">Available Models</h2>
+<p>Cerebras offers several models through their API:</p>
 <ul>
-<li>GPT-3.5 Turbo</li>
-<li>GPT-4</li>
-<li>GPT-4 Turbo</li>
+<li><code>qwen-3-coder-480b</code>: 32k context, reasoning-focused model with function calling support</li>
 </ul>
-<h2 id="google">Google</h2>
-<ul>
-<li>Gemini Pro</li>
-<li>Gemini 1.5 Pro</li>
-</ul>
-<h2 id="anthropic">Anthropic</h2>
-<ul>
-<li>Claude 2</li>
-<li>Claude 3 Opus</li>
-<li>Claude 3 Sonnet</li>
-<li>Claude 3 Haiku</li>
-</ul>
-<h2 id="moonshotai">MoonshotAI</h2>
-<ul>
-<li>kimi-k2-turbo-preview</li>
-<li>kimi-k2-turbo-preview</li>
-<li>kimi-k1-8k</li>
-<li>kimi-k1-32k</li>
-<li>
-<p>kimi-k1-128k</p>
-</li>
-<li>
-<p>Llama-3-8b-8192</p>
-</li>
-<li>Llama-3-70b-8192</li>
-</ul>
-<h2 id="alibaba">Alibaba</h2>
-<ul>
-<li>qwen-turbo</li>
-<li>qwen-plus</li>
-<li>qwen-max</li>
-<li>qwen3-coder-plus (default)</li>
-<li>qwen3-coder-480b-a35b-instruct</li>
-</ul>
-<h2 id="zai">Z.AI</h2>
-<ul>
-<li>glm-4.5</li>
-<li>glm-4.5-air</li>
-</ul>
-<h2 id="cerebras">Cerebras</h2>
-<p><strong>Production Models:</strong>
-- llama-4-scout-17b-16e-instruct
-- llama-3.3-70b
-- llama3.1-8b
-- qwen-3-32b</p>
-<p><strong>Preview Models:</strong>
-- llama-4-maverick-17b-128e-instruct
-- qwen-3-235b-a22b-instruct-2507
-- qwen-3-235b-a22b-thinking-2507
-- qwen-3-coder-480b
-- gpt-oss-120b</p>
-<p><strong>Notes:</strong>
-- qwen-3-coder-480b: 32k context, reasoning-focused model with function calling support</p>
-<!-- Removed links to model_info.py files for all providers to avoid broken references. -->
+<h2 id="troubleshooting">Troubleshooting</h2>
+<p>If you encounter issues:</p>
+<ol>
+<li>Verify your API key is correct and active</li>
+<li>Check that you have internet connectivity</li>
+<li>Ensure you're using a supported model name</li>
+<li>Check the Cerebras status page for any service outages</li>
+</ol>
+<p>For further assistance, consult the <a href="https://api.cerebras.ai/docs">Cerebras documentation</a> or <a href="https://docs.janito.dev">Janito documentation</a>.</p>
 
 
 
