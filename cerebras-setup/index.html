@@ -11,6 +11,10 @@
         <link rel="canonical" href="https://ikignosis.org/janito/cerebras-setup/">
       
       
+        <link rel="prev" href="../z-ai-setup/">
+      
+      
+        <link rel="next" href="../concepts/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -18,7 +22,7 @@
     
     
       
-        <title>Cerebras Setup Guide - Janito</title>
+        <title>Cerebras Setup - Janito</title>
       
     
     
@@ -106,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Cerebras Setup Guide
+              Cerebras Setup
             
           </span>
         </div>
@@ -249,7 +253,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../index.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -943,17 +947,19 @@
       
   
   
+    
   
   
+  
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
         
           
           <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
@@ -968,7 +974,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             Supported Providers & Models
@@ -987,6 +993,28 @@
   
   <span class="md-ellipsis">
     Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../openai-setup/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    OpenAI Setup
     
   </span>
   
@@ -1058,6 +1086,123 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Cerebras Setup
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Cerebras Setup
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prerequisites
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-an-api-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      Getting an API Key
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Usage
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#available-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      Available Models
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Troubleshooting
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1462,6 +1607,22 @@
 
 <h2 id="available-models">Available Models</h2>
 <p>Cerebras offers several models through their API:</p>
+<p><strong>Production Models:</strong></p>
+<ul>
+<li><code>llama-4-scout-17b-16e-instruct</code></li>
+<li><code>llama-3.3-70b</code></li>
+<li><code>llama3.1-8b</code></li>
+<li><code>qwen-3-32b</code></li>
+</ul>
+<p><strong>Preview Models:</strong></p>
+<ul>
+<li><code>llama-4-maverick-17b-128e-instruct</code></li>
+<li><code>qwen-3-235b-a22b-instruct-2507</code></li>
+<li><code>qwen-3-235b-a22b-thinking-2507</code></li>
+<li><code>qwen-3-coder-480b</code></li>
+<li><code>gpt-oss-120b</code></li>
+</ul>
+<p><strong>Notes:</strong></p>
 <ul>
 <li><code>qwen-3-coder-480b</code>: 32k context, reasoning-focused model with function calling support</li>
 </ul>
