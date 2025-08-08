@@ -1,0 +1,16 @@
+<div class="md-copyright">
+  {% if config.copyright %}
+    <div class="md-copyright__highlight">
+      {{ config.copyright }}
+      {% if config.extra.commit_hash %}
+        • Commit: <code>{{ config.extra.commit_hash }}</code>
+      {% endif %}
+    </div>
+  {% endif %}
+  {% if not config.extra.generator is defined or config.extra.generator %}
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  {% endif %}
+</div>
