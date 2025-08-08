@@ -18,7 +18,7 @@
     
     
       
-        <title>Configuring Janito for Alibaba - Janito</title>
+        <title>Alibaba Cloud Qwen Setup Guide - Janito</title>
       
     
     
@@ -70,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#configuring-janito-for-alibaba" class="md-skip">
+        <a href="#alibaba-cloud-qwen-setup-guide" class="md-skip">
           Skip to content
         </a>
       
@@ -106,7 +106,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Configuring Janito for Alibaba
+              Alibaba Cloud Qwen Setup Guide
             
           </span>
         </div>
@@ -1403,54 +1403,63 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-obtain-an-alibaba-api-key" class="md-nav__link">
+  <a href="#prerequisites" class="md-nav__link">
     <span class="md-ellipsis">
-      1. Obtain an Alibaba API Key
+      Prerequisites
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-set-your-alibaba-api-key-in-janito" class="md-nav__link">
+  <a href="#getting-your-api-key" class="md-nav__link">
     <span class="md-ellipsis">
-      2. Set Your Alibaba API Key in Janito
+      Getting Your API Key
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-select-alibaba-as-the-provider" class="md-nav__link">
+  <a href="#setting-up-the-api-key" class="md-nav__link">
     <span class="md-ellipsis">
-      3. Select Alibaba as the Provider
+      Setting Up the API Key
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-choose-an-alibaba-model" class="md-nav__link">
+  <a href="#configuration" class="md-nav__link">
     <span class="md-ellipsis">
-      4. Choose an Alibaba Model
+      Configuration
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#5-verify-your-configuration" class="md-nav__link">
+  <a href="#available-models" class="md-nav__link">
     <span class="md-ellipsis">
-      5. Verify Your Configuration
+      Available Models
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#6-troubleshooting" class="md-nav__link">
+  <a href="#default-model" class="md-nav__link">
     <span class="md-ellipsis">
-      6. Troubleshooting
+      Default Model
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      Troubleshooting
     </span>
   </a>
   
@@ -1475,53 +1484,60 @@
   
 
 
-<h1 id="configuring-janito-for-alibaba">Configuring Janito for Alibaba</h1>
-<p>Janito supports Alibaba as an LLM provider. This guide explains how to configure Janito to use Alibaba models.</p>
-<h2 id="1-obtain-an-alibaba-api-key">1. Obtain an Alibaba API Key</h2>
+<h1 id="alibaba-cloud-qwen-setup-guide">Alibaba Cloud Qwen Setup Guide</h1>
+<p>This guide explains how to set up the Alibaba Cloud Qwen provider for Janito.</p>
+<h2 id="prerequisites">Prerequisites</h2>
 <ul>
-<li>Sign up or log in at <a href="https://www.alibabacloud.com/">Alibaba Cloud</a> to get your API key.</li>
+<li>An Alibaba Cloud account</li>
+<li>Access to the Alibaba Cloud Qwen model service</li>
+<li>API key for authentication</li>
 </ul>
-<h2 id="2-set-your-alibaba-api-key-in-janito">2. Set Your Alibaba API Key in Janito</h2>
-<p>You must specify both the API key and the provider name when configuring Janito for Alibaba:</p>
-<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>--set-api-key<span class="w"> </span>YOUR_ALIBABA_API_KEY<span class="w"> </span>-p<span class="w"> </span>alibaba
+<h2 id="getting-your-api-key">Getting Your API Key</h2>
+<ol>
+<li>Log in to your <a href="https://account.alibabacloud.com">Alibaba Cloud account</a></li>
+<li>Navigate to the <strong>Qwen Model Service</strong> in the console</li>
+<li>Go to <strong>API Keys</strong> or <strong>Security Settings</strong></li>
+<li>Create a new API key or use an existing one</li>
+<li>Copy the API key value</li>
+</ol>
+<h2 id="setting-up-the-api-key">Setting Up the API Key</h2>
+<p>You can set your API key using the Janito CLI:</p>
+<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>--set-api-key<span class="w"> </span>alibaba:your-api-key-here
 </code></pre></div>
 
-<p>Replace <code>YOUR_ALIBABA_API_KEY</code> with your actual Alibaba API key.</p>
-<h2 id="3-select-alibaba-as-the-provider">3. Select Alibaba as the Provider</h2>
-<p>You can set Alibaba as your default provider:</p>
-<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>--set<span class="w"> </span><span class="nv">provider</span><span class="o">=</span>alibaba
+<p>Alternatively, you can set the environment variable:</p>
+<div class="codehilite"><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">ALIBABA_API_KEY</span><span class="o">=</span>your-api-key-here
 </code></pre></div>
 
-<p>Or specify it per command:</p>
-<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>-p<span class="w"> </span>alibaba<span class="w"> </span><span class="s2">&quot;Your prompt here&quot;</span>
-</code></pre></div>
-
-<h2 id="4-choose-an-alibaba-model">4. Choose an Alibaba Model</h2>
-<p>Janito supports the following Alibaba models:</p>
+<h2 id="configuration">Configuration</h2>
+<p>The Alibaba provider uses the following environment variable:</p>
 <ul>
-<li><code>qwen-turbo</code></li>
-<li><code>qwen-plus</code></li>
-<li><code>qwen-max</code></li>
-<li><code>qwen3-coder-plus</code> (default)</li>
-<li><code>qwen3-coder-480b-a35b-instruct</code></li>
+<li><code>ALIBABA_API_KEY</code>: Your Alibaba Cloud API key</li>
 </ul>
-<p>To select a model:</p>
-<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>-p<span class="w"> </span>alibaba<span class="w"> </span>-m<span class="w"> </span>qwen3-coder-plus<span class="w"> </span><span class="s2">&quot;Your prompt here&quot;</span>
-</code></pre></div>
-
-<h2 id="5-verify-your-configuration">5. Verify Your Configuration</h2>
-<p>Show your current configuration (the config file path will be shown at the top):</p>
-<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>--show-config
-</code></pre></div>
-
-<h2 id="6-troubleshooting">6. Troubleshooting</h2>
+<h2 id="available-models">Available Models</h2>
+<p>The Alibaba provider supports the following models:</p>
 <ul>
-<li>Ensure your API key is correct and active.</li>
-<li>If you encounter issues, use <code>janito --list-providers</code> to verify Alibaba is available.</li>
-<li>For more help, see the main <a href="../guides/configuration/">Configuration Guide</a> or run <code>janito --help</code>.</li>
+<li><code>qwen-turbo</code>: Fast, lightweight model for simple tasks</li>
+<li><code>qwen-plus</code>: Balanced performance and capability</li>
+<li><code>qwen-max</code>: Most capable model for complex tasks</li>
+<li><code>qwen3-coder-plus</code>: Coding-focused model with 128k context</li>
+<li><code>qwen3-coder-480b-a35b-instruct</code>: Advanced coding model</li>
+<li><code>qwen3-235b-a22b-thinking-2507</code>: 1M context thinking model</li>
+<li><code>qwen3-235b-a22b-instruct-2507</code>: 1M context instruct model</li>
+<li><code>qwen3-30b-a3b-thinking-2507</code>: 1M context thinking model</li>
+<li><code>qwen3-30b-a3b-instruct-2507</code>: 1M context instruct model</li>
 </ul>
-<hr />
-<p>For more details on supported models and features, see <a href="../supported-providers-models/">Supported Providers &amp; Models</a>.</p>
+<h2 id="default-model">Default Model</h2>
+<p>The default model is <code>qwen3-235b-a22b-instruct-2507</code>, which provides 129k context and is suitable for general-purpose tasks.</p>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<p><strong>Q: I'm getting authentication errors</strong>
+A: Verify your API key is correct and has the necessary permissions in the Alibaba Cloud console.</p>
+<p><strong>Q: The model is not responding</strong>
+A: Check your internet connection and verify the Alibaba Cloud Qwen service is available in your region.</p>
+<p><strong>Q: I want to use a different model</strong>
+A: Use the <code>--model</code> flag when running Janito:</p>
+<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>--provider<span class="w"> </span>alibaba<span class="w"> </span>--model<span class="w"> </span>qwen-max
+</code></pre></div>
 
 
 
