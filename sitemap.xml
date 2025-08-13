@@ -2,214 +2,262 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://ikignosis.org/janito/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/DIV/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/TOOLBAR-STYLING/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/alibaba-setup/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/alternatives/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/cerebras-setup/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/deepseek-setup/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/driver-flow/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/driver-request-cancellation/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/drivers/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/event-bus/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
+    </url>
+    <url>
+         <loc>https://ikignosis.org/janito/ibm-setup/</loc>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/llm-drivers-required-config/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/llm-drivers/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
+    </url>
+    <url>
+         <loc>https://ikignosis.org/janito/mistral-setup/</loc>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/moonshotai-setup/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/openai-setup/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
+    </url>
+    <url>
+         <loc>https://ikignosis.org/janito/provider-platform-access/</loc>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/security/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/supported-providers-models/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/tools-index/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/tools-natural-results/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/tools-precision/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/z-ai-setup/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/about/costs/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/about/vs-webchats/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/about/why/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/code_intelligence/agentic-frameworks-comparison/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/code_intelligence/code-generation-challenges/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/code_intelligence/code-generation-observability/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/code_intelligence/our-approach/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/code_intelligence/why-string-replacement/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/concepts/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/concepts/analysis-style/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/concepts/human-guided-ai/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/concepts/language-model-clients/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/concepts/prompt-design-style/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/drivers/events/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/guides/configuration/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/guides/developing/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/guides/disabled-tools/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/guides/installation/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/guides/profiles/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/guides/single-shot-terminal/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/guides/terminal-shell/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/guides/tools-developer-guide/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/guides/using/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/guides/using_tools/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/guides/prompting/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/meta/developer-toolchain/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
+    </url>
+    <url>
+         <loc>https://ikignosis.org/janito/pt/</loc>
+         <lastmod>2025-08-13</lastmod>
+    </url>
+    <url>
+         <loc>https://ikignosis.org/janito/pt/README-pt/</loc>
+         <lastmod>2025-08-13</lastmod>
+    </url>
+    <url>
+         <loc>https://ikignosis.org/janito/pt/configuracao/</loc>
+         <lastmod>2025-08-13</lastmod>
+    </url>
+    <url>
+         <loc>https://ikignosis.org/janito/pt/exemplos/</loc>
+         <lastmod>2025-08-13</lastmod>
+    </url>
+    <url>
+         <loc>https://ikignosis.org/janito/pt/faq-pt/</loc>
+         <lastmod>2025-08-13</lastmod>
+    </url>
+    <url>
+         <loc>https://ikignosis.org/janito/pt/ferramentas/</loc>
+         <lastmod>2025-08-13</lastmod>
+    </url>
+    <url>
+         <loc>https://ikignosis.org/janito/pt/guia-uso/</loc>
+         <lastmod>2025-08-13</lastmod>
+    </url>
+    <url>
+         <loc>https://ikignosis.org/janito/pt/instalacao/</loc>
+         <lastmod>2025-08-13</lastmod>
+    </url>
+    <url>
+         <loc>https://ikignosis.org/janito/pt/perfis/</loc>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/reference/api/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/reference/azure-openai/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/reference/cli-options/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/reference/message-handler-model/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/reference/rich-message-handler/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/tools/search-text/</loc>
-         <lastmod>2025-08-08</lastmod>
+         <lastmod>2025-08-13</lastmod>
     </url>
 </urlset>

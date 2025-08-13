@@ -14,7 +14,7 @@
         <link rel="prev" href="../reference/api/">
       
       
-        <link rel="next" href="../openai-setup/">
+        <link rel="next" href="../provider-platform-access/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -1073,6 +1073,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#mistral" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mistral
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#moonshotai" class="md-nav__link">
     <span class="md-ellipsis">
       MoonshotAI
@@ -1085,6 +1094,15 @@
   <a href="#zai" class="md-nav__link">
     <span class="md-ellipsis">
       Z.AI
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ibm-watsonx" class="md-nav__link">
+    <span class="md-ellipsis">
+      IBM WatsonX
     </span>
   </a>
   
@@ -1150,6 +1168,28 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../provider-platform-access/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Platform & Documentation Access
+    
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -1255,6 +1295,28 @@
   
   <span class="md-ellipsis">
     Cerebras Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ibm-setup/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    IBM WatsonX Setup
     
   </span>
   
@@ -1598,6 +1660,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#mistral" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mistral
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#moonshotai" class="md-nav__link">
     <span class="md-ellipsis">
       MoonshotAI
@@ -1610,6 +1681,15 @@
   <a href="#zai" class="md-nav__link">
     <span class="md-ellipsis">
       Z.AI
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ibm-watsonx" class="md-nav__link">
+    <span class="md-ellipsis">
+      IBM WatsonX
     </span>
   </a>
   
@@ -1692,6 +1772,9 @@
 
 <h1 id="supported-providers-and-models">Supported Providers and Models</h1>
 <p>This page lists the supported providers and their available models, organized by openness and sorted alphabetically within each category.</p>
+<blockquote>
+<p>📋 <strong>Platform &amp; Documentation Access</strong>: For information about which providers have publicly accessible platforms and documentation vs. blocked access, see <a href="../provider-platform-access/">Platform &amp; Documentation Access</a>.</p>
+</blockquote>
 <h2 id="open-source-open-weight-models">Open-Source / Open-Weight Models</h2>
 <h3 id="alibaba">Alibaba</h3>
 <ul>
@@ -1728,6 +1811,18 @@
 <li><strong>DeepSeek Chat</strong> (default) - General purpose chat model</li>
 <li><strong>DeepSeek Reasoner</strong> - Specialized for complex reasoning tasks</li>
 </ul>
+<h3 id="mistral">Mistral</h3>
+<ul>
+<li><strong>Mistral Large Latest</strong> (default) - Most capable Mistral model with 128k context</li>
+<li><strong>Mistral Medium Latest</strong> - Balanced performance with 32k context</li>
+<li><strong>Mistral Small Latest</strong> - Compact and efficient with 32k context</li>
+<li><strong>Codestral Latest</strong> - Specialized for code generation with 256k context</li>
+<li><strong>Codestral 2405</strong> - Previous version of code-focused model</li>
+<li><strong>Devstral Small Latest</strong> - Optimized for agentic tool use in software development</li>
+<li><strong>Devstral Medium Latest</strong> - Enhanced agentic capabilities for development tasks</li>
+</ul>
+<p>Mistral provides both general-purpose and specialized models, with Codestral specifically designed for code generation and Devstral for agentic software development.</p>
+<p>For setup instructions, see the <a href="../mistral-setup/">Mistral Setup Guide</a>.</p>
 <h3 id="moonshotai">MoonshotAI</h3>
 <ul>
 <li><strong>Kimi K2 Turbo Preview</strong> (default) - Latest generation with enhanced performance</li>
@@ -1739,6 +1834,25 @@
 <li><strong>GLM-4.5</strong> (default) - Advanced reasoning and conversation</li>
 <li><strong>GLM-4.5 Air</strong> - Compact and efficient version</li>
 </ul>
+<h3 id="ibm-watsonx">IBM WatsonX</h3>
+<p><strong>Open-Source Models:</strong></p>
+<ul>
+<li><strong>openai/gpt-oss-120b</strong> (default) - Open-source 120B model with thinking capabilities</li>
+<li><strong>openai/gpt-oss-20b</strong> - Open-source 20B model with thinking capabilities</li>
+</ul>
+<p><strong>IBM Granite Models:</strong></p>
+<ul>
+<li><strong>ibm/granite-3-8b-instruct</strong> - IBM's Granite 3 8B Instruct model with 128K context</li>
+<li><strong>ibm/granite-3-3-8b-instruct</strong> - Updated Granite 3.3 8B Instruct model</li>
+</ul>
+<p><strong>Hosted Models:</strong></p>
+<ul>
+<li><strong>meta-llama/llama-3-1-70b-instruct</strong> - Meta Llama 3.1 70B hosted on WatsonX</li>
+<li><strong>meta-llama/llama-3-3-70b-instruct</strong> - Meta Llama 3.3 70B hosted on WatsonX</li>
+<li><strong>mistralai/mistral-large</strong> - Mistral Large model hosted on WatsonX</li>
+<li><strong>mistralai/mistral-large-2407</strong> - Mistral Large 2407 version</li>
+</ul>
+<p>IBM WatsonX provides access to IBM's Granite models as well as popular open-source models hosted on their platform. All models support 128K context windows.</p>
 <h2 id="proprietary-models">Proprietary Models</h2>
 <h3 id="anthropic">Anthropic</h3>
 <ul>
@@ -1806,7 +1920,7 @@
       <div class="md-copyright" style="text-align: center; width: 100%;">
   <div class="md-copyright__highlight" style="display: inline-block;">
     Generated by Janito • 
-    <span style="color: var(--md-accent-fg-color);">8641cee</span>
+    <span style="color: var(--md-accent-fg-color);">fc5b66f</span>
   </div>
 </div>
       
