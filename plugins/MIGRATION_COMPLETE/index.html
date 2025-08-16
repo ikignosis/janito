@@ -8,7 +8,7 @@
       
       
       
-        <link rel="canonical" href="https://ikignosis.org/janito/guides/plugins/">
+        <link rel="canonical" href="https://ikignosis.org/janito/plugins/MIGRATION_COMPLETE/">
       
       
       
@@ -18,7 +18,7 @@
     
     
       
-        <title>Plugin System Guide - Janito</title>
+        <title>Tool Migration Complete ✅ - Janito</title>
       
     
     
@@ -70,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#plugin-system-guide" class="md-skip">
+        <a href="#tool-migration-complete" class="md-skip">
           Skip to content
         </a>
       
@@ -106,7 +106,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Plugin System Guide
+              Tool Migration Complete ✅
             
           </span>
         </div>
@@ -270,7 +270,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../installation/" class="md-nav__link">
+      <a href="../../guides/installation/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -291,7 +291,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../configuration/" class="md-nav__link">
+      <a href="../../guides/configuration/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -348,7 +348,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../using/" class="md-nav__link">
+      <a href="../../guides/using/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -370,7 +370,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../using_tools/" class="md-nav__link">
+      <a href="../../guides/using_tools/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -392,7 +392,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../terminal-shell/" class="md-nav__link">
+      <a href="../../guides/terminal-shell/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -414,7 +414,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../single-shot-terminal/" class="md-nav__link">
+      <a href="../../guides/single-shot-terminal/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -458,7 +458,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../profiles/" class="md-nav__link">
+      <a href="../../guides/profiles/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -523,7 +523,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../developing/" class="md-nav__link">
+      <a href="../../guides/developing/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -545,7 +545,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tools-developer-guide/" class="md-nav__link">
+      <a href="../../guides/tools-developer-guide/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -851,7 +851,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../configuration/" class="md-nav__link">
+      <a href="../../guides/configuration/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -895,7 +895,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../disabled-tools/" class="md-nav__link">
+      <a href="../../guides/disabled-tools/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1447,46 +1447,82 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#overview" class="md-nav__link">
+  <a href="#summary" class="md-nav__link">
     <span class="md-ellipsis">
-      Overview
+      Summary
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#creating-a-plugin" class="md-nav__link">
+  <a href="#migration-results" class="md-nav__link">
     <span class="md-ellipsis">
-      Creating a Plugin
+      Migration Results
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Creating a Plugin">
+    <nav class="md-nav" aria-label="Migration Results">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#basic-plugin-structure" class="md-nav__link">
+  <a href="#file-manager-plugin-pluginscorefilemanagertools" class="md-nav__link">
     <span class="md-ellipsis">
-      Basic Plugin Structure
+      📁 File Manager Plugin (plugins/core/filemanager/tools/)
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#plugin-locations" class="md-nav__link">
+  <a href="#code-analyzer-plugin-pluginscorecodeanalyzertools" class="md-nav__link">
     <span class="md-ellipsis">
-      Plugin Locations
+      🔍 Code Analyzer Plugin (plugins/core/codeanalyzer/tools/)
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#directory-structure" class="md-nav__link">
+  <a href="#system-tools-plugin-pluginscoresystemtools" class="md-nav__link">
     <span class="md-ellipsis">
-      Directory Structure
+      ⚡ System Tools Plugin (plugins/core/system/tools/)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#web-tools-plugin-pluginswebwebtoolstools" class="md-nav__link">
+    <span class="md-ellipsis">
+      🌐 Web Tools Plugin (plugins/web/webtools/tools/)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#python-dev-plugin-pluginsdevpythondevtools" class="md-nav__link">
+    <span class="md-ellipsis">
+      🐍 Python Dev Plugin (plugins/dev/pythondev/tools/)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#visualization-plugin-pluginsdevvisualizationtools" class="md-nav__link">
+    <span class="md-ellipsis">
+      📊 Visualization Plugin (plugins/dev/visualization/tools/)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#user-interface-plugin-pluginsuiuserinterfacetools" class="md-nav__link">
+    <span class="md-ellipsis">
+      💬 User Interface Plugin (plugins/ui/userinterface/tools/)
     </span>
   </a>
   
@@ -1498,179 +1534,20 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
+  <a href="#total-files-moved" class="md-nav__link">
     <span class="md-ellipsis">
-      Configuration
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Configuration">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#enable-plugins" class="md-nav__link">
-    <span class="md-ellipsis">
-      Enable Plugins
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#plugin-configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      Plugin Configuration
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cli-commands" class="md-nav__link">
-    <span class="md-ellipsis">
-      CLI Commands
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="CLI Commands">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#list-plugins" class="md-nav__link">
-    <span class="md-ellipsis">
-      List Plugins
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#manual-loading" class="md-nav__link">
-    <span class="md-ellipsis">
-      Manual Loading
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#plugin-features" class="md-nav__link">
-    <span class="md-ellipsis">
-      Plugin Features
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Plugin Features">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#tools" class="md-nav__link">
-    <span class="md-ellipsis">
-      Tools
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#commands" class="md-nav__link">
-    <span class="md-ellipsis">
-      Commands
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#configuration-schema" class="md-nav__link">
-    <span class="md-ellipsis">
-      Configuration Schema
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#example-plugin" class="md-nav__link">
-    <span class="md-ellipsis">
-      Example Plugin
+      Total Files Moved
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#best-practices" class="md-nav__link">
+  <a href="#plugin-structure" class="md-nav__link">
     <span class="md-ellipsis">
-      Best Practices
+      Plugin Structure
     </span>
   </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#troubleshooting" class="md-nav__link">
-    <span class="md-ellipsis">
-      Troubleshooting
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Troubleshooting">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#plugin-not-found" class="md-nav__link">
-    <span class="md-ellipsis">
-      Plugin Not Found
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#configuration-issues" class="md-nav__link">
-    <span class="md-ellipsis">
-      Configuration Issues
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#tool-registration-issues" class="md-nav__link">
-    <span class="md-ellipsis">
-      Tool Registration Issues
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#remote-plugin-issues" class="md-nav__link">
-    <span class="md-ellipsis">
-      Remote Plugin Issues
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -1693,178 +1570,79 @@
   
 
 
-<h1 id="plugin-system-guide">Plugin System Guide</h1>
-<p>The janito plugin system allows you to extend the functionality of janito with custom tools, commands, and features.</p>
-<h2 id="overview">Overview</h2>
-<p>The plugin system consists of:</p>
+<h1 id="tool-migration-complete">Tool Migration Complete ✅</h1>
+<h2 id="summary">Summary</h2>
+<p>All 23 tools have been successfully organized in the plugin structure in <code>plugins/</code>. The actual implementations remain in <code>janito/tools/adapters/local/</code> as the source of truth.</p>
+<h2 id="migration-results">Migration Results</h2>
+<blockquote>
+<p>[!NOTE]
+The actual tool implementations remain in <code>janito/tools/adapters/local/</code> as the source of truth. The plugin system provides organized interfaces.</p>
+</blockquote>
+<h3 id="file-manager-plugin-pluginscorefilemanagertools">📁 File Manager Plugin (<code>plugins/core/filemanager/tools/</code>)</h3>
 <ul>
-<li><strong>Plugin</strong>: Base class for all plugins</li>
-<li><strong>PluginManager</strong>: Manages plugin loading, registration, and lifecycle</li>
-<li><strong>Plugin Discovery</strong>: Automatically finds and loads plugins from various locations</li>
+<li>✅ copy_file.py</li>
+<li>✅ create_directory.py  </li>
+<li>✅ create_file.py</li>
+<li>✅ find_files.py</li>
+<li>✅ move_file.py</li>
+<li>✅ read_files.py</li>
+<li>✅ remove_directory.py</li>
+<li>✅ remove_file.py</li>
+<li>✅ replace_text_in_file.py</li>
+<li>✅ validate_file_syntax/ (directory)</li>
+<li>✅ view_file.py</li>
 </ul>
-<h2 id="creating-a-plugin">Creating a Plugin</h2>
-<h3 id="basic-plugin-structure">Basic Plugin Structure</h3>
-<p>Create a new Python file or directory for your plugin:</p>
-<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">janito.plugins.base</span> <span class="kn">import</span> <span class="n">Plugin</span><span class="p">,</span> <span class="n">PluginMetadata</span>
-<span class="kn">from</span> <span class="nn">janito.tools.tool_base</span> <span class="kn">import</span> <span class="n">ToolBase</span><span class="p">,</span> <span class="n">ToolPermissions</span>
-
-<span class="k">class</span> <span class="nc">MyTool</span><span class="p">(</span><span class="n">ToolBase</span><span class="p">):</span>
-    <span class="n">tool_name</span> <span class="o">=</span> <span class="s2">&quot;my_tool&quot;</span>
-    <span class="n">permissions</span> <span class="o">=</span> <span class="n">ToolPermissions</span><span class="p">(</span><span class="n">read</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">write</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">execute</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Hello </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2">!&quot;</span>
-
-<span class="k">class</span> <span class="nc">MyPlugin</span><span class="p">(</span><span class="n">Plugin</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">get_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PluginMetadata</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">PluginMetadata</span><span class="p">(</span>
-            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;my_plugin&quot;</span><span class="p">,</span>
-            <span class="n">version</span><span class="o">=</span><span class="s2">&quot;1.0.0&quot;</span><span class="p">,</span>
-            <span class="n">description</span><span class="o">=</span><span class="s2">&quot;My custom plugin&quot;</span><span class="p">,</span>
-            <span class="n">author</span><span class="o">=</span><span class="s2">&quot;Your Name&quot;</span><span class="p">,</span>
-            <span class="n">license</span><span class="o">=</span><span class="s2">&quot;MIT&quot;</span>
-        <span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">get_tools</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">MyTool</span><span class="p">]</span>
-
-    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;My plugin initialized!&quot;</span><span class="p">)</span>
-</code></pre></div>
-
-<h3 id="plugin-locations">Plugin Locations</h3>
-<p>Plugins can be placed in:</p>
-<ol>
-<li><code>./plugins/</code> (project directory)</li>
-<li><code>~/.janito/plugins/</code> (user directory)</li>
-<li>Any directory added via configuration</li>
-</ol>
-<h3 id="directory-structure">Directory Structure</h3>
-<p><strong>Single file plugin:</strong></p>
-<div class="codehilite"><pre><span></span><code>plugins/
-└── my_plugin.py
-</code></pre></div>
-
-<p><strong>Package plugin:</strong></p>
-<div class="codehilite"><pre><span></span><code>plugins/
-└── my_plugin/
-    ├── __init__.py
-    └── plugin.py
-</code></pre></div>
-
-<h2 id="configuration">Configuration</h2>
-<h3 id="enable-plugins">Enable Plugins</h3>
-<p>Add to your <code>janito.json</code>:</p>
-<div class="codehilite"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;plugins&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;paths&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;./plugins&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;~/.janito/plugins&quot;</span><span class="p">],</span>
-<span class="w">    </span><span class="nt">&quot;load&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;my_plugin&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-<span class="w">      </span><span class="nt">&quot;another_plugin&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;setting&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;value&quot;</span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
-<span class="p">}</span>
-</code></pre></div>
-
-<h3 id="plugin-configuration">Plugin Configuration</h3>
-<p>Plugins can accept configuration:</p>
-<div class="codehilite"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;plugins&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;load&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">      </span><span class="nt">&quot;my_plugin&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;api_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;secret&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;debug&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
-<span class="w">      </span><span class="p">}</span>
-<span class="w">    </span><span class="p">}</span>
-<span class="w">  </span><span class="p">}</span>
-<span class="p">}</span>
-</code></pre></div>
-
-<h2 id="cli-commands">CLI Commands</h2>
-<h3 id="list-plugins">List Plugins</h3>
-<div class="codehilite"><pre><span></span><code><span class="c1"># List loaded plugins</span>
-janito<span class="w"> </span>--list-plugins
-
-<span class="c1"># List available plugins</span>
-janito<span class="w"> </span>--list-plugins-available
-</code></pre></div>
-
-<h3 id="manual-loading">Manual Loading</h3>
-<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">janito.plugins.manager</span> <span class="kn">import</span> <span class="n">PluginManager</span>
-
-<span class="n">manager</span> <span class="o">=</span> <span class="n">PluginManager</span><span class="p">()</span>
-<span class="n">manager</span><span class="o">.</span><span class="n">load_plugin</span><span class="p">(</span><span class="s2">&quot;my_plugin&quot;</span><span class="p">)</span>
-<span class="n">manager</span><span class="o">.</span><span class="n">load_plugin</span><span class="p">(</span><span class="s2">&quot;my_plugin&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;config&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">})</span>
-</code></pre></div>
-
-<h2 id="plugin-features">Plugin Features</h2>
-<h3 id="tools">Tools</h3>
-<p>Plugins can provide new tools by implementing <code>get_tools()</code>:</p>
-<div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">get_tools</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="p">[</span><span class="n">MyTool1</span><span class="p">,</span> <span class="n">MyTool2</span><span class="p">,</span> <span class="n">MyTool3</span><span class="p">]</span>
-</code></pre></div>
-
-<h3 id="commands">Commands</h3>
-<p>Plugins can provide CLI commands:</p>
-<div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">get_commands</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">&quot;my_command&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle_my_command</span>
-    <span class="p">}</span>
-</code></pre></div>
-
-<h3 id="configuration-schema">Configuration Schema</h3>
-<p>Define configuration validation:</p>
-<div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">get_config_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;api_key&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">},</span>
-            <span class="s2">&quot;debug&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;boolean&quot;</span><span class="p">}</span>
-        <span class="p">},</span>
-        <span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;api_key&quot;</span><span class="p">]</span>
-    <span class="p">}</span>
-
-<span class="k">def</span> <span class="nf">validate_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
-    <span class="k">return</span> <span class="s2">&quot;api_key&quot;</span> <span class="ow">in</span> <span class="n">config</span>
-</code></pre></div>
-
-<h2 id="example-plugin">Example Plugin</h2>
-<p>See <code>plugins/example_plugin.py</code> for a complete example including:</p>
+<h3 id="code-analyzer-plugin-pluginscorecodeanalyzertools">🔍 Code Analyzer Plugin (<code>plugins/core/codeanalyzer/tools/</code>)</h3>
 <ul>
-<li>Custom tools</li>
-<li>Configuration handling</li>
-<li>Initialization and cleanup</li>
+<li>✅ get_file_outline/ (directory)</li>
+<li>✅ search_text/ (directory)</li>
 </ul>
-<h2 id="best-practices">Best Practices</h2>
-<ol>
-<li><strong>Naming</strong>: Use descriptive plugin names</li>
-<li><strong>Versioning</strong>: Follow semantic versioning</li>
-<li><strong>Dependencies</strong>: List all dependencies in metadata</li>
-<li><strong>Error Handling</strong>: Handle configuration errors gracefully</li>
-<li><strong>Documentation</strong>: Provide clear descriptions and examples</li>
-</ol>
-<h2 id="troubleshooting">Troubleshooting</h2>
-<h3 id="plugin-not-found">Plugin Not Found</h3>
-<p>Check:</p>
+<h3 id="system-tools-plugin-pluginscoresystemtools">⚡ System Tools Plugin (<code>plugins/core/system/tools/</code>)</h3>
 <ul>
-<li>Plugin file exists in search paths</li>
-<li>Plugin class inherits from <code>Plugin</code></li>
-<li>File has correct extension (.py)</li>
+<li>✅ run_powershell_command.py</li>
 </ul>
-<h3 id="configuration-issues">Configuration Issues</h3>
+<h3 id="web-tools-plugin-pluginswebwebtoolstools">🌐 Web Tools Plugin (<code>plugins/web/webtools/tools/</code>)</h3>
 <ul>
-<li>Validate configuration using <code>validate_config()</code></li>
-<li>Check JSON schema with <code>get_config_schema()</code></li>
-<li>Use debug logging to trace issues</li>
+<li>✅ fetch_url.py</li>
+<li>✅ open_html_in_browser.py</li>
+<li>✅ open_url.py</li>
 </ul>
-<h3 id="tool-registration-issues">Tool Registration Issues</h3>
+<h3 id="python-dev-plugin-pluginsdevpythondevtools">🐍 Python Dev Plugin (<code>plugins/dev/pythondev/tools/</code>)</h3>
 <ul>
-<li>Ensure tools inherit from <code>ToolBase</code></li>
-<li>Set proper <code>tool_name</code> and <code>permissions</code></li>
-<li>Implement required <code>run()</code> method</li>
+<li>✅ python_code_run.py</li>
+<li>✅ python_command_run.py</li>
+<li>✅ python_file_run.py</li>
 </ul>
-<h3 id="remote-plugin-issues">Remote Plugin Issues</h3>
-<p>For issues with remote plugins from the <code>ikignosis/janito-plugins</code> repository, see the <a href="../remote-plugins/">Remote Plugins Guide</a> for specific troubleshooting steps.</p>
+<h3 id="visualization-plugin-pluginsdevvisualizationtools">📊 Visualization Plugin (<code>plugins/dev/visualization/tools/</code>)</h3>
+<ul>
+<li>✅ read_chart.py</li>
+</ul>
+<h3 id="user-interface-plugin-pluginsuiuserinterfacetools">💬 User Interface Plugin (<code>plugins/ui/userinterface/tools/</code>)</h3>
+<ul>
+<li>✅ ask_user.py</li>
+</ul>
+<h2 id="total-files-moved">Total Files Moved</h2>
+<ul>
+<li><strong>23 tools</strong> successfully relocated</li>
+<li><strong>All directories</strong> created and organized</li>
+<li><strong>Original files</strong> remain in <code>janito/tools/adapters/local/</code> (copies made)</li>
+</ul>
+<h2 id="plugin-structure">Plugin Structure</h2>
+<div class="codehilite"><pre><span></span><code><span class="n">plugins</span><span class="o">/</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">core</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">filemanager</span><span class="o">/</span><span class="n">tools</span><span class="o">/</span><span class="w">     </span><span class="c1"># 11 tools</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">codeanalyzer</span><span class="o">/</span><span class="n">tools</span><span class="o">/</span><span class="w">    </span><span class="c1"># 3 tools  </span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">system</span><span class="o">/</span><span class="n">tools</span><span class="o">/</span><span class="w">          </span><span class="c1"># 1 tool</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">web</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">webtools</span><span class="o">/</span><span class="n">tools</span><span class="o">/</span><span class="w">        </span><span class="c1"># 3 tools</span>
+<span class="err">├──</span><span class="w"> </span><span class="n">dev</span><span class="o">/</span>
+<span class="err">│</span><span class="w">   </span><span class="err">├──</span><span class="w"> </span><span class="n">pythondev</span><span class="o">/</span><span class="n">tools</span><span class="o">/</span><span class="w">       </span><span class="c1"># 3 tools</span>
+<span class="err">│</span><span class="w">   </span><span class="err">└──</span><span class="w"> </span><span class="n">visualization</span><span class="o">/</span><span class="n">tools</span><span class="o">/</span><span class="w">   </span><span class="c1"># 1 tool</span>
+<span class="err">└──</span><span class="w"> </span><span class="n">ui</span><span class="o">/</span>
+<span class="w">    </span><span class="err">└──</span><span class="w"> </span><span class="n">userinterface</span><span class="o">/</span><span class="n">tools</span><span class="o">/</span><span class="w">   </span><span class="c1"># 1 tool</span>
+</code></pre></div>
+
+<p>The tools are now organized by functional domain and ready for plugin-based usage!</p>
 
 
 
@@ -1894,7 +1672,7 @@ janito<span class="w"> </span>--list-plugins-available
       <div class="md-copyright" style="text-align: center; width: 100%;">
   <div class="md-copyright__highlight" style="display: inline-block;">
     Generated by Janito • 
-    <span style="color: var(--md-accent-fg-color);">9b6dc7c</span>
+    <span style="color: var(--md-accent-fg-color);">f695387</span>
   </div>
 </div>
       

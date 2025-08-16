@@ -8,7 +8,7 @@
       
       
       
-        <link rel="canonical" href="https://ikignosis.org/janito/guides/prompting/">
+        <link rel="canonical" href="https://ikignosis.org/janito/plugins/ACTUAL_TOOLS_LOCATION/">
       
       
       
@@ -18,7 +18,7 @@
     
     
       
-        <title>Prompting Guide - Janito</title>
+        <title>Actual Tools Location - Janito</title>
       
     
     
@@ -70,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#prompting-guide" class="md-skip">
+        <a href="#actual-tools-location" class="md-skip">
           Skip to content
         </a>
       
@@ -106,7 +106,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Prompting Guide
+              Actual Tools Location
             
           </span>
         </div>
@@ -270,7 +270,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../installation/" class="md-nav__link">
+      <a href="../../guides/installation/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -291,7 +291,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../configuration/" class="md-nav__link">
+      <a href="../../guides/configuration/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -348,7 +348,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../using/" class="md-nav__link">
+      <a href="../../guides/using/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -370,7 +370,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../using_tools/" class="md-nav__link">
+      <a href="../../guides/using_tools/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -392,7 +392,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../terminal-shell/" class="md-nav__link">
+      <a href="../../guides/terminal-shell/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -414,7 +414,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../single-shot-terminal/" class="md-nav__link">
+      <a href="../../guides/single-shot-terminal/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -458,7 +458,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../profiles/" class="md-nav__link">
+      <a href="../../guides/profiles/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -523,7 +523,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../developing/" class="md-nav__link">
+      <a href="../../guides/developing/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -545,7 +545,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tools-developer-guide/" class="md-nav__link">
+      <a href="../../guides/tools-developer-guide/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -851,7 +851,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../configuration/" class="md-nav__link">
+      <a href="../../guides/configuration/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -895,7 +895,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../disabled-tools/" class="md-nav__link">
+      <a href="../../guides/disabled-tools/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1447,9 +1447,27 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#contents" class="md-nav__link">
+  <a href="#real-tool-implementations" class="md-nav__link">
     <span class="md-ellipsis">
-      Contents
+      Real Tool Implementations
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tool-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tool Mapping
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture-note" class="md-nav__link">
+    <span class="md-ellipsis">
+      Architecture Note
     </span>
   </a>
   
@@ -1474,15 +1492,177 @@
   
 
 
-<h1 id="prompting-guide">Prompting Guide</h1>
-<p>This section contains detailed guides and best practices for prompt engineering, system prompt design, and domain-specific prompting strategies for Janito.</p>
-<h2 id="contents">Contents</h2>
-<ul>
-<li><a href="../../concepts/prompt-design-style/">Prompt Design Style: Condition Before Action</a></li>
-<li><a href="../profiles/">Using Profiles in Janito</a></li>
-<li>(Add more guides for specific instructions, roles, and domains)</li>
-</ul>
-<p><em>This directory is intended for all documentation related to prompt construction, style, and advanced usage.</em></p>
+<h1 id="actual-tools-location">Actual Tools Location</h1>
+<h2 id="real-tool-implementations">Real Tool Implementations</h2>
+<p>The actual tool implementations are located in:</p>
+<div class="codehilite"><pre><span></span><code><span class="n">janito</span><span class="o">/</span><span class="n">tools</span><span class="o">/</span><span class="n">adapters</span><span class="o">/</span><span class="n">local</span><span class="o">/</span>
+</code></pre></div>
+
+<h2 id="tool-mapping">Tool Mapping</h2>
+<table>
+<thead>
+<tr>
+<th>Plugin Name</th>
+<th>Actual Tool File</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>core.filemanager</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>create_file</code></td>
+<td><code>janito/tools/adapters/local/create_file.py</code></td>
+<td>Create new files</td>
+</tr>
+<tr>
+<td><code>read_files</code></td>
+<td><code>janito/tools/adapters/local/read_files.py</code></td>
+<td>Read multiple files</td>
+</tr>
+<tr>
+<td><code>view_file</code></td>
+<td><code>janito/tools/adapters/local/view_file.py</code></td>
+<td>Read file contents</td>
+</tr>
+<tr>
+<td><code>replace_text_in_file</code></td>
+<td><code>janito/tools/adapters/local/replace_text_in_file.py</code></td>
+<td>Find and replace text</td>
+</tr>
+<tr>
+<td><code>validate_file_syntax</code></td>
+<td><code>janito/tools/adapters/local/validate_file_syntax/</code></td>
+<td>Syntax validation</td>
+</tr>
+<tr>
+<td><code>create_directory</code></td>
+<td><code>janito/tools/adapters/local/create_directory.py</code></td>
+<td>Create directories</td>
+</tr>
+<tr>
+<td><code>remove_directory</code></td>
+<td><code>janito/tools/adapters/local/remove_directory.py</code></td>
+<td>Remove directories</td>
+</tr>
+<tr>
+<td><code>remove_file</code></td>
+<td><code>janito/tools/adapters/local/remove_file.py</code></td>
+<td>Delete files</td>
+</tr>
+<tr>
+<td><code>copy_file</code></td>
+<td><code>janito/tools/adapters/local/copy_file.py</code></td>
+<td>Copy files/directories</td>
+</tr>
+<tr>
+<td><code>move_file</code></td>
+<td><code>janito/tools/adapters/local/move_file.py</code></td>
+<td>Move/rename files</td>
+</tr>
+<tr>
+<td><code>find_files</code></td>
+<td><code>janito/tools/adapters/local/find_files.py</code></td>
+<td>Search for files</td>
+</tr>
+<tr>
+<td><strong>core.codeanalyzer</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>get_file_outline</code></td>
+<td><code>janito/tools/adapters/local/get_file_outline/</code></td>
+<td>File structure analysis</td>
+</tr>
+<tr>
+<td><code>search_outline</code></td>
+<td><code>janito/tools/adapters/local/get_file_outline/search_outline.py</code></td>
+<td>Search in outlines</td>
+</tr>
+<tr>
+<td><code>search_text</code></td>
+<td><code>janito/tools/adapters/local/search_text/</code></td>
+<td>Text search</td>
+</tr>
+<tr>
+<td><strong>core.system</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>run_powershell_command</code></td>
+<td><code>janito/tools/adapters/local/run_powershell_command.py</code></td>
+<td>PowerShell execution</td>
+</tr>
+<tr>
+<td><strong>web.webtools</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>fetch_url</code></td>
+<td><code>janito/tools/adapters/local/fetch_url.py</code></td>
+<td>Web scraping</td>
+</tr>
+<tr>
+<td><code>open_url</code></td>
+<td><code>janito/tools/adapters/local/open_url.py</code></td>
+<td>Open URLs</td>
+</tr>
+<tr>
+<td><code>open_html_in_browser</code></td>
+<td><code>janito/tools/adapters/local/open_html_in_browser.py</code></td>
+<td>Open HTML files</td>
+</tr>
+<tr>
+<td><strong>dev.pythondev</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>python_code_run</code></td>
+<td><code>janito/tools/adapters/local/python_code_run.py</code></td>
+<td>Python execution</td>
+</tr>
+<tr>
+<td><code>python_command_run</code></td>
+<td><code>janito/tools/adapters/local/python_command_run.py</code></td>
+<td>Python -c execution</td>
+</tr>
+<tr>
+<td><code>python_file_run</code></td>
+<td><code>janito/tools/adapters/local/python_file_run.py</code></td>
+<td>Python script execution</td>
+</tr>
+<tr>
+<td><strong>dev.visualization</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>read_chart</code></td>
+<td><code>janito/tools/adapters/local/read_chart.py</code></td>
+<td>Data visualization</td>
+</tr>
+<tr>
+<td><strong>ui.userinterface</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><code>ask_user</code></td>
+<td><code>janito/tools/adapters/local/ask_user.py</code></td>
+<td>User interaction</td>
+</tr>
+</tbody>
+</table>
+<h2 id="architecture-note">Architecture Note</h2>
+<p>The plugin system in <code>plugins/</code> contains <strong>interface definitions and wrappers</strong>, while the actual tool implementations are in <code>janito/tools/adapters/local/</code>. </p>
+<p>The real tools are implemented as classes inheriting from <code>ToolBase</code> and registered via decorators like <code>@register_local_tool</code>.</p>
 
 
 

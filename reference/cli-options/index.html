@@ -955,11 +955,44 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#enabling-execution-tools" class="md-nav__link">
+  <a href="#enabling-tool-permissions" class="md-nav__link">
     <span class="md-ellipsis">
-      ⚠️ Enabling Execution Tools
+      ⚠️ Enabling Tool Permissions
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="⚠️ Enabling Tool Permissions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#individual-permission-flags" class="md-nav__link">
+    <span class="md-ellipsis">
+      Individual Permission Flags
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quick-permission-shortcut" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quick Permission Shortcut
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -1591,11 +1624,44 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#enabling-execution-tools" class="md-nav__link">
+  <a href="#enabling-tool-permissions" class="md-nav__link">
     <span class="md-ellipsis">
-      ⚠️ Enabling Execution Tools
+      ⚠️ Enabling Tool Permissions
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="⚠️ Enabling Tool Permissions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#individual-permission-flags" class="md-nav__link">
+    <span class="md-ellipsis">
+      Individual Permission Flags
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quick-permission-shortcut" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quick Permission Shortcut
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -1799,13 +1865,32 @@ janito<span class="w"> </span>--multi<span class="w">  </span><span class="c1">#
 janito<span class="w"> </span>-u<span class="w"> </span>-x<span class="w"> </span>--read<span class="w"> </span>--write<span class="w"> </span><span class="s2">&quot;Run a tool with unrestricted paths (DANGEROUS)&quot;</span>
 </code></pre></div>
 
-<h3 id="enabling-execution-tools">⚠️ Enabling Execution Tools</h3>
-<p>By default, tools that can execute code or shell commands are <strong>disabled</strong> for safety. To enable these tools (such as code execution, shell commands, etc.), use the <code>--exec</code> or <code>-x</code> flag:</p>
-<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>-x<span class="w"> </span><span class="s2">&quot;Run this code: print(&#39;Hello, world!&#39;)&quot;</span>
+<h3 id="enabling-tool-permissions">⚠️ Enabling Tool Permissions</h3>
+<p>By default, tools that can read, write, or execute code are <strong>disabled</strong> for safety. You can enable these permissions using individual flags or a convenient shortcut:</p>
+<h4 id="individual-permission-flags">Individual Permission Flags</h4>
+<ul>
+<li><code>-r</code>, <code>--read</code>: Enable tools that require read permissions</li>
+<li><code>-w</code>, <code>--write</code>: Enable tools that require write permissions  </li>
+<li><code>-x</code>, <code>--exec</code>: Enable execution/run tools (code execution, shell commands)</li>
+</ul>
+<h4 id="quick-permission-shortcut">Quick Permission Shortcut</h4>
+<p>Use <code>/rwx</code> prefix to enable all permissions at once:</p>
+<div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>/rwx<span class="w"> </span><span class="s2">&quot;Create a Python script and run it&quot;</span>
+</code></pre></div>
+
+<h4 id="examples">Examples</h4>
+<div class="codehilite"><pre><span></span><code><span class="c1"># Enable all permissions individually</span>
+janito<span class="w"> </span>-r<span class="w"> </span>-w<span class="w"> </span>-x<span class="w"> </span><span class="s2">&quot;Create and run a Python script&quot;</span>
+
+<span class="c1"># Enable only execution tools</span>
+janito<span class="w"> </span>-x<span class="w"> </span><span class="s2">&quot;Run this code: print(&#39;Hello, world!&#39;)&quot;</span>
+
+<span class="c1"># Enable read and write tools</span>
+janito<span class="w"> </span>-r<span class="w"> </span>-w<span class="w"> </span><span class="s2">&quot;Read a file and create a new one&quot;</span>
 </code></pre></div>
 
 <blockquote>
-<p><strong>Warning:</strong> Enabling execution tools allows running arbitrary code or shell commands. Only use <code>--exec</code> if you trust your prompt and environment.</p>
+<p><strong>Warning:</strong> Enabling execution tools allows running arbitrary code or shell commands. Only use these options if you trust your prompt and environment.</p>
 </blockquote>
 <h3 id="disabling-path-security">⚠️ Disabling Path Security</h3>
 <p>By default, all file and directory arguments to tools are restricted to the working directory (see <code>--workdir</code>). To disable this security and allow any path (including system files), use the <code>-u</code> or <code>--unrestricted-paths</code> flag:</p>
@@ -1900,7 +1985,7 @@ janito<span class="w"> </span>-u<span class="w"> </span>-x<span class="w"> </spa
       <div class="md-copyright" style="text-align: center; width: 100%;">
   <div class="md-copyright__highlight" style="display: inline-block;">
     Generated by Janito • 
-    <span style="color: var(--md-accent-fg-color);">9b6dc7c</span>
+    <span style="color: var(--md-accent-fg-color);">f695387</span>
   </div>
 </div>
       

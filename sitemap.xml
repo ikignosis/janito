@@ -125,6 +125,14 @@
          <lastmod>2025-08-16</lastmod>
     </url>
     <url>
+         <loc>https://ikignosis.org/janito/changelogs/CHANGELOG_2.26.0/</loc>
+         <lastmod>2025-08-16</lastmod>
+    </url>
+    <url>
+         <loc>https://ikignosis.org/janito/changelogs/CHANGELOG_2.27.0/</loc>
+         <lastmod>2025-08-16</lastmod>
+    </url>
+    <url>
          <loc>https://ikignosis.org/janito/changelogs/RELEASE_NOTES_2.22.0/</loc>
          <lastmod>2025-08-16</lastmod>
     </url>
@@ -197,19 +205,11 @@
          <lastmod>2025-08-16</lastmod>
     </url>
     <url>
-         <loc>https://ikignosis.org/janito/guides/plugins/</loc>
-         <lastmod>2025-08-16</lastmod>
-    </url>
-    <url>
          <loc>https://ikignosis.org/janito/guides/profiles/</loc>
          <lastmod>2025-08-16</lastmod>
     </url>
     <url>
          <loc>https://ikignosis.org/janito/guides/read-chart-examples/</loc>
-         <lastmod>2025-08-16</lastmod>
-    </url>
-    <url>
-         <loc>https://ikignosis.org/janito/guides/remote-plugins/</loc>
          <lastmod>2025-08-16</lastmod>
     </url>
     <url>
@@ -254,6 +254,14 @@
     </url>
     <url>
          <loc>https://ikignosis.org/janito/plugins/</loc>
+         <lastmod>2025-08-16</lastmod>
+    </url>
+    <url>
+         <loc>https://ikignosis.org/janito/plugins/ACTUAL_TOOLS_LOCATION/</loc>
+         <lastmod>2025-08-16</lastmod>
+    </url>
+    <url>
+         <loc>https://ikignosis.org/janito/plugins/MIGRATION_COMPLETE/</loc>
          <lastmod>2025-08-16</lastmod>
     </url>
     <url>
