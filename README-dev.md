@@ -36,6 +36,32 @@ This document provides guidelines and instructions for developers contributing t
   pip install -e .
   ```
 
+## Release Process
+
+The project includes an automated release script at `tools/release.py` that handles the complete release process:
+
+- **Full release** (build + upload to PyPI):
+  ```sh
+  python tools/release.py
+  ```
+
+- **Build only** (skip PyPI upload):
+  ```sh
+  python tools/release.py --build-only
+  ```
+
+The release script will:
+1. Check for uncommitted changes
+2. Verify the latest git tag version
+3. Check PyPI for existing versions
+4. Build the package using `python -m build`
+5. Upload to PyPI using `twine upload`
+
+**Requirements**: Make sure you have `build` and `twine` installed:
+```sh
+pip install build twine
+```
+
 ## Running Tests
 
 - (Add test instructions here if/when tests are present)
