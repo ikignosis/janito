@@ -216,6 +216,8 @@ class PromptHandler:
             if on_event and final_event is not None:
                 on_event(final_event)
                 global_event_bus.publish(final_event)
+                # Terminal bell moved to token summary printing in session.py and handler.py
+                pass  # print('\a', end='', flush=True)
         except KeyboardInterrupt:
             # Capture user interrupt / cancellation
             self.console.print("[red]Interrupted by the user.[/red]")

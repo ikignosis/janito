@@ -377,6 +377,8 @@ class ChatSession:
             print_token_message_summary(
                 self.console, self.msg_count, usage, elapsed=elapsed
             )
+            # Send terminal bell character to trigger TUI bell after printing token summary
+            print("\a", end="", flush=True)
             if final_event and hasattr(final_event, "metadata"):
                 exit_reason = (
                     final_event.metadata.get("exit_reason")

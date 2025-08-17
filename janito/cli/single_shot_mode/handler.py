@@ -125,6 +125,8 @@ class PromptHandler:
             print_token_message_summary(
                 shared_console, msg_count=1, usage=usage, elapsed=elapsed
             )
+            # Send terminal bell character to trigger TUI bell after printing token summary
+            print("\a", end="", flush=True)
         self._cleanup_driver_and_console()
 
     def _cleanup_driver_and_console(self):
