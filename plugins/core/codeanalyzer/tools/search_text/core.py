@@ -98,7 +98,7 @@ class SearchTextTool(ToolBase):
         if max_depth > 0:
             info_str += tr(" [max_depth={max_depth}]", max_depth=max_depth)
         if count_only:
-            info_str += " [count]"
+            info_str += " [count-only]"
         self.report_action(info_str, ReportAction.READ)
         if os.path.isfile(search_path):
             dir_output, dir_limit_reached, per_file_counts = self._handle_file(
