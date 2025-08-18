@@ -109,8 +109,8 @@ def prepare_llm_driver_config(args, modifiers):
     llm_driver_config = LLMDriverConfig(**driver_config_data)
     if getattr(llm_driver_config, "verbose_api", None):
         pass
-    # If both --role and --profile are provided, --role takes precedence for agent_role
-    agent_role = modifiers.get("role") or modifiers.get("profile") or "developer"
+
+    agent_role = modifiers.get("profile") or "developer"
     return provider, llm_driver_config, agent_role
 
 

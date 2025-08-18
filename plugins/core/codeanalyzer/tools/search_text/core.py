@@ -144,7 +144,7 @@ class SearchTextTool(ToolBase):
         file_word_max = file_word + (" (max)" if dir_limit_reached else "")
         self.report_success(
             tr(
-                " ✅ {count} {file_word} from {num_files} {file_label}",
+                " ✅ {count} {file_word}/{num_files} {file_label}",
                 count=count,
                 file_word=file_word_max,
                 num_files=num_files,

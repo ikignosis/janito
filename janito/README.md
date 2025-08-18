@@ -116,11 +116,11 @@ Janito includes powerful built-in tools for:
 - System commands
 - And more...
 
-### Profiles and Roles
+### Profiles
 Use predefined system prompts:
 ```bash
-janito --profile developer "Create a REST API"
-janito --role python-expert "Optimize this algorithm"
+janito --developer "Create a REST API"  # Same as --profile developer
+janito --market "Analyze market trends"   # Same as --profile market-analyst
 ```
 
 ### Environment Variables

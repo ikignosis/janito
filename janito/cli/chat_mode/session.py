@@ -63,6 +63,7 @@ class ChatSession:
         allowed_permissions=None,
     ):
         self.console = console
+        self.session_start_time = time.time()
         self.user_input_history = UserInputHistory()
         self.input_dicts = self.user_input_history.load()
         self.mem_history = InMemoryHistory()
@@ -114,22 +115,11 @@ class ChatSession:
         self.multi_line_mode = getattr(args, "multi", False) if args else False
 
     def _select_profile_and_role(self, args, role):
-        profile = getattr(args, "profile", None) if args is not None else None
-        role_arg = getattr(args, "role", None) if args is not None else None
-        python_profile = (
-            getattr(args, "developer", False) if args is not None else False
-        )
-        market_profile = getattr(args, "market", False) if args is not None else False
+        profile, role_arg, python_profile, market_profile = self._extract_args(args)
         profile_system_prompt = None
         no_tools_mode = False
 
-        # Handle --developer flag
-        if python_profile and profile is None and role_arg is None:
-            profile = "Developer with Python Tools"
-
-        # Handle --market flag
-        if market_profile and profile is None and role_arg is None:
-            profile = "Market Analyst"
+        profile = self._determine_profile(profile, python_profile, market_profile)
 
         if (
             profile is None
@@ -137,45 +127,15 @@ class ChatSession:
             and not python_profile
             and not market_profile
         ):
-            # Skip interactive profile selection for list commands
-            from janito.cli.core.getters import GETTER_KEYS
-
-            # Check if any getter command is active - these don't need interactive mode
+            skip_profile_selection = self._should_skip_profile_selection(args)
+        else:
             skip_profile_selection = False
-            if args is not None:
-                for key in GETTER_KEYS:
-                    if getattr(args, key, False):
-                        skip_profile_selection = True
-                        break
 
             if skip_profile_selection:
                 profile = "Developer with Python Tools"  # Default for non-interactive commands
             else:
-                try:
-                    from janito.cli.chat_mode.session_profile_select import (
-                        select_profile,
-                    )
-
-                    result = select_profile()
-                    if isinstance(result, dict):
-                        profile = result.get("profile")
-                        profile_system_prompt = result.get("profile_system_prompt")
-                        no_tools_mode = result.get("no_tools_mode", False)
-                    elif isinstance(result, str) and result.startswith("role:"):
-                        role = result[len("role:") :].strip()
-                        profile = "Developer with Python Tools"
-                    else:
-                        profile = (
-                            "Developer with Python Tools"
-                            if result == "Developer"
-                            else result
-                        )
-                except ImportError:
-                    profile = "Raw Model Session (no tools, no context)"
-        if role_arg is not None:
-            role = role_arg
-            if profile is None:
                 profile = "Developer with Python Tools"
+
         return profile, role, profile_system_prompt, no_tools_mode
 
     def _create_conversation_history(self):
@@ -314,52 +274,8 @@ class ChatSession:
             )
             start_time = time.time()
 
-            # Print rule line with model info before processing prompt
-            model_name = (
-                self.agent.get_model_name()
-                if hasattr(self.agent, "get_model_name")
-                else "Unknown"
-            )
-            provider_name = (
-                self.agent.get_provider_name()
-                if hasattr(self.agent, "get_provider_name")
-                else "Unknown"
-            )
-
-            backend_hostname = "Unknown"
-            candidates = []
-            drv = getattr(self.agent, "driver", None)
-            if drv is not None:
-                cfg = getattr(drv, "config", None)
-                if cfg is not None:
-                    b = getattr(cfg, "base_url", None)
-                    if b:
-                        candidates.append(b)
-                direct_base = getattr(drv, "base_url", None)
-                if direct_base:
-                    candidates.append(direct_base)
-            cfg2 = getattr(self.agent, "config", None)
-            if cfg2 is not None:
-                b2 = getattr(cfg2, "base_url", None)
-                if b2:
-                    candidates.append(b2)
-            top_base = getattr(self.agent, "base_url", None)
-            if top_base:
-                candidates.append(top_base)
-            from urllib.parse import urlparse
-
-            for candidate in candidates:
-                try:
-                    if not candidate:
-                        continue
-                    parsed = urlparse(str(candidate))
-                    host = parsed.netloc or parsed.path
-                    if host:
-                        backend_hostname = host
-                        break
-                except Exception:
-                    backend_hostname = str(candidate)
-                    break
+            model_name, provider_name = self._get_model_info()
+            backend_hostname = self._get_backend_hostname()
 
             self.console.print(
                 Rule(
@@ -395,6 +311,102 @@ class ChatSession:
 
             self.console.print(traceback.format_exc())
 
+    def _extract_args(self, args):
+        """Extract profile and role arguments from args."""
+        profile = getattr(args, "profile", None) if args is not None else None
+        role_arg = None
+        python_profile = (
+            getattr(args, "developer", False) if args is not None else False
+        )
+        market_profile = getattr(args, "market", False) if args is not None else False
+        return profile, role_arg, python_profile, market_profile
+
+    def _determine_profile(self, profile, python_profile, market_profile):
+        """Determine the profile based on flags and arguments."""
+        if python_profile and profile is None:
+            return "Developer with Python Tools"
+        if market_profile and profile is None:
+            return "Market Analyst"
+        return profile
+
+    def _should_skip_profile_selection(self, args):
+        """Check if profile selection should be skipped for getter commands."""
+        from janito.cli.core.getters import GETTER_KEYS
+
+        if args is None:
+            return False
+
+        for key in GETTER_KEYS:
+            if getattr(args, key, False):
+                return True
+        return False
+
+    def _get_model_info(self):
+        """Get model and provider information."""
+        model_name = (
+            self.agent.get_model_name()
+            if hasattr(self.agent, "get_model_name")
+            else "Unknown"
+        )
+        provider_name = (
+            self.agent.get_provider_name()
+            if hasattr(self.agent, "get_provider_name")
+            else "Unknown"
+        )
+        return model_name, provider_name
+
+    def _get_backend_hostname(self):
+        """Extract backend hostname from agent configuration."""
+        candidates = self._collect_base_urls()
+        return self._parse_hostname_from_urls(candidates)
+
+    def _collect_base_urls(self):
+        """Collect all possible base URLs from agent configuration."""
+        candidates = []
+
+        # Collect from driver
+        drv = getattr(self.agent, "driver", None)
+        if drv is not None:
+            cfg = getattr(drv, "config", None)
+            if cfg is not None:
+                b = getattr(cfg, "base_url", None)
+                if b:
+                    candidates.append(b)
+            direct_base = getattr(drv, "base_url", None)
+            if direct_base:
+                candidates.append(direct_base)
+
+        # Collect from agent config
+        cfg2 = getattr(self.agent, "config", None)
+        if cfg2 is not None:
+            b2 = getattr(cfg2, "base_url", None)
+            if b2:
+                candidates.append(b2)
+
+        # Collect from agent directly
+        top_base = getattr(self.agent, "base_url", None)
+        if top_base:
+            candidates.append(top_base)
+
+        return candidates
+
+    def _parse_hostname_from_urls(self, candidates):
+        """Parse hostname from a list of URL candidates."""
+        from urllib.parse import urlparse
+
+        for candidate in candidates:
+            try:
+                if not candidate:
+                    continue
+                parsed = urlparse(str(candidate))
+                host = parsed.netloc or parsed.path
+                if host:
+                    return host
+            except Exception:
+                return str(candidate)
+
+        return "Unknown"
+
     def _create_prompt_session(self):
         return PromptSession(
             style=chat_shell_style,
@@ -416,7 +428,25 @@ class ChatSession:
         else:
             try:
                 cmd_input = session.prompt(HTML("<inputline>💬 </inputline>"))
-            except (KeyboardInterrupt, EOFError):
+            except KeyboardInterrupt:
+                # Ask for confirmation on Ctrl+C
+                from prompt_toolkit import prompt
+
+                try:
+                    confirm = prompt(
+                        "Are you sure you want to exit? (y/n): ",
+                        style=self._create_prompt_session().style,
+                    )
+                    if confirm.lower() == "y":
+                        self._handle_exit()
+                        return None
+                    else:
+                        return ""  # Return empty string to continue
+                except (KeyboardInterrupt, EOFError):
+                    # Handle second Ctrl+C or Ctrl+D as immediate exit
+                    self._handle_exit()
+                    return None
+            except EOFError:
                 self._handle_exit()
                 return None
         sanitized = cmd_input.strip()
@@ -430,7 +460,37 @@ class ChatSession:
         return sanitized
 
     def _handle_exit(self):
-        self.console.print("[bold yellow]Exiting chat. Goodbye![/bold yellow]")
+        session_duration = time.time() - self.session_start_time
+
+        # Get total token usage from performance collector
+        from janito.perf_singleton import performance_collector
+
+        total_tokens = performance_collector.get_token_usage().get("total_tokens", 0)
+
+        # Format session duration
+        if session_duration < 60:
+            duration_str = f"{session_duration:.1f}s"
+        elif session_duration < 3600:
+            duration_str = f"{session_duration/60:.1f}m"
+        else:
+            duration_str = f"{session_duration/3600:.1f}h"
+
+        # Format tokens in k/m/t as appropriate
+        if total_tokens >= 1_000_000_000:
+            token_str = f"{total_tokens/1_000_000_000:.1f}t"
+        elif total_tokens >= 1_000_000:
+            token_str = f"{total_tokens/1_000_000:.1f}m"
+        elif total_tokens >= 1_000:
+            token_str = f"{total_tokens/1_000:.1f}k"
+        else:
+            token_str = f"{total_tokens}"
+
+        self.console.print(f"[bold yellow]Session completed![/bold yellow]")
+        self.console.print(
+            f"[dim]Session time: {duration_str} | Total tokens: {token_str}[/dim]"
+        )
+        self.console.print("[bold yellow]Goodbye![/bold yellow]")
+
         if hasattr(self, "agent") and hasattr(self.agent, "join_driver"):
             if (
                 hasattr(self.agent, "input_queue")

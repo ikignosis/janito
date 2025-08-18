@@ -244,7 +244,12 @@ class LLMAgent:
                         f"[agent] [DEBUG] Tool call detected: {getattr(part, 'name', repr(part))} with arguments: {getattr(part, 'arguments', None)}"
                     )
                 tool_calls.append(part)
-                result = self.tools_adapter.execute_function_call_message_part(part)
+                try:
+                    result = self.tools_adapter.execute_function_call_message_part(part)
+                except Exception as e:
+                    # Catch any exception during tool execution and return as string
+                    # instead of letting it propagate to the user
+                    result = str(e)
                 tool_results.append(result)
         if tool_calls:
             # Prepare tool_calls message for assistant

@@ -159,16 +159,22 @@ class ReplaceTextInFileTool(ToolBase):
             )
         return warning, concise_warning
 
-    def _report_success(self, match_lines):
+    def _report_success(self, match_lines, line_delta_str=""):
         """Report success with line numbers where replacements occurred."""
         if match_lines:
             lines_str = ", ".join(str(line_no) for line_no in match_lines)
             self.report_success(
-                tr(" ✅ replaced at {lines_str}", lines_str=lines_str),
+                tr(
+                    " ✅ replaced at {lines_str}{delta}",
+                    lines_str=lines_str,
+                    delta=line_delta_str,
+                ),
                 ReportAction.CREATE,
             )
         else:
-            self.report_success(tr(" ✅ replaced (lines unknown)"), ReportAction.CREATE)
+            self.report_success(
+                tr(" ✅ replaced{delta}", delta=line_delta_str), ReportAction.CREATE
+            )
 
     def _get_line_delta_str(self, content, new_content):
         """Return a string describing the net line change after replacement."""

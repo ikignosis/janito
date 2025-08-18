@@ -196,25 +196,15 @@ class FetchUrlTool(ToolBase):
         whitelist_manager = get_url_whitelist_manager()
 
         if not whitelist_manager.is_url_allowed(url):
-            error_message = tr(
-                "Warning: URL blocked by whitelist: {url}",
-                url=url,
-            )
+            error_message = tr("Blocked")
             self.report_error(
-                tr(
-                    "❗ URL blocked by whitelist: {url}",
-                    url=url,
-                ),
+                tr("❗ Blocked"),
                 ReportAction.READ,
             )
             return error_message
 
         # Check session cache first
         if url in self.session_cache:
-            self.report_warning(
-                tr("ℹ️ Using session cache"),
-                ReportAction.READ,
-            )
             return self.session_cache[url]
 
         # Check persistent cache for known errors
@@ -258,9 +248,8 @@ class FetchUrlTool(ToolBase):
             status_code = http_err.response.status_code if http_err.response else None
             if status_code and 400 <= status_code < 500:
                 error_message = tr(
-                    "Warning: HTTP {status_code} error for URL: {url}",
+                    "HTTP {status_code}",
                     status_code=status_code,
-                    url=url,
                 )
                 # Cache 403 and 404 errors
                 if status_code in [403, 404]:
@@ -268,9 +257,8 @@ class FetchUrlTool(ToolBase):
 
                 self.report_error(
                     tr(
-                        "❗ HTTP {status_code} error for URL: {url}",
+                        "❗ HTTP {status_code}",
                         status_code=status_code,
-                        url=url,
                     ),
                     ReportAction.READ,
                 )
@@ -278,25 +266,21 @@ class FetchUrlTool(ToolBase):
             else:
                 self.report_error(
                     tr(
-                        "❗ HTTP error for URL: {url}: {err}",
-                        url=url,
-                        err=str(http_err),
+                        "❗ HTTP {status_code}",
+                        status_code=status_code or "Error",
                     ),
                     ReportAction.READ,
                 )
                 return tr(
-                    "Warning: HTTP error for URL: {url}: {err}",
-                    url=url,
-                    err=str(http_err),
+                    "HTTP {status_code}",
+                    status_code=status_code or "Error",
                 )
         except Exception as err:
             self.report_error(
-                tr("❗ Error fetching URL: {url}: {err}", url=url, err=str(err)),
+                tr("❗ Error"),
                 ReportAction.READ,
             )
-            return tr(
-                "Warning: Error fetching URL: {url}: {err}", url=url, err=str(err)
-            )
+            return tr("Error")
 
     def _extract_and_clean_text(self, html_content: str) -> str:
         """Extract and clean text from HTML content."""
@@ -370,7 +354,11 @@ class FetchUrlTool(ToolBase):
                 cookies=cookies,
                 follow_redirects=follow_redirects,
             )
-            if html_content.startswith("Warning:"):
+            if (
+                html_content.startswith("HTTP ")
+                or html_content == "Error"
+                or html_content == "Blocked"
+            ):
                 return html_content
 
             try:
@@ -399,7 +387,11 @@ class FetchUrlTool(ToolBase):
             cookies=cookies,
             follow_redirects=follow_redirects,
         )
-        if html_content.startswith("Warning:"):
+        if (
+            html_content.startswith("HTTP ")
+            or html_content == "Error"
+            or html_content == "Blocked"
+        ):
             return html_content
 
         # Extract and clean text

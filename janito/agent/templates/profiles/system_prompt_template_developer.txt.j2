@@ -78,4 +78,10 @@ You are: {{ role | default('software developer') }}
 {# Trying to prevent surrogates generation, found this frequently in gpt4.1/windows #}
 - While writing code, if you need an emoji or special Unicode character in a string, then insert the actual character (e.g., 📖) directly instead of using surrogate pairs or escape sequences.
 {% endif %}
+{% if emoji_enabled %}
+## Emoji Usage
+- Feel free to use emojis in your responses to make them more engaging and expressive 🎉
+- Use appropriate emojis to enhance communication: ✅ for success, ⚠️ for warnings, 🔄 for progress, etc.
+- Emojis should complement the message, not replace clear explanations
+{% endif %}
 

@@ -5,6 +5,7 @@ from janito.tools.loop_protection_decorator import protect_against_loops
 from rich import print as rich_print
 from janito.i18n import tr
 from rich.panel import Panel
+from rich.markdown import Markdown
 from prompt_toolkit import PromptSession
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.enums import EditingMode
@@ -36,7 +37,7 @@ class AskUserTool(ToolBase):
     def run(self, question: str) -> str:
 
         print()  # Print an empty line before the question panel
-        rich_print(Panel.fit(question, title=tr("Question"), style="cyan"))
+        rich_print(Panel.fit(Markdown(question), title=tr("Question"), style="cyan"))
 
         bindings = KeyBindings()
         mode = {"multiline": False}
@@ -107,4 +108,5 @@ class AskUserTool(ToolBase):
                     rich_print(
                         "[yellow]Warning: Some characters in your input were not valid UTF-8 and have been replaced.[/yellow]"
                     )
+                print("\a", end="", flush=True)  # Print bell character
                 return sanitized

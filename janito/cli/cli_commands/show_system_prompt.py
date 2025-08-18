@@ -35,6 +35,7 @@ def _prepare_context(args, agent_role, allowed_permissions):
     context["role"] = agent_role or "developer"
     context["profile"] = getattr(args, "profile", None)
     context["allowed_permissions"] = allowed_permissions
+    context["emoji_enabled"] = getattr(args, "emoji", False)
     if allowed_permissions and "x" in allowed_permissions:
         pd = PlatformDiscovery()
         context["platform"] = pd.get_platform_name()
@@ -122,6 +123,10 @@ def handle_show_system_prompt(args):
     if profile is None and getattr(args, "market", False):
         profile = "Market Analyst"
 
+    # Handle --developer flag mapping to Developer With Python Tools profile
+    if profile is None and getattr(args, "developer", False):
+        profile = "Developer With Python Tools"
+
     if not profile:
         print(
             "[janito] No profile specified. The main agent runs without a system prompt template.\n"
@@ -152,9 +157,9 @@ def handle_show_system_prompt(args):
     system_prompt = template.render(**context)
     system_prompt = re.sub(r"\n{3,}", "\n\n", system_prompt)
 
-    print(
-        f"\n--- System Prompt (resolved, profile: {getattr(args, 'profile', 'main')}) ---\n"
-    )
+    # Use the actual profile name for display, not the resolved value
+    display_profile = profile or "main"
+    print(f"\n--- System Prompt (resolved, profile: {display_profile}) ---\n")
     print(system_prompt)
     print("\n-------------------------------\n")
     if agent_role:

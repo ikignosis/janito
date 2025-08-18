@@ -52,14 +52,6 @@ definition = [
         },
     ),
     (
-        ["--role"],
-        {
-            "metavar": "ROLE",
-            "help": "Select the developer role name (overrides profile, e.g. 'python-expert').",
-            "default": None,
-        },
-    ),
-    (
         ["-W", "--workdir"],
         {
             "metavar": "WORKDIR",
@@ -205,6 +197,13 @@ definition = [
             "help": "Set the reasoning effort for models that support it (low, medium, high, none)",
         },
     ),
+    (
+        ["--emoji"],
+        {
+            "action": "store_true",
+            "help": "Enable emoji usage in responses to make output more engaging and expressive",
+        },
+    ),
     (["user_prompt"], {"nargs": argparse.REMAINDER, "help": "Prompt to submit"}),
     (
         ["-e", "--event-log"],
@@ -244,7 +243,6 @@ definition = [
 MODIFIER_KEYS = [
     "provider",
     "model",
-    "role",
     "profile",
     "developer",
     "market",
@@ -257,6 +255,7 @@ MODIFIER_KEYS = [
     "exec",
     "read",
     "write",
+    "emoji",
 ]
 SETTER_KEYS = ["set", "set_provider", "set_api_key", "unset"]
 GETTER_KEYS = [
@@ -372,9 +371,7 @@ class JanitoCLI:
             for k in MODIFIER_KEYS
             if getattr(self.args, k, None) is not None
         }
-        # If --role is provided, override role in modifiers
-        if getattr(self.args, "role", None):
-            modifiers["role"] = getattr(self.args, "role")
+
         return modifiers
 
     def classify(self):
@@ -420,9 +417,6 @@ class JanitoCLI:
             self.args.exec = True
             # Remove the /rwx prefix from the prompt
             self.args.user_prompt = self.args.user_prompt[1:]
-        elif self.args.user_prompt and self.args.user_prompt[0].startswith("/"):
-            # Skip LLM processing for other commands that start with /
-            return
 
         # If running in single shot mode and --profile is not provided, default to 'developer' profile
         # Skip profile selection for list commands that don't need it

@@ -6,7 +6,7 @@ This directory contains comprehensive documentation for the Janito plugin system
 
 - **[Plugin Development Guide](plugin-development.md)** - Complete guide for creating plugins
 - **[Remote Plugins](remote-plugins.md)** - Using plugins from remote repositories
-- **[Built-in Plugins](built-in-plugins.md)** - Documentation for included plugins
+- **[Built-in Plugins](../built-in-plugins.md)** - Documentation for included plugins
 - **[API Reference](api-reference.md)** - Technical details and interfaces
 - **[Examples](examples/)** - Working plugin examples
 
@@ -68,9 +68,9 @@ Add to `janito.json`:
 - [Configuration](configuration.md) - Plugin configuration options
 
 ### Built-in Plugins
-- [Git Analyzer](built-in-plugins/git-analyzer.md) - Git repository analysis
-- [Code Navigator](built-in-plugins/code-navigator.md) - Code navigation tools
-- [Example Plugin](built-in-plugins/example.md) - Basic plugin example
+- [Git Analyzer](../built-in-plugins/git-analyzer.md) - Git repository analysis
+- [Code Navigator](../built-in-plugins/code-navigator.md) - Code navigation tools
+- [Example Plugin](../built-in-plugins/example.md) - Basic plugin example
 
 ### Advanced Topics
 - [Plugin Architecture](architecture.md) - System design and internals

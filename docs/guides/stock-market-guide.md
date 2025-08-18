@@ -118,7 +118,7 @@ janito "Compare performance of AAPL, MSFT, GOOGL, and TSLA over the past month"
 
 ## Related Documentation
 
-- [Public Data Sources](public-sources.md) - Government and public financial data
+- [Public Data Sources](../public-sources.md) - Government and public financial data
 - [Using Tools](using_tools.md) - How to use Janito's web scraping capabilities
 - [CLI Options](../reference/cli-options.md) - Command-line options for data fetching
 

@@ -138,7 +138,7 @@ For enhanced security, use the `/security` command in chat mode to restrict acce
 ## Related Documentation
 
 - [Stock Market Guide](stock-market-guide.md) - Comprehensive guide to accessing financial data
-- [Public Sources](public-sources.md) - Government and institutional data sources
+- [Public Sources](../public-sources.md) - Government and institutional data sources
 - [Using Tools](using_tools.md) - How to use Janito's data fetching capabilities
 - [CLI Options](../reference/cli-options.md) - Command-line options for data access
 

@@ -14,7 +14,7 @@ nav:
       - Terminal Shell: guides/terminal-shell.md
       - Single-Shot: guides/single-shot-terminal.md
       - Prompt Design Style: concepts/prompt-design-style.md
-      - Using Profiles: guides/profiles.md
+      - Using Profiles: PROFILES.md
   - Developing & Extending:
       - Developer Guide: guides/developing.md
       - Tools Developer Guide: guides/tools-developer-guide.md
@@ -33,6 +33,7 @@ nav:
       - CLI Options: reference/cli-options.md
       - Disabling Tools: guides/disabled-tools.md
       - API Reference: reference/api.md
+      - Changelog: CHANGELOG.md
   - Supported Providers & Models:
       - Overview: supported-providers-models.md
       - Platform & Documentation Access: provider-platform-access.md

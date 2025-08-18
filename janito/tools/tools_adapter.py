@@ -460,9 +460,9 @@ class ToolsAdapterBase:
             raise ToolCallException(tool_name, error_msg, arguments=arguments)
 
     def _handle_execution_error(self, tool_name, request_id, exception, arguments):
-        # Check if this is a loop protection error that should be returned as a string
+        # Check if this is a loop protection error that should trigger a new strategy
         if isinstance(exception, RuntimeError) and "Loop protection:" in str(exception):
-            error_msg = str(exception)  # Return the loop protection message directly
+            error_msg = str(exception)
             if self._event_bus:
                 self._event_bus.publish(
                     ToolCallError(
@@ -473,8 +473,22 @@ class ToolsAdapterBase:
                         arguments=arguments,
                     )
                 )
-            # Return the error message instead of raising an exception
-            return error_msg
+            # Return the loop protection message as string to trigger new strategy
+            return f"Loop protection triggered - requesting new strategy: {error_msg}"
+
+        # Check if this is a string return from loop protection (new behavior)
+        if isinstance(exception, str) and "Loop protection:" in exception:
+            error_msg = str(exception)
+            if self._event_bus:
+                self._event_bus.publish(
+                    ToolCallError(
+                        tool_name=tool_name,
+                        request_id=request_id,
+                        error=error_msg,
+                        arguments=arguments,
+                    )
+                )
+            return f"Loop protection triggered - requesting new strategy: {error_msg}"
 
         error_msg = f"Exception during execution of tool '{tool_name}': {exception}"
         if self._event_bus:

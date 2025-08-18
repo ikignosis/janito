@@ -467,9 +467,9 @@ For users upgrading from previous versions:
   - **CLI Integration**: New commands for plugin management (`--list-remote-plugins`, `--update-remote-plugins`)
 
 - **Documentation**: Comprehensive guides for remote plugin usage
-  - [Remote Plugins Guide](docs/guides/remote-plugins.md) - Complete documentation for remote plugin usage
-  - Updated [Plugin System Guide](docs/guides/plugins.md) with remote plugin integration
-  - Enhanced [README-PLUGINS.md](README-PLUGINS.md) with remote repository references
+  - [Remote Plugins Guide](../guides/remote-plugins.md) - Complete documentation for remote plugin usage
+  - Updated [Plugin System Guide](../guides/plugins.md) with remote plugin integration
+  - Enhanced [README-PLUGINS.md](../../README-PLUGINS.md) with remote repository references
 
 ### Changed
 

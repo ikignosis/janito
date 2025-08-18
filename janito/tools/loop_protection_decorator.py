@@ -119,22 +119,18 @@ def protect_against_loops(
                             current_time - timestamp <= time_window
                             for timestamp in _decorator_call_tracker[op_name]
                         ):
-                            # Define the error reporting function
-                            def _report_error_and_raise(args, operation_type):
-                                # Get the tool instance to access report_error method if available
-                                tool_instance = args[0] if args else None
-                                error_msg = f"Loop protection: Too many {operation_type} operations in a short time period ({max_calls} calls in {time_window}s)"
+                            # Return loop protection message as string instead of raising exception
+                            error_msg = f"Loop protection: Too many {op_name} operations in a short time period ({max_calls} calls in {time_window}s). Please try a different approach or wait before retrying."
 
-                                # Try to report the error through the tool's reporting mechanism
-                                if hasattr(tool_instance, "report_error"):
-                                    try:
-                                        tool_instance.report_error(error_msg)
-                                    except Exception:
-                                        pass  # If reporting fails, we still raise the error
+                            # Try to report the error through the tool's reporting mechanism
+                            tool_instance = args[0] if args else None
+                            if hasattr(tool_instance, "report_error"):
+                                try:
+                                    tool_instance.report_error(error_msg)
+                                except Exception:
+                                    pass  # If reporting fails, we still return the message
 
-                                raise RuntimeError(error_msg)
-
-                            _report_error_and_raise(args, op_name)
+                            return error_msg
 
                 # Record this call
                 if op_name not in _decorator_call_tracker:

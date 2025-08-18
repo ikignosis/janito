@@ -25,10 +25,14 @@ def _load_template_content(profile, templates_dir):
 
     Spaces in the profile name are converted to underscores to align with the file-naming convention (e.g. "Developer with Python Tools" ➜ "Developer_with_Python_Tools" (matches: system_prompt_template_Developer_with_Python_Tools.txt.j2)).
     """
-    # Sanitize profile for filename resolution (convert whitespace to underscores)
-    sanitized_profile = re.sub(r"\s+", "_", profile.strip()) if profile else profile
-
+    sanitized_profile = re.sub(r"\s+", "_", profile.strip())
     template_filename = f"system_prompt_template_{sanitized_profile}.txt.j2"
+
+    return _find_template_file(template_filename, templates_dir)
+
+
+def _find_template_file(template_filename, templates_dir):
+    """Find and load template file from various locations."""
     template_path = templates_dir / template_filename
 
     # 1) Check local templates directory
@@ -96,39 +100,9 @@ def _load_template_content(profile, templates_dir):
         )
 
     raise FileNotFoundError(error_msg)
-    # Replace spaces in profile name with underscores for filename resolution
-    sanitized_profile = re.sub(r"\\s+", "_", profile.strip()) if profile else profile
-    """
-    Loads the template content for the given profile from the specified directory or package resources.
-    If the profile template is not found in the default locations, tries to load from the user profiles directory ~/.janito/profiles.
-    """
-
-    # Sanitize profile name by replacing spaces with underscores to match filename conventions
-    sanitized_profile = re.sub(r"\\s+", "_", profile.strip())
-    template_filename = f"system_prompt_template_{sanitized_profile}.txt.j2"
-    template_path = templates_dir / template_filename
-    if template_path.exists():
-        with open(template_path, "r", encoding="utf-8") as file:
-            return file.read(), template_path
-    # Try package import fallback
-    try:
-        with importlib.resources.files("janito.agent.templates.profiles").joinpath(
-            template_filename
-        ).open("r", encoding="utf-8") as file:
-            return file.read(), template_path
-    except (FileNotFoundError, ModuleNotFoundError, AttributeError):
-        # Try user profiles directory
-        user_profiles_dir = Path(os.path.expanduser("~/.janito/profiles"))
-        user_template_path = user_profiles_dir / profile
-        if user_template_path.exists():
-            with open(user_template_path, "r", encoding="utf-8") as file:
-                return file.read(), user_template_path
-        raise FileNotFoundError(
-            f"[janito] Could not find profile-specific template '{template_filename}' in {template_path} nor in janito.agent.templates.profiles package nor in user profiles directory {user_template_path}."
-        )
 
 
-def _prepare_template_context(role, profile, allowed_permissions):
+def _prepare_template_context(role, profile, allowed_permissions, args=None):
     """
     Prepares the context dictionary for Jinja2 template rendering.
     """
@@ -148,6 +122,11 @@ def _prepare_template_context(role, profile, allowed_permissions):
             perm_str += "x"
         allowed_permissions = perm_str or None
     context["allowed_permissions"] = allowed_permissions
+
+    # Add emoji flag for system prompt
+    context["emoji_enabled"] = (
+        getattr(args, "emoji", False) if "args" in locals() else False
+    )
     # Inject platform info if execute permission is present
     if allowed_permissions and "x" in allowed_permissions:
         pd = PlatformDiscovery()
@@ -170,6 +149,11 @@ def _prepare_template_context(role, profile, allowed_permissions):
             )
         else:
             context["allowed_sites_info"] = f"Restricted to: {', '.join(allowed_sites)}"
+
+    # Add emoji flag for system prompt
+    context["emoji_enabled"] = (
+        getattr(args, "emoji", False) if "args" in locals() else False
+    )
 
     return context
 
@@ -267,7 +251,9 @@ def setup_agent(
     template_content, template_path = _load_template_content(profile, templates_dir)
 
     template = Template(template_content)
-    context = _prepare_template_context(role, profile, allowed_permissions)
+    context = _prepare_template_context(
+        role, profile, allowed_permissions, locals().get("args")
+    )
 
     # Debug output if requested
     debug_flag = False
