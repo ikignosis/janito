@@ -115,22 +115,13 @@ class ChatSession:
         self.multi_line_mode = getattr(args, "multi", False) if args else False
 
     def _select_profile_and_role(self, args, role):
-        profile = getattr(args, "profile", None) if args is not None else None
-        role_arg = getattr(args, "role", None) if args is not None else None
-        python_profile = (
-            getattr(args, "developer", False) if args is not None else False
-        )
-        market_profile = getattr(args, "market", False) if args is not None else False
+        profile, role_arg, python_profile, market_profile = self._extract_args(args)
         profile_system_prompt = None
         no_tools_mode = False
 
-        # Handle --developer flag
-        if python_profile and profile is None and role_arg is None:
-            profile = "Developer with Python Tools"
-
-        # Handle --market flag
-        if market_profile and profile is None and role_arg is None:
-            profile = "Market Analyst"
+        profile = self._determine_profile(
+            profile, role_arg, python_profile, market_profile
+        )
 
         if (
             profile is None
@@ -138,16 +129,9 @@ class ChatSession:
             and not python_profile
             and not market_profile
         ):
-            # Skip interactive profile selection for list commands
-            from janito.cli.core.getters import GETTER_KEYS
-
-            # Check if any getter command is active - these don't need interactive mode
+            skip_profile_selection = self._should_skip_profile_selection(args)
+        else:
             skip_profile_selection = False
-            if args is not None:
-                for key in GETTER_KEYS:
-                    if getattr(args, key, False):
-                        skip_profile_selection = True
-                        break
 
             if skip_profile_selection:
                 profile = "Developer with Python Tools"  # Default for non-interactive commands
@@ -315,39 +299,14 @@ class ChatSession:
             )
             start_time = time.time()
 
-            # Print rule line with model info before processing prompt
-            model_name = (
-                self.agent.get_model_name()
-                if hasattr(self.agent, "get_model_name")
-                else "Unknown"
-            )
-            provider_name = (
-                self.agent.get_provider_name()
-                if hasattr(self.agent, "get_provider_name")
-                else "Unknown"
-            )
+            model_name, provider_name = self._get_model_info()
+            backend_hostname = self._get_backend_hostname()
 
-            backend_hostname = "Unknown"
-            candidates = []
-            drv = getattr(self.agent, "driver", None)
-            if drv is not None:
-                cfg = getattr(drv, "config", None)
-                if cfg is not None:
-                    b = getattr(cfg, "base_url", None)
-                    if b:
-                        candidates.append(b)
-                direct_base = getattr(drv, "base_url", None)
-                if direct_base:
-                    candidates.append(direct_base)
-            cfg2 = getattr(self.agent, "config", None)
-            if cfg2 is not None:
-                b2 = getattr(cfg2, "base_url", None)
-                if b2:
-                    candidates.append(b2)
-            top_base = getattr(self.agent, "base_url", None)
-            if top_base:
-                candidates.append(top_base)
-            from urllib.parse import urlparse
+            self.console.print(
+                Rule(
+                    f"[bold blue]Model: {model_name} ({provider_name}) | Backend: {backend_hostname}[/bold blue]"
+                )
+            )
 
             for candidate in candidates:
                 try:
@@ -393,6 +352,102 @@ class ChatSession:
             import traceback
 
             self.console.print(traceback.format_exc())
+
+    def _extract_args(self, args):
+        """Extract profile and role arguments from args."""
+        profile = getattr(args, "profile", None) if args is not None else None
+        role_arg = getattr(args, "role", None) if args is not None else None
+        python_profile = (
+            getattr(args, "developer", False) if args is not None else False
+        )
+        market_profile = getattr(args, "market", False) if args is not None else False
+        return profile, role_arg, python_profile, market_profile
+
+    def _determine_profile(self, profile, role_arg, python_profile, market_profile):
+        """Determine the profile based on flags and arguments."""
+        if python_profile and profile is None and role_arg is None:
+            return "Developer with Python Tools"
+        if market_profile and profile is None and role_arg is None:
+            return "Market Analyst"
+        return profile
+
+    def _should_skip_profile_selection(self, args):
+        """Check if profile selection should be skipped for getter commands."""
+        from janito.cli.core.getters import GETTER_KEYS
+
+        if args is None:
+            return False
+
+        for key in GETTER_KEYS:
+            if getattr(args, key, False):
+                return True
+        return False
+
+    def _get_model_info(self):
+        """Get model and provider information."""
+        model_name = (
+            self.agent.get_model_name()
+            if hasattr(self.agent, "get_model_name")
+            else "Unknown"
+        )
+        provider_name = (
+            self.agent.get_provider_name()
+            if hasattr(self.agent, "get_provider_name")
+            else "Unknown"
+        )
+        return model_name, provider_name
+
+    def _get_backend_hostname(self):
+        """Extract backend hostname from agent configuration."""
+        candidates = self._collect_base_urls()
+        return self._parse_hostname_from_urls(candidates)
+
+    def _collect_base_urls(self):
+        """Collect all possible base URLs from agent configuration."""
+        candidates = []
+
+        # Collect from driver
+        drv = getattr(self.agent, "driver", None)
+        if drv is not None:
+            cfg = getattr(drv, "config", None)
+            if cfg is not None:
+                b = getattr(cfg, "base_url", None)
+                if b:
+                    candidates.append(b)
+            direct_base = getattr(drv, "base_url", None)
+            if direct_base:
+                candidates.append(direct_base)
+
+        # Collect from agent config
+        cfg2 = getattr(self.agent, "config", None)
+        if cfg2 is not None:
+            b2 = getattr(cfg2, "base_url", None)
+            if b2:
+                candidates.append(b2)
+
+        # Collect from agent directly
+        top_base = getattr(self.agent, "base_url", None)
+        if top_base:
+            candidates.append(top_base)
+
+        return candidates
+
+    def _parse_hostname_from_urls(self, candidates):
+        """Parse hostname from a list of URL candidates."""
+        from urllib.parse import urlparse
+
+        for candidate in candidates:
+            try:
+                if not candidate:
+                    continue
+                parsed = urlparse(str(candidate))
+                host = parsed.netloc or parsed.path
+                if host:
+                    return host
+            except Exception:
+                return str(candidate)
+
+        return "Unknown"
 
     def _create_prompt_session(self):
         return PromptSession(
