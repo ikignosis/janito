@@ -35,9 +35,9 @@ class ShowImageTool(ToolBase):
         # Defer heavy imports to runtime
         try:
             from rich.console import Console
-            from rich.image import Image as RichImage
+            from PIL import Image as PILImage
         except Exception as e:
-            msg = tr("⚠️ Missing dependency: rich ({error})", error=e)
+            msg = tr("⚠️ Missing dependency: PIL/Pillow ({error})", error=e)
             self.report_error(msg)
             return msg
 
@@ -53,7 +53,11 @@ class ShowImageTool(ToolBase):
         try:
             console = Console()
             # rich.image.Image handles inline terminal display of common formats
-            img = RichImage.from_path(path, width=width, height=height, preserve_aspect_ratio=preserve_aspect)
+            from rich.console import Console
+            from rich.text import Text
+            console = Console()
+            img = PILImage.open(path)
+            console.print(Text(f"Image: {disp_path} ({img.width}x{img.height})", style="bold green"))
             console.print(img)
             self.report_success(tr("✅ Displayed"))
             details = []

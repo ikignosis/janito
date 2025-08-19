@@ -38,10 +38,10 @@ class ShowImageGridTool(ToolBase):
         try:
             from rich.console import Console
             from rich.columns import Columns
-            from rich.image import Image as RichImage
+            from PIL import Image as PILImage
             from rich.panel import Panel
         except Exception as e:
-            msg = tr("⚠️ Missing dependency: rich ({error})", error=e)
+            msg = tr("⚠️ Missing dependency: PIL/Pillow ({error})", error=e)
             self.report_error(msg)
             return msg
 
@@ -59,8 +59,9 @@ class ShowImageGridTool(ToolBase):
                 self.report_warning(tr("❗ not found: {p}", p=display_path(fp)))
                 continue
             try:
-                img = RichImage.from_path(fp, width=width, height=height, preserve_aspect_ratio=preserve_aspect)
-                images.append(Panel.fit(img, title=display_path(fp), border_style="dim"))
+                img = PILImage.open(fp)
+                title = f"{display_path(fp)} ({img.width}x{img.height})"
+                images.append(Panel.fit(title, title=display_path(fp), border_style="dim"))
                 shown += 1
             except Exception as e:
                 self.report_warning(tr("⚠️ Skipped {p}: {e}", p=display_path(fp), e=e))
