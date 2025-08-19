@@ -11,6 +11,8 @@ The Visualization plugin provides data visualization and charting capabilities. 
 | Tool Name | Function | Description |
 |-----------|----------|-------------|
 | `read_chart` | Display charts in terminal | Renders various chart types (bar, line, pie, table) in the terminal using rich formatting |
+| `show_image` | Display single image | Shows a single image inline in the terminal using rich |
+| `show_image_grid` | Display image grid | Shows multiple images in a grid inline in the terminal |
 
 ## Usage Examples
 
@@ -68,6 +70,11 @@ The Visualization plugin provides data visualization and charting capabilities. 
 ## Configuration
 
 This plugin does not require any specific configuration. Chart rendering uses default dimensions and styling.
+
+Image Display tools (core.imagedisplay) have optional settings:
+- default_width (int): Default width for image display
+- default_height (int): Default height for image display
+- preserve_aspect (bool): Preserve aspect ratio by default
 
 ## Security Considerations
 

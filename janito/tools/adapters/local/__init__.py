@@ -24,6 +24,8 @@ from .get_file_outline.search_outline import SearchOutlineTool
 from .search_text.core import SearchTextTool
 from .validate_file_syntax.core import ValidateFileSyntaxTool
 from .read_chart import ReadChartTool
+from .show_image import ShowImageTool
+from .show_image_grid import ShowImageGridTool
 
 from janito.tools.tool_base import ToolPermissions
 import os
@@ -63,6 +65,8 @@ for tool_class in [
     SearchTextTool,
     ValidateFileSyntaxTool,
     ReadChartTool,
+    ShowImageTool,
+    ShowImageGridTool,
 ]:
     local_tools_adapter.register_tool(tool_class)
 

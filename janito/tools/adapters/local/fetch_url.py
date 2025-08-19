@@ -246,10 +246,35 @@ class FetchUrlTool(ToolBase):
             return content
         except requests.exceptions.HTTPError as http_err:
             status_code = http_err.response.status_code if http_err.response else None
+            
+            # Map status codes to descriptions
+            status_descriptions = {
+                400: "Bad Request",
+                401: "Unauthorized", 
+                403: "Forbidden",
+                404: "Not Found",
+                405: "Method Not Allowed",
+                408: "Request Timeout",
+                409: "Conflict",
+                410: "Gone",
+                413: "Payload Too Large",
+                414: "URI Too Long",
+                415: "Unsupported Media Type",
+                429: "Too Many Requests",
+                500: "Internal Server Error",
+                501: "Not Implemented",
+                502: "Bad Gateway",
+                503: "Service Unavailable",
+                504: "Gateway Timeout",
+                505: "HTTP Version Not Supported"
+            }
+            
             if status_code and 400 <= status_code < 500:
+                description = status_descriptions.get(status_code, "Client Error")
                 error_message = tr(
-                    "HTTP {status_code}",
+                    "HTTP Error {status_code} {description}",
                     status_code=status_code,
+                    description=description,
                 )
                 # Cache 403 and 404 errors
                 if status_code in [403, 404]:
@@ -257,23 +282,27 @@ class FetchUrlTool(ToolBase):
 
                 self.report_error(
                     tr(
-                        "❗ HTTP {status_code}",
+                        "❗ HTTP Error {status_code} {description}",
                         status_code=status_code,
+                        description=description,
                     ),
                     ReportAction.READ,
                 )
                 return error_message
             else:
+                description = status_descriptions.get(status_code, "Server Error") if status_code else "Error"
                 self.report_error(
                     tr(
-                        "❗ HTTP {status_code}",
+                        "❗ HTTP Error {status_code} {description}",
                         status_code=status_code or "Error",
+                        description=description,
                     ),
                     ReportAction.READ,
                 )
                 return tr(
-                    "HTTP {status_code}",
+                    "HTTP Error {status_code} {description}",
                     status_code=status_code or "Error",
+                    description=description,
                 )
         except Exception as err:
             self.report_error(
@@ -355,7 +384,7 @@ class FetchUrlTool(ToolBase):
                 follow_redirects=follow_redirects,
             )
             if (
-                html_content.startswith("HTTP ")
+                html_content.startswith("HTTP Error ")
                 or html_content == "Error"
                 or html_content == "Blocked"
             ):
@@ -388,7 +417,7 @@ class FetchUrlTool(ToolBase):
             follow_redirects=follow_redirects,
         )
         if (
-            html_content.startswith("HTTP ")
+            html_content.startswith("HTTP Error ")
             or html_content == "Error"
             or html_content == "Blocked"
         ):

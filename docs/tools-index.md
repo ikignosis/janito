@@ -6,6 +6,39 @@ Janito provides a comprehensive set of tools for file operations, code execution
 
 ### Visualization Tools
 
+#### show_image
+
+Display an image inline in the terminal using rich.
+
+Arguments:
+- path (str): Path to the image file.
+- width (int, optional): Target width in terminal cells. If unset, auto-fit.
+- height (int, optional): Target height in terminal rows. If unset, auto-fit.
+- preserve_aspect (bool, optional): Preserve aspect ratio. Default: True.
+
+Returns:
+- Status message indicating display result or error details.
+
+Example Usage:
+- show a PNG: `show_image(path="img/tux.png", width=60)`
+
+#### show_image_grid
+
+Display multiple images in a grid inline in the terminal using rich.
+
+Arguments:
+- paths (list[str]): List of image file paths.
+- columns (int, optional): Number of columns in the grid. Default: 2.
+- width (int, optional): Max width for each image cell. Default: None (auto).
+- height (int, optional): Max height for each image cell. Default: None (auto).
+- preserve_aspect (bool, optional): Preserve aspect ratio. Default: True.
+
+Returns:
+- Status string summarizing the grid display.
+
+Example Usage:
+- `show_image_grid(paths=["img/tux.png", "img/tux_display.png"], columns=2, width=40)`
+
 #### read_chart
 
 Display charts and data visualizations in the terminal using rich.

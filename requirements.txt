@@ -10,3 +10,4 @@ requests>=2.32.4
 bs4>=0.0.2
 questionary>=2.0.1
 openai>=1.68.0
+Pillow>=10.0.0

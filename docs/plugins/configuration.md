@@ -14,6 +14,7 @@ Plugins can be configured through the main configuration file `janito.json`. The
     "load": {
       "core.filemanager": true,
       "core.codeanalyzer": true,
+      "core.imagedisplay": true,
       "web.webtools": false
     },
     "config": {
@@ -41,7 +42,8 @@ The `plugins.load` section controls which plugins are enabled:
   "load": {
     "core.filemanager": true,
     "dev.pythondev": true,
-    "ui.userinterface": true
+    "ui.userinterface": true,
+    "core.imagedisplay": true
   }
 }
 ```

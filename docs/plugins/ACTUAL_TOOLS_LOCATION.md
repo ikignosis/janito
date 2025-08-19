@@ -39,6 +39,9 @@ janito/tools/adapters/local/
 | `python_file_run` | `janito/tools/adapters/local/python_file_run.py` | Python script execution |
 | **dev.visualization** | | |
 | `read_chart` | `janito/tools/adapters/local/read_chart.py` | Data visualization |
+| **core.imagedisplay** | | |
+| `show_image` | `janito/tools/adapters/local/show_image.py` | Display single image |
+| `show_image_grid` | `janito/tools/adapters/local/show_image_grid.py` | Display multiple images in a grid |
 | **ui.userinterface** | | |
 | `ask_user` | `janito/tools/adapters/local/ask_user.py` | User interaction |
 

@@ -8,7 +8,7 @@ for easier discovery and usage.
 __version__ = "1.0.0"
 __author__ = "Development Assistant"
 
-from .core import filemanager, codeanalyzer, system
+from .core import filemanager, codeanalyzer, system, imagedisplay
 from .web import webtools
 from .dev import pythondev, visualization
 from .ui import userinterface
@@ -18,6 +18,7 @@ PLUGINS = {
     "core.filemanager": filemanager,
     "core.codeanalyzer": codeanalyzer,
     "core.system": system,
+    "core.imagedisplay": imagedisplay,
     "web.webtools": webtools,
     "dev.pythondev": pythondev,
     "dev.visualization": visualization,

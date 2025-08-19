@@ -33,6 +33,7 @@ import logging
 
 from .base import Plugin
 from .builtin import load_builtin_plugin, BuiltinPluginRegistry
+from .core_loader import load_core_plugin
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +75,13 @@ def discover_plugins(
         parts = plugin_name.split(".")
         if len(parts) == 2:
             package_name, submodule_name = parts
+            
+            # Handle core plugins with dedicated loader
+            if plugin_name.startswith(("core.", "dev.", "ui.", "web.")):
+                plugin = load_core_plugin(plugin_name)
+                if plugin:
+                    return plugin
+                    
             for base_path in all_paths:
                 package_path = base_path / package_name / submodule_name / "__init__.py"
                 if package_path.exists():
