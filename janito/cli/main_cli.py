@@ -13,12 +13,13 @@ from janito.cli.core.event_logger import (
     inject_debug_event_bus_if_needed,
 )
 
+
 definition = [
     (
-        ["-u", "--unrestricted-paths"],
+        ["-u", "--unrestricted"],
         {
             "action": "store_true",
-            "help": "Disable path security: allow tool arguments to use any file/directory path (DANGEROUS)",
+            "help": "Unrestricted mode: disable path security and URL whitelist restrictions (DANGEROUS)",
         },
     ),
     (
@@ -37,18 +38,17 @@ definition = [
         },
     ),
     (
-        ["--python"],
+        ["--developer"],
         {
             "action": "store_true",
             "help": "Start with the Python developer profile (equivalent to --profile 'Developer with Python Tools')",
         },
     ),
     (
-        ["--role"],
+        ["--market"],
         {
-            "metavar": "ROLE",
-            "help": "Select the developer role name (overrides profile, e.g. 'python-expert').",
-            "default": None,
+            "action": "store_true",
+            "help": "Start with the Market Analyst profile (equivalent to --profile 'Market Analyst')",
         },
     ),
     (
@@ -125,10 +125,31 @@ definition = [
         {"action": "store_true", "help": "List supported LLM providers"},
     ),
     (
+        ["--ping"],
+        {
+            "action": "store_true",
+            "help": "Ping/test connectivity for all providers (use with --list-providers)",
+        },
+    ),
+    (
         ["--list-drivers"],
         {
             "action": "store_true",
             "help": "List available LLM drivers and their dependencies",
+        },
+    ),
+    (
+        ["--region-info"],
+        {
+            "action": "store_true",
+            "help": "Show current region information and location",
+        },
+    ),
+    (
+        ["--list-providers-region"],
+        {
+            "action": "store_true",
+            "help": "List all providers with their regional API information",
         },
     ),
     (
@@ -176,6 +197,13 @@ definition = [
             "help": "Set the reasoning effort for models that support it (low, medium, high, none)",
         },
     ),
+    (
+        ["--emoji"],
+        {
+            "action": "store_true",
+            "help": "Enable emoji usage in responses to make output more engaging and expressive",
+        },
+    ),
     (["user_prompt"], {"nargs": argparse.REMAINDER, "help": "Prompt to submit"}),
     (
         ["-e", "--event-log"],
@@ -195,14 +223,29 @@ definition = [
             "help": "Use custom configuration file ~/.janito/configs/NAME.json instead of default config.json",
         },
     ),
+    (
+        ["--list-plugins"],
+        {"action": "store_true", "help": "List all loaded plugins"},
+    ),
+    (
+        ["--list-plugins-available"],
+        {"action": "store_true", "help": "List all available plugins"},
+    ),
+    (
+        ["--list-resources"],
+        {
+            "action": "store_true",
+            "help": "List all resources (tools, commands, config) from loaded plugins",
+        },
+    ),
 ]
 
 MODIFIER_KEYS = [
     "provider",
     "model",
-    "role",
     "profile",
-    "python",
+    "developer",
+    "market",
     "system",
     "temperature",
     "verbose",
@@ -212,6 +255,7 @@ MODIFIER_KEYS = [
     "exec",
     "read",
     "write",
+    "emoji",
 ]
 SETTER_KEYS = ["set", "set_provider", "set_api_key", "unset"]
 GETTER_KEYS = [
@@ -221,6 +265,22 @@ GETTER_KEYS = [
     "list_models",
     "list_tools",
     "list_config",
+    "list_drivers",
+    "region_info",
+    "list_providers_region",
+    "ping",
+]
+GETTER_KEYS = [
+    "show_config",
+    "list_providers",
+    "list_profiles",
+    "list_models",
+    "list_tools",
+    "list_config",
+    "list_drivers",
+    "region_info",
+    "list_providers_region",
+    "ping",
 ]
 
 
@@ -236,8 +296,8 @@ class JanitoCLI:
 
         self.parser = argparse.ArgumentParser(
             description="Janito CLI - A tool for running LLM-powered workflows from the command line."
-            "\n\nExample usage: janito -p moonshotai -m kimi-k1-8k 'Your prompt here'\n\n"
-            "Use -m or --model to set the model for the session."
+            "\n\nExample usage: janito -p moonshot -m kimi-k1-8k 'Your prompt here'\n\n"
+            "Use -m or --model to set the model for the session.",
         )
         self._define_args()
         self.args = self.parser.parse_args()
@@ -311,9 +371,7 @@ class JanitoCLI:
             for k in MODIFIER_KEYS
             if getattr(self.args, k, None) is not None
         }
-        # If --role is provided, override role in modifiers
-        if getattr(self.args, "role", None):
-            modifiers["role"] = getattr(self.args, "role")
+
         return modifiers
 
     def classify(self):
@@ -336,7 +394,7 @@ class JanitoCLI:
         if run_mode == RunMode.SET:
             if self._run_set_mode():
                 return
-        # Special handling: provider is not required for list_providers, list_tools, show_config, list_drivers
+        # Special handling: provider is not required for list commands
         if run_mode == RunMode.GET and (
             self.args.list_providers
             or self.args.list_tools
@@ -344,11 +402,24 @@ class JanitoCLI:
             or self.args.show_config
             or self.args.list_config
             or self.args.list_drivers
+            or self.args.list_plugins
+            or self.args.list_plugins_available
+            or self.args.list_resources
+            or self.args.ping
         ):
             self._maybe_print_verbose_provider_model()
             handle_getter(self.args)
             return
+        # Handle /rwx prefix for enabling all permissions
+        if self.args.user_prompt and self.args.user_prompt[0] == "/rwx":
+            self.args.read = True
+            self.args.write = True
+            self.args.exec = True
+            # Remove the /rwx prefix from the prompt
+            self.args.user_prompt = self.args.user_prompt[1:]
+
         # If running in single shot mode and --profile is not provided, default to 'developer' profile
+        # Skip profile selection for list commands that don't need it
         if get_prompt_mode(self.args) == "single_shot" and not getattr(
             self.args, "profile", None
         ):
@@ -380,8 +451,6 @@ class JanitoCLI:
                 agent_role,
                 verbose_tools=self.args.verbose_tools,
             )
-        elif run_mode == RunMode.GET:
-            handle_getter(self.args)
 
     def _run_set_mode(self):
         if handle_api_key_set(self.args):

@@ -135,6 +135,7 @@ def _extract_path_keys_from_schema(schema: Mapping[str, Any]) -> set[str]:
     path_keys: set[str] = set()
     if schema is not None:
         for k, v in schema.get("properties", {}).items():
+            # Handle direct path strings
             if v.get("format") == "path" or (
                 v.get("type") == "string"
                 and (
@@ -144,6 +145,19 @@ def _extract_path_keys_from_schema(schema: Mapping[str, Any]) -> set[str]:
                 )
             ):
                 path_keys.add(k)
+            # Handle arrays of path strings
+            elif v.get("type") == "array" and "items" in v:
+                items = v["items"]
+                if items.get("format") == "path" or (
+                    items.get("type") == "string"
+                    and (
+                        "path" in items.get("description", "").lower()
+                        or "path" in v.get("description", "").lower()
+                        or k.endswith("paths")
+                        or k == "paths"
+                    )
+                ):
+                    path_keys.add(k)
     return path_keys
 
 

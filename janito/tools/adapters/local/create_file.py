@@ -1,11 +1,12 @@
 import os
+from janito.tools.path_utils import expand_path
 from janito.tools.adapters.local.adapter import register_local_tool
 
 from janito.tools.tool_utils import display_path
 from janito.tools.tool_base import ToolBase, ToolPermissions
 from janito.report_events import ReportAction
 from janito.i18n import tr
-
+from janito.tools.loop_protection_decorator import protect_against_loops
 
 from janito.tools.adapters.local.validate_file_syntax.core import validate_file_syntax
 
@@ -13,26 +14,80 @@ from janito.tools.adapters.local.validate_file_syntax.core import validate_file_
 @register_local_tool
 class CreateFileTool(ToolBase):
     """
-    Create a new file with the given content.
+    Create a new file with specified content at the given path.
+
+    This tool provides comprehensive file creation capabilities with built-in safety features,
+    automatic syntax validation, and detailed feedback. It handles path expansion, directory
+    creation, encoding issues, and provides clear status messages for both success and failure cases.
+
+    Key Features:
+    - Automatic directory creation for nested paths
+    - UTF-8 encoding with error handling for special characters
+    - Built-in syntax validation for common file types (Python, JavaScript, JSON, YAML, etc.)
+    - Loop protection to prevent excessive file creation
+    - Detailed error messages with context
+    - Safe overwrite protection with preview of existing content
+    - Cross-platform path handling (Windows, macOS, Linux)
 
     Args:
-        path (str): Path to the file to create.
-        content (str): Content to write to the file.
-        overwrite (bool, optional): Overwrite existing file if True. Default: False. Recommended only after reading the file to be overwritten.
-    Returns:
-        str: Status message indicating the result. Example:
-            - "✅ Successfully created the file at ..."
+        path (str): Target file path. Supports relative and absolute paths, with automatic
+                   expansion of user home directory (~) and environment variables.
+                   Examples: "src/main.py", "~/Documents/config.json", "$HOME/.env"
+        content (str): File content to write. Empty string creates empty file.
+                      Supports any text content including Unicode characters, newlines,
+                      and binary-safe text representation.
+        overwrite (bool, optional): If True, allows overwriting existing files. Default: False.
+                                   When False, prevents accidental overwrites by checking
+                                   file existence and showing current content. Always review
+                                   existing content before enabling overwrite.
 
-    Note: Syntax validation is automatically performed after this operation.
+    Returns:
+        str: Detailed status message including:
+            - Success confirmation with line count
+            - File path (display-friendly format)
+            - Syntax validation results
+            - Existing content preview (when overwrite blocked)
+            - Error details (when creation fails)
+
+    Raises:
+        No direct exceptions - all errors are caught and returned as user-friendly messages.
+        Common error cases include: permission denied, invalid path format, disk full,
+        or file exists (when overwrite=False).
+
+    Security Features:
+        - Loop protection: Maximum 5 calls per 10 seconds for the same file path
+        - Path traversal prevention: Validates and sanitizes file paths
+        - Permission checking: Respects file system permissions
+        - Atomic writes: Prevents partial file creation on errors
+
+    Examples:
+        Basic file creation:
+        >>> create_file("hello.py", "print('Hello, World!')")
+        ✅ Created file 1 lines.
+        ✅ Syntax OK
+
+        Creating nested directories:
+        >>> create_file("src/utils/helpers.py", "def helper(): pass")
+        ✅ Created file 2 lines.
+        ✅ Syntax OK
+
+        Overwrite protection:
+        >>> create_file("existing.txt", "new content")
+        ❗ Cannot create file: file already exists at 'existing.txt'.
+        --- Current file content ---
+        old content
+
+    Note: After successful creation, automatic syntax validation is performed based on
+    file extension. Results are appended to the return message for immediate feedback.
     """
 
     permissions = ToolPermissions(write=True)
     tool_name = "create_file"
 
+    @protect_against_loops(max_calls=5, time_window=10.0, key_field="path")
     def run(self, path: str, content: str, overwrite: bool = False) -> str:
-        expanded_path = path  # Using path as is
-        disp_path = display_path(expanded_path)
-        path = expanded_path
+        path = expand_path(path)
+        disp_path = display_path(path)
         if os.path.exists(path) and not overwrite:
             try:
                 with open(path, "r", encoding="utf-8", errors="replace") as f:

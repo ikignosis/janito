@@ -23,6 +23,7 @@ from .get_file_outline.core import GetFileOutlineTool
 from .get_file_outline.search_outline import SearchOutlineTool
 from .search_text.core import SearchTextTool
 from .validate_file_syntax.core import ValidateFileSyntaxTool
+from .read_chart import ReadChartTool
 
 from janito.tools.tool_base import ToolPermissions
 import os
@@ -61,6 +62,7 @@ for tool_class in [
     SearchOutlineTool,
     SearchTextTool,
     ValidateFileSyntaxTool,
+    ReadChartTool,
 ]:
     local_tools_adapter.register_tool(tool_class)
 

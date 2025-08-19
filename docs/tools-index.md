@@ -4,6 +4,29 @@ Janito provides a comprehensive set of tools for file operations, code execution
 
 ## Available Tools
 
+### Visualization Tools
+
+#### read_chart
+
+Display charts and data visualizations in the terminal using rich.
+
+**Arguments:**
+
+- `data` (dict): Chart data in JSON format. Should contain 'type' (bar, line, pie, table) and 'data' keys.
+- `title` (str, optional): Chart title. Defaults to "Chart".
+- `width` (int, optional): Chart width. Defaults to 80.
+- `height` (int, optional): Chart height. Defaults to 20.
+
+**Returns:**
+
+- Formatted chart display in terminal or error message.
+
+**Example Usage:**
+
+- Display a table: `read_chart(data={"type": "table", "data": [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]}, title="Users")`
+- Display a bar chart: `read_chart(data={"type": "bar", "data": {"Q1": 100, "Q2": 150}}, title="Sales")`
+- Display a pie chart: `read_chart(data={"type": "pie", "data": {"Desktop": 45, "Mobile": 30}}, title="Usage")`
+
 ### Web Tools
 
 #### open_url

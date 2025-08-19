@@ -10,6 +10,18 @@ janito "what are the key classes of this project?"
 
 Janito will process your request and exit after displaying the result.
 
+### Quick Permission Setup
+
+For one-shot mode, you can quickly enable all tool permissions using the `/rwx` prefix:
+
+```bash
+# Enable read, write, and execute permissions
+janito /rwx "create a python script and run it"
+
+# Or use individual flags
+janito -r -w -x "create a python script and run it"
+```
+
 > ⚠️ **Warning:** Some models may not complete all required steps in a single-shot (one-off) run. If the model does not act as expected, try appending "; just do it" to your command-line prompt to encourage direct action.
 
 ![One-Shot Terminal Shell](../imgs/terminal-one-shot.png)

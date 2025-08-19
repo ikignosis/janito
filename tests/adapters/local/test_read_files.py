@@ -16,7 +16,7 @@ def test_read_files_tool(tmp_path, read_files_tool):
     file2.write_text("Second file contents.\n")
     missing_file = tmp_path / "missing.txt"
 
-    result = read_files_tool.run([str(file1), str(file2), str(missing_file)])
+    result = read_files_tool.run(paths=[str(file1), str(file2), str(missing_file)])
 
     assert "Hello from file 1!" in result
     assert "Second file contents." in result

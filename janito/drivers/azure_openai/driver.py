@@ -6,6 +6,16 @@ from janito.llm.driver_config import LLMDriverConfig
 
 
 class AzureOpenAIModelDriver(OpenAIModelDriver):
+    # Check if required dependencies are available
+    try:
+        from openai import AzureOpenAI
+
+        available = True
+        unavailable_reason = None
+    except ImportError as e:
+        available = False
+        unavailable_reason = f"Missing dependency: {str(e)}"
+
     def start(self, *args, **kwargs):
         # Ensure azure_deployment_name is set before starting
         config = getattr(self, "config", None)
@@ -64,11 +74,10 @@ class AzureOpenAIModelDriver(OpenAIModelDriver):
     def _instantiate_openai_client(self, config):
         try:
             if not config.api_key:
-                provider_name = getattr(self, 'provider_name', 'Azure OpenAI')
-                print(f"[ERROR] No API key found for provider '{provider_name}'. Please set the API key using:")
-                print(f"  janito --set-api-key YOUR_API_KEY -p azure-openai")
-                print(f"Or set the AZURE_OPENAI_API_KEY environment variable.")
-                raise ValueError(f"API key is required for provider '{provider_name}'")
+                provider_name = getattr(self, "provider_name", "Azure OpenAI")
+                from janito.llm.auth_utils import handle_missing_api_key
+
+                handle_missing_api_key(provider_name, "AZURE_OPENAI_API_KEY")
 
             from openai import AzureOpenAI
 

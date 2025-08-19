@@ -7,11 +7,13 @@ This document describes the architecture of the LLM driver system in Janito, foc
 All LLM drivers in Janito inherit from the abstract base class `LLMDriver` (`janito/llm/driver.py`). This class provides a threaded, queue-based interface for interacting with language model APIs in a provider-agnostic way.
 
 ### Key Responsibilities
+
 - **Threaded Operation:** Each driver runs a background thread that processes requests from an input queue and emits results/events to an output queue.
 - **Standardized Events:** Drivers emit standardized events (e.g., `RequestStarted`, `ResponseReceived`, `RequestFinished`) for downstream consumers.
 - **Provider Abstraction:** The base class defines abstract methods for provider-specific logic, ensuring a uniform interface for all drivers.
 
 ### Required Abstract Methods
+
 To implement a new driver, you must subclass `LLMDriver` and implement the following methods:
 
 - `def _prepare_api_kwargs(self, config, conversation)`
@@ -30,12 +32,14 @@ To implement a new driver, you must subclass `LLMDriver` and implement the follo
   - Extract the relevant message object from the provider's API result for further processing.
 
 ### Threading and Queues
+
 - Each driver instance has its own `input_queue` and `output_queue`.
 - Use the `start()` method to launch the driver's background thread.
 - Submit requests by putting `DriverInput` objects into `input_queue`.
 - Listen for events/results by reading from `output_queue`.
 
 ## Implementing a New Driver: Checklist
+
 1. **Subclass `LLMDriver`.**
 2. **Implement all required abstract methods** listed above.
 3. **Handle provider-specific configuration** (e.g., API keys, endpoints) in your constructor or via config objects.
@@ -45,7 +49,9 @@ To implement a new driver, you must subclass `LLMDriver` and implement the follo
 7. **Convert provider responses** to standardized message parts for downstream processing.
 
 ## Example: OpenAI Driver
+
 See `janito/drivers/openai/driver.py` for a complete example. Highlights:
+
 - Implements all required methods for the OpenAI API.
 - Handles tool/function call schemas if tools are present.
 - Converts conversation history to OpenAI's message format.
@@ -53,7 +59,8 @@ See `janito/drivers/openai/driver.py` for a complete example. Highlights:
 - Handles cancellation and error reporting robustly.
 
 ## References
-- Base class: [`janito/llm/driver.py`](git@github.com:ikignosis/janito.git/tree/main/janito/llm/driver.py)
-- OpenAI driver: [`janito/drivers/openai/driver.py`](git@github.com:ikignosis/janito.git/tree/main/janito/drivers/openai/driver.py)
-- Driver events: [`janito/driver_events.py`](git@github.com:ikignosis/janito.git/tree/main/janito/driver_events.py)
+
+- Base class: `janito/llm/driver.py`
+- OpenAI driver: `janito/drivers/openai/driver.py`
+- Driver events: `janito/driver_events.py`
 

@@ -1,9 +1,11 @@
 from janito.tools.tool_base import ToolBase, ToolPermissions
 from janito.tools.adapters.local.adapter import register_local_tool
+from janito.tools.loop_protection_decorator import protect_against_loops
 
 from rich import print as rich_print
 from janito.i18n import tr
 from rich.panel import Panel
+from rich.markdown import Markdown
 from prompt_toolkit import PromptSession
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.enums import EditingMode
@@ -31,10 +33,11 @@ class AskUserTool(ToolBase):
     permissions = ToolPermissions(read=True)
     tool_name = "ask_user"
 
+    @protect_against_loops(max_calls=5, time_window=10.0, key_field="question")
     def run(self, question: str) -> str:
 
         print()  # Print an empty line before the question panel
-        rich_print(Panel.fit(question, title=tr("Question"), style="cyan"))
+        rich_print(Panel.fit(Markdown(question), title=tr("Question"), style="cyan"))
 
         bindings = KeyBindings()
         mode = {"multiline": False}
@@ -49,6 +52,12 @@ class AskUserTool(ToolBase):
             buf.text = "Do It"
             buf.validate_and_handle()
 
+        @bindings.add("f2")
+        def _(event):
+            buf = event.app.current_buffer
+            buf.text = "F2"
+            buf.validate_and_handle()
+
         # Use shared CLI styles
 
         # prompt_style contains the prompt area and input background
@@ -58,7 +67,7 @@ class AskUserTool(ToolBase):
         style = chat_shell_style
 
         def get_toolbar():
-            f12_hint = ""
+            f12_hint = " F2: F2 | F12: Do It"
             if mode["multiline"]:
                 return HTML(
                     f"<b>Multiline mode (Esc+Enter to submit). Type /single to switch.</b>{f12_hint}"
@@ -99,4 +108,5 @@ class AskUserTool(ToolBase):
                     rich_print(
                         "[yellow]Warning: Some characters in your input were not valid UTF-8 and have been replaced.[/yellow]"
                     )
+                print("\a", end="", flush=True)  # Print bell character
                 return sanitized

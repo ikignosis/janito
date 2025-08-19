@@ -56,8 +56,10 @@ class ToolsShellHandler(ShellCmdHandler):
 
     def run(self):
         # Check for no_tools_mode in shell_state
-        if self.shell_state and getattr(self.shell_state, 'no_tools_mode', False):
-            shared_console.print("[yellow]No tools are available in this mode (no tools, no context).[/yellow]")
+        if self.shell_state and getattr(self.shell_state, "no_tools_mode", False):
+            shared_console.print(
+                "[yellow]No tools are available in this mode (no tools, no context).[/yellow]"
+            )
             return
         try:
             import janito.tools  # Ensure all tools are registered

@@ -229,6 +229,12 @@ class LLMAgent:
             print("[agent] [INFO] Handling ResponseReceived event.")
         from janito.llm.message_parts import FunctionCallMessagePart
 
+        # Skip tool processing if no tools adapter is available
+        if self.tools_adapter is None:
+            if getattr(self, "verbose_agent", False):
+                print("[agent] [DEBUG] No tools adapter available, skipping tool calls")
+            return False
+
         tool_calls = []
         tool_results = []
         for part in event.parts:
@@ -238,7 +244,12 @@ class LLMAgent:
                         f"[agent] [DEBUG] Tool call detected: {getattr(part, 'name', repr(part))} with arguments: {getattr(part, 'arguments', None)}"
                     )
                 tool_calls.append(part)
-                result = self.tools_adapter.execute_function_call_message_part(part)
+                try:
+                    result = self.tools_adapter.execute_function_call_message_part(part)
+                except Exception as e:
+                    # Catch any exception during tool execution and return as string
+                    # instead of letting it propagate to the user
+                    result = str(e)
                 tool_results.append(result)
         if tool_calls:
             # Prepare tool_calls message for assistant

@@ -1,1 +1,0 @@
-# MoonshotAI provider package

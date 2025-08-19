@@ -19,7 +19,35 @@ def _extract_profile_name(filename: str) -> str:
         filename = filename[len(_PREFIX) :]
     if filename.endswith(_SUFFIX):
         filename = filename[: -len(_SUFFIX)]
-    return filename.replace("_", " ")
+
+    # Convert to title case for consistent capitalization, but handle common acronyms
+    name = filename.replace("_", " ")
+
+    # Convert to proper title case with consistent capitalization
+    name = filename.replace("_", " ")
+
+    # Handle special cases and acronyms
+    special_cases = {
+        "python": "Python",
+        "tools": "Tools",
+        "model": "Model",
+        "context": "Context",
+        "developer": "Developer",
+        "analyst": "Analyst",
+        "conversation": "Conversation",
+        "without": "Without",
+    }
+
+    words = name.split()
+    capitalized_words = []
+    for word in words:
+        lower_word = word.lower()
+        if lower_word in special_cases:
+            capitalized_words.append(special_cases[lower_word])
+        else:
+            capitalized_words.append(word.capitalize())
+
+    return " ".join(capitalized_words)
 
 
 def _gather_default_profiles():

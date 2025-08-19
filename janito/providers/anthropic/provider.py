@@ -22,11 +22,10 @@ class AnthropicProvider(LLMProvider):
         self.auth_manager = auth_manager or LLMAuthManager()
         self._api_key = self.auth_manager.get_credentials(type(self).NAME)
         if not self._api_key:
-            print(f"[ERROR] No API key found for provider '{self.name}'. Please set the API key using:")
-            print(f"  janito --set-api-key YOUR_API_KEY -p {self.name}")
-            print(f"Or set the ANTHROPIC_API_KEY environment variable.")
-            return
-        
+            from janito.llm.auth_utils import handle_missing_api_key
+
+            handle_missing_api_key(self.name, "ANTHROPIC_API_KEY")
+
         self._tools_adapter = get_local_tools_adapter()
         self._driver_config = config or LLMDriverConfig(model=None)
         if not getattr(self._driver_config, "model", None):

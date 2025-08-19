@@ -16,6 +16,16 @@ import openai
 
 
 class OpenAIModelDriver(LLMDriver):
+    # Check if required dependencies are available
+    try:
+        import openai
+
+        available = True
+        unavailable_reason = None
+    except ImportError as e:
+        available = False
+        unavailable_reason = f"Missing dependency: {str(e)}"
+
     def _get_message_from_result(self, result):
         """Extract the message object from the provider result (OpenAI-specific)."""
         if hasattr(result, "choices") and result.choices:
@@ -54,14 +64,20 @@ class OpenAIModelDriver(LLMDriver):
         if config.model:
             api_kwargs["model"] = config.model
         # Prefer max_completion_tokens if present, else fallback to max_tokens (for backward compatibility)
-        if (
-            hasattr(config, "max_completion_tokens")
-            and config.max_completion_tokens is not None
-        ):
-            api_kwargs["max_completion_tokens"] = int(config.max_completion_tokens)
+        # Skip max_completion_tokens for Mistral as their API doesn't support it
+        is_mistral = config.base_url and "mistral.ai" in str(config.base_url)
+        if not is_mistral:
+            if (
+                hasattr(config, "max_completion_tokens")
+                and config.max_completion_tokens is not None
+            ):
+                api_kwargs["max_completion_tokens"] = int(config.max_completion_tokens)
+            elif hasattr(config, "max_tokens") and config.max_tokens is not None:
+                # For models that do not support 'max_tokens', map to 'max_completion_tokens'
+                api_kwargs["max_completion_tokens"] = int(config.max_tokens)
         elif hasattr(config, "max_tokens") and config.max_tokens is not None:
-            # For models that do not support 'max_tokens', map to 'max_completion_tokens'
-            api_kwargs["max_completion_tokens"] = int(config.max_tokens)
+            # For Mistral, use max_tokens directly
+            api_kwargs["max_tokens"] = int(config.max_tokens)
         for p in (
             "temperature",
             "top_p",
@@ -248,11 +264,12 @@ class OpenAIModelDriver(LLMDriver):
     def _instantiate_openai_client(self, config):
         try:
             if not config.api_key:
-                provider_name = getattr(self, 'provider_name', 'OpenAI-compatible')
-                print(f"[ERROR] No API key found for provider '{provider_name}'. Please set the API key using:")
-                print(f"  janito --set-api-key YOUR_API_KEY -p {provider_name.lower()}")
-                print(f"Or set the {provider_name.upper()}_API_KEY environment variable.")
-                raise ValueError(f"API key is required for provider '{provider_name}'")
+                provider_name = getattr(self, "provider_name", "OpenAI-compatible")
+                from janito.llm.auth_utils import handle_missing_api_key
+
+                handle_missing_api_key(
+                    provider_name, f"{provider_name.upper()}_API_KEY"
+                )
 
             api_key_display = str(config.api_key)
             if api_key_display and len(api_key_display) > 8:

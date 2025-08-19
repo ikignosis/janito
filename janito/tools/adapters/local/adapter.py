@@ -1,5 +1,6 @@
 from typing import Type, Dict, Any
 from janito.tools.tools_adapter import ToolsAdapterBase as ToolsAdapter
+from janito.tools.tool_use_tracker import ToolUseTracker
 
 
 class LocalToolsAdapter(ToolsAdapter):
@@ -57,6 +58,9 @@ class LocalToolsAdapter(ToolsAdapter):
         # Normalise by changing the actual process working directory for
         # consistency with many file-system tools.
         os.chdir(self.workdir)
+
+        # Initialize tool tracker
+        self.tool_tracker = ToolUseTracker.instance()
 
         if tools:
             for tool in tools:
@@ -129,6 +133,39 @@ class LocalToolsAdapter(ToolsAdapter):
             if self.is_tool_allowed(entry["instance"])
             and not is_tool_disabled(entry["instance"].tool_name)
         ]
+
+    # ------------------------------------------------------------------
+    # Tool execution with error handling
+    # ------------------------------------------------------------------
+    def execute_tool(self, name: str, **kwargs):
+        """
+        Execute a tool with proper error handling.
+
+        This method extends the base execute_tool functionality by adding
+        error handling for RuntimeError exceptions that may be raised by
+        tools with loop protection decorators.
+
+        Args:
+            name: The name of the tool to execute
+            **kwargs: Arguments to pass to the tool
+
+        Returns:
+            The result of the tool execution
+
+        Raises:
+            ToolCallException: If tool execution fails for any reason
+            ValueError: If the tool is not found or not allowed
+        """
+        # First check if tool exists and is allowed
+        tool = self.get_tool(name)
+        if not tool:
+            raise ValueError(f"Tool '{name}' not found or not allowed.")
+
+        # Record tool usage
+        self.tool_tracker.record(name, kwargs)
+
+        # Execute the tool using execute_by_name which handles loop protection
+        return self.execute_by_name(name, arguments=kwargs)
 
     # ------------------------------------------------------------------
     # Convenience methods

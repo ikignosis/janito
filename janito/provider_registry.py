@@ -39,7 +39,17 @@ class ProviderRegistry:
             if len(info) == 4 and info[3]:
                 continue  # skip providers flagged as not implemented
             rows.append(info[:3])
-        rows.sort(key=self._maintainer_sort_key)
+
+        # Group providers by openness (open-source first, then proprietary)
+        open_providers = {"cerebras", "deepseek", "alibaba", "moonshot", "zai"}
+
+        def sort_key(row):
+            provider_name = row[0]
+            is_open = provider_name in open_providers
+            # Sort open providers alphabetically first, then proprietary alphabetically
+            return (not is_open, provider_name)
+
+        rows.sort(key=sort_key)
         return rows
 
     def _add_rows_to_table(self, table, rows):
@@ -91,21 +101,21 @@ class ProviderRegistry:
             model_specs = None
             if hasattr(model_info_mod, "MODEL_SPECS"):
                 model_specs = model_info_mod.MODEL_SPECS
-            elif hasattr(model_info_mod, "MOONSHOTAI_MODEL_SPECS"):
-                model_specs = model_info_mod.MOONSHOTAI_MODEL_SPECS
-            
+            elif hasattr(model_info_mod, "MOONSHOT_MODEL_SPECS"):
+                model_specs = model_info_mod.MOONSHOT_MODEL_SPECS
+
             if model_specs:
                 default_model = getattr(provider_class, "DEFAULT_MODEL", None)
                 model_names = []
-                
+
                 for model_key in model_specs.keys():
                     if model_key == default_model:
                         # Highlight the default model with color and star icon
                         model_names.append(f"[bold green]⭐ {model_key}[/bold green]")
                     else:
                         model_names.append(model_key)
-                
-                if provider_name == "moonshotai":
+
+                if provider_name == "moonshot":
                     return ", ".join(model_names)
                 return ", ".join(model_names)
             return "-"

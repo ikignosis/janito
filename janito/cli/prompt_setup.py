@@ -35,8 +35,10 @@ def setup_agent_and_prompt_handler(
     prompt handler that points to that agent.
     """
     no_tools_mode = False
-    if hasattr(args, 'no_tools_mode'):
-        no_tools_mode = getattr(args, 'no_tools_mode', False)
+    if hasattr(args, "no_tools_mode"):
+        no_tools_mode = getattr(args, "no_tools_mode", False)
+
+    zero_mode = getattr(args, "zero", False)
     agent = create_configured_agent(
         provider_instance=provider_instance,
         llm_driver_config=llm_driver_config,
@@ -46,6 +48,7 @@ def setup_agent_and_prompt_handler(
         allowed_permissions=allowed_permissions,
         profile=profile,
         profile_system_prompt=profile_system_prompt,
+        zero_mode=zero_mode,
         no_tools_mode=no_tools_mode,
     )
 

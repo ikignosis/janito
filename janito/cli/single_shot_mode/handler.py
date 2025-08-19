@@ -24,10 +24,12 @@ class PromptHandler:
         self.llm_driver_config = llm_driver_config
         self.role = role
         # Instantiate agent together with prompt handler using the shared helper
-        # Handle --python flag for single shot mode
+        # Handle --developer and --market flags for single shot mode
         profile = getattr(args, "profile", None)
-        if profile is None and getattr(args, "python", False):
+        if profile is None and getattr(args, "developer", False):
             profile = "Developer with Python Tools"
+        if profile is None and getattr(args, "market", False):
+            profile = "Market Analyst"
 
         self.agent, self.generic_handler = setup_agent_and_prompt_handler(
             args=args,

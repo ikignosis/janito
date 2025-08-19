@@ -9,6 +9,7 @@ from janito.platform_discovery import PlatformDiscovery
 from pathlib import Path
 from jinja2 import Template
 import importlib.resources
+import importlib.resources as resources
 import re
 
 
@@ -34,6 +35,7 @@ def _prepare_context(args, agent_role, allowed_permissions):
     context["role"] = agent_role or "developer"
     context["profile"] = getattr(args, "profile", None)
     context["allowed_permissions"] = allowed_permissions
+    context["emoji_enabled"] = getattr(args, "emoji", False)
     if allowed_permissions and "x" in allowed_permissions:
         pd = PlatformDiscovery()
         context["platform"] = pd.get_platform_name()
@@ -60,7 +62,18 @@ def _load_template(profile, templates_dir):
             ).open("r", encoding="utf-8") as file:
                 template_content = file.read()
         except (FileNotFoundError, ModuleNotFoundError, AttributeError):
-            return template_filename, None
+            # Also check user profiles directory
+            from pathlib import Path
+            import os
+
+            user_profiles_dir = Path(os.path.expanduser("~/.janito/profiles"))
+            user_template_path = user_profiles_dir / template_filename
+            if user_template_path.exists():
+                with open(user_template_path, "r", encoding="utf-8") as file:
+                    template_content = file.read()
+            else:
+                template_content = None
+            return template_filename, template_content
     return template_filename, template_content
 
 
@@ -105,6 +118,15 @@ def handle_show_system_prompt(args):
         Path(__file__).parent.parent.parent / "agent" / "templates" / "profiles"
     )
     profile = getattr(args, "profile", None)
+
+    # Handle --market flag mapping to Market Analyst profile
+    if profile is None and getattr(args, "market", False):
+        profile = "Market Analyst"
+
+    # Handle --developer flag mapping to Developer With Python Tools profile
+    if profile is None and getattr(args, "developer", False):
+        profile = "Developer With Python Tools"
+
     if not profile:
         print(
             "[janito] No profile specified. The main agent runs without a system prompt template.\n"
@@ -116,24 +138,28 @@ def handle_show_system_prompt(args):
     _print_debug_info(debug_flag, template_filename, allowed_permissions, context)
 
     if not template_content:
-        if profile:
-            raise FileNotFoundError(
-                f"[janito] Could not find profile-specific template '{template_filename}' in {templates_dir / template_filename} nor in janito.agent.templates.profiles package."
+        # Try to load directly from package resources as fallback
+        try:
+            template_content = (
+                resources.files("janito.agent.templates.profiles")
+                .joinpath(
+                    f"system_prompt_template_{profile.lower().replace(' ', '_')}.txt.j2"
+                )
+                .read_text(encoding="utf-8")
             )
-        else:
+        except (FileNotFoundError, ModuleNotFoundError, AttributeError):
             print(
-                f"[janito] Could not find {template_filename} in {templates_dir / template_filename} nor in janito.agent.templates.profiles package."
+                f"[janito] Could not find profile '{profile}'. This may be a configuration issue."
             )
-            print("No system prompt is set or resolved for this configuration.")
             return
 
     template = Template(template_content)
     system_prompt = template.render(**context)
     system_prompt = re.sub(r"\n{3,}", "\n\n", system_prompt)
 
-    print(
-        f"\n--- System Prompt (resolved, profile: {getattr(args, 'profile', 'main')}) ---\n"
-    )
+    # Use the actual profile name for display, not the resolved value
+    display_profile = profile or "main"
+    print(f"\n--- System Prompt (resolved, profile: {display_profile}) ---\n")
     print(system_prompt)
     print("\n-------------------------------\n")
     if agent_role:

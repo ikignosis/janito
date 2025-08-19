@@ -17,7 +17,9 @@ class AlibabaProvider(LLMProvider):
     NAME = "alibaba"
     MAINTAINER = "João Pinto <janito@ikignosis.org>"
     MODEL_SPECS = MODEL_SPECS
-    DEFAULT_MODEL = "qwen3-coder-plus"  # Options: qwen-turbo, qwen-plus, qwen-max, qwen3-coder-plus
+    DEFAULT_MODEL = (
+        "qwen3-235b-a22b-instruct-2507"  # 129k context, general-purpose model
+    )
 
     def __init__(
         self, auth_manager: LLMAuthManager = None, config: LLMDriverConfig = None
@@ -25,27 +27,29 @@ class AlibabaProvider(LLMProvider):
         # Always set a tools adapter so that even if the driver is unavailable,
         # generic code paths that expect provider.execute_tool() continue to work.
         self._tools_adapter = get_local_tools_adapter()
-        
+
         # Always initialize _driver_config to avoid AttributeError
         self._driver_config = config or LLMDriverConfig(model=None)
-        
+
         if not self.available:
             self._driver = None
         else:
             self.auth_manager = auth_manager or LLMAuthManager()
             self._api_key = self.auth_manager.get_credentials(type(self).NAME)
             if not self._api_key:
-                print(f"[ERROR] No API key found for provider '{self.name}'. Please set the API key using:")
-                print(f"  janito --set-api-key YOUR_API_KEY -p {self.name}")
-                print(f"Or set the ALIBABA_API_KEY environment variable.")
-            
+                from janito.llm.auth_utils import handle_missing_api_key
+
+                handle_missing_api_key(self.name, "ALIBABA_API_KEY")
+
             if not self._driver_config.model:
                 self._driver_config.model = self.DEFAULT_MODEL
             if not self._driver_config.api_key:
                 self._driver_config.api_key = self._api_key
             # Set Alibaba international endpoint as default base_url if not provided
             if not getattr(self._driver_config, "base_url", None):
-                self._driver_config.base_url = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+                self._driver_config.base_url = (
+                    "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+                )
             self.fill_missing_device_info(self._driver_config)
             self._driver = None  # to be provided by factory/agent
 

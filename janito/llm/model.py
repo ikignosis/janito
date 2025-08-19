@@ -10,6 +10,7 @@ class LLMModelInfo:
     max_cot: Any = "N/A"
     max_response: Any = "N/A"
     thinking_supported: Any = "N/A"
+    thinking: bool = False
     default_temp: float = 0.2
     open: Optional[Any] = None
     category: Optional[str] = None

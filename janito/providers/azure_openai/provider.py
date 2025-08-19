@@ -33,11 +33,10 @@ class AzureOpenAIProvider(LLMProvider):
         self._auth_manager = auth_manager or LLMAuthManager()
         self._api_key = self._auth_manager.get_credentials(type(self).NAME)
         if not self._api_key:
-            print(f"[ERROR] No API key found for provider '{self.name}'. Please set the API key using:")
-            print(f"  janito --set-api-key YOUR_API_KEY -p {self.name}")
-            print(f"Or set the AZURE_OPENAI_API_KEY environment variable.")
-            return
-        
+            from janito.llm.auth_utils import handle_missing_api_key
+
+            handle_missing_api_key(self.name, "AZURE_OPENAI_API_KEY")
+
         self._tools_adapter = get_local_tools_adapter()
         self._driver_config = config or LLMDriverConfig(model=None)
         if not self._driver_config.model:
@@ -83,7 +82,7 @@ class AzureOpenAIProvider(LLMProvider):
         If the model_name is not in MODEL_SPECS, return a generic info dict.
         """
         if model_name is None:
-            # Return all known specs, but note: only static ones are listed
+            # Return all known specs
             return {
                 name: model_info.to_dict()
                 for name, model_info in self.MODEL_SPECS.items()

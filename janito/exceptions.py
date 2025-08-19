@@ -9,7 +9,27 @@ class ToolCallException(Exception):
         self.error = error
         self.arguments = arguments
         self.original_exception = exception
-        super().__init__(f"ToolCallException: {tool_name}: {error}")
+
+        # Build detailed error message
+        details = []
+        details.append(f"ToolCallException: {tool_name}: {error}")
+
+        if arguments is not None:
+            details.append(f"Arguments received: {arguments}")
+            if isinstance(arguments, dict):
+                details.append("Parameters:")
+                for key, value in arguments.items():
+                    details.append(f"  {key}: {repr(value)} ({type(value).__name__})")
+            elif isinstance(arguments, (list, tuple)):
+                details.append(f"Positional arguments: {arguments}")
+                for i, value in enumerate(arguments):
+                    details.append(f"  [{i}]: {repr(value)} ({type(value).__name__})")
+            else:
+                details.append(
+                    f"Single argument: {repr(arguments)} ({type(arguments).__name__})"
+                )
+
+        super().__init__("\n".join(details))
 
 
 class MissingProviderSelectionException(Exception):

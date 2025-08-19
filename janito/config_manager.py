@@ -55,6 +55,26 @@ class ConfigManager:
             except Exception as e:
                 print(f"Warning: Failed to apply tool_permissions from config: {e}")
 
+        # Load plugins from config
+        plugins_config = self.file_config.get("plugins", {})
+        if plugins_config:
+            try:
+                from janito.plugins.manager import PluginManager
+
+                plugin_manager = PluginManager()
+                plugin_manager.load_plugins_from_config({"plugins": plugins_config})
+            except Exception as e:
+                print(f"Warning: Failed to load plugins from config: {e}")
+        else:
+            # Try loading from user config directory
+            try:
+                from janito.plugins.manager import PluginManager
+
+                plugin_manager = PluginManager()
+                plugin_manager.load_plugins_from_user_config()
+            except Exception as e:
+                print(f"Warning: Failed to load plugins from user config: {e}")
+
         # Load disabled tools from config - skip during startup to avoid circular imports
         # This will be handled by the CLI when needed
 

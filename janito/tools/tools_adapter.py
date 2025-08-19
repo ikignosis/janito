@@ -67,8 +67,6 @@ class ToolsAdapterBase:
     def add_tool(self, tool):
         self._tools.append(tool)
 
-
-
     def _validate_arguments_against_schema(self, arguments: dict, schema: dict):
         properties = schema.get("properties", {})
         required = schema.get("required", [])
@@ -131,9 +129,15 @@ class ToolsAdapterBase:
 
         if arguments is None:
             arguments = {}
-        # Ensure the input is a dict to avoid breaking the inspect-based logic
+        # If arguments are provided as a non-dict (e.g. a list or a scalar)
+        # we skip signature *keyword* validation completely and defer the
+        # decision to Python's own call mechanics when the function is
+        # eventually invoked.  This allows positional / variadic arguments to
+        # be supplied by callers that intentionally bypass the structured
+        # JSON-schema style interface.
         if not isinstance(arguments, dict):
-            return "Tool arguments should be provided as an object / mapping"
+            # Nothing to validate at this stage – treat as OK.
+            return None
 
         sig = inspect.signature(func)
         params = sig.parameters
@@ -145,7 +149,19 @@ class ToolsAdapterBase:
         if not accepts_kwargs:
             unexpected = [k for k in arguments.keys() if k not in params]
             if unexpected:
-                return "Unexpected argument(s): " + ", ".join(sorted(unexpected))
+                # Build detailed error message with received arguments
+                error_parts = [
+                    "Unexpected argument(s): " + ", ".join(sorted(unexpected))
+                ]
+                error_parts.append(
+                    "Valid parameters: " + ", ".join(sorted(params.keys()))
+                )
+                error_parts.append("Arguments received:")
+                for key, value in arguments.items():
+                    error_parts.append(
+                        f"  {key}: {repr(value)} ({type(value).__name__})"
+                    )
+                return "\n".join(error_parts)
 
         # Check for missing required arguments (ignoring *args / **kwargs / self)
         required_params = [
@@ -161,7 +177,21 @@ class ToolsAdapterBase:
         ]
         missing = [name for name in required_params if name not in arguments]
         if missing:
-            return "Missing required argument(s): " + ", ".join(sorted(missing))
+            # Build detailed error message with received arguments
+            error_parts = [
+                "Missing required argument(s): " + ", ".join(sorted(missing))
+            ]
+            error_parts.append("Arguments received:")
+            if isinstance(arguments, dict):
+                for key, value in arguments.items():
+                    error_parts.append(
+                        f"  {key}: {repr(value)} ({type(value).__name__})"
+                    )
+            elif arguments is not None:
+                error_parts.append(f"  {repr(arguments)} ({type(arguments).__name__})")
+            else:
+                error_parts.append("  None")
+            return "\n".join(error_parts)
 
         return None
 
@@ -193,30 +223,35 @@ class ToolsAdapterBase:
             )
 
             schema = getattr(tool, "schema", None)
-            try:
-                validate_paths_in_arguments(arguments, workdir, schema=schema)
-            except PathSecurityError as sec_err:
-                # Publish both a ToolCallError and a user-facing ReportEvent for path security errors
-                self._publish_tool_call_error(
-                    tool_name, request_id, str(sec_err), arguments
-                )
-                if self._event_bus:
-                    from janito.report_events import (
-                        ReportEvent,
-                        ReportSubtype,
-                        ReportAction,
+            # Only validate paths for dictionary-style arguments
+            if isinstance(arguments, dict):
+                try:
+                    validate_paths_in_arguments(arguments, workdir, schema=schema)
+                except PathSecurityError as sec_err:
+                    # Publish both a ToolCallError and a user-facing ReportEvent for path security errors
+                    self._publish_tool_call_error(
+                        tool_name, request_id, str(sec_err), arguments
                     )
-
-                    self._event_bus.publish(
-                        ReportEvent(
-                            subtype=ReportSubtype.ERROR,
-                            message=f"[SECURITY] Path access denied: {sec_err}",
-                            action=ReportAction.EXECUTE,
-                            tool=tool_name,
-                            context={"arguments": arguments, "request_id": request_id},
+                    if self._event_bus:
+                        from janito.report_events import (
+                            ReportEvent,
+                            ReportSubtype,
+                            ReportAction,
                         )
-                    )
-                return f"Security error: {sec_err}"
+
+                        self._event_bus.publish(
+                            ReportEvent(
+                                subtype=ReportSubtype.ERROR,
+                                message=f"[SECURITY] Path access denied: {sec_err}",
+                                action=ReportAction.EXECUTE,
+                                tool=tool_name,
+                                context={
+                                    "arguments": arguments,
+                                    "request_id": request_id,
+                                },
+                            )
+                        )
+                    return f"Security error: {sec_err}"
         # --- END SECURITY ---
 
         self._publish_tool_call_started(tool_name, request_id, arguments)
@@ -224,9 +259,27 @@ class ToolsAdapterBase:
             f"[tools-adapter] Executing tool: {tool_name} with arguments: {arguments}"
         )
         try:
-            result = self.execute(tool, **(arguments or {}), **kwargs)
+            # Normalize arguments to ensure proper type handling
+            normalized_args = self._normalize_arguments(arguments, tool, func)
+
+            if isinstance(normalized_args, (list, tuple)):
+                # Positional arguments supplied as an array → expand as *args
+                result = self.execute(tool, *normalized_args, **kwargs)
+            elif isinstance(normalized_args, dict) or normalized_args is None:
+                # Keyword-style arguments (the default) – pass as **kwargs
+                result = self.execute(tool, **(normalized_args or {}), **kwargs)
+            else:
+                # Single positional argument (scalar/str/int/…)
+                result = self.execute(tool, normalized_args, **kwargs)
         except Exception as e:
-            self._handle_execution_error(tool_name, request_id, e, arguments)
+            # Handle exception and return error message instead of raising
+            error_result = self._handle_execution_error(
+                tool_name, request_id, e, arguments
+            )
+            if error_result is not None:
+                return error_result
+            # If _handle_execution_error returns None, re-raise
+            raise
         self._print_verbose(
             f"[tools-adapter] Tool execution finished: {tool_name} -> {result}"
         )
@@ -281,6 +334,71 @@ class ToolsAdapterBase:
         if self.verbose_tools:
             print(message)
 
+    def _normalize_arguments(self, arguments, tool, func):
+        """
+        Normalize arguments to ensure proper type handling at the adapter level.
+
+        This handles cases where:
+        1. String is passed instead of list for array parameters
+        2. JSON string parsing issues
+        3. Other type mismatches that can be automatically resolved
+        """
+        import inspect
+        import json
+
+        # If arguments is already a dict or None, return as-is
+        if isinstance(arguments, dict) or arguments is None:
+            return arguments
+
+        # If arguments is a list/tuple, return as-is (positional args)
+        if isinstance(arguments, (list, tuple)):
+            return arguments
+
+        # Handle string arguments
+        if isinstance(arguments, str):
+            # Try to parse as JSON if it looks like JSON
+            stripped = arguments.strip()
+            if (stripped.startswith("{") and stripped.endswith("}")) or (
+                stripped.startswith("[") and stripped.endswith("]")
+            ):
+                try:
+                    parsed = json.loads(arguments)
+                    return parsed
+                except json.JSONDecodeError:
+                    # If it looks like JSON but failed, try to handle common issues
+                    pass
+
+            # Check if the function expects a list parameter
+            try:
+                sig = inspect.signature(func)
+                params = list(sig.parameters.values())
+
+                # Skip 'self' parameter for methods
+                if len(params) > 0 and params[0].name == "self":
+                    params = params[1:]
+
+                # If there's exactly one parameter that expects a list, wrap string in list
+                if len(params) == 1:
+                    param = params[0]
+                    annotation = param.annotation
+
+                    # Check if annotation is list[str] or similar
+                    if (
+                        hasattr(annotation, "__origin__")
+                        and annotation.__origin__ is list
+                    ):
+                        return [arguments]
+                    elif (
+                        str(annotation).startswith("list[") or str(annotation) == "list"
+                    ):
+                        return [arguments]
+
+            except (ValueError, TypeError):
+                pass
+
+        # Return original arguments for other cases
+        return arguments
+
     def execute_function_call_message_part(self, function_call_message_part):
         """
         Execute a FunctionCallMessagePart by extracting the tool name and arguments and dispatching to execute_by_name.
@@ -298,9 +416,23 @@ class ToolsAdapterBase:
         # Parse arguments if they are a JSON string
         if isinstance(arguments, str):
             try:
+                # Try to parse as JSON first
                 arguments = json.loads(arguments)
-            except Exception:
-                pass  # Leave as string if not JSON
+            except json.JSONDecodeError:
+                # Handle single quotes in JSON strings
+                try:
+                    # Replace single quotes with double quotes for JSON compatibility
+                    fixed_json = arguments.replace("'", '"')
+                    arguments = json.loads(fixed_json)
+                except (json.JSONDecodeError, ValueError):
+                    # If it's a string that looks like it might be a single path parameter,
+                    # try to handle it gracefully
+                    if arguments.startswith("{") and arguments.endswith("}"):
+                        # Looks like JSON but failed to parse - this is likely an error
+                        pass
+                    else:
+                        # Single string argument - let the normalization handle it
+                        pass
         if self.verbose_tools:
             print(
                 f"[tools-adapter] Executing FunctionCallMessagePart: tool={tool_name}, arguments={arguments}, tool_call_id={tool_call_id}"
@@ -328,6 +460,36 @@ class ToolsAdapterBase:
             raise ToolCallException(tool_name, error_msg, arguments=arguments)
 
     def _handle_execution_error(self, tool_name, request_id, exception, arguments):
+        # Check if this is a loop protection error that should trigger a new strategy
+        if isinstance(exception, RuntimeError) and "Loop protection:" in str(exception):
+            error_msg = str(exception)
+            if self._event_bus:
+                self._event_bus.publish(
+                    ToolCallError(
+                        tool_name=tool_name,
+                        request_id=request_id,
+                        error=error_msg,
+                        exception=exception,
+                        arguments=arguments,
+                    )
+                )
+            # Return the loop protection message as string to trigger new strategy
+            return f"Loop protection triggered - requesting new strategy: {error_msg}"
+
+        # Check if this is a string return from loop protection (new behavior)
+        if isinstance(exception, str) and "Loop protection:" in exception:
+            error_msg = str(exception)
+            if self._event_bus:
+                self._event_bus.publish(
+                    ToolCallError(
+                        tool_name=tool_name,
+                        request_id=request_id,
+                        error=error_msg,
+                        arguments=arguments,
+                    )
+                )
+            return f"Loop protection triggered - requesting new strategy: {error_msg}"
+
         error_msg = f"Exception during execution of tool '{tool_name}': {exception}"
         if self._event_bus:
             self._event_bus.publish(

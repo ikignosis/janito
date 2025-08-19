@@ -1,6 +1,7 @@
 from .base import ShellCmdHandler
 from .history_view import ViewShellHandler
 from .lang import LangShellHandler
+from .provider import ProviderCmdHandler
 
 from .prompt import PromptShellHandler, RoleShellHandler
 from .multi import MultiShellHandler
@@ -9,6 +10,7 @@ from .role import RoleCommandShellHandler
 from .session import HistoryShellHandler
 from .tools import ToolsShellHandler
 from .help import HelpShellHandler
+from .security_command import SecurityCommand
 from janito.cli.console import shared_console
 
 COMMAND_HANDLERS = {
@@ -41,6 +43,8 @@ COMMAND_HANDLERS = {
     "/model": ModelShellHandler,
     "/multi": MultiShellHandler,
     "/help": HelpShellHandler,
+    "/security": SecurityCommand,
+    "/provider": ProviderCmdHandler,
 }
 
 

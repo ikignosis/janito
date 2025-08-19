@@ -139,11 +139,12 @@ class RichTerminalReporter(EventHandlerBase):
         if not msg or not subtype:
             return
         if subtype == ReportSubtype.ACTION_INFO:
-            # Use orange for modification actions, cyan otherwise
+            # Use orange for all write/modification actions
             modification_actions = (
                 getattr(ReportAction, "UPDATE", None),
                 getattr(ReportAction, "WRITE", None),
                 getattr(ReportAction, "DELETE", None),
+                getattr(ReportAction, "CREATE", None),
             )
             style = (
                 "orange1"

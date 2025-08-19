@@ -8,7 +8,7 @@ Janito enforces path security for all file and directory arguments passed to too
 - This enforcement is automatic for all tools executed via the tools adapter if a `workdir` is set.
 
 ## Disabling Path Security
-You can disable this restriction using the `-u` or `--unrestricted-paths` CLI flag. **Disabling path security is dangerous and should only be done if you trust your prompt, tools, and environment.**
+You can disable this restriction using the `-u` or `--unrestricted` CLI flag. **Disabling path security is dangerous and should only be done if you trust your prompt, tools, and environment.**
 
 ```sh
 janito -u "Do something with C:/Windows/System32/hosts"

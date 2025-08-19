@@ -16,25 +16,30 @@ For a list of all built-in tools and their usage, see the [Tools Reference](../t
 ## Example: Creating a Tool
 
 ```python
-from janito.agent.tool_base import ToolBase
-from janito.agent.tool_registry import register_tool
+from janito.tools.tool_base import ToolBase, ToolPermissions
+from janito.tools.adapters.local.adapter import register_local_tool
 
-@register_tool
+@register_local_tool
 class MyTool(ToolBase):
-    name = "my_tool"
     """
     Processes a file a given number of times.
     """
+    permissions = ToolPermissions(read=True, write=True)
+    tool_name = "my_tool"
 
-    def run(self, filename: str, count: int) -> None:
+    def run(self, filename: str, count: int) -> str:
         """
         Processes the specified file repeatedly.
 
         Args:
             filename (str): The path to the file to process.
             count (int): How many times to process the file.
+
+        Returns:
+            str: Status message after processing.
         """
         # Implementation here
+        return f"Processed {filename} {count} times"
 ```
 
 ## Steps to Add a Tool
@@ -42,8 +47,9 @@ class MyTool(ToolBase):
 1. **Define your tool as a class** inheriting from `ToolBase`.
 2. **Add a class-level docstring** summarizing the tool's purpose (user-facing).
 3. **Implement the `run` method** with type hints and a Google-style docstring, including an `Args:` section for every parameter.
-4. **Register your tool** with `@register_tool` from `janito.agent.tool_registry`. Set a unique class attribute `name = "your_tool_name"`.
-5. **Document your tool:** Update `janito/agent/tools/README.md` with a short description and usage for your new tool.
+4. **Set permissions** using `permissions = ToolPermissions(read=True, write=True, execute=True)` as needed.
+5. **Register your tool** with `@register_local_tool` from `janito.tools.adapters.local.adapter`. Set a unique class attribute `tool_name = "your_tool_name"`.
+6. **Document your tool:** Update `docs/tools-index.md` with a short description and usage for your new tool.
 
 ## Docstring Style
 

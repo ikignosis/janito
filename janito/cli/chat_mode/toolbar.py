@@ -1,3 +1,4 @@
+import os
 from prompt_toolkit.formatted_text import HTML
 from janito.performance_collector import PerformanceCollector
 from janito.cli.config import config
@@ -17,7 +18,20 @@ def format_tokens(n, tag=None):
 
 
 def assemble_first_line(provider_name, model_name, role, agent=None):
-    return f" Janito {VERSION} | Provider: <provider>{provider_name}</provider> | Model: <model>{model_name}</model> | Role: <role>{role}</role>"
+    cwd = os.getcwd()
+    home = os.path.expanduser("~")
+
+    # Convert to relative path if under home directory
+    if cwd.startswith(home):
+        cwd_display = "~" + cwd[len(home) :]
+    else:
+        cwd_display = cwd
+
+    # Shorten long paths for display
+    if len(cwd_display) > 50:
+        cwd_display = "..." + cwd_display[-47:]
+
+    return f" Janito {VERSION} | Provider: <provider>{provider_name}</provider> | Model: <model>{model_name}</model> | Dir: <model>{cwd_display}</model>"
 
 
 def assemble_bindings_line(width, permissions=None):

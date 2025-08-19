@@ -2,7 +2,9 @@
 
 from janito.llm.driver_config import LLMDriverConfig
 from janito.provider_config import get_config_provider
-from janito.cli.core.model_guesser import guess_provider_from_model as _guess_provider_from_model
+from janito.cli.core.model_guesser import (
+    guess_provider_from_model as _guess_provider_from_model,
+)
 from janito.cli.verbose_output import print_verbose_info
 
 
@@ -22,10 +24,13 @@ def _choose_provider(args):
                 if guessed_provider:
                     if getattr(args, "verbose", False):
                         print_verbose_info(
-                            "Guessed provider", guessed_provider, style="magenta", align_content=True
+                            "Guessed provider",
+                            guessed_provider,
+                            style="magenta",
+                            align_content=True,
                         )
                     return guessed_provider
-            
+
             print(
                 "Error: No provider selected and no provider found in config. Please set a provider using '-p PROVIDER', '--set provider=name', or configure a provider."
             )
@@ -104,8 +109,8 @@ def prepare_llm_driver_config(args, modifiers):
     llm_driver_config = LLMDriverConfig(**driver_config_data)
     if getattr(llm_driver_config, "verbose_api", None):
         pass
-    # If both --role and --profile are provided, --role takes precedence for agent_role
-    agent_role = modifiers.get("role") or modifiers.get("profile") or "developer"
+
+    agent_role = modifiers.get("profile") or "developer"
     return provider, llm_driver_config, agent_role
 
 
@@ -144,13 +149,19 @@ def handle_runner(
 
     load_disabled_tools_from_config()
 
-    unrestricted_paths = getattr(args, "unrestricted_paths", False)
+    unrestricted = getattr(args, "unrestricted", False)
     adapter = janito.tools.get_local_tools_adapter(
         workdir=getattr(args, "workdir", None)
     )
-    if unrestricted_paths:
+    if unrestricted:
         # Patch: disable path security enforcement for this adapter instance
         setattr(adapter, "unrestricted_paths", True)
+
+        # Also disable URL whitelist restrictions in unrestricted mode
+        from janito.tools.url_whitelist import get_url_whitelist_manager
+
+        whitelist_manager = get_url_whitelist_manager()
+        whitelist_manager.set_unrestricted_mode(True)
 
     # Print allowed permissions in verbose mode
     if getattr(args, "verbose", False):
@@ -169,7 +180,23 @@ def handle_runner(
             "Active LLMDriverConfig (after provider)", llm_driver_config, style="green"
         )
         print_verbose_info("Agent role", agent_role, style="green")
-    if mode == "single_shot":
+
+    # Skip chat mode for list commands - handle them directly
+    from janito.cli.core.getters import GETTER_KEYS
+
+    skip_chat_mode = False
+    if args is not None:
+        for key in GETTER_KEYS:
+            if getattr(args, key, False):
+                skip_chat_mode = True
+                break
+
+    if skip_chat_mode:
+        # Handle list commands directly without prompt
+        from janito.cli.core.getters import handle_getter
+
+        handle_getter(args)
+    elif mode == "single_shot":
         from janito.cli.single_shot_mode.handler import (
             PromptHandler as SingleShotPromptHandler,
         )
