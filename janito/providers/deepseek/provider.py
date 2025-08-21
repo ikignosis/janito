@@ -17,7 +17,7 @@ class DeepSeekProvider(LLMProvider):
     NAME = "deepseek"
     MAINTAINER = "João Pinto <janito@ikignosis.org>"
     MODEL_SPECS = MODEL_SPECS
-    DEFAULT_MODEL = "deepseek-chat"  # Options: deepseek-chat, deepseek-reasoner
+    DEFAULT_MODEL = "deepseek-chat"  # Options: deepseek-chat, deepseek-reasoner, deepseek-v3.1, deepseek-v3.1-base, deepseek-r1
 
     def __init__(
         self, auth_manager: LLMAuthManager = None, config: LLMDriverConfig = None

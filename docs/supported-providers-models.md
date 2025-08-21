@@ -39,8 +39,11 @@ This page lists the supported providers and their available models, organized by
 
 ### DeepSeek
 
-- **DeepSeek Chat** (default) - General purpose chat model
-- **DeepSeek Reasoner** - Specialized for complex reasoning tasks
+- **DeepSeek Chat** (default) - General purpose chat model (8K context)
+- **DeepSeek Reasoner** - Specialized for complex reasoning tasks (8K context)
+- **DeepSeek V3.1** - Latest V3.1 model with 128K context window
+- **DeepSeek V3.1 Base** - Base V3.1 model with 128K context window
+- **DeepSeek R1** - R1 model with 128K context window (reasoning-focused)
 
 ### Mistral
 

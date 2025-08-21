@@ -17,7 +17,7 @@ Janito is a powerful AI assistant designed for developers, providing intelligent
 - **Terminal Integration**: Seamless shell integration with intelligent command assistance
 - **Code Intelligence**: Advanced code analysis and generation capabilities
 - **Extensible Tools**: Custom tool development and integration
-- **Multi-Provider Support**: Works with OpenAI, DeepSeek, Moonshot, and more
+- **Multi-Provider Support**: Works with OpenAI, DeepSeek (including V3.1 and R1), Moonshot, and more
 - **Human-Guided AI**: Collaborative AI that works with you, not instead of you
 
 ## Documentation Sections
