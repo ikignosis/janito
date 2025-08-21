@@ -45,7 +45,18 @@ def check_tool(tool):
             )
             sys.exit(1)
     else:
-        if shutil.which(tool) is None:
+        if tool == "twine":
+            # Special handling for twine which might be installed as a module
+            try:
+                subprocess.run(
+                    [sys.executable, "-m", "twine", "--version"],
+                    check=False,
+                    capture_output=True,
+                )
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                print_error(f"{tool} is not installed. Please install it first.")
+                sys.exit(1)
+        elif shutil.which(tool) is None:
             print_error(f"{tool} is not installed. Please install it first.")
             sys.exit(1)
 
