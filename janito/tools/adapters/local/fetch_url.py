@@ -291,7 +291,14 @@ class FetchUrlTool(ToolBase):
                 return error_message
             else:
                 status_code_str = str(status_code) if status_code else "Error"
-                description = status_descriptions.get(status_code, "Server Error" if status_code and status_code >= 500 else "Client Error")
+                description = status_descriptions.get(
+                    status_code,
+                    (
+                        "Server Error"
+                        if status_code and status_code >= 500
+                        else "Client Error"
+                    ),
+                )
                 self.report_error(
                     f"❗ HTTP {status_code_str} {description}",
                     ReportAction.READ,
