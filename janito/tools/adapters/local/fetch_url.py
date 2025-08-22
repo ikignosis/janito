@@ -271,50 +271,56 @@ class FetchUrlTool(ToolBase):
 
             if status_code and 400 <= status_code < 500:
                 description = status_descriptions.get(status_code, "Client Error")
-                error_message = tr(
-                    "HTTP Error {status_code} {description}",
-                    status_code=str(status_code),
-                    description=description,
-                )
+                error_message = f"HTTP {status_code} {description}"
                 # Cache 403 and 404 errors
                 if status_code in [403, 404]:
                     self._cache_error(url, status_code, error_message)
 
                 self.report_error(
-                    tr(
-                        "❗ HTTP Error {status_code} {description}",
-                        status_code=str(status_code),
-                        description=description,
-                    ),
+                    f"❗ HTTP {status_code} {description}",
+                    ReportAction.READ,
+                )
+                return error_message
+            elif status_code and 500 <= status_code < 600:
+                description = status_descriptions.get(status_code, "Server Error")
+                error_message = f"HTTP {status_code} {description}"
+                self.report_error(
+                    f"❗ HTTP {status_code} {description}",
                     ReportAction.READ,
                 )
                 return error_message
             else:
                 status_code_str = str(status_code) if status_code else "Error"
-                description = (
-                    status_descriptions.get(status_code, "Server Error")
-                    if status_code
-                    else "Error"
-                )
+                description = status_descriptions.get(status_code, "Server Error" if status_code and status_code >= 500 else "Client Error")
                 self.report_error(
-                    tr(
-                        "❗ HTTP Error {status_code} {description}",
-                        status_code=status_code_str,
-                        description=description,
-                    ),
+                    f"❗ HTTP {status_code_str} {description}",
                     ReportAction.READ,
                 )
-                return tr(
-                    "HTTP Error {status_code} {description}",
-                    status_code=status_code_str,
-                    description=description,
-                )
-        except Exception as err:
+                return f"HTTP {status_code_str} {description}"
+        except requests.exceptions.ConnectionError as conn_err:
             self.report_error(
-                tr("❗ Error"),
+                "❗ Network Error",
                 ReportAction.READ,
             )
-            return tr("Error")
+            return f"Network Error: Failed to connect to {url}"
+        except requests.exceptions.Timeout as timeout_err:
+            self.report_error(
+                "❗ Timeout Error",
+                ReportAction.READ,
+            )
+            return f"Timeout Error: Request timed out after {timeout} seconds"
+        except requests.exceptions.RequestException as req_err:
+            self.report_error(
+                "❗ Request Error",
+                ReportAction.READ,
+            )
+            return f"Request Error: {str(req_err)}"
+        except Exception as err:
+            self.report_error(
+                "❗ Error fetching URL",
+                ReportAction.READ,
+            )
+            return f"Error: {str(err)}"
 
     def _extract_and_clean_text(self, html_content: str) -> str:
         """Extract and clean text from HTML content."""
