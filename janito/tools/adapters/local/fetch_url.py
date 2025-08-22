@@ -246,11 +246,11 @@ class FetchUrlTool(ToolBase):
             return content
         except requests.exceptions.HTTPError as http_err:
             status_code = http_err.response.status_code if http_err.response else None
-            
+
             # Map status codes to descriptions
             status_descriptions = {
                 400: "Bad Request",
-                401: "Unauthorized", 
+                401: "Unauthorized",
                 403: "Forbidden",
                 404: "Not Found",
                 405: "Method Not Allowed",
@@ -266,14 +266,14 @@ class FetchUrlTool(ToolBase):
                 502: "Bad Gateway",
                 503: "Service Unavailable",
                 504: "Gateway Timeout",
-                505: "HTTP Version Not Supported"
+                505: "HTTP Version Not Supported",
             }
-            
+
             if status_code and 400 <= status_code < 500:
                 description = status_descriptions.get(status_code, "Client Error")
                 error_message = tr(
                     "HTTP Error {status_code} {description}",
-                    status_code=status_code,
+                    status_code=str(status_code),
                     description=description,
                 )
                 # Cache 403 and 404 errors
@@ -283,25 +283,30 @@ class FetchUrlTool(ToolBase):
                 self.report_error(
                     tr(
                         "❗ HTTP Error {status_code} {description}",
-                        status_code=status_code,
+                        status_code=str(status_code),
                         description=description,
                     ),
                     ReportAction.READ,
                 )
                 return error_message
             else:
-                description = status_descriptions.get(status_code, "Server Error") if status_code else "Error"
+                status_code_str = str(status_code) if status_code else "Error"
+                description = (
+                    status_descriptions.get(status_code, "Server Error")
+                    if status_code
+                    else "Error"
+                )
                 self.report_error(
                     tr(
                         "❗ HTTP Error {status_code} {description}",
-                        status_code=status_code or "Error",
+                        status_code=status_code_str,
                         description=description,
                     ),
                     ReportAction.READ,
                 )
                 return tr(
                     "HTTP Error {status_code} {description}",
-                    status_code=status_code or "Error",
+                    status_code=status_code_str,
                     description=description,
                 )
         except Exception as err:

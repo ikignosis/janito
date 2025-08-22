@@ -155,6 +155,32 @@ def _prepare_template_context(role, profile, allowed_permissions, args=None):
         getattr(args, "emoji", False) if "args" in locals() else False
     )
 
+    # Add current date/time with timezone using standard library
+    from datetime import datetime, timezone
+    import time
+
+    # Get local time with timezone info
+    local_time = datetime.now()
+
+    # Get timezone offset
+    if time.daylight:
+        offset = time.altzone
+    else:
+        offset = time.timezone
+
+    # Format offset as +HHMM or -HHMM
+    offset_hours = -offset // 3600
+    offset_minutes = abs(offset) % 3600 // 60
+    offset_str = f"{offset_hours:+03d}{offset_minutes:02d}"
+
+    # Get timezone name
+    tz_name = time.tzname[time.daylight and time.daylight or 0]
+
+    context["current_datetime"] = local_time.strftime(
+        f"%Y-%m-%d %H:%M:%S {tz_name}{offset_str}"
+    )
+    context["timezone"] = f"{tz_name} (UTC{offset_str})"
+
     return context
 
 

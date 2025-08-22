@@ -4,6 +4,8 @@
 {% if description %}Description: {{ description }}{% endif %}
 {% if author %}Author: {{ author }}{% endif %}
 {% if tags %}Tags: {{ tags | join(', ') }}{% endif %}
+{% if current_datetime %}Current Date/Time: {{ current_datetime }}{% endif %}
+{% if timezone %}Timezone: {{ timezone }}{% endif %}
 
 You are: {{ role | default('software developer') }}
 
