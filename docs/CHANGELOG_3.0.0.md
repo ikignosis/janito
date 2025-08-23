@@ -1,23 +1,4 @@
-# Changelog
-
-All notable changes to Janito will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [Unreleased]
-
-### Added
-
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
+# Changelog - Version 3.0.0
 
 ## [3.0.0] - 2025-08-23
 
@@ -58,6 +39,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Simplified initialization process** for new plugins
 - **Reduced configuration overhead** for plugin developers
 
+### Developer Experience
+
+#### Plugin Development
+- **Simplified plugin creation** with consistent patterns
+- **Clear plugin boundaries** and responsibilities
+- **Enhanced documentation** with comprehensive examples
+- **Reduced boilerplate** code for new plugins
+
+#### Migration Path
+- **Backward compatibility** maintained for existing plugins
+- **Smooth transition** from legacy plugin system
+- **Comprehensive documentation** for migration guidance
+
 ### Breaking Changes
 
 #### Plugin System
@@ -85,49 +79,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 3. **Test existing workflows** with new architecture
 
 ### Documentation Updates
+
+#### New Documentation
 - **Comprehensive plugin development guide** with updated patterns
 - **Migration documentation** for legacy plugin system
 - **Enhanced API reference** with new plugin interfaces
+- **Updated examples** demonstrating new architecture
 
-## [2.27.0] - 2025-08-22
+#### Updated Guides
+- **Plugin creation tutorials** with modern patterns
+- **Configuration documentation** reflecting new system
+- **Best practices** for plugin development
 
-### Removed
+### Performance Improvements
 
-- **Breaking Change**: Removed `--role` argument and interactive profile selection
-  - The `--role` argument has been completely removed from the CLI
-  - Interactive profile selection has been removed from chat mode
-  - Use `--profile <name>` or shorthand flags like `--developer` and `--market` instead
-  - Default behavior now uses the Developer profile when no profile is specified
+#### Startup Time
+- **Faster plugin discovery** through optimized loading
+- **Reduced initialization overhead** with consolidated modules
+- **Improved caching** for plugin metadata
 
-### Changed
+#### Memory Usage
+- **Reduced memory footprint** through code consolidation
+- **Eliminated duplicate implementations** across plugins
+- **Optimized plugin loading** with lazy initialization
 
-- Updated documentation to reflect removal of role argument
-- Added comprehensive profile documentation in `PROFILES.md`
-- Simplified profile selection to use explicit flags only
+### Security Enhancements
 
-## [Previous Versions]
+#### Plugin Isolation
+- **Improved plugin sandboxing** with clear boundaries
+- **Enhanced security validation** for plugin loading
+- **Reduced attack surface** through simplified architecture
 
-### Added
+### Future Roadmap
 
-- Initial support for profiles and roles
-- Interactive profile selection in chat mode
-- `--role` argument for specifying developer roles
-- `--profile` argument for system prompt templates
-- `--developer` and `--market` shorthand flags
+#### Plugin Ecosystem
+- **Community plugin repository** integration planned
+- **Plugin marketplace** development in progress
+- **Advanced plugin features** for complex workflows
 
-### Available Profiles
-
-- **Developer**: Optimized for software development tasks
-- **Market Analyst**: Specialized for market analysis and business insights
-
-### Supported Providers
-
-- Moonshot AI (default)
-- OpenAI
-- Anthropic
-- IBM WatsonX
-- Google AI
+#### Technical Enhancements
+- **Performance optimizations** for large plugin sets
+- **Advanced plugin configuration** options
+- **Plugin dependency management** improvements
 
 ---
 
-For detailed information about profiles and their usage, see [PROFILES.md](PROFILES.md).
+## Upgrade Notes
+
+### Before Upgrading
+1. **Backup existing configuration** files
+2. **Document current plugin setup** for reference
+3. **Test critical workflows** with current version
+
+### After Upgrading
+1. **Review new plugin documentation** for updated patterns
+2. **Update configuration files** to new format
+3. **Test all plugins** for compatibility
+4. **Report any issues** to development team
+
+### Support
+- **Migration assistance** available through GitHub issues
