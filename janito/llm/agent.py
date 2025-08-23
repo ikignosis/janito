@@ -318,23 +318,36 @@ class LLMAgent:
         loop_count = 1
         import threading
 
-        cancel_event = threading.Event()
-        while True:
-            self._print_verbose_chat_loop(loop_count)
-            driver_input = self._prepare_driver_input(config, cancel_event=cancel_event)
-            self.input_queue.put(driver_input)
-            try:
-                result, added_tool_results = self._process_next_response()
-            except KeyboardInterrupt:
-                cancel_event.set()
-                raise
-            if getattr(self, "verbose_agent", False):
-                print(
-                    f"[agent] [DEBUG] Returned from _process_next_response: result={result}, added_tool_results={added_tool_results}"
-                )
-            if self._should_exit_chat_loop(result, added_tool_results):
-                return result
-            loop_count += 1
+        # Use global cancellation manager
+        from janito.llm.cancellation_manager import get_cancellation_manager
+        cancel_manager = get_cancellation_manager()
+        driver_cancel_event = cancel_manager.start_new_request()
+        
+        # Store cancellation event on agent for external access
+        self.cancel_event = driver_cancel_event
+        
+        try:
+            while True:
+                self._print_verbose_chat_loop(loop_count)
+                driver_input = self._prepare_driver_input(config, cancel_event=driver_cancel_event)
+                self.input_queue.put(driver_input)
+                try:
+                    result, added_tool_results = self._process_next_response()
+                except KeyboardInterrupt:
+                    cancel_manager.cancel_current_request()
+                    raise
+                if getattr(self, "verbose_agent", False):
+                    print(
+                        f"[agent] [DEBUG] Returned from _process_next_response: result={result}, added_tool_results={added_tool_results}"
+                    )
+                if self._should_exit_chat_loop(result, added_tool_results):
+                    return result
+                loop_count += 1
+        finally:
+            cancel_manager.clear_current_request()
+            # Clean up cancellation event
+            if hasattr(self, 'cancel_event'):
+                delattr(self, 'cancel_event')
 
     def _clear_driver_queues(self):
         if hasattr(self, "driver") and self.driver:

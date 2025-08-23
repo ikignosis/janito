@@ -283,7 +283,13 @@ class ChatSession:
                 )
             )
 
-            self._prompt_handler.run_prompt(cmd_input)
+            try:
+                self._prompt_handler.run_prompt(cmd_input)
+            finally:
+                # Ensure cancellation manager is cleared
+                cancel_manager = get_cancellation_manager()
+                cancel_manager.clear_current_request()
+                
             end_time = time.time()
             elapsed = end_time - start_time
             self.msg_count += 1

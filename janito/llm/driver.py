@@ -252,3 +252,10 @@ class LLMDriver(ABC):
     def _get_message_from_result(self, result):
         """Extract the message object from the provider result. Subclasses must implement this."""
         raise NotImplementedError("Subclasses must implement _get_message_from_result.")
+
+    def cancel_current_request(self):
+        """Cancel the current request being processed."""
+        # Use global cancellation manager to cancel the current request
+        from janito.llm.cancellation_manager import get_cancellation_manager
+        cancel_manager = get_cancellation_manager()
+        cancel_manager.cancel_current_request()
