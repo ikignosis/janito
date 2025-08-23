@@ -39,26 +39,29 @@ class KeyBindingsFactory:
         def _(event):
             """Handle Enter key to interrupt current request."""
             import threading
-            
+
             # Get the current session context
             from prompt_toolkit.application import get_app
+
             app = get_app()
-            
+
             # Use global cancellation manager for robust cancellation
             from janito.llm.cancellation_manager import get_cancellation_manager
+
             cancel_manager = get_cancellation_manager()
-            
+
             cancelled = cancel_manager.cancel_current_request()
             if cancelled:
                 # Provide user feedback
                 from rich.console import Console
+
                 console = Console()
                 console.print("[red]Request cancelled by Enter key[/red]")
-                
+
                 # Prevent the Enter key from being processed as input
                 event.app.output.flush()
                 return
-            
+
             # If no active request to cancel, let normal Enter behavior proceed
 
         return bindings

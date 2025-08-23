@@ -6,16 +6,6 @@ from functools import wraps
 from typing import Type
 from janito.plugin_system.base import Plugin, PluginMetadata
 
-# Registry for core tools
-_core_tools_registry = []
-
-
-def register_core_tool(cls: Type):
-    """Decorator to register a core tool."""
-    _core_tools_registry.append(cls)
-    return cls
-
-
 from .ask_user import AskUser
 from .copy_file import CopyFile
 from .create_directory import CreateDirectory
@@ -43,6 +33,15 @@ from .validate_file_syntax.core import ValidateFileSyntax
 from .get_file_outline.core import GetFileOutline
 from .search_text.core import SearchText
 from .decorators import get_core_tools
+
+# Registry for core tools
+_core_tools_registry = []
+
+
+def register_core_tool(cls: Type):
+    """Decorator to register a core tool."""
+    _core_tools_registry.append(cls)
+    return cls
 
 
 class CoreToolsPlugin(Plugin):

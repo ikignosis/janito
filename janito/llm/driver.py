@@ -257,5 +257,6 @@ class LLMDriver(ABC):
         """Cancel the current request being processed."""
         # Use global cancellation manager to cancel the current request
         from janito.llm.cancellation_manager import get_cancellation_manager
+
         cancel_manager = get_cancellation_manager()
         cancel_manager.cancel_current_request()

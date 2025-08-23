@@ -10,7 +10,7 @@ translations = {
     "70a9ed8edb6da12e208431a31aa16ba54419b26f": "Risposta non valida/malformed da OpenAI (tentativo {attempt}/{max_retries}). Riprovo tra {wait_time} secondi...",
     "a873085e3b06184fb5d27e842f97b06b6190976d": "Numero massimo di tentativi per risposta non valida raggiunto. Generazione errore.",
     "66a34568bbe846bb1bde3619eb4d6dfa10211104": "L'API non supporta l'uso degli strumenti.",
-    "09b81476b75586da4116b83f8be70d77b174cec3": "Limite di richieste API OpenAI (429) (tentativo {attempt}/{max_retries}): {e}. Riprovo tra {wait_time} secondi...",
+    "09b81476b75586da4116b83f8be70d77b174cec3": "Limit di richieste API OpenAI (429) (tentativo {attempt}/{max_retries}): {e}. Riprovo tra {wait_time} secondi...",
     "5717a35dd2a1533fb7e15edc8c9329cb69f3410b": "Errore server API OpenAI (tentativo {attempt}/{max_retries}): {e}. Riprovo tra {wait_time} secondi...",
     "02e760ba15ed863176c1290ac8a9b923963103cd": "Errore client API OpenAI {status_code}: {e}. Nessun nuovo tentativo.",
     "2e52b0bbc8f16226b70e3e20f95c9245d2bcdb47": "Errore API OpenAI (tentativo {attempt}/{max_retries}): {e}. Riprovo tra {wait_time} secondi...",

@@ -320,16 +320,19 @@ class LLMAgent:
 
         # Use global cancellation manager
         from janito.llm.cancellation_manager import get_cancellation_manager
+
         cancel_manager = get_cancellation_manager()
         driver_cancel_event = cancel_manager.start_new_request()
-        
+
         # Store cancellation event on agent for external access
         self.cancel_event = driver_cancel_event
-        
+
         try:
             while True:
                 self._print_verbose_chat_loop(loop_count)
-                driver_input = self._prepare_driver_input(config, cancel_event=driver_cancel_event)
+                driver_input = self._prepare_driver_input(
+                    config, cancel_event=driver_cancel_event
+                )
                 self.input_queue.put(driver_input)
                 try:
                     result, added_tool_results = self._process_next_response()
@@ -346,8 +349,8 @@ class LLMAgent:
         finally:
             cancel_manager.clear_current_request()
             # Clean up cancellation event
-            if hasattr(self, 'cancel_event'):
-                delattr(self, 'cancel_event')
+            if hasattr(self, "cancel_event"):
+                delattr(self, "cancel_event")
 
     def _clear_driver_queues(self):
         if hasattr(self, "driver") and self.driver:

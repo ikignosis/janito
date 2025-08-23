@@ -207,12 +207,13 @@ class PromptHandler:
         """
         try:
             self._print_verbose_debug("Calling agent.chat()...")
-            
+
             # Use global cancellation manager
             from janito.llm.cancellation_manager import get_cancellation_manager
+
             cancel_manager = get_cancellation_manager()
             driver_cancel_event = cancel_manager.start_new_request()
-            
+
             try:
                 final_event = self.agent.chat(prompt=user_prompt)
                 if hasattr(self.agent, "set_latest_event"):
@@ -225,7 +226,7 @@ class PromptHandler:
                     global_event_bus.publish(final_event)
             finally:
                 cancel_manager.clear_current_request()
-                
+
         except KeyboardInterrupt:
             # Capture user interrupt / cancellation
             self.console.print("[red]Interrupted by the user.[/red]")
