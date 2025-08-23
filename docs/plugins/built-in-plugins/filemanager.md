@@ -74,7 +74,7 @@ Overwrite existing file (use with caution):
 - **Path Expansion**: Supports `~` for home directory and environment variables like `$HOME`
 - **Directory Creation**: Automatically creates parent directories as needed
 - **Encoding Safety**: Uses UTF-8 encoding with proper error handling for international characters
-- **Loop Protection**: Prevents excessive file creation calls (max 5 per 10 seconds per file)
+- **Loop Protection**: Prevents repeated create calls for the same path within a short window (1 allowed per 10 seconds)
 
 **Return Values:**
 

@@ -27,13 +27,13 @@ class CreateFileTool(ToolBase):
     Note: Syntax validation is automatically performed after this operation.
 
     Security: This tool includes loop protection to prevent excessive file creation operations.
-    Maximum 5 calls per 10 seconds for the same file path.
+    Protection: Prevents repeated create calls for the same file path within a short window (1 allowed per 10 seconds).
     """
 
     permissions = ToolPermissions(write=True)
     tool_name = "create_file"
 
-    @protect_against_loops(max_calls=5, time_window=10.0, key_field="path")
+    @protect_against_loops(max_calls=1, time_window=10.0, key_field="path")
     def run(self, path: str, content: str, overwrite: bool = False) -> str:
         path = expand_path(path)
         disp_path = display_path(path)

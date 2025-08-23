@@ -55,7 +55,7 @@ class CreateFile(ToolBase):
         or file exists (when overwrite=False).
 
     Security Features:
-        - Loop protection: Maximum 5 calls per 10 seconds for the same file path
+        - Loop protection: Prevents repeated create calls for the same file path within a short window (1 allowed per 10 seconds)
         - Path traversal prevention: Validates and sanitizes file paths
         - Permission checking: Respects file system permissions
         - Atomic writes: Prevents partial file creation on errors
@@ -84,7 +84,7 @@ class CreateFile(ToolBase):
     permissions = ToolPermissions(write=True)
     tool_name = "create_file"
 
-    @protect_against_loops(max_calls=5, time_window=10.0, key_field="path")
+    @protect_against_loops(max_calls=1, time_window=10.0, key_field="path")
     def run(self, path: str, content: str, overwrite: bool = False) -> str:
         path = expand_path(path)
         disp_path = display_path(path)
