@@ -22,6 +22,7 @@ import time
 
 # Shared prompt/agent factory
 from janito.cli.prompt_setup import setup_agent_and_prompt_handler
+from janito.llm.cancellation_manager import get_cancellation_manager
 
 import time
 
@@ -113,6 +114,10 @@ class ChatSession:
 
         # Check if multi-line mode should be enabled by default
         self.multi_line_mode = getattr(args, "multi", False) if args else False
+        
+        # Default to single-line mode (Enter submits) unless explicitly enabled
+        if not self.multi_line_mode:
+            self.multi_line_mode = False
 
     def _select_profile_and_role(self, args, role):
         profile, role_arg, python_profile, market_profile = self._extract_args(args)

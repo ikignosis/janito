@@ -10,3 +10,4 @@ import janito.providers.zai.provider
 import janito.providers.cerebras.provider
 import janito.providers.mistral.provider
 import janito.providers.ibm.provider
+import janito.providers.together.provider
