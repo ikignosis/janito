@@ -24,6 +24,7 @@ janito --web
 ## Basic Usage Tips
 - Use natural language to describe what you want Janito to do (e.g., "Add type hints to all functions in utils.py").
 - In the chat shell, use `/help` for available commands. Use `/exec on` to enable code/shell execution tools at runtime.
+- **Press Enter** at any time to cancel a long-running request in chat mode
 - Use CLI flags to customize behavior (see [CLI Options](../reference/cli-options.md)).
 
 ## More Resources

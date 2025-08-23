@@ -517,4 +517,37 @@ For users upgrading from previous versions:
 
 ---
 
+## [3.1.0] - 2025-08-23
+
+### Added
+
+- **Enter Key Cancellation Support for Chat Mode**: Revolutionary usability improvement for interactive chat sessions
+  - **Instant Request Cancellation**: Press **Enter key** at any time to immediately cancel current LLM operations
+  - **Global Cancellation Manager**: Robust cross-component cancellation system spanning agent, driver, and prompt handler
+  - **User Feedback**: Clear visual confirmation with red "Request cancelled by Enter key" message
+  - **Clean State Management**: Automatic cleanup of cancellation state after request completion
+  - **Thread-Safe Implementation**: Safe cancellation across multiple threads and async operations
+
+### Technical Implementation
+
+- **Global Cancellation Manager**: New `janito.llm.cancellation_manager` module provides centralized cancellation handling
+- **Key Binding Integration**: Enhanced chat mode with dedicated Enter key handling for cancellation
+- **Cross-Component Support**: Cancellation signals properly propagate through entire application stack
+- **Backward Compatible**: All existing functionality preserved, cancellation is additive feature
+
+### Developer Experience
+
+- **Extensible Architecture**: Cancellation system designed for future integration with other components
+- **Clean API**: Simple interface for starting, cancelling, and clearing requests across application
+- **Comprehensive Testing**: Full test coverage for cancellation scenarios and edge cases
+
+### Documentation
+
+- Updated CLI options documentation with new cancellation behavior
+- Enhanced chat mode guides with cancellation instructions
+- Added troubleshooting section for long-running requests
+- New dedicated changelog: [CHANGELOG_3.1.0.md](../changelogs/CHANGELOG_3.1.0.md)
+
+---
+
 **Full Changelog**: https://github.com/ikignosis/janito/compare/v2.22.0...v2.23.0
