@@ -7,7 +7,7 @@ with janito and available by default without requiring external installation.
 
 import importlib
 from typing import Dict, List, Optional, Type
-from janito.plugins.base import Plugin
+from janito.plugin_system.base import Plugin
 
 
 class BuiltinPluginRegistry:
@@ -83,6 +83,20 @@ try:
         "documentation_generator", DocumentationGeneratorPlugin
     )
 
+    # Register core tools plugin
+    from janito.plugins.tools import CoreToolsPlugin
+
+    BuiltinPluginRegistry.register("core_tools", CoreToolsPlugin)
+
 except ImportError:
     # janito-coder not available, skip registration
+    pass
+
+# Register core tools plugin (always available)
+try:
+    from janito.plugins.tools import CoreToolsPlugin
+
+    BuiltinPluginRegistry.register("core_tools", CoreToolsPlugin)
+except ImportError:
+    # Should not happen, but handle gracefully
     pass

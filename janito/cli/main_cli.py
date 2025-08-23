@@ -238,6 +238,13 @@ definition = [
             "help": "List all resources (tools, commands, config) from loaded plugins",
         },
     ),
+    (
+        ["--check-tools"],
+        {
+            "action": "store_true",
+            "help": "Check all registered tools for signature validation and availability",
+        },
+    ),
 ]
 
 MODIFIER_KEYS = [
@@ -269,18 +276,7 @@ GETTER_KEYS = [
     "region_info",
     "list_providers_region",
     "ping",
-]
-GETTER_KEYS = [
-    "show_config",
-    "list_providers",
-    "list_profiles",
-    "list_models",
-    "list_tools",
-    "list_config",
-    "list_drivers",
-    "region_info",
-    "list_providers_region",
-    "ping",
+    "check_tools",
 ]
 
 
@@ -406,6 +402,7 @@ class JanitoCLI:
             or self.args.list_plugins_available
             or self.args.list_resources
             or self.args.ping
+            or self.args.check_tools
         ):
             self._maybe_print_verbose_provider_model()
             handle_getter(self.args)

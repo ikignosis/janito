@@ -31,9 +31,9 @@ from pathlib import Path
 from typing import Optional, List
 import logging
 
-from .base import Plugin
+from janito.plugin_system.base import Plugin
 from .builtin import load_builtin_plugin, BuiltinPluginRegistry
-from .core_loader import load_core_plugin
+from janito.plugin_system.core_loader import load_core_plugin
 
 logger = logging.getLogger(__name__)
 
@@ -75,13 +75,13 @@ def discover_plugins(
         parts = plugin_name.split(".")
         if len(parts) == 2:
             package_name, submodule_name = parts
-            
+
             # Handle core plugins with dedicated loader
             if plugin_name.startswith(("core.", "dev.", "ui.", "web.")):
                 plugin = load_core_plugin(plugin_name)
                 if plugin:
                     return plugin
-                    
+
             for base_path in all_paths:
                 package_path = base_path / package_name / submodule_name / "__init__.py"
                 if package_path.exists():
@@ -157,7 +157,7 @@ def _load_plugin_from_file(
 
         # Check for package-based plugin with __plugin_name__ metadata
         if hasattr(module, "__plugin_name__"):
-            from janito.plugins.base import PluginMetadata
+            from janito.plugin_system.base import PluginMetadata
 
             # Create a dynamic plugin class
             class PackagePlugin(Plugin):

@@ -8,7 +8,11 @@ from janito.plugins.discovery import list_available_plugins
 import os
 from janito.plugins.manager import PluginManager
 from janito.plugins.builtin import BuiltinPluginRegistry
-from janito.plugins.auto_loader_fixed import load_core_plugins, get_loaded_core_plugins, is_core_plugin
+from janito.plugins.auto_loader_fixed import (
+    load_core_plugins,
+    get_loaded_core_plugins,
+    is_core_plugin,
+)
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
@@ -51,7 +55,8 @@ def _list_available_plugins():
         console.print(table)
 
         # Show core plugins
-        from janito.plugins.core_loader_fixed import get_core_plugins
+        from janito.plugin_system.core_loader_fixed import get_core_plugins
+
         core_plugins = get_core_plugins()
         core_table = Table(title="Core Plugins (Enabled by Default)")
         core_table.add_column("Plugin Name", style="cyan", no_wrap=True)
@@ -62,14 +67,16 @@ def _list_available_plugins():
 
         console.print(core_table)
     else:
-        console.print(Panel(
-            "No plugins found in search paths\n"
-            f"[dim]Search paths:[/dim]\n"
-            f"  • {os.getcwd()}/plugins\n"
-            f"  • {os.path.expanduser('~')}/.janito/plugins",
-            title="No Plugins Found",
-            style="yellow"
-        ))
+        console.print(
+            Panel(
+                "No plugins found in search paths\n"
+                f"[dim]Search paths:[/dim]\n"
+                f"  • {os.getcwd()}/plugins\n"
+                f"  • {os.path.expanduser('~')}/.janito/plugins",
+                title="No Plugins Found",
+                style="yellow",
+            )
+        )
 
 
 def _print_builtin_plugins(builtin_plugins):
@@ -92,7 +99,7 @@ def _print_external_plugins(available, builtin_plugins):
 def _list_plugin_resources():
     """List all resources from loaded plugins using rich formatting."""
     from janito.plugins.auto_loader_fixed import get_plugin_manager
-    
+
     console = Console()
     manager = get_plugin_manager()
     all_resources = manager.list_all_resources()
@@ -100,11 +107,11 @@ def _list_plugin_resources():
     if all_resources:
         for plugin_name, resources in all_resources.items():
             metadata = manager.get_plugin_metadata(plugin_name)
-            version = metadata.version if metadata else 'unknown'
-            
+            version = metadata.version if metadata else "unknown"
+
             # Create panel for each plugin
             panel_content = []
-            
+
             tools = [r for r in resources if r["type"] == "tool"]
             commands = [r for r in resources if r["type"] == "command"]
             configs = [r for r in resources if r["type"] == "config"]
@@ -122,19 +129,25 @@ def _list_plugin_resources():
             if configs:
                 panel_content.append("[bold yellow]Configuration:[/bold yellow]")
                 for config in configs:
-                    panel_content.append(f"  • {config['name']}: {config['description']}")
+                    panel_content.append(
+                        f"  • {config['name']}: {config['description']}"
+                    )
 
-            console.print(Panel(
-                "\n".join(panel_content),
-                title=f"{plugin_name} v{version}",
-                style="cyan"
-            ))
+            console.print(
+                Panel(
+                    "\n".join(panel_content),
+                    title=f"{plugin_name} v{version}",
+                    style="cyan",
+                )
+            )
     else:
-        console.print(Panel(
-            "No plugins are currently loaded.",
-            title="No Plugin Resources",
-            style="yellow"
-        ))
+        console.print(
+            Panel(
+                "No plugins are currently loaded.",
+                title="No Plugin Resources",
+                style="yellow",
+            )
+        )
 
 
 def _print_resources_by_type(resources):
@@ -162,7 +175,7 @@ def _print_resources_by_type(resources):
 def _list_loaded_plugins():
     """List loaded plugins using rich formatting."""
     from janito.plugins.auto_loader_fixed import get_plugin_manager
-    
+
     console = Console()
     manager = get_plugin_manager()
     loaded = manager.list_plugins()
@@ -177,42 +190,38 @@ def _list_loaded_plugins():
 
         core_plugins = []
         other_plugins = []
-        
+
         for plugin_name in loaded:
             if is_core_plugin(plugin_name):
                 core_plugins.append(plugin_name)
             else:
                 other_plugins.append(plugin_name)
-        
+
         # Add core plugins
         for plugin_name in core_plugins:
             metadata = manager.get_plugin_metadata(plugin_name)
             if metadata:
                 table.add_row(
-                    metadata.name,
-                    metadata.version,
-                    metadata.description,
-                    "🔵 Core"
+                    metadata.name, metadata.version, metadata.description, "🔵 Core"
                 )
-        
+
         # Add other plugins
         for plugin_name in other_plugins:
             metadata = manager.get_plugin_metadata(plugin_name)
             if metadata:
                 table.add_row(
-                    metadata.name,
-                    metadata.version,
-                    metadata.description,
-                    "🔶 External"
+                    metadata.name, metadata.version, metadata.description, "🔶 External"
                 )
 
         console.print(table)
     else:
-        console.print(Panel(
-            "No plugins are currently loaded.",
-            title="No Plugins Loaded",
-            style="yellow"
-        ))
+        console.print(
+            Panel(
+                "No plugins are currently loaded.",
+                title="No Plugins Loaded",
+                style="yellow",
+            )
+        )
 
 
 def _print_plugin_details(manager, plugin_name):

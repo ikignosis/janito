@@ -9,12 +9,12 @@ import os
 from pathlib import Path
 from typing import List
 from janito.plugins.manager import PluginManager
-from janito.plugins.core_loader_fixed import load_core_plugin, get_core_plugins
+from janito.plugin_system.core_loader_fixed import load_core_plugin, get_core_plugins
 
 # List of core plugins that should be enabled by default
 CORE_PLUGINS = [
     "core.filemanager",
-    "core.codeanalyzer", 
+    "core.codeanalyzer",
     "core.system",
     "core.imagedisplay",
     "dev.pythondev",
@@ -27,18 +27,18 @@ CORE_PLUGINS = [
 def load_core_plugins(pm: PluginManager = None) -> List[str]:
     """
     Load all core plugins.
-    
+
     Args:
         pm: PluginManager instance. If None, creates a new one.
-        
+
     Returns:
         List of successfully loaded plugin names
     """
     if pm is None:
         pm = PluginManager()
-    
+
     loaded = []
-    
+
     # Load core plugins
     for plugin_name in CORE_PLUGINS:
         try:
@@ -49,14 +49,14 @@ def load_core_plugins(pm: PluginManager = None) -> List[str]:
                 loaded.append(plugin_name)
         except Exception as e:
             print(f"Warning: Failed to load core plugin {plugin_name}: {e}")
-    
+
     return loaded
 
 
 def get_loaded_core_plugins() -> List[str]:
     """
     Get list of currently loaded core plugins.
-    
+
     Returns:
         List of loaded core plugin names
     """
@@ -68,10 +68,10 @@ def get_loaded_core_plugins() -> List[str]:
 def is_core_plugin(plugin_name: str) -> bool:
     """
     Check if a plugin is a core plugin.
-    
+
     Args:
         plugin_name: Name of the plugin to check
-        
+
     Returns:
         True if it's a core plugin
     """
@@ -80,6 +80,7 @@ def is_core_plugin(plugin_name: str) -> bool:
 
 # Auto-load core plugins when module is imported
 _plugin_manager = None
+
 
 def get_plugin_manager() -> PluginManager:
     """Get the global plugin manager with core plugins loaded."""

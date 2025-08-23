@@ -174,6 +174,7 @@ class ZAIModelDriver(LLMDriver):
         is_insufficient_quota = (
             "insufficient_quota" in lower_err
             or "exceeded your current quota" in lower_err
+            or "exceeded_current_quota_error" in lower_err
         )
         is_rate_limit = (
             status_code == 429
