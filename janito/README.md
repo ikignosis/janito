@@ -106,6 +106,9 @@ janito --set model=kimi-k1-8k
 
 ## Advanced Features
 
+### 🚀 New in v3.1.0: Enter Key Cancellation
+**Chat Mode Enhancement**: Press **Enter** at any time to instantly cancel long-running requests in interactive chat mode. No more waiting for stuck requests!
+
 ### Tool Usage
 
 Janito includes powerful built-in tools for:
