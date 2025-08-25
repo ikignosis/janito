@@ -2,7 +2,7 @@
 Example plugin demonstrating the plugin system.
 """
 
-from janito.plugin_system.base import Plugin, PluginMetadata, PluginResource
+from .base import Plugin, PluginMetadata, PluginResource
 from janito.tools.tool_base import ToolBase, ToolPermissions
 from typing import Dict, Any
 

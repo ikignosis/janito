@@ -15,6 +15,7 @@ class DeleteTextInFile(ToolBase):
         path (str): Path to the file to modify.
         start_marker (str): The starting delimiter string.
         end_marker (str): The ending delimiter string.
+        backup (bool, optional): Deprecated. No backups are created anymore and this flag is ignored. Defaults to False.
 
     Returns:
         str: Status message indicating the result.

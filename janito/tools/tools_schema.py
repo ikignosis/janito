@@ -7,6 +7,8 @@ class ToolSchemaBase:
     def parse_param_section(self, lines, param_section_headers):
         param_descs = {}
         in_params = False
+        current_param = None
+        
         for line in lines:
             stripped_line = line.strip()
             if any(
@@ -16,17 +18,21 @@ class ToolSchemaBase:
                 in_params = True
                 continue
             if in_params:
+                # Check for parameter definition: "param_name (type): description"
                 m = re.match(
-                    r"([a-zA-Z_][a-zA-Z0-9_]*)\s*(?:\(([^)]+)\))?\s*[:\-]?\s*(.+)",
+                    r"([a-zA-Z_][a-zA-Z0-9_]*)\s*(?:\([^)]+\))?\s*:\s*(.+)",
                     stripped_line,
                 )
                 if m:
-                    param, _, desc = m.groups()
+                    param, desc = m.groups()
                     param_descs[param] = desc.strip()
-                elif stripped_line and stripped_line[0] != "-":
-                    if param_descs:
-                        last = list(param_descs)[-1]
-                        param_descs[last] += " " + stripped_line
+                    current_param = param
+                elif current_param and stripped_line and not (
+                    stripped_line.lower().startswith("returns:") or 
+                    stripped_line.lower() == "returns"
+                ):
+                    # Continuation of current parameter description
+                    param_descs[current_param] += " " + stripped_line.strip()
             if (
                 stripped_line.lower().startswith("returns:")
                 or stripped_line.lower() == "returns"

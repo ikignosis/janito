@@ -4,7 +4,7 @@ Image Display Plugin implementation.
 
 from typing import Dict, Any, List, Type
 
-from janito.plugin_system.base import Plugin, PluginMetadata
+from ...base import Plugin, PluginMetadata
 from janito.tools.tool_base import ToolBase
 from .tools.show_image import ShowImageTool
 from .tools.show_image_grid import ShowImageGridTool

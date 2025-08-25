@@ -1,36 +1,28 @@
 """
-Plugin System for Development Tools
+Unified Plugin System for Janito
 
-This package organizes all available tools into logical plugin groups
-for easier discovery and usage.
+This package provides a clean, unified plugin architecture for janito.
 """
 
 __version__ = "1.0.0"
 __author__ = "Development Assistant"
 
-from .core import filemanager, codeanalyzer, system, imagedisplay
-from .web import webtools
-from .dev import pythondev, visualization
-from .ui import userinterface
+# Import core components
+from .base import Plugin, PluginMetadata, PluginResource
+from .manager import PluginManager
+from .discovery import discover_plugins, list_available_plugins
+from .config import load_plugins_config, save_plugins_config
+from .builtin import BuiltinPluginRegistry, load_builtin_plugin
 
-# Plugin registry
-PLUGINS = {
-    "core.filemanager": filemanager,
-    "core.codeanalyzer": codeanalyzer,
-    "core.system": system,
-    "core.imagedisplay": imagedisplay,
-    "web.webtools": webtools,
-    "dev.pythondev": pythondev,
-    "dev.visualization": visualization,
-    "ui.userinterface": userinterface,
-}
-
-
-def list_plugins():
-    """Return all available plugins"""
-    return list(PLUGINS.keys())
-
-
-def get_plugin(name):
-    """Get a specific plugin by name"""
-    return PLUGINS.get(name)
+__all__ = [
+    "Plugin",
+    "PluginMetadata", 
+    "PluginResource",
+    "PluginManager",
+    "discover_plugins",
+    "list_available_plugins",
+    "load_plugins_config",
+    "save_plugins_config",
+    "BuiltinPluginRegistry",
+    "load_builtin_plugin",
+]

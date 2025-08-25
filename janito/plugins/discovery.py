@@ -31,9 +31,9 @@ from pathlib import Path
 from typing import Optional, List
 import logging
 
-from janito.plugin_system.base import Plugin
+from .base import Plugin
 from .builtin import load_builtin_plugin, BuiltinPluginRegistry
-from janito.plugin_system.core_loader import load_core_plugin
+from .core_loader import load_core_plugin
 
 logger = logging.getLogger(__name__)
 
@@ -157,7 +157,7 @@ def _load_plugin_from_file(
 
         # Check for package-based plugin with __plugin_name__ metadata
         if hasattr(module, "__plugin_name__"):
-            from janito.plugin_system.base import PluginMetadata
+            from .base import PluginMetadata
 
             # Create a dynamic plugin class
             class PackagePlugin(Plugin):

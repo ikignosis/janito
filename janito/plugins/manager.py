@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any
 import logging
 
-from janito.plugin_system.base import Plugin, PluginMetadata
+from .base import Plugin, PluginMetadata
 from .discovery import discover_plugins
 from .config import load_plugins_config, get_user_plugins_dir
 from .builtin import BuiltinPluginRegistry, load_builtin_plugin

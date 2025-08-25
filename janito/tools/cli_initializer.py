@@ -17,7 +17,7 @@ def initialize_cli_tools():
     """Initialize tools for CLI usage, avoiding circular imports."""
     try:
         from janito.tools.adapters.local.adapter import LocalToolsAdapter
-        from janito.plugin_system.core_loader_fixed import load_core_plugin
+        from janito.plugins.core_loader import load_core_plugin
         from janito.tools.permissions import set_global_allowed_permissions
         from janito.tools.tool_base import ToolPermissions
 

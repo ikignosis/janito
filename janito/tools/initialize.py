@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-from janito.plugin_system.core_loader_fixed import load_core_plugin
+from janito.plugins.core_loader import load_core_plugin
 from janito.tools.adapters.local.adapter import LocalToolsAdapter
 
 

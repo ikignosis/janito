@@ -11,7 +11,7 @@ from pathlib import Path
 # Add the current directory to Python path
 sys.path.insert(0, os.getcwd())
 
-from janito.plugins.base import Plugin, PluginMetadata
+from janito.plugin_system.base import Plugin, PluginMetadata
 
 
 class CorePlugin(Plugin):

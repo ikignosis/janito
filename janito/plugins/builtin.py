@@ -7,7 +7,7 @@ with janito and available by default without requiring external installation.
 
 import importlib
 from typing import Dict, List, Optional, Type
-from janito.plugin_system.base import Plugin
+from .base import Plugin
 
 
 class BuiltinPluginRegistry:
