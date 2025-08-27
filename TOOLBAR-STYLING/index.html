@@ -79,6 +79,10 @@
       
     </div>
     
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
     
       
 
@@ -1609,28 +1613,25 @@
 </ul>
 <h2 id="defining-styles">Defining Styles</h2>
 <p>All style rules are set in <code>janito/cli/chat_mode/prompt_style.py</code>, for example:</p>
-<div class="codehilite"><pre><span></span><code><span class="n">chat_shell_style</span> <span class="o">=</span> <span class="n">Style</span><span class="o">.</span><span class="n">from_dict</span><span class="p">({</span>
-    <span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;fg:#e87c32 bold&#39;</span><span class="p">,</span>                <span class="c1"># For &lt;role&gt;...&lt;/role&gt;</span>
-    <span class="s1">&#39;provider&#39;</span><span class="p">:</span> <span class="s1">&#39;fg:#117fbf&#39;</span><span class="p">,</span>                 <span class="c1"># For &lt;provider&gt;...&lt;/provider&gt;</span>
-    <span class="s1">&#39;key-label&#39;</span><span class="p">:</span> <span class="s1">&#39;bg:#ff9500 fg:#232323 bold&#39;</span><span class="p">,</span><span class="c1"># For &lt;key-label&gt;...&lt;/key-label&gt;</span>
-    <span class="o">...</span>
-<span class="p">})</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">chat_shell_style</span> <span class="o">=</span> <span class="n">Style</span><span class="o">.</span><span class="n">from_dict</span><span class="p">({</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="s1">&#39;role&#39;</span><span class="p">:</span> <span class="s1">&#39;fg:#e87c32 bold&#39;</span><span class="p">,</span>                <span class="c1"># For &lt;role&gt;...&lt;/role&gt;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="s1">&#39;provider&#39;</span><span class="p">:</span> <span class="s1">&#39;fg:#117fbf&#39;</span><span class="p">,</span>                 <span class="c1"># For &lt;provider&gt;...&lt;/provider&gt;</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="s1">&#39;key-label&#39;</span><span class="p">:</span> <span class="s1">&#39;bg:#ff9500 fg:#232323 bold&#39;</span><span class="p">,</span><span class="c1"># For &lt;key-label&gt;...&lt;/key-label&gt;</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="o">...</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">})</span>
 </code></pre></div>
-
 <ul>
 <li>The key in <code>Style.from_dict</code> must match the tag name used in toolbar line strings.</li>
 <li>Example: <code>&lt;role&gt;user&lt;/role&gt;</code> will be rendered using the <code>'role'</code> style.</li>
 </ul>
 <h2 id="applying-styles-in-toolbar-output">Applying Styles in Toolbar Output</h2>
 <p>When building toolbar lines, use HTML-like tags named for your style, <strong>not CSS style tags or attributes</strong>:</p>
-<p><strong>Correct:</strong></p>
-<div class="codehilite"><pre><span></span><code><span class="sa">f</span><span class="s1">&#39;Press &lt;key-label&gt;F1&lt;/key-label&gt; for help | Role: &lt;role&gt;</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s1">&lt;/role&gt;&#39;</span>
-</code></pre></div>
-
-<p><strong>Incorrect (won't work):</strong></p>
-<div class="codehilite"><pre><span></span><code><span class="sa">f</span><span class="s1">&#39;&lt;style class=&quot;key-label&quot;&gt;F1&lt;/style&gt; | Role: &lt;role&gt;</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s1">&lt;/role&gt;&#39;</span>
-</code></pre></div>
-
+<p><strong>Correct:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="sa">f</span><span class="s1">&#39;Press &lt;key-label&gt;F1&lt;/key-label&gt; for help | Role: &lt;role&gt;</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s1">&lt;/role&gt;&#39;</span>
+</code></pre></div></p>
+<p><strong>Incorrect (won't work):</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="sa">f</span><span class="s1">&#39;&lt;style class=&quot;key-label&quot;&gt;F1&lt;/style&gt; | Role: &lt;role&gt;</span><span class="si">{</span><span class="n">role</span><span class="si">}</span><span class="s1">&lt;/role&gt;&#39;</span>
+</code></pre></div></p>
 <h2 id="supported-tag-mapping">Supported Tag Mapping</h2>
 <table>
 <thead>
@@ -1671,20 +1672,19 @@
 <h2 id="adding-or-changing-a-style">Adding or Changing a Style</h2>
 <ol>
 <li><strong>Define your style</strong> in <code>prompt_style.py</code>, for example:
-   <code>python
-   'custom': 'bg:#f7e01d fg:#222222'</code></li>
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="s1">&#39;custom&#39;</span><span class="p">:</span> <span class="s1">&#39;bg:#f7e01d fg:#222222&#39;</span>
+</code></pre></div></li>
 <li><strong>Mark up your toolbar string</strong> with <code>&lt;custom&gt;...&lt;/custom&gt;</code>.</li>
 <li><strong>Result:</strong> prompt_toolkit will apply your custom style to those segments.</li>
 </ol>
 <h2 id="example">Example</h2>
 <p>If you want a new binding to stand out in blue:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># In prompt_style.py:</span>
-<span class="s1">&#39;blue-label&#39;</span><span class="p">:</span> <span class="s1">&#39;bg:#2629d4 fg:#ffffff bold&#39;</span><span class="p">,</span>
-
-<span class="c1"># In toolbar.py:</span>
-<span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;... &lt;blue-label&gt;F5&lt;/blue-label&gt;: Extra ...&#39;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># In prompt_style.py:</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="s1">&#39;blue-label&#39;</span><span class="p">:</span> <span class="s1">&#39;bg:#2629d4 fg:#ffffff bold&#39;</span><span class="p">,</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># In toolbar.py:</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;... &lt;blue-label&gt;F5&lt;/blue-label&gt;: Extra ...&#39;</span>
 </code></pre></div>
-
 <hr />
 <p><strong>Troubleshooting:</strong>
 - If your style is not applied, check that the tag name in your string exactly matches a key in the style <code>from_dict</code>.
@@ -1720,8 +1720,23 @@
       <div class="md-copyright" style="text-align: center; width: 100%;">
   <div class="md-copyright__highlight" style="display: inline-block;">
     Generated by Janito • 
-    <span style="color: var(--md-accent-fg-color);">77d6a99</span>
+    <span style="color: var(--md-accent-fg-color);">a0ee65b</span>
   </div>
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/janito-ai/janito" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
 </div>
       
     </div>
@@ -1736,7 +1751,7 @@
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.f8cc74c7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": [], "search": "../assets/javascripts/workers/search.f8cc74c7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../assets/javascripts/bundle.c8b220af.min.js"></script>

@@ -79,6 +79,10 @@
       
     </div>
     
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
     
       
 
@@ -1682,125 +1686,118 @@
 <p>This guide explains how to test plugins in the Janito system. Comprehensive testing ensures that plugins work correctly and reliably in various scenarios.</p>
 <h2 id="test-structure">Test Structure</h2>
 <p>Tests should be organized in the <code>tests/</code> directory with a structure that mirrors the plugin organization:</p>
-<div class="codehilite"><pre><span></span><code>tests/
-└── plugins/
-    └── myplugin/
-        └── test_myplugin.py
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>tests/
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>└── plugins/
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    └── myplugin/
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>        └── test_myplugin.py
 </code></pre></div>
-
 <h2 id="basic-test-example">Basic Test Example</h2>
-<div class="codehilite"><pre><span></span><code><span class="c1"># tests/plugins/myplugin/test_myplugin.py</span>
-<span class="k">def</span> <span class="nf">test_hello_world_tool</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test the HelloWorldTool functionality.&quot;&quot;&quot;</span>
-    <span class="kn">from</span> <span class="nn">plugins.myplugin.tools.hello_world</span> <span class="kn">import</span> <span class="n">HelloWorldTool</span>
-
-    <span class="n">tool</span> <span class="o">=</span> <span class="n">HelloWorldTool</span><span class="p">()</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="n">tool</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Test&quot;</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="s2">&quot;Hello, Test!&quot;</span> <span class="ow">in</span> <span class="n">result</span>
-
-<span class="k">def</span> <span class="nf">test_hello_world_default_name</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test HelloWorldTool with default name.&quot;&quot;&quot;</span>
-    <span class="kn">from</span> <span class="nn">plugins.myplugin.tools.hello_world</span> <span class="kn">import</span> <span class="n">HelloWorldTool</span>
-
-    <span class="n">tool</span> <span class="o">=</span> <span class="n">HelloWorldTool</span><span class="p">()</span>
-    <span class="n">result</span> <span class="o">=</span> <span class="n">tool</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
-    <span class="k">assert</span> <span class="s2">&quot;Hello, World!&quot;</span> <span class="ow">in</span> <span class="n">result</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># tests/plugins/myplugin/test_myplugin.py</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="k">def</span> <span class="nf">test_hello_world_tool</span><span class="p">():</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Test the HelloWorldTool functionality.&quot;&quot;&quot;</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="kn">from</span> <span class="nn">plugins.myplugin.tools.hello_world</span> <span class="kn">import</span> <span class="n">HelloWorldTool</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">tool</span> <span class="o">=</span> <span class="n">HelloWorldTool</span><span class="p">()</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">tool</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Test&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="k">assert</span> <span class="s2">&quot;Hello, Test!&quot;</span> <span class="ow">in</span> <span class="n">result</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="k">def</span> <span class="nf">test_hello_world_default_name</span><span class="p">():</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Test HelloWorldTool with default name.&quot;&quot;&quot;</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="kn">from</span> <span class="nn">plugins.myplugin.tools.hello_world</span> <span class="kn">import</span> <span class="n">HelloWorldTool</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>    <span class="n">tool</span> <span class="o">=</span> <span class="n">HelloWorldTool</span><span class="p">()</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">tool</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    <span class="k">assert</span> <span class="s2">&quot;Hello, World!&quot;</span> <span class="ow">in</span> <span class="n">result</span>
 </code></pre></div>
-
 <h2 id="testing-plugin-metadata">Testing Plugin Metadata</h2>
-<div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">test_plugin_metadata</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that plugin metadata is correctly defined.&quot;&quot;&quot;</span>
-    <span class="kn">from</span> <span class="nn">plugins.myplugin.plugin</span> <span class="kn">import</span> <span class="n">MyPlugin</span>
-
-    <span class="n">plugin</span> <span class="o">=</span> <span class="n">MyPlugin</span><span class="p">()</span>
-    <span class="n">metadata</span> <span class="o">=</span> <span class="n">plugin</span><span class="o">.</span><span class="n">get_metadata</span><span class="p">()</span>
-
-    <span class="k">assert</span> <span class="n">metadata</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;myplugin&quot;</span>
-    <span class="k">assert</span> <span class="n">metadata</span><span class="o">.</span><span class="n">version</span> <span class="o">==</span> <span class="s2">&quot;1.0.0&quot;</span>
-    <span class="k">assert</span> <span class="s2">&quot;description&quot;</span> <span class="ow">in</span> <span class="n">metadata</span><span class="o">.</span><span class="n">description</span>
-    <span class="k">assert</span> <span class="s2">&quot;author&quot;</span> <span class="ow">in</span> <span class="n">metadata</span><span class="o">.</span><span class="n">author</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">def</span> <span class="nf">test_plugin_metadata</span><span class="p">():</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that plugin metadata is correctly defined.&quot;&quot;&quot;</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="kn">from</span> <span class="nn">plugins.myplugin.plugin</span> <span class="kn">import</span> <span class="n">MyPlugin</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">plugin</span> <span class="o">=</span> <span class="n">MyPlugin</span><span class="p">()</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="n">metadata</span> <span class="o">=</span> <span class="n">plugin</span><span class="o">.</span><span class="n">get_metadata</span><span class="p">()</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="k">assert</span> <span class="n">metadata</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;myplugin&quot;</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="k">assert</span> <span class="n">metadata</span><span class="o">.</span><span class="n">version</span> <span class="o">==</span> <span class="s2">&quot;1.0.0&quot;</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    <span class="k">assert</span> <span class="s2">&quot;description&quot;</span> <span class="ow">in</span> <span class="n">metadata</span><span class="o">.</span><span class="n">description</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    <span class="k">assert</span> <span class="s2">&quot;author&quot;</span> <span class="ow">in</span> <span class="n">metadata</span><span class="o">.</span><span class="n">author</span>
 </code></pre></div>
-
 <h2 id="testing-tool-permissions">Testing Tool Permissions</h2>
-<div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">test_tool_permissions</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that tool permissions are correctly set.&quot;&quot;&quot;</span>
-    <span class="kn">from</span> <span class="nn">plugins.myplugin.tools.hello_world</span> <span class="kn">import</span> <span class="n">HelloWorldTool</span>
-
-    <span class="n">tool</span> <span class="o">=</span> <span class="n">HelloWorldTool</span><span class="p">()</span>
-
-    <span class="c1"># Check that the tool has the expected permissions</span>
-    <span class="k">assert</span> <span class="n">tool</span><span class="o">.</span><span class="n">permissions</span><span class="o">.</span><span class="n">read</span> <span class="o">==</span> <span class="kc">True</span>
-    <span class="k">assert</span> <span class="n">tool</span><span class="o">.</span><span class="n">permissions</span><span class="o">.</span><span class="n">write</span> <span class="o">==</span> <span class="kc">False</span>
-    <span class="k">assert</span> <span class="n">tool</span><span class="o">.</span><span class="n">permissions</span><span class="o">.</span><span class="n">execute</span> <span class="o">==</span> <span class="kc">True</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">def</span> <span class="nf">test_tool_permissions</span><span class="p">():</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that tool permissions are correctly set.&quot;&quot;&quot;</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="kn">from</span> <span class="nn">plugins.myplugin.tools.hello_world</span> <span class="kn">import</span> <span class="n">HelloWorldTool</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="n">tool</span> <span class="o">=</span> <span class="n">HelloWorldTool</span><span class="p">()</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="c1"># Check that the tool has the expected permissions</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="k">assert</span> <span class="n">tool</span><span class="o">.</span><span class="n">permissions</span><span class="o">.</span><span class="n">read</span> <span class="o">==</span> <span class="kc">True</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="k">assert</span> <span class="n">tool</span><span class="o">.</span><span class="n">permissions</span><span class="o">.</span><span class="n">write</span> <span class="o">==</span> <span class="kc">False</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="k">assert</span> <span class="n">tool</span><span class="o">.</span><span class="n">permissions</span><span class="o">.</span><span class="n">execute</span> <span class="o">==</span> <span class="kc">True</span>
 </code></pre></div>
-
 <h2 id="testing-configuration">Testing Configuration</h2>
-<div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">test_plugin_config_schema</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that the plugin configuration schema is valid.&quot;&quot;&quot;</span>
-    <span class="kn">from</span> <span class="nn">plugins.myplugin.plugin</span> <span class="kn">import</span> <span class="n">MyPlugin</span>
-    <span class="kn">import</span> <span class="nn">jsonschema</span>
-
-    <span class="n">plugin</span> <span class="o">=</span> <span class="n">MyPlugin</span><span class="p">()</span>
-    <span class="n">schema</span> <span class="o">=</span> <span class="n">plugin</span><span class="o">.</span><span class="n">get_config_schema</span><span class="p">()</span>
-
-    <span class="c1"># Test that the schema is valid JSON Schema</span>
-    <span class="k">assert</span> <span class="s2">&quot;type&quot;</span> <span class="ow">in</span> <span class="n">schema</span>
-    <span class="k">assert</span> <span class="n">schema</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;object&quot;</span>
-
-    <span class="c1"># Test that required properties are defined</span>
-    <span class="k">if</span> <span class="s2">&quot;required&quot;</span> <span class="ow">in</span> <span class="n">schema</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">schema</span><span class="p">[</span><span class="s2">&quot;required&quot;</span><span class="p">]:</span>
-            <span class="k">assert</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">schema</span><span class="p">[</span><span class="s2">&quot;properties&quot;</span><span class="p">]</span>
-
-<span class="k">def</span> <span class="nf">test_config_validation</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test configuration validation.&quot;&quot;&quot;</span>
-    <span class="kn">from</span> <span class="nn">plugins.myplugin.plugin</span> <span class="kn">import</span> <span class="n">MyPlugin</span>
-
-    <span class="n">plugin</span> <span class="o">=</span> <span class="n">MyPlugin</span><span class="p">()</span>
-
-    <span class="c1"># Test valid configuration</span>
-    <span class="n">valid_config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;api_key&quot;</span><span class="p">:</span> <span class="s2">&quot;test1234567890&quot;</span><span class="p">}</span>
-    <span class="k">assert</span> <span class="n">plugin</span><span class="o">.</span><span class="n">validate_config</span><span class="p">(</span><span class="n">valid_config</span><span class="p">)</span> <span class="o">==</span> <span class="kc">True</span>
-
-    <span class="c1"># Test invalid configuration</span>
-    <span class="n">invalid_config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;wrong_key&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">}</span>
-    <span class="k">assert</span> <span class="n">plugin</span><span class="o">.</span><span class="n">validate_config</span><span class="p">(</span><span class="n">invalid_config</span><span class="p">)</span> <span class="o">==</span> <span class="kc">False</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">def</span> <span class="nf">test_plugin_config_schema</span><span class="p">():</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that the plugin configuration schema is valid.&quot;&quot;&quot;</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="kn">from</span> <span class="nn">plugins.myplugin.plugin</span> <span class="kn">import</span> <span class="n">MyPlugin</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="kn">import</span> <span class="nn">jsonschema</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="n">plugin</span> <span class="o">=</span> <span class="n">MyPlugin</span><span class="p">()</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    <span class="n">schema</span> <span class="o">=</span> <span class="n">plugin</span><span class="o">.</span><span class="n">get_config_schema</span><span class="p">()</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    <span class="c1"># Test that the schema is valid JSON Schema</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>    <span class="k">assert</span> <span class="s2">&quot;type&quot;</span> <span class="ow">in</span> <span class="n">schema</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>    <span class="k">assert</span> <span class="n">schema</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;object&quot;</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>    <span class="c1"># Test that required properties are defined</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>    <span class="k">if</span> <span class="s2">&quot;required&quot;</span> <span class="ow">in</span> <span class="n">schema</span><span class="p">:</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>        <span class="k">for</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">schema</span><span class="p">[</span><span class="s2">&quot;required&quot;</span><span class="p">]:</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>            <span class="k">assert</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">schema</span><span class="p">[</span><span class="s2">&quot;properties&quot;</span><span class="p">]</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="k">def</span> <span class="nf">test_config_validation</span><span class="p">():</span>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Test configuration validation.&quot;&quot;&quot;</span>
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>    <span class="kn">from</span> <span class="nn">plugins.myplugin.plugin</span> <span class="kn">import</span> <span class="n">MyPlugin</span>
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a>
+<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a>    <span class="n">plugin</span> <span class="o">=</span> <span class="n">MyPlugin</span><span class="p">()</span>
+<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a>
+<a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a>    <span class="c1"># Test valid configuration</span>
+<a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a>    <span class="n">valid_config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;api_key&quot;</span><span class="p">:</span> <span class="s2">&quot;test1234567890&quot;</span><span class="p">}</span>
+<a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a>    <span class="k">assert</span> <span class="n">plugin</span><span class="o">.</span><span class="n">validate_config</span><span class="p">(</span><span class="n">valid_config</span><span class="p">)</span> <span class="o">==</span> <span class="kc">True</span>
+<a id="__codelineno-4-27" name="__codelineno-4-27" href="#__codelineno-4-27"></a>
+<a id="__codelineno-4-28" name="__codelineno-4-28" href="#__codelineno-4-28"></a>    <span class="c1"># Test invalid configuration</span>
+<a id="__codelineno-4-29" name="__codelineno-4-29" href="#__codelineno-4-29"></a>    <span class="n">invalid_config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;wrong_key&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">}</span>
+<a id="__codelineno-4-30" name="__codelineno-4-30" href="#__codelineno-4-30"></a>    <span class="k">assert</span> <span class="n">plugin</span><span class="o">.</span><span class="n">validate_config</span><span class="p">(</span><span class="n">invalid_config</span><span class="p">)</span> <span class="o">==</span> <span class="kc">False</span>
 </code></pre></div>
-
 <h2 id="testing-commands">Testing Commands</h2>
-<div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">test_cli_commands</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that CLI commands are properly registered.&quot;&quot;&quot;</span>
-    <span class="kn">from</span> <span class="nn">plugins.myplugin.plugin</span> <span class="kn">import</span> <span class="n">MyPlugin</span>
-
-    <span class="n">plugin</span> <span class="o">=</span> <span class="n">MyPlugin</span><span class="p">()</span>
-    <span class="n">commands</span> <span class="o">=</span> <span class="n">plugin</span><span class="o">.</span><span class="n">get_commands</span><span class="p">()</span>
-
-    <span class="k">assert</span> <span class="s2">&quot;mycommand&quot;</span> <span class="ow">in</span> <span class="n">commands</span>
-    <span class="k">assert</span> <span class="nb">callable</span><span class="p">(</span><span class="n">commands</span><span class="p">[</span><span class="s2">&quot;mycommand&quot;</span><span class="p">])</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">def</span> <span class="nf">test_cli_commands</span><span class="p">():</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Test that CLI commands are properly registered.&quot;&quot;&quot;</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="kn">from</span> <span class="nn">plugins.myplugin.plugin</span> <span class="kn">import</span> <span class="n">MyPlugin</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="n">plugin</span> <span class="o">=</span> <span class="n">MyPlugin</span><span class="p">()</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="n">commands</span> <span class="o">=</span> <span class="n">plugin</span><span class="o">.</span><span class="n">get_commands</span><span class="p">()</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>    <span class="k">assert</span> <span class="s2">&quot;mycommand&quot;</span> <span class="ow">in</span> <span class="n">commands</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>    <span class="k">assert</span> <span class="nb">callable</span><span class="p">(</span><span class="n">commands</span><span class="p">[</span><span class="s2">&quot;mycommand&quot;</span><span class="p">])</span>
 </code></pre></div>
-
 <h2 id="integration-testing">Integration Testing</h2>
-<div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">test_plugin_integration</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test the complete plugin integration.&quot;&quot;&quot;</span>
-    <span class="kn">from</span> <span class="nn">janito.plugins.manager</span> <span class="kn">import</span> <span class="n">PluginManager</span>
-    <span class="kn">from</span> <span class="nn">janito.config</span> <span class="kn">import</span> <span class="n">Config</span>
-
-    <span class="c1"># Create a temporary config</span>
-    <span class="n">config</span> <span class="o">=</span> <span class="n">Config</span><span class="p">()</span>
-    <span class="n">config</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;plugins.load.myplugin&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
-
-    <span class="c1"># Initialize plugin manager</span>
-    <span class="n">manager</span> <span class="o">=</span> <span class="n">PluginManager</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
-    <span class="n">manager</span><span class="o">.</span><span class="n">load_plugins</span><span class="p">()</span>
-
-    <span class="c1"># Check that the plugin was loaded</span>
-    <span class="k">assert</span> <span class="s2">&quot;myplugin&quot;</span> <span class="ow">in</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_loaded_plugins</span><span class="p">()</span>
-
-    <span class="c1"># Check that tools are registered</span>
-    <span class="n">tools</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_all_tools</span><span class="p">()</span>
-    <span class="k">assert</span> <span class="s2">&quot;hello_world&quot;</span> <span class="ow">in</span> <span class="p">[</span><span class="n">tool</span><span class="o">.</span><span class="n">tool_name</span> <span class="k">for</span> <span class="n">tool</span> <span class="ow">in</span> <span class="n">tools</span><span class="p">]</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">def</span> <span class="nf">test_plugin_integration</span><span class="p">():</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Test the complete plugin integration.&quot;&quot;&quot;</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="kn">from</span> <span class="nn">janito.plugins.manager</span> <span class="kn">import</span> <span class="n">PluginManager</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="kn">from</span> <span class="nn">janito.config</span> <span class="kn">import</span> <span class="n">Config</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="c1"># Create a temporary config</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    <span class="n">config</span> <span class="o">=</span> <span class="n">Config</span><span class="p">()</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>    <span class="n">config</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s2">&quot;plugins.load.myplugin&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>    <span class="c1"># Initialize plugin manager</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>    <span class="n">manager</span> <span class="o">=</span> <span class="n">PluginManager</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>    <span class="n">manager</span><span class="o">.</span><span class="n">load_plugins</span><span class="p">()</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>    <span class="c1"># Check that the plugin was loaded</span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>    <span class="k">assert</span> <span class="s2">&quot;myplugin&quot;</span> <span class="ow">in</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_loaded_plugins</span><span class="p">()</span>
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>    <span class="c1"># Check that tools are registered</span>
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>    <span class="n">tools</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_all_tools</span><span class="p">()</span>
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>    <span class="k">assert</span> <span class="s2">&quot;hello_world&quot;</span> <span class="ow">in</span> <span class="p">[</span><span class="n">tool</span><span class="o">.</span><span class="n">tool_name</span> <span class="k">for</span> <span class="n">tool</span> <span class="ow">in</span> <span class="n">tools</span><span class="p">]</span>
 </code></pre></div>
-
 <h2 id="best-practices">Best Practices</h2>
 <h3 id="test-coverage">Test Coverage</h3>
 <ul>
@@ -1810,96 +1807,92 @@
 <li><strong>Performance</strong>: Test with large inputs and edge cases</li>
 </ul>
 <h3 id="mocking-external-dependencies">Mocking External Dependencies</h3>
-<div class="codehilite"><pre><span></span><code><span class="kn">from</span> <span class="nn">unittest.mock</span> <span class="kn">import</span> <span class="n">patch</span><span class="p">,</span> <span class="n">Mock</span>
-<span class="k">def</span> <span class="nf">test_weather_tool_with_mock</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test weather tool with mocked API call.&quot;&quot;&quot;</span>
-    <span class="kn">from</span> <span class="nn">plugins.weather.tools.weather</span> <span class="kn">import</span> <span class="n">WeatherTool</span>
-
-    <span class="c1"># Mock the requests.get method</span>
-    <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;requests.get&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_get</span><span class="p">:</span>
-        <span class="c1"># Configure the mock response</span>
-        <span class="n">mock_response</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
-        <span class="n">mock_response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">=</span> <span class="mi">200</span>
-        <span class="n">mock_response</span><span class="o">.</span><span class="n">json</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;main&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;temp&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">},</span>
-            <span class="s2">&quot;weather&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;clear sky&quot;</span><span class="p">}]</span>
-        <span class="p">}</span>
-        <span class="n">mock_get</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="n">mock_response</span>
-
-        <span class="c1"># Create and test the tool</span>
-        <span class="n">tool</span> <span class="o">=</span> <span class="n">WeatherTool</span><span class="p">()</span>
-        <span class="c1"># Set the API key (normally from config)</span>
-        <span class="n">tool</span><span class="o">.</span><span class="n">api_key</span> <span class="o">=</span> <span class="s2">&quot;test_key&quot;</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">tool</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s2">&quot;London&quot;</span><span class="p">)</span>
-
-        <span class="c1"># Verify the result</span>
-        <span class="k">assert</span> <span class="s2">&quot;20°C&quot;</span> <span class="ow">in</span> <span class="n">result</span>
-        <span class="k">assert</span> <span class="s2">&quot;clear sky&quot;</span> <span class="ow">in</span> <span class="n">result</span>
-
-        <span class="c1"># Verify the mock was called correctly</span>
-        <span class="n">mock_get</span><span class="o">.</span><span class="n">assert_called_once</span><span class="p">()</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span> <span class="nn">unittest.mock</span> <span class="kn">import</span> <span class="n">patch</span><span class="p">,</span> <span class="n">Mock</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="k">def</span> <span class="nf">test_weather_tool_with_mock</span><span class="p">():</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Test weather tool with mocked API call.&quot;&quot;&quot;</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    <span class="kn">from</span> <span class="nn">plugins.weather.tools.weather</span> <span class="kn">import</span> <span class="n">WeatherTool</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    <span class="c1"># Mock the requests.get method</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    <span class="k">with</span> <span class="n">patch</span><span class="p">(</span><span class="s1">&#39;requests.get&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mock_get</span><span class="p">:</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>        <span class="c1"># Configure the mock response</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>        <span class="n">mock_response</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>        <span class="n">mock_response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">=</span> <span class="mi">200</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>        <span class="n">mock_response</span><span class="o">.</span><span class="n">json</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>            <span class="s2">&quot;main&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;temp&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">},</span>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>            <span class="s2">&quot;weather&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;clear sky&quot;</span><span class="p">}]</span>
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>        <span class="p">}</span>
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>        <span class="n">mock_get</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="n">mock_response</span>
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>        <span class="c1"># Create and test the tool</span>
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>        <span class="n">tool</span> <span class="o">=</span> <span class="n">WeatherTool</span><span class="p">()</span>
+<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a>        <span class="c1"># Set the API key (normally from config)</span>
+<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a>        <span class="n">tool</span><span class="o">.</span><span class="n">api_key</span> <span class="o">=</span> <span class="s2">&quot;test_key&quot;</span>
+<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a>        <span class="n">result</span> <span class="o">=</span> <span class="n">tool</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s2">&quot;London&quot;</span><span class="p">)</span>
+<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a>
+<a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a>        <span class="c1"># Verify the result</span>
+<a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a>        <span class="k">assert</span> <span class="s2">&quot;20°C&quot;</span> <span class="ow">in</span> <span class="n">result</span>
+<a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a>        <span class="k">assert</span> <span class="s2">&quot;clear sky&quot;</span> <span class="ow">in</span> <span class="n">result</span>
+<a id="__codelineno-7-26" name="__codelineno-7-26" href="#__codelineno-7-26"></a>
+<a id="__codelineno-7-27" name="__codelineno-7-27" href="#__codelineno-7-27"></a>        <span class="c1"># Verify the mock was called correctly</span>
+<a id="__codelineno-7-28" name="__codelineno-7-28" href="#__codelineno-7-28"></a>        <span class="n">mock_get</span><span class="o">.</span><span class="n">assert_called_once</span><span class="p">()</span>
 </code></pre></div>
-
 <h3 id="testing-lifecycle-methods">Testing Lifecycle Methods</h3>
-<div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">test_plugin_lifecycle</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Test plugin initialization and cleanup.&quot;&quot;&quot;</span>
-    <span class="kn">from</span> <span class="nn">plugins.myplugin.plugin</span> <span class="kn">import</span> <span class="n">MyPlugin</span>
-
-    <span class="n">plugin</span> <span class="o">=</span> <span class="n">MyPlugin</span><span class="p">()</span>
-
-    <span class="c1"># Test initialization</span>
-    <span class="n">plugin</span><span class="o">.</span><span class="n">initialize</span><span class="p">()</span>
-    <span class="c1"># Add assertions for expected initialization behavior</span>
-
-    <span class="c1"># Test cleanup</span>
-    <span class="n">plugin</span><span class="o">.</span><span class="n">cleanup</span><span class="p">()</span>
-    <span class="c1"># Add assertions for expected cleanup behavior</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">def</span> <span class="nf">test_plugin_lifecycle</span><span class="p">():</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Test plugin initialization and cleanup.&quot;&quot;&quot;</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    <span class="kn">from</span> <span class="nn">plugins.myplugin.plugin</span> <span class="kn">import</span> <span class="n">MyPlugin</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>    <span class="n">plugin</span> <span class="o">=</span> <span class="n">MyPlugin</span><span class="p">()</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>    <span class="c1"># Test initialization</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>    <span class="n">plugin</span><span class="o">.</span><span class="n">initialize</span><span class="p">()</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>    <span class="c1"># Add assertions for expected initialization behavior</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>    <span class="c1"># Test cleanup</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>    <span class="n">plugin</span><span class="o">.</span><span class="n">cleanup</span><span class="p">()</span>
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>    <span class="c1"># Add assertions for expected cleanup behavior</span>
 </code></pre></div>
-
 <h2 id="running-tests">Running Tests</h2>
 <p>Run tests using pytest:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># Run all plugin tests</span>
-pytest<span class="w"> </span>tests/plugins/
-
-<span class="c1"># Run tests for a specific plugin</span>
-pytest<span class="w"> </span>tests/plugins/myplugin/
-
-<span class="c1"># Run with coverage report</span>
-pytest<span class="w"> </span>tests/plugins/<span class="w"> </span>--cov<span class="o">=</span>plugins<span class="w"> </span>--cov-report<span class="o">=</span>html
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1"># Run all plugin tests</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>pytest<span class="w"> </span>tests/plugins/
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="c1"># Run tests for a specific plugin</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>pytest<span class="w"> </span>tests/plugins/myplugin/
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="c1"># Run with coverage report</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>pytest<span class="w"> </span>tests/plugins/<span class="w"> </span>--cov<span class="o">=</span>plugins<span class="w"> </span>--cov-report<span class="o">=</span>html
 </code></pre></div>
-
 <h2 id="continuous-integration">Continuous Integration</h2>
 <p>Include plugin tests in your CI/CD pipeline:</p>
-<div class="codehilite"><pre><span></span><code><span class="c1"># .github/workflows/test.yml</span>
-<span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Test Plugins</span>
-
-<span class="nt">on</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">push</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">pull_request</span><span class="p p-Indicator">]</span>
-
-<span class="nt">jobs</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">test</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">runs-on</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ubuntu-latest</span>
-
-<span class="w">    </span><span class="nt">steps</span><span class="p">:</span>
-<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/checkout@v2</span>
-
-<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Set up Python</span>
-<span class="w">      </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/setup-python@v2</span>
-<span class="w">      </span><span class="nt">with</span><span class="p">:</span>
-<span class="w">        </span><span class="nt">python-version</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;3.12&#39;</span>
-
-<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Install dependencies</span>
-<span class="w">      </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
-<span class="w">        </span><span class="no">pip install -r requirements.txt</span>
-<span class="w">        </span><span class="no">pip install pytest pytest-cov</span>
-
-<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Run tests</span>
-<span class="w">      </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
-<span class="w">        </span><span class="no">pytest tests/plugins/ --cov=plugins --cov-report=xml</span>
-
-<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Upload coverage</span>
-<span class="w">      </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">codecov/codecov-action@v1</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># .github/workflows/test.yml</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Test Plugins</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="nt">on</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">push</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">pull_request</span><span class="p p-Indicator">]</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="nt">jobs</span><span class="p">:</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">  </span><span class="nt">test</span><span class="p">:</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="w">    </span><span class="nt">runs-on</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ubuntu-latest</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="w">    </span><span class="nt">steps</span><span class="p">:</span>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/checkout@v2</span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Set up Python</span>
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="w">      </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/setup-python@v2</span>
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="w">      </span><span class="nt">with</span><span class="p">:</span>
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a><span class="w">        </span><span class="nt">python-version</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;3.12&#39;</span>
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Install dependencies</span>
+<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a><span class="w">      </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a><span class="w">        </span><span class="no">pip install -r requirements.txt</span>
+<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a><span class="w">        </span><span class="no">pip install pytest pytest-cov</span>
+<a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a>
+<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Run tests</span>
+<a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a><span class="w">      </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a><span class="w">        </span><span class="no">pytest tests/plugins/ --cov=plugins --cov-report=xml</span>
+<a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a>
+<a id="__codelineno-10-27" name="__codelineno-10-27" href="#__codelineno-10-27"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Upload coverage</span>
+<a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a><span class="w">      </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">codecov/codecov-action@v1</span>
 </code></pre></div>
-
 <p>Comprehensive testing ensures that your plugins are reliable, secure, and maintainable.</p>
 
 
@@ -1930,8 +1923,23 @@ pytest<span class="w"> </span>tests/plugins/<span class="w"> </span>--cov<span c
       <div class="md-copyright" style="text-align: center; width: 100%;">
   <div class="md-copyright__highlight" style="display: inline-block;">
     Generated by Janito • 
-    <span style="color: var(--md-accent-fg-color);">77d6a99</span>
+    <span style="color: var(--md-accent-fg-color);">a0ee65b</span>
   </div>
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/janito-ai/janito" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
 </div>
       
     </div>
@@ -1946,7 +1954,7 @@ pytest<span class="w"> </span>tests/plugins/<span class="w"> </span>--cov<span c
     
     
       
-      <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.f8cc74c7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.f8cc74c7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.c8b220af.min.js"></script>

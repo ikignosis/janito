@@ -79,6 +79,10 @@
       
     </div>
     
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
     
       
 
@@ -1850,9 +1854,8 @@
 <h2 id="overview">Overview</h2>
 <p>The <code>/security</code> command provides a centralized way to manage security settings in chat mode. Currently, it supports managing allowed sites for the <code>fetch_url</code> tool, which is particularly useful for market analysts who should only access trusted financial data sources.</p>
 <h2 id="security-command-structure">Security Command Structure</h2>
-<div class="codehilite"><pre><span></span><code>/security &lt;subcommand&gt; [arguments...]
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>/security &lt;subcommand&gt; [arguments...]
 </code></pre></div>
-
 <h3 id="available-subcommands">Available Subcommands</h3>
 <ul>
 <li><code>allowed-sites</code> - Manage the URL whitelist for fetch_url tool</li>
@@ -1860,31 +1863,27 @@
 <h2 id="allowed-sites-management">Allowed Sites Management</h2>
 <p>The <code>/security allowed-sites</code> subcommand allows you to control which websites the <code>fetch_url</code> tool can access.</p>
 <h3 id="commands">Commands</h3>
-<div class="codehilite"><pre><span></span><code><span class="o">/</span><span class="nv">security</span><span class="w"> </span><span class="nv">allowed</span><span class="o">-</span><span class="nv">sites</span><span class="w"> </span><span class="nv">list</span><span class="w">                    </span>#<span class="w"> </span><span class="k">Show</span><span class="w"> </span><span class="nv">all</span><span class="w"> </span><span class="nv">allowed</span><span class="w"> </span><span class="nv">sites</span>
-<span class="o">/</span><span class="nv">security</span><span class="w"> </span><span class="nv">allowed</span><span class="o">-</span><span class="nv">sites</span><span class="w"> </span><span class="nv">add</span><span class="w"> </span><span class="o">&lt;</span><span class="nv">site</span><span class="o">&gt;</span><span class="w">             </span>#<span class="w"> </span><span class="nv">Add</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">site</span><span class="w"> </span><span class="nv">to</span><span class="w"> </span><span class="nv">whitelist</span>
-<span class="o">/</span><span class="nv">security</span><span class="w"> </span><span class="nv">allowed</span><span class="o">-</span><span class="nv">sites</span><span class="w"> </span><span class="nv">remove</span><span class="w"> </span><span class="o">&lt;</span><span class="nv">site</span><span class="o">&gt;</span><span class="w">          </span>#<span class="w"> </span><span class="nv">Remove</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">site</span><span class="w"> </span><span class="nv">from</span><span class="w"> </span><span class="nv">whitelist</span>
-<span class="o">/</span><span class="nv">security</span><span class="w"> </span><span class="nv">allowed</span><span class="o">-</span><span class="nv">sites</span><span class="w"> </span><span class="nv">clear</span><span class="w">                  </span>#<span class="w"> </span><span class="nv">Clear</span><span class="w"> </span><span class="nv">all</span><span class="w"> </span><span class="nv">restrictions</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>/security allowed-sites list                    # Show all allowed sites
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>/security allowed-sites add &lt;site&gt;             # Add a site to whitelist
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>/security allowed-sites remove &lt;site&gt;          # Remove a site from whitelist
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>/security allowed-sites clear                  # Clear all restrictions
 </code></pre></div>
-
 <h2 id="quick-start-for-market-analysts">Quick Start for Market Analysts</h2>
 <h3 id="step-1-configure-trusted-market-data-sources">Step 1: Configure Trusted Market Data Sources</h3>
-<div class="codehilite"><pre><span></span><code>/security allowed-sites add sec.gov
-/security allowed-sites add fred.stlouisfed.org
-/security allowed-sites add tradingview.com
-/security allowed-sites add investing.com
-/security allowed-sites add alphavantage.co
-/security allowed-sites add financialmodelingprep.com
-/security allowed-sites add twelvedata.com
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>/security allowed-sites add sec.gov
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>/security allowed-sites add fred.stlouisfed.org
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>/security allowed-sites add tradingview.com
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>/security allowed-sites add investing.com
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>/security allowed-sites add alphavantage.co
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>/security allowed-sites add financialmodelingprep.com
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>/security allowed-sites add twelvedata.com
 </code></pre></div>
-
 <h3 id="step-2-verify-configuration">Step 2: Verify Configuration</h3>
-<div class="codehilite"><pre><span></span><code>/security allowed-sites list
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>/security allowed-sites list
 </code></pre></div>
-
 <h3 id="step-3-test-with-market-analysis">Step 3: Test with Market Analysis</h3>
-<div class="codehilite"><pre><span></span><code>Fetch Apple&#39;s current stock price from tradingview.com
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Fetch Apple&#39;s current stock price from tradingview.com
 </code></pre></div>
-
 <h2 id="market-data-sources">Market Data Sources</h2>
 <h3 id="tier-1-government-official-sources">Tier 1: Government &amp; Official Sources</h3>
 <ul>
@@ -1905,35 +1904,32 @@
 </ul>
 <h2 id="usage-examples">Usage Examples</h2>
 <h3 id="adding-sites">Adding Sites</h3>
-<div class="codehilite"><pre><span></span><code># Add a single trusted source
-/security allowed-sites add sec.gov
-
-# Add multiple sources one by one
-/security allowed-sites add tradingview.com
-/security allowed-sites add investing.com
-/security allowed-sites add alphavantage.co
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a># Add a single trusted source
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>/security allowed-sites add sec.gov
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a># Add multiple sources one by one
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>/security allowed-sites add tradingview.com
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>/security allowed-sites add investing.com
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>/security allowed-sites add alphavantage.co
 </code></pre></div>
-
 <h3 id="removing-sites">Removing Sites</h3>
-<div class="codehilite"><pre><span></span><code># Remove a specific site
-/security allowed-sites remove yahoo.com
-
-# Verify removal
-/security allowed-sites list
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a># Remove a specific site
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>/security allowed-sites remove yahoo.com
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a># Verify removal
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>/security allowed-sites list
 </code></pre></div>
-
 <h3 id="managing-restrictions">Managing Restrictions</h3>
-<div class="codehilite"><pre><span></span><code># List current restrictions
-/security allowed-sites list
-
-# Temporarily allow all sites
-/security allowed-sites clear
-
-# Re-establish restrictions
-/security allowed-sites add sec.gov
-/security allowed-sites add tradingview.com
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a># List current restrictions
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>/security allowed-sites list
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a># Temporarily allow all sites
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>/security allowed-sites clear
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a># Re-establish restrictions
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>/security allowed-sites add sec.gov
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>/security allowed-sites add tradingview.com
 </code></pre></div>
-
 <h2 id="best-practices">Best Practices</h2>
 <h3 id="for-market-analysts">For Market Analysts</h3>
 <ol>
@@ -1951,75 +1947,68 @@
 </ol>
 <h2 id="configuration-persistence">Configuration Persistence</h2>
 <p>The whitelist configuration is stored in <code>~/.janito/url_whitelist.json</code> and persists across sessions:</p>
-<div class="codehilite"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;allowed_sites&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">    </span><span class="s2">&quot;sec.gov&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;fred.stlouisfed.org&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;tradingview.com&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="s2">&quot;investing.com&quot;</span>
-<span class="w">  </span><span class="p">]</span>
-<span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">&quot;allowed_sites&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="s2">&quot;sec.gov&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span><span class="s2">&quot;fred.stlouisfed.org&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">    </span><span class="s2">&quot;tradingview.com&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">    </span><span class="s2">&quot;investing.com&quot;</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">  </span><span class="p">]</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="p">}</span>
 </code></pre></div>
-
 <h2 id="integration-with-profiles">Integration with Profiles</h2>
 <p>When using the Market Analyst profile, you can pre-configure trusted sources:</p>
-<div class="codehilite"><pre><span></span><code>#<span class="w"> </span><span class="nv">Set</span><span class="w"> </span><span class="nv">up</span><span class="w"> </span><span class="nv">security</span><span class="w"> </span><span class="nv">before</span><span class="w"> </span><span class="nv">using</span><span class="w"> </span><span class="nv">market</span><span class="w"> </span><span class="nv">analyst</span>
-<span class="o">/</span><span class="nv">security</span><span class="w"> </span><span class="nv">allowed</span><span class="o">-</span><span class="nv">sites</span><span class="w"> </span><span class="nv">add</span><span class="w"> </span><span class="nv">sec</span>.<span class="nv">gov</span>
-<span class="o">/</span><span class="nv">security</span><span class="w"> </span><span class="nv">allowed</span><span class="o">-</span><span class="nv">sites</span><span class="w"> </span><span class="nv">add</span><span class="w"> </span><span class="nv">fred</span>.<span class="nv">stlouisfed</span>.<span class="nv">org</span>
-<span class="o">/</span><span class="nv">security</span><span class="w"> </span><span class="nv">allowed</span><span class="o">-</span><span class="nv">sites</span><span class="w"> </span><span class="nv">add</span><span class="w"> </span><span class="nv">tradingview</span>.<span class="nv">com</span>
-
-#<span class="w"> </span><span class="k">Then</span><span class="w"> </span><span class="nv">use</span><span class="w"> </span><span class="nv">market</span><span class="w"> </span><span class="nv">analyst</span><span class="w"> </span><span class="nv">profile</span>
-<span class="o">/</span><span class="nv">profile</span><span class="w"> </span><span class="nv">market</span><span class="o">-</span><span class="nv">analyst</span>
-<span class="nv">Analyze</span><span class="w"> </span><span class="nv">Apple</span><span class="err">&#39;s financial performance</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a># Set up security before using market analyst
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>/security allowed-sites add sec.gov
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>/security allowed-sites add fred.stlouisfed.org
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>/security allowed-sites add tradingview.com
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a># Then use market analyst profile
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>/profile market-analyst
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>Analyze Apple&#39;s financial performance
 </code></pre></div>
-
 <h2 id="troubleshooting">Troubleshooting</h2>
 <h3 id="common-issues">Common Issues</h3>
-<p><strong>Problem</strong>: <code>fetch_url</code> returns "URL blocked by whitelist"</p>
-<div class="codehilite"><pre><span></span><code># Check current whitelist
-/security allowed-sites list
-
-# Add the missing site
-/security allowed-sites add missing-site.com
-</code></pre></div>
-
-<p><strong>Problem</strong>: Need to allow subdomains</p>
-<div class="codehilite"><pre><span></span><code># The whitelist automatically includes subdomains
-# Adding &quot;tradingview.com&quot; also allows &quot;www.tradingview.com&quot;, &quot;api.tradingview.com&quot;, etc.
-</code></pre></div>
-
-<p><strong>Problem</strong>: Want to temporarily disable whitelist</p>
-<div class="codehilite"><pre><span></span><code># Clear all restrictions
-/security allowed-sites clear
-
-# Restore later by adding sites back
-/security allowed-sites add sec.gov
-/security allowed-sites add tradingview.com
-</code></pre></div>
-
+<p><strong>Problem</strong>: <code>fetch_url</code> returns "URL blocked by whitelist"
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a># Check current whitelist
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>/security allowed-sites list
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a># Add the missing site
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>/security allowed-sites add missing-site.com
+</code></pre></div></p>
+<p><strong>Problem</strong>: Need to allow subdomains
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a># The whitelist automatically includes subdomains
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a># Adding &quot;tradingview.com&quot; also allows &quot;www.tradingview.com&quot;, &quot;api.tradingview.com&quot;, etc.
+</code></pre></div></p>
+<p><strong>Problem</strong>: Want to temporarily disable whitelist
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a># Clear all restrictions
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>/security allowed-sites clear
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a># Restore later by adding sites back
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>/security allowed-sites add sec.gov
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>/security allowed-sites add tradingview.com
+</code></pre></div></p>
 <h2 id="advanced-usage">Advanced Usage</h2>
 <h3 id="batch-configuration">Batch Configuration</h3>
-<div class="codehilite"><pre><span></span><code># Configure comprehensive market sources
-/security allowed-sites add sec.gov
-/security allowed-sites add fred.stlouisfed.org
-/security allowed-sites add tradingview.com
-/security allowed-sites add investing.com
-/security allowed-sites add alphavantage.co
-/security allowed-sites add financialmodelingprep.com
-/security allowed-sites add twelvedata.com
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a># Configure comprehensive market sources
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>/security allowed-sites add sec.gov
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>/security allowed-sites add fred.stlouisfed.org
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>/security allowed-sites add tradingview.com
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>/security allowed-sites add investing.com
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>/security allowed-sites add alphavantage.co
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>/security allowed-sites add financialmodelingprep.com
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>/security allowed-sites add twelvedata.com
 </code></pre></div>
-
 <h3 id="team-configuration-sharing">Team Configuration Sharing</h3>
-<div class="codehilite"><pre><span></span><code>#<span class="w"> </span><span class="nv">Share</span><span class="w"> </span><span class="nv">configuration</span><span class="w"> </span><span class="nv">with</span><span class="w"> </span><span class="nv">team</span>
-<span class="o">/</span><span class="nv">security</span><span class="w"> </span><span class="nv">allowed</span><span class="o">-</span><span class="nv">sites</span><span class="w"> </span><span class="nv">list</span>
-#<span class="w"> </span><span class="nv">Copy</span><span class="w"> </span><span class="nv">the</span><span class="w"> </span><span class="nv">output</span><span class="w"> </span><span class="nv">and</span><span class="w"> </span><span class="nv">share</span><span class="w"> </span><span class="nv">with</span><span class="w"> </span><span class="nv">team</span><span class="w"> </span><span class="nv">members</span>
-
-#<span class="w"> </span><span class="nv">Team</span><span class="w"> </span><span class="nv">members</span><span class="w"> </span><span class="nv">can</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="nv">configure</span><span class="w"> </span><span class="nv">their</span><span class="w"> </span><span class="nv">instances</span>
-<span class="o">/</span><span class="nv">security</span><span class="w"> </span><span class="nv">allowed</span><span class="o">-</span><span class="nv">sites</span><span class="w"> </span><span class="nv">add</span><span class="w"> </span><span class="nv">sec</span>.<span class="nv">gov</span>
-<span class="o">/</span><span class="nv">security</span><span class="w"> </span><span class="nv">allowed</span><span class="o">-</span><span class="nv">sites</span><span class="w"> </span><span class="nv">add</span><span class="w"> </span><span class="nv">tradingview</span>.<span class="nv">com</span>
-#<span class="w"> </span>...<span class="w"> </span><span class="nv">etc</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a># Share configuration with team
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>/security allowed-sites list
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a># Copy the output and share with team members
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a># Team members can then configure their instances
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>/security allowed-sites add sec.gov
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>/security allowed-sites add tradingview.com
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a># ... etc
 </code></pre></div>
-
 <h2 id="related-documentation">Related Documentation</h2>
 <ul>
 <li><a href="../market-data-sources/">Market Data Sources Guide</a> - Comprehensive list of reliable sources</li>
@@ -2056,8 +2045,23 @@
       <div class="md-copyright" style="text-align: center; width: 100%;">
   <div class="md-copyright__highlight" style="display: inline-block;">
     Generated by Janito • 
-    <span style="color: var(--md-accent-fg-color);">77d6a99</span>
+    <span style="color: var(--md-accent-fg-color);">a0ee65b</span>
   </div>
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/janito-ai/janito" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
 </div>
       
     </div>
@@ -2072,7 +2076,7 @@
     
     
       
-      <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.f8cc74c7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.f8cc74c7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.c8b220af.min.js"></script>
