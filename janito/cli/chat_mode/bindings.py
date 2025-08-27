@@ -64,4 +64,28 @@ class KeyBindingsFactory:
 
             # If no active request to cancel, let normal Enter behavior proceed
 
+        @bindings.add("escape", eager=True)
+        def _(event):
+            """Handle ESC key to interrupt current request (like Ctrl+C)."""
+            import threading
+
+            # Use global cancellation manager for robust cancellation
+            from janito.llm.cancellation_manager import get_cancellation_manager
+
+            cancel_manager = get_cancellation_manager()
+
+            cancelled = cancel_manager.cancel_current_request()
+            if cancelled:
+                # Provide user feedback
+                from rich.console import Console
+
+                console = Console()
+                console.print("[red]Request cancelled by ESC key[/red]")
+
+                # Prevent the ESC key from being processed as input
+                event.app.output.flush()
+                return
+
+            # If no active request to cancel, ESC does nothing
+
         return bindings

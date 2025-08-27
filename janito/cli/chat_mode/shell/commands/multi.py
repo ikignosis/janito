@@ -23,6 +23,11 @@ class MultiShellHandler(ShellCmdHandler):
             submitted["value"] = buffer.text
             event.app.exit(result=buffer.text)
 
+        # Support single ESC to cancel/interrupt (like Ctrl+C)
+        @bindings.add("escape")
+        def _(event):
+            raise KeyboardInterrupt
+
         # Support Ctrl+D
         @bindings.add("c-d")
         def _(event):
