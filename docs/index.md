@@ -1,6 +1,10 @@
-# Janito.tv - AI-Powered Development Assistant
+# Janito Documentation
 
-Welcome to Janito.tv! This is the official documentation for Janito, a powerful AI assistant designed for developers, providing intelligent code assistance, terminal integration, and extensible tooling capabilities.
+Welcome to the Janito documentation! This site contains comprehensive guides, tutorials, and reference materials for using and extending Janito.
+
+## What is Janito?
+
+Janito is a powerful **Large Language Model Thin Client** - a lightweight command-line tool that connects to various AI providers (OpenAI, DeepSeek, Moonshot, IBM WatsonX, etc.) while providing intelligent code assistance, terminal integration, and extensible tooling capabilities.
 
 ## What is Janito?
 
@@ -65,4 +69,4 @@ Janito supports multiple AI providers:
 
 ---
 
-*This documentation is automatically deployed from the latest commit and will always reflect the most current version of Janito, available at [janito.xyz](https://janito.xyz).*
+*This documentation is automatically deployed from the latest commit and will always reflect the most current version of Janito.*
