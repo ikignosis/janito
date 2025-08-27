@@ -210,22 +210,49 @@ class PromptHandler:
 
             # Use global cancellation manager
             from janito.llm.cancellation_manager import get_cancellation_manager
+            import time
+            from threading import Thread, Event
 
             cancel_manager = get_cancellation_manager()
             driver_cancel_event = cancel_manager.start_new_request()
 
-            try:
-                final_event = self.agent.chat(prompt=user_prompt)
-                if hasattr(self.agent, "set_latest_event"):
-                    self.agent.set_latest_event(final_event)
-                self.agent.last_event = final_event
-                self._print_verbose_debug(f"agent.chat() returned: {final_event}")
-                self._print_verbose_final_event(final_event)
-                if on_event and final_event is not None:
-                    on_event(final_event)
-                    global_event_bus.publish(final_event)
-            finally:
-                cancel_manager.clear_current_request()
+            # Timer setup with live status display
+            start_time = time.time()
+            stop_timer = Event()
+            
+            # Create a status display with timer
+            from rich.live import Live
+            from rich.text import Text
+            
+            def get_timer_text():
+                elapsed = time.time() - start_time
+                minutes, seconds = divmod(int(elapsed), 60)
+                return Text(f"⏱️  Waiting for response... {minutes:02d}:{seconds:02d}", style="cyan")
+            
+            # Use Live display for updating timer
+            with Live(get_timer_text(), refresh_per_second=4, console=self.console) as live:
+                def update_timer():
+                    while not stop_timer.wait(0.25):  # Update every 250ms
+                        live.update(get_timer_text())
+                
+                timer_thread = Thread(target=update_timer, daemon=True)
+                timer_thread.start()
+
+                try:
+                    final_event = self.agent.chat(prompt=user_prompt)
+                    stop_timer.set()  # Stop the timer
+                    
+                    if hasattr(self.agent, "set_latest_event"):
+                        self.agent.set_latest_event(final_event)
+                    self.agent.last_event = final_event
+                    self._print_verbose_debug(f"agent.chat() returned: {final_event}")
+                    self._print_verbose_final_event(final_event)
+                    if on_event and final_event is not None:
+                        on_event(final_event)
+                        global_event_bus.publish(final_event)
+                finally:
+                    stop_timer.set()  # Ensure timer stops
+                    cancel_manager.clear_current_request()
 
         except KeyboardInterrupt:
             # Capture user interrupt / cancellation
