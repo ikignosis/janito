@@ -1,14 +1,15 @@
+---
+description: "Janito - AI-powered development assistant that helps you write, analyze, and debug code with precision and transparency. Get started with intelligent code generation, debugging, and development automation."
+image: https://janito.xyz/assets/images/social-preview.png
+---
+
 # Janito Documentation
 
 Welcome to the Janito documentation! This site contains comprehensive guides, tutorials, and reference materials for using and extending Janito.
 
 ## What is Janito?
 
-Janito is a powerful **Large Language Model Thin Client** - a lightweight command-line tool that connects to various AI providers (OpenAI, DeepSeek, Moonshot, IBM WatsonX, etc.) while providing intelligent code assistance, terminal integration, and extensible tooling capabilities.
-
-## What is Janito?
-
-Janito is a powerful AI assistant designed for developers, providing intelligent code assistance, terminal integration, and extensible tooling capabilities.
+Janito is a powerful **AI-powered development assistant** that helps you write, analyze, and debug code with precision and transparency. It connects to various AI providers (OpenAI, DeepSeek, Moonshot, IBM WatsonX, etc.) while providing intelligent code assistance, terminal integration, and extensible tooling capabilities.
 
 ## Quick Start
 
