@@ -8,7 +8,7 @@
       
       
       
-        <link rel="canonical" href="https://ikignosis.org/janito/changelogs/CHANGELOG/">
+        <link rel="canonical" href="https://janito.xyz/changelogs/CHANGELOG/">
       
       
       
@@ -186,7 +186,7 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/ikignosis/janito" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/janito-ai/janito" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
@@ -232,7 +232,7 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/ikignosis/janito" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/janito-ai/janito" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
@@ -2862,6 +2862,37 @@
 <li>Strengthened security and validation features</li>
 </ul>
 <hr />
+<h2 id="310-2025-08-23">[3.1.0] - 2025-08-23</h2>
+<h3 id="added_17">Added</h3>
+<ul>
+<li><strong>Enter Key Cancellation Support for Chat Mode</strong>: Revolutionary usability improvement for interactive chat sessions</li>
+<li><strong>Instant Request Cancellation</strong>: Press <strong>Enter key</strong> at any time to immediately cancel current LLM operations</li>
+<li><strong>Global Cancellation Manager</strong>: Robust cross-component cancellation system spanning agent, driver, and prompt handler</li>
+<li><strong>User Feedback</strong>: Clear visual confirmation with red "Request cancelled by Enter key" message</li>
+<li><strong>Clean State Management</strong>: Automatic cleanup of cancellation state after request completion</li>
+<li><strong>Thread-Safe Implementation</strong>: Safe cancellation across multiple threads and async operations</li>
+</ul>
+<h3 id="technical-implementation">Technical Implementation</h3>
+<ul>
+<li><strong>Global Cancellation Manager</strong>: New <code>janito.llm.cancellation_manager</code> module provides centralized cancellation handling</li>
+<li><strong>Key Binding Integration</strong>: Enhanced chat mode with dedicated Enter key handling for cancellation</li>
+<li><strong>Cross-Component Support</strong>: Cancellation signals properly propagate through entire application stack</li>
+<li><strong>Backward Compatible</strong>: All existing functionality preserved, cancellation is additive feature</li>
+</ul>
+<h3 id="developer-experience_3">Developer Experience</h3>
+<ul>
+<li><strong>Extensible Architecture</strong>: Cancellation system designed for future integration with other components</li>
+<li><strong>Clean API</strong>: Simple interface for starting, cancelling, and clearing requests across application</li>
+<li><strong>Comprehensive Testing</strong>: Full test coverage for cancellation scenarios and edge cases</li>
+</ul>
+<h3 id="documentation_2">Documentation</h3>
+<ul>
+<li>Updated CLI options documentation with new cancellation behavior</li>
+<li>Enhanced chat mode guides with cancellation instructions</li>
+<li>Added troubleshooting section for long-running requests</li>
+<li>New dedicated changelog: <a href="../CHANGELOG_3.1.0/">CHANGELOG_3.1.0.md</a></li>
+</ul>
+<hr />
 <p><strong>Full Changelog</strong>: https://github.com/ikignosis/janito/compare/v2.22.0...v2.23.0</p>
 
 
@@ -2892,7 +2923,7 @@
       <div class="md-copyright" style="text-align: center; width: 100%;">
   <div class="md-copyright__highlight" style="display: inline-block;">
     Generated by Janito • 
-    <span style="color: var(--md-accent-fg-color);">a1c7b0e</span>
+    <span style="color: var(--md-accent-fg-color);">034ee66</span>
   </div>
 </div>
       
