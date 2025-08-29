@@ -19,6 +19,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## [3.5.1] - 2025-08-29
+
+### Added
+
+- **Cancellation Support**: Added comprehensive cancellation support to system and Python execution tools
+  - **Real-time Cancellation**: Users can now cancel long-running bash commands, Python code execution, and Python file runs
+  - **Graceful Termination**: Clean cancellation handling with proper process cleanup
+  - **User Feedback**: Clear cancellation messages when operations are interrupted
+  - **Thread Safety**: Proper thread cleanup and resource management on cancellation
+
+### Fixed
+
+- **Terminal Output**: Removed styling from stdout/stderr output in rich terminal reporter
+  - **Cleaner Output**: Plain text output for better readability and copy-paste compatibility
+  - **Tool Integration**: Improved compatibility with external tools and scripts
+  - **Consistent Formatting**: Standardized output across all terminal environments
+
+### Technical Improvements
+
+- **Enhanced User Experience**: Cancellation support prevents hanging operations
+- **Code Quality**: Improved error handling and resource cleanup
+- **Process Management**: Better process lifecycle management for external commands
+- **Thread Safety**: Enhanced thread management for concurrent operations
+
 ## [3.5.0] - 2025-08-28
 
 ### Added
