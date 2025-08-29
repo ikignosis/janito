@@ -71,6 +71,9 @@ class RunPowershellCommandTool(ToolBase):
 
     def _stream_output(self, stream, file_obj, report_func, count_func, counter):
         for line in stream:
+            # Check for cancellation
+            if hasattr(self, '_cancel_event') and self._cancel_event.is_set():
+                break
             file_obj.write(line)
             file_obj.flush()
             report_func(line.rstrip("\r\n"), ReportAction.EXECUTE)
@@ -163,6 +166,11 @@ class RunPowershellCommandTool(ToolBase):
                     encoding="utf-8",
                 ) as stderr_file,
             ):
+                # Set up cancellation event
+                from janito.llm.cancellation_manager import get_cancellation_manager
+                cancel_manager = get_cancellation_manager()
+                self._cancel_event = cancel_manager.get_current_cancel_event()
+                
                 process = self._launch_process(shell_exe, command_with_encoding)
                 counter = {"stdout": 0, "stderr": 0}
                 stdout_thread = threading.Thread(
@@ -189,6 +197,14 @@ class RunPowershellCommandTool(ToolBase):
                 stderr_thread.start()
                 try:
                     return_code = process.wait(timeout=timeout)
+                    # Check if cancelled
+                    if self._cancel_event and self._cancel_event.is_set():
+                        process.kill()
+                        self.report_warning(
+                            tr("Command cancelled by user"),
+                            ReportAction.EXECUTE,
+                        )
+                        return tr("Command cancelled by user")
                 except subprocess.TimeoutExpired:
                     process.kill()
                     self.report_error(

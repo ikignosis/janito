@@ -92,6 +92,9 @@ class PythonCommandRun(ToolBase):
         def stream_output(stream, file_obj, report_func, count_func):
             nonlocal stdout_lines, stderr_lines
             for line in stream:
+                # Check for cancellation
+                if hasattr(self, '_cancel_event') and self._cancel_event.is_set():
+                    break
                 file_obj.write(line)
                 file_obj.flush()
                 from janito.tools.tool_base import ReportAction
@@ -102,6 +105,11 @@ class PythonCommandRun(ToolBase):
                 else:
                     stderr_lines += 1
 
+        # Set up cancellation event
+        from janito.llm.cancellation_manager import get_cancellation_manager
+        cancel_manager = get_cancellation_manager()
+        self._cancel_event = cancel_manager.get_current_cancel_event()
+        
         stdout_thread = threading.Thread(
             target=stream_output,
             args=(process.stdout, stdout_file, self.report_stdout, "stdout"),
@@ -112,8 +120,16 @@ class PythonCommandRun(ToolBase):
         )
         stdout_thread.start()
         stderr_thread.start()
-        stdout_thread.join()
-        stderr_thread.join()
+        
+        try:
+            stdout_thread.join()
+            stderr_thread.join()
+        except Exception as e:
+            # Handle cancellation
+            if self._cancel_event and self._cancel_event.is_set():
+                process.kill()
+                self.report_warning(tr("Code execution cancelled by user"), ReportAction.EXECUTE)
+            raise
         return stdout_lines, stderr_lines
 
     def _wait_for_process(self, process, timeout):

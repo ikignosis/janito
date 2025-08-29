@@ -30,7 +30,11 @@ class RunBashCommandTool(ToolBase):
     tool_name = "run_bash_command"
 
     def _stream_output(self, stream, file_obj, report_func, count_func, counter):
+        import threading
         for line in stream:
+            # Check for cancellation
+            if hasattr(self, '_cancel_event') and self._cancel_event.is_set():
+                break
             file_obj.write(line)
             file_obj.flush()
             report_func(line.rstrip("\r\n"), ReportAction.EXECUTE)
@@ -87,6 +91,11 @@ class RunBashCommandTool(ToolBase):
                     bufsize=1,
                     env=env,
                 )
+                # Set up cancellation event
+                from janito.llm.cancellation_manager import get_cancellation_manager
+                cancel_manager = get_cancellation_manager()
+                self._cancel_event = cancel_manager.get_current_cancel_event()
+                
                 counter = {"stdout": 0, "stderr": 0}
                 stdout_thread = threading.Thread(
                     target=self._stream_output,
@@ -112,6 +121,14 @@ class RunBashCommandTool(ToolBase):
                 stderr_thread.start()
                 try:
                     return_code = process.wait(timeout=timeout)
+                    # Check if cancelled
+                    if self._cancel_event and self._cancel_event.is_set():
+                        process.kill()
+                        self.report_warning(
+                            tr("Command cancelled by user"),
+                            ReportAction.EXECUTE,
+                        )
+                        return tr("Command cancelled by user")
                 except subprocess.TimeoutExpired:
                     process.kill()
                     self.report_error(
@@ -124,8 +141,12 @@ class RunBashCommandTool(ToolBase):
                     return tr(
                         "Command timed out after {timeout} seconds.", timeout=timeout
                     )
-                stdout_thread.join()
-                stderr_thread.join()
+                finally:
+                    # Ensure threads are stopped
+                    if self._cancel_event:
+                        self._cancel_event.set()
+                    stdout_thread.join(timeout=0.1)
+                    stderr_thread.join(timeout=0.1)
                 stdout_file.flush()
                 stderr_file.flush()
                 if not silent:
