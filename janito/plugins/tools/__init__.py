@@ -1,10 +1,39 @@
 """
-Core tools plugin for janito.
+Core tools package for janito.
 
-This plugin provides the essential tools for file operations, code execution,
-and system interactions that are core to janito's functionality.
+This package contains the essential tools for file operations, code execution,
+web scraping, and system interactions that are core to janito's functionality.
 """
 
-from .core_tools_plugin import CoreToolsPlugin
+from .core import *
 
-__all__ = ["CoreToolsPlugin"]
+__all__ = [
+    'FetchUrl',
+    'AskUser',
+    'CopyFile',
+    'CreateDirectory',
+    'CreateFile',
+    'DeleteTextInFile',
+    'FindFiles',
+    'MoveFile',
+    'OpenHtmlInBrowser',
+    'OpenUrl',
+    'PythonCodeRun',
+    'PythonCommandRun',
+    'PythonFileRun',
+    'ReadChart',
+    'ReadFiles',
+    'RemoveDirectory',
+    'RemoveFile',
+    'ReplaceTextInFile',
+    'RunBashCommand',
+    'RunPowershellCommand',
+    'ShowImage',
+    'ShowImageGrid',
+    'ViewFile',
+    'ValidateFileSyntax',
+    'GetFileOutline',
+    'SearchText',
+    'get_core_tools',
+    'register_core_tool',
+]
