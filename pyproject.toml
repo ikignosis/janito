@@ -27,8 +27,9 @@ where = ["."]
 include = ["janito*"]
 
 [tool.setuptools.package-data]
-# Ensure prompt templates are included in the wheel
+# Ensure prompt templates and data files are included in the wheel
 "janito.agent.templates.profiles" = ["*.j2"]
+"janito.data" = ["*.txt"]
 
 [project.scripts]
 janito = "janito.__main__:main"
