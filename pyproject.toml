@@ -17,7 +17,6 @@ dependencies = { file = ["requirements.txt"] }
 
 [tool.setuptools.dynamic.optional-dependencies]
 dev = { file = ["requirements-dev.txt"] }
-coder = { file = ["plugins.txt"] }
 
 [project.urls]
 Homepage = "https://github.com/ikignosis/janito"
