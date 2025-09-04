@@ -1,0 +1,96 @@
+# Sites known to be unexplorable due to authentication/paywall restrictions
+# This list helps identify URLs that should be skipped during automated exploration
+
+# News sites with paywalls
+https://www.reuters.com
+https://www.wsj.com
+https://www.ft.com
+https://www.thetimes.co.uk
+https://www.nytimes.com
+https://www.washingtonpost.com
+https://www.economist.com
+https://www.bloomberg.com
+https://www.thestreet.com
+https://www.marketwatch.com
+
+# Academic/research databases
+https://www.jstor.org
+https://academic.oup.com
+https://www.sciencedirect.com
+https://ieeexplore.ieee.org
+https://dl.acm.org
+https://pubs.acs.org
+https://www.nature.com
+https://www.science.org
+https://link.springer.com
+https://onlinelibrary.wiley.com
+
+# Social media platforms (require login)
+https://www.facebook.com
+https://www.twitter.com
+https://www.instagram.com
+https://www.linkedin.com
+https://www.tiktok.com
+https://www.snapchat.com
+https://www.threads.net
+
+# Streaming services
+https://www.netflix.com
+https://www.hulu.com
+https://www.disneyplus.com
+https://www.primevideo.com
+https://www.hbomax.com
+https://www.spotify.com
+https://music.apple.com
+
+# Cloud services requiring authentication
+https://drive.google.com
+https://www.dropbox.com
+https://onedrive.live.com
+https://www.icloud.com
+https://github.com (private repos)
+https://gitlab.com (private repos)
+
+# Financial services
+https://www.paypal.com
+https://www.venmo.com
+https://www.cash.app
+https://www.zellepay.com
+https://www.robinhood.com
+https://www.coinbase.com
+
+# Government services requiring login
+https://www.irs.gov
+https://www.ssa.gov
+https://www.medicare.gov
+https://www.dmv.ca.gov
+https://www.gov.uk
+
+# Shopping sites requiring accounts
+https://www.amazon.com (account areas)
+https://www.ebay.com (account areas)
+https://www.etsy.com (account areas)
+
+# Professional tools
+https://slack.com
+https://zoom.us
+https://teams.microsoft.com
+https://www.notion.so
+https://trello.com
+https://asana.com
+
+# Dating apps
+https://tinder.com
+https://www.bumble.com
+https://www.okcupid.com
+https://match.com
+https://eharmony.com
+
+# Gaming platforms
+https://www.steamcommunity.com
+https://www.xbox.com
+https://www.playstation.com
+https://www.nintendo.com
+
+# Note: These URLs are generally inaccessible without proper authentication
+# Some may allow limited public access, but core functionality requires login

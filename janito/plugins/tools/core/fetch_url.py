@@ -190,11 +190,23 @@ class FetchUrl(ToolBase):
 
         Also implements URL whitelist checking and browser-like behavior.
         """
-        # Check URL whitelist
+        # Check URL whitelist and blocked sites
         from janito.tools.url_whitelist import get_url_whitelist_manager
+        from janito.tools.blocked_sites import get_blocked_sites_manager
 
         whitelist_manager = get_url_whitelist_manager()
+        blocked_manager = get_blocked_sites_manager()
 
+        # Check blocked sites first
+        if blocked_manager.is_url_blocked(url):
+            error_message = tr("Blocked: Site is in blocked list")
+            self.report_error(
+                tr("❗ Blocked: Site is in blocked list"),
+                ReportAction.READ,
+            )
+            return error_message
+
+        # Then check whitelist
         if not whitelist_manager.is_url_allowed(url):
             error_message = tr("Blocked")
             self.report_error(
