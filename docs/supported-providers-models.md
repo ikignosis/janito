@@ -61,7 +61,8 @@ For setup instructions, see the [Mistral Setup Guide](mistral-setup.md).
 
 ### Moonshot
 
-- **Kimi K2 Turbo Preview** (default) - Latest generation with enhanced performance
+- **Kimi K2 0905** (default) - Latest generation with 256K context and enhanced coding capabilities
+- **Kimi K2 Turbo Preview** - High-performance turbo version
 - **Kimi K2 0711 Preview** - Previous preview version
 
 Moonshot provides open-source Kimi models with competitive performance.

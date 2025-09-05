@@ -8,8 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Kimi K2-0905 Support**: Added support for the new Kimi K2-0905 model
+  - **256K Context Window**: Doubled context capacity from 128K to 256K tokens
+  - **Enhanced Coding**: Improved front-end and tool-calling capabilities
+  - **Better Performance**: 60-100 TPS processing speed
+  - **New Default Model**: Updated default Moonshot model to K2-0905
 
 ### Changed
+- **Updated Moonshot Model Lineup**: 
+  - Added `kimi-k2-0905` as the new flagship model
+  - Retained `kimi-k2-turbo-preview` and `kimi-k2-0711-preview` for compatibility
+  - Updated all documentation to reflect new model capabilities
+- **Platform URL Updates**: Updated Moonshot platform URLs from .cn to .ai domain
 
 ### Deprecated
 

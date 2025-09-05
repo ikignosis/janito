@@ -76,7 +76,12 @@ def handle_list_tools(args=None):
         DisabledToolsState.set_disabled_tools(disabled_str)
     disabled_tools = DisabledToolsState.get_disabled_tools()
 
-    registry = janito.tools.local_tools_adapter
+    # Ensure tools are initialized
+    from janito.tools import get_local_tools_adapter
+    registry = get_local_tools_adapter()
+    if registry is None:
+        print("No tools available - tools initialization failed.")
+        return
     tools = registry.list_tools()
     if tools:
         from rich.console import Console

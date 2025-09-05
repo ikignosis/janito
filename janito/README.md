@@ -26,7 +26,7 @@ pip install janito
 janito "Create a Python script that reads a CSV file"
 
 # Using a specific Moonshot model
-janito -m kimi-k1-8k "Explain quantum computing"
+janito -m kimi-k2-0905 "Explain quantum computing"
 ```
 
 **Other Providers**
@@ -72,14 +72,14 @@ In chat mode, you can:
 Set default provider and model:
 ```bash
 janito --set provider=moonshot
-janito --set model=kimi-k1-8k
+janito --set model=kimi-k2-0905
 ```
 
 ## Providers
 
 ### Moonshot (Recommended)
 
-- **Models**: kimi-k1-8k, kimi-k1-32k, kimi-k1-128k, kimi-k2-turbo-preview
+- **Models**: kimi-k2-0905, kimi-k2-turbo-preview, kimi-k2-0711-preview
 - **Strengths**: Excellent Chinese/English support, competitive pricing, fast responses
 - **Setup**: Get API key from [Moonshot AI Platform](https://platform.moonshot.cn/)
 
@@ -133,7 +133,7 @@ You can also configure via environment variables:
 ```bash
 export MOONSHOT_API_KEY=your_key_here
 export JANITO_PROVIDER=moonshot
-export JANITO_MODEL=kimi-k1-8k
+export JANITO_MODEL=kimi-k2-0905
 ```
 
 **OpenAI:**

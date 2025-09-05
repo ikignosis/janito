@@ -14,7 +14,7 @@ pip install janito
 Janito supports multiple AI providers. Choose one to get started:
 
 **Moonshot (Recommended for Chinese users)**
-1. Go to [Moonshot AI Platform](https://platform.moonshot.cn/)
+1. Go to [Moonshot AI Platform](https://platform.moonshot.ai)
 2. Sign up for an account
 3. Navigate to API Keys section
 4. Create a new API key
@@ -67,7 +67,7 @@ janito "Hello, can you introduce yourself?"
 janito "Create a Python script to calculate fibonacci numbers"
 
 # With specific model
-janito -m kimi-k1-8k "Explain machine learning in simple terms"
+janito -m kimi-k2-0905 "Explain machine learning in simple terms"
 
 # Interactive chat mode
 janito --chat
@@ -88,7 +88,7 @@ janito -W ./my_project "Create a REST API with FastAPI"
 ```bash
 # Make your chosen provider the permanent default
 janito --set provider=moonshot  # or openai, ibm, etc.
-janito --set model=kimi-k1-8k     # or gpt-5, ibm/granite-3-8b-instruct, etc.
+janito --set model=kimi-k2-0905     # or gpt-5, ibm/granite-3-8b-instruct, etc.
 ```
 
 ### Environment Variables
@@ -98,7 +98,7 @@ You can also use environment variables:
 ```bash
 export MOONSHOT_API_KEY=your_key_here
 export JANITO_PROVIDER=moonshot
-export JANITO_MODEL=kimi-k1-8k
+export JANITO_MODEL=kimi-k2-0905
 ```
 
 **OpenAI:**
@@ -120,11 +120,10 @@ export JANITO_MODEL=ibm/granite-3-3-8b-instruct
 ## Available Models by Provider
 
 ### Moonshot Models
-- **kimi-k1-8k**: Fast responses, good for general tasks
-- **kimi-k1-32k**: Better for longer contexts
-- **kimi-k1-128k**: Best for very long documents
-- **kimi-k2-turbo-preview**: Latest model with enhanced capabilities
-- **kimi-k2-turbo-preview**: Turbo version of the advanced reasoning model
+
+- **kimi-k2-0905**: Latest flagship model with 256k context and enhanced coding
+- **kimi-k2-turbo-preview**: Turbo version with 128k context window
+- **kimi-k2-0711-preview**: Previous preview version with 128k context window
 
 ### OpenAI Models
 - **gpt-5**: Latest GPT model with advanced capabilities

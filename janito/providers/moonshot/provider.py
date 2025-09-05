@@ -12,7 +12,7 @@ class MoonshotProvider(LLMProvider):
     NAME = "moonshot"
     MAINTAINER = "João Pinto <janito@ikignosis.org>"
     MODEL_SPECS = MOONSHOT_MODEL_SPECS
-    DEFAULT_MODEL = "kimi-k2-turbo-preview"
+    DEFAULT_MODEL = "kimi-k2-0905"
 
     def __init__(
         self, auth_manager: LLMAuthManager = None, config: LLMDriverConfig = None

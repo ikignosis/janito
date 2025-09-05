@@ -33,14 +33,24 @@ def get_local_tools_adapter(workdir=None, allowed_permissions=None):
 local_tools_adapter = None
 
 
+def _initialize_global_adapter():
+    """Initialize the global tools adapter."""
+    global local_tools_adapter
+    if local_tools_adapter is None:
+        from janito.tools.cli_initializer import get_cli_tools_adapter
+        # Try CLI initialization first
+        local_tools_adapter = get_cli_tools_adapter()
+        if local_tools_adapter is None:
+            # Fallback to regular initialization
+            from janito.tools.initialize import initialize_tools
+            local_tools_adapter = initialize_tools(LocalToolsAdapter())
+
+
 def get_local_tools_adapter(workdir=None, allowed_permissions=None):
     """Get the global tools adapter, initializing on first use."""
     global local_tools_adapter
     if local_tools_adapter is None:
-        from janito.tools.initialize import initialize_tools
-
-        adapter = LocalToolsAdapter(workdir=workdir)
-        local_tools_adapter = initialize_tools(adapter)
+        _initialize_global_adapter()
 
     # Handle workdir if provided
     if workdir is not None and local_tools_adapter is not None:
