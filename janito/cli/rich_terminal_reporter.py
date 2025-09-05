@@ -74,8 +74,8 @@ class RichTerminalReporter(EventHandlerBase):
         """
         Clears the entire current line in the terminal and returns the cursor to column 1.
         """
-        sys.stdout.write("\033[2K\r")
-        sys.stdout.flush()
+        self.console.file.write("\033[2K\r")
+        self.console.file.flush()
 
     def on_RequestFinished(self, event):
         self.delete_current_line()
