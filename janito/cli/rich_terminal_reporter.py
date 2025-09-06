@@ -74,8 +74,16 @@ class RichTerminalReporter(EventHandlerBase):
         """
         Clears the entire current line in the terminal and returns the cursor to column 1.
         """
-        sys.stdout.write("\033[2K\r")
-        sys.stdout.flush()
+        # Use raw ANSI escape sequences but write directly to the underlying file
+        # to bypass Rich's escaping/interpretation
+        if hasattr(self.console, 'file') and hasattr(self.console.file, 'write'):
+            self.console.file.write("\r\033[2K")
+            self.console.file.flush()
+        else:
+            # Fallback to sys.stdout if console.file is not available
+            import sys
+            sys.stdout.write("\r\033[2K")
+            sys.stdout.flush()
 
     def on_RequestFinished(self, event):
         self.delete_current_line()

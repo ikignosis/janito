@@ -207,7 +207,29 @@ class PromptHandler:
         """
         try:
             self._print_verbose_debug("Calling agent.chat()...")
-            final_event = self.agent.chat(prompt=user_prompt)
+            
+            # Show waiting status with elapsed time
+            start_time = time.time()
+            status = Status("[bold blue]Waiting for LLM response...[/bold blue]")
+            
+            def update_status():
+                elapsed = time.time() - start_time
+                status.update(f"[bold blue]Waiting for LLM response... ({elapsed:.1f}s)[/bold blue]")
+            
+            # Start status display and update timer
+            with status:
+                # Update status every second in a separate thread
+                def status_updater():
+                    while True:
+                        time.sleep(1.0)
+                        update_status()
+                
+                import threading
+                updater_thread = threading.Thread(target=status_updater, daemon=True)
+                updater_thread.start()
+                
+                final_event = self.agent.chat(prompt=user_prompt)
+                
             if hasattr(self.agent, "set_latest_event"):
                 self.agent.set_latest_event(final_event)
             self.agent.last_event = final_event

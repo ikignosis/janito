@@ -183,6 +183,9 @@ class LLMAgent:
         elapsed = 0.0
         if getattr(self, "verbose_agent", False):
             print("[agent] [DEBUG] Waiting for event from output_queue...")
+        # Show initial wait message
+        if getattr(self, "verbose_agent", False):
+            print(f"[agent] [DEBUG] Starting to wait for LLM response... (timeout: {max_wait_time}s)")
         # Let KeyboardInterrupt propagate to caller
         return self._poll_for_event(poll_timeout, max_wait_time)
 
@@ -197,6 +200,9 @@ class LLMAgent:
                     print(error_msg)
                     print("[DEBUG] Exiting _process_next_response due to timeout")
                     return None, False
+                # Show elapsed time info while waiting
+                if getattr(self, "verbose_agent", False):
+                    print(f"[agent] [DEBUG] Waiting for LLM response... ({elapsed:.1f}s elapsed)")
                 continue
             if getattr(self, "verbose_agent", False):
                 print(f"[agent] [DEBUG] Received event from output_queue: {event}")
