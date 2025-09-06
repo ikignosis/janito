@@ -92,4 +92,14 @@ MODEL_SPECS = {
         thinking=False,
         max_cot=32768,
     ),
+    "qwen3-max-preview": LLMModelInfo(
+        name="qwen3-max-preview",
+        context=131072,  # 128K context window
+        max_response=32768,
+        category="Alibaba Qwen3 Max Preview Model (OpenAI-compatible)",
+        driver="OpenAIModelDriver",
+        thinking_supported=True,
+        thinking=False,
+        max_cot=32768,
+    ),
 }

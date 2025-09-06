@@ -23,4 +23,15 @@ MOONSHOT_MODEL_SPECS = {
         open="moonshot",
         driver="OpenAIModelDriver",
     ),
+    "kimi-k2-0905-preview": LLMModelInfo(
+        name="kimi-k2-0905-preview",
+        context=128000,
+        max_input=100000,
+        max_cot="N/A",
+        max_response=4096,
+        thinking_supported=False,
+        default_temp=0.2,
+        open="moonshot",
+        driver="OpenAIModelDriver",
+    ),
 }
