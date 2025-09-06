@@ -124,7 +124,7 @@ export JANITO_MODEL=ibm/granite-3-3-8b-instruct
 - **kimi-k1-32k**: Better for longer contexts
 - **kimi-k1-128k**: Best for very long documents
 - **kimi-k2-turbo-preview**: Latest model with enhanced capabilities
-- **kimi-k2-turbo-preview**: Turbo version of the advanced reasoning model
+- **kimi-k2-0905-preview**: Newest model with 256K context window for handling very large documents and complex tasks
 
 ### OpenAI Models
 - **gpt-5**: Latest GPT model with advanced capabilities

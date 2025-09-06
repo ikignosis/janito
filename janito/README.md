@@ -79,7 +79,7 @@ janito --set model=kimi-k1-8k
 
 ### Moonshot (Recommended)
 
-- **Models**: kimi-k1-8k, kimi-k1-32k, kimi-k1-128k, kimi-k2-turbo-preview
+- **Models**: kimi-k1-8k, kimi-k1-32k, kimi-k1-128k, kimi-k2-turbo-preview, kimi-k2-0905-preview
 - **Strengths**: Excellent Chinese/English support, competitive pricing, fast responses
 - **Setup**: Get API key from [Moonshot AI Platform](https://platform.moonshot.cn/)
 
