@@ -1,6 +1,6 @@
 # 🏁 Janito CLI Options
 
-This page documents all command-line options for Janito, as shown by `janito --help`. These options temporarily override configuration for a single session and do not persist changes to config files unless you use `--set` or a custom config file with `-c`.
+This page documents all command-line options for Janito, as shown by `janito --help`. These options override configuration for a single session and do not persist changes to config files unless you use `--set` or a custom config file with `-c`.
 
 **Syntax:** `janito [options] [prompt]`
 

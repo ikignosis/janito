@@ -111,10 +111,10 @@ janito "Get Apple's 10-K filing"  # ✅ Works (sec.gov)
 janito "Get Apple's stock price"  # ❌ Blocked (needs tradingview.com)
 ```
 
-### Temporary Access for Testing
+### Testing Access
 
 ```bash
-# Add a site temporarily
+# Add a site for testing
 janito --add-allowed-site test-site.com
 
 # Use it for testing
@@ -176,7 +176,7 @@ janito --add-allowed-site missing-site.com
 # Adding "tradingview.com" also allows "www.tradingview.com", "api.tradingview.com", etc.
 ```
 
-**Problem**: Want to temporarily disable whitelist
+**Problem**: Want to disable whitelist temporarily
 
 ```bash
 # Clear all restrictions

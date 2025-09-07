@@ -33,7 +33,7 @@ class FetchUrlTool(ToolBase):
 
     **Error Cache Behavior:**
     - HTTP 403 errors: Cached for 24 hours (more permanent)
-    - HTTP 404 errors: Cached for 1 hour (temporary)
+    - HTTP 404 errors: Cached for 1 hour (shorter duration)
     - Other 4xx errors: Cached for 30 minutes
     - 5xx errors: Not cached (retried on each request)
 
@@ -151,7 +151,7 @@ class FetchUrlTool(ToolBase):
             # Cache 403 errors for 24 hours (more permanent)
             expiration_time = 24 * 3600
         elif entry["status_code"] == 404:
-            # Cache 404 errors for 1 hour (more temporary)
+            # Cache 404 errors for 1 hour (shorter duration)
             expiration_time = 3600
         else:
             # Cache other 4xx errors for 30 minutes

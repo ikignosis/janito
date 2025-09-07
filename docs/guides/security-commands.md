@@ -101,7 +101,7 @@ Fetch Apple's current stock price from tradingview.com
 # List current restrictions
 /security allowed-sites list
 
-# Temporarily allow all sites
+# Allow all sites for testing
 /security allowed-sites clear
 
 # Re-establish restrictions
@@ -174,7 +174,7 @@ Analyze Apple's financial performance
 # Adding "tradingview.com" also allows "www.tradingview.com", "api.tradingview.com", etc.
 ```
 
-**Problem**: Want to temporarily disable whitelist
+**Problem**: Want to disable whitelist temporarily
 ```
 # Clear all restrictions
 /security allowed-sites clear

@@ -75,8 +75,8 @@ Disable tools you don't use to reduce clutter:
 janito --set disabled_tools="open_url,open_html_in_browser"
 ```
 
-### Temporary Disabling
-Temporarily disable tools for specific sessions:
+### Session-Based Disabling
+Disable tools for specific sessions:
 ```bash
 janito --set disabled_tools=ask_user "Generate code without user interaction"
 ```

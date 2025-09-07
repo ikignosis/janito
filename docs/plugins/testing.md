@@ -124,7 +124,7 @@ def test_plugin_integration():
     from janito.plugins.manager import PluginManager
     from janito.config import Config
     
-    # Create a temporary config
+    # Create a test config
     config = Config()
     config.set("plugins.load.myplugin", True)
     

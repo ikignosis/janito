@@ -384,7 +384,7 @@ For users upgrading from previous versions:
 - Refactored tool system to use latest git tag for version detection in release script.
 - Refined release script to recommend creating a new git tag if version exists on PyPI.
 - Removed termweb: web file viewer and related CLI/editor features, updated docs and config accordingly.
-- Removed temporary file x.txt.
+- Removed test file x.txt.
 - Restored tool permissions to CLI defaults on /restart; store and retrieve default tool permissions in AllowedPermissionsState. Runner now sets and saves default permissions for restoration. Updated conversation_restart to restore or fallback to all-off permissions.
 - Updated disabled execution tools message for clarity.
 - Docs and UX: clarified permissions (read/write/exec), added profiles doc links, and removed localhost references from UI/toolbar.

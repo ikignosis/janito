@@ -19,7 +19,7 @@
 ### Enhanced fetch_url Tool
 - **Error Handling**: Added intelligent error caching for 403 (Forbidden) and 404 (Not Found) responses
 - **Performance**: Reduced redundant network requests when URLs are known to be inaccessible
-- **Reliability**: Better handling of rate limiting and temporary access restrictions
+- **Reliability**: Better handling of rate limiting and session-based access restrictions
 
 ### Documentation Updates
 - **IBM Setup Guide**: Complete step-by-step documentation for IBM WatsonX configuration

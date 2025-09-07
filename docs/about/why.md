@@ -12,7 +12,7 @@ Janito is designed to give you maximum control over how AI assists you with your
 
 - 💻 **Not Locked to an Editor:** Janito works in the terminal, scripts, or web—no need for a heavyweight IDE or plugin ecosystem.
 - 🧰 **Composable and Extensible:** Tools can be enabled, disabled, or customized for each session, letting you experiment or automate workflows.
-- 🕒 **Session-Scoped Adjustments:** Temporary overrides (via CLI options or prompt tweaks) let you try new approaches without changing your global setup.
+- 🕒 **Session-Scoped Adjustments:** Session-based overrides (via CLI options or prompt tweaks) let you try new approaches without changing your global setup.
 
 ## 🧑‍💻 Example: Prompt-Driven Focus
 
