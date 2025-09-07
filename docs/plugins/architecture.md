@@ -27,10 +27,10 @@ plugins/
 
 ### Implementation Layer
 
-The actual tool implementations are located in `janito/tools/adapters/local/`. This separation ensures that the core functionality remains stable while the plugin interfaces can be organized and extended.
+The actual tool implementations are located in `janito/plugins/tools/local/`. This separation ensures that the core functionality remains stable while the plugin interfaces can be organized and extended.
 
 ```
-janito/tools/adapters/local/
+janito/plugins/tools/local/
 ├── create_file.py
 ├── read_files.py
 ├── view_file.py

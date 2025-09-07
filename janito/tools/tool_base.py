@@ -1,7 +1,7 @@
 from janito.report_events import ReportEvent, ReportSubtype, ReportAction
 from janito.event_bus.bus import event_bus as default_event_bus
 
-
+import inspect
 from collections import namedtuple
 
 
@@ -112,3 +112,10 @@ class ToolBase:
 
     def run(self, *args, **kwargs):
         raise NotImplementedError("Subclasses must implement the run method.")
+
+    def get_signature(self):
+        """
+        Return the function signature for this tool's run method.
+        This is used for introspection and validation.
+        """
+        return inspect.signature(self.run)

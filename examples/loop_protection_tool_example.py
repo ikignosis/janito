@@ -8,7 +8,7 @@ using the @protect_against_loops decorator.
 
 from janito.tools.tool_base import ToolBase, ToolPermissions
 from janito.tools.loop_protection_decorator import protect_against_loops
-from janito.tools.adapters.local.adapter import register_local_tool
+from janito.plugins.tools.local.adapter import register_local_tool
 
 
 @register_local_tool

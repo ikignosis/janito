@@ -210,25 +210,38 @@ class PromptHandler:
             
             # Show waiting status with elapsed time
             start_time = time.time()
-            status = Status("[bold blue]Waiting for LLM response...[/bold blue]")
+            
+            # Get provider and model info for status display
+            provider_name = self.agent.get_provider_name() if hasattr(self.agent, 'get_provider_name') else 'LLM'
+            model_name = self.agent.get_model_name() if hasattr(self.agent, 'get_model_name') else 'unknown'
+            
+            status = Status(f"[bold blue]Waiting for {provider_name} (model: {model_name})...[/bold blue]")
+            
+            # Thread coordination event
+            stop_updater = threading.Event()
             
             def update_status():
                 elapsed = time.time() - start_time
-                status.update(f"[bold blue]Waiting for LLM response... ({elapsed:.1f}s)[/bold blue]")
+                status.update(f"[bold blue]Waiting for {provider_name} (model: {model_name})... ({elapsed:.1f}s)[/bold blue]")
             
             # Start status display and update timer
             with status:
                 # Update status every second in a separate thread
                 def status_updater():
-                    while True:
-                        time.sleep(1.0)
+                    while not stop_updater.is_set():
                         update_status()
+                        stop_updater.wait(1.0)  # Wait for 1 second or until stopped
                 
-                import threading
                 updater_thread = threading.Thread(target=status_updater, daemon=True)
                 updater_thread.start()
                 
-                final_event = self.agent.chat(prompt=user_prompt)
+                try:
+                    final_event = self.agent.chat(prompt=user_prompt)
+                finally:
+                    # Signal the updater thread to stop
+                    stop_updater.set()
+                    # Wait a bit for the thread to clean up
+                    updater_thread.join(timeout=0.1)
                 
             if hasattr(self.agent, "set_latest_event"):
                 self.agent.set_latest_event(final_event)

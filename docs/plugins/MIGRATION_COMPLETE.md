@@ -2,12 +2,12 @@
 
 ## Summary
 
-All 23 tools have been successfully organized in the plugin structure in `plugins/`. The actual implementations remain in `janito/tools/adapters/local/` as the source of truth.
+All 23 tools have been successfully organized in the plugin structure in `plugins/`. The actual implementations remain in `janito/plugins/tools/local/` as the source of truth.
 
 ## Migration Results
 
 > [!NOTE]
-> The actual tool implementations remain in `janito/tools/adapters/local/` as the source of truth. The plugin system provides organized interfaces.
+> The actual tool implementations remain in `janito/plugins/tools/local/` as the source of truth. The plugin system provides organized interfaces.
 
 ### 📁 File Manager Plugin (`plugins/core/filemanager/tools/`)
 
@@ -51,7 +51,7 @@ All 23 tools have been successfully organized in the plugin structure in `plugin
 ## Total Files Moved
 - **23 tools** successfully relocated
 - **All directories** created and organized
-- **Original files** remain in `janito/tools/adapters/local/` (copies made)
+- **Original files** remain in `janito/plugins/tools/local/` (copies made)
 
 ## Plugin Structure
 
