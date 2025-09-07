@@ -14,7 +14,7 @@ from janito.driver_events import (
     RequestStatus,
     RateLimitRetry,
 )
-from janito.tools.tool_events import ToolCallError
+from janito.tools.tool_events import ToolCallError, ToolCallStarted
 import threading
 from janito.cli.verbose_output import print_verbose_header
 from janito.event_bus import event_bus as global_event_bus
@@ -52,8 +52,10 @@ class PromptHandler:
     def _handle_inner_event(self, inner_event, on_event, status):
         if on_event:
             on_event(inner_event)
-        from janito.tools.tool_events import ToolCallFinished
+        from janito.tools.tool_events import ToolCallFinished, ToolCallStarted
 
+        if isinstance(inner_event, ToolCallStarted):
+            return self._handle_tool_call_started(inner_event, status)
         if isinstance(inner_event, ToolCallFinished):
             return self._handle_tool_call_finished(inner_event)
         if isinstance(inner_event, RateLimitRetry):
@@ -74,6 +76,14 @@ class PromptHandler:
         self.console.print(
             f"[yellow]Warning: Unknown event type encountered: {event_type}[yellow]"
         )
+        return None
+
+    def _handle_tool_call_started(self, inner_event, status):
+        """Handle ToolCallStarted event - pause the timer when ask_user tool is called."""
+        if hasattr(inner_event, 'tool_name') and inner_event.tool_name == 'ask_user':
+            # Pause the status timer by clearing the status
+            if status:
+                status.update("")
         return None
 
     def _handle_tool_call_finished(self, inner_event):
