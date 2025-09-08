@@ -62,11 +62,7 @@ class RichTerminalReporter(EventHandlerBase):
         self._waiting_printed = True
 
     def on_AgentWaitingForResponse(self, event):
-        # Print waiting message for agent
-        agent_name = getattr(event, "agent_name", "Agent")
-        self.console.print(
-            f"[bold cyan]Agent {agent_name} waiting for LLM response...[/bold cyan]", end=""
-        )
+        # Agent waiting - set flag but don't print anything
         self._waiting_printed = True
 
     def on_ResponseReceived(self, event):
@@ -101,6 +97,7 @@ class RichTerminalReporter(EventHandlerBase):
             self._waiting_printed = False
 
     def on_AgentReceivedResponse(self, event):
+        # Clear any waiting message when agent receives response
         if self._waiting_printed:
             self.delete_current_line()
             self._waiting_printed = False
@@ -137,6 +134,10 @@ class RichTerminalReporter(EventHandlerBase):
         if not msg or not subtype:
             return
         if subtype == ReportSubtype.ACTION_INFO:
+            # Clear any waiting message before showing action info
+            if self._waiting_printed:
+                self.delete_current_line()
+                self._waiting_printed = False
             # Use orange for all write/modification actions
             modification_actions = (
                 getattr(ReportAction, "UPDATE", None),

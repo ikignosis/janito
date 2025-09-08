@@ -70,4 +70,4 @@ If you encounter issues:
 3. Ensure you're using a supported model name
 4. Check the Cerebras status page for any service outages
 
-For further assistance, consult the [Cerebras documentation](https://api.cerebras.ai/docs) or [Janito documentation](https://docs.janito.dev).
+For further assistance, consult the [Cerebras documentation](https://api.cerebras.ai/docs).
