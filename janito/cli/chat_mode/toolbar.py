@@ -44,7 +44,7 @@ def assemble_bindings_line(width, permissions=None):
         "on" if getattr(permissions, "execute", False) else "off"
     )
     return (
-        f"  <key-label>CTRL-C</key-label>: Interrupt/Exit | "
+        f" <key-label>CTRL-C</key-label>: Interrupt/Exit | "
         f"<key-label>F2</key-label>: /restart | "
         f"<b>/help</b>: Help | "
         f"<key-label>F12</key-label>: Do It "
@@ -55,13 +55,13 @@ def assemble_platform_line():
     import platform
     import sys
     from janito.platform_discovery import PlatformDiscovery
-    
+
     discovery = PlatformDiscovery()
     system_info = f"{platform.system()} {platform.release()}"
     arch_info = platform.machine()
     shell_info = discovery.detect_shell()
     python_version = f"Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
-    
+
     return f" Platform: {system_info} ({arch_info}) | Shell: {shell_info} | {python_version}"
 
 
@@ -111,7 +111,7 @@ def get_toolbar_func(perf: PerformanceCollector, msg_count: int, shell_state):
         permissions = _get_permissions()
         bindings_line = assemble_bindings_line(width, permissions)
         platform_line = assemble_platform_line()
-        toolbar_text = first_line + "\n" + bindings_line + "\n" + platform_line
+        toolbar_text = first_line + "\n" + platform_line + "\n" + bindings_line
 
         return HTML(toolbar_text)
 
