@@ -44,7 +44,7 @@ def _select_coder_model_for_provider(provider: str) -> str:
         "alibaba": "qwen3-coder-plus",
         "cerebras": "qwen-3-coder-480b",
     }
-    
+
     return coder_models.get(provider)
 
 
@@ -89,7 +89,7 @@ def prepare_llm_driver_config(args, modifiers):
     model = getattr(args, "model", None)
     if not model:
         model = get_effective_model(provider)
-    
+
     # Auto-select coder model when --developer mode is used and no model is specified
     if not model and getattr(args, "developer", False):
         model = _select_coder_model_for_provider(provider)
@@ -98,7 +98,7 @@ def prepare_llm_driver_config(args, modifiers):
                 "Auto-selected coder model",
                 f"{model} for provider {provider} (developer mode)",
                 style="magenta",
-                align_content=True
+                align_content=True,
             )
 
     # Validate that the chosen model is supported by the selected provider
@@ -169,6 +169,15 @@ def handle_runner(
     from janito.tools.disabled_tools import load_disabled_tools_from_config
 
     load_disabled_tools_from_config()
+
+    # Disable bash tools when running in PowerShell
+    from janito.platform_discovery import PlatformDiscovery
+
+    pd = PlatformDiscovery()
+    if pd.detect_shell().startswith("PowerShell"):
+        from janito.tools.disabled_tools import DisabledToolsState
+
+        DisabledToolsState.disable_tool("run_bash_command")
 
     unrestricted = getattr(args, "unrestricted", False)
     adapter = janito.tools.get_local_tools_adapter(

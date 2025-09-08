@@ -30,6 +30,7 @@ from .show_image_grid import ShowImageGridTool
 from janito.tools.tool_base import ToolPermissions
 import os
 from janito.tools.permissions import get_global_allowed_permissions
+from janito.platform_discovery import PlatformDiscovery
 
 # Singleton tools adapter with all standard tools registered
 local_tools_adapter = LocalToolsAdapter(workdir=os.getcwd())
@@ -40,6 +41,9 @@ def get_local_tools_adapter(workdir=None):
 
 
 # Register tools
+pd = PlatformDiscovery()
+is_powershell = pd.detect_shell().startswith("PowerShell")
+
 for tool_class in [
     AskUserTool,
     CopyFileTool,
@@ -68,6 +72,9 @@ for tool_class in [
     ShowImageTool,
     ShowImageGridTool,
 ]:
+    # Skip bash tools when running in PowerShell
+    if is_powershell and tool_class.__name__ in ["RunBashCommandTool"]:
+        continue
     local_tools_adapter.register_tool(tool_class)
 
 # DEBUG: Print registered tools at startup
