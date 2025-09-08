@@ -4,6 +4,17 @@ from janito.conversation_history import LLMConversationHistory
 from janito.tools.tools_adapter import ToolsAdapterBase
 from queue import Queue, Empty
 from janito.driver_events import RequestStatus
+from janito.agent_events import (
+    AgentInitialized,
+    AgentChatStarted,
+    AgentChatFinished,
+    AgentProcessingResponse,
+    AgentToolCallStarted,
+    AgentToolCallFinished,
+    AgentWaitingForResponse,
+    AgentReceivedResponse,
+    AgentShutdown
+)
 from typing import Any, Optional, List, Iterator, Union
 import threading
 import logging
@@ -53,6 +64,9 @@ class LLMAgent:
         self._latest_event = None
         self.verbose_agent = verbose_agent
         self.driver = None  # Will be set by setup_agent if available
+        
+        # Emit agent initialized event
+        event_bus.publish(AgentInitialized(agent_name=self.agent_name))
 
     def get_provider_name(self):
         # Try to get provider name from driver, fallback to llm_provider, else '?'
@@ -178,6 +192,9 @@ class LLMAgent:
         Wait for a single event from the output queue (with timeout), process it, and return the result.
         This function is intended to be called from the main agent loop, which controls the overall flow.
         """
+        # Emit agent waiting for response event
+        event_bus.publish(AgentWaitingForResponse(agent_name=self.agent_name))
+        
         if getattr(self, "verbose_agent", False):
             print("[agent] [DEBUG] Entered _process_next_response")
         elapsed = 0.0
@@ -204,6 +221,10 @@ class LLMAgent:
                 if getattr(self, "verbose_agent", False):
                     print(f"[agent] [DEBUG] Waiting for LLM response... ({elapsed:.1f}s elapsed)")
                 continue
+            
+            # Emit agent received response event
+            event_bus.publish(AgentReceivedResponse(agent_name=self.agent_name, response=event))
+            
             if getattr(self, "verbose_agent", False):
                 print(f"[agent] [DEBUG] Received event from output_queue: {event}")
             event_bus.publish(event)
@@ -233,6 +254,10 @@ class LLMAgent:
         """
         if getattr(self, "verbose_agent", False):
             print("[agent] [INFO] Handling ResponseReceived event.")
+        
+        # Emit agent processing response event
+        event_bus.publish(AgentProcessingResponse(agent_name=self.agent_name, response=event))
+        
         from janito.llm.message_parts import FunctionCallMessagePart
 
         # Skip tool processing if no tools adapter is available
@@ -249,6 +274,15 @@ class LLMAgent:
                     print(
                         f"[agent] [DEBUG] Tool call detected: {getattr(part, 'name', repr(part))} with arguments: {getattr(part, 'arguments', None)}"
                     )
+                
+                # Emit agent tool call started event
+                event_bus.publish(AgentToolCallStarted(
+                    agent_name=self.agent_name,
+                    tool_call_id=getattr(part, 'tool_call_id', None),
+                    name=getattr(part, 'name', None),
+                    arguments=getattr(part, 'arguments', None)
+                ))
+                
                 tool_calls.append(part)
                 try:
                     result = self.tools_adapter.execute_function_call_message_part(part)
@@ -257,6 +291,14 @@ class LLMAgent:
                     # instead of letting it propagate to the user
                     result = str(e)
                 tool_results.append(result)
+                
+                # Emit agent tool call finished event
+                event_bus.publish(AgentToolCallFinished(
+                    agent_name=self.agent_name,
+                    tool_call_id=getattr(part, 'tool_call_id', None),
+                    name=getattr(part, 'name', None),
+                    result=result
+                ))
         if tool_calls:
             # Prepare tool_calls message for assistant
             tool_calls_list = []
@@ -316,6 +358,14 @@ class LLMAgent:
         role: str = "user",
         config=None,
     ):
+        # Emit agent chat started event
+        event_bus.publish(AgentChatStarted(
+            agent_name=self.agent_name,
+            prompt=prompt,
+            messages=messages,
+            role=role
+        ))
+        
         self._clear_driver_queues()
         self._validate_and_update_history(prompt, messages, role)
         self._ensure_system_prompt()
@@ -339,6 +389,12 @@ class LLMAgent:
                     f"[agent] [DEBUG] Returned from _process_next_response: result={result}, added_tool_results={added_tool_results}"
                 )
             if self._should_exit_chat_loop(result, added_tool_results):
+                # Emit agent chat finished event
+                event_bus.publish(AgentChatFinished(
+                    agent_name=self.agent_name,
+                    result=result,
+                    loop_count=loop_count
+                ))
                 return result
             loop_count += 1
 
@@ -502,6 +558,9 @@ class LLMAgent:
         :param timeout: Optional timeout in seconds.
         Handles KeyboardInterrupt gracefully.
         """
+        # Emit agent shutdown event
+        event_bus.publish(AgentShutdown(agent_name=self.agent_name))
+        
         if (
             hasattr(self, "driver")
             and self.driver

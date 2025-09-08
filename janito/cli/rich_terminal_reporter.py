@@ -8,6 +8,7 @@ import janito.driver_events as driver_events
 from janito.report_events import ReportSubtype, ReportAction
 from janito.event_bus.bus import event_bus
 from janito.llm import message_parts
+import janito.agent_events as agent_events
 
 
 import sys
@@ -33,7 +34,7 @@ class RichTerminalReporter(EventHandlerBase):
 
         import janito.tools.tool_events as tool_events
 
-        super().__init__(driver_events, report_events, tool_events)
+        super().__init__(driver_events, report_events, tool_events, agent_events)
         self._waiting_printed = False
 
     def on_RequestStarted(self, event):
@@ -58,6 +59,15 @@ class RichTerminalReporter(EventHandlerBase):
         self.console.print(
             f"[bold cyan]Waiting for {provider} (model: {model})...[/bold cyan]", end=""
         )
+        self._waiting_printed = True
+
+    def on_AgentWaitingForResponse(self, event):
+        # Print waiting message for agent
+        agent_name = getattr(event, "agent_name", "Agent")
+        self.console.print(
+            f"[bold cyan]Agent {agent_name} waiting for LLM response...[/bold cyan]", end=""
+        )
+        self._waiting_printed = True
 
     def on_ResponseReceived(self, event):
         parts = event.parts if hasattr(event, "parts") else None
@@ -86,34 +96,14 @@ class RichTerminalReporter(EventHandlerBase):
             sys.stdout.flush()
 
     def on_RequestFinished(self, event):
-        self.delete_current_line()
-        self._waiting_printed = False
-        response = getattr(event, "response", None)
-        error = getattr(event, "error", None)
-        exception = getattr(event, "exception", None)
+        if self._waiting_printed:
+            self.delete_current_line()
+            self._waiting_printed = False
 
-        # Print error and exception if present
-        if error:
-            self.console.print(f"[bold red]Error:[/] {error}")
-            self.console.file.flush()
-        if exception:
-            self.console.print(f"[red]Exception:[/] {exception}")
-            self.console.file.flush()
-
-        if response is not None:
-            if self.raw_mode:
-                self.console.print(Pretty(response, expand_all=True))
-                self.console.file.flush()
-            # Check for 'code' and 'event' fields in the response
-            code = None
-            event_field = None
-            if isinstance(response, dict):
-                code = response.get("code")
-                event_field = response.get("event")
-            if event_field is not None:
-                self.console.print(f"[bold yellow]Event:[/] {event_field}")
-                self.console.file.flush()
-        # No output if not raw_mode or if response is None
+    def on_AgentReceivedResponse(self, event):
+        if self._waiting_printed:
+            self.delete_current_line()
+            self._waiting_printed = False
 
     def on_ToolCallError(self, event):
         # Optionally handle tool call errors in a user-friendly way
