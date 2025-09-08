@@ -251,4 +251,7 @@ def handle_runner(
 
 
 def get_prompt_mode(args):
+    # If interactive flag is set, force chat mode regardless of user_prompt
+    if getattr(args, "interactive", False):
+        return "chat_mode"
     return "single_shot" if getattr(args, "user_prompt", None) else "chat_mode"

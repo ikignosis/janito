@@ -45,6 +45,25 @@ class PromptHandler:
     def handle(self) -> None:
         import traceback
 
+        # Check if interactive mode is requested - if so, switch to chat mode
+        if getattr(self.args, "interactive", False):
+            from janito.cli.chat_mode.session import ChatSession
+            from rich.console import Console
+
+            console = Console()
+            session = ChatSession(
+                console,
+                self.provider_instance,
+                self.llm_driver_config,
+                role=self.role,
+                args=self.args,
+                verbose_tools=getattr(self.args, "verbose_tools", False),
+                verbose_agent=getattr(self.args, "verbose_agent", False),
+                allowed_permissions=getattr(self, 'allowed_permissions', None),
+            )
+            session.run()
+            return
+
         user_prompt = " ".join(getattr(self.args, "user_prompt", [])).strip()
         # UTF-8 sanitize user_prompt
         sanitized = user_prompt

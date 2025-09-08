@@ -204,6 +204,13 @@ definition = [
             "help": "Enable emoji usage in responses to make output more engaging and expressive",
         },
     ),
+    (
+        ["-i", "--interactive"],
+        {
+            "action": "store_true",
+            "help": "Signal that this is an interactive chat session",
+        },
+    ),
     (["user_prompt"], {"nargs": argparse.REMAINDER, "help": "Prompt to submit"}),
     (
         ["-e", "--event-log"],
@@ -256,6 +263,7 @@ MODIFIER_KEYS = [
     "read",
     "write",
     "emoji",
+    "interactive",
 ]
 SETTER_KEYS = ["set", "set_provider", "set_api_key", "unset"]
 GETTER_KEYS = [
@@ -420,6 +428,7 @@ class JanitoCLI:
 
         # If running in single shot mode and --profile is not provided, default to 'developer' profile
         # Skip profile selection for list commands that don't need it
+        # Also skip if interactive mode is enabled (forces chat mode)
         if get_prompt_mode(self.args) == "single_shot" and not getattr(
             self.args, "profile", None
         ):

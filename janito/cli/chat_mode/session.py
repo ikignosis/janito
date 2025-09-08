@@ -31,6 +31,7 @@ class ChatShellState:
         self.mem_history = mem_history
         self.conversation_history = conversation_history
         self.paste_mode = False
+        self.interactive_mode = True  # Default to interactive mode
 
         self._pid = None
         self._stdout_path = None

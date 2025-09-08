@@ -11,6 +11,7 @@ from .session import HistoryShellHandler
 from .tools import ToolsShellHandler
 from .help import HelpShellHandler
 from .security_command import SecurityCommand
+from .interactive import InteractiveShellHandler
 from janito.cli.console import shared_console
 
 COMMAND_HANDLERS = {
@@ -45,6 +46,7 @@ COMMAND_HANDLERS = {
     "/help": HelpShellHandler,
     "/security": SecurityCommand,
     "/provider": ProviderCmdHandler,
+    "/interactive": InteractiveShellHandler,
 }
 
 
