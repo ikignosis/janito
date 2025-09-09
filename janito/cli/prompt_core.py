@@ -79,11 +79,10 @@ class PromptHandler:
         return None
 
     def _handle_tool_call_started(self, inner_event, status):
-        """Handle ToolCallStarted event - pause the timer when ask_user tool is called."""
-        if hasattr(inner_event, 'tool_name') and inner_event.tool_name == 'ask_user':
-            # Pause the status timer by clearing the status
-            if status:
-                status.update("")
+        """Handle ToolCallStarted event - clear the status before any tool execution."""
+        # Always clear the status when any tool starts to avoid cluttering the UI
+        if status:
+            status.update("")
         return None
 
     def _handle_tool_call_finished(self, inner_event):
