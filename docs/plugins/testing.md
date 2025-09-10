@@ -239,8 +239,8 @@ jobs:
     
     - name: Install dependencies
       run: |
-        pip install -r requirements.txt
-        pip install pytest pytest-cov
+        uv pip install -r requirements.txt
+        uv pip install pytest pytest-cov
     
     - name: Run tests
       run: |

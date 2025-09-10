@@ -1,0 +1,75 @@
+INFO    -  Building documentation...
+INFO    -  Cleaning site directory
+INFO    -  The following pages exist in the docs directory, but are not included in the "nav" configuration:
+  - DIV.md
+  - TOOLBAR-STYLING.md
+  - alibaba-setup.md
+  - driver-flow.md
+  - driver-request-cancellation.md
+  - drivers.md
+  - event-bus.md
+  - llm-drivers-required-config.md
+  - llm-drivers.md
+  - mistral-setup.md
+  - public-sources.md
+  - security.md
+  - tools-index.md
+  - tools-natural-results.md
+  - agent/agent-lifecycle.md
+  - agent/tools-workflow-lifecycle.md
+  - changelogs/CHANGELOG.md
+  - changelogs/CHANGELOG_2.16.0.md
+  - changelogs/CHANGELOG_2.23.0.md
+  - changelogs/CHANGELOG_2.26.0.md
+  - changelogs/CHANGELOG_2.27.0.md
+  - changelogs/RELEASE_NOTES_2.22.0.md
+  - changelogs/RELEASE_NOTES_2.24.1.md
+  - drivers/events.md
+  - guides/market-data-sources.md
+  - guides/profiles.md
+  - guides/read-chart-examples.md
+  - guides/security-commands.md
+  - guides/stock-market-guide.md
+  - guides/url-whitelist.md
+  - guides/prompting/README.md
+  - plugins/README.md
+  - plugins/api-reference.md
+  - plugins/architecture.md
+  - plugins/configuration.md
+  - plugins/plugin-development.md
+  - plugins/plugin-resources.md
+  - plugins/publishing.md
+  - plugins/remote-plugins.md
+  - plugins/testing.md
+  - plugins/built-in-plugins/codeanalyzer.md
+  - plugins/built-in-plugins/filemanager.md
+  - plugins/built-in-plugins/imagedisplay.md
+  - plugins/built-in-plugins/pythondev.md
+  - plugins/built-in-plugins/system.md
+  - plugins/built-in-plugins/userinterface.md
+  - plugins/built-in-plugins/visualization.md
+  - plugins/built-in-plugins/webtools.md
+  - plugins/examples/advanced.md
+  - plugins/examples/basic.md
+  - plugins/examples/intermediate.md
+  - reference/azure-openai.md
+  - reference/message-handler-model.md
+  - reference/rich-message-handler.md
+  - tools/search-text.md
+  - tools/show-image-grid.md
+  - tools/show-image.md
+WARNING -  Doc file 'changelogs/CHANGELOG.md' contains a link '../guides/remote-plugins.md', but the target 'guides/remote-plugins.md' is not found among documentation files.
+WARNING -  Doc file 'changelogs/CHANGELOG.md' contains a link '../guides/plugins.md', but the target 'guides/plugins.md' is not found among documentation files.
+WARNING -  Doc file 'changelogs/CHANGELOG.md' contains a link '../../README-PLUGINS.md', but the target '../README-PLUGINS.md' is not found among documentation files.
+WARNING -  Doc file 'changelogs/CHANGELOG_2.23.0.md' contains a link '../guides/remote-plugins.md', but the target 'guides/remote-plugins.md' is not found among documentation files.
+WARNING -  Doc file 'changelogs/CHANGELOG_2.23.0.md' contains a link '../guides/plugins.md', but the target 'guides/plugins.md' is not found among documentation files.
+WARNING -  Doc file 'changelogs/CHANGELOG_2.23.0.md' contains a link '../../README-PLUGINS.md', but the target '../README-PLUGINS.md' is not found among documentation files.
+WARNING -  Doc file 'plugins/README.md' contains a link '../built-in-plugins.md', but the target 'built-in-plugins.md' is not found among documentation files.
+INFO    -  Doc file 'plugins/README.md' contains an unrecognized relative link 'examples/', it was left as is.
+WARNING -  Doc file 'plugins/README.md' contains a link '../built-in-plugins/git-analyzer.md', but the target 'built-in-plugins/git-analyzer.md' is not found among documentation files.
+WARNING -  Doc file 'plugins/README.md' contains a link '../built-in-plugins/code-navigator.md', but the target 'built-in-plugins/code-navigator.md' is not found among documentation files.
+WARNING -  Doc file 'plugins/README.md' contains a link '../built-in-plugins/example.md', but the target 'built-in-plugins/example.md' is not found among documentation files.
+INFO    -  Documentation built in 1.22 seconds
+INFO    -  [17:00:45] Watching paths for changes: 'docs', 'mkdocs.yml'
+INFO    -  [17:00:45] Serving on http://0.0.0.0:8000/janito/
+INFO    -  Shutting down...

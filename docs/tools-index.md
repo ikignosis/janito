@@ -81,6 +81,52 @@ Opens the supplied URL or local file in the default web browser.
 
 This tool replaces the previous `open_html_in_browser` tool, and can be used for both web and local files.
 
+### System Tools
+
+#### run_bash_command
+
+Execute a non-interactive command using the bash shell and capture live output.
+
+**Arguments:**
+
+- `command` (str): The bash command to execute.
+- `timeout` (int): Timeout in seconds for the command. Defaults to 60.
+- `require_confirmation` (bool): If True, require user confirmation before running. Defaults to False.
+- `requires_user_input` (bool): If True, warns that the command may require user input and might hang. Defaults to False.
+- `silent` (bool): If True, suppresses progress and status messages. Defaults to False.
+
+**Returns:**
+
+- File paths and line counts for stdout and stderr.
+
+**Example Usage:**
+
+- List files: `run_bash_command(command="ls -la")`
+- Git status: `run_bash_command(command="git status")`
+- Complex pipeline: `run_bash_command(command="find . -name '*.py' | head -10")`
+
+#### run_powershell_command
+
+Execute a non-interactive command using the PowerShell shell and capture live output.
+
+**Arguments:**
+
+- `command` (str): The PowerShell command to execute. This string is passed directly to PowerShell using the --Command argument (not as a script file).
+- `timeout` (int): Timeout in seconds for the command. Defaults to 60.
+- `require_confirmation` (bool): If True, require user confirmation before running. Defaults to False.
+- `requires_user_input` (bool): If True, warns that the command may require user input and might hang. Defaults to False.
+- `silent` (bool): If True, suppresses progress and status messages. Defaults to False.
+
+**Returns:**
+
+- Output and status message, or file paths/line counts if output is large.
+
+**Example Usage:**
+
+- List processes: `run_powershell_command(command="Get-Process")`
+- File operations: `run_powershell_command(command="Get-ChildItem -Path . -Recurse")`
+- System info: `run_powershell_command(command="Get-ComputerInfo")`
+
 ### search_text
 
 Search for a text query in files or directories.

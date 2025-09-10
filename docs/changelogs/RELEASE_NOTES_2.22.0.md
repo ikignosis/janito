@@ -83,4 +83,4 @@ Special thanks to the community for feedback and contributions that helped shape
 
 **Full Changelog**: https://github.com/ikignosis/janito/compare/v2.21.0...v2.22.0
 
-**Installation**: `pip install janito==2.22.0` or `pip install --upgrade janito`
+**Installation**: `uv pip install janito==2.22.0` or `uv pip install --upgrade janito`

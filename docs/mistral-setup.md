@@ -12,7 +12,7 @@ Mistral AI provides a comprehensive suite of models including:
 ## Prerequisites
 
 1. **Python 3.8+** installed
-2. **Janito** installed (`pip install janito`)
+2. **Janito** installed (`uv pip install janito`)
 3. **Mistral API Key** from [La Plateforme](https://console.mistral.ai/)
 
 ## Quick Setup

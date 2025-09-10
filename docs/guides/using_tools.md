@@ -14,6 +14,7 @@ The following tools are listed for transparency and to help you understand how J
 - 🌐 **Web Fetching:** Some tools fetch and parse web content for research or documentation purposes.
 - 🎨 **Rich Output:** Tools format and present results in a readable, actionable way (e.g., code blocks, tables).
 - 📊 **Data Visualization:** Tools display charts and graphs directly in the terminal using rich formatting.
+- 💻 **Shell Command Execution:** Tools execute bash and PowerShell commands with live output streaming, timeout handling, and security controls.
 
 ## 📖 Full Reference
 

@@ -10,6 +10,18 @@ janito "what are the key classes of this project?"
 
 Janito will process your request and exit after displaying the result.
 
+### Shell Command Execution
+
+Janito supports executing shell commands in one-shot mode using the built-in `run_bash_command` and `run_powershell_command` tools:
+
+```bash
+# Execute a bash command
+janito "run_bash_command('ls -la')"
+
+# Execute a PowerShell command  
+janito "run_powershell_command('Get-Process | Select-Object Name, CPU')"
+```
+
 ### Quick Permission Setup
 
 For one-shot mode, you can quickly enable all tool permissions using the `/rwx` prefix:

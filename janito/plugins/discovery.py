@@ -11,7 +11,7 @@ Plugins can be provided in several formats:
    Example: plugins/my_plugin/plugin.py
 
 3. Installed Python package: An installed package with a Plugin class
-   Example: pip install janito-plugin-example
+   Example: uv pip install janito-plugin-example
 
 4. ZIP file: A .zip file containing a Python package structure
    Example: plugins/my_plugin.zip (containing package structure)

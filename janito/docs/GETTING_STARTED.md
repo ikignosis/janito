@@ -6,7 +6,7 @@ This guide will help you set up Janito CLI quickly and start using it with your 
 
 ### 1. Install Janito
 ```bash
-pip install janito
+uv pip install janito
 ```
 
 ### 2. Choose Your Provider

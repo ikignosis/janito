@@ -23,7 +23,7 @@ These options are useful for one-off runs, scripting, or experimentation. They t
 | `--multi` | Start chat mode with multiline input as default (no need for /multi command) |
 | `-r`, `--read` | Enable tools that require read permissions (default: off) |
 | `-w`, `--write` | Enable tools that require write permissions (default: off) |
-| `-x`, `--exec` | Enable execution/run tools (allows running code or shell tools from the CLI). (default: off) |
+| `-x`, `--exec` | Enable execution/run tools (allows running code or shell commands from the CLI). (default: off) |
 | `--unset KEY` | Unset (remove) a config key |
 | `--version` | Show program's version number and exit |
 | `--list-tools` | List all registered tools |
@@ -60,9 +60,10 @@ janito -u -x --read --write "Run a tool with unrestricted paths (DANGEROUS)"
 By default, tools that can read, write, or execute code are **disabled** for safety. You can enable these permissions using individual flags or a convenient shortcut:
 
 #### Individual Permission Flags
+
 - `-r`, `--read`: Enable tools that require read permissions
 - `-w`, `--write`: Enable tools that require write permissions  
-- `-x`, `--exec`: Enable execution/run tools (code execution, shell commands)
+- `-x`, `--exec`: Enable execution/run tools (code execution, shell commands including `run_bash_command` and `run_powershell_command`)
 
 #### Quick Permission Shortcut
 Use `/rwx` prefix to enable all permissions at once:

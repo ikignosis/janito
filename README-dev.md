@@ -55,7 +55,7 @@ Using a virtual environment ensures:
 2. **Install development dependencies:**
    ```sh
    # Install the package in editable mode with dev dependencies
-   pip install -e ".[dev]"
+   uv pip install -e ".[dev]"
    ```
 
 3. **Verify installation:**
@@ -68,7 +68,7 @@ Using a virtual environment ensures:
 If you prefer not to use a virtual environment:
 
 ```sh
-pip install -e ".[dev]"
+uv pip install -e ".[dev]"
 ```
 
 ## Building and Installing
@@ -80,7 +80,7 @@ pip install -e ".[dev]"
 
 - To install in editable mode:
   ```sh
-  pip install -e .
+  uv pip install -e .
   ```
 
 ## Release Process
@@ -108,7 +108,7 @@ The release script will:
 Make sure you have `build` and `twine` installed:
 
 ```sh
-pip install build twine
+uv pip install build twine
 ```
 
 ## Running Tests
@@ -127,7 +127,7 @@ pip install build twine
 
 2. **Update dependencies when pulling new changes:**
    ```sh
-   pip install -e ".[dev]" --upgrade
+   uv pip install -e ".[dev]" --upgrade
    ```
 
 3. **Deactivate virtual environment when done:**
@@ -138,7 +138,7 @@ pip install build twine
 ### Common Virtual Environment Issues
 
 - **"Command not found" errors**: Make sure the virtual environment is activated
-- **Import errors**: Reinstall the package with `pip install -e ".[dev]"`
+- **Import errors**: Reinstall the package with `uv pip install -e ".[dev]"`
 - **Permission errors**: Use virtual environment instead of system-wide installation
 
 ## Contributing
@@ -153,7 +153,7 @@ For new developers getting started:
 
 1. **Clone the repository**
 2. **Create and activate virtual environment** (see [Development Environment Setup](#development-environment-setup))
-3. **Install development dependencies** with `pip install -e ".[dev]"`
+3. **Install development dependencies** with `uv pip install -e ".[dev]"`
 4. **Verify installation** with `python -c "import janito; print(janito.__version__)"`
 5. **Run tests** (when available) to ensure everything works
 6. **Start coding!**

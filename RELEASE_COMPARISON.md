@@ -104,7 +104,7 @@ Both versions are fully backward compatible. Users can upgrade seamlessly:
 
 ```bash
 # From any previous version
-pip install --upgrade janito
+uv pip install --upgrade janito
 
 # New capabilities immediately available
 janito --profile market_analyst "help with stock analysis"

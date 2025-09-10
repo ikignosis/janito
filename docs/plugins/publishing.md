@@ -141,14 +141,14 @@ setup(
 python setup.py sdist bdist_wheel
 
 # Upload to PyPI
-pip install twine
+uv pip install twine
 twine upload dist/*
 ```
 
 3. **Installation**:
 
 ```bash
-pip install janito-myplugin
+uv pip install janito-myplugin
 ```
 
 ## Repository Structure

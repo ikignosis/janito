@@ -10,6 +10,14 @@ Janito is designed to work with modern Unicode-capable terminals. **Windows Term
 - **macOS**: Terminal.app, iTerm2, Alacritty, WezTerm
 - **Linux**: GNOME Terminal, Konsole, Alacritty, WezTerm, xterm-compatible terminals
 
+### Shell Command Support
+
+Janito includes native support for shell command execution:
+- **Bash commands** - Execute via `run_bash_command` tool (requires bash available in PATH)
+- **PowerShell commands** - Execute via `run_powershell_command` tool (uses PowerShell Core on non-Windows platforms)
+
+Both tools provide live output streaming, timeout handling, and security controls for safe command execution.
+
 For optimal display of charts, images, and styled output, ensure your terminal supports Unicode and 256 colors.
 
 ## Features

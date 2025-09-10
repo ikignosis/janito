@@ -6,7 +6,7 @@ Feel free to copy-paste and adapt.
 ## 0  Dependencies & setup
 
 ```bash
-pip install openai httpx python-dotenv       # ↩︎ async-friendly HTTP client
+uv pip install openai httpx python-dotenv       # ↩︎ async-friendly HTTP client
 export OPENAI_API_KEY=sk-...
 ```
 

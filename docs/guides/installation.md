@@ -6,6 +6,7 @@ This guide explains how to install Janito and verify your setup.
 
 - Python 3.10 or newer
 - **Terminal**: Windows Terminal (primary supported), PowerShell, Command Prompt, or any Unicode-capable terminal emulator
+- **Shell Support**: Bash (for `run_bash_command` tool) and/or PowerShell (for `run_powershell_command` tool) depending on your platform and intended usage
 
 ## Installation Methods
 
@@ -13,12 +14,12 @@ You can install Janito using pip from either PyPI (for stable releases) or direc
 
 ### From PyPI (Stable)
 ```bash
-pip install janito
+uv pip install janito
 ```
 
 ### From GitHub (Development Version)
 ```bash
-pip install git+git@github.com:ikignosis/janito.git
+uv pip install git+git@github.com:ikignosis/janito.git
 ```
 
 > For development setup and contributing, see [Developing & Extending](developing.md).

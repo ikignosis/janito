@@ -7,7 +7,7 @@ A powerful command-line tool for running LLM-powered workflows with built-in too
 ### Installation
 
 ```bash
-pip install janito
+uv pip install janito
 ```
 
 ### First-Time Setup

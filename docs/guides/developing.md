@@ -7,7 +7,7 @@ This guide explains how to set up Janito for development and install the latest 
 To install the most recent development version from the GitHub main branch, run:
 
 ```bash
-pip install git+git@github.com:ikignosis/janito.git@main
+uv pip install git+git@github.com:ikignosis/janito.git@main
 ```
 
 ## Editable Install for Local Development
@@ -18,7 +18,7 @@ To make code changes and see them reflected immediately (without reinstalling), 
 git clone git@github.com:ikignosis/janito.git
 cd janito
 git checkout main
-pip install -e .
+uv pip install -e .
 ```
 
 This installs Janito in "editable" mode, so changes to the source code are instantly available in your environment.

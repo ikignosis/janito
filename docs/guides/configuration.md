@@ -63,6 +63,9 @@ janito --set disabled_tools=ask_user
 # Disable multiple tools
 janito --set disabled_tools="ask_user,python_code_run"
 
+# Disable shell command execution
+janito --set disabled_tools="run_bash_command,run_powershell_command"
+
 # View disabled tools
 janito --show-config
 ```

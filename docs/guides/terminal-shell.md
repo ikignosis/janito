@@ -6,6 +6,15 @@ The interactive shell lets you have a continuous conversation with Janito, just 
 
 Janito works best with modern Unicode-capable terminals. **Windows Terminal is the primary supported terminal** and provides the optimal experience with full Unicode support, rich colors, and proper styling. The shell mode is also compatible with other terminals including PowerShell, Command Prompt, macOS Terminal, iTerm2, and various Linux terminals.
 
+## Shell Command Support
+
+Janito includes built-in support for executing shell commands across platforms:
+
+- **Bash commands** (`run_bash_command`) - Execute bash shell commands on Linux, macOS, and Windows (via WSL/Git Bash)
+- **PowerShell commands** (`run_powershell_command`) - Execute PowerShell commands on Windows and cross-platform (requires PowerShell Core)
+
+These tools can be enabled/disabled via configuration and provide live output streaming, timeout handling, and security controls.
+
 ## ✨ Features
 
 - 🔄 Multi-turn conversations: Build on previous answers and context

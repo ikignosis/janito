@@ -33,7 +33,7 @@ except ImportError:  # pragma: no cover – not available in editable installs
     def _resolve_version() -> str:
         """Resolve the version string using several fallbacks."""
 
-        # 2. importlib.metadata – works for both regular and `pip install -e`.
+        # 2. importlib.metadata – works for both regular and `uv pip install -e`.
         try:
             return importlib_metadata.version("janito")
         except importlib_metadata.PackageNotFoundError:

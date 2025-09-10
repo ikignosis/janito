@@ -21,6 +21,7 @@ janito
 - Use natural language to describe what you want Janito to do (e.g., "Add type hints to all functions in utils.py").
 - In the chat shell, use `/help` for available commands. Use `/exec on` to enable code/shell execution tools at runtime.
 - Use CLI flags to customize behavior (see [CLI Options](../reference/cli-options.md)).
+- Shell commands can be executed using the built-in `run_bash_command` and `run_powershell_command` tools (when enabled).
 
 ## More Resources
 

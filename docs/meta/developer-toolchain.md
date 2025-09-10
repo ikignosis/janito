@@ -11,7 +11,7 @@ This project uses [pre-commit](https://pre-commit.com/) to enforce code style an
 1. Install pre-commit if you haven't already:
 
 ```bash
-pip install pre-commit
+uv pip install pre-commit
 ```
 
 2. Install the hooks:

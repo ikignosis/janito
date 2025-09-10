@@ -154,7 +154,7 @@ def handle_list_drivers(args=None):
     missing_deps = _get_missing_dependencies(drivers)
     if missing_deps:
         console.print(
-            f"\n[dim]💡 Install missing deps: pip install {' '.join(missing_deps)}[/dim]"
+            f"\n[dim]💡 Install missing deps: uv pip install {' '.join(missing_deps)}[/dim]"
         )
 
 

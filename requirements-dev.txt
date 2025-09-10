@@ -9,3 +9,8 @@ codespell==2.4.1  # Spell checker (matches pre-commit config)
 black  # Code formatter (version not pinned)
 questionary>=2.0.1
 setuptools_scm>=8.0
+
+# Documentation dependencies
+mkdocs
+mkdocs-material
+mkdocs-material-extensions
