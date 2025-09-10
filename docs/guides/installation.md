@@ -5,6 +5,7 @@ This guide explains how to install Janito and verify your setup.
 ## Requirements
 
 - Python 3.10 or newer
+- **Terminal**: Windows Terminal (primary supported), PowerShell, Command Prompt, or any Unicode-capable terminal emulator
 
 ## Installation Methods
 

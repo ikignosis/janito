@@ -16,12 +16,8 @@ janito "Refactor the data processing module to improve readability."
 janito
 ```
 
-Or, to enable clickable file links in your browser during the session:
-```bash
-janito --web
-```
-
 ## Basic Usage Tips
+
 - Use natural language to describe what you want Janito to do (e.g., "Add type hints to all functions in utils.py").
 - In the chat shell, use `/help` for available commands. Use `/exec on` to enable code/shell execution tools at runtime.
 - Use CLI flags to customize behavior (see [CLI Options](../reference/cli-options.md)).

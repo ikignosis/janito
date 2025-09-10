@@ -2,6 +2,10 @@
 
 The interactive shell lets you have a continuous conversation with Janito, just like chatting with a smart assistant. This mode is ideal for deep dives, brainstorming, or when you want to iteratively refine your requests.
 
+## Terminal Compatibility
+
+Janito works best with modern Unicode-capable terminals. **Windows Terminal is the primary supported terminal** and provides the optimal experience with full Unicode support, rich colors, and proper styling. The shell mode is also compatible with other terminals including PowerShell, Command Prompt, macOS Terminal, iTerm2, and various Linux terminals.
+
 ## ✨ Features
 
 - 🔄 Multi-turn conversations: Build on previous answers and context

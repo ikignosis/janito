@@ -2,6 +2,10 @@
 
 The `read_chart` tool allows you to display various types of charts and data visualizations directly in the terminal using the rich library.
 
+## Terminal Requirements
+
+For optimal chart display, use a modern Unicode-capable terminal. **Windows Terminal is the primary supported terminal** and provides the best experience. Charts use Unicode characters and colors that require terminal support for proper rendering.
+
 ## Chart Types
 
 ### 1. Table Charts

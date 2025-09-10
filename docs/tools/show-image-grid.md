@@ -2,6 +2,10 @@
 
 Display multiple images in a grid inline in the terminal using rich.
 
+## Terminal Compatibility
+
+Image grid display requires a terminal that supports inline image rendering. **Windows Terminal is the primary supported terminal** for the optimal multi-image display experience. Performance and display quality depend on your terminal's image rendering capabilities.
+
 Arguments:
 
 - paths (list[str]): List of image file paths.

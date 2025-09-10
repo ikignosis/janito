@@ -2,6 +2,16 @@
 
 The Rich Message Handler is responsible for rendering all output (tool, agent, system) in the terminal using the [rich](https://rich.readthedocs.io/) library for styled and colorized output.
 
+## Terminal Compatibility
+
+Janito is designed to work with modern Unicode-capable terminals. **Windows Terminal is the primary supported terminal** on Windows, providing the best experience with full Unicode support, colors, and styling. Other supported terminals include:
+
+- **Windows**: Windows Terminal (recommended), PowerShell, Command Prompt
+- **macOS**: Terminal.app, iTerm2, Alacritty, WezTerm
+- **Linux**: GNOME Terminal, Konsole, Alacritty, WezTerm, xterm-compatible terminals
+
+For optimal display of charts, images, and styled output, ensure your terminal supports Unicode and 256 colors.
+
 ## Features
 
 - **Unified output:** Handles all message types (tool, agent, system) through a single API.

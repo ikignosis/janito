@@ -2,6 +2,10 @@
 
 Display an image inline in the terminal using the rich library.
 
+## Terminal Compatibility
+
+Image display requires a terminal that supports inline image rendering. **Windows Terminal is the primary supported terminal** for the best image display experience. Other modern terminals with image support may also work, but results can vary depending on terminal capabilities and configuration.
+
 Arguments:
 - path (str): Path to the image file.
 - width (int, optional): Target width in terminal cells. If unset, auto-fit.
