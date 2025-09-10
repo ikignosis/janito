@@ -94,13 +94,12 @@ class PromptHandler:
             sys.stdout.flush()
 
     def _handle_tool_call_started(self, inner_event, status):
-        """Handle ToolCallStarted event - pause the timer when ask_user tool is called."""
-        if hasattr(inner_event, "tool_name") and inner_event.tool_name == "ask_user":
-            # Pause the status timer by clearing the status
-            if status:
-                status.stop()
-                # Clear the current line after status is suspended/closed
-                self._clear_current_line()
+        """Handle ToolCallStarted event - clear the status before any tool execution."""
+        # Always clear the status when any tool starts to avoid cluttering the UI
+        if status:
+            status.update("")
+            # Also clear the current line to ensure clean terminal output
+            self._clear_current_line()
         return None
 
     def _handle_tool_call_finished(self, inner_event):
@@ -288,7 +287,6 @@ class PromptHandler:
                 updater_thread.join(timeout=0.1)
                 # Clear the current line after status is suspended/closed
                 self._clear_current_line()
-
             if hasattr(self.agent, "set_latest_event"):
                 self.agent.set_latest_event(final_event)
             self.agent.last_event = final_event

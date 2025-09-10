@@ -23,7 +23,7 @@ A thin client is designed to be lightweight and stateless. It primarily acts as 
 
 
 
-**Use Case:** A CLI code assistant like **aider.chat** or **janito.dev**, which runs as a command-line tool, maintains session context, refines developer prompts, handles fallbacks, and integrates with local code repositories before sending requests to the LLM and processing responses for display in the terminal.
+**Use Case:** A CLI code assistant like **aider.chat**, which runs as a command-line tool, maintains session context, refines developer prompts, handles fallbacks, and integrates with local code repositories before sending requests to the LLM and processing responses for display in the terminal.
 
 ### Thick Clients
 

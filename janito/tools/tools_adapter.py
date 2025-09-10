@@ -433,6 +433,10 @@ class ToolsAdapterBase:
                     else:
                         # Single string argument - let the normalization handle it
                         pass
+        
+        # Convert argument names to lowercase for better matching
+        if isinstance(arguments, dict):
+            arguments = {k.lower(): v for k, v in arguments.items()}
         if self.verbose_tools:
             print(
                 f"[tools-adapter] Executing FunctionCallMessagePart: tool={tool_name}, arguments={arguments}, tool_call_id={tool_call_id}"
