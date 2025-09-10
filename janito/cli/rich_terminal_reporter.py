@@ -160,11 +160,9 @@ class RichTerminalReporter(EventHandlerBase):
             self.console.print(msg)
             self.console.file.flush()
         elif subtype == ReportSubtype.STDOUT:
-            self.console.print(msg)
-            self.console.file.flush()
+            print(msg)
         elif subtype == ReportSubtype.STDERR:
-            self.console.print(Text(msg, style="on red"))
-            self.console.file.flush()
+            print(msg, file=sys.stderr)
         else:
             self.console.print(msg)
             self.console.file.flush()
