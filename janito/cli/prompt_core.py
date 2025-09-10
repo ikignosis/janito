@@ -3,6 +3,7 @@ Core PromptHandler: Handles prompt submission and response formatting for janito
 """
 
 import time
+import sys
 from janito import __version__ as VERSION
 from janito.performance_collector import PerformanceCollector
 from rich.status import Status
@@ -78,12 +79,28 @@ class PromptHandler:
         )
         return None
 
+    def _clear_current_line(self):
+        """
+        Clears the current line in the terminal and returns the cursor to column 1.
+        """
+        # Use raw ANSI escape sequences but write directly to the underlying file
+        # to bypass Rich's escaping/interpretation
+        if hasattr(self.console, "file") and hasattr(self.console.file, "write"):
+            self.console.file.write("\r\033[2K")
+            self.console.file.flush()
+        else:
+            # Fallback to sys.stdout if console.file is not available
+            sys.stdout.write("\r\033[2K")
+            sys.stdout.flush()
+
     def _handle_tool_call_started(self, inner_event, status):
         """Handle ToolCallStarted event - pause the timer when ask_user tool is called."""
-        if hasattr(inner_event, 'tool_name') and inner_event.tool_name == 'ask_user':
+        if hasattr(inner_event, "tool_name") and inner_event.tool_name == "ask_user":
             # Pause the status timer by clearing the status
             if status:
-                status.update("")
+                status.stop()
+                # Clear the current line after status is suspended/closed
+                self._clear_current_line()
         return None
 
     def _handle_tool_call_finished(self, inner_event):
@@ -217,42 +234,61 @@ class PromptHandler:
         """
         try:
             self._print_verbose_debug("Calling agent.chat()...")
-            
+
             # Show waiting status with elapsed time
             start_time = time.time()
-            
+
             # Get provider and model info for status display
-            provider_name = self.agent.get_provider_name() if hasattr(self.agent, 'get_provider_name') else 'LLM'
-            model_name = self.agent.get_model_name() if hasattr(self.agent, 'get_model_name') else 'unknown'
-            
-            status = Status(f"[bold blue]Waiting for {provider_name} (model: {model_name})...[/bold blue]")
-            
+            provider_name = (
+                self.agent.get_provider_name()
+                if hasattr(self.agent, "get_provider_name")
+                else "LLM"
+            )
+            model_name = (
+                self.agent.get_model_name()
+                if hasattr(self.agent, "get_model_name")
+                else "unknown"
+            )
+
+            status = Status(
+                f"[bold blue]Waiting for {provider_name} (model: {model_name})...[/bold blue]"
+            )
             # Thread coordination event
             stop_updater = threading.Event()
-            
+
             def update_status():
                 elapsed = time.time() - start_time
-                status.update(f"[bold blue]Waiting for {provider_name} (model: {model_name})... ({elapsed:.1f}s)[/bold blue]")
-            
+                status.update(
+                    f"[bold blue]Waiting for {provider_name} (model: {model_name})... ({elapsed:.1f}s)[/bold blue]"
+                )
+
             # Start status display and update timer
-            with status:
-                # Update status every second in a separate thread
-                def status_updater():
-                    while not stop_updater.is_set():
-                        update_status()
-                        stop_updater.wait(1.0)  # Wait for 1 second or until stopped
-                
-                updater_thread = threading.Thread(target=status_updater, daemon=True)
-                updater_thread.start()
-                
-                try:
-                    final_event = self.agent.chat(prompt=user_prompt)
-                finally:
-                    # Signal the updater thread to stop
-                    stop_updater.set()
-                    # Wait a bit for the thread to clean up
-                    updater_thread.join(timeout=0.1)
-                
+            status.start()
+
+            # Update status every second in a separate thread
+            def status_updater():
+                while not stop_updater.is_set():
+                    update_status()
+                    stop_updater.wait(1.0)  # Wait for 1 second or until stopped
+
+            updater_thread = threading.Thread(target=status_updater, daemon=True)
+            updater_thread.start()
+
+            try:
+                # Stop status before calling agent.chat() to prevent interference with tools
+                status.stop()
+                # Clear the current line after status is stopped
+                self._clear_current_line()
+
+                final_event = self.agent.chat(prompt=user_prompt)
+            finally:
+                # Signal the updater thread to stop
+                stop_updater.set()
+                # Wait a bit for the thread to clean up
+                updater_thread.join(timeout=0.1)
+                # Clear the current line after status is suspended/closed
+                self._clear_current_line()
+
             if hasattr(self.agent, "set_latest_event"):
                 self.agent.set_latest_event(final_event)
             self.agent.last_event = final_event
