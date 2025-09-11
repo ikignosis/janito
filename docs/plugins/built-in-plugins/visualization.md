@@ -10,85 +10,53 @@ The Visualization plugin provides data visualization and charting capabilities. 
 
 | Tool Name | Function | Description |
 |-----------|----------|-------------|
-| `read_chart` | Display charts in terminal | Renders various chart types (bar, line, pie, table) in the terminal using rich formatting |
+
 | `show_image` | Display single image | Shows a single image inline in the terminal using rich |
 | `show_image_grid` | Display image grid | Shows multiple images in a grid inline in the terminal |
 
 ## Usage Examples
 
-### Creating a Bar Chart
+### Displaying an Image
 ```json
 {
-  "tool": "read_chart",
-  "data": {
-    "type": "bar",
-    "data": {
-      "labels": ["January", "February", "March"],
-      "values": [65, 59, 80]
-    }
-  },
-  "title": "Monthly Sales",
+  "tool": "show_image",
+  "path": "chart.png",
   "width": 80,
-  "height": 20
+  "preserve_aspect": true
 }
 ```
 
-### Displaying a Pie Chart
+### Creating an Image Grid
 ```json
 {
-  "tool": "read_chart",
-  "data": {
-    "type": "pie",
-    "data": {
-      "labels": ["Direct", "Referral", "Social"],
-      "values": [55, 30, 15]
-    }
-  },
-  "title": "Traffic Sources"
+  "tool": "show_image_grid",
+  "paths": ["image1.png", "image2.png", "image3.png"],
+  "columns": 2,
+  "width": 40
 }
 ```
 
-### Showing a Data Table
-```json
-{
-  "tool": "read_chart",
-  "data": {
-    "type": "table",
-    "data": {
-      "headers": ["Name", "Age", "City"],
-      "rows": [
-        ["Alice", "25", "New York"],
-        ["Bob", "30", "San Francisco"],
-        ["Charlie", "35", "Chicago"]
-      ]
-    }
-  },
-  "title": "User Data"
-}
-```
+
+
 
 ## Configuration
 
-This plugin does not require any specific configuration. Chart rendering uses default dimensions and styling.
+This plugin does not require any specific configuration. Image display uses default dimensions and styling.
 
-Image Display tools (core.imagedisplay) have optional settings:
-- default_width (int): Default width for image display
-- default_height (int): Default height for image display
-- preserve_aspect (bool): Preserve aspect ratio by default
 
 ## Security Considerations
 
-- Chart data is rendered client-side with no external dependencies
+- Images are displayed client-side with no external dependencies
 - No data is transmitted to external services
-- Large datasets are truncated to prevent performance issues
+- Large images are resized to prevent performance issues
 
 ## Integration
 
-The Visualization plugin integrates with the reporting system to provide:
+The Visualization plugin provides image display capabilities for:
 
-- Data analysis and exploration
-- Report generation with visual elements
-- Interactive data exploration
-- Performance metric visualization
+- Visual content presentation
+- Multi-image comparisons
+- Documentation with visual elements
+- Terminal-based image viewing
 
-This enables rich data presentation capabilities within the terminal interface, enhancing the user's ability to understand and interpret information.
+This enables rich visual presentation capabilities within the terminal interface.

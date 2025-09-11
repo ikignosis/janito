@@ -32,7 +32,7 @@ Learn how to use Janito effectively:
 - [Profiles](guides/profiles.md) - Custom configurations for different workflows
 - [Stock Market Guide](guides/stock-market-guide.md) - Accessing financial market data
 - [Market Data Sources](guides/market-data-sources.md) - Reliable sources for financial data
-- [Read Chart Examples](guides/read-chart-examples.md) - Data visualization in the terminal
+
 
 ### Development & Extension
 

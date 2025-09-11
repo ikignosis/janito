@@ -55,6 +55,36 @@ class ShowImageGridTool(ToolBase):
         console = Console()
         images = []
         shown = 0
+        
+        # Import numpy for ASCII art conversion
+        import numpy as np
+        
+        # Create ASCII art representation function
+        def image_to_ascii(image, target_width=20, target_height=10):
+            try:
+                # Convert to grayscale and resize
+                img_gray = image.convert('L')
+                img_resized = img_gray.resize((target_width, target_height))
+                
+                # Convert to numpy array
+                pixels = np.array(img_resized)
+                
+                # ASCII characters from dark to light
+                ascii_chars = "@%#*+=-:. "
+                
+                # Normalize pixels to ASCII range
+                ascii_art = ""
+                for row in pixels:
+                    for pixel in row:
+                        # Map pixel value (0-255) to ASCII index
+                        ascii_index = int((pixel / 255) * (len(ascii_chars) - 1))
+                        ascii_art += ascii_chars[ascii_index]
+                    ascii_art += "\n"
+                
+                return ascii_art.strip()
+            except Exception:
+                return None
+        
         for p in paths:
             fp = expand_path(p)
             if not os.path.exists(fp):
@@ -62,8 +92,22 @@ class ShowImageGridTool(ToolBase):
                 continue
             try:
                 img = PILImage.open(fp)
-                title = f"{display_path(fp)} ({img.width}x{img.height})"
-                images.append(Panel.fit(title, title=display_path(fp), border_style="dim"))
+                
+                # Create ASCII art preview
+                ascii_art = image_to_ascii(img, 20, 10)
+                
+                if ascii_art:
+                    from rich.text import Text
+                    title_text = Text(f"{display_path(fp)}\n{img.width}×{img.height}", style="bold")
+                    ascii_text = Text(ascii_art, style="dim")
+                    combined_text = Text.assemble(title_text, "\n", ascii_text)
+                    panel = Panel(combined_text, title="Image", border_style="dim")
+                else:
+                    # Fallback to just info if ASCII art fails
+                    title = f"{display_path(fp)} ({img.width}x{img.height})"
+                    panel = Panel.fit(title, title=display_path(fp), border_style="dim")
+                
+                images.append(panel)
                 shown += 1
             except Exception as e:
                 self.report_warning(tr("⚠️ Skipped {p}: {e}", p=display_path(fp), e=e))
@@ -71,6 +115,20 @@ class ShowImageGridTool(ToolBase):
         if not images:
             return tr("No images could be displayed")
 
-        console.print(Columns(images, equal=True, expand=True, columns=columns))
+        # Use manual column layout since Columns doesn't support columns parameter
+        if columns > 1:
+            # Group images into rows
+            rows = []
+            for i in range(0, len(images), columns):
+                row_images = images[i:i+columns]
+                rows.append(Columns(row_images, equal=True, expand=True))
+            
+            # Print all rows
+            for row in rows:
+                console.print(row)
+        else:
+            # Single column - print each image panel separately
+            for image_panel in images:
+                console.print(image_panel)
         self.report_success(tr("✅ Displayed {n} images", n=shown))
         return tr("Displayed {shown}/{total} images in a {cols}x? grid", shown=shown, total=len(paths), cols=columns)

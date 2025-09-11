@@ -51,7 +51,7 @@ janito/plugins/tools/local/
 ├── python_code_run.py
 ├── python_command_run.py
 ├── python_file_run.py
-├── read_chart.py
+
 └── ask_user.py
 ```
 

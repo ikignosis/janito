@@ -8,6 +8,7 @@ from janito.driver_events import (
     ResponseReceived,
     RequestStatus,
 )
+from janito.llm.response_cache import ResponseCache
 
 
 class LLMDriver(ABC):
@@ -43,12 +44,14 @@ class LLMDriver(ABC):
     available = True
     unavailable_reason = None
 
-    def __init__(self, tools_adapter=None, provider_name=None):
+    def __init__(self, tools_adapter=None, provider_name=None, enable_cache=True):
         self.input_queue = Queue()
         self.output_queue = Queue()
         self._thread = None
         self.tools_adapter = tools_adapter
         self.provider_name = provider_name
+        self.enable_cache = enable_cache
+        self.response_cache = ResponseCache() if enable_cache else None
 
     def start(self):
         """Validate tool schemas (if any) and launch the driver's background thread to process DriverInput objects."""
@@ -131,6 +134,23 @@ class LLMDriver(ABC):
         if not self.available:
             self.handle_driver_unavailable(request_id)
             return
+        
+        # Check cache first if enabled
+        if self.response_cache:
+            cached_response = self.response_cache.get(driver_input)
+            if cached_response is not None:
+                # Use cached response
+                message = self._get_message_from_result(cached_response)
+                parts = (
+                    self._convert_completion_message_to_parts(message) if message else []
+                )
+                timestamp = getattr(cached_response, "created", None)
+                metadata = {"usage": getattr(cached_response, "usage", None), "raw_response": cached_response, "cached": True}
+                self.emit_response_received(
+                    self.__class__.__name__, request_id, cached_response, parts, timestamp, metadata
+                )
+                return
+        
         # Prepare payload for RequestStarted event
         payload = {"provider_name": self.provider_name}
         if hasattr(config, "model") and getattr(config, "model", None):
@@ -205,6 +225,11 @@ class LLMDriver(ABC):
             )
             timestamp = getattr(result, "created", None)
             metadata = {"usage": getattr(result, "usage", None), "raw_response": result}
+            
+            # Cache the response if caching is enabled
+            if self.response_cache:
+                self.response_cache.set(driver_input, result)
+            
             self.emit_response_received(
                 self.__class__.__name__, request_id, result, parts, timestamp, metadata
             )
@@ -221,6 +246,17 @@ class LLMDriver(ABC):
                     traceback=traceback.format_exc(),
                 )
             )
+
+    def clear_cache(self):
+        """Clear the response cache if caching is enabled."""
+        if self.response_cache:
+            self.response_cache.clear()
+    
+    def get_cache_stats(self):
+        """Get cache statistics if caching is enabled."""
+        if self.response_cache:
+            return self.response_cache.get_stats()
+        return {"total_entries": 0, "total_size": 0}
 
     @abstractmethod
     def _prepare_api_kwargs(self, config, conversation):

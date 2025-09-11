@@ -53,12 +53,57 @@ class ShowImageTool(ToolBase):
 
         try:
             console = Console()
-            from rich.console import Console
+            from rich.panel import Panel
             from rich.text import Text
-            console = Console()
+            import numpy as np
+            
             img = PILImage.open(path)
-            console.print(Text(f"Image: {disp_path} ({img.width}x{img.height})", style="bold green"))
-            console.print(img)
+            
+            # Create ASCII art representation
+            def image_to_ascii(image, width=40, height=20):
+                try:
+                    # Convert to grayscale and resize
+                    img_gray = image.convert('L')
+                    img_resized = img_gray.resize((width, height))
+                    
+                    # Convert to numpy array
+                    pixels = np.array(img_resized)
+                    
+                    # ASCII characters from dark to light
+                    ascii_chars = "@%#*+=-:. "
+                    
+                    # Normalize pixels to ASCII range
+                    ascii_art = ""
+                    for row in pixels:
+                        for pixel in row:
+                            # Map pixel value (0-255) to ASCII index
+                            ascii_index = int((pixel / 255) * (len(ascii_chars) - 1))
+                            ascii_art += ascii_chars[ascii_index]
+                        ascii_art += "\n"
+                    
+                    return ascii_art.strip()
+                except Exception:
+                    return None
+            
+            # Calculate appropriate size for terminal display
+            display_width = width or min(60, img.width // 4)
+            display_height = height or min(30, img.height // 4)
+            
+            ascii_art = image_to_ascii(img, display_width, display_height)
+            
+            if ascii_art:
+                # Create a panel with both info and ASCII art
+                img_info = Text(f"🖼️ {disp_path}\nSize: {img.width}×{img.height}\nMode: {img.mode}\n", style="bold green")
+                ascii_text = Text(ascii_art, style="dim")
+                combined = Text.assemble(img_info, ascii_text)
+                panel = Panel(combined, title="Image Preview", border_style="blue")
+            else:
+                # Fallback to just info if ASCII art fails
+                img_info = Text(f"🖼️ {disp_path}\nSize: {img.width}×{img.height}\nMode: {img.mode}", style="bold green")
+                panel = Panel(img_info, title="Image Info", border_style="blue")
+            
+            console.print(panel)
+            
             self.report_success(tr("✅ Displayed"))
             details = []
             if width:
