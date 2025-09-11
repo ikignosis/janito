@@ -21,6 +21,16 @@ MODEL_SPECS = {
         thinking=False,
         max_cot=8192,
     ),
+    "qwen-flash": LLMModelInfo(
+        name="qwen-flash",
+        context=1000000,
+        max_response=8192,
+        category="Alibaba Qwen Flash Model (OpenAI-compatible)",
+        driver="OpenAIModelDriver",
+        thinking_supported=True,
+        thinking=False,
+        max_cot=8192,
+    ),
     "qwen-max": LLMModelInfo(
         name="qwen-max",
         context=32768,
@@ -92,14 +102,35 @@ MODEL_SPECS = {
         thinking=False,
         max_cot=32768,
     ),
-    "qwen3-max-preview": LLMModelInfo(
-        name="qwen3-max-preview",
-        context=131072,  # 128K context window
-        max_response=32768,
-        category="Alibaba Qwen3 Max Preview Model (OpenAI-compatible)",
+    # Qwen3 Next models (September 2025 update)
+    "qwen3-next-80b-a3b-instruct": LLMModelInfo(
+        name="qwen3-next-80b-a3b-instruct",
+        context=262144,  # 256K context window (Qwen3-Max Preview)
+        max_response=65536,  # Matches Qwen3-Max Preview output limit
+        category="Alibaba Qwen3-Max Preview (256K) - 80B A3B Instruct Model (OpenAI-compatible)",
         driver="OpenAIModelDriver",
         thinking_supported=True,
         thinking=False,
-        max_cot=32768,
+        max_cot=65536,
+    ),
+    "qwen3-next-80b-a3b-thinking": LLMModelInfo(
+        name="qwen3-next-80b-a3b-thinking",
+        context=262144,  # 256K context window (Qwen3-Max Preview)
+        max_response=65536,  # Matches Qwen3-Max Preview output limit
+        category="Alibaba Qwen3-Max Preview (256K) - 80B A3B Thinking Model (OpenAI-compatible)",
+        driver="OpenAIModelDriver",
+        thinking=True,
+        thinking_supported=True,
+        max_cot=65536,
+    ),
+    "qwen3-max-preview": LLMModelInfo(
+        name="qwen3-max-preview",
+        context=262144,  # 256K context window (Qwen3-Max Preview)
+        max_response=65536,  # Matches Qwen3-Max Preview output limit
+        category="Alibaba Qwen3-Max Preview (256K) - Standard Model (OpenAI-compatible)",
+        driver="OpenAIModelDriver",
+        thinking_supported=True,
+        thinking=False,
+        max_cot=65536,
     ),
 }
