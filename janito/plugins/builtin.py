@@ -54,35 +54,11 @@ def load_builtin_plugin(name: str) -> Optional[Plugin]:
     return None
 
 
-# Auto-register janito-coder plugins as builtin
-try:
-    from janito_coder.plugins import (
-        GitAnalyzerPlugin,
-        CodeNavigatorPlugin,
-        DependencyAnalyzerPlugin,
-        CodeFormatterPlugin,
-        TestRunnerPlugin,
-        LinterPlugin,
-        DebuggerPlugin,
-        PerformanceProfilerPlugin,
-        SecurityScannerPlugin,
-        DocumentationGeneratorPlugin,
-    )
-
-    # Register all janito-coder plugins as builtin
-    BuiltinPluginRegistry.register("git_analyzer", GitAnalyzerPlugin)
-    BuiltinPluginRegistry.register("code_navigator", CodeNavigatorPlugin)
-    BuiltinPluginRegistry.register("dependency_analyzer", DependencyAnalyzerPlugin)
-    BuiltinPluginRegistry.register("code_formatter", CodeFormatterPlugin)
-    BuiltinPluginRegistry.register("test_runner", TestRunnerPlugin)
-    BuiltinPluginRegistry.register("linter", LinterPlugin)
-    BuiltinPluginRegistry.register("debugger", DebuggerPlugin)
-    BuiltinPluginRegistry.register("performance_profiler", PerformanceProfilerPlugin)
-    BuiltinPluginRegistry.register("security_scanner", SecurityScannerPlugin)
-    BuiltinPluginRegistry.register(
-        "documentation_generator", DocumentationGeneratorPlugin
-    )
-
-except ImportError:
-    # janito-coder not available, skip registration
-    pass
+# Note: External plugin packages can be registered here if needed
+# For example, to auto-register plugins from external packages:
+# try:
+#     from external_package.plugins import SomePlugin
+#     BuiltinPluginRegistry.register("some_plugin", SomePlugin)
+# except ImportError:
+#     # external_package not available, skip registration
+#     pass

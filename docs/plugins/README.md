@@ -16,7 +16,7 @@ The Janito plugin system allows you to extend functionality with custom tools, c
 
 - **Local plugins** - Stored in `./plugins/` or `~/.janito/plugins/`
 - **Remote plugins** - Loaded from the `ikignosis/janito-plugins` repository
-- **Built-in plugins** - Included with janito-coder
+- **Built-in plugins** - Included with janito
 
 ## Quick Start
 
