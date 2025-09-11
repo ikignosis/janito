@@ -38,14 +38,7 @@ def _choose_provider(args):
     return provider
 
 
-def _select_coder_model_for_provider(provider: str) -> str:
-    """Auto-select the best coder model for the given provider when --developer mode is used."""
-    coder_models = {
-        "alibaba": "qwen3-coder-plus",
-        "cerebras": "qwen-3-coder-480b",
-    }
 
-    return coder_models.get(provider)
 
 
 def _populate_driver_config_data(args, modifiers, provider, model):
@@ -90,16 +83,7 @@ def prepare_llm_driver_config(args, modifiers):
     if not model:
         model = get_effective_model(provider)
 
-    # Auto-select coder model when --developer mode is used and no model is specified
-    if not model and getattr(args, "developer", False):
-        model = _select_coder_model_for_provider(provider)
-        if model and getattr(args, "verbose", False):
-            print_verbose_info(
-                "Auto-selected coder model",
-                f"{model} for provider {provider} (developer mode)",
-                style="magenta",
-                align_content=True,
-            )
+
 
     # Validate that the chosen model is supported by the selected provider
     if model:

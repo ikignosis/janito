@@ -23,9 +23,6 @@ def _extract_profile_name(filename: str) -> str:
     # Convert to title case for consistent capitalization, but handle common acronyms
     name = filename.replace("_", " ")
 
-    # Convert to proper title case with consistent capitalization
-    name = filename.replace("_", " ")
-
     # Handle special cases and acronyms
     special_cases = {
         "python": "Python",

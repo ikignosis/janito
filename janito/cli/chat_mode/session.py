@@ -133,9 +133,9 @@ class ChatSession:
             skip_profile_selection = False
 
             if skip_profile_selection:
-                profile = "Developer with Python Tools"  # Default for non-interactive commands
+                profile = "Developer"  # Default for non-interactive commands
             else:
-                profile = "Developer with Python Tools"
+                profile = "Developer"
 
         return profile, role, profile_system_prompt, no_tools_mode
 
@@ -323,7 +323,7 @@ class ChatSession:
     def _determine_profile(self, profile, python_profile, market_profile):
         """Determine the profile based on flags and arguments."""
         if python_profile and profile is None:
-            return "Developer with Python Tools"
+            return "Developer"
         if market_profile and profile is None:
             return "Market Analyst"
         return profile

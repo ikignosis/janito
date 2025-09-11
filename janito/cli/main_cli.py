@@ -41,7 +41,7 @@ definition = [
         ["--developer"],
         {
             "action": "store_true",
-            "help": "Start with the Python developer profile (equivalent to --profile 'Developer with Python Tools')",
+            "help": "Start with the Python developer profile (equivalent to --profile 'Developer')",
         },
     ),
     (
@@ -405,6 +405,7 @@ class JanitoCLI:
         # Special handling: provider is not required for list commands
         if run_mode == RunMode.GET and (
             self.args.list_providers
+            or self.args.list_models
             or self.args.list_tools
             or self.args.list_profiles
             or self.args.show_config

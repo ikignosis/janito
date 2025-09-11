@@ -27,7 +27,7 @@ class PromptHandler:
         # Handle --developer and --market flags for single shot mode
         profile = getattr(args, "profile", None)
         if profile is None and getattr(args, "developer", False):
-            profile = "Developer with Python Tools"
+            profile = "Developer"
         if profile is None and getattr(args, "market", False):
             profile = "Market Analyst"
 

@@ -23,15 +23,16 @@ def _load_template_content(profile, templates_dir):
     Loads the template content for the given profile from the specified directory or package resources.
     If the profile template is not found in the default locations, tries to load from the user profiles directory ~/.janito/profiles.
 
-    Spaces in the profile name are converted to underscores to align with the file-naming convention (e.g. "Developer with Python Tools" ➜ "Developer_with_Python_Tools" (matches: system_prompt_template_Developer_with_Python_Tools.txt.j2)).
+    Spaces in the profile name are converted to underscores to align with the file-naming convention (e.g. "Developer" ➜ "Developer" (matches: system_prompt_template_Developer.txt.j2)).
     """
-    sanitized_profile = re.sub(r"\s+", "_", profile.strip())
-    template_filename = f"system_prompt_template_{sanitized_profile}.txt.j2"
+    # Normalize profile name for file matching: convert to lowercase and replace spaces with underscores
+    normalized_profile = profile.strip().lower().replace(" ", "_")
+    template_filename = f"system_prompt_template_{normalized_profile}.txt.j2"
 
-    return _find_template_file(template_filename, templates_dir)
+    return _find_template_file(template_filename, templates_dir, profile)
 
 
-def _find_template_file(template_filename, templates_dir):
+def _find_template_file(template_filename, templates_dir, profile):
     """Find and load template file from various locations."""
     template_path = templates_dir / template_filename
 

@@ -123,9 +123,9 @@ def handle_show_system_prompt(args):
     if profile is None and getattr(args, "market", False):
         profile = "Market Analyst"
 
-    # Handle --developer flag mapping to Developer With Python Tools profile
+    # Handle --developer flag mapping to Developer profile
     if profile is None and getattr(args, "developer", False):
-        profile = "Developer With Python Tools"
+        profile = "Developer"
 
     if not profile:
         print(
