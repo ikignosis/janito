@@ -17,7 +17,7 @@ class AlibabaProvider(LLMProvider):
     NAME = "alibaba"
     MAINTAINER = "João Pinto <janito@ikignosis.org>"
     MODEL_SPECS = MODEL_SPECS
-    DEFAULT_MODEL = "qwen3-max-preview"  # 128k context, latest preview model
+    DEFAULT_MODEL = "qwen3-next-80b-a3b-instruct"  # 256k context, latest Qwen3 Next model
 
     def __init__(
         self, auth_manager: LLMAuthManager = None, config: LLMDriverConfig = None
