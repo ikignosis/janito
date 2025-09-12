@@ -43,7 +43,7 @@ class ReadFilesTool(ToolBase):
                 with open(path, "r", encoding="utf-8", errors="replace") as f:
                     content = f.read()
                 results.append(f"--- File: {disp_path} ---\n{content}\n")
-                self.report_success(tr("✅ Read {disp_path}", disp_path=disp_path))
+                self.report_success(tr("✅ Read {disp_path}", disp_path=""))
             except Exception as e:
                 self.report_error(
                     tr(

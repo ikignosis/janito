@@ -98,7 +98,7 @@ class SearchTextTool(ToolBase):
         if max_depth > 0:
             info_str += tr(" [max_depth={max_depth}]", max_depth=max_depth)
         if count_only:
-            info_str += " [count]"
+            info_str += " 🔢"
         self.report_action(info_str, ReportAction.READ)
         if os.path.isfile(search_path):
             dir_output, dir_limit_reached, per_file_counts = self._handle_file(
@@ -141,7 +141,7 @@ class SearchTextTool(ToolBase):
         file_word = pluralize("match", count)
         num_files = len(per_file_counts)
         file_label = pluralize("file", num_files)
-        file_word_max = file_word + (" (max)" if dir_limit_reached else "")
+        file_word_max = file_word + (" 🛑" if dir_limit_reached else "")
         self.report_success(
             tr(
                 " ✅ {count} {file_word}/{num_files} {file_label}",
