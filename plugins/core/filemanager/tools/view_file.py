@@ -21,7 +21,7 @@ class ViewFileTool(ToolBase):
     Returns:
         str: File content with a header indicating the file name and line range. Example:
             - "---\nFile: /path/to/file.py | Lines: 1-10 (of 100)\n---\n<lines...>"
-            - "---\nFile: /path/to/file.py | All lines (total: 100 ⚪)\n---\n<all lines...>"
+            - "---\nFile: /path/to/file.py | All lines (total: 100 ∞)\n---\n<all lines...>"
             - "Error reading file: <error message>"
             - "❗ not found"
     """
@@ -114,7 +114,7 @@ class ViewFileTool(ToolBase):
             elif to_line < total_lines:
                 self.report_success(
                     tr(
-                        " ✅ {selected_len} {line_word} ({remaining} to end)",
+                        " ✅ {selected_len} {line_word} ({remaining} ➡️∞)",
                         selected_len=selected_len,
                         line_word=pluralize("line", selected_len),
                         remaining=total_lines - to_line,
@@ -123,7 +123,7 @@ class ViewFileTool(ToolBase):
         else:
             self.report_success(
                 tr(
-                    " ✅ {selected_len} {line_word} ⚪",
+                    " ✅ {selected_len} {line_word} ∞",
                     selected_len=selected_len,
                     line_word=pluralize("line", selected_len),
                 )
@@ -158,7 +158,7 @@ class ViewFileTool(ToolBase):
             )
         else:
             return tr(
-                "---\n{disp_path} All lines (total: {total_lines} ⚪)\n---\n",
+                "---\n{disp_path} All lines (total: {total_lines} ∞)\n---\n",
                 disp_path=disp_path,
                 total_lines=total_lines,
             )

@@ -43,7 +43,7 @@ class ReplaceTextInFileTool(ToolBase):
         from janito.tools.tool_utils import display_path
 
         disp_path = display_path(path)
-        action = "⚪" if replace_all else ""
+        action = "∞" if replace_all else ""
         search_lines = len(search_text.splitlines())
         replace_lines = len(replacement_text.splitlines())
         info_msg = self._format_info_msg(

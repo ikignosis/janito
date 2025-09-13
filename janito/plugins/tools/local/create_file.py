@@ -1,4 +1,5 @@
 import os
+import base64
 from janito.tools.path_utils import expand_path
 from janito.plugins.tools.local.adapter import register_local_tool
 
@@ -28,6 +29,7 @@ class CreateFileTool(ToolBase):
     - Detailed error messages with context
     - Safe overwrite protection with preview of existing content
     - Cross-platform path handling (Windows, macOS, Linux)
+    - Base64 decoding support for binary files
 
     Args:
         path (str, required): Target file path. Supports relative and absolute paths, with automatic
@@ -40,12 +42,15 @@ class CreateFileTool(ToolBase):
                                    When False, prevents accidental overwrites by checking
                                    file existence and showing current content. Always review
                                    existing content before enabling overwrite.
+        is_base64 (bool, optional): If True, treats the content as base64-encoded data and decodes it
+                           before writing to the file. This enables creation of binary files
+                           (images, executables, archives, etc.). Default: False.
 
     Returns:
         str: Detailed status message including:
-            - Success confirmation with line count
+            - Success confirmation with line count (for text files) or byte count (for binary files)
             - File path (display-friendly format)
-            - Syntax validation results
+            - Syntax validation results (for text files)
             - Existing content preview (when overwrite blocked)
             - Error details (when creation fails)
 
@@ -75,6 +80,10 @@ class CreateFileTool(ToolBase):
         >>> create_file("empty.txt", "")
         ✅ Created file 0 lines.
 
+        Creating a binary file from base64:
+        >>> create_file("image.png", "/9j/4AAQSkZJRgABAQEASABIAAD/...", is_base64=True)
+        ✅ Created file 12345 bytes.
+
         Overwrite protection:
         >>> create_file("existing.txt", "new content")
         ❗ Cannot create file: file already exists at 'existing.txt'.
@@ -89,7 +98,7 @@ class CreateFileTool(ToolBase):
     tool_name = "create_file"
 
     @protect_against_loops(max_calls=5, time_window=10.0, key_field="path")
-    def run(self, path: str, content: str = "", overwrite: bool = False) -> str:
+    def run(self, path: str, content: str = "", overwrite: bool = False, is_base64: bool = False) -> str:
         path = expand_path(path)
         disp_path = display_path(path)
         if os.path.exists(path) and not overwrite:
@@ -120,23 +129,48 @@ class CreateFileTool(ToolBase):
                 tr("📝 Create file '{disp_path}' ...", disp_path=disp_path),
                 ReportAction.CREATE,
             )
-        with open(path, "w", encoding="utf-8", errors="replace") as f:
-            f.write(content)
-        new_lines = content.count("\n") + 1 if content else 0
-        self.report_success(
-            tr("✅ {new_lines} lines", new_lines=new_lines), ReportAction.CREATE
-        )
-        # Perform syntax validation and append result
-        validation_result = validate_file_syntax(path)
+        
+        # Handle base64 decoding if requested
+        if is_base64:
+            try:
+                decoded_content = base64.b64decode(content)
+                mode = "wb"  # Binary mode for base64 content
+                # For binary files, we report byte count instead of line count
+                new_bytes = len(decoded_content)
+                self.report_success(
+                    tr("✅ {new_bytes} bytes", new_bytes=new_bytes), ReportAction.CREATE
+                )
+            except Exception as e:
+                return tr(
+                    "❌ Failed to decode base64 content: {error}",
+                    error=str(e)
+                )
+        else:
+            # Regular text content
+            decoded_content = content
+            mode = "w"  # Text mode for regular content
+            new_lines = content.count("\n") + 1 if content else 0
+            self.report_success(
+                tr("✅ {new_lines} lines", new_lines=new_lines), ReportAction.CREATE
+            )
+        
+        with open(path, mode, errors="replace") as f:
+            f.write(decoded_content)
+        
+        # Perform syntax validation only for text files (not binary)
+        validation_result = ""
+        if not is_base64:
+            validation_result = validate_file_syntax(path)
+        
         if is_overwrite:
             # Overwrite branch: return minimal overwrite info to user
-            return (
-                tr("✅ {new_lines} lines", new_lines=new_lines)
-                + f"\n{validation_result}"
-            )
+            result = tr("✅ {count}", count=f"{new_bytes} bytes" if is_base64 else f"{new_lines} lines")
+            if validation_result:
+                result += f"\n{validation_result}"
+            return result
         else:
             # Create branch: return detailed create success to user
-            return (
-                tr("✅ Created file {new_lines} lines.", new_lines=new_lines)
-                + f"\n{validation_result}"
-            )
+            result = tr("✅ Created file {count}.", count=f"{new_bytes} bytes" if is_base64 else f"{new_lines} lines")
+            if validation_result:
+                result += f"\n{validation_result}"
+            return result

@@ -35,14 +35,19 @@ nav:
       - API Reference: reference/api.md
       - Changelog: CHANGELOG.md
   - Supported Providers & Models:
-      - Overview: supported-providers-models.md
-      - Platform & Documentation Access: provider-platform-access.md
+      - Overview: providers.md
+      - Model List: models/supported_models.md
       - OpenAI Setup: openai-setup.md
+      - Anthropic Setup: anthropic-setup.md
+      - Google Gemini Setup: google-setup.md
+      - Mistral Setup: mistral-setup.md
+      - Cerebras Setup: cerebras-setup.md
+      - Z.AI Setup: z-ai-setup.md
+      - Alibaba Qwen Setup: alibaba-setup.md
       - DeepSeek Setup: deepseek-setup.md
       - Moonshot Setup: moonshot-setup.md
-      - Z.ai Setup: z-ai-setup.md
-      - Cerebras Setup: cerebras-setup.md
       - IBM WatsonX Setup: ibm-setup.md
+      - Azure OpenAI Setup: azure-openai-setup.md
   - Concepts:
       - Overview: concepts/index.md
       - What Is a Language Model Client?: concepts/language-model-clients.md

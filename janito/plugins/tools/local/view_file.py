@@ -15,23 +15,26 @@ class ViewFileTool(ToolBase):
         path (str): Path to the file to read lines from.
         from_line (int, optional): Starting line number (1-based). Omit to start from the first line.
         to_line (int, optional): Ending line number (1-based). Omit to read to the end of the file.
+        as_base64 (bool, optional): If True, returns the file content as base64-encoded string instead of plain text. Default: False.
 
     To read the full file, just provide path and leave from_line and to_line unset.
 
     Returns:
         str: File content with a header indicating the file name and line range. Example:
             - "---\nFile: /path/to/file.py | Lines: 1-10 (of 100)\n---\n<lines...>"
-            - "---\nFile: /path/to/file.py | All lines (total: 100 ⚪)\n---\n<all lines...>"
+            - "---\nFile: /path/to/file.py | All lines (total: 100 ∞)\n---\n<all lines...>"
             - "Error reading file: <error message>"
             - "❗ not found"
+            - When as_base64=True: "---\nFile: /path/to/file.py | Base64 encoded (total: 12345 bytes)\n---\n<base64_string>"
     """
 
     permissions = ToolPermissions(read=True)
     tool_name = "view_file"
 
     @protect_against_loops(max_calls=5, time_window=10.0, key_field="path")
-    def run(self, path: str, from_line: int = None, to_line: int = None) -> str:
+    def run(self, path: str, from_line: int = None, to_line: int = None, as_base64: bool = False) -> str:
         import os
+        import base64
         from janito.tools.tool_utils import display_path
         from janito.tools.path_utils import expand_path
 
@@ -44,7 +47,23 @@ class ViewFileTool(ToolBase):
         try:
             if os.path.isdir(path):
                 return self._list_directory(path, disp_path)
-            lines = self._read_file_lines(path)
+            
+            # Read file content
+            with open(path, "rb") as f:  # Open in binary mode for base64 compatibility
+                content = f.read()
+            
+            if as_base64:
+                # Return base64 encoded content
+                encoded_content = base64.b64encode(content).decode('utf-8')
+                header = tr(
+                    "---\n{disp_path} Base64 encoded (total: {total_bytes} bytes)\n---\n",
+                    disp_path=disp_path,
+                    total_bytes=len(content)
+                )
+                return header + encoded_content
+            
+            # Original behavior: decode and return as text
+            lines = content.decode('utf-8', errors='replace').splitlines(keepends=True)
             selected, selected_len, total_lines = self._select_lines(
                 lines, from_line, to_line
             )
@@ -52,7 +71,7 @@ class ViewFileTool(ToolBase):
             header = self._format_header(
                 disp_path, from_line, to_line, selected_len, total_lines
             )
-            return header + "".join(selected)
+            return header + ''.join(selected)
         except FileNotFoundError as e:
             self.report_warning(tr("❗ not found"))
             return f"Error reading file: {e}"
@@ -71,7 +90,7 @@ class ViewFileTool(ToolBase):
             for entry in entries:
                 full_path = os.path.join(path, entry)
                 if os.path.isdir(full_path):
-                    formatted_entries.append(entry + "/")
+                    formatted_entries.append(entry + '/')
                 else:
                     formatted_entries.append(entry)
             header = (
@@ -83,11 +102,6 @@ class ViewFileTool(ToolBase):
         except Exception as e:
             self.report_error(tr(" ❌ Error listing directory: {error}", error=e))
             return tr("Error listing directory: {error}", error=e)
-
-    def _read_file_lines(self, path):
-        """Read all lines from the file."""
-        with open(path, "r", encoding="utf-8", errors="replace") as f:
-            return f.readlines()
 
     def _select_lines(self, lines, from_line, to_line):
         """Select the requested lines and return them with their count and total lines."""
@@ -114,7 +128,7 @@ class ViewFileTool(ToolBase):
             elif to_line < total_lines:
                 self.report_success(
                     tr(
-                        " ✅ {selected_len} {line_word} ({remaining} to end)",
+                        " ✅ {selected_len} {line_word} ({remaining} ➡️∞)",
                         selected_len=selected_len,
                         line_word=pluralize("line", selected_len),
                         remaining=total_lines - to_line,
@@ -123,7 +137,7 @@ class ViewFileTool(ToolBase):
         else:
             self.report_success(
                 tr(
-                    " ✅ {selected_len} {line_word} ⚪",
+                    " ✅ {selected_len} {line_word} ∞",
                     selected_len=selected_len,
                     line_word=pluralize("line", selected_len),
                 )
@@ -158,7 +172,7 @@ class ViewFileTool(ToolBase):
             )
         else:
             return tr(
-                "---\n{disp_path} All lines (total: {total_lines} ⚪)\n---\n",
+                "---\n{disp_path} All lines (total: {total_lines} ∞)\n---\n",
                 disp_path=disp_path,
                 total_lines=total_lines,
             )
