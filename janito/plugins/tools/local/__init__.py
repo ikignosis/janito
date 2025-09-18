@@ -27,6 +27,7 @@ from .read_chart import ReadChartTool
 from .show_image import ShowImageTool
 from .show_image_grid import ShowImageGridTool
 from .markdown_view import MarkdownViewTool
+from .clear_context import ClearContextTool
 
 from janito.tools.tool_base import ToolPermissions
 import os
@@ -73,6 +74,7 @@ for tool_class in [
     ShowImageTool,
     ShowImageGridTool,
     MarkdownViewTool,
+    ClearContextTool,
 ]:
     # Skip bash tools when running in PowerShell
     if is_powershell and tool_class.__name__ in ["RunBashCommandTool"]:

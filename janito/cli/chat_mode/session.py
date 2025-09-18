@@ -102,6 +102,15 @@ class ChatSession:
         # Set no_tools_mode if present
         self.shell_state.no_tools_mode = bool(no_tools_mode)
         self._filter_execution_tools()
+        
+        # Set the current agent in the tools adapter for context-aware tools
+        try:
+            from janito.plugins.tools.local import local_tools_adapter
+            if hasattr(local_tools_adapter, 'set_current_agent'):
+                local_tools_adapter.set_current_agent(self.agent)
+        except Exception:
+            pass  # Silently ignore if adapter doesn't support this
+        
         from janito.perf_singleton import performance_collector
 
         self.performance_collector = performance_collector

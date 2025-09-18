@@ -31,6 +31,9 @@ COMMAND_HANDLERS = {
     "/clear": __import__(
         "janito.cli.chat_mode.shell.commands.clear", fromlist=["ClearShellHandler"]
     ).ClearShellHandler,
+    "/clear_context": __import__(
+        "janito.cli.chat_mode.shell.commands.clear_context", fromlist=["ClearContextShellHandler"]
+    ).ClearContextShellHandler,
     "/restart": __import__(
         "janito.cli.chat_mode.shell.commands.conversation_restart",
         fromlist=["RestartShellHandler"],

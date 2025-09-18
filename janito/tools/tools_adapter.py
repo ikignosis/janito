@@ -34,13 +34,20 @@ class ToolsAdapterBase:
 
         allowed_permissions = get_global_allowed_permissions()
         perms = tool.permissions  # permissions are mandatory and type-checked
-        # If all permissions are False, block all tools
+        
+        # If tool requires no permissions (all False), allow it regardless of global settings
+        if not any(perms):
+            return True
+            
+        # If all global permissions are False, block tools that require permissions
         if not (
             allowed_permissions.read
             or allowed_permissions.write
             or allowed_permissions.execute
         ):
             return False
+            
+        # Check if tool's required permissions are satisfied by global settings
         for perm in ["read", "write", "execute"]:
             if getattr(perms, perm) and not getattr(allowed_permissions, perm):
                 return False
@@ -253,6 +260,13 @@ class ToolsAdapterBase:
                         )
                     return f"Security error: {sec_err}"
         # --- END SECURITY ---
+
+        # Set agent reference for tools that need it
+        if hasattr(tool, 'set_agent'):
+            if hasattr(self, 'agent') and self.agent:
+                tool.set_agent(self.agent)
+            elif hasattr(self, '_current_agent') and self._current_agent:
+                tool.set_agent(self._current_agent)
 
         self._publish_tool_call_started(tool_name, request_id, arguments)
         self._print_verbose(

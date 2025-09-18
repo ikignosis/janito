@@ -48,6 +48,7 @@ class LocalToolsAdapter(ToolsAdapter):
 
         # Internal registry structure: { tool_name: {"class": cls, "instance": obj, "function": obj.run} }
         self._tools: Dict[str, Dict[str, Any]] = {}
+        self._current_agent = None  # Store reference to current agent
 
         import os
 
@@ -186,6 +187,11 @@ class LocalToolsAdapter(ToolsAdapter):
             "class": tool.__class__,
             "instance": tool,
         }
+
+    def set_current_agent(self, agent):
+        """Set the current agent reference for tools that need it."""
+        self._current_agent = agent
+        self.agent = agent  # Also set the base class attribute
 
 
 # -------------------------------------------------------------------------
