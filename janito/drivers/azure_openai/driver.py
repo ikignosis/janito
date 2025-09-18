@@ -1,6 +1,9 @@
 from janito.drivers.openai.driver import OpenAIModelDriver
 
-from openai import AzureOpenAI
+try:
+    from openai import AzureOpenAI
+except ImportError:
+    AzureOpenAI = None
 
 from janito.llm.driver_config import LLMDriverConfig
 

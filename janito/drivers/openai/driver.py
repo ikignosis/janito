@@ -12,7 +12,10 @@ from janito.llm.driver_input import DriverInput
 from janito.driver_events import RequestFinished, RequestStatus, RateLimitRetry
 from janito.llm.message_parts import TextMessagePart, FunctionCallMessagePart
 
-import openai
+try:
+    import openai
+except ImportError:
+    openai = None
 
 
 class OpenAIModelDriver(LLMDriver):
