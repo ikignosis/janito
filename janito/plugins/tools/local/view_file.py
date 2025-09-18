@@ -128,7 +128,7 @@ class ViewFileTool(ToolBase):
             elif to_line < total_lines:
                 self.report_success(
                     tr(
-                        " ✅ {selected_len} {line_word} ({remaining} ➡️∞)",
+                        " ✅ {selected_len} {line_word} ({remaining} ➡️ ∞)",
                         selected_len=selected_len,
                         line_word=pluralize("line", selected_len),
                         remaining=total_lines - to_line,

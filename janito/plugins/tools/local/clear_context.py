@@ -16,6 +16,12 @@ class ClearContextTool(ToolBase):
     
     This tool clears the LLM's conversation history, allowing you to start fresh
     within the current session without losing session state or tool configurations.
+    
+    Parameters
+    ----------
+    new_context_msg : str, optional
+        Optional message to add to the conversation history after clearing.
+        This can be used to provide context about the reset.
     """
 
     tool_name = "clear_context"
