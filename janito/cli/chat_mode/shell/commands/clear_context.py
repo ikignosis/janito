@@ -3,16 +3,27 @@ from janito.cli.console import shared_console
 
 
 class ClearContextShellHandler(ShellCmdHandler):
-    help_text = "Clear the agent's conversation history to reset context."
+    help_text = "Clear the agent's conversation history to reset context. Usage: /clear_context [optional new context message]"
 
     def run(self):
         try:
+            # Parse optional new context message from the command line
+            new_context_msg = self.after_cmd_line.strip() if self.after_cmd_line else None
+            
             # Access the agent through the shell state
             if hasattr(self.shell_state, 'agent') and self.shell_state.agent:
                 agent = self.shell_state.agent
                 if hasattr(agent, 'conversation_history'):
+                    # Clear the conversation history
                     agent.conversation_history.clear()
-                    shared_console.print("[green]✅ Agent conversation history has been cleared.[/green]")
+                    
+                    # Add optional new context message if provided
+                    if new_context_msg:
+                        agent.conversation_history.add_message("system", new_context_msg)
+                        shared_console.print("[green]✅ Agent conversation history has been cleared and new context added.[/green]")
+                    else:
+                        shared_console.print("[green]✅ Agent conversation history has been cleared.[/green]")
+                    
                     shared_console.print("[dim]The context has been reset for this session.[/dim]")
                     return None
             

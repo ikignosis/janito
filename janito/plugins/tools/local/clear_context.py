@@ -29,9 +29,15 @@ class ClearContextTool(ToolBase):
         """Set the agent reference to access conversation history."""
         self._agent = agent
 
-    def run(self) -> str:
+    def run(self, new_context_msg: str = None) -> str:
         """
         Clear the agent's conversation history.
+        
+        Parameters
+        ----------
+        new_context_msg : str, optional
+            Optional message to add to the conversation history after clearing.
+            This can be used to provide context about the reset.
         
         Returns
         -------
@@ -41,26 +47,29 @@ class ClearContextTool(ToolBase):
         self.report_action("Clearing agent conversation history", None)
         
         try:
-            # Check if we have a direct agent reference
+            # Determine which agent reference to use
+            agent = None
             if self._agent and hasattr(self._agent, 'conversation_history'):
-                self._agent.conversation_history.clear()
-                self.report_success("Agent conversation history cleared successfully")
-                return "✅ Agent conversation history has been cleared. The context has been reset."
-            
-            # Try to access the agent through the tools adapter context
-            # The tools adapter should have access to the current agent's conversation history
-            if hasattr(self, '_tools_adapter') and hasattr(self._tools_adapter, 'agent'):
+                agent = self._agent
+            elif hasattr(self, '_tools_adapter') and hasattr(self._tools_adapter, 'agent'):
                 agent = self._tools_adapter.agent
-                if agent and hasattr(agent, 'conversation_history'):
-                    agent.conversation_history.clear()
-                    self.report_success("Agent conversation history cleared successfully")
-                    return "✅ Agent conversation history has been cleared. The context has been reset."
+            elif hasattr(self, 'agent') and hasattr(self.agent, 'conversation_history'):
+                agent = self.agent
             
-            # Try to access through the base class agent attribute
-            if hasattr(self, 'agent') and hasattr(self.agent, 'conversation_history'):
-                self.agent.conversation_history.clear()
+            if agent and hasattr(agent, 'conversation_history'):
+                # Clear the conversation history
+                agent.conversation_history.clear()
+                
+                # Add optional new context message if provided
+                if new_context_msg:
+                    agent.conversation_history.add_message("system", new_context_msg)
+                
                 self.report_success("Agent conversation history cleared successfully")
-                return "✅ Agent conversation history has been cleared. The context has been reset."
+                
+                if new_context_msg:
+                    return f"✅ Agent conversation history has been cleared and new context added. The context has been reset."
+                else:
+                    return "✅ Agent conversation history has been cleared. The context has been reset."
             
             # Try to access through the event bus or global context
             # This is a fallback approach for when the tool is called directly
