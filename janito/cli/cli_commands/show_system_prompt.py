@@ -41,6 +41,10 @@ def _prepare_context(args, agent_role, allowed_permissions):
         context["platform"] = pd.get_platform_name()
         context["python_version"] = pd.get_python_version()
         context["shell_info"] = pd.detect_shell()
+        # Add Linux distro info if on Linux
+        if pd.is_linux():
+            context["linux_distro"] = pd.get_linux_distro()
+            context["distro_info"] = pd.get_distro_info()
     return context
 
 

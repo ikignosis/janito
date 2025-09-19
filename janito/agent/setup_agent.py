@@ -134,6 +134,10 @@ def _prepare_template_context(role, profile, allowed_permissions, args=None):
         context["platform"] = pd.get_platform_name()
         context["python_version"] = pd.get_python_version()
         context["shell_info"] = pd.detect_shell()
+        # Add Linux distro info if on Linux
+        if pd.is_linux():
+            context["linux_distro"] = pd.get_linux_distro()
+            context["distro_info"] = pd.get_distro_info()
 
     # Add allowed sites for market analyst profile
     if profile == "market-analyst":

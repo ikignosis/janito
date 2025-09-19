@@ -70,28 +70,13 @@ class ClearContextTool(ToolBase):
                 if new_context_msg:
                     agent.conversation_history.add_message("system", new_context_msg)
                 
-                self.report_success("Agent conversation history cleared successfully")
+                self.report_success("✅")
                 
                 if new_context_msg:
                     return f"✅ Agent conversation history has been cleared and new context added. The context has been reset."
                 else:
                     return "✅ Agent conversation history has been cleared. The context has been reset."
-            
-            # Try to access through the event bus or global context
-            # This is a fallback approach for when the tool is called directly
-            try:
-                from janito.cli.chat_mode.session import ChatSession
-                # Try to find the current session through global state
-                # This is a workaround for the architectural limitation
-                
-                # For now, provide a clear message about the limitation
-                # and suggest using the shell command instead
-                self.report_warning("Use /clear_context command instead")
-                return "⚠️ Cannot clear conversation history from tool context. Please use the /clear_context shell command instead. This tool is designed to work within the chat session context."
-                
-            except ImportError:
-                pass
-            
+                        
             # Final fallback message
             self.report_warning("Cannot access agent conversation history from tool context")
             return "⚠️ Cannot clear conversation history: the tool does not have access to the agent context. Please use the /clear_context shell command instead."

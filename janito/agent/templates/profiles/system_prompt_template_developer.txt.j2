@@ -23,9 +23,10 @@ You are: {{ role | default('software developer') }}
 {% endfor %}
 {% endif %}
 
-{% if environment or platform or shell_info %}
+{% if environment or platform or shell_info or linux_distro %}
 ## Environment
 {% if platform %}Platform: {{ platform }}{% endif %}
+{% if linux_distro %}Linux Distribution: {{ linux_distro }}{% endif %}
 {% if python_version %}Python version: {{ python_version }}{% endif %}
 {% if shell_info %}Shell/Environment: {{ shell_info }}{% endif %}
 {% endif %}

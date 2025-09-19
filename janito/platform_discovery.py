@@ -2,6 +2,7 @@ import os
 import platform
 import subprocess
 import sys
+from pathlib import Path
 
 
 class PlatformDiscovery:
@@ -145,3 +146,62 @@ class PlatformDiscovery:
             bool: True if running on macOS, False otherwise.
         """
         return sys.platform.startswith("darwin")
+
+    def get_linux_distro(self) -> str:
+        """
+        Detect the Linux distribution name and version from /etc/os-release.
+
+        Returns:
+            str: A string like 'Ubuntu 22.04' or 'Unknown Linux' if the file
+                 is missing or not on Linux.
+        """
+        if not self.is_linux():
+            return "Not Linux"
+
+        os_release = Path("/etc/os-release")
+        if not os_release.exists():
+            return "Unknown Linux"
+
+        info = {}
+        try:
+            content = os_release.read_text(encoding="utf-8")
+            for line in content.splitlines():
+                if "=" in line:
+                    key, value = line.split("=", 1)
+                    info[key] = value.strip('"')
+        except Exception:
+            return "Unknown Linux"
+
+        name = info.get("NAME", "Unknown")
+        version = info.get("VERSION_ID", "")
+        if version:
+            return f"{name} {version}"
+        return name
+
+    def get_distro_info(self) -> dict:
+        """
+        Get detailed Linux distribution information from /etc/os-release.
+
+        Returns:
+            dict: Dictionary containing keys like NAME, VERSION, ID, ID_LIKE,
+                  PRETTY_NAME, VERSION_ID, etc. Empty dict if not on Linux
+                  or if /etc/os-release is unavailable.
+        """
+        if not self.is_linux():
+            return {}
+
+        os_release = Path("/etc/os-release")
+        if not os_release.exists():
+            return {}
+
+        info = {}
+        try:
+            content = os_release.read_text(encoding="utf-8")
+            for line in content.splitlines():
+                if "=" in line:
+                    key, value = line.split("=", 1)
+                    info[key] = value.strip('"')
+        except Exception:
+            return {}
+
+        return info
