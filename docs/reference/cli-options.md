@@ -36,7 +36,7 @@ These options are useful for one-off runs, scripting, or experimentation. They t
 | `-s SYSTEM_PROMPT`, `--system SYSTEM_PROMPT` | Set a system prompt |
 | `-S`, `--show-system` | Show the resolved system prompt for the main agent |
 | `-p PROVIDER`, `--provider PROVIDER` | Select the provider |
-| `-m MODEL`, `--model MODEL` | Select the model |
+| `-m MODEL`, `--model MODEL` | Select the model (supports `model@provider` syntax) |
 | `-t TEMPERATURE`, `--temperature TEMPERATURE` | Set the temperature |
 | `-v`, `--verbose` | Print extra information before answering |
 | `-R`, `--raw` | Print the raw JSON response from the OpenAI API (if applicable) |
@@ -49,6 +49,7 @@ These options are useful for one-off runs, scripting, or experimentation. They t
 ```sh
 janito [options] [prompt]
 janito -p openai -m gpt-3.5-turbo "Your prompt here"
+janito -m gpt-4@openai "Your prompt here"  # Using model@provider syntax
 janito -c myproject -p openai "Prompt for my project (uses ~/.janito/configs/myproject.json)"
 janito --list-tools
 janito --multi  # Start chat mode with multiline input as default
@@ -95,6 +96,44 @@ janito -u "Do something with C:/Windows/System32/hosts"
 > **Warning:** Disabling path security is extremely dangerous. Only use `--unrestricted-paths` if you trust your prompt, tools, and environment.
 
 _This page is generated from the output of `janito --help`._
+
+## 🔄 Model@Provider Syntax
+
+The `-m`/`--model` option supports a convenient `model@provider` syntax that allows you to specify both the model and provider in a single argument:
+
+```sh
+# Traditional approach (two arguments)
+janito -p openai -m gpt-4 "Your prompt"
+
+# New syntax (single argument) - equivalent to above
+janito -m gpt-4@openai "Your prompt"
+```
+
+### Benefits
+- **Shorter commands**: Combine model and provider selection
+- **Consistent with other tools**: Familiar syntax used by tools like Docker
+- **Backward compatible**: Existing `-p provider -m model` syntax still works
+
+### Examples
+
+```sh
+# Use GPT-4 with OpenAI
+janito -m gpt-4@openai "Explain quantum computing"
+
+# Use Claude with Anthropic
+janito -m claude-3-5-sonnet-20241022@anthropic "Write a Python function"
+
+# Use Kimi with Moonshot
+janito -m kimi-k1-8k@moonshot "Translate this to Chinese"
+
+# Complex model names work too
+janito -m gpt-4-turbo-preview@openai "Debug this code"
+```
+
+### Notes
+- If you specify both `-m model@provider` and `-p provider`, the explicit `-p` flag takes precedence
+- Multiple `@` symbols are handled by splitting on the last `@` (e.g., `model@with@symbols@provider` → model: `model@with@symbols`, provider: `provider`)
+- Empty parts are ignored (e.g., `@provider` or `model@` won't set the provider)
 
 ## 🧠 About `--effort`
 

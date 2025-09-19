@@ -101,4 +101,26 @@ You can override the default model using `--model MODEL_NAME` on any command:
 janito chat --provider openai --model gpt-4o
 ```
 
+### Model@Provider Syntax
+
+For convenience, you can specify both model and provider in a single argument using the `model@provider` syntax:
+
+```bash
+# These are equivalent:
+janito chat --provider openai --model gpt-4o
+janito chat -m gpt-4o@openai
+
+# More examples:
+janito -m claude-3-5-sonnet-20241022@anthropic "Write a Python function"
+janito -m kimi-k1-8k@moonshot "Translate this to Chinese"
+janito -m deepseek-chat@deepseek "Explain machine learning"
+```
+
+This syntax is particularly useful for:
+- Quick one-off commands
+- Scripts and automation
+- Following conventions from tools like Docker
+
+> **Note**: If you specify both `-m model@provider` and `-p provider`, the explicit `-p` flag takes precedence.
+
 > **Note**: The list of available models is automatically synchronized with the codebase. Use `janito list-models --provider PROVIDER` to see all available options.

@@ -33,6 +33,22 @@ Janito is a flexible and extensible platform for interacting with large language
    janito chat
    ```
 
+## Quick Examples
+
+```bash
+# Simple prompt
+janito "Create a Python script to calculate fibonacci numbers"
+
+# Using specific model and provider
+janito -p openai -m gpt-4 "Explain quantum computing"
+
+# Using the shorthand model@provider syntax
+janito -m gpt-4@openai "Explain quantum computing"
+
+# Interactive mode
+janito --interactive
+```
+
 ## Documentation
 
 Explore our comprehensive documentation:

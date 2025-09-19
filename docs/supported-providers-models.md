@@ -1,5 +1,7 @@
 # Supported Providers and Models
 
+> **💡 Quick Tip**: Use the convenient `model@provider` syntax to specify both model and provider in one argument: `janito -m gpt-4@openai "Your prompt"`
+
 This page lists the supported providers and their available models, organized by openness and sorted alphabetically within each category.
 
 > 📋 **Platform & Documentation Access**: For information about which providers have publicly accessible platforms and documentation vs. blocked access, see [Platform & Documentation Access](provider-platform-access.md).

@@ -10,6 +10,21 @@ janito "what are the key classes of this project?"
 
 Janito will process your request and exit after displaying the result.
 
+### Model and Provider Selection
+
+You can specify which model and provider to use for your one-shot command:
+
+```bash
+# Traditional approach
+janito -p openai -m gpt-4 "what are the key classes of this project?"
+
+# Shorthand syntax (model@provider)
+janito -m gpt-4@openai "what are the key classes of this project?"
+
+# Using a different provider
+janito -m claude-3-5-sonnet-20241022@anthropic "analyze this codebase"
+```
+
 ### Shell Command Execution
 
 Janito supports executing shell commands in one-shot mode using the built-in `run_bash_command` and `run_powershell_command` tools:

@@ -4,8 +4,8 @@ import os
 import json
 from pathlib import Path
 from bs4 import BeautifulSoup
-from typing import Dict, Any, Optional
-from janito.tools.adapters.local.adapter import register_local_tool
+from typing import Dict, Any, Optional, Union
+from janito.plugins.tools.local.adapter import register_local_tool
 from janito.tools.tool_base import ToolBase, ToolPermissions
 from janito.report_events import ReportAction
 from janito.i18n import tr
@@ -45,7 +45,9 @@ class FetchUrlTool(ToolBase):
         context_chars (int, optional): Characters of context around search matches. Defaults to 400.
         timeout (int, optional): Timeout in seconds for the HTTP request. Defaults to 10.
         save_to_file (str, optional): File path to save the full resource content. If provided,
-            the complete response will be saved to this file instead of being processed.
+            the complete response will be saved to this file instead of being processed. Supports
+            both text and binary content - binary content (PDFs, images, archives, etc.) will be
+            saved correctly with proper encoding detection.
         headers (Dict[str, str], optional): Custom HTTP headers to send with the request.
         cookies (Dict[str, str], optional): Custom cookies to send with the request.
         follow_redirects (bool, optional): Whether to follow HTTP redirects. Defaults to True.
@@ -181,7 +183,7 @@ class FetchUrlTool(ToolBase):
         headers: Optional[Dict[str, str]] = None,
         cookies: Optional[Dict[str, str]] = None,
         follow_redirects: bool = True,
-    ) -> str:
+    ) -> Union[str, bytes]:
         """Fetch URL content and handle HTTP errors.
 
         Implements two-tier caching:
@@ -189,6 +191,9 @@ class FetchUrlTool(ToolBase):
         2. Error cache: Persistent disk cache for HTTP errors with different expiration times
 
         Also implements URL whitelist checking and browser-like behavior.
+        
+        Returns:
+            Union[str, bytes]: Text content as string, binary content as bytes.
         """
         # Check URL whitelist
         from janito.tools.url_whitelist import get_url_whitelist_manager
@@ -236,7 +241,35 @@ class FetchUrlTool(ToolBase):
                 allow_redirects=follow_redirects,
             )
             response.raise_for_status()
-            content = response.text
+            
+            # Try to detect content type and handle binary content
+            content_type = response.headers.get('content-type', '').lower()
+            
+            # Check if content is likely binary based on content-type header
+            binary_content_types = [
+                'application/octet-stream',
+                'application/pdf',
+                'application/zip',
+                'application/x-tar',
+                'application/gzip',
+                'image/',
+                'audio/',
+                'video/',
+                'application/vnd.',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument',
+                'application/x-rar-compressed',
+                'application/x-7z-compressed'
+            ]
+            
+            is_binary_type = any(binary_type in content_type for binary_type in binary_content_types)
+            
+            if is_binary_type:
+                # For binary content, get raw bytes
+                content = response.content
+            else:
+                # For text content, decode as text
+                content = response.text
 
             # Save cookies after successful request
             self._save_cookies()
@@ -393,17 +426,33 @@ class FetchUrlTool(ToolBase):
                 cookies=cookies,
                 follow_redirects=follow_redirects,
             )
+            # Handle both string and bytes content for error checking
+            if isinstance(html_content, bytes):
+                error_check = html_content.decode('utf-8', errors='replace')
+            else:
+                error_check = html_content
+                
             if (
-                html_content.startswith("HTTP Error ")
-                or html_content == "Error"
-                or html_content == "Blocked"
+                error_check.startswith("HTTP Error ")
+                or error_check == "Error"
+                or error_check == "Blocked"
             ):
-                return html_content
+                return error_check
 
             try:
-                with open(save_to_file, "w", encoding="utf-8") as f:
-                    f.write(html_content)
-                file_size = len(html_content)
+                # Handle both string and bytes content for saving
+                if isinstance(html_content, bytes):
+                    # For binary content, write in binary mode
+                    with open(save_to_file, "wb") as f:
+                        f.write(html_content)
+    
+                else:
+                    # For text content, write with UTF-8 encoding
+                    with open(save_to_file, "w", encoding="utf-8") as f:
+                        f.write(html_content)
+                    file_size = len(html_content.encode('utf-8'))
+                
+                file_size = len(html_content.encode('utf-8') if isinstance(html_content, str) else html_content)
                 self.report_success(
                     tr(
                         "✅ Saved {size} bytes to {file}",
@@ -426,12 +475,18 @@ class FetchUrlTool(ToolBase):
             cookies=cookies,
             follow_redirects=follow_redirects,
         )
+        # Handle both string and bytes content for error checking
+        if isinstance(html_content, bytes):
+            error_check = html_content.decode('utf-8', errors='replace')
+        else:
+            error_check = html_content
+            
         if (
-            html_content.startswith("HTTP Error ")
-            or html_content == "Error"
-            or html_content == "Blocked"
+            error_check.startswith("HTTP Error ")
+            or error_check == "Error"
+            or error_check == "Blocked"
         ):
-            return html_content
+            return error_check
 
         # Extract and clean text
         text = self._extract_and_clean_text(html_content)

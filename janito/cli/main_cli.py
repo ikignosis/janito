@@ -173,7 +173,7 @@ definition = [
         },
     ),
     (["-p", "--provider"], {"metavar": "PROVIDER", "help": "Select the provider"}),
-    (["-m", "--model"], {"metavar": "MODEL", "help": "Select the model"}),
+    (["-m", "--model"], {"metavar": "MODEL", "help": "Select the model (can use model@provider syntax)"}),
     (
         ["-t", "--temperature"],
         {"type": float, "default": None, "help": "Set the temperature"},
@@ -304,11 +304,13 @@ class JanitoCLI:
 
         self.parser = argparse.ArgumentParser(
             description="Janito CLI - A tool for running LLM-powered workflows from the command line."
-            "\n\nExample usage: janito -p moonshot -m kimi-k1-8k 'Your prompt here'\n\n"
+            "\n\nExample usage: janito -p moonshot -m kimi-k1-8k 'Your prompt here'\n"
+            "Example usage: janito -m model@provider 'Your prompt here'\n\n"
             "Use -m or --model to set the model for the session.",
         )
         self._define_args()
         self.args = self.parser.parse_args()
+        self._parse_model_provider_syntax()
         self._set_all_arg_defaults()
         # Support custom config file via -c/--config
         if getattr(self.args, "config", None):
@@ -348,6 +350,18 @@ class JanitoCLI:
         from janito.cli.rich_terminal_reporter import RichTerminalReporter
 
         self.rich_reporter = RichTerminalReporter(raw_mode=self.args.raw)
+
+    def _parse_model_provider_syntax(self):
+        """Parse -m model@provider syntax to split into model and provider."""
+        model = getattr(self.args, "model", None)
+        if model and "@" in model:
+            model_part, provider_part = model.rsplit("@", 1)
+            if model_part and provider_part:
+                # Only set provider if not already explicitly set via -p flag
+                if getattr(self.args, "provider", None) is None:
+                    self.args.provider = provider_part
+                # Always set the model part (without the @provider suffix)
+                self.args.model = model_part
 
     def _define_args(self):
         for argnames, argkwargs in definition:

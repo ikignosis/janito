@@ -57,6 +57,9 @@ janito --set-config ibm project_id YOUR_PROJECT_ID
 
 # Verify it's working
 janito "Hello, can you introduce yourself?"
+
+# Or use the shorthand syntax
+janito -m ibm/granite-3-3-8b-instruct@ibm "Hello, can you introduce yourself?"
 ```
 
 ## Your First Commands
@@ -68,6 +71,10 @@ janito "Create a Python script to calculate fibonacci numbers"
 
 # With specific model
 janito -m kimi-k1-8k "Explain machine learning in simple terms"
+
+# Using model@provider syntax (shorthand)
+janito -m kimi-k1-8k@moonshot "Explain machine learning in simple terms"
+janito -m gpt-4@openai "Explain quantum computing"
 
 # Interactive chat mode
 janito --chat
