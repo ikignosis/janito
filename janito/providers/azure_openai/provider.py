@@ -38,20 +38,20 @@ class AzureOpenAIProvider(LLMProvider):
             handle_missing_api_key(self.name, "AZURE_OPENAI_API_KEY")
 
         self._tools_adapter = get_local_tools_adapter()
-        self._driver_config = config or LLMDriverConfig(model=None)
-        if not self._driver_config.model:
-            self._driver_config.model = self.DEFAULT_MODEL
-        if not self._driver_config.api_key:
-            self._driver_config.api_key = self._api_key
-        if not self._driver_config.extra.get("api_version"):
-            self._driver_config.extra["api_version"] = "2023-05-15"
+        self.config = config or LLMDriverConfig(model=None)
+        if not self.config.model:
+            self.config.model = self.DEFAULT_MODEL
+        if not self.config.api_key:
+            self.config.api_key = self._api_key
+        if not self.config.extra.get("api_version"):
+            self.config.extra["api_version"] = "2023-05-15"
         # Inject azure_deployment_name from config if present
         from janito.config import config as global_config
 
         deployment_name = global_config.get("azure_deployment_name")
         if deployment_name:
-            self._driver_config.extra["azure_deployment_name"] = deployment_name
-        self.fill_missing_device_info(self._driver_config)
+            self.config.extra["azure_deployment_name"] = deployment_name
+        self.fill_missing_device_info(self.config)
         self._driver = AzureOpenAIModelDriver(tools_adapter=self._tools_adapter)
 
     @property
@@ -107,7 +107,7 @@ class AzureOpenAIProvider(LLMProvider):
         Creates and returns a new AzureOpenAIModelDriver instance with the provider's configuration and tools adapter.
         """
         driver = AzureOpenAIModelDriver(tools_adapter=self._tools_adapter)
-        driver.config = self._driver_config
+        driver.config = self.config
         # NOTE: The caller is responsible for calling driver.start() if background processing is needed.
         return driver
 
@@ -122,7 +122,7 @@ class AzureOpenAIProvider(LLMProvider):
     @property
     def driver_config(self):
         """Public, read-only access to the provider's LLMDriverConfig object."""
-        return self._driver_config
+        return self.config
 
     def execute_tool(self, tool_name: str, event_bus, *args, **kwargs):
         # Use direct execution via adapter:

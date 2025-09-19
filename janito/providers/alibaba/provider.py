@@ -50,7 +50,7 @@ class AlibabaProvider(LLMProvider):
         # Set Alibaba international endpoint as default base_url if not provided
         if not getattr(self.config, "base_url", None):
             self.config.base_url = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
-            self.fill_missing_device_info(self._driver_config)
+            self.fill_missing_device_info(self.config)
             self._driver = None  # to be provided by factory/agent
 
     def create_driver(self) -> OpenAIModelDriver:
@@ -78,7 +78,7 @@ class AlibabaProvider(LLMProvider):
     @property
     def driver_config(self):
         """Public, read-only access to the provider's LLMDriverConfig object."""
-        return self._driver_config
+        return self.config
 
     def execute_tool(self, tool_name: str, event_bus, *args, **kwargs):
         self._tools_adapter.event_bus = event_bus

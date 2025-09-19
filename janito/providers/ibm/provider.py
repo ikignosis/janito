@@ -94,12 +94,12 @@ class IBMProvider(LLMProvider):
 
     @property
     def model_name(self):
-        return self._driver_config.model
+        return self.config.model
 
     @property
     def driver_config(self):
         """Public, read-only access to the provider's LLMDriverConfig object."""
-        return self._driver_config
+        return self.config
 
     def execute_tool(self, tool_name: str, event_bus, *args, **kwargs):
         self._tools_adapter.event_bus = event_bus
