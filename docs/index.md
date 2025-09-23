@@ -59,5 +59,6 @@ Explore our comprehensive documentation:
 - [Supported Models](models/supported_models.md)
 - [Tools & Plugins](tools.md)
 - [Developer Guide](guides/developing.md)
+- [Releasing Guide](guides/releasing.md)
 
 > **Note**: The list of supported models is automatically generated from the codebase. When new models are added, this documentation updates automatically.*
