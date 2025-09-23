@@ -92,8 +92,8 @@ This document lists all supported large language models (LLMs) across providers,
 
 | Model Name | Context Window | Max Tokens | Description |
 |------------|----------------|------------|-------------|
-| `deepseek-chat` | 8,192 | 4,096 | DeepSeek Chat Model (OpenAI-compatible) |
-| `deepseek-reasoner` | 8,192 | 4,096 | DeepSeek Reasoner Model (OpenAI-compatible) |
+| `deepseek-chat` | 131,072 | 4,096 | DeepSeek Chat Model (OpenAI-compatible) |
+| `deepseek-reasoner` | 131,072 | 32,768 | DeepSeek Reasoner Model (OpenAI-compatible) |
 
 ## Moonshot
 

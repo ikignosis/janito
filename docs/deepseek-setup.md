@@ -34,8 +34,8 @@ janito -p deepseek "Your prompt here"
 
 Janito supports the following DeepSeek models:
 
-- `deepseek-chat` (default) - General purpose chat model (8K context)
-- `deepseek-reasoner` - Specialized for complex reasoning tasks (8K context)
+- `deepseek-chat` (default) - General purpose chat model (128K context)
+- `deepseek-reasoner` - Specialized for complex reasoning tasks (128K context)
 
 To select a model:
 

@@ -41,8 +41,8 @@ This page lists the supported providers and their available models, organized by
 
 ### DeepSeek
 
-- **DeepSeek Chat** (default) - General purpose chat model (8K context)
-- **DeepSeek Reasoner** - Specialized for complex reasoning tasks (8K context)
+- **DeepSeek Chat** (default) - General purpose chat model (128K context)
+- **DeepSeek Reasoner** - Specialized for complex reasoning tasks (128K context)
 
 ### Mistral
 
