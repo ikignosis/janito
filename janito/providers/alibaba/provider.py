@@ -19,7 +19,7 @@ class AlibabaProvider(LLMProvider):
     NAME = "alibaba"  # For backward compatibility
     MAINTAINER = "João Pinto <janito@ikignosis.org>"
     MODEL_SPECS = MODEL_SPECS
-    DEFAULT_MODEL = "qwen3-next-80b-a3b-instruct"  # 256k context, latest Qwen3 Next model
+    DEFAULT_MODEL = "qwen3-max-preview"  # 256k context, Qwen3 Max Preview standard model
     available = OpenAIModelDriver.available
     unavailable_reason = OpenAIModelDriver.unavailable_reason
 
