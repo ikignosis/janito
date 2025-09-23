@@ -15,9 +15,6 @@ Run "janito <command> --help" for more information on a command.
 # If you have go already installed
 go install github.com/ninech/janito@latest
 
-# Homebrew
-brew install ninech/taps/janito
-
 # Debian/Ubuntu
 echo "deb [trusted=yes] https://repo.nine.ch/deb/ /" | sudo tee /etc/apt/sources.list.d/repo.nine.ch.list
 sudo apt-get update
