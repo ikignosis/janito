@@ -6,6 +6,7 @@ import subprocess
 import sys
 import urllib.request
 import json
+import os
 
 # Colors for output
 GREEN = "\033[0;32m"
@@ -150,11 +151,64 @@ def check_tag_points_to_head(tag):
             f"Tag {tag} does not point to the current commit. Please update the tag or create a new one."
         )
 
+def create_github_release(tag, version):
+    """Create a GitHub release for the given tag"""
+    # Get GitHub token from environment
+    token = os.environ.get('GITHUB_TOKEN')
+    if not token:
+        print_error("GITHUB_TOKEN environment variable not set. Required for GitHub release.")
+    
+    # Get repository info from git remote
+    try:
+        remote_url = subprocess.check_output(["git", "config", "--get", "remote.origin.url"]).decode().strip()
+        # Handle different URL formats
+        if remote_url.startswith('git@'):
+            # git@github.com:owner/repo.git
+            repo_path = remote_url.split(':')[1].replace('.git', '')
+        else:
+            # https://github.com/owner/repo.git
+            repo_path = '/'.join(remote_url.split('/')[-2:]).replace('.git', '')
+        
+        owner, repo = repo_path.split('/')
+    except Exception as e:
+        print_error(f"Could not determine repository info: {e}")
+    
+    # Create release data
+    release_data = {
+        "tag_name": tag,
+        "name": f"v{version}",
+        "body": f"Release v{version}\n\nSee the [changelog](https://github.com/{owner}/{repo}/blob/main/CHANGELOG.md) for details.",
+        "draft": False,
+        "prerelease": False
+    }
+    
+    # Make API request
+    import requests
+    headers = {
+        'Authorization': f'token {token}',
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+    }
+    
+    url = f'https://api.github.com/repos/{owner}/{repo}/releases'
+    response = requests.post(url, json=release_data, headers=headers)
+    
+    if response.status_code == 201:
+        print_info(f"GitHub release created successfully: {response.json()['html_url']}")
+    else:
+        print_error(f"Failed to create GitHub release: {response.status_code} - {response.text}")
+
 
 def main():
     build_only = "--build-only" in sys.argv
     check_tool("build")
     check_tool("twine")
+    
+    # Check for requests module
+    try:
+        import requests
+    except ImportError:
+        print_error("requests module is not installed. Please install it first: pip install requests")
 
     # Check git status for uncommitted changes
     status = subprocess.check_output(["git", "status", "--porcelain"]).decode().strip()
@@ -180,6 +234,11 @@ def main():
         return
     print_info("Publishing to PyPI...")
     subprocess.run("twine upload dist/*", shell=True, check=True)
+    
+    # Create GitHub release
+    print_info("Creating GitHub release...")
+    create_github_release(tag, project_version)
+    
     print_info("Release process completed successfully.")
 
 
