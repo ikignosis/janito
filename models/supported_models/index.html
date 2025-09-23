@@ -1,0 +1,2524 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://ikignosis.org/janito/models/supported_models/">
+      
+      
+        <link rel="prev" href="../../providers/">
+      
+      
+        <link rel="next" href="../../openai-setup/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.20">
+    
+    
+      
+        <title>Model List - Janito</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.e53b48f4.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#supported-llm-models" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Janito" class="md-header__button md-logo" aria-label="Janito" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Janito
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Model List
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/ikignosis/janito" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Janito" class="md-nav__button md-logo" aria-label="Janito" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Janito
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ikignosis/janito" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Installation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Configuration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Using Janito
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Using Janito
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/using/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quickstart & Basic Usage
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/using_tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    How Janito Uses Tools
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/terminal-shell/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Terminal Shell
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/single-shot-terminal/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Single-Shot
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/prompt-design-style/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Prompt Design Style
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../PROFILES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Using Profiles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Developing & Extending
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Developing & Extending
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/developing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Developer Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/tools-developer-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tools Developer Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../meta/developer-toolchain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Developer Toolchain Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Features
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Features
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tools-precision/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tools Precision
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_2" id="__nav_6_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Code Intelligence
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_2">
+            <span class="md-nav__icon md-icon"></span>
+            Code Intelligence
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../code_intelligence/our-approach/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Our Approach
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../code_intelligence/code-generation-challenges/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Code Generation Challenges
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../code_intelligence/code-generation-observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Code Generation Observability
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../code_intelligence/agentic-frameworks-comparison/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Agentic Frameworks Comparison
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../code_intelligence/why-string-replacement/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Why String-Replacement Rules?
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Reference
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Configuration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/cli-options/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    CLI Options
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/disabled-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Disabling Tools
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    API Reference
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Changelog
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Supported Providers & Models
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            Supported Providers & Models
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../providers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Model List
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Model List
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#openai" class="md-nav__link">
+    <span class="md-ellipsis">
+      OpenAI
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#anthropic" class="md-nav__link">
+    <span class="md-ellipsis">
+      Anthropic
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#google-gemini" class="md-nav__link">
+    <span class="md-ellipsis">
+      Google Gemini
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mistral" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mistral
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cerebras" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cerebras
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#zai" class="md-nav__link">
+    <span class="md-ellipsis">
+      Z.AI
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alibaba-qwen" class="md-nav__link">
+    <span class="md-ellipsis">
+      Alibaba Qwen
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deepseek" class="md-nav__link">
+    <span class="md-ellipsis">
+      DeepSeek
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#moonshot" class="md-nav__link">
+    <span class="md-ellipsis">
+      Moonshot
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ibm-watsonx" class="md-nav__link">
+    <span class="md-ellipsis">
+      IBM WatsonX
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#azure-openai" class="md-nav__link">
+    <span class="md-ellipsis">
+      Azure OpenAI
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../openai-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    OpenAI Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../anthropic-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Anthropic Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../google-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Google Gemini Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../mistral-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Mistral Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cerebras-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Cerebras Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../z-ai-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Z.AI Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../alibaba-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Alibaba Qwen Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deepseek-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    DeepSeek Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../moonshot-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Moonshot Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ibm-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    IBM WatsonX Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../azure-openai-setup.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Azure OpenAI Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Concepts
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            Concepts
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/language-model-clients/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    What Is a Language Model Client?
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/analysis-style/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Prompt Analysis Style
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/human-guided-ai/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Human-Guided AI Principle
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    About
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            About
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../about/why/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Why Janito?
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../about/vs-webchats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Janito vs Web Chat Agents
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../about/costs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Costs & Value Transparency
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../alternatives/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Alternatives
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#openai" class="md-nav__link">
+    <span class="md-ellipsis">
+      OpenAI
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#anthropic" class="md-nav__link">
+    <span class="md-ellipsis">
+      Anthropic
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#google-gemini" class="md-nav__link">
+    <span class="md-ellipsis">
+      Google Gemini
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mistral" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mistral
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cerebras" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cerebras
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#zai" class="md-nav__link">
+    <span class="md-ellipsis">
+      Z.AI
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alibaba-qwen" class="md-nav__link">
+    <span class="md-ellipsis">
+      Alibaba Qwen
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deepseek" class="md-nav__link">
+    <span class="md-ellipsis">
+      DeepSeek
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#moonshot" class="md-nav__link">
+    <span class="md-ellipsis">
+      Moonshot
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ibm-watsonx" class="md-nav__link">
+    <span class="md-ellipsis">
+      IBM WatsonX
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#azure-openai" class="md-nav__link">
+    <span class="md-ellipsis">
+      Azure OpenAI
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="supported-llm-models">Supported LLM Models</h1>
+<p>This document lists all supported large language models (LLMs) across providers, as defined in the codebase.</p>
+<h2 id="openai">OpenAI</h2>
+<table>
+<thead>
+<tr>
+<th>Model Name</th>
+<th>Context Window</th>
+<th>Max Response</th>
+<th>Thinking Supported</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gpt-3.5-turbo</code></td>
+<td>16,385</td>
+<td>4,096</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>gpt-4.1</code></td>
+<td>1,047,576</td>
+<td>32,768</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>gpt-4.1-mini</code></td>
+<td>1,047,576</td>
+<td>32,768</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>gpt-4.1-nano</code></td>
+<td>1,047,576</td>
+<td>32,768</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>gpt-4-turbo</code></td>
+<td>128,000</td>
+<td>N/A</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>gpt-4o</code></td>
+<td>128,000</td>
+<td>4,096</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>gpt-4o-mini</code></td>
+<td>128,000</td>
+<td>16,384</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>o3-mini</code></td>
+<td>200,000</td>
+<td>100,000</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>o3</code></td>
+<td>200,000</td>
+<td>100,000</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>o4-mini</code></td>
+<td>200,000</td>
+<td>100,000</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>gpt-5</code></td>
+<td>200,000</td>
+<td>100,000</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>gpt-5-mini</code></td>
+<td>200,000</td>
+<td>100,000</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>gpt-5-nano</code></td>
+<td>200,000</td>
+<td>100,000</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Note</strong>: <code>gpt-4-turbo-alt</code> is a duplicate entry for internal use and should not be selected by users.</p>
+</blockquote>
+<h2 id="anthropic">Anthropic</h2>
+<table>
+<thead>
+<tr>
+<th>Model Name</th>
+<th>Max Response</th>
+<th>Thinking Supported</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>claude-opus-4-20250514</code></td>
+<td>32,000</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>claude-sonnet-4-20250514</code></td>
+<td>64,000</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>claude-3-7-sonnet-20250219</code></td>
+<td>64,000</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>claude-3-5-haiku-20241022</code></td>
+<td>8,192</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>claude-3-5-sonnet-20241022</code></td>
+<td>8,192</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>claude-3-haiku-20240307</code></td>
+<td>4,096</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<h2 id="google-gemini">Google Gemini</h2>
+<table>
+<thead>
+<tr>
+<th>Model Name</th>
+<th>Max Response</th>
+<th>Max COT</th>
+<th>Thinking Supported</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>gemini-2.5-flash</code></td>
+<td>8,192</td>
+<td>24,576</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>gemini-2.5-pro</code></td>
+<td>65,536</td>
+<td>196,608</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>gemini-2.5-flash-lite-preview-06-17</code></td>
+<td>64,000</td>
+<td>192,000</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<h2 id="mistral">Mistral</h2>
+<table>
+<thead>
+<tr>
+<th>Model Name</th>
+<th>Context Window</th>
+<th>Max Input</th>
+<th>Max Response</th>
+<th>Thinking Supported</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>codestral-latest</code></td>
+<td>256,000</td>
+<td>250,000</td>
+<td>4,096</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>codestral-2405</code></td>
+<td>256,000</td>
+<td>250,000</td>
+<td>4,096</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>mistral-small-latest</code></td>
+<td>32,000</td>
+<td>28,000</td>
+<td>4,096</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>mistral-medium-latest</code></td>
+<td>32,000</td>
+<td>28,000</td>
+<td>4,096</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>mistral-large-latest</code></td>
+<td>128,000</td>
+<td>120,000</td>
+<td>4,096</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>devstral-small-latest</code></td>
+<td>128,000</td>
+<td>120,000</td>
+<td>4,096</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>devstral-medium-latest</code></td>
+<td>128,000</td>
+<td>120,000</td>
+<td>4,096</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<h2 id="cerebras">Cerebras</h2>
+<table>
+<thead>
+<tr>
+<th>Model Name</th>
+<th>Max Input</th>
+<th>Max Response</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>qwen-3-32b</code></td>
+<td>128,000</td>
+<td>16,384</td>
+<td>Qwen 3 32B model for general instruction following</td>
+</tr>
+<tr>
+<td><code>qwen-3-235b-a22b-instruct-2507</code></td>
+<td>128,000</td>
+<td>16,384</td>
+<td>Qwen 3 235B A22B instruction-tuned model (preview)</td>
+</tr>
+<tr>
+<td><code>qwen-3-235b-a22b-thinking-2507</code></td>
+<td>128,000</td>
+<td>16,384</td>
+<td>Qwen 3 235B A22B thinking model for reasoning tasks (preview)</td>
+</tr>
+<tr>
+<td><code>qwen-3-coder-480b</code></td>
+<td>128,000</td>
+<td>16,384</td>
+<td>Qwen 3 Coder 480B model for programming tasks (preview)</td>
+</tr>
+<tr>
+<td><code>gpt-oss-120b</code></td>
+<td>128,000</td>
+<td>16,384</td>
+<td>GPT-OSS 120B open-source model (preview)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="zai">Z.AI</h2>
+<table>
+<thead>
+<tr>
+<th>Model Name</th>
+<th>Context Window</th>
+<th>Max Input</th>
+<th>Max COT</th>
+<th>Max Response</th>
+<th>Thinking Supported</th>
+<th>Supports Tools</th>
+<th>Supports Images</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>glm-4.5</code></td>
+<td>128,000</td>
+<td>128,000</td>
+<td>4,096</td>
+<td>4,096</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>glm-4.5-air</code></td>
+<td>128,000</td>
+<td>128,000</td>
+<td>4,096</td>
+<td>4,096</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<h2 id="alibaba-qwen">Alibaba Qwen</h2>
+<table>
+<thead>
+<tr>
+<th>Model Name</th>
+<th>Context Window</th>
+<th>Max Response</th>
+<th>Category</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>qwen-turbo</code></td>
+<td>1,008,192</td>
+<td>8,192</td>
+<td>Alibaba Qwen Turbo Model (OpenAI-compatible)</td>
+</tr>
+<tr>
+<td><code>qwen-plus</code></td>
+<td>131,072</td>
+<td>8,192</td>
+<td>Alibaba Qwen Plus Model (OpenAI-compatible)</td>
+</tr>
+<tr>
+<td><code>qwen-flash</code></td>
+<td>1,000,000</td>
+<td>8,192</td>
+<td>Alibaba Qwen Flash Model (OpenAI-compatible)</td>
+</tr>
+<tr>
+<td><code>qwen-max</code></td>
+<td>32,768</td>
+<td>8,192</td>
+<td>Alibaba Qwen Max Model (OpenAI-compatible)</td>
+</tr>
+<tr>
+<td><code>qwen3-coder-plus</code></td>
+<td>1,048,576</td>
+<td>65,536</td>
+<td>Alibaba Qwen3 Coder Plus Model (OpenAI-compatible)</td>
+</tr>
+<tr>
+<td><code>qwen3-coder-480b-a35b-instruct</code></td>
+<td>262,144</td>
+<td>65,536</td>
+<td>Alibaba Qwen3 Coder 480B A35B Instruct Model (OpenAI-compatible)</td>
+</tr>
+<tr>
+<td><code>qwen3-235b-a22b-thinking-2507</code></td>
+<td>131,072</td>
+<td>32,768</td>
+<td>Alibaba Qwen3 235B A22B Thinking Model (OpenAI-compatible)</td>
+</tr>
+<tr>
+<td><code>qwen3-235b-a22b-instruct-2507</code></td>
+<td>129,024</td>
+<td>32,768</td>
+<td>Alibaba Qwen3 235B A22B Instruct Model (OpenAI-compatible)</td>
+</tr>
+<tr>
+<td><code>qwen3-30b-a3b-thinking-2507</code></td>
+<td>126,976</td>
+<td>32,768</td>
+<td>Alibaba Qwen3 30B A3B Thinking Model (OpenAI-compatible)</td>
+</tr>
+<tr>
+<td><code>qwen3-30b-a3b-instruct-2507</code></td>
+<td>129,024</td>
+<td>32,768</td>
+<td>Alibaba Qwen3 30B A3B Instruct Model (OpenAI-compatible)</td>
+</tr>
+<tr>
+<td><code>qwen3-next-80b-a3b-instruct</code></td>
+<td>262,144</td>
+<td>65,536</td>
+<td>Alibaba Qwen3-Max Preview (256K) - 80B A3B Instruct Model (OpenAI-compatible)</td>
+</tr>
+<tr>
+<td><code>qwen3-next-80b-a3b-thinking</code></td>
+<td>262,144</td>
+<td>65,536</td>
+<td>Alibaba Qwen3-Max Preview (256K) - 80B A3B Thinking Model (OpenAI-compatible)</td>
+</tr>
+<tr>
+<td><code>qwen3-max-preview</code></td>
+<td>262,144</td>
+<td>65,536</td>
+<td>Alibaba Qwen3-Max Preview (256K) - Standard Model (OpenAI-compatible)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="deepseek">DeepSeek</h2>
+<table>
+<thead>
+<tr>
+<th>Model Name</th>
+<th>Context Window</th>
+<th>Max Tokens</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>deepseek-chat</code></td>
+<td>131,072</td>
+<td>4,096</td>
+<td>DeepSeek Chat Model (OpenAI-compatible)</td>
+</tr>
+<tr>
+<td><code>deepseek-reasoner</code></td>
+<td>131,072</td>
+<td>32,768</td>
+<td>DeepSeek Reasoner Model (OpenAI-compatible)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="moonshot">Moonshot</h2>
+<table>
+<thead>
+<tr>
+<th>Model Name</th>
+<th>Context Window</th>
+<th>Max Input</th>
+<th>Max Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>kimi-k2-0711-preview</code></td>
+<td>128,000</td>
+<td>100,000</td>
+<td>4,096</td>
+</tr>
+<tr>
+<td><code>kimi-k2-turbo-preview</code></td>
+<td>128,000</td>
+<td>100,000</td>
+<td>4,096</td>
+</tr>
+<tr>
+<td><code>kimi-k2-0905-preview</code></td>
+<td>128,000</td>
+<td>100,000</td>
+<td>4,096</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ibm-watsonx">IBM WatsonX</h2>
+<table>
+<thead>
+<tr>
+<th>Model Name</th>
+<th>Context Window</th>
+<th>Max Input</th>
+<th>Max Response</th>
+<th>Max COT</th>
+<th>Thinking Supported</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>openai/gpt-oss-120b</code></td>
+<td>128,000</td>
+<td>128,000</td>
+<td>4,096</td>
+<td>4,096</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>ibm/granite-3-8b-instruct</code></td>
+<td>128,000</td>
+<td>128,000</td>
+<td>4,096</td>
+<td>4,096</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>ibm/granite-3-3-8b-instruct</code></td>
+<td>128,000</td>
+<td>128,000</td>
+<td>4,096</td>
+<td>4,096</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>meta-llama/llama-3-1-70b-instruct</code></td>
+<td>128,000</td>
+<td>128,000</td>
+<td>4,096</td>
+<td>4,096</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>meta-llama/llama-3-3-70b-instruct</code></td>
+<td>128,000</td>
+<td>128,000</td>
+<td>4,096</td>
+<td>4,096</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>mistralai/mistral-large</code></td>
+<td>128,000</td>
+<td>128,000</td>
+<td>4,096</td>
+<td>4,096</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>mistralai/mistral-large-2407</code></td>
+<td>128,000</td>
+<td>128,000</td>
+<td>4,096</td>
+<td>4,096</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>openai/gpt-oss-20b</code></td>
+<td>128,000</td>
+<td>128,000</td>
+<td>4,096</td>
+<td>4,096</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<h2 id="azure-openai">Azure OpenAI</h2>
+<p>Azure OpenAI supports any deployment name configured by the user. The following are known model mappings:</p>
+<table>
+<thead>
+<tr>
+<th>Model Name</th>
+<th>Mapped To</th>
+<th>Context Window</th>
+<th>Max Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>azure_openai_deployment</code></td>
+<td>gpt-4o</td>
+<td>128,000</td>
+<td>4,096</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Note</strong>: Azure OpenAI deployments are user-defined. Use <code>--provider azure_openai --model YOUR_DEPLOYMENT_NAME</code> to use any valid deployment.</p>
+</blockquote>
+<hr />
+<p><em>Last updated from source code: September 2025</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright" style="text-align: center; width: 100%;">
+  <div class="md-copyright__highlight" style="display: inline-block;">
+    Generated by Janito • 
+    <span style="color: var(--md-accent-fg-color);">6dde87c5</span>
+  </div>
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.f55a23d4.min.js"></script>
+      
+    
+  </body>
+</html>
