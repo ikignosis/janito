@@ -94,9 +94,6 @@ This document lists all supported large language models (LLMs) across providers,
 |------------|----------------|------------|-------------|
 | `deepseek-chat` | 8,192 | 4,096 | DeepSeek Chat Model (OpenAI-compatible) |
 | `deepseek-reasoner` | 8,192 | 4,096 | DeepSeek Reasoner Model (OpenAI-compatible) |
-| `deepseek-v3.1` | 131,072 | 4,096 | DeepSeek V3.1 Model (128K context, OpenAI-compatible) |
-| `deepseek-v3.1-base` | 131,072 | 4,096 | DeepSeek V3.1 Base Model (128K context, OpenAI-compatible) |
-| `deepseek-r1` | 131,072 | 4,096 | DeepSeek R1 Model (128K context, OpenAI-compatible) |
 
 ## Moonshot
 

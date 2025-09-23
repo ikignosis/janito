@@ -19,7 +19,7 @@ class DeepSeekProvider(LLMProvider):
     NAME = "deepseek"  # For backward compatibility
     MAINTAINER = "João Pinto <janito@ikignosis.org>"
     MODEL_SPECS = MODEL_SPECS
-    DEFAULT_MODEL = "deepseek-chat"  # Options: deepseek-chat, deepseek-reasoner, deepseek-v3.1, deepseek-v3.1-base, deepseek-r1
+    DEFAULT_MODEL = "deepseek-chat"  # Options: deepseek-chat, deepseek-reasoner
     available = OpenAIModelDriver.available
     unavailable_reason = OpenAIModelDriver.unavailable_reason
 
@@ -51,7 +51,6 @@ class DeepSeekProvider(LLMProvider):
         if not getattr(self.config, "base_url", None):
             self.config.base_url = "https://api.deepseek.com/v1"
 
-    @property
     def create_driver(self) -> OpenAIModelDriver:
         """
         Create and return a new OpenAIModelDriver instance for DeepSeek.
@@ -75,4 +74,6 @@ class DeepSeekProvider(LLMProvider):
         return self.tools_adapter.execute_by_name(tool_name, *args, **kwargs)
 
 
-# Registration handled by providers/__init__.py to avoid circular imports
+# Registration
+from janito.providers.registry import LLMProviderRegistry
+LLMProviderRegistry.register(DeepSeekProvider.name, DeepSeekProvider)
