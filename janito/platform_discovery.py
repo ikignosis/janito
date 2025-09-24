@@ -24,13 +24,7 @@ class PlatformDiscovery:
             return f"Git Bash ({self.os_environ.get('MSYSTEM')})"
         return None
 
-    def _detect_wsl(self):
-        if self.os_environ.get("WSL_DISTRO_NAME"):
-            shell = self.os_environ.get("SHELL")
-            shell_name = shell.split("/")[-1] if shell else "unknown"
-            distro = self.os_environ.get("WSL_DISTRO_NAME")
-            return f"{shell_name} (WSL: {distro})"
-        return None
+
 
     def _detect_powershell(self):
         try:
@@ -87,7 +81,6 @@ class PlatformDiscovery:
         """
         shell_info = (
             self._detect_git_bash()
-            or self._detect_wsl()
             or self._detect_powershell()
             or self._detect_shell_env()
             or self._detect_comspec()

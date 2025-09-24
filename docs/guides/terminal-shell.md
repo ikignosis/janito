@@ -10,7 +10,7 @@ Janito works best with modern Unicode-capable terminals. **Windows Terminal is t
 
 Janito includes built-in support for executing shell commands across platforms:
 
-- **Bash commands** (`run_bash_command`) - Execute bash shell commands on Linux, macOS, and Windows (via WSL/Git Bash)
+- **Bash commands** (`run_bash_command`) - Execute bash shell commands on Linux, macOS, and Windows (via Git Bash)
 - **PowerShell commands** (`run_powershell_command`) - Execute PowerShell commands on Windows and cross-platform (requires PowerShell Core)
 
 These tools can be enabled/disabled via configuration and provide live output streaming, timeout handling, and security controls.
