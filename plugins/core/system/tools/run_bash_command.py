@@ -27,7 +27,6 @@ class RunBashCommandTool(ToolBase):
     """
 
     permissions = ToolPermissions(execute=True)
-    tool_name = "run_bash_command"
 
     def _stream_output(self, stream, file_obj, report_func, count_func, counter):
         for line in stream:

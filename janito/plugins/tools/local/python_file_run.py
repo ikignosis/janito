@@ -24,7 +24,6 @@ class PythonFileRunTool(ToolBase):
     """
 
     permissions = ToolPermissions(execute=True)
-    tool_name = "python_file_run"
 
     def run(self, path: str, timeout: int = 60, silent: bool = False) -> str:
         from janito.tools.path_utils import expand_path

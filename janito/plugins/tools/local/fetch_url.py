@@ -57,7 +57,6 @@ class FetchUrlTool(ToolBase):
     """
 
     permissions = ToolPermissions(read=True)
-    tool_name = "fetch_url"
 
     def __init__(self):
         super().__init__()

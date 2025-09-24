@@ -24,7 +24,6 @@ class RemoveDirectoryTool(ToolBase):
     """
 
     permissions = ToolPermissions(write=True)
-    tool_name = "remove_directory"
 
     def run(self, path: str, recursive: bool = False) -> str:
         path = expand_path(path)

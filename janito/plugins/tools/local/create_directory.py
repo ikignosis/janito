@@ -22,7 +22,6 @@ class CreateDirectoryTool(ToolBase):
     """
 
     permissions = ToolPermissions(write=True)
-    tool_name = "create_directory"
 
     def run(self, path: str) -> str:
         path = expand_path(path)

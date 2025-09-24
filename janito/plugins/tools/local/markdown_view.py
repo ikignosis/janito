@@ -21,7 +21,6 @@ class MarkdownViewTool(ToolBase):
     """
 
     permissions = ToolPermissions(read=True)
-    tool_name = "markdown_view"
 
     @protect_against_loops(max_calls=5, time_window=10.0, key_field="path")
     def run(self, path: str, width: int = 80, theme: str = "github") -> str:

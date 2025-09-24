@@ -23,7 +23,6 @@ class MoveFileTool(ToolBase):
     """
 
     permissions = ToolPermissions(read=True, write=True)
-    tool_name = "move_file"
 
     def run(
         self,

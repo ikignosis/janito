@@ -1,5 +1,6 @@
 from janito.report_events import ReportEvent, ReportSubtype, ReportAction
 from janito.event_bus.bus import event_bus as default_event_bus
+from janito.tools.base import BaseTool
 
 import inspect
 from collections import namedtuple
@@ -15,7 +16,7 @@ class ToolPermissions(namedtuple("ToolPermissions", ["read", "write", "execute"]
         return f"ToolPermissions(read={self.read}, write={self.write}, execute={self.execute})"
 
 
-class ToolBase:
+class ToolBase(BaseTool):
     """
     Base class for all tools in the janito project.
     Extend this class to implement specific tool functionality.

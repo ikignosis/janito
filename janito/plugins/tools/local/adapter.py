@@ -76,10 +76,11 @@ class LocalToolsAdapter(ToolsAdapter):
             raise TypeError(
                 f"Tool '{tool_class.__name__}' must implement a callable 'run' method."
             )
-        tool_name = getattr(instance, "tool_name", None)
+        # Derive tool name from class name by convention
+        tool_name = instance.tool_name
         if not tool_name or not isinstance(tool_name, str):
             raise ValueError(
-                f"Tool '{tool_class.__name__}' must provide a class attribute 'tool_name' (str) for its registration name."
+                f"Tool '{tool_class.__name__}' must provide a valid tool_name property."
             )
         if tool_name in self._tools:
             raise ValueError(f"Tool '{tool_name}' is already registered.")

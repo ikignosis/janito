@@ -31,7 +31,6 @@ class CreateFileTool(ToolBase):
     """
 
     permissions = ToolPermissions(write=True)
-    tool_name = "create_file"
 
     @protect_against_loops(max_calls=5, time_window=10.0, key_field="path")
     def run(self, path: str, content: str, overwrite: bool = False) -> str:

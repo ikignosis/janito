@@ -30,7 +30,6 @@ class FindFilesTool(ToolBase):
     """
 
     permissions = ToolPermissions(read=True)
-    tool_name = "find_files"
 
     def _match_directories(self, root, dirs, pat):
         dir_output = set()

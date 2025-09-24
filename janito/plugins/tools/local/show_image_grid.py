@@ -22,7 +22,6 @@ class ShowImageGridTool(ToolBase):
     """
 
     permissions = ToolPermissions(read=True)
-    tool_name = "show_image_grid"
 
     @protect_against_loops(max_calls=5, time_window=10.0, key_field="paths")
     def run(

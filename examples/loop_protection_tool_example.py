@@ -21,7 +21,6 @@ class CustomFileAnalyzerTool(ToolBase):
     """
 
     permissions = ToolPermissions(read=True)
-    tool_name = "custom_file_analyzer"
 
     @protect_against_loops(max_calls=5, time_window=10.0)
     def run(self, path: str, analysis_type: str = "basic") -> str:
@@ -77,7 +76,6 @@ class BatchFileProcessorTool(ToolBase):
     """
 
     permissions = ToolPermissions(read=True)
-    tool_name = "batch_file_processor"
 
     @protect_against_loops(max_calls=5, time_window=10.0)
     def run(self, file_paths: list, operation: str = "count") -> str:

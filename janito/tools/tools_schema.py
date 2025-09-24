@@ -61,16 +61,16 @@ class ToolSchemaBase:
         return summary, param_descs, return_desc
 
     def validate_tool_class(self, tool_class):
-        if not hasattr(tool_class, "tool_name") or not isinstance(
-            tool_class.tool_name, str
-        ):
+        # Create instance to get tool_name property
+        instance = tool_class()
+        tool_name = instance.tool_name
+        if not tool_name or not isinstance(tool_name, str):
             raise ValueError(
-                "Tool class must have a class-level 'tool_name' attribute (str) for registry and schema generation."
+                "Tool class must have a valid 'tool_name' property for registry and schema generation."
             )
         if not hasattr(tool_class, "run") or not callable(getattr(tool_class, "run")):
             raise ValueError("Tool class must have a callable 'run' method.")
         func = tool_class.run
-        tool_name = tool_class.tool_name
         sig = inspect.signature(func)
         if sig.return_annotation is inspect._empty or sig.return_annotation is not str:
             raise ValueError(

@@ -24,7 +24,6 @@ class CopyFileTool(ToolBase):
     """
 
     permissions = ToolPermissions(read=True, write=True)
-    tool_name = "copy_file"
 
     def run(self, sources: str, target: str, overwrite: bool = False) -> str:
         source_list = [expand_path(src) for src in sources.split() if src]

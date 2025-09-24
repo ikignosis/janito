@@ -30,7 +30,6 @@ class ReplaceTextInFileTool(ToolBase):
     """
 
     permissions = ToolPermissions(read=True, write=True)
-    tool_name = "replace_text_in_file"
 
     def run(
         self,

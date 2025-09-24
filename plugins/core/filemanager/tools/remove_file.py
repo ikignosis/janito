@@ -24,7 +24,6 @@ class RemoveFileTool(ToolBase):
     """
 
     permissions = ToolPermissions(write=True)
-    tool_name = "remove_file"
 
     def run(self, path: str, backup: bool = False) -> str:
         path = expand_path(path)

@@ -21,7 +21,6 @@ class DeleteTextInFileTool(ToolBase):
     """
 
     permissions = ToolPermissions(read=True, write=True)
-    tool_name = "delete_text_in_file"
 
     def run(
         self,

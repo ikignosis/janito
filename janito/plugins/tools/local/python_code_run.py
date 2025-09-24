@@ -24,7 +24,6 @@ class PythonCodeRunTool(ToolBase):
     """
 
     permissions = ToolPermissions(execute=True)
-    tool_name = "python_code_run"
 
     def run(self, code: str, timeout: int = 60, silent: bool = False) -> str:
         if not code.strip():

@@ -30,7 +30,6 @@ class RunPowershellCommandTool(ToolBase):
     """
 
     permissions = ToolPermissions(execute=True)
-    tool_name = "run_powershell_command"
 
     def _confirm_and_warn(self, command, require_confirmation, requires_user_input):
         if requires_user_input:

@@ -24,7 +24,6 @@ class ReadChartTool(ToolBase):
     """
 
     permissions = ToolPermissions(read=True)
-    tool_name = "read_chart"
 
     @protect_against_loops(max_calls=5, time_window=10.0, key_field="data")
     def run(

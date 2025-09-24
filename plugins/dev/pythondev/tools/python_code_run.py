@@ -5,7 +5,7 @@ import tempfile
 import threading
 from janito.tools.tool_base import ToolBase, ToolPermissions
 from janito.report_events import ReportAction
-from janito.tools.adapters.local.adapter import register_local_tool
+from janito.plugins.tools.local.adapter import register_local_tool
 from janito.i18n import tr
 
 
@@ -24,7 +24,6 @@ class PythonCodeRunTool(ToolBase):
     """
 
     permissions = ToolPermissions(execute=True)
-    tool_name = "python_code_run"
 
     def run(self, code: str, timeout: int = 60, silent: bool = False) -> str:
         if not code.strip():
