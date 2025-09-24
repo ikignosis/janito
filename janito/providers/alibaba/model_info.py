@@ -123,8 +123,8 @@ MODEL_SPECS = {
         thinking_supported=True,
         max_cot=65536,
     ),
-    "qwen3-max-preview": LLMModelInfo(
-        name="qwen3-max-preview",
+    "qwen3-max": LLMModelInfo(
+        name="qwen3-max",
         context=262144,  # 256K context window (Qwen3-Max Preview)
         max_response=65536,  # Matches Qwen3-Max Preview output limit
         category="Alibaba Qwen3-Max Preview (256K) - Standard Model (OpenAI-compatible)",

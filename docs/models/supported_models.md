@@ -86,7 +86,7 @@ This document lists all supported large language models (LLMs) across providers,
 | `qwen3-30b-a3b-instruct-2507` | 129,024 | 32,768 | Alibaba Qwen3 30B A3B Instruct Model (OpenAI-compatible) |
 | `qwen3-next-80b-a3b-instruct` | 262,144 | 65,536 | Alibaba Qwen3-Max Preview (256K) - 80B A3B Instruct Model (OpenAI-compatible) |
 | `qwen3-next-80b-a3b-thinking` | 262,144 | 65,536 | Alibaba Qwen3-Max Preview (256K) - 80B A3B Thinking Model (OpenAI-compatible) |
-| `qwen3-max-preview` | 262,144 | 65,536 | Alibaba Qwen3-Max Preview (256K) - Standard Model (OpenAI-compatible) |
+| `qwen3-max` | 262,144 | 65,536 | Alibaba Qwen3-Max Preview (256K) - Standard Model (OpenAI-compatible) |
 
 ## DeepSeek
 
@@ -126,6 +126,6 @@ Azure OpenAI supports any deployment name configured by the user. The following 
 
 > **Note**: Azure OpenAI deployments are user-defined. Use `--provider azure_openai --model YOUR_DEPLOYMENT_NAME` to use any valid deployment.
 
----
+ 
 
 *Last updated from source code: September 2025*
