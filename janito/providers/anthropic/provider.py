@@ -10,12 +10,12 @@ from janito.drivers.openai.driver import OpenAIModelDriver
 
 class AnthropicProvider(LLMProvider):
     """Anthropic LLM Provider implementation."""
-    
+
     name = "anthropic"
     NAME = "anthropic"  # For backward compatibility
     MAINTAINER = "Alberto Minetti <alberto.minetti@gmail.com>"
     MODEL_SPECS = MODEL_SPECS
-    DEFAULT_MODEL = "claude-3-7-sonnet-20250219"
+    DEFAULT_MODEL = "claude-sonnet-4-5-20250929"
     available = OpenAIModelDriver.available
     unavailable_reason = OpenAIModelDriver.unavailable_reason
 
@@ -23,10 +23,12 @@ class AnthropicProvider(LLMProvider):
         self, auth_manager: LLMAuthManager = None, config: LLMDriverConfig = None
     ):
         self._tools_adapter = get_local_tools_adapter()
-        
+
         # Call parent constructor to initialize base functionality
-        super().__init__(auth_manager=auth_manager, config=config, tools_adapter=self._tools_adapter)
-        
+        super().__init__(
+            auth_manager=auth_manager, config=config, tools_adapter=self._tools_adapter
+        )
+
         # Initialize API key and configure Anthropic-specific settings
         if self.available:
             self._initialize_anthropic_config()
@@ -37,28 +39,30 @@ class AnthropicProvider(LLMProvider):
         api_key = self.auth_manager.get_credentials(self.name)
         if not api_key:
             from janito.llm.auth_utils import handle_missing_api_key
+
             handle_missing_api_key(self.name, "ANTHROPIC_API_KEY")
-        
+
         # Set API key in config
         if not self.config.api_key:
             self.config.api_key = api_key
-        
+
         # Set the Anthropic OpenAI-compatible API endpoint
         self.config.base_url = "https://api.anthropic.com/v1/"
 
     def create_driver(self) -> OpenAIModelDriver:
         """
         Create and return a new OpenAIModelDriver instance for Anthropic.
-        
+
         Returns:
             A new OpenAIModelDriver instance configured for Anthropic API
         """
         if not self.available:
-            raise ImportError(f"AnthropicProvider unavailable: {self.unavailable_reason}")
-        
+            raise ImportError(
+                f"AnthropicProvider unavailable: {self.unavailable_reason}"
+            )
+
         driver = OpenAIModelDriver(
-            tools_adapter=self.tools_adapter, 
-            provider_name=self.name
+            tools_adapter=self.tools_adapter, provider_name=self.name
         )
         driver.config = self.config
         return driver
