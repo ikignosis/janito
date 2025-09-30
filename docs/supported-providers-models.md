@@ -96,10 +96,11 @@ IBM WatsonX provides access to IBM's Granite models as well as popular open-sour
 
 ### Anthropic
 
-- **Claude 3.7 Sonnet** (default) - Latest Claude model with enhanced reasoning
-- **Claude 4 Opus** - Most capable Claude model (preview)
-- **Claude 4 Sonnet** - Balanced performance and capability (preview)
-- **Claude 3.5 Sonnet** - Previous generation, still highly capable
+- **Claude Sonnet 4.5** (default) - Latest model with enhanced agent and coding capabilities
+- **Claude Opus 4.1** - Exceptional model for specialized complex tasks
+- **Claude Opus 4** - High-capability model for complex tasks
+- **Claude Sonnet 4** - Balanced performance and capability
+- **Claude 3.7 Sonnet** - High-performance model with extended thinking
 - **Claude 3.5 Haiku** - Fast and efficient
 - **Claude 3 Haiku** - Compact and cost-effective
 

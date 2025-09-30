@@ -35,7 +35,7 @@ janito -m kimi-k1-8k "Explain quantum computing"
 janito -p openai -m gpt-4 "Write a React component"
 
 # Anthropic
-janito -p anthropic -m claude-3-5-sonnet-20241022 "Analyze this code"
+janito -p anthropic -m claude-sonnet-4-5-20250929 "Analyze this code"
 
 # Google
 janito -p google -m gemini-2.0-flash-exp "Generate unit tests"

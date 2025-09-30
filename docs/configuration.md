@@ -84,7 +84,7 @@ janito set-config watsonx_space_id=your-space-id
 When no model is specified, Janito uses the provider's default model:
 
 - **OpenAI**: `gpt-5`
-- **Anthropic**: `claude-3-7-sonnet-20250219`
+- **Anthropic**: `claude-sonnet-4-5-20250929`
 - **Google**: `gemini-2.5-flash`
 - **Mistral**: `mistral-large-latest`
 - **Cerebras**: `qwen-3-coder-480b`
@@ -111,7 +111,7 @@ janito chat --provider openai --model gpt-4o
 janito chat -m gpt-4o@openai
 
 # More examples:
-janito -m claude-3-5-sonnet-20241022@anthropic "Write a Python function"
+janito -m claude-sonnet-4-5-20250929@anthropic "Write a Python function"
 janito -m kimi-k1-8k@moonshot "Translate this to Chinese"
 janito -m deepseek-chat@deepseek "Explain machine learning"
 ```

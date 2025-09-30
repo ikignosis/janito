@@ -22,7 +22,7 @@ janito -p openai -m gpt-4 "what are the key classes of this project?"
 janito -m gpt-4@openai "what are the key classes of this project?"
 
 # Using a different provider
-janito -m claude-3-5-sonnet-20241022@anthropic "analyze this codebase"
+janito -m claude-sonnet-4-5-20250929@anthropic "analyze this codebase"
 ```
 
 ### Shell Command Execution

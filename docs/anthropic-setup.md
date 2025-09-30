@@ -26,7 +26,9 @@ export ANTHROPIC_API_KEY="YOUR_API_KEY_HERE"
 
 Janito supports the following Anthropic models:
 
-- `claude-opus-4-20250514` - Most capable model for complex tasks
+- `claude-sonnet-4-5-20250929` - Latest model with enhanced agent and coding capabilities
+- `claude-opus-4-1-20250805` - Exceptional model for specialized complex tasks
+- `claude-opus-4-20250514` - High-capability model for complex tasks
 - `claude-sonnet-4-20250514` - Balanced performance and cost
 - `claude-3-7-sonnet-20250219` - High-performance model
 - `claude-3-5-haiku-20241022` - Fast and cost-effective
@@ -56,7 +58,7 @@ janito set-config provider=anthropic
 ## Notes
 
 - Anthropic is accessed through an OpenAI-compatible API endpoint
-- The default model is `claude-3-7-sonnet-20250219`
+- The default model is `claude-sonnet-4-5-20250929`
 - All models support streaming responses
 - Context window sizes vary by model (see [Supported Models](models/supported_models.md) for details)
 

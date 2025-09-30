@@ -121,7 +121,7 @@ janito -m gpt-4@openai "Your prompt"
 janito -m gpt-4@openai "Explain quantum computing"
 
 # Use Claude with Anthropic
-janito -m claude-3-5-sonnet-20241022@anthropic "Write a Python function"
+janito -m claude-sonnet-4-5-20250929@anthropic "Write a Python function"
 
 # Use Kimi with Moonshot
 janito -m kimi-k1-8k@moonshot "Translate this to Chinese"
