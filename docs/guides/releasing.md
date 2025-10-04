@@ -49,6 +49,12 @@ Execute the release script:
 python tools/release.py
 ```
 
+To also create a GitHub release, use the `--gh-release` flag:
+
+```bash
+python tools/release.py --gh-release
+```
+
 The script will:
 
 - Verify you have the required tools installed
@@ -57,7 +63,7 @@ The script will:
 - Verify the tag points to the current commit
 - Build the package
 - Upload to PyPI
-- Create a GitHub release
+- Create a GitHub release (only if `--gh-release` flag is used)
 
 ### 3. What the GitHub Release Includes
 
