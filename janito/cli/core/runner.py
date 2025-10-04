@@ -38,9 +38,6 @@ def _choose_provider(args):
     return provider
 
 
-
-
-
 def _populate_driver_config_data(args, modifiers, provider, model):
     from janito.provider_config import get_effective_setting
 
@@ -48,6 +45,8 @@ def _populate_driver_config_data(args, modifiers, provider, model):
     driver_config_data = {"model": model}
     if getattr(args, "verbose_api", None) is not None:
         driver_config_data["verbose_api"] = args.verbose_api
+    if getattr(args, "verbose_http", None) is not None:
+        driver_config_data["verbose_http"] = args.verbose_http
 
     # Add reasoning_effort from --effort CLI argument
     if getattr(args, "effort", None) is not None:
@@ -82,8 +81,6 @@ def prepare_llm_driver_config(args, modifiers):
     model = getattr(args, "model", None)
     if not model:
         model = get_effective_model(provider)
-
-
 
     # Validate that the chosen model is supported by the selected provider
     if model:

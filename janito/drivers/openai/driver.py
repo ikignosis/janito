@@ -282,7 +282,9 @@ class OpenAIModelDriver(LLMDriver):
                 client_kwargs["base_url"] = config.base_url
 
             # HTTP debug wrapper
-            if os.environ.get("OPENAI_DEBUG_HTTP", "0") == "1":
+            if os.environ.get("OPENAI_DEBUG_HTTP", "0") == "1" or getattr(
+                config, "verbose_http", False
+            ):
                 from http.client import HTTPConnection
 
                 HTTPConnection.debuglevel = 1
@@ -292,7 +294,7 @@ class OpenAIModelDriver(LLMDriver):
                 requests_log.setLevel(logging.DEBUG)
                 requests_log.propagate = True
                 print(
-                    "[OpenAIModelDriver] HTTP debug enabled via OPENAI_DEBUG_HTTP=1",
+                    "[OpenAIModelDriver] HTTP debug enabled via OPENAI_DEBUG_HTTP=1 or --verbose-http",
                     flush=True,
                 )
 

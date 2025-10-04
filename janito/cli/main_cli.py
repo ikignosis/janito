@@ -67,6 +67,13 @@ definition = [
         },
     ),
     (
+        ["--verbose-http"],
+        {
+            "action": "store_true",
+            "help": "Enable verbose HTTP logging for the OpenAI driver (equivalent to setting OPENAI_DEBUG_HTTP=1).",
+        },
+    ),
+    (
         ["--verbose-tools"],
         {
             "action": "store_true",
@@ -173,7 +180,13 @@ definition = [
         },
     ),
     (["-p", "--provider"], {"metavar": "PROVIDER", "help": "Select the provider"}),
-    (["-m", "--model"], {"metavar": "MODEL", "help": "Select the model (can use model@provider syntax)"}),
+    (
+        ["-m", "--model"],
+        {
+            "metavar": "MODEL",
+            "help": "Select the model (can use model@provider syntax)",
+        },
+    ),
     (
         ["-t", "--temperature"],
         {"type": float, "default": None, "help": "Set the temperature"},
@@ -197,7 +210,6 @@ definition = [
             "help": "Set the reasoning effort for models that support it (low, medium, high, none)",
         },
     ),
-
     (
         ["-i", "--interactive"],
         {
@@ -252,6 +264,7 @@ MODIFIER_KEYS = [
     "verbose",
     "raw",
     "verbose_api",
+    "verbose_http",
     "verbose_tools",
     "exec",
     "read",

@@ -7,9 +7,11 @@ class LLMDriverConfig:
     # For OpenAI and similar providers that distinguish between completion and response tokens
     max_completion_tokens: Optional[int] = None
     verbose_api: Optional[bool] = None
+    verbose_http: Optional[bool] = None
     """
     Common configuration container for LLM drivers.
     - verbose_api: Print API trace info if set
+    - verbose_http: Enable HTTP debugging if set
     
     Holds standard attributes that most LLM drivers require (used as a config or schema reference object).
     Inspired by the OpenAI driver, but fields are generic for most LLM backends.
