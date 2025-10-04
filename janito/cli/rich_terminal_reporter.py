@@ -82,16 +82,30 @@ class RichTerminalReporter(EventHandlerBase):
         """
         # Use raw ANSI escape sequences but write directly to the underlying file
         # to bypass Rich's escaping/interpretation
-        if hasattr(self.console, 'file') and hasattr(self.console.file, 'write'):
+        if hasattr(self.console, "file") and hasattr(self.console.file, "write"):
             self.console.file.write("\r\033[2K")
             self.console.file.flush()
         else:
             # Fallback to sys.stdout if console.file is not available
             import sys
+
             sys.stdout.write("\r\033[2K")
             sys.stdout.flush()
 
     def on_RequestFinished(self, event):
+        # Check if this is an error status and display the error message
+        status = getattr(event, "status", None)
+        if status == driver_events.RequestStatus.ERROR:
+            error_msg = getattr(event, "error", "Unknown error occurred")
+            self.console.print(f"[bold red]Request Error:[/bold red] {error_msg}")
+
+            # Optionally print the traceback if available and in raw mode
+            if self.raw_mode:
+                traceback = getattr(event, "traceback", None)
+                if traceback:
+                    self.console.print("[bold yellow]Traceback:[/bold yellow]")
+                    self.console.print(traceback)
+
         if self._waiting_printed:
             self.delete_current_line()
             self._waiting_printed = False
