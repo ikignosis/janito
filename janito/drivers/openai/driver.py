@@ -278,8 +278,10 @@ class OpenAIModelDriver(LLMDriver):
             if api_key_display and len(api_key_display) > 8:
                 api_key_display = api_key_display[:4] + "..." + api_key_display[-4:]
             client_kwargs = {"api_key": config.api_key}
-            if getattr(config, "base_url", None):
-                client_kwargs["base_url"] = config.base_url
+            # Check for BASE_URL environment variable first, then fall back to config
+            base_url = os.environ.get("BASE_URL") or getattr(config, "base_url", None)
+            if base_url:
+                client_kwargs["base_url"] = base_url
 
             # HTTP debug wrapper
             if os.environ.get("OPENAI_DEBUG_HTTP", "0") == "1" or getattr(
