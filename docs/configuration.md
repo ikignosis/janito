@@ -27,6 +27,7 @@ Janito's behavior is controlled through a combination of environment variables, 
 | `WATSONX_SPACE_ID` | IBM WatsonX space ID | `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` |
 | `AZURE_OPENAI_API_KEY` | Azure OpenAI API key | `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
 | `JANITO_PROVIDER` | Default provider | `openai` |
+| `BASE_URL` | Custom API base URL (overrides provider default) | `https://api.example.com` |
 
 ## Configuration File
 
@@ -48,6 +49,9 @@ janito set-config provider=openai
 
 # Set Azure deployment name
 janito set-config azure_deployment_name=my-deployment
+
+# Set custom base URL
+janito set-config base_url=https://api.example.com
 
 # View current config
 janito show-config
@@ -100,6 +104,22 @@ You can override the default model using `--model MODEL_NAME` on any command:
 ```bash
 janito chat --provider openai --model gpt-4o
 ```
+
+### Base URL Configuration
+
+You can configure a custom base URL for API endpoints in two ways:
+
+1. Using the `BASE_URL` environment variable (highest priority):
+   ```bash
+   BASE_URL=https://api.example.com janito chat
+   ```
+
+2. Using the configuration file:
+   ```bash
+   janito set-config base_url=https://api.example.com
+   ```
+
+The `BASE_URL` environment variable takes precedence over the configuration file setting.
 
 ### Model@Provider Syntax
 

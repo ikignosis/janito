@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 from threading import Lock
 
@@ -95,7 +96,14 @@ class ConfigManager:
             f.write("\n")
 
     def get(self, key, default=None):
-        # Precedence: runtime_overrides > file_config > defaults
+        # Precedence: runtime_overrides > environment variables > file_config > defaults
+        # Special handling for base_url to check BASE_URL environment variable
+        if key == "base_url":
+            env_value = os.environ.get("BASE_URL")
+            if env_value is not None:
+                return env_value
+
+        # Standard precedence for other keys
         for layer in (self.runtime_overrides, self.file_config, self.defaults):
             if key in layer and layer[key] is not None:
                 return layer[key]
