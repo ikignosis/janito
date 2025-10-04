@@ -35,7 +35,6 @@ def _prepare_context(args, agent_role, allowed_permissions):
     context["role"] = agent_role or "developer"
     context["profile"] = getattr(args, "profile", None)
     context["allowed_permissions"] = allowed_permissions
-    context["emoji_enabled"] = getattr(args, "emoji", False)
     if allowed_permissions and "x" in allowed_permissions:
         pd = PlatformDiscovery()
         context["platform"] = pd.get_platform_name()

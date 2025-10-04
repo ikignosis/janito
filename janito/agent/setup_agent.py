@@ -124,10 +124,6 @@ def _prepare_template_context(role, profile, allowed_permissions, args=None):
         allowed_permissions = perm_str or None
     context["allowed_permissions"] = allowed_permissions
 
-    # Add emoji flag for system prompt
-    context["emoji_enabled"] = (
-        getattr(args, "emoji", False) if "args" in locals() else False
-    )
     # Inject platform info if execute permission is present
     if allowed_permissions and "x" in allowed_permissions:
         pd = PlatformDiscovery()
@@ -154,11 +150,6 @@ def _prepare_template_context(role, profile, allowed_permissions, args=None):
             )
         else:
             context["allowed_sites_info"] = f"Restricted to: {', '.join(allowed_sites)}"
-
-    # Add emoji flag for system prompt
-    context["emoji_enabled"] = (
-        getattr(args, "emoji", False) if "args" in locals() else False
-    )
 
     # Add current date/time with timezone using standard library
     from datetime import datetime, timezone
