@@ -197,13 +197,7 @@ definition = [
             "help": "Set the reasoning effort for models that support it (low, medium, high, none)",
         },
     ),
-    (
-        ["--emoji"],
-        {
-            "action": "store_true",
-            "help": "Enable emoji usage in responses to make output more engaging and expressive",
-        },
-    ),
+
     (
         ["-i", "--interactive"],
         {
