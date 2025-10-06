@@ -20,17 +20,17 @@ Janito is a flexible and extensible platform for interacting with large language
 
 2. Set your API key:
    ```
-   janito set-api-key --provider openai --key YOUR_API_KEY
+   janito --set-api-key --provider openai --key YOUR_API_KEY
    ```
 
 3. List available models:
    ```
-   janito list-models --provider openai
+   janito --list-models --provider openai
    ```
 
-4. Start interactive chat:
+4. Start interactive shell (default model):
    ```
-   janito chat
+   janito
    ```
 
 ## Quick Examples
@@ -44,9 +44,6 @@ janito -p openai -m gpt-4 "Explain quantum computing"
 
 # Using the shorthand model@provider syntax
 janito -m gpt-4@openai "Explain quantum computing"
-
-# Interactive mode
-janito --interactive
 ```
 
 ## Documentation
