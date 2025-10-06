@@ -69,6 +69,7 @@ This document lists all supported large language models (LLMs) across providers,
 |------------|----------------|-----------|---------|--------------|--------------------|----------------|-----------------|
 | `glm-4.5` | 128,000 | 128,000 | 4,096 | 4,096 | Yes | Yes | Yes |
 | `glm-4.5-air` | 128,000 | 128,000 | 4,096 | 4,096 | Yes | Yes | Yes |
+| `glm-4.6` | 128,000 | 128,000 | 4,096 | 4,096 | Yes | Yes | Yes |
 
 ## Alibaba Qwen
 
