@@ -1,5 +1,5 @@
 """
-Function-to-Tool adapter for core plugins.
+Function-to-Tool adapter for core tools.
 
 This module provides a way to wrap function-based tools into proper ToolBase classes.
 """

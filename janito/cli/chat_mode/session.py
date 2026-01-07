@@ -105,7 +105,7 @@ class ChatSession:
         
         # Set the current agent in the tools adapter for context-aware tools
         try:
-            from janito.plugins.tools.local import local_tools_adapter
+            from janito.tools.local import local_tools_adapter
             if hasattr(local_tools_adapter, 'set_current_agent'):
                 local_tools_adapter.set_current_agent(self.agent)
         except Exception:

@@ -1,6 +1,6 @@
 def check_tools_registry():
     # Import and use the singleton tools adapter instance
-    from janito.plugins.tools.local import local_tools_adapter
+    from janito.tools.local import local_tools_adapter
 
     print("Available tool names:", local_tools_adapter.list_tools())
     print(

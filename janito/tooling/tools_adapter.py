@@ -7,7 +7,7 @@ from janito.tooling.tool_base import ToolPermissions
 class ToolsAdapterBase:
     """
     Composable entry point for tools management and provisioning in LLM pipelines.
-    This class represents an external or plugin-based provider of tool definitions.
+    This class represents an external or dynamic provider of tool definitions.
     Extend and customize this to load, register, or serve tool implementations dynamically.
     After refactor, also responsible for tool execution.
     """

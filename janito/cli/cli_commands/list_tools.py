@@ -53,7 +53,7 @@ def _print_tools_table(console, title, tools_info):
 
 
 def handle_list_tools(args=None):
-    from janito.plugins.tools.local.adapter import LocalToolsAdapter
+    from janito.tools.local.adapter import LocalToolsAdapter
     import janito.tooling  # Ensure all tools are registered
     from janito.tooling.tool_base import ToolPermissions
 

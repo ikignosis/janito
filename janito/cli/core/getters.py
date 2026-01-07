@@ -9,7 +9,6 @@ from janito.cli.cli_commands.show_config import handle_show_config
 from janito.cli.cli_commands.list_config import handle_list_config
 from janito.cli.cli_commands.list_drivers import handle_list_drivers
 
-from janito.cli.cli_commands.list_plugins import handle_list_plugins
 from functools import partial
 from janito.provider_registry import ProviderRegistry
 from janito.config import config as global_config
@@ -22,8 +21,7 @@ GETTER_KEYS = [
     "list_tools",
     "list_config",
     "list_drivers",
-    "list_plugins",
-    "list_plugins_available",
+
     "list_resources",
 ]
 
@@ -56,9 +54,6 @@ def handle_getter(args, config_mgr=None):
         "show_config": partial(handle_show_config, args),
         "list_config": partial(handle_list_config, args),
         "list_drivers": partial(handle_list_drivers, args),
-        "list_plugins": partial(handle_list_plugins, args),
-        "list_plugins_available": partial(handle_list_plugins, args),
-        "list_resources": partial(handle_list_plugins, args),
     }
     for arg in GETTER_KEYS:
         if getattr(args, arg, False) and arg in GETTER_DISPATCH:

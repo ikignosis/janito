@@ -224,21 +224,8 @@ definition = [
             "help": "Use custom configuration file ~/.janito/configs/NAME.json instead of default config.json",
         },
     ),
-    (
-        ["--list-plugins"],
-        {"action": "store_true", "help": "List all loaded plugins"},
-    ),
-    (
-        ["--list-plugins-available"],
-        {"action": "store_true", "help": "List all available plugins"},
-    ),
-    (
-        ["--list-resources"],
-        {
-            "action": "store_true",
-            "help": "List all resources (tools, commands, config) from loaded plugins",
-        },
-    ),
+
+
 ]
 
 MODIFIER_KEYS = [
@@ -415,9 +402,8 @@ class JanitoCLI:
             or self.args.show_config
             or self.args.list_config
             or self.args.list_drivers
-            or self.args.list_plugins
-            or self.args.list_plugins_available
-            or self.args.list_resources
+
+
             or self.args.ping
         ):
             self._maybe_print_verbose_provider_model()
