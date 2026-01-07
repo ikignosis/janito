@@ -19,7 +19,7 @@ class ZAIProvider(LLMProvider):
     NAME = "zai"  # For backward compatibility
     MAINTAINER = "João Pinto <janito@ikignosis.org>"
     MODEL_SPECS = MODEL_SPECS
-    DEFAULT_MODEL = "glm-4.5"  # Options: glm-4.5, glm-4.5-air
+    DEFAULT_MODEL = "glm-4.7"  # Options: glm-4.5, glm-4.5-air, glm-4.6, glm-4.7
     available = ZAIModelDriver.available
     unavailable_reason = ZAIModelDriver.unavailable_reason
 

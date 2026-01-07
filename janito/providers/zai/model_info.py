@@ -52,4 +52,21 @@ MODEL_SPECS = {
             "output_cost_per_1k": 0.0015,
         },
     ),
+    "glm-4.7": LLMModelInfo(
+        name="glm-4.7",
+        context=128000,
+        max_input=128000,
+        max_cot=4096,
+        max_response=4096,
+        thinking_supported=True,
+        other={
+            "description": "Z.AI's GLM-4.7 model - latest generation reasoning and conversation",
+            "supports_tools": True,
+            "supports_images": True,
+            "supports_audio": False,
+            "supports_video": False,
+            "input_cost_per_1k": 0.0005,
+            "output_cost_per_1k": 0.0015,
+        },
+    ),
 }
