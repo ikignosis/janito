@@ -2,6 +2,8 @@
 
 from janito.llm.model import LLMModelInfo
 
+DEFAULT_MODEL = "ibm/granite-3-3-8b-instruct"
+
 MODEL_SPECS = {
     "openai/gpt-oss-120b": LLMModelInfo(
         name="openai/gpt-oss-120b",

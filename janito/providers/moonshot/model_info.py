@@ -1,5 +1,7 @@
 from janito.llm.model import LLMModelInfo
 
+DEFAULT_MODEL = "kimi-k2-0905-preview"
+
 MOONSHOT_MODEL_SPECS = {
     "kimi-k2-0711-preview": LLMModelInfo(
         name="kimi-k2-0711-preview",

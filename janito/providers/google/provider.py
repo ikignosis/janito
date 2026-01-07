@@ -9,9 +9,10 @@ from janito.providers.registry import LLMProviderRegistry
 
 # Import Google Gemini model specs (to be created or imported as needed)
 try:
-    from .model_info import MODEL_SPECS
+    from .model_info import MODEL_SPECS, DEFAULT_MODEL
 except ImportError:
     MODEL_SPECS = {}
+    DEFAULT_MODEL = "gemini-2.5-flash"
 
 
 class GoogleProvider(LLMProvider):
@@ -21,7 +22,7 @@ class GoogleProvider(LLMProvider):
     NAME = "google"  # For backward compatibility
     MAINTAINER = "João Pinto <janito@ikignosis.org>"
     MODEL_SPECS = MODEL_SPECS
-    DEFAULT_MODEL = "gemini-2.5-flash"  # Default Gemini model
+    DEFAULT_MODEL = DEFAULT_MODEL
     available = OpenAIModelDriver.available
     unavailable_reason = OpenAIModelDriver.unavailable_reason
 

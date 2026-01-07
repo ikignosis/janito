@@ -1,5 +1,7 @@
 from janito.llm.model import LLMModelInfo
 
+DEFAULT_MODEL = "mistral-large-latest"
+
 MODEL_SPECS = {
     "codestral-latest": LLMModelInfo(
         name="codestral-latest",

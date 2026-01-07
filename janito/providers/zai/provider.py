@@ -5,7 +5,7 @@ from janito.llm.driver_config import LLMDriverConfig
 from janito.drivers.zai.driver import ZAIModelDriver
 from janito.tooling import get_local_tools_adapter
 from janito.providers.registry import LLMProviderRegistry
-from janito.providers.zai.model_info import MODEL_SPECS
+from janito.providers.zai.model_info import MODEL_SPECS, DEFAULT_MODEL
 
 
 available = ZAIModelDriver.available
@@ -19,7 +19,7 @@ class ZAIProvider(LLMProvider):
     NAME = "zai"  # For backward compatibility
     MAINTAINER = "João Pinto <janito@ikignosis.org>"
     MODEL_SPECS = MODEL_SPECS
-    DEFAULT_MODEL = "glm-4.7"  # Options: glm-4.5, glm-4.5-air, glm-4.6, glm-4.7
+    DEFAULT_MODEL = DEFAULT_MODEL
     available = ZAIModelDriver.available
     unavailable_reason = ZAIModelDriver.unavailable_reason
 

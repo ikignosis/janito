@@ -5,7 +5,7 @@ from janito.llm.driver_config import LLMDriverConfig
 from janito.drivers.openai.driver import OpenAIModelDriver
 from janito.tooling import get_local_tools_adapter
 from janito.providers.registry import LLMProviderRegistry
-from janito.providers.mistral.model_info import MODEL_SPECS
+from janito.providers.mistral.model_info import MODEL_SPECS, DEFAULT_MODEL
 
 
 class MistralProvider(LLMProvider):
@@ -15,7 +15,7 @@ class MistralProvider(LLMProvider):
     NAME = "mistral"  # For backward compatibility
     MAINTAINER = "João Pinto <janito@ikignosis.org>"
     MODEL_SPECS = MODEL_SPECS
-    DEFAULT_MODEL = "mistral-large-latest"
+    DEFAULT_MODEL = DEFAULT_MODEL
     available = OpenAIModelDriver.available
     unavailable_reason = OpenAIModelDriver.unavailable_reason
 

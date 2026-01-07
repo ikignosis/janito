@@ -1,5 +1,7 @@
 from janito.llm.model import LLMModelInfo
 
+DEFAULT_MODEL = "glm-4.7"
+
 MODEL_SPECS = {
     "glm-4.5": LLMModelInfo(
         name="glm-4.5",

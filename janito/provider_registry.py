@@ -95,7 +95,7 @@ class ProviderRegistry:
             module_parts = provider_class.__module__.split(".")
             # Build the correct import path: janito.providers.{provider}.model_info
             model_info_module = f"janito.providers.{provider_name}.model_info"
-            model_info_mod = __import__(model_info_module, fromlist=["MODEL_SPECS"])
+            model_info_mod = __import__(model_info_module, fromlist=["MODEL_SPECS", "DEFAULT_MODEL"])
 
             # Handle different model spec variable names
             model_specs = None
@@ -105,7 +105,8 @@ class ProviderRegistry:
                 model_specs = model_info_mod.MOONSHOT_MODEL_SPECS
 
             if model_specs:
-                default_model = getattr(provider_class, "DEFAULT_MODEL", None)
+                # Get DEFAULT_MODEL from model_info module
+                default_model = getattr(model_info_mod, "DEFAULT_MODEL", None)
                 model_names = []
 
                 for model_key in model_specs.keys():

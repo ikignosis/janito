@@ -1,5 +1,7 @@
 from janito.llm.model import LLMModelInfo
 
+DEFAULT_MODEL = "gemini-2.5-flash"
+
 MODEL_SPECS = {
     "gemini-2.5-flash": LLMModelInfo(
         name="gemini-2.5-flash",

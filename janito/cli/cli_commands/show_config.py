@@ -13,10 +13,10 @@ def resolve_effective_model(provider_name):
         model = config.get("model")
     if not model:
         try:
-            from janito.provider_registry import ProviderRegistry
-
-            provider_class = ProviderRegistry().get_provider(provider_name)
-            model = getattr(provider_class, "DEFAULT_MODEL", None)
+            # Import DEFAULT_MODEL from the model_info module
+            model_info_module = f"janito.providers.{provider_name}.model_info"
+            model_info_mod = __import__(model_info_module, fromlist=["DEFAULT_MODEL"])
+            model = getattr(model_info_mod, "DEFAULT_MODEL", None)
         except Exception:
             model = None
     return model

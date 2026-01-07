@@ -2,6 +2,8 @@
 
 from janito.llm.model import LLMModelInfo
 
+DEFAULT_MODEL = "qwen-3-coder-480b"
+
 MODEL_SPECS = {
     "qwen-3-32b": LLMModelInfo(
         name="qwen-3-32b",

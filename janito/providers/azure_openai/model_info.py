@@ -1,6 +1,8 @@
 from janito.llm.model import LLMModelInfo
 from janito.providers.openai.model_info import MODEL_SPECS as OPENAI_MODEL_SPECS
 
+DEFAULT_MODEL = "azure_openai_deployment"
+
 MODEL_SPECS = {
     "azure_openai_deployment": LLMModelInfo(
         name="azure_openai_deployment",

@@ -5,7 +5,7 @@ from janito.llm.driver_config import LLMDriverConfig
 from janito.drivers.openai.driver import OpenAIModelDriver
 from janito.tooling import get_local_tools_adapter
 from janito.providers.registry import LLMProviderRegistry
-from janito.providers.openai.model_info import MODEL_SPECS
+from janito.providers.openai.model_info import MODEL_SPECS, DEFAULT_MODEL
 
 
 class OpenAIProvider(LLMProvider):
@@ -15,7 +15,7 @@ class OpenAIProvider(LLMProvider):
     NAME = "openai"  # For backward compatibility
     MAINTAINER = "João Pinto <janito@ikignosis.org>"
     MODEL_SPECS = MODEL_SPECS
-    DEFAULT_MODEL = "gpt-5.2"  # Options: gpt-4.1, gpt-4o, o3-mini, o4-mini, gpt-5, gpt-5.2, gpt-5-nano
+    DEFAULT_MODEL = DEFAULT_MODEL
     available = OpenAIModelDriver.available
     unavailable_reason = OpenAIModelDriver.unavailable_reason
 

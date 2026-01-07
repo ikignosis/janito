@@ -1,5 +1,7 @@
 from janito.llm.model import LLMModelInfo
 
+DEFAULT_MODEL = "gpt-5.2"
+
 MODEL_SPECS = {
     "gpt-3.5-turbo": LLMModelInfo(
         name="gpt-3.5-turbo",

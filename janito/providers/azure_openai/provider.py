@@ -5,13 +5,13 @@ from janito.llm.driver_config import LLMDriverConfig
 from janito.tooling import get_local_tools_adapter
 from janito.providers.registry import LLMProviderRegistry
 
-from .model_info import MODEL_SPECS
+from .model_info import MODEL_SPECS, DEFAULT_MODEL
 
 from janito.drivers.azure_openai.driver import AzureOpenAIModelDriver
 
 available = AzureOpenAIModelDriver.available
 unavailable_reason = AzureOpenAIModelDriver.unavailable_reason
-maintainer = "João Pinto <janito@ikignosis.org>"
+maintainer = "Joao Pinto <janito@ikignosis.org>"
 
 
 class AzureOpenAIProvider(LLMProvider):
@@ -19,7 +19,7 @@ class AzureOpenAIProvider(LLMProvider):
     NAME = "azure_openai"
     MAINTAINER = "João Pinto <janito@ikignosis.org>"
     MODEL_SPECS = MODEL_SPECS
-    DEFAULT_MODEL = "azure_openai_deployment"
+    DEFAULT_MODEL = DEFAULT_MODEL
 
     def __init__(
         self, auth_manager: LLMAuthManager = None, config: LLMDriverConfig = None

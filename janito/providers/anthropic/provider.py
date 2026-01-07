@@ -4,7 +4,7 @@ from janito.llm.auth import LLMAuthManager
 from janito.llm.driver_config import LLMDriverConfig
 from janito.tooling import get_local_tools_adapter
 from janito.providers.registry import LLMProviderRegistry
-from janito.providers.anthropic.model_info import MODEL_SPECS
+from janito.providers.anthropic.model_info import MODEL_SPECS, DEFAULT_MODEL
 from janito.drivers.openai.driver import OpenAIModelDriver
 
 
@@ -15,7 +15,7 @@ class AnthropicProvider(LLMProvider):
     NAME = "anthropic"  # For backward compatibility
     MAINTAINER = "Alberto Minetti <alberto.minetti@gmail.com>"
     MODEL_SPECS = MODEL_SPECS
-    DEFAULT_MODEL = "claude-sonnet-4-5-20250929"
+    DEFAULT_MODEL = DEFAULT_MODEL
     available = OpenAIModelDriver.available
     unavailable_reason = OpenAIModelDriver.unavailable_reason
 

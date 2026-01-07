@@ -5,7 +5,7 @@ from janito.llm.auth import LLMAuthManager
 from janito.llm.driver_config import LLMDriverConfig
 from janito.tooling import get_local_tools_adapter
 from janito.providers.registry import LLMProviderRegistry
-from janito.providers.ibm.model_info import MODEL_SPECS
+from janito.providers.ibm.model_info import MODEL_SPECS, DEFAULT_MODEL
 
 try:
     from janito.drivers.openai.driver import OpenAIModelDriver
@@ -24,7 +24,7 @@ class IBMProvider(LLMProvider):
     NAME = "ibm"  # For backward compatibility
     MAINTAINER = "João Pinto <janito@ikignosis.org>"
     MODEL_SPECS = MODEL_SPECS
-    DEFAULT_MODEL = "ibm/granite-3-3-8b-instruct"
+    DEFAULT_MODEL = DEFAULT_MODEL
     available = available
     unavailable_reason = unavailable_reason
 

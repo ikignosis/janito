@@ -4,7 +4,7 @@ from janito.llm.driver_config import LLMDriverConfig
 from janito.drivers.openai.driver import OpenAIModelDriver
 from janito.tooling import get_local_tools_adapter
 from janito.providers.registry import LLMProviderRegistry
-from janito.providers.moonshot.model_info import MOONSHOT_MODEL_SPECS
+from janito.providers.moonshot.model_info import MOONSHOT_MODEL_SPECS, DEFAULT_MODEL
 
 
 class MoonshotProvider(LLMProvider):
@@ -14,7 +14,7 @@ class MoonshotProvider(LLMProvider):
     NAME = "moonshot"  # For backward compatibility
     MAINTAINER = "João Pinto <janito@ikignosis.org>"
     MODEL_SPECS = MOONSHOT_MODEL_SPECS
-    DEFAULT_MODEL = "kimi-k2-0905-preview"
+    DEFAULT_MODEL = DEFAULT_MODEL
     available = OpenAIModelDriver.available
     unavailable_reason = OpenAIModelDriver.unavailable_reason
 

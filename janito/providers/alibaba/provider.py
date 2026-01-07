@@ -5,7 +5,7 @@ from janito.llm.driver_config import LLMDriverConfig
 from janito.drivers.openai.driver import OpenAIModelDriver
 from janito.tooling import get_local_tools_adapter
 from janito.providers.registry import LLMProviderRegistry
-from janito.providers.alibaba.model_info import MODEL_SPECS
+from janito.providers.alibaba.model_info import MODEL_SPECS, DEFAULT_MODEL
 
 
 available = OpenAIModelDriver.available
@@ -19,7 +19,7 @@ class AlibabaProvider(LLMProvider):
     NAME = "alibaba"  # For backward compatibility
     MAINTAINER = "João Pinto <janito@ikignosis.org>"
     MODEL_SPECS = MODEL_SPECS
-    DEFAULT_MODEL = "qwen3-max"  # 256k context, Qwen3 Max Preview standard model
+    DEFAULT_MODEL = DEFAULT_MODEL
     available = OpenAIModelDriver.available
     unavailable_reason = OpenAIModelDriver.unavailable_reason
 

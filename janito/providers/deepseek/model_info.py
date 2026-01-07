@@ -1,5 +1,7 @@
 from janito.llm.model import LLMModelInfo
 
+DEFAULT_MODEL = "deepseek-chat"
+
 MODEL_SPECS = {
     "deepseek-chat": LLMModelInfo(
         name="deepseek-chat",

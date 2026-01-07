@@ -7,7 +7,7 @@ from janito.llm.driver_config import LLMDriverConfig
 from janito.drivers.openai.driver import OpenAIModelDriver
 from janito.tooling import get_local_tools_adapter
 from janito.providers.registry import LLMProviderRegistry
-from janito.providers.cerebras.model_info import MODEL_SPECS
+from janito.providers.cerebras.model_info import MODEL_SPECS, DEFAULT_MODEL
 
 
 class CerebrasProvider(LLMProvider):
@@ -15,7 +15,7 @@ class CerebrasProvider(LLMProvider):
 
     name = "cerebras"
     NAME = "cerebras"  # For backward compatibility
-    DEFAULT_MODEL = "qwen-3-coder-480b"
+    DEFAULT_MODEL = DEFAULT_MODEL
     MAINTAINER = "João Pinto <janito@ikignosis.org>"
     MODEL_SPECS = MODEL_SPECS
     available = OpenAIModelDriver.available

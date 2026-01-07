@@ -1,5 +1,7 @@
 from janito.llm.model import LLMModelInfo
 
+DEFAULT_MODEL = "qwen3-max"
+
 MODEL_SPECS = {
     "qwen-turbo": LLMModelInfo(
         name="qwen-turbo",

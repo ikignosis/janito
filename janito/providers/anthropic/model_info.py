@@ -1,5 +1,7 @@
 from janito.llm.model import LLMModelInfo
 
+DEFAULT_MODEL = "claude-sonnet-4-5-20250929"
+
 MODEL_SPECS = {
     "claude-sonnet-4-5-20250929": LLMModelInfo(
         name="claude-sonnet-4-5-20250929",

@@ -21,8 +21,10 @@ def _print_models_table(models, provider_name):
     from janito.providers.registry import LLMProviderRegistry
 
     try:
-        provider_class = LLMProviderRegistry.get(provider_name)
-        default_model = getattr(provider_class, "DEFAULT_MODEL", None)
+        # Import DEFAULT_MODEL from the model_info module
+        model_info_module = f"janito.providers.{provider_name}.model_info"
+        model_info_mod = __import__(model_info_module, fromlist=["DEFAULT_MODEL"])
+        default_model = getattr(model_info_mod, "DEFAULT_MODEL", None)
     except:
         default_model = None
 
@@ -82,8 +84,10 @@ def _print_models_table(models, provider_name):
         from janito.providers.registry import LLMProviderRegistry
 
         try:
-            provider_class = LLMProviderRegistry.get(provider_name)
-            default_model = getattr(provider_class, "DEFAULT_MODEL", None)
+            # Import DEFAULT_MODEL from the model_info module
+            model_info_module = f"janito.providers.{provider_name}.model_info"
+            model_info_mod = __import__(model_info_module, fromlist=["DEFAULT_MODEL"])
+            default_model = getattr(model_info_mod, "DEFAULT_MODEL", None)
         except:
             default_model = None
 
