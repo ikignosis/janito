@@ -51,6 +51,10 @@ class ZAIProvider(LLMProvider):
         # Set API key in config
         if not self.config.api_key:
             self.config.api_key = api_key
+        
+        # Set base_url in config (default to Z.AI's official endpoint)
+        if not self.config.base_url:
+            self.config.base_url = "https://api.z.ai/api/paas/v4/"
 
     def create_driver(self) -> ZAIModelDriver:
         """

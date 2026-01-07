@@ -286,8 +286,9 @@ class ZAIModelDriver(LLMDriver):
             # Use the official Z.ai SDK
             from zai import ZaiClient
 
+            base_url = config.base_url or "https://api.z.ai/api/paas/v4/"
             client = ZaiClient(
-                api_key=config.api_key, base_url="https://api.z.ai/api/paas/v4/"
+                api_key=config.api_key, base_url=base_url
             )
             return client
         except Exception as e:
