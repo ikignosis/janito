@@ -15,7 +15,7 @@ class OpenAIProvider(LLMProvider):
     NAME = "openai"  # For backward compatibility
     MAINTAINER = "João Pinto <janito@ikignosis.org>"
     MODEL_SPECS = MODEL_SPECS
-    DEFAULT_MODEL = "gpt-5"  # Options: gpt-4.1, gpt-4o, o3-mini, o4-mini, gpt-5, gpt-5-nano
+    DEFAULT_MODEL = "gpt-5.2"  # Options: gpt-4.1, gpt-4o, o3-mini, o4-mini, gpt-5, gpt-5.2, gpt-5-nano
     available = OpenAIModelDriver.available
     unavailable_reason = OpenAIModelDriver.unavailable_reason
 

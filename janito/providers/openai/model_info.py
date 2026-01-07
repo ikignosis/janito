@@ -144,6 +144,17 @@ MODEL_SPECS = {
         open="openai",
         driver="OpenAIModelDriver",
     ),
+    "gpt-5.2": LLMModelInfo(
+        name="gpt-5.2",
+        context=200000,
+        max_input=100000,
+        max_cot="N/A",
+        max_response=100000,
+        thinking_supported=True,
+        default_temp=1.0,
+        open="openai",
+        driver="OpenAIModelDriver",
+    ),
     # duplicated gpt-4-turbo with minimal properties for distinction
     "gpt-4-turbo-alt": LLMModelInfo(
         name="gpt-4-turbo",
