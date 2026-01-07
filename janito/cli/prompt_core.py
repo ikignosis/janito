@@ -15,7 +15,7 @@ from janito.driver_events import (
     RequestStatus,
     RateLimitRetry,
 )
-from janito.tools.tool_events import ToolCallError, ToolCallStarted
+from janito.tooling.tool_events import ToolCallError, ToolCallStarted
 import threading
 from janito.cli.verbose_output import print_verbose_header
 from janito.event_bus import event_bus as global_event_bus
@@ -53,7 +53,7 @@ class PromptHandler:
     def _handle_inner_event(self, inner_event, on_event, status):
         if on_event:
             on_event(inner_event)
-        from janito.tools.tool_events import ToolCallFinished, ToolCallStarted
+        from janito.tooling.tool_events import ToolCallFinished, ToolCallStarted
 
         if isinstance(inner_event, ToolCallStarted):
             return self._handle_tool_call_started(inner_event, status)

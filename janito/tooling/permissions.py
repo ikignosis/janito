@@ -1,4 +1,4 @@
-from janito.tools.tool_base import ToolPermissions
+from janito.tooling.tool_base import ToolPermissions
 
 
 class AllowedPermissionsState:

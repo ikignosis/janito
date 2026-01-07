@@ -6,7 +6,7 @@ for the current chat session. This is useful when you want to start fresh withou
 restarting the entire session.
 """
 
-from janito.tools.tool_base import ToolBase, ToolPermissions
+from janito.tooling.tool_base import ToolBase, ToolPermissions
 from janito.report_events import ReportAction
 
 

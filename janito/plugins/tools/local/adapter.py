@@ -1,6 +1,6 @@
 from typing import Type, Dict, Any
-from janito.tools.tools_adapter import ToolsAdapterBase as ToolsAdapter
-from janito.tools.tool_use_tracker import ToolUseTracker
+from janito.tooling.tools_adapter import ToolsAdapterBase as ToolsAdapter
+from janito.tooling.tool_use_tracker import ToolUseTracker
 
 
 class LocalToolsAdapter(ToolsAdapter):
@@ -10,12 +10,12 @@ class LocalToolsAdapter(ToolsAdapter):
     permission filtering (read/write/execute) as required by the janito CLI.
 
     The legacy ``set_execution_tools_enabled()`` helper has been removed – use
-    ``janito.tools.permissions.set_global_allowed_permissions`` or
+    ``janito.tooling.permissions.set_global_allowed_permissions`` or
     :py:meth:`LocalToolsAdapter.set_allowed_permissions` to adjust the
     permission mask at runtime.
 
     Apart from registration/lookup helpers the class derives all execution
-    logic from :class:`janito.tools.tools_adapter.ToolsAdapterBase`.
+    logic from :class:`janito.tooling.tools_adapter.ToolsAdapterBase`.
     """
 
     def __init__(self, tools=None, event_bus=None, workdir=None):
@@ -101,14 +101,14 @@ class LocalToolsAdapter(ToolsAdapter):
     # Lookup helpers used by ToolsAdapterBase
     # ------------------------------------------------------------------
     def get_tool(self, name: str):
-        from janito.tools.disabled_tools import is_tool_disabled
+        from janito.tooling.disabled_tools import is_tool_disabled
 
         if name in self._tools and not is_tool_disabled(name):
             return self._tools[name]["instance"]
         return None
 
     def list_tools(self):
-        from janito.tools.disabled_tools import is_tool_disabled
+        from janito.tooling.disabled_tools import is_tool_disabled
 
         return [
             name
@@ -117,7 +117,7 @@ class LocalToolsAdapter(ToolsAdapter):
         ]
 
     def get_tool_classes(self):
-        from janito.tools.disabled_tools import is_tool_disabled
+        from janito.tooling.disabled_tools import is_tool_disabled
 
         return [
             entry["class"]
@@ -127,7 +127,7 @@ class LocalToolsAdapter(ToolsAdapter):
         ]
 
     def get_tools(self):
-        from janito.tools.disabled_tools import is_tool_disabled
+        from janito.tooling.disabled_tools import is_tool_disabled
 
         return [
             entry["instance"]

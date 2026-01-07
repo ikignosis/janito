@@ -48,8 +48,8 @@ class ConfigManager:
         perm_str = self.file_config.get("tool_permissions")
         if perm_str:
             try:
-                from janito.tools.permissions_parse import parse_permissions_string
-                from janito.tools.permissions import set_global_allowed_permissions
+                from janito.tooling.permissions_parse import parse_permissions_string
+                from janito.tooling.permissions import set_global_allowed_permissions
 
                 perms = parse_permissions_string(perm_str)
                 set_global_allowed_permissions(perms)

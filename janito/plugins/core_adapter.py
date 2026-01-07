@@ -7,8 +7,8 @@ that use the function-based approach instead of class-based.
 
 from janito.plugins.base import Plugin, PluginMetadata
 from typing import List, Type
-from janito.tools.tool_base import ToolBase
-from janito.tools.function_adapter import create_function_tool
+from janito.tooling.tool_base import ToolBase
+from janito.tooling.function_adapter import create_function_tool
 
 
 class CorePluginAdapter(Plugin):

@@ -54,21 +54,21 @@ def _print_tools_table(console, title, tools_info):
 
 def handle_list_tools(args=None):
     from janito.plugins.tools.local.adapter import LocalToolsAdapter
-    import janito.tools  # Ensure all tools are registered
-    from janito.tools.tool_base import ToolPermissions
+    import janito.tooling  # Ensure all tools are registered
+    from janito.tooling.tool_base import ToolPermissions
 
     read = getattr(args, "read", False) if args else False
     write = getattr(args, "write", False) if args else False
     execute = getattr(args, "exec", False) if args else False
     if not (read or write or execute):
         read = write = execute = True
-    from janito.tools.permissions import set_global_allowed_permissions
+    from janito.tooling.permissions import set_global_allowed_permissions
 
     set_global_allowed_permissions(
         ToolPermissions(read=read, write=write, execute=execute)
     )
     # Load disabled tools from config
-    from janito.tools.disabled_tools import DisabledToolsState
+    from janito.tooling.disabled_tools import DisabledToolsState
     from janito.config import config
 
     disabled_str = config.get("disabled_tools", "")
@@ -76,7 +76,7 @@ def handle_list_tools(args=None):
         DisabledToolsState.set_disabled_tools(disabled_str)
     disabled_tools = DisabledToolsState.get_disabled_tools()
 
-    registry = janito.tools.local_tools_adapter
+    registry = janito.tooling.local_tools_adapter
     tools = registry.list_tools()
     if tools:
         from rich.console import Console

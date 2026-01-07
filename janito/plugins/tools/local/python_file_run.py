@@ -3,7 +3,7 @@ import os
 import sys
 import tempfile
 import threading
-from janito.tools.tool_base import ToolBase, ToolPermissions
+from janito.tooling.tool_base import ToolBase, ToolPermissions
 from janito.report_events import ReportAction
 from janito.plugins.tools.local.adapter import register_local_tool
 from janito.i18n import tr
@@ -26,7 +26,7 @@ class PythonFileRunTool(ToolBase):
     permissions = ToolPermissions(execute=True)
 
     def run(self, path: str, timeout: int = 60, silent: bool = False) -> str:
-        from janito.tools.path_utils import expand_path
+        from janito.tooling.path_utils import expand_path
 
         path = expand_path(path)
         if not silent:

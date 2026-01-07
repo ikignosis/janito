@@ -130,24 +130,24 @@ def handle_runner(
     from janito.provider_registry import ProviderRegistry
 
     # Patch: disable execution/run tools if not enabled
-    import janito.tools
-    from janito.tools.tool_base import ToolPermissions
+    import janito.tooling
+    from janito.tooling.tool_base import ToolPermissions
 
     read = getattr(args, "read", False)
     write = getattr(args, "write", False)
     execute = getattr(args, "exec", False)
-    from janito.tools.permissions import set_global_allowed_permissions
-    from janito.tools.tool_base import ToolPermissions
+    from janito.tooling.permissions import set_global_allowed_permissions
+    from janito.tooling.tool_base import ToolPermissions
 
     allowed_permissions = ToolPermissions(read=read, write=write, execute=execute)
     set_global_allowed_permissions(allowed_permissions)
     # Store the default permissions for later restoration (e.g., on /restart)
-    from janito.tools.permissions import set_default_allowed_permissions
+    from janito.tooling.permissions import set_default_allowed_permissions
 
     set_default_allowed_permissions(allowed_permissions)
 
     # Load disabled tools from config
-    from janito.tools.disabled_tools import load_disabled_tools_from_config
+    from janito.tooling.disabled_tools import load_disabled_tools_from_config
 
     load_disabled_tools_from_config()
 
@@ -156,12 +156,12 @@ def handle_runner(
 
     pd = PlatformDiscovery()
     if pd.detect_shell().startswith("PowerShell"):
-        from janito.tools.disabled_tools import DisabledToolsState
+        from janito.tooling.disabled_tools import DisabledToolsState
 
         DisabledToolsState.disable_tool("run_bash_command")
 
     unrestricted = getattr(args, "unrestricted", False)
-    adapter = janito.tools.get_local_tools_adapter(
+    adapter = janito.tooling.get_local_tools_adapter(
         workdir=getattr(args, "workdir", None)
     )
     if unrestricted:
@@ -169,7 +169,7 @@ def handle_runner(
         setattr(adapter, "unrestricted_paths", True)
 
         # Also disable URL whitelist restrictions in unrestricted mode
-        from janito.tools.url_whitelist import get_url_whitelist_manager
+        from janito.tooling.url_whitelist import get_url_whitelist_manager
 
         whitelist_manager = get_url_whitelist_manager()
         whitelist_manager.set_unrestricted_mode(True)

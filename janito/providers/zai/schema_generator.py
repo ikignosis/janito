@@ -4,7 +4,7 @@ Generate OpenAI-compatible tool schemas for Z.AI API.
 
 import inspect
 from typing import get_type_hints, Dict, Any, Optional, List, Union
-from janito.tools.tool_base import ToolBase
+from janito.tooling.tool_base import ToolBase
 
 
 def generate_tool_schemas(tool_classes):

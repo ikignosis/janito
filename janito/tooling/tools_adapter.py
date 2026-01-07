@@ -1,7 +1,7 @@
-from janito.tools.tool_base import ToolBase
-from janito.tools.tool_events import ToolCallStarted, ToolCallFinished, ToolCallError
+from janito.tooling.tool_base import ToolBase
+from janito.tooling.tool_events import ToolCallStarted, ToolCallFinished, ToolCallError
 from janito.exceptions import ToolCallException
-from janito.tools.tool_base import ToolPermissions
+from janito.tooling.tool_base import ToolPermissions
 
 
 class ToolsAdapterBase:
@@ -30,7 +30,7 @@ class ToolsAdapterBase:
 
     def is_tool_allowed(self, tool):
         """Check if a tool is allowed based on current global AllowedPermissionsState."""
-        from janito.tools.permissions import get_global_allowed_permissions
+        from janito.tooling.permissions import get_global_allowed_permissions
 
         allowed_permissions = get_global_allowed_permissions()
         perms = tool.permissions  # permissions are mandatory and type-checked
@@ -55,7 +55,7 @@ class ToolsAdapterBase:
 
     def get_tools(self):
         """Return the list of enabled tools managed by this provider, filtered by allowed permissions and disabled tools."""
-        from janito.tools.disabled_tools import is_tool_disabled
+        from janito.tooling.disabled_tools import is_tool_disabled
 
         tools = [
             tool
@@ -67,7 +67,7 @@ class ToolsAdapterBase:
 
     def set_allowed_permissions(self, allowed_permissions):
         """Set the allowed permissions at runtime. This now updates the global AllowedPermissionsState only."""
-        from janito.tools.permissions import set_global_allowed_permissions
+        from janito.tooling.permissions import set_global_allowed_permissions
 
         set_global_allowed_permissions(allowed_permissions)
 
@@ -224,7 +224,7 @@ class ToolsAdapterBase:
                 import os
 
                 workdir = os.getcwd()
-            from janito.tools.path_security import (
+            from janito.tooling.path_security import (
                 validate_paths_in_arguments,
                 PathSecurityError,
             )

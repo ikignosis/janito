@@ -13,6 +13,8 @@ from janito.cli.core.event_logger import (
     inject_debug_event_bus_if_needed,
 )
 
+import janito.tooling
+
 
 definition = [
     (
@@ -289,7 +291,6 @@ class RunMode(enum.Enum):
 
 class JanitoCLI:
     def __init__(self):
-        import janito.tools
 
         self.parser = argparse.ArgumentParser(
             description="Janito CLI - A tool for running LLM-powered workflows from the command line."

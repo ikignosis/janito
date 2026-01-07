@@ -1,6 +1,6 @@
 from janito.report_events import ReportEvent, ReportSubtype, ReportAction
 from janito.event_bus.bus import event_bus as default_event_bus
-from janito.tools.base import BaseTool
+from janito.tooling.base import BaseTool
 
 import inspect
 from collections import namedtuple

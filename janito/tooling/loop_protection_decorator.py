@@ -2,8 +2,8 @@ import functools
 import time
 import threading
 from typing import Callable, Any
-from janito.tools.loop_protection import LoopProtection
-from janito.tools.tool_use_tracker import normalize_path
+from janito.tooling.loop_protection import LoopProtection
+from janito.tooling.tool_use_tracker import normalize_path
 
 
 # Global tracking for decorator-based loop protection

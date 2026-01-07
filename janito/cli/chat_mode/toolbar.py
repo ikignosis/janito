@@ -89,7 +89,7 @@ def _get_agent_info(agent):
 
 def _get_permissions():
     try:
-        from janito.tools.permissions import get_global_allowed_permissions
+        from janito.tooling.permissions import get_global_allowed_permissions
 
         return get_global_allowed_permissions()
     except Exception:

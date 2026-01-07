@@ -1,4 +1,4 @@
-from janito.tools.tool_base import ToolBase, ToolPermissions
+from janito.tooling.tool_base import ToolBase, ToolPermissions
 from janito.report_events import ReportAction
 from janito.plugins.tools.local.adapter import register_local_tool
 from janito.i18n import tr
@@ -29,7 +29,7 @@ class DeleteTextInFileTool(ToolBase):
         end_marker: str,
         backup: bool = False,
     ) -> str:
-        from janito.tools.tool_utils import display_path
+        from janito.tooling.tool_utils import display_path
 
         disp_path = display_path(path)
         info_msg = tr(

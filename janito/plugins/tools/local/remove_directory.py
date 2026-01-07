@@ -1,12 +1,12 @@
-from janito.tools.tool_base import ToolBase, ToolPermissions
+from janito.tooling.tool_base import ToolBase, ToolPermissions
 from janito.report_events import ReportAction
 from janito.plugins.tools.local.adapter import register_local_tool
-from janito.tools.tool_utils import pluralize, display_path
+from janito.tooling.tool_utils import pluralize, display_path
 from janito.i18n import tr
 import shutil
 import os
 import zipfile
-from janito.tools.path_utils import expand_path
+from janito.tooling.path_utils import expand_path
 
 
 @register_local_tool

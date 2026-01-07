@@ -1,9 +1,9 @@
 import webbrowser
 from janito.plugins.tools.local.adapter import register_local_tool
-from janito.tools.tool_base import ToolBase, ToolPermissions
+from janito.tooling.tool_base import ToolBase, ToolPermissions
 from janito.report_events import ReportAction
 from janito.i18n import tr
-from janito.tools.loop_protection_decorator import protect_against_loops
+from janito.tooling.loop_protection_decorator import protect_against_loops
 
 
 @register_local_tool

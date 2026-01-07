@@ -5,7 +5,7 @@ Base classes for janito plugins.
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Dict, Any, List, Optional, Type, Union
-from janito.tools.tool_base import ToolBase
+from janito.tooling.tool_base import ToolBase
 
 
 @dataclass

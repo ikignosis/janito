@@ -29,7 +29,7 @@ class UnrestrictedShellHandler(ShellCmdHandler):
             )
 
         # Update URL whitelist manager
-        from janito.tools.url_whitelist import get_url_whitelist_manager
+        from janito.tooling.url_whitelist import get_url_whitelist_manager
 
         whitelist_manager = get_url_whitelist_manager()
         whitelist_manager.set_unrestricted_mode(new_unrestricted)

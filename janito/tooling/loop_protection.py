@@ -1,7 +1,7 @@
 import time
 import threading
 from typing import Dict, List, Tuple
-from janito.tools.tool_use_tracker import normalize_path
+from janito.tooling.tool_use_tracker import normalize_path
 
 
 class LoopProtection:

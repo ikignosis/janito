@@ -3,7 +3,7 @@ Key bindings for Janito Chat CLI.
 """
 
 from prompt_toolkit.key_binding import KeyBindings
-from janito.tools.permissions import get_global_allowed_permissions
+from janito.tooling.permissions import get_global_allowed_permissions
 
 
 class KeyBindingsFactory:

@@ -29,9 +29,9 @@ from .show_image_grid import ShowImageGridTool
 from .markdown_view import MarkdownViewTool
 from .clear_context import ClearContextTool
 
-from janito.tools.tool_base import ToolPermissions
+from janito.tooling.tool_base import ToolPermissions
 import os
-from janito.tools.permissions import get_global_allowed_permissions
+from janito.tooling.permissions import get_global_allowed_permissions
 from janito.platform_discovery import PlatformDiscovery
 
 # Singleton tools adapter with all standard tools registered

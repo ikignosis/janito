@@ -32,7 +32,7 @@ class RichTerminalReporter(EventHandlerBase):
         self.raw_mode = raw_mode
         import janito.report_events as report_events
 
-        import janito.tools.tool_events as tool_events
+        import janito.tooling.tool_events as tool_events
 
         super().__init__(driver_events, report_events, tool_events, agent_events)
         self._waiting_printed = False

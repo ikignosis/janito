@@ -1,7 +1,7 @@
 from janito.llm.driver_input import DriverInput
 from janito.llm.driver_config import LLMDriverConfig
 from janito.conversation_history import LLMConversationHistory
-from janito.tools.tools_adapter import ToolsAdapterBase
+from janito.tooling.tools_adapter import ToolsAdapterBase
 from queue import Queue, Empty
 from janito.driver_events import RequestStatus
 from janito.agent_events import (
@@ -109,8 +109,8 @@ class LLMAgent:
             )
             template = env.get_template(Path(self.system_prompt_template).name)
             # Refresh allowed_permissions in context before rendering
-            from janito.tools.permissions import get_global_allowed_permissions
-            from janito.tools.tool_base import ToolPermissions
+            from janito.tooling.permissions import get_global_allowed_permissions
+            from janito.tooling.tool_base import ToolPermissions
 
             perms = get_global_allowed_permissions()
             if isinstance(perms, ToolPermissions):

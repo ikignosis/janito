@@ -14,7 +14,7 @@ import re
 
 
 def _compute_permission_string(args):
-    from janito.tools.tool_base import ToolPermissions
+    from janito.tooling.tool_base import ToolPermissions
 
     read = getattr(args, "read", False)
     write = getattr(args, "write", False)

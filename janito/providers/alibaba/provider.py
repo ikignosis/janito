@@ -3,7 +3,7 @@ from janito.llm.model import LLMModelInfo
 from janito.llm.auth import LLMAuthManager
 from janito.llm.driver_config import LLMDriverConfig
 from janito.drivers.openai.driver import OpenAIModelDriver
-from janito.tools import get_local_tools_adapter
+from janito.tooling import get_local_tools_adapter
 from janito.providers.registry import LLMProviderRegistry
 from janito.providers.alibaba.model_info import MODEL_SPECS
 

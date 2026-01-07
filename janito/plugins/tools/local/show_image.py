@@ -1,8 +1,8 @@
-from janito.tools.tool_base import ToolBase, ToolPermissions
+from janito.tooling.tool_base import ToolBase, ToolPermissions
 from janito.report_events import ReportAction
 from janito.plugins.tools.local.adapter import register_local_tool
 from janito.i18n import tr
-from janito.tools.loop_protection_decorator import protect_against_loops
+from janito.tooling.loop_protection_decorator import protect_against_loops
 
 
 @register_local_tool
@@ -29,8 +29,8 @@ class ShowImageTool(ToolBase):
         height: int | None = None,
         preserve_aspect: bool = True,
     ) -> str:
-        from janito.tools.tool_utils import display_path
-        from janito.tools.path_utils import expand_path
+        from janito.tooling.tool_utils import display_path
+        from janito.tooling.path_utils import expand_path
         import os
 
         try:

@@ -54,8 +54,8 @@ def _dispatch_set_key(key, value):
         print(f"Azure deployment name set to '{value}'.")
         return True
     if key == "tool_permissions":
-        from janito.tools.permissions_parse import parse_permissions_string
-        from janito.tools.permissions import set_global_allowed_permissions
+        from janito.tooling.permissions_parse import parse_permissions_string
+        from janito.tooling.permissions import set_global_allowed_permissions
 
         perms = parse_permissions_string(value)
         global_config.file_set("tool_permissions", value)
@@ -63,14 +63,14 @@ def _dispatch_set_key(key, value):
         print(f"Tool permissions set to '{value}' (parsed: {perms})")
         return True
     if key == "disabled_tools":
-        from janito.tools.disabled_tools import set_disabled_tools
+        from janito.tooling.disabled_tools import set_disabled_tools
 
         set_disabled_tools(value)
         global_config.file_set("disabled_tools", value)
         print(f"Disabled tools set to '{value}'")
         return True
     if key == "allowed_sites":
-        from janito.tools.url_whitelist import get_url_whitelist_manager
+        from janito.tooling.url_whitelist import get_url_whitelist_manager
 
         sites = [site.strip() for site in value.split(",") if site.strip()]
         whitelist_manager = get_url_whitelist_manager()

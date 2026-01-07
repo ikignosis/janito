@@ -74,7 +74,7 @@ def handle_show_config(args):
         console.print("  (no configuration values set)")
 
     # Show disabled tools
-    from janito.tools.disabled_tools import load_disabled_tools_from_config
+    from janito.tooling.disabled_tools import load_disabled_tools_from_config
 
     disabled_tools = load_disabled_tools_from_config()
     if disabled_tools:

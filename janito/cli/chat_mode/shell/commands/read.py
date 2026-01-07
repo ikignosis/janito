@@ -20,11 +20,11 @@ class ReadShellHandler(ShellCmdHandler):
             return
         enable = arg == "on"
         try:
-            from janito.tools.permissions import (
+            from janito.tooling.permissions import (
                 set_global_allowed_permissions,
                 get_global_allowed_permissions,
             )
-            from janito.tools.tool_base import ToolPermissions
+            from janito.tooling.tool_base import ToolPermissions
 
             current = get_global_allowed_permissions()
             new_perms = ToolPermissions(
@@ -32,9 +32,9 @@ class ReadShellHandler(ShellCmdHandler):
             )
             set_global_allowed_permissions(new_perms)
             # Also update the singleton tools registry permissions
-            import janito.tools
+            import janito.tooling
 
-            janito.tools.local_tools_adapter.set_allowed_permissions(new_perms)
+            janito.tooling.local_tools_adapter.set_allowed_permissions(new_perms)
 
         except Exception as e:
             shared_console.print(

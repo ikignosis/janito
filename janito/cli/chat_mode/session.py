@@ -182,7 +182,7 @@ class ChatSession:
     def _filter_execution_tools(self):
         try:
             getattr(
-                __import__("janito.tools", fromlist=["get_local_tools_adapter"]),
+                __import__("janito.tooling", fromlist=["get_local_tools_adapter"]),
                 "get_local_tools_adapter",
             )()
         except Exception as e:
@@ -230,7 +230,7 @@ class ChatSession:
         )
 
         perms = __import__(
-            "janito.tools.permissions", fromlist=["get_global_allowed_permissions"]
+            "janito.tooling.permissions", fromlist=["get_global_allowed_permissions"]
         ).get_global_allowed_permissions()
         if perms.execute:
             self.console.print(

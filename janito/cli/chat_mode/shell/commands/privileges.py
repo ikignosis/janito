@@ -13,7 +13,7 @@ class PrivilegesShellHandler(ShellCmdHandler):
             )
             return
         try:
-            from janito.tools.permissions import get_global_allowed_permissions
+            from janito.tooling.permissions import get_global_allowed_permissions
 
             perms = get_global_allowed_permissions()
             lines = ["[bold]Current tool privileges:[/bold]"]

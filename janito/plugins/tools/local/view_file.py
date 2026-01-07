@@ -1,9 +1,9 @@
-from janito.tools.tool_base import ToolBase, ToolPermissions
+from janito.tooling.tool_base import ToolBase, ToolPermissions
 from janito.report_events import ReportAction
 from janito.plugins.tools.local.adapter import register_local_tool
-from janito.tools.tool_utils import pluralize
+from janito.tooling.tool_utils import pluralize
 from janito.i18n import tr
-from janito.tools.loop_protection_decorator import protect_against_loops
+from janito.tooling.loop_protection_decorator import protect_against_loops
 
 
 @register_local_tool
@@ -34,8 +34,8 @@ class ViewFileTool(ToolBase):
     def run(self, path: str, from_line: int = None, to_line: int = None, as_base64: bool = False) -> str:
         import os
         import base64
-        from janito.tools.tool_utils import display_path
-        from janito.tools.path_utils import expand_path
+        from janito.tooling.tool_utils import display_path
+        from janito.tooling.path_utils import expand_path
 
         path = expand_path(path)
         disp_path = display_path(path)

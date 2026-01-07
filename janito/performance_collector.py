@@ -2,7 +2,7 @@ from collections import defaultdict, Counter
 from janito.event_bus.handler import EventHandlerBase
 import janito.driver_events as driver_events
 import janito.report_events as report_events
-import janito.tools.tool_events as tool_events
+import janito.tooling.tool_events as tool_events
 
 
 class PerformanceCollector(EventHandlerBase):

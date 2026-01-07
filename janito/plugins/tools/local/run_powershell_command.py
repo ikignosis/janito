@@ -1,10 +1,10 @@
-from janito.tools.tool_base import ToolBase, ToolPermissions
+from janito.tooling.tool_base import ToolBase, ToolPermissions
 from janito.report_events import ReportAction
 from janito.plugins.tools.local.adapter import register_local_tool
 from janito.i18n import tr
 import subprocess
 import os
-from janito.tools.path_utils import expand_path
+from janito.tooling.path_utils import expand_path
 import tempfile
 import threading
 

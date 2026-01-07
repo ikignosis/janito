@@ -11,8 +11,8 @@ from pathlib import Path
 from typing import Optional
 
 from janito.plugins.base import Plugin, PluginMetadata
-from janito.tools.function_adapter import create_function_tool
-from janito.tools.tool_base import ToolBase
+from janito.tooling.function_adapter import create_function_tool
+from janito.tooling.tool_base import ToolBase
 
 
 class CorePlugin(Plugin):

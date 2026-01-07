@@ -10,12 +10,12 @@ from jinja2 import Template
 from pathlib import Path
 from queue import Queue
 from rich import print as rich_print
-from janito.tools import get_local_tools_adapter
+from janito.tooling import get_local_tools_adapter
 from janito.llm.agent import LLMAgent
 
 from janito.platform_discovery import PlatformDiscovery
-from janito.tools.tool_base import ToolPermissions
-from janito.tools.permissions import get_global_allowed_permissions
+from janito.tooling.tool_base import ToolPermissions
+from janito.tooling.permissions import get_global_allowed_permissions
 
 
 def _load_template_content(profile, templates_dir):
@@ -137,7 +137,7 @@ def _prepare_template_context(role, profile, allowed_permissions, args=None):
 
     # Add allowed sites for market analyst profile
     if profile == "market-analyst":
-        from janito.tools.url_whitelist import get_url_whitelist_manager
+        from janito.tooling.url_whitelist import get_url_whitelist_manager
 
         whitelist_manager = get_url_whitelist_manager()
         allowed_sites = whitelist_manager.get_allowed_sites()

@@ -1,7 +1,7 @@
 """Security commands for managing allowed sites."""
 
 from janito.cli.chat_mode.shell.commands.base import ShellCmdHandler as BaseCommand
-from janito.tools.url_whitelist import get_url_whitelist_manager
+from janito.tooling.url_whitelist import get_url_whitelist_manager
 
 
 class SecurityAllowedSitesCommand(BaseCommand):

@@ -1,10 +1,10 @@
 import os
-from janito.tools.path_utils import expand_path
+from janito.tooling.path_utils import expand_path
 from janito.i18n import tr
-from janito.tools.tool_base import ToolBase, ToolPermissions
+from janito.tooling.tool_base import ToolBase, ToolPermissions
 from janito.report_events import ReportAction
 from janito.plugins.tools.local.adapter import register_local_tool
-from janito.tools.tool_utils import display_path
+from janito.tooling.tool_utils import display_path
 from janito.plugins.tools.local.adapter import register_local_tool as register_tool
 
 from .python_validator import validate_python
@@ -18,7 +18,7 @@ from .js_validator import validate_js
 from .css_validator import validate_css
 from .jinja2_validator import validate_jinja2
 from .txt_validator import validate_txt
-from janito.tools.loop_protection_decorator import protect_against_loops
+from janito.tooling.loop_protection_decorator import protect_against_loops
 
 
 def _get_validator(ext):

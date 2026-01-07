@@ -6,11 +6,11 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 from typing import Dict, Any, Optional
 from janito.plugins.tools.local.adapter import register_local_tool
-from janito.tools.tool_base import ToolBase, ToolPermissions
+from janito.tooling.tool_base import ToolBase, ToolPermissions
 from janito.report_events import ReportAction
 from janito.i18n import tr
-from janito.tools.tool_utils import pluralize
-from janito.tools.loop_protection_decorator import protect_against_loops
+from janito.tooling.tool_utils import pluralize
+from janito.tooling.loop_protection_decorator import protect_against_loops
 
 
 @register_local_tool
@@ -190,7 +190,7 @@ class FetchUrlTool(ToolBase):
         Also implements URL whitelist checking and browser-like behavior.
         """
         # Check URL whitelist
-        from janito.tools.url_whitelist import get_url_whitelist_manager
+        from janito.tooling.url_whitelist import get_url_whitelist_manager
 
         whitelist_manager = get_url_whitelist_manager()
 

@@ -1,4 +1,4 @@
-from janito.tools.permissions import get_global_allowed_permissions
+from janito.tooling.permissions import get_global_allowed_permissions
 
 
 def get_privilege_status_message():

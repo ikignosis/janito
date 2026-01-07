@@ -1,4 +1,4 @@
-"""janito.tools.path_security
+"""janito.tooling.path_security
 ================================
 Utilities that ensure user-supplied file-system paths never escape the allowed
 workspace.
@@ -187,7 +187,7 @@ def validate_paths_in_arguments(
     if it finds a suspicious path that points outside the allowed workspace.
 
     If *schema* is given it is expected to be the JSON Schema describing the
-    tool's arguments (as produced by ``janito.tools.inspect_registry``).  Keys
+    tool's arguments (as produced by ``janito.tooling.inspect_registry``).  Keys
     whose schema declares a ``"format": "path"`` or mentions "path" in the
     description are treated as path parameters.  Without a schema the function
     falls back to a simple heuristic based on the argument name.

@@ -1,6 +1,6 @@
 import re
 from janito.i18n import tr
-from janito.tools.tool_utils import pluralize
+from janito.tooling.tool_utils import pluralize
 
 
 def prepare_pattern(pattern, is_regex, case_sensitive, report_error, report_warning):

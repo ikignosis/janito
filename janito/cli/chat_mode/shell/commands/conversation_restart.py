@@ -24,7 +24,7 @@ def handle_restart(shell_state=None):
 
     # Reset tool use tracker
     try:
-        from janito.tools.tool_use_tracker import ToolUseTracker
+        from janito.tooling.tool_use_tracker import ToolUseTracker
 
         ToolUseTracker.instance().clear_history()
     except Exception as e:
@@ -49,25 +49,25 @@ def handle_restart(shell_state=None):
 
     # Restore tool permissions to the CLI default on restart
     try:
-        from janito.tools.permissions import (
+        from janito.tooling.permissions import (
             set_global_allowed_permissions,
             get_default_allowed_permissions,
         )
-        import janito.tools
+        import janito.tooling
 
         default_perms = get_default_allowed_permissions()
         if default_perms is not None:
             set_global_allowed_permissions(default_perms)
-            janito.tools.local_tools_adapter.set_allowed_permissions(default_perms)
+            janito.tooling.local_tools_adapter.set_allowed_permissions(default_perms)
             msg = None
 
         else:
-            from janito.tools.tool_base import ToolPermissions
+            from janito.tooling.tool_base import ToolPermissions
 
             set_global_allowed_permissions(
                 ToolPermissions(read=False, write=False, execute=False)
             )
-            janito.tools.local_tools_adapter.set_allowed_permissions(
+            janito.tooling.local_tools_adapter.set_allowed_permissions(
                 ToolPermissions(read=False, write=False, execute=False)
             )
             msg = "[green]All tool permissions have been set to OFF (read, write, execute = False).[/green]"

@@ -3,7 +3,7 @@ import os
 import sys
 import tempfile
 import threading
-from janito.tools.tool_base import ToolBase, ToolPermissions
+from janito.tooling.tool_base import ToolBase, ToolPermissions
 from janito.report_events import ReportAction
 from janito.plugins.tools.local.adapter import register_local_tool
 from janito.i18n import tr

@@ -57,7 +57,7 @@ class LLMDriver(ABC):
         """Validate tool schemas (if any) and launch the driver's background thread to process DriverInput objects."""
         # Validate all tool schemas before starting the thread
         if self.tools_adapter is not None:
-            from janito.tools.tools_schema import ToolSchemaBase
+            from janito.tooling.tools_schema import ToolSchemaBase
 
             validator = ToolSchemaBase()
             for tool in self.tools_adapter.get_tools():

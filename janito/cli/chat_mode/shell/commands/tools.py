@@ -62,10 +62,10 @@ class ToolsShellHandler(ShellCmdHandler):
             )
             return
         try:
-            import janito.tools  # Ensure all tools are registered
-            from janito.tools.permissions import get_global_allowed_permissions
+            import janito.tooling  # Ensure all tools are registered
+            from janito.tooling.permissions import get_global_allowed_permissions
 
-            registry = janito.tools.get_local_tools_adapter()
+            registry = janito.tooling.get_local_tools_adapter()
             tools = registry.list_tools()
             shared_console.print("Registered tools:")
             tool_instances = {t.tool_name: t for t in registry.get_tools()}

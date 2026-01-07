@@ -1,9 +1,9 @@
-from janito.tools.tool_base import ToolBase, ToolPermissions
+from janito.tooling.tool_base import ToolBase, ToolPermissions
 from janito.report_events import ReportAction
 from janito.plugins.tools.local.adapter import register_local_tool
-from janito.tools.tool_utils import display_path
+from janito.tooling.tool_utils import display_path
 from janito.i18n import tr
-from janito.tools.loop_protection_decorator import protect_against_loops
+from janito.tooling.loop_protection_decorator import protect_against_loops
 
 
 @register_local_tool
@@ -25,7 +25,7 @@ class MarkdownViewTool(ToolBase):
     @protect_against_loops(max_calls=5, time_window=10.0, key_field="path")
     def run(self, path: str, width: int = 80, theme: str = "github") -> str:
         import os
-        from janito.tools.path_utils import expand_path
+        from janito.tooling.path_utils import expand_path
 
         path = expand_path(path)
         disp_path = display_path(path)

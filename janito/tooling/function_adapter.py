@@ -6,7 +6,7 @@ This module provides a way to wrap function-based tools into proper ToolBase cla
 
 import inspect
 from typing import Any, Dict, List, Optional, get_type_hints
-from janito.tools.tool_base import ToolBase, ToolPermissions
+from janito.tooling.tool_base import ToolBase, ToolPermissions
 
 
 class FunctionToolAdapter(ToolBase):
