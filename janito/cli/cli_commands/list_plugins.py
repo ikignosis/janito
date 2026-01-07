@@ -8,7 +8,7 @@ from janito.plugins.discovery import list_available_plugins
 import os
 from janito.plugins.manager import PluginManager
 from janito.plugins.builtin import BuiltinPluginRegistry
-from janito.plugins.auto_loader_fixed import load_core_plugins, get_loaded_core_plugins, is_core_plugin
+from janito.plugins.auto_loader import load_core_plugins, get_loaded_core_plugins, is_core_plugin
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
@@ -91,7 +91,7 @@ def _print_external_plugins(available, builtin_plugins):
 
 def _list_plugin_resources():
     """List all resources from loaded plugins using rich formatting."""
-    from janito.plugins.auto_loader_fixed import get_plugin_manager
+    from janito.plugins.auto_loader import get_plugin_manager
     
     console = Console()
     manager = get_plugin_manager()
@@ -161,7 +161,7 @@ def _print_resources_by_type(resources):
 
 def _list_loaded_plugins():
     """List loaded plugins using rich formatting."""
-    from janito.plugins.auto_loader_fixed import get_plugin_manager
+    from janito.plugins.auto_loader import get_plugin_manager
     
     console = Console()
     manager = get_plugin_manager()
