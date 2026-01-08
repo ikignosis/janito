@@ -73,11 +73,11 @@ def get_effective_model(provider=None, requested_model=None):
         provider_model = config.get_provider_config(provider).get("model")
         if provider_model:
             return provider_model
-    # Only use global model if no provider is specified
-    if provider is None:
-        global_model = config.get("model")
-        if global_model:
-            return global_model
+
+    global_model = config.get("model")
+    if global_model:
+        return global_model
+    
     return None
 
 

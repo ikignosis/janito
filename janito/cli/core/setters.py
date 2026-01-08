@@ -22,10 +22,11 @@ def handle_set(args, config_mgr=None):
             return True
         key, value = _parse_set_arg(set_arg)
         key = key.replace("-", "_")
-        return _dispatch_set_key(key, value)
     except Exception as e:
         print(f"Error parsing --set value: {e}")
         return True
+    return _dispatch_set_key(key, value)
+
 
 
 def _validate_set_arg_format(set_arg):

@@ -39,10 +39,7 @@ def handle_show_config(args):
     config_path = get_config_path()
     console.print("[bold green]Current configuration:[/bold green]")
     console.print(f"[bold yellow]Config file:[/bold yellow] {config_path}")
-    console.print(f"[bold yellow]Current provider:[/bold yellow] {provider!r}\n")
-    if model is not None:
-        console.print(f"[bold yellow]Global model:[/bold yellow] {model!r}\n")
-
+ 
     # Show all configuration values
     console.print("[bold green]Configuration values:[/bold green]")
     all_config = config.all()

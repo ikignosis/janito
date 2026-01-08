@@ -94,6 +94,8 @@ class ConfigManager:
         # Always reload, update, and persist
         self._load_file_config()
         self.file_config[key] = value
+        if not self.config_path.parent.exists():
+            self.config_path.parent.mkdir(parents=True, exist_ok=True)
         with open(self.config_path, "w", encoding="utf-8") as f:
             json.dump(self.file_config, f, indent=2)
             f.write("\n")
