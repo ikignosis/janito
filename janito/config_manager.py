@@ -3,6 +3,9 @@ import os
 from pathlib import Path
 from threading import Lock
 
+from janito.tooling.permissions_parse import parse_permissions_string
+from janito.tooling.permissions import set_global_allowed_permissions
+
 
 class ConfigManager:
     """
@@ -47,14 +50,8 @@ class ConfigManager:
         # On startup, read tool_permissions from config and set global permissions
         perm_str = self.file_config.get("tool_permissions")
         if perm_str:
-            try:
-                from janito.tooling.permissions_parse import parse_permissions_string
-                from janito.tooling.permissions import set_global_allowed_permissions
-
-                perms = parse_permissions_string(perm_str)
-                set_global_allowed_permissions(perms)
-            except Exception as e:
-                print(f"Warning: Failed to apply tool_permissions from config: {e}")
+            perms = parse_permissions_string(perm_str)
+            set_global_allowed_permissions(perms)
 
  
         # Load disabled tools from config - skip during startup to avoid circular imports

@@ -136,15 +136,15 @@ def handle_runner(
     read = getattr(args, "read", False)
     write = getattr(args, "write", False)
     execute = getattr(args, "exec", False)
-    from janito.tooling.permissions import set_global_allowed_permissions
+    from janito.tooling.permissions import set_global_allowed_permissions, get_global_allowed_permissions
     from janito.tooling.tool_base import ToolPermissions
 
-    allowed_permissions = ToolPermissions(read=read, write=write, execute=execute)
-    set_global_allowed_permissions(allowed_permissions)
-    # Store the default permissions for later restoration (e.g., on /restart)
-    from janito.tooling.permissions import set_default_allowed_permissions
-
-    set_default_allowed_permissions(allowed_permissions)
+    # if there is an override we take it otherwise we default to the permissions previosly set from config
+    if read or write or execute:
+        allowed_permissions = ToolPermissions(read=read, write=write, execute=execute)
+        set_global_allowed_permissions(allowed_permissions)
+    else:
+        allowed_permissions = get_global_allowed_permissions()
 
     # Load disabled tools from config
     from janito.tooling.disabled_tools import load_disabled_tools_from_config
