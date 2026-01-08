@@ -10,5 +10,6 @@ import janito.providers.zai.provider
 import janito.providers.cerebras.provider
 import janito.providers.mistral.provider
 import janito.providers.ibm.provider
+import janito.providers.minimax.provider
 
 # Registration is now handled by each provider module to avoid circular imports

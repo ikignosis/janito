@@ -44,6 +44,14 @@ This page lists the supported providers and their available models, organized by
 - **DeepSeek Chat** (default) - General purpose chat model (128K context)
 - **DeepSeek Reasoner** - Specialized for complex reasoning tasks (128K context)
 
+### MiniMax
+
+- **MiniMax M2.1** (default) - Latest model with 230B total parameters (10B activated per inference), optimized for code generation and refactoring with polyglot code mastery and enhanced reasoning (128K context)
+- **MiniMax M2.1 Lightning** - Same performance as M2.1 with significantly faster inference and low latency (128K context)
+- **MiniMax M2** - Previous generation model with 200k context length, 128k max output, agentic capabilities, function calling, and advanced reasoning
+
+MiniMax models are optimized for coding, tool use, instruction following, and long-horizon planning. M2.1 excels in multilingual scenarios and matches or exceeds Claude Sonnet 4.5 performance.
+
 ### Mistral
 
 - **Mistral Large Latest** (default) - Most capable Mistral model with 128k context

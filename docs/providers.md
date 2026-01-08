@@ -74,6 +74,13 @@ Janito supports the following LLM providers:
 - **Default Model**: `ibm/granite-3-3-8b-instruct`
 - **Driver**: `OpenAIModelDriver`
 
+## MiniMax
+
+- **API Key Env Var**: `MINIMAX_API_KEY`
+- **Base URL**: `https://api.minimax.io/v1`
+- **Default Model**: `minimax-m2.1`
+- **Driver**: `OpenAIModelDriver`
+
 ## Azure OpenAI
 
 - **API Key Env Var**: `AZURE_OPENAI_API_KEY`
