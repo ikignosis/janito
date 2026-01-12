@@ -132,7 +132,7 @@ janito chat -m gpt-4o@openai
 
 # More examples:
 janito -m claude-sonnet-4-5-20250929@anthropic "Write a Python function"
-janito -m kimi-k1-8k@moonshot "Translate this to Chinese"
+janito -m kimi-k2-thinking@moonshot "Translate this to Chinese"
 janito -m deepseek-chat@deepseek "Explain machine learning"
 ```
 

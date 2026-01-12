@@ -37,14 +37,12 @@ Janito supports the following Moonshot models:
 
 - `kimi-k2-0905-preview` (default) - Advanced reasoning model with 128k context window
 - `kimi-k2-turbo-preview` - Turbo version of the advanced reasoning model with 128k context window
-- `kimi-k1-8k` - Standard model with 8k context window
-- `kimi-k1-32k` - Standard model with 32k context window
-- `kimi-k1-128k` - Standard model with 128k context window
+- `kimi-k2-thinking` - Advanced thinking model with 256k context window and enhanced reasoning capabilities
 
 To select a model:
 
 ```bash
-janito -p moonshot -m kimi-k1-32k "Your prompt here"
+janito -p moonshot -m kimi-k2-thinking "Your prompt here"
 ```
 
 ## 5. Verify Your Configuration

@@ -281,7 +281,7 @@ class JanitoCLI:
 
         self.parser = argparse.ArgumentParser(
             description="Janito CLI - A tool for running LLM-powered workflows from the command line."
-            "\n\nExample usage: janito -p moonshot -m kimi-k1-8k 'Your prompt here'\n"
+            "\n\nExample usage: janito -p moonshot -m kimi-k2-thinking 'Your prompt here'\n"
             "Example usage: janito -m model@provider 'Your prompt here'\n\n"
             "Use -m or --model to set the model for the session.",
         )

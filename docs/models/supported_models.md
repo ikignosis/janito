@@ -98,11 +98,11 @@ This document lists all supported large language models (LLMs) across providers,
 
 ## Moonshot
 
-| Model Name | Context Window | Max Input | Max Response |
-|------------|----------------|-----------|--------------|
-| `kimi-k2-0711-preview` | 128,000 | 100,000 | 4,096 |
-| `kimi-k2-turbo-preview` | 128,000 | 100,000 | 4,096 |
-| `kimi-k2-0905-preview` | 128,000 | 100,000 | 4,096 |
+| Model Name | Context Window | Max Input | Max Response | Thinking Supported |
+|------------|----------------|-----------|--------------|--------------------|
+| `kimi-k2-turbo-preview` | 128,000 | 100,000 | 4,096 | No |
+| `kimi-k2-thinking` | 256,000 | 200,000 | 8,192 | Yes |
+| `kimi-k2-0905-preview` | 128,000 | 100,000 | 4,096 | No |
 
 ## IBM WatsonX
 

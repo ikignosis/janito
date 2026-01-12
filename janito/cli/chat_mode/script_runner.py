@@ -53,7 +53,7 @@ class ChatScriptRunner:
         *,
         console: Optional[Console] = None,
         provider: str = "moonshot",
-        model: str = "kimi-k1-8k",
+        model: str = "kimi-k2-thinking",
         use_real_agent: bool = True,
         **chat_session_kwargs,
     ) -> None:

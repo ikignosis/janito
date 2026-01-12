@@ -70,10 +70,10 @@ janito -m ibm/granite-3-3-8b-instruct@ibm "Hello, can you introduce yourself?"
 janito "Create a Python script to calculate fibonacci numbers"
 
 # With specific model
-janito -m kimi-k1-8k "Explain machine learning in simple terms"
+janito -m kimi-k2-thinking "Explain machine learning in simple terms"
 
 # Using model@provider syntax (shorthand)
-janito -m kimi-k1-8k@moonshot "Explain machine learning in simple terms"
+janito -m kimi-k2-thinking@moonshot "Explain machine learning in simple terms"
 janito -m gpt-4@openai "Explain quantum computing"
 
 # Interactive chat mode
@@ -95,7 +95,7 @@ janito -W ./my_project "Create a REST API with FastAPI"
 ```bash
 # Make your chosen provider the permanent default
 janito --set provider=moonshot  # or openai, ibm, etc.
-janito --set model=kimi-k1-8k     # or gpt-5, ibm/granite-3-8b-instruct, etc.
+janito --set model=kimi-k2-thinking     # or gpt-5, ibm/granite-3-8b-instruct, etc.
 ```
 
 ### Environment Variables
@@ -105,7 +105,7 @@ You can also use environment variables:
 ```bash
 export MOONSHOT_API_KEY=your_key_here
 export JANITO_PROVIDER=moonshot
-export JANITO_MODEL=kimi-k1-8k
+export JANITO_MODEL=kimi-k2-thinking
 ```
 
 **OpenAI:**
@@ -127,9 +127,9 @@ export JANITO_MODEL=ibm/granite-3-3-8b-instruct
 ## Available Models by Provider
 
 ### Moonshot Models
-- **kimi-k1-8k**: Fast responses, good for general tasks
-- **kimi-k1-32k**: Better for longer contexts
-- **kimi-k1-128k**: Best for very long documents
+- **kimi-k2-thinking**: Advanced thinking model with 256k context and enhanced reasoning
+- **kimi-k2-turbo-preview**: Turbo version with 128k context for fast responses
+- **kimi-k2-0905-preview**: Advanced reasoning model with 128k context window
 - **kimi-k2-turbo-preview**: Latest model with enhanced capabilities
 - **kimi-k2-turbo-preview**: Turbo version of the advanced reasoning model
 

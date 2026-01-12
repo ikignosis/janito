@@ -124,7 +124,7 @@ janito -m gpt-4@openai "Explain quantum computing"
 janito -m claude-sonnet-4-5-20250929@anthropic "Write a Python function"
 
 # Use Kimi with Moonshot
-janito -m kimi-k1-8k@moonshot "Translate this to Chinese"
+janito -m kimi-k2-thinking@moonshot "Translate this to Chinese"
 
 # Complex model names work too
 janito -m gpt-4-turbo-preview@openai "Debug this code"
