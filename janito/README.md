@@ -187,6 +187,6 @@ janito "Create a responsive landing page with Tailwind CSS"
 
 ## Support
 
-- **Documentation**: Check individual provider directories for detailed setup guides
+- **Full Documentation**: https://ikignosis.org/janito/
 - **Issues**: Report bugs and feature requests on GitHub
 - **Discord**: Join our community for help and discussions
