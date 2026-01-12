@@ -11,6 +11,4 @@ questionary>=2.0.1
 setuptools_scm>=8.0
 
 # Documentation dependencies
-mkdocs
-mkdocs-material
-mkdocs-material-extensions
+zensical
