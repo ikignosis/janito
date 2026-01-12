@@ -43,7 +43,7 @@ janito -p google -m gemini-2.0-flash-exp "Generate unit tests"
 
 ### Interactive Chat Mode
 
-Start an interactive session (default mode):
+By default, running `janito` without any arguments starts an interactive chat session:
 ```bash
 janito
 ```
@@ -54,6 +54,11 @@ In chat mode, you can:
 - Execute code and commands
 - Read and write files
 - Use built-in tools
+
+- **One-shot mode**: Pass a prompt directly for single tasks:
+```bash
+janito "Create a Python script that reads a CSV file"
+```
 
 ### Available Commands
 

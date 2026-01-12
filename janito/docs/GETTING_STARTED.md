@@ -64,6 +64,20 @@ janito -m ibm/granite-3-3-8b-instruct@ibm "Hello, can you introduce yourself?"
 
 ## Your First Commands
 
+### Interactive Mode vs One-Shot Mode
+
+By default, running `janito` without any arguments starts an **interactive chat session** where you can have multi-turn conversations, execute code, and use tools:
+
+```bash
+janito
+```
+
+For single tasks, pass a prompt directly (**one-shot mode**):
+
+```bash
+janito "Create a Python script to calculate fibonacci numbers"
+```
+
 ### Basic Usage
 ```bash
 # Simple prompt
