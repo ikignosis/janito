@@ -48,11 +48,6 @@ Start an interactive session (default mode):
 janito
 ```
 
-Or explicitly:
-```bash
-janito --chat
-```
-
 In chat mode, you can:
 
 - Have multi-turn conversations

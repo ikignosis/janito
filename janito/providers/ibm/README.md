@@ -55,9 +55,6 @@ janito -p ibm "Explain quantum computing"
 
 # Use specific IBM model
 janito -p ibm -m ibm/granite-3-2b-instruct "Generate a Python function"
-
-# Interactive chat mode
-janito -p ibm --chat
 ```
 
 ### Configuration

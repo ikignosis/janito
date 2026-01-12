@@ -64,8 +64,6 @@ janito -p ibm "Hello, how are you?"
 # Use a specific model
 janito -p ibm -m ibm/granite-3-8b-instruct "Explain quantum computing"
 
-# Start interactive chat
-janito -p ibm --chat
 ```
 
 ## Available Models

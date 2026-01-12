@@ -75,9 +75,6 @@ janito -m kimi-k2-thinking "Explain machine learning in simple terms"
 # Using model@provider syntax (shorthand)
 janito -m kimi-k2-thinking@moonshot "Explain machine learning in simple terms"
 janito -m gpt-4@openai "Explain quantum computing"
-
-# Interactive chat mode
-janito --chat
 ```
 
 ### Working with Files
@@ -149,9 +146,8 @@ export JANITO_MODEL=ibm/granite-3-3-8b-instruct
 ## Next Steps
 
 1. **Explore tools**: Run `janito --list-tools` to see available tools
-2. **Try chat mode**: Run `janito --chat` for interactive sessions
-3. **Check examples**: Look at the main README.md for more usage examples
-4. **Join community**: Get help and share tips with other users
+2. **Check examples**: Look at the main README.md for more usage examples
+3. **Join community**: Get help and share tips with other users
 
 ## Troubleshooting
 
