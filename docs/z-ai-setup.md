@@ -6,7 +6,7 @@ This guide explains how to set up and use Z.ai's API with your API key.
 
 Install the Z.ai SDK package:
 
-```bash
+```
 pip install zai-sdk
 ```
 
