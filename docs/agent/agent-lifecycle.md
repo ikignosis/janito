@@ -17,7 +17,7 @@ The agent lifecycle in Janito involves several key phases, from initialization t
 
 The agent operates in a continuous loop that processes user input, executes tools, and responds with results:
 
-1. **Input Processing**: The agent receives input from the user or other sources.
+1. **Input Processing**: The agent receives input from the user.
 2. **Planning**: Based on the input, the agent determines which tools to use and in what order.
 3. **Tool Execution**: Tools are executed with the necessary parameters.
 4. **Result Processing**: The agent processes the results from tool executions.
