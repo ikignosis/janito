@@ -1,7 +1,3 @@
-"""
-ProviderRegistry: Handles provider listing and selection logic for janito CLI.
-"""
-
 from rich.table import Table
 from janito.cli.console import shared_console
 from janito.providers.registry import LLMProviderRegistry
@@ -70,8 +66,8 @@ class ProviderRegistry:
         # Build header from column titles
         header_titles = [column.header or "" for column in table.columns]
         print(" | ".join(header_titles))
-        # rich.table.Row objects in recent Rich versions don't expose a public `.cells` attribute.
-        # Instead, cell content is stored in each column's private `_cells` list.
+        # rich.table.Row objects in recent Rich versions don't expose a public .cells attribute.
+        # Instead, cell content is stored in each column's private _cells list.
         for row_index, _ in enumerate(table.rows):
             cells_text = [str(column._cells[row_index]) for column in table.columns]
             ascii_row = " | ".join(cells_text).encode("ascii", "ignore").decode("ascii")
@@ -80,7 +76,7 @@ class ProviderRegistry:
     def _get_provider_info(self, provider_name):
         provider_class = LLMProviderRegistry.get(provider_name)
         maintainer = getattr(provider_class, "MAINTAINER", "-")
-        maintainer = f"👤 {maintainer}" if maintainer != "-" else maintainer
+        maintainer = f"?? {maintainer}" if maintainer != "-" else maintainer
         model_names = self._get_model_names(provider_name)
         skip = False
         return (provider_name, maintainer, model_names, skip)
@@ -97,8 +93,6 @@ class ProviderRegistry:
             model_specs = None
             if hasattr(model_info_mod, "MODEL_SPECS"):
                 model_specs = model_info_mod.MODEL_SPECS
-            elif hasattr(model_info_mod, "MOONSHOT_MODEL_SPECS"):
-                model_specs = model_info_mod.MOONSHOT_MODEL_SPECS
 
             if model_specs:
                 # Get DEFAULT_MODEL from model_info module
@@ -108,7 +102,7 @@ class ProviderRegistry:
                 for model_key in model_specs.keys():
                     if model_key == default_model:
                         # Highlight the default model with color and star icon
-                        model_names.append(f"[bold green]⭐ {model_key}[/bold green]")
+                        model_names.append(f"[bold green]? {model_key}[/bold green]")
                     else:
                         model_names.append(model_key)
 
@@ -122,7 +116,7 @@ class ProviderRegistry:
     def _maintainer_sort_key(self, row):
         maint = row[1]
         is_needs_maint = "Needs maintainer" in maint
-        return (is_needs_maint, row[2] != "✅ Auth")
+        return (is_needs_maint, row[2] != "? Auth")
 
     def get_provider(self, provider_name):
         """Return the provider class for the given provider name. Returns None if not found."""

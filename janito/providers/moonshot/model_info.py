@@ -2,7 +2,7 @@ from janito.llm.model import LLMModelInfo
 
 DEFAULT_MODEL = "kimi-k2-0905-preview"
 
-MOONSHOT_MODEL_SPECS = {
+MODEL_SPECS = {
     "kimi-k2-turbo-preview": LLMModelInfo(
         name="kimi-k2-turbo-preview",
         context=128000,
