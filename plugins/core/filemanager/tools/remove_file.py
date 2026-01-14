@@ -16,7 +16,6 @@ class RemoveFileTool(ToolBase):
 
     Args:
         path (str): Path to the file to remove.
-        backup (bool, optional): Deprecated. Backups are no longer created. Flag ignored.
     Returns:
         str: Status message indicating the result. Example:
             - "			 Successfully removed the file at ..."
@@ -25,7 +24,7 @@ class RemoveFileTool(ToolBase):
 
     permissions = ToolPermissions(write=True)
 
-    def run(self, path: str, backup: bool = False) -> str:
+    def run(self, path: str) -> str:
         path = expand_path(path)
         disp_path = display_path(path)
 
