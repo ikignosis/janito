@@ -5,40 +5,27 @@ Janito's behavior is controlled through a combination of environment variables, 
 ## Configuration Sources (Priority Order)
 
 1. **Command-line arguments** (highest priority)
-2. **Environment variables**
-3. **Configuration file** (`~/.janito/config.yaml`)
-4. **Default values** (lowest priority)
+2. **Configuration file** (`~/.janito/config.json`)
+3. **Default values** (lowest priority)
 
 ## Environment Variables
 
+> **Note**: API keys are set via `janito --set-api-key YOUR_KEY -p PROVIDER` and stored in `~/.janito/auth.json`. Provider-specific API key environment variables are not supported.
+
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `OPENAI_API_KEY` | OpenAI API key | `sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
-| `ANTHROPIC_API_KEY` | Anthropic API key | `sk-ant-api03-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
-| `GOOGLE_API_KEY` | Google Gemini API key | `AIzaSyBxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
-| `MISTRAL_API_KEY` | Mistral API key | `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
-| `CEREBRAS_API_KEY` | Cerebras API key | `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
-| `ZAI_API_KEY` | Z.AI API key | `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
-| `ALIBABA_API_KEY` | Alibaba Qwen API key | `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
-| `DEEPSEEK_API_KEY` | DeepSeek API key | `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
-| `MOONSHOT_API_KEY` | Moonshot API key | `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
-| `WATSONX_API_KEY` | IBM WatsonX API key | `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
-| `WATSONX_PROJECT_ID` | IBM WatsonX project ID | `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` |
-| `WATSONX_SPACE_ID` | IBM WatsonX space ID | `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` |
-| `AZURE_OPENAI_API_KEY` | Azure OpenAI API key | `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
-| `JANITO_PROVIDER` | Default provider | `openai` |
 | `BASE_URL` | Custom API base URL (overrides provider default) | `https://api.example.com` |
 
 ## Configuration File
 
-The configuration file is located at `~/.janito/config.yaml` and has the following structure:
+The configuration file is located at `~/.janito/config.json` and has the following structure:
 
-```yaml
-provider: openai
-azure_deployment_name: my-deployment
-max_tokens: 4096
-default_temperature: 0.7
-enable_tools: true
+```json
+{
+  "provider": "openai",
+  "model": "gpt-5",
+  "base_url": null
+}
 ```
 
 You can modify this file directly or use the CLI:

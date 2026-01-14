@@ -134,6 +134,10 @@ definition = [
         {"action": "store_true", "help": "List supported LLM providers"},
     ),
     (
+        ["--list-auth"],
+        {"action": "store_true", "help": "List providers with configured authentication keys"},
+    ),
+    (
         ["--ping"],
         {
             "action": "store_true",
@@ -257,16 +261,7 @@ GETTER_KEYS = [
     "list_config",
     "list_drivers",
     "ping",
-]
-GETTER_KEYS = [
-    "show_config",
-    "list_providers",
-    "list_profiles",
-    "list_models",
-    "list_tools",
-    "list_config",
-    "list_drivers",
-    "ping",
+    "list_auth",
 ]
 
 
@@ -402,8 +397,7 @@ class JanitoCLI:
             or self.args.show_config
             or self.args.list_config
             or self.args.list_drivers
-
-
+            or self.args.list_auth
             or self.args.ping
         ):
             self._maybe_print_verbose_provider_model()

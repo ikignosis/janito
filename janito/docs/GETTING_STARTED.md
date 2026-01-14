@@ -110,30 +110,14 @@ janito --set model=kimi-k2-thinking     # or gpt-5, ibm/granite-3-8b-instruct, e
 ```
 
 ### Environment Variables
-You can also use environment variables:
 
-**Moonshot:**
-```bash
-export MOONSHOT_API_KEY=your_key_here
-export JANITO_PROVIDER=moonshot
-export JANITO_MODEL=kimi-k2-thinking
-```
+> **Note**: API keys are set via `janito --set-api-key YOUR_KEY -p PROVIDER` and stored in `~/.janito/auth.json`. Provider-specific API key environment variables are not supported.
 
-**OpenAI:**
-```bash
-export OPENAI_API_KEY=your_key_here
-export JANITO_PROVIDER=openai
-export JANITO_MODEL=gpt-5
-```
+The following environment variable is supported:
 
-**IBM WatsonX:**
-```bash
-export WATSONX_API_KEY=your_key_here
-export WATSONX_PROJECT_ID=your_project_id
-export WATSONX_SPACE_ID=your_space_id  # optional
-export JANITO_PROVIDER=ibm
-export JANITO_MODEL=ibm/granite-3-3-8b-instruct
-```
+| Variable | Description |
+|----------|-------------|
+| `BASE_URL` | Custom API base URL (overrides provider default) |
 
 ## Available Models by Provider
 
