@@ -2,8 +2,9 @@
 Session management for Janito Chat CLI.
 Defines ChatSession and ChatShellState classes.
 """
-
 from __future__ import annotations
+import traceback
+
 
 import types
 from rich.console import Console
@@ -14,10 +15,13 @@ from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit import PromptSession
 from janito.cli.chat_mode.toolbar import get_toolbar_func
 from prompt_toolkit.enums import EditingMode
+from prompt_toolkit import prompt
 from janito.cli.chat_mode.prompt_style import chat_shell_style
 from janito.cli.chat_mode.bindings import KeyBindingsFactory
 from janito.cli.chat_mode.shell.commands import handle_command
 from janito.cli.chat_mode.shell.autocomplete import ShellCommandCompleter
+from janito.perf_singleton import performance_collector
+
 import time
 
 # Shared prompt/agent factory
@@ -103,15 +107,6 @@ class ChatSession:
         self.shell_state.no_tools_mode = bool(no_tools_mode)
         self._filter_execution_tools()
         
-        # Set the current agent in the tools adapter for context-aware tools
-        try:
-            from janito.tools.local import local_tools_adapter
-            if hasattr(local_tools_adapter, 'set_current_agent'):
-                local_tools_adapter.set_current_agent(self.agent)
-        except Exception:
-            pass  # Silently ignore if adapter doesn't support this
-        
-        from janito.perf_singleton import performance_collector
 
         self.performance_collector = performance_collector
         self.key_bindings = KeyBindingsFactory.create()
@@ -315,7 +310,6 @@ class ChatSession:
                     )
         except Exception as exc:
             self.console.print(f"[red]Exception in agent: {exc}[/red]")
-            import traceback
 
             self.console.print(traceback.format_exc())
 
@@ -438,7 +432,6 @@ class ChatSession:
                 cmd_input = session.prompt(HTML("<inputline>💬 </inputline>"))
             except KeyboardInterrupt:
                 # Ask for confirmation on Ctrl+C
-                from prompt_toolkit import prompt
 
                 try:
                     confirm = prompt(
