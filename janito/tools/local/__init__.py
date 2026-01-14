@@ -26,7 +26,7 @@ from .validate_file_syntax.core import ValidateFileSyntaxTool
 from .read_chart import ReadChartTool
 from .show_image import ShowImageTool
 from .show_image_grid import ShowImageGridTool
-from .markdown_view import MarkdownViewTool
+
 from .clear_context import ClearContextTool
 
 from janito.tooling.tool_base import ToolPermissions
@@ -73,7 +73,7 @@ for tool_class in [
     ReadChartTool,
     ShowImageTool,
     ShowImageGridTool,
-    MarkdownViewTool,
+
     ClearContextTool,
 ]:
     # Skip bash tools when running in PowerShell
