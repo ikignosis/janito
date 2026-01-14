@@ -5,9 +5,6 @@ ProviderRegistry: Handles provider listing and selection logic for janito CLI.
 from rich.table import Table
 from janito.cli.console import shared_console
 from janito.providers.registry import LLMProviderRegistry
-from janito.llm.auth import LLMAuthManager
-import sys
-from janito.exceptions import MissingProviderSelectionException
 
 
 class ProviderRegistry:
@@ -20,7 +17,6 @@ class ProviderRegistry:
         self._print_table(table)
 
     def _get_provider_names(self):
-        from janito.providers.registry import LLMProviderRegistry
 
         return LLMProviderRegistry.list_providers()
 
