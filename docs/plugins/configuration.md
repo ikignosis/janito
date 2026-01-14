@@ -59,7 +59,6 @@ The `plugins.config` section contains configuration options for individual plugi
 ```json
 "core.filemanager": {
   "max_file_size": 1000000,
-  "backup_enabled": true,
   "default_encoding": "utf-8"
 }
 ```

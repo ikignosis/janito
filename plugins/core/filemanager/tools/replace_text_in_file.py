@@ -21,7 +21,6 @@ class ReplaceTextInFileTool(ToolBase):
         search_text (str): The exact text to search for (including indentation).
         replacement_text (str): The text to replace with (including indentation).
         replace_all (bool): If True, replace all occurrences; otherwise, only the first occurrence.
-        backup (bool, optional): Deprecated. No backups are created anymore and this flag is ignored. Defaults to False.
     Returns:
         str: Status message. Example:
             - "Text replaced in /path/to/file"
@@ -37,7 +36,6 @@ class ReplaceTextInFileTool(ToolBase):
         search_text: str,
         replacement_text: str,
         replace_all: bool = False,
-        backup: bool = False,
     ) -> str:
         from janito.tools.tool_utils import display_path
 
@@ -63,7 +61,6 @@ class ReplaceTextInFileTool(ToolBase):
                 content, search_text, replacement_text, replace_all, occurrences
             )
             file_changed = new_content != content
-            backup_path = None
             validation_result = ""
             if file_changed:
                 self._write_file_content(path, new_content)
@@ -126,10 +123,6 @@ class ReplaceTextInFileTool(ToolBase):
             replaced_count = 1 if occurrences == 1 else 0
             new_content = content.replace(search_text, replacement_text, 1)
         return replaced_count, new_content
-
-    def _backup_file(self, path, backup_path):
-        """Create a backup of the file."""
-        shutil.copy2(path, backup_path)
 
     def _write_file_content(self, path, content):
         """Write content to the file."""

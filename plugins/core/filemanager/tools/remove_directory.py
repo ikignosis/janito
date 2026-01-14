@@ -16,7 +16,7 @@ class RemoveDirectoryTool(ToolBase):
 
     Args:
         path (str): Path to the directory to remove.
-        recursive (bool, optional): If True, remove non-empty directories recursively (with backup). If False, only remove empty directories. Defaults to False.
+        recursive (bool, optional): If True, remove non-empty directories recursively. If False, only remove empty directories. Defaults to False.
     Returns:
         str: Status message indicating result. Example:
             - "Directory removed: /path/to/dir"

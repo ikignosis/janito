@@ -17,7 +17,6 @@ class MoveFileTool(ToolBase):
         src_path (str): Source file or directory path.
         dest_path (str): Destination file or directory path.
         overwrite (bool, optional): Whether to overwrite if the destination exists. Defaults to False.
-        backup (bool, optional): Deprecated. No backups are created anymore. This flag is ignored. Defaults to False.
     Returns:
         str: Status message indicating the result.
     """
@@ -29,7 +28,6 @@ class MoveFileTool(ToolBase):
         src_path: str,
         dest_path: str,
         overwrite: bool = False,
-        backup: bool = False,
     ) -> str:
         src = expand_path(src_path)
         dest = expand_path(dest_path)
@@ -37,17 +35,14 @@ class MoveFileTool(ToolBase):
         original_dest = dest_path
         disp_src = display_path(original_src)
         disp_dest = display_path(original_dest)
-        backup_path = None
 
         valid, is_src_file, is_src_dir, err_msg = self._validate_source(src, disp_src)
         if not valid:
             return err_msg
 
-        dest_result = self._handle_destination(dest, disp_dest, overwrite, backup)
-        if dest_result is not None:
-            backup_path, err_msg = dest_result
-            if err_msg:
-                return err_msg
+        err_msg = self._handle_destination(dest, disp_dest, overwrite)
+        if err_msg:
+            return err_msg
 
         try:
             self.report_action(
@@ -98,8 +93,7 @@ class MoveFileTool(ToolBase):
             )
         return True, is_src_file, is_src_dir, None
 
-    def _handle_destination(self, dest, disp_dest, overwrite, backup):
-        backup_path = None
+    def _handle_destination(self, dest, disp_dest, overwrite):
         if os.path.exists(dest):
             if not overwrite:
                 self.report_error(
@@ -109,7 +103,7 @@ class MoveFileTool(ToolBase):
                     ),
                     ReportAction.UPDATE,
                 )
-                return None, tr(
+                return tr(
                     "❗ Destination '{disp_dest}' already exists and overwrite is False.",
                     disp_dest=disp_dest,
                 )
@@ -124,7 +118,7 @@ class MoveFileTool(ToolBase):
                     tr("❌ Error removing destination before move: {error}", error=e),
                     ReportAction.UPDATE,
                 )
-                return None, tr(
+                return tr(
                     "❌ Error removing destination before move: {error}", error=e
                 )
-        return backup_path, None
+        return None
