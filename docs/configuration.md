@@ -15,6 +15,7 @@ Janito's behavior is controlled through a combination of environment variables, 
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `BASE_URL` | Custom API base URL (overrides provider default) | `https://api.example.com` |
+| `BASE_API_KEY` | Custom API key (overrides provider-specific API key) | `sk-...` |
 
 ## Configuration File
 

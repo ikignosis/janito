@@ -15,7 +15,7 @@ uv pip install janito
 1. **Get your API key**: Sign up at [Moonshot AI](https://platform.moonshot.cn/) and get your API key
 2. **Set your API key**:
    ```bash
-   janito --set-api-key YOUR_MOONSHOT_API_KEY -p moonshot
+   janito -p moonshot --set-api-key YOUR_MOONSHOT_API_KEY 
    ```
 
 ### Basic Usage
@@ -130,6 +130,7 @@ The following environment variables are supported:
 | Variable | Description |
 |----------|-------------|
 | `BASE_URL` | Custom API base URL (overrides provider default) |
+| `BASE_API_KEY` | Custom API key (overrides provider-specific API key) |
 
 ## Examples
 

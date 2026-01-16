@@ -266,18 +266,19 @@ class OpenAIModelDriver(LLMDriver):
 
     def _instantiate_openai_client(self, config):
         try:
-            if not config.api_key:
+            # Check for BASE_API_KEY environment variable first, then fall back to config
+            api_key = os.environ.get("BASE_API_KEY") or config.api_key
+            if not api_key:
                 provider_name = getattr(self, "provider_name", "OpenAI-compatible")
                 from janito.llm.auth_utils import handle_missing_api_key
 
                 handle_missing_api_key(
                     provider_name, f"{provider_name.upper()}_API_KEY"
                 )
-
-            api_key_display = str(config.api_key)
+            api_key_display = str(api_key)
             if api_key_display and len(api_key_display) > 8:
                 api_key_display = api_key_display[:4] + "..." + api_key_display[-4:]
-            client_kwargs = {"api_key": config.api_key}
+            client_kwargs = {"api_key": api_key}
             # Check for BASE_URL environment variable first, then fall back to config
             base_url = os.environ.get("BASE_URL") or getattr(config, "base_url", None)
             if base_url:

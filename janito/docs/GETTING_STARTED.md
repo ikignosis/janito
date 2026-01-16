@@ -118,6 +118,7 @@ The following environment variable is supported:
 | Variable | Description |
 |----------|-------------|
 | `BASE_URL` | Custom API base URL (overrides provider default) |
+| `BASE_API_KEY` | Custom API key (overrides provider-specific API key) |
 
 ## Available Models by Provider
 
