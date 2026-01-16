@@ -41,6 +41,10 @@ class OpenAIProvider(LLMProvider):
         # Set API key in config
         if not self.config.api_key:
             self.config.api_key = api_key
+        
+        # Set base_url in config (default to OpenAI's official endpoint)
+        if not self.config.base_url:
+            self.config.base_url = "https://api.openai.com/v1"
 
     def create_driver(self) -> OpenAIModelDriver:
         """
