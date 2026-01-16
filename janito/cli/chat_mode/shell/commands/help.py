@@ -1,6 +1,6 @@
 from janito.cli.chat_mode.shell.commands.base import ShellCmdHandler
 from janito.cli.console import shared_console
-import os
+from janito.tooling.permissions import user_has_any_privileges
 
 
 class HelpShellHandler(ShellCmdHandler):
@@ -15,7 +15,6 @@ class HelpShellHandler(ShellCmdHandler):
 
             COMMAND_HANDLERS["/provider"] = ProviderCmdHandler
 
-        from ._priv_check import user_has_any_privileges
 
         shared_console.print("[bold magenta]Available commands:[/bold magenta]")
         for cmd, handler_cls in sorted(COMMAND_HANDLERS.items()):

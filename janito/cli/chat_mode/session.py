@@ -6,8 +6,7 @@ from __future__ import annotations
 import traceback
 
 
-import types
-from rich.console import Console
+import time
 from rich.rule import Rule
 from prompt_toolkit.history import InMemoryHistory
 from janito.cli.chat_mode.shell.input_history import UserInputHistory
@@ -21,13 +20,10 @@ from janito.cli.chat_mode.bindings import KeyBindingsFactory
 from janito.cli.chat_mode.shell.commands import handle_command
 from janito.cli.chat_mode.shell.autocomplete import ShellCommandCompleter
 from janito.perf_singleton import performance_collector
-
-import time
-
-# Shared prompt/agent factory
+from janito.tooling.permissions import get_privilege_status_message
 from janito.cli.prompt_setup import setup_agent_and_prompt_handler
+from janito import __version__
 
-import time
 
 
 class ChatShellState:
@@ -193,7 +189,6 @@ class ChatSession:
 
     def run(self):
         self.console.clear()
-        from janito import __version__
 
         self.console.print(f"[bold green]Janito Chat Mode v{__version__}[/bold green]")
         self.console.print(f"[dim]Profile: {self.profile}[/dim]")
@@ -206,9 +201,6 @@ class ChatSession:
             cwd_display = "~" + cwd[len(home) :]
         else:
             cwd_display = cwd
-        from janito.cli.chat_mode.shell.commands._priv_status import (
-            get_privilege_status_message,
-        )
 
         priv_status = get_privilege_status_message()
         self.console.print(
@@ -219,10 +211,6 @@ class ChatSession:
             self.console.print(
                 "[blue]Multi-line input mode enabled (Esc+Enter or Ctrl+D to submit)[/blue]"
             )
-
-        from janito.cli.chat_mode.shell.commands._priv_check import (
-            user_has_any_privileges,
-        )
 
         perms = __import__(
             "janito.tooling.permissions", fromlist=["get_global_allowed_permissions"]
