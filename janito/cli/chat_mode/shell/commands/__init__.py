@@ -1,7 +1,6 @@
 from .base import ShellCmdHandler
 from .history_view import ViewShellHandler
 from .lang import LangShellHandler
-from .provider import ProviderCmdHandler
 
 from .prompt import PromptShellHandler, RoleShellHandler
 from .multi import MultiShellHandler
@@ -12,32 +11,24 @@ from .tools import ToolsShellHandler
 from .help import HelpShellHandler
 from .security_command import SecurityCommand
 from .interactive import InteractiveShellHandler
+from .privileges import PrivilegesShellHandler
+from .bang import BangShellHandler
+from .execute import ExecuteShellHandler
+from .read import ReadShellHandler
+from .write import WriteShellHandler
+from .clear import ClearShellHandler
+from .clear_context import ClearContextShellHandler
+from .conversation_restart import RestartShellHandler
 from janito.cli.console import shared_console
 
 COMMAND_HANDLERS = {
-    # Bang handler for shell commands
-    "!": __import__(
-        "janito.cli.chat_mode.shell.commands.bang", fromlist=["BangShellHandler"]
-    ).BangShellHandler,
-    "/execute": __import__(
-        "janito.cli.chat_mode.shell.commands.execute", fromlist=["ExecuteShellHandler"]
-    ).ExecuteShellHandler,
-    "/read": __import__(
-        "janito.cli.chat_mode.shell.commands.read", fromlist=["ReadShellHandler"]
-    ).ReadShellHandler,
-    "/write": __import__(
-        "janito.cli.chat_mode.shell.commands.write", fromlist=["WriteShellHandler"]
-    ).WriteShellHandler,
-    "/clear": __import__(
-        "janito.cli.chat_mode.shell.commands.clear", fromlist=["ClearShellHandler"]
-    ).ClearShellHandler,
-    "/clear_context": __import__(
-        "janito.cli.chat_mode.shell.commands.clear_context", fromlist=["ClearContextShellHandler"]
-    ).ClearContextShellHandler,
-    "/restart": __import__(
-        "janito.cli.chat_mode.shell.commands.conversation_restart",
-        fromlist=["RestartShellHandler"],
-    ).RestartShellHandler,
+    "!": BangShellHandler,
+    "/execute": ExecuteShellHandler,
+    "/read": ReadShellHandler,
+    "/write": WriteShellHandler,
+    "/clear": ClearShellHandler,
+    "/clear_context": ClearContextShellHandler,
+    "/restart": RestartShellHandler,
     "/view": ViewShellHandler,
     "/lang": LangShellHandler,
     "/prompt": PromptShellHandler,
@@ -48,7 +39,7 @@ COMMAND_HANDLERS = {
     "/multi": MultiShellHandler,
     "/help": HelpShellHandler,
     "/security": SecurityCommand,
-    "/provider": ProviderCmdHandler,
+    "/privileges": PrivilegesShellHandler,
     "/interactive": InteractiveShellHandler,
 }
 

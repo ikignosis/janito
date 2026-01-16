@@ -65,17 +65,6 @@ def assemble_platform_line():
     return f" Platform: {system_info} ({arch_info}) | Shell: {shell_info} | {python_version}"
 
 
-def _get_status(shell_state):
-    _support = getattr(shell_state, "_support", False)
-    _status = getattr(shell_state, "_status", None)
-    if not _support:
-        return None
-    if _status == "starting" or _status is None:
-        return _status
-
-    return _status
-
-
 def _get_agent_info(agent):
     provider_name = (
         agent.get_provider_name() if hasattr(agent, "get_provider_name") else "?"
@@ -102,11 +91,9 @@ def get_toolbar_func(perf: PerformanceCollector, msg_count: int, shell_state):
     def get_toolbar():
         width = get_app().output.get_size().columns
         agent = getattr(shell_state, "agent", None)
-        this__status = _get_status(shell_state)
         provider_name, model_name, role = (
             _get_agent_info(agent) if agent is not None else ("?", "?", "?")
         )
-        usage = perf.get_last_request_usage()
         first_line = assemble_first_line(provider_name, model_name, role, agent=agent)
         permissions = _get_permissions()
         bindings_line = assemble_bindings_line(width, permissions)

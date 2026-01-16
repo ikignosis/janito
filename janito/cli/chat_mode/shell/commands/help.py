@@ -10,12 +10,6 @@ class HelpShellHandler(ShellCmdHandler):
         # Ensure /provider command is registered before showing help
         from janito.cli.chat_mode.shell.commands import COMMAND_HANDLERS
 
-        if "/provider" not in COMMAND_HANDLERS:
-            from janito.cli.chat_mode.shell.commands.provider import ProviderCmdHandler
-
-            COMMAND_HANDLERS["/provider"] = ProviderCmdHandler
-
-
         shared_console.print("[bold magenta]Available commands:[/bold magenta]")
         for cmd, handler_cls in sorted(COMMAND_HANDLERS.items()):
             help_text = getattr(handler_cls, "help_text", "")
