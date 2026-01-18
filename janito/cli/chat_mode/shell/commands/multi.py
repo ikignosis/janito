@@ -46,6 +46,3 @@ class MultiShellHandler(ShellCmdHandler):
             user_input_history.append(user_input)
         # Store input for main chat loop to consume as if just entered by the user
         self.shell_state.injected_input = user_input
-        shared_console.print(
-            "[green]Multi-line input will be sent as your next chat prompt.[/green]"
-        )

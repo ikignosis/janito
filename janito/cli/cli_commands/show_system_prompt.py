@@ -11,6 +11,7 @@ from jinja2 import Template
 import importlib.resources
 import importlib.resources as resources
 import re
+import sys
 
 
 def _compute_permission_string(args):
@@ -107,7 +108,6 @@ def handle_show_system_prompt(args):
     context = _prepare_context(args, agent_role, allowed_permissions)
 
     # Debug flag detection
-    import sys
 
     debug_flag = False
     try:

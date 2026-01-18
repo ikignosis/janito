@@ -17,12 +17,11 @@ from janito.agent_events import (
 )
 from typing import Any, Optional, List, Iterator, Union
 import threading
-import logging
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pathlib import Path
-import time
 from janito.event_bus.bus import event_bus
-
+from janito.tooling.permissions import get_global_allowed_permissions
+from janito.tooling.tool_base import ToolPermissions
 
 class LLMAgent:
     _event_lock: threading.Lock
@@ -50,7 +49,6 @@ class LLMAgent:
         input_queue: Queue = None,
         output_queue: Queue = None,
         verbose_agent: bool = False,
-        **kwargs: Any,
     ):
         self.llm_provider = llm_provider
         self.tools_adapter = tools_adapter
@@ -64,7 +62,7 @@ class LLMAgent:
         self._latest_event = None
         self.verbose_agent = verbose_agent
         self.driver = None  # Will be set by setup_agent if available
-        
+
         # Emit agent initialized event
         event_bus.publish(AgentInitialized(agent_name=self.agent_name))
 
@@ -90,27 +88,15 @@ class LLMAgent:
             self._template_vars = {}
         self._template_vars[key] = value
 
-    def set_system_prompt(self, prompt: str) -> None:
-        self.system_prompt = prompt
-
-    def set_system_using_template(self, template_path: str, **kwargs) -> None:
-        env = Environment(
-            loader=FileSystemLoader(Path(template_path).parent),
-            autoescape=select_autoescape(),
-        )
-        template = env.get_template(Path(template_path).name)
-        self.system_prompt = template.render(**kwargs)
-
     def refresh_system_prompt_from_template(self):
+        n_lines = self.system_prompt.count('\n') + 1
+        print(n_lines)
         if hasattr(self, "_template_vars") and hasattr(self, "system_prompt_template"):
             env = Environment(
                 loader=FileSystemLoader(Path(self.system_prompt_template).parent),
                 autoescape=select_autoescape(),
             )
             template = env.get_template(Path(self.system_prompt_template).name)
-            # Refresh allowed_permissions in context before rendering
-            from janito.tooling.permissions import get_global_allowed_permissions
-            from janito.tooling.tool_base import ToolPermissions
 
             perms = get_global_allowed_permissions()
             if isinstance(perms, ToolPermissions):
@@ -125,6 +111,8 @@ class LLMAgent:
             else:
                 self._template_vars["allowed_permissions"] = perms
             self.system_prompt = template.render(**self._template_vars)
+            n_lines = self.system_prompt.count('\n') + 1
+            print(n_lines)
 
     def get_system_prompt(self) -> str:
         return self.system_prompt
@@ -194,7 +182,7 @@ class LLMAgent:
         """
         # Emit agent waiting for response event
         event_bus.publish(AgentWaitingForResponse(agent_name=self.agent_name))
-        
+
         if getattr(self, "verbose_agent", False):
             print("[agent] [DEBUG] Entered _process_next_response")
         elapsed = 0.0
@@ -221,10 +209,10 @@ class LLMAgent:
                 if getattr(self, "verbose_agent", False):
                     print(f"[agent] [DEBUG] Waiting for LLM response... ({elapsed:.1f}s elapsed)")
                 continue
-            
+
             # Emit agent received response event
             event_bus.publish(AgentReceivedResponse(agent_name=self.agent_name, response=event))
-            
+
             if getattr(self, "verbose_agent", False):
                 print(f"[agent] [DEBUG] Received event from output_queue: {event}")
             event_bus.publish(event)
@@ -254,10 +242,10 @@ class LLMAgent:
         """
         if getattr(self, "verbose_agent", False):
             print("[agent] [INFO] Handling ResponseReceived event.")
-        
+
         # Emit agent processing response event
         event_bus.publish(AgentProcessingResponse(agent_name=self.agent_name, response=event))
-        
+
         from janito.llm.message_parts import FunctionCallMessagePart
 
         # Skip tool processing if no tools adapter is available
@@ -274,7 +262,7 @@ class LLMAgent:
                     print(
                         f"[agent] [DEBUG] Tool call detected: {getattr(part, 'name', repr(part))} with arguments: {getattr(part, 'arguments', None)}"
                     )
-                
+
                 # Emit agent tool call started event
                 event_bus.publish(AgentToolCallStarted(
                     agent_name=self.agent_name,
@@ -282,7 +270,7 @@ class LLMAgent:
                     name=getattr(part, 'name', None),
                     arguments=getattr(part, 'arguments', None)
                 ))
-                
+
                 tool_calls.append(part)
                 try:
                     result = self.tools_adapter.execute_function_call_message_part(part)
@@ -291,7 +279,7 @@ class LLMAgent:
                     # instead of letting it propagate to the user
                     result = str(e)
                 tool_results.append(result)
-                
+
                 # Emit agent tool call finished event
                 event_bus.publish(AgentToolCallFinished(
                     agent_name=self.agent_name,
@@ -365,7 +353,7 @@ class LLMAgent:
             messages=messages,
             role=role
         ))
-        
+
         self._clear_driver_queues()
         self._validate_and_update_history(prompt, messages, role)
         self._ensure_system_prompt()
