@@ -1,7 +1,7 @@
 import os
 import base64
 from janito.tooling.path_utils import expand_path
-from janito.tools.local.adapter import register_local_tool
+
 
 from janito.tooling.tool_utils import display_path
 from janito.tooling.tool_base import ToolBase, ToolPermissions
@@ -12,7 +12,7 @@ from janito.tooling.loop_protection_decorator import protect_against_loops
 from janito.tools.local.validate_file_syntax.core import validate_file_syntax
 
 
-@register_local_tool
+
 class CreateFileTool(ToolBase):
     """
     Create a new file with specified content at the given path.

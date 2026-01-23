@@ -1,12 +1,12 @@
 from janito.tooling.tool_base import ToolBase, ToolPermissions
 from janito.report_events import ReportAction
-from janito.tools.local.adapter import register_local_tool
+
 from janito.tooling.tool_utils import pluralize
 from janito.i18n import tr
 from janito.tooling.loop_protection_decorator import protect_against_loops
 
 
-@register_local_tool
+
 class ViewFileTool(ToolBase):
     """
     Read lines from a file. You can specify a line range, or read the entire file by simply omitting the from_line and to_line parameters.

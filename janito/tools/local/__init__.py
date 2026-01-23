@@ -40,10 +40,11 @@ local_tools_adapter = LocalToolsAdapter(workdir=os.getcwd())
 def get_local_tools_adapter(workdir=None):
     return LocalToolsAdapter(workdir=workdir or os.getcwd())
 
-
-# Register tools
+# Detect powershell to later disable bash
 pd = PlatformDiscovery()
 is_powershell = pd.detect_shell().startswith("PowerShell")
+
+# Register all the tools in the adapter
 
 for tool_class in [
     AskUserTool,
@@ -78,4 +79,4 @@ for tool_class in [
         continue
     local_tools_adapter.register_tool(tool_class)
 
-# DEBUG: Print registered tools at startup
+

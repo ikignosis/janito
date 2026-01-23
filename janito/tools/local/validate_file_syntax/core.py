@@ -3,9 +3,9 @@ from janito.tooling.path_utils import expand_path
 from janito.i18n import tr
 from janito.tooling.tool_base import ToolBase, ToolPermissions
 from janito.report_events import ReportAction
-from janito.tools.local.adapter import register_local_tool
+
 from janito.tooling.tool_utils import display_path
-from janito.tools.local.adapter import register_local_tool as register_tool
+
 
 from .python_validator import validate_python
 from .json_validator import validate_json

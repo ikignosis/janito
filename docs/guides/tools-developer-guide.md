@@ -19,7 +19,7 @@ For a list of all built-in tools and their usage, see the [Tools Reference](../t
 from janito.tools.tool_base import ToolBase, ToolPermissions
 from janito.plugins.adapters.local.adapter import register_local_tool
 
-@register_local_tool
+
 class MyTool(ToolBase):
     """
     Processes a file a given number of times.
@@ -48,7 +48,7 @@ class MyTool(ToolBase):
 2. **Add a class-level docstring** summarizing the tool's purpose (user-facing).
 3. **Implement the `run` method** with type hints and a Google-style docstring, including an `Args:` section for every parameter.
 4. **Set permissions** using `permissions = ToolPermissions(read=True, write=True, execute=True)` as needed.
-5. **Register your tool** with `@register_local_tool` from `janito.plugins.adapters.local.adapter`. Set a unique class attribute `tool_name = "your_tool_name"`.
+5. **Register your tool** with `` from `janito.plugins.adapters.local.adapter`. Set a unique class attribute `tool_name = "your_tool_name"`.
 6. **Document your tool:** Update `docs/tools-index.md` with a short description and usage for your new tool.
 
 ## Docstring Style

@@ -1,6 +1,6 @@
 from janito.tooling.tool_base import ToolBase, ToolPermissions
 from janito.report_events import ReportAction
-from janito.tools.local.adapter import register_local_tool
+
 from janito.tooling.tool_utils import pluralize, display_path
 from janito.i18n import tr
 import os
@@ -11,10 +11,8 @@ from .traverse_directory import traverse_directory
 from janito.tooling.loop_protection_decorator import protect_against_loops
 
 
-from janito.tools.local.adapter import register_local_tool as register_tool
 
 
-@register_tool
 class SearchTextTool(ToolBase):
     """
     Search for a text query in all files within one or more directories or file paths and return matching lines or counts. Respects .gitignore.

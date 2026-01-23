@@ -1,7 +1,7 @@
 import os
 from janito.tooling.path_utils import expand_path
 import shutil
-from janito.tools.local.adapter import register_local_tool
+
 
 from janito.tooling.tool_utils import display_path
 from janito.tooling.tool_base import ToolBase, ToolPermissions
@@ -9,7 +9,7 @@ from janito.report_events import ReportAction
 from janito.i18n import tr
 
 
-@register_local_tool
+
 class RemoveFileTool(ToolBase):
     """
     Remove a file at the specified path.

@@ -195,29 +195,5 @@ class LocalToolsAdapter(ToolsAdapter):
         self.agent = agent  # Also set the base class attribute
 
 
-# -------------------------------------------------------------------------
-# Decorator helper for quick registration of local tools
-# -------------------------------------------------------------------------
 
 
-def register_local_tool(tool=None):
-    """Class decorator that registers the tool on the *singleton* adapter.
-
-    Example
-    -------
-    >>> @register_local_tool
-    ... class MyTool(BaseTool):
-    ...     ...
-    """
-
-    def decorator(cls):
-        # Register the tool on a *fresh* adapter instance to avoid circular
-        # import issues during package initialisation.  This keeps behaviour
-        # identical to the original implementation while still allowing
-        # immediate use via the singleton in janito.tools.local.
-        LocalToolsAdapter().register_tool(cls)
-        return cls
-
-    if tool is None:
-        return decorator
-    return decorator(tool)

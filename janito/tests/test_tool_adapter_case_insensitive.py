@@ -15,7 +15,7 @@ def test_tool_adapter_lowercase_conversion():
 
     # Create a simple test tool that logs its arguments
     test_tool_content = '''
-from janito.tools.local.adapter import register_local_tool
+
 from janito.tooling.tool_base import ToolBase, ToolPermissions
 
 class TestArgsTool(ToolBase):

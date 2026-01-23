@@ -1,6 +1,6 @@
 from janito.tooling.tool_base import ToolBase, ToolPermissions
 from janito.report_events import ReportAction
-from janito.tools.local.adapter import register_local_tool
+
 from janito.tooling.tool_utils import pluralize, display_path
 from janito.i18n import tr
 import shutil
@@ -9,7 +9,7 @@ import zipfile
 from janito.tooling.path_utils import expand_path
 
 
-@register_local_tool
+
 class RemoveDirectoryTool(ToolBase):
     """
     Remove a directory.

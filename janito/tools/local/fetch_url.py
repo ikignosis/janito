@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from bs4 import BeautifulSoup
 from typing import Dict, Any, Optional
-from janito.tools.local.adapter import register_local_tool
+
 from janito.tooling.tool_base import ToolBase, ToolPermissions
 from janito.report_events import ReportAction
 from janito.i18n import tr
@@ -13,7 +13,7 @@ from janito.tooling.tool_utils import pluralize
 from janito.tooling.loop_protection_decorator import protect_against_loops
 
 
-@register_local_tool
+
 class FetchUrlTool(ToolBase):
     """
     Fetch the content of a web page and extract its text.

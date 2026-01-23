@@ -1,11 +1,11 @@
 from janito.tooling.tool_base import ToolBase, ToolPermissions
 from janito.report_events import ReportAction
-from janito.tools.local.adapter import register_local_tool
+
 from janito.i18n import tr
 from janito.tooling.loop_protection_decorator import protect_against_loops
 
 
-@register_local_tool
+
 class ShowImageTool(ToolBase):
     """Display an image inline in the terminal using the rich library.
 

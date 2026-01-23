@@ -11,7 +11,7 @@ from janito.tools.loop_protection_decorator import protect_against_loops
 from janito.plugins.tools.local.adapter import register_local_tool
 
 
-@register_local_tool
+
 class CustomFileAnalyzerTool(ToolBase):
     """
     Example custom tool that analyzes files with loop protection.
@@ -66,7 +66,7 @@ class CustomFileAnalyzerTool(ToolBase):
             return f"Error analyzing file: {e}"
 
 
-@register_local_tool
+
 class BatchFileProcessorTool(ToolBase):
     """
     Example tool that processes multiple files with loop protection.

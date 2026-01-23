@@ -1,4 +1,4 @@
-from janito.tools.local.adapter import register_local_tool
+
 from .python_outline import parse_python_outline
 from .markdown_outline import parse_markdown_outline
 from janito.formatting import OutlineFormatter
@@ -10,11 +10,10 @@ from janito.report_events import ReportAction
 from janito.tooling.tool_utils import display_path, pluralize
 from janito.i18n import tr
 
-from janito.tools.local.adapter import register_local_tool as register_tool
+
 from janito.tooling.loop_protection_decorator import protect_against_loops
 
 
-@register_tool
 class GetFileOutlineTool(ToolBase):
     """
     Get an outline of a file's structure. Supports Python and Markdown files.

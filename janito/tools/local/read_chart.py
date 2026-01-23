@@ -1,6 +1,6 @@
 from janito.tooling.tool_base import ToolBase, ToolPermissions
 from janito.report_events import ReportAction
-from janito.tools.local.adapter import register_local_tool
+
 from janito.tooling.tool_utils import display_path
 from janito.i18n import tr
 import json
@@ -8,7 +8,7 @@ import os
 from janito.tooling.loop_protection_decorator import protect_against_loops
 
 
-@register_local_tool
+
 class ReadChartTool(ToolBase):
     """
     Display charts and data visualizations in the terminal using rich.

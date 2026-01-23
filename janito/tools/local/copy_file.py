@@ -2,14 +2,14 @@ import os
 from janito.tooling.path_utils import expand_path
 import shutil
 from typing import List, Union
-from janito.tools.local.adapter import register_local_tool
+
 from janito.tooling.tool_base import ToolBase, ToolPermissions
 from janito.tooling.tool_utils import display_path
 from janito.report_events import ReportAction
 from janito.i18n import tr
 
 
-@register_local_tool
+
 class CopyFileTool(ToolBase):
     """
     Copy one or more files to a target directory, or copy a single file to a new file.

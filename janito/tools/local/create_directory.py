@@ -1,4 +1,4 @@
-from janito.tools.local.adapter import register_local_tool
+
 
 from janito.tooling.tool_utils import display_path
 from janito.tooling.tool_base import ToolBase, ToolPermissions
@@ -9,7 +9,7 @@ from janito.tooling.path_utils import expand_path
 from pathlib import Path
 
 
-@register_local_tool
+
 class CreateDirectoryTool(ToolBase):
     """
     Create a new directory at the specified path.

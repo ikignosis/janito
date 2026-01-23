@@ -21,7 +21,7 @@ Example:
 from janito.tools.tool_base import ToolBase, ToolPermissions
 from janito.plugins.adapters.local.adapter import register_local_tool
 
-@register_local_tool
+
 class MyTool(ToolBase):
     """
     Processes a file a given number of times.
@@ -48,7 +48,7 @@ class MyTool(ToolBase):
 
 Tools can be registered in two ways:
 
-1. Using the `@register_local_tool` decorator
+1. Using the `` decorator
 2. Manually registering with a `LocalToolsAdapter` instance
 
 The decorator approach automatically registers the tool with the singleton adapter.

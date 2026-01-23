@@ -1,5 +1,5 @@
 from janito.tooling.tool_base import ToolBase, ToolPermissions
-from janito.tools.local.adapter import register_local_tool
+
 from janito.tooling.loop_protection_decorator import protect_against_loops
 
 from rich import print as rich_print
@@ -16,7 +16,7 @@ from prompt_toolkit.styles import Style
 toolbar_style = Style.from_dict({"bottom-toolbar": "fg:yellow bg:darkred"})
 
 
-@register_local_tool
+
 class AskUserTool(ToolBase):
     """
     Prompts the user for clarification or input with a question.

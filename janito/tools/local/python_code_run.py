@@ -5,11 +5,11 @@ import tempfile
 import threading
 from janito.tooling.tool_base import ToolBase, ToolPermissions
 from janito.report_events import ReportAction
-from janito.tools.local.adapter import register_local_tool
+
 from janito.i18n import tr
 
 
-@register_local_tool
+
 class PythonCodeRunTool(ToolBase):
     """
     Tool to execute Python code by passing it to the interpreter via standard input (stdin).

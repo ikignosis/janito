@@ -1,6 +1,6 @@
 from janito.tooling.tool_base import ToolBase, ToolPermissions
 from janito.report_events import ReportAction
-from janito.tools.local.adapter import register_local_tool
+
 from janito.tooling.tool_utils import pluralize, display_path
 from janito.dir_walk_utils import walk_dir_with_gitignore
 from janito.i18n import tr
@@ -10,7 +10,6 @@ from janito.tooling.path_utils import expand_path
 from janito.tooling.loop_protection_decorator import protect_against_loops
 
 
-@register_local_tool
 class FindFilesTool(ToolBase):
     """
     Find files or directories in one or more directories matching a pattern. Respects .gitignore.

@@ -1,13 +1,13 @@
 from janito.tooling.tool_base import ToolBase, ToolPermissions
 from janito.report_events import ReportAction
-from janito.tools.local.adapter import register_local_tool
+
 from janito.i18n import tr
 import shutil
 import re
 from janito.tools.local.validate_file_syntax.core import validate_file_syntax
 
 
-@register_local_tool
+
 class ReplaceTextInFileTool(ToolBase):
     """
     Replace exact occurrences of a given text in a file.
