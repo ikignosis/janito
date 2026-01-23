@@ -8,6 +8,7 @@ from janito.tooling.permissions import (
         get_default_allowed_permissions,
     )
 import janito.tooling
+from janito.tools.local import get_local_tools_adapter
 from janito.perf_singleton import performance_collector
 
 def handle_restart(shell_state=None):
@@ -40,7 +41,8 @@ def handle_restart(shell_state=None):
     default_perms = get_default_allowed_permissions()
     if default_perms is not None:
         set_global_allowed_permissions(default_perms)
-        janito.tooling.local_tools_adapter.set_allowed_permissions(default_perms)
+        tools_adapter = get_default_allowed_permissions()
+        tools_adapter.set_allowed_permissions(default_perms)
         msg = None
 
     else:
@@ -49,7 +51,8 @@ def handle_restart(shell_state=None):
         set_global_allowed_permissions(
             ToolPermissions(read=False, write=False, execute=False)
         )
-        janito.tooling.local_tools_adapter.set_allowed_permissions(
+        tools_adapter = get_local_tools_adapter()
+        tools_adapter.set_allowed_permissions(
             ToolPermissions(read=False, write=False, execute=False)
         )
         msg = "[green]All tool permissions have been set to OFF (read, write, execute = False).[/green]"
