@@ -1,8 +1,8 @@
 from janito.report_events import ReportEvent, ReportSubtype, ReportAction
 from janito.event_bus.bus import event_bus as default_event_bus
-from janito.tooling.base import BaseTool
 
 import inspect
+import re
 from collections import namedtuple
 
 
@@ -16,13 +16,25 @@ class ToolPermissions(namedtuple("ToolPermissions", ["read", "write", "execute"]
         return f"ToolPermissions(read={self.read}, write={self.write}, execute={self.execute})"
 
 
-class ToolBase(BaseTool):
+class ToolBase:
     """
     Base class for all tools in the janito project.
     Extend this class to implement specific tool functionality.
     """
 
     permissions: "ToolPermissions" = None  # Required: must be set by subclasses
+
+    @property
+    def tool_name(self) -> str:
+        """Derive tool name from class name by convention."""
+        # Convert class name to snake_case and remove 'Tool' suffix if present
+        class_name = self.__class__.__name__
+        if class_name.endswith('Tool'):
+            class_name = class_name[:-4]
+        
+        # Convert CamelCase to snake_case
+        name = re.sub(r'(?<!^)(?=[A-Z])', '_', class_name).lower()
+        return name
 
     def __init__(self, name=None, event_bus=None):
         if self.permissions is None or not isinstance(
@@ -111,7 +123,8 @@ class ToolBase(BaseTool):
             )
         )
 
-    def run(self, *args, **kwargs):
+    def run(self, *args, **kwargs) -> str:
+        """Execute the tool."""
         raise NotImplementedError("Subclasses must implement the run method.")
 
     def get_signature(self):
