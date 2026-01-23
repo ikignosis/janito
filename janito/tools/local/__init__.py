@@ -25,7 +25,6 @@ from .search_text.core import SearchTextTool
 from .validate_file_syntax.core import ValidateFileSyntaxTool
 from .read_chart import ReadChartTool
 from .show_image import ShowImageTool
-from .show_image_grid import ShowImageGridTool
 
 from .clear_context import ClearContextTool
 
@@ -72,8 +71,6 @@ for tool_class in [
     ValidateFileSyntaxTool,
     ReadChartTool,
     ShowImageTool,
-    ShowImageGridTool,
-
     ClearContextTool,
 ]:
     # Skip bash tools when running in PowerShell
