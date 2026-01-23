@@ -101,9 +101,6 @@ class ChatSession:
         self.shell_state.agent = self.agent
         # Set no_tools_mode if present
         self.shell_state.no_tools_mode = bool(no_tools_mode)
-        self._filter_execution_tools()
-        
-
         self.performance_collector = performance_collector
         self.key_bindings = KeyBindingsFactory.create()
         self._prompt_handler.agent = self.agent
@@ -169,23 +166,6 @@ class ChatSession:
             profile_system_prompt=profile_system_prompt,
             conversation_history=conversation_history,
         )
-
-    def _filter_execution_tools(self):
-        try:
-            getattr(
-                __import__("janito.tooling", fromlist=["get_local_tools_adapter"]),
-                "get_local_tools_adapter",
-            )()
-        except Exception as e:
-            self.console.print(
-                f"[yellow]Warning: Could not filter execution tools at startup: {e}[/yellow]"
-            )
-
-            _thread = _start_and_watch(self.shell_state, self._lock, get__port())
-            self._thread = _thread
-        else:
-            self.shell_state._support = False
-            self.shell_state._status = "offline"
 
     def run(self):
         self.console.clear()

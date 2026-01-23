@@ -2,8 +2,7 @@ import re
 from pathlib import Path
 
 from janito.llm.agent import LLMAgent
-from janito.tooling import get_local_tools_adapter
-
+from janito.tools.local import get_local_tools_adapter
 from janito.agent.system_prompt import SystemPromptTemplateManager
 
 

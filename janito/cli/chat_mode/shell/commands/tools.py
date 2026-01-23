@@ -1,7 +1,7 @@
 from janito.cli.console import shared_console
 from janito.cli.chat_mode.shell.commands.base import ShellCmdHandler
-
-
+from janito.tooling.permissions import get_global_allowed_permissions
+from janito.tools.local import get_local_tools_adapter
 class ToolsShellHandler(ShellCmdHandler):
     help_text = "List available tools"
 
@@ -62,10 +62,9 @@ class ToolsShellHandler(ShellCmdHandler):
             )
             return
         try:
-            import janito.tooling  # Ensure all tools are registered
-            from janito.tooling.permissions import get_global_allowed_permissions
 
-            registry = janito.tooling.get_local_tools_adapter()
+
+            registry = get_local_tools_adapter()
             tools = registry.list_tools()
             shared_console.print("Registered tools:")
             tool_instances = {t.tool_name: t for t in registry.get_tools()}

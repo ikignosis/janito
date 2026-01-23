@@ -53,14 +53,7 @@ definition = [
             "help": "Start with the Market Analyst profile (equivalent to --profile 'Market Analyst')",
         },
     ),
-    (
-        ["-W", "--workdir"],
-        {
-            "metavar": "WORKDIR",
-            "help": "Working directory to chdir to before tool execution",
-            "default": None,
-        },
-    ),
+
     (
         ["--verbose-api"],
         {

@@ -1,6 +1,7 @@
 """
 CLI Command: List available tools
 """
+from rich.console import Console
 
 
 def _group_tools_by_permission(tools, tool_instances, disabled_tools):
@@ -76,10 +77,9 @@ def handle_list_tools(args=None):
         DisabledToolsState.set_disabled_tools(disabled_str)
     disabled_tools = DisabledToolsState.get_disabled_tools()
 
-    registry = janito.tooling.local_tools_adapter
+    registry = janito.tools.local.get_local_tools_adapter()
     tools = registry.list_tools()
     if tools:
-        from rich.console import Console
 
         console = Console()
         tool_instances = {t.tool_name: t for t in registry.get_tools()}

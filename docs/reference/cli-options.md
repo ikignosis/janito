@@ -88,7 +88,7 @@ janito -r -w "Read a file and create a new one"
 
 ### ⚠️ Disabling Path Security
 
-By default, all file and directory arguments to tools are restricted to the working directory (see `--workdir`). To disable this security and allow any path (including system files), use the `-u` or `--unrestricted-paths` flag:
+By default, all file and directory arguments to tools are restricted to the current working directory. To disable this security and allow any path (including system files), use the `-u` or `--unrestricted-paths` flag:
 
 ```sh
 janito -u "Do something with C:/Windows/System32/hosts"

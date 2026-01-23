@@ -9,11 +9,6 @@ class LocalToolsAdapter(ToolsAdapter):
     This adapter keeps an **in-memory registry** of tool classes and manages
     permission filtering (read/write/execute) as required by the janito CLI.
 
-    The legacy ``set_execution_tools_enabled()`` helper has been removed – use
-    ``janito.tooling.permissions.set_global_allowed_permissions`` or
-    :py:meth:`LocalToolsAdapter.set_allowed_permissions` to adjust the
-    permission mask at runtime.
-
     Apart from registration/lookup helpers the class derives all execution
     logic from :class:`janito.tooling.tools_adapter.ToolsAdapterBase`.
     """

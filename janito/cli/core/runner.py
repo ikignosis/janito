@@ -161,9 +161,7 @@ def handle_runner(
         DisabledToolsState.disable_tool("run_bash_command")
 
     unrestricted = getattr(args, "unrestricted", False)
-    adapter = janito.tooling.get_local_tools_adapter(
-        workdir=getattr(args, "workdir", None)
-    )
+    adapter = janito.tools.local.get_local_tools_adapter()
     if unrestricted:
         # Patch: disable path security enforcement for this adapter instance
         setattr(adapter, "unrestricted_paths", True)

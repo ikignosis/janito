@@ -3,7 +3,7 @@
 from janito.llm.provider import LLMProvider
 from janito.llm.auth import LLMAuthManager
 from janito.llm.driver_config import LLMDriverConfig
-from janito.tooling import get_local_tools_adapter
+from janito.tools.local import get_local_tools_adapter
 from janito.providers.registry import LLMProviderRegistry
 from janito.providers.ibm.model_info import MODEL_SPECS, DEFAULT_MODEL
 

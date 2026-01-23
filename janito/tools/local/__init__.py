@@ -1,5 +1,5 @@
+import os
 from .adapter import LocalToolsAdapter
-
 from .ask_user import AskUserTool
 from .copy_file import CopyFileTool
 from .create_directory import CreateDirectoryTool
@@ -25,20 +25,17 @@ from .search_text.core import SearchTextTool
 from .validate_file_syntax.core import ValidateFileSyntaxTool
 from .read_chart import ReadChartTool
 from .show_image import ShowImageTool
-
 from .clear_context import ClearContextTool
 
-from janito.tooling.tool_base import ToolPermissions
-import os
-from janito.tooling.permissions import get_global_allowed_permissions
+
 from janito.platform_discovery import PlatformDiscovery
 
 # Singleton tools adapter with all standard tools registered
 local_tools_adapter = LocalToolsAdapter(workdir=os.getcwd())
 
 
-def get_local_tools_adapter(workdir=None):
-    return LocalToolsAdapter(workdir=workdir or os.getcwd())
+def get_local_tools_adapter():
+    return local_tools_adapter
 
 # Detect powershell to later disable bash
 pd = PlatformDiscovery()
