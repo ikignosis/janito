@@ -11,21 +11,20 @@ from janito.i18n import tr
 
 
 class CopyFileTool(ToolBase):
-    """
-    Copy one or more files to a target directory, or copy a single file to a new file.
-    Args:
-        sources (str): Space-separated path(s) to the file(s) to copy.
-            For multiple sources, provide a single string with paths separated by spaces.
-        target (str): Destination path. If copying multiple sources, this must be an existing directory.
-        overwrite (bool, optional): Overwrite existing files. Default: False.
-            Recommended only after reading the file to be overwritten.
-    Returns:
-        str: Status string for each copy operation.
-    """
-
     permissions = ToolPermissions(read=True, write=True)
 
     def run(self, sources: str, target: str, overwrite: bool = False) -> str:
+        """
+        Copy one or more files to a target directory, or copy a single file to a new file.
+        Args:
+            sources (str): Space-separated path(s) to the file(s) to copy.
+                For multiple sources, provide a single string with paths separated by spaces.
+            target (str): Destination path. If copying multiple sources, this must be an existing directory.
+            overwrite (bool, optional): Overwrite existing files. Default: False.
+                Recommended only after reading the file to be overwritten.
+        Returns:
+            str: Status string for each copy operation.
+        """
         source_list = [expand_path(src) for src in sources.split() if src]
         target = expand_path(target)
         messages = []

@@ -7,18 +7,6 @@ from janito.tooling.loop_protection_decorator import protect_against_loops
 
 
 class ShowImageTool(ToolBase):
-    """Display an image inline in the terminal using the rich library.
-
-    Args:
-        path (str): Path to the image file.
-        width (int, optional): Target width in terminal cells. If unset, auto-fit.
-        height (int, optional): Target height in terminal rows. If unset, auto-fit.
-        preserve_aspect (bool, optional): Preserve aspect ratio. Default: True.
-
-    Returns:
-        str: Status message indicating display result or error details.
-    """
-
     permissions = ToolPermissions(read=True)
 
     @protect_against_loops(max_calls=5, time_window=10.0, key_field="path")
@@ -29,6 +17,18 @@ class ShowImageTool(ToolBase):
         height: int | None = None,
         preserve_aspect: bool = True,
     ) -> str:
+        """
+        Display an image inline in the terminal using the rich library.
+
+        Args:
+            path (str): Path to the image file.
+            width (int, optional): Target width in terminal cells. If unset, auto-fit.
+            height (int, optional): Target height in terminal rows. If unset, auto-fit.
+            preserve_aspect (bool, optional): Preserve aspect ratio. Default: True.
+
+        Returns:
+            str: Status message indicating display result or error details.
+        """
         from janito.tooling.tool_utils import display_path
         from janito.tooling.path_utils import expand_path
         import os

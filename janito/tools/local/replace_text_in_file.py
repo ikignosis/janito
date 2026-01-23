@@ -9,25 +9,6 @@ from janito.tools.local.validate_file_syntax.core import validate_file_syntax
 
 
 class ReplaceTextInFileTool(ToolBase):
-    """
-    Replace exact occurrences of a given text in a file.
-
-    Note:
-        To avoid syntax errors, ensure your replacement text is pre-indented as needed, matching the indentation of the
-        search text in its original location.
-
-    Args:
-        path (str): Path to the file to modify.
-        search_text (str): The exact text to search for (including indentation).
-        replacement_text (str): The text to replace with (including indentation).
-        replace_all (bool): If True, replace all occurrences; otherwise, only the first occurrence.
-    Returns:
-        str: Status message. Example:
-            - "Text replaced in /path/to/file"
-            - "No changes made. [Warning: Search text not found in file] Please review the original file."
-            - "Error replacing text: <error message>"
-    """
-
     permissions = ToolPermissions(read=True, write=True)
 
     def run(
@@ -37,6 +18,24 @@ class ReplaceTextInFileTool(ToolBase):
         replacement_text: str,
         replace_all: bool = False,
     ) -> str:
+        """
+        Replace exact occurrences of a given text in a file.
+
+        Note:
+            To avoid syntax errors, ensure your replacement text is pre-indented as needed, matching the indentation of the
+            search text in its original location.
+
+        Args:
+            path (str): Path to the file to modify.
+            search_text (str): The exact text to search for (including indentation).
+            replacement_text (str): The text to replace with (including indentation).
+            replace_all (bool): If True, replace all occurrences; otherwise, only the first occurrence.
+        Returns:
+            str: Status message. Example:
+                - "Text replaced in /path/to/file"
+                - "No changes made. [Warning: Search text not found in file] Please review the original file."
+                - "Error replacing text: <error message>"
+        """
         from janito.tooling.tool_utils import display_path
 
         disp_path = display_path(path)

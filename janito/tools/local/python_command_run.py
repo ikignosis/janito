@@ -11,21 +11,20 @@ from janito.i18n import tr
 
 
 class PythonCommandRunTool(ToolBase):
-    """
-    Tool to execute Python code using the `python -c` command-line flag.
-
-    Args:
-        code (str): The Python code to execute as a string.
-        timeout (int): Timeout in seconds for the command. Defaults to 60.
-        silent (bool): If True, suppresses progress and status messages. Defaults to False.
-
-    Returns:
-        str: Output and status message, or file paths/line counts if output is large.
-    """
-
     permissions = ToolPermissions(execute=True)
 
     def run(self, code: str, timeout: int = 60, silent: bool = False) -> str:
+        """
+        Tool to execute Python code using the `python -c` command-line flag.
+
+        Args:
+            code (str): The Python code to execute as a string.
+            timeout (int): Timeout in seconds for the command. Defaults to 60.
+            silent (bool): If True, suppresses progress and status messages. Defaults to False.
+
+        Returns:
+            str: Output and status message, or file paths/line counts if output is large.
+        """
         if not code.strip():
             self.report_warning(tr("ℹ️ Empty code provided."), ReportAction.EXECUTE)
             return tr("Warning: Empty code provided. Operation skipped.")

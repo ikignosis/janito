@@ -14,22 +14,6 @@ from janito.tooling.loop_protection_decorator import protect_against_loops
 
 
 class SearchTextTool(ToolBase):
-    """
-    Search for a text query in all files within one or more directories or file paths and return matching lines or counts. Respects .gitignore.
-    Args:
-        paths (str): String of one or more paths (space-separated) to search in. Each path can be a directory or a file.
-        query (str): Text or regular expression to search for in files. Must not be empty. When use_regex=True, this is treated as a regex pattern; otherwise as plain text.
-        use_regex (bool): If True, treat query as a regular expression. If False, treat as plain text (default).
-        case_sensitive (bool): If False, perform a case-insensitive search. Default is True (case sensitive).
-        max_depth (int, optional): Maximum directory depth to search. If 0 (default), search is recursive with no depth limit. If >0, limits recursion to that depth. Setting max_depth=1 disables recursion (only top-level directory). Ignored for file paths.
-        max_results (int, optional): Maximum number of results to return. Defaults to 100. 0 means no limit.
-        count_only (bool): If True, return only the count of matches per file and total, not the matching lines. Default is False.
-    Returns:
-        str: If count_only is False, matching lines from files as a newline-separated string, each formatted as 'filepath:lineno: line'.
-             If count_only is True, returns per-file and total match counts.
-        If max_results is reached, appends a note to the output.
-    """
-
     permissions = ToolPermissions(read=True)
     tool_name = "search_text"
 
@@ -163,6 +147,21 @@ class SearchTextTool(ToolBase):
         max_results: int = 100,
         count_only: bool = False,
     ) -> str:
+        """
+        Search for a text query in all files within one or more directories or file paths and return matching lines or counts. Respects .gitignore.
+        Args:
+            paths (str): String of one or more paths (space-separated) to search in. Each path can be a directory or a file.
+            query (str): Text or regular expression to search for in files. Must not be empty. When use_regex=True, this is treated as a regex pattern; otherwise as plain text.
+            use_regex (bool): If True, treat query as a regular expression. If False, treat as plain text (default).
+            case_sensitive (bool): If False, perform a case-insensitive search. Default is True (case sensitive).
+            max_depth (int, optional): Maximum directory depth to search. If 0 (default), search is recursive with no depth limit. If >0, limits recursion to that depth. Setting max_depth=1 disables recursion (only top-level directory). Ignored for file paths.
+            max_results (int, optional): Maximum number of results to return. Defaults to 100. 0 means no limit.
+            count_only (bool): If True, return only the count of matches per file and total, not the matching lines. Default is False.
+        Returns:
+            str: If count_only is False, matching lines from files as a newline-separated string, each formatted as 'filepath:lineno: line'.
+                 If count_only is True, returns per-file and total match counts.
+            If max_results is reached, appends a note to the output.
+        """
         regex, use_regex, error_msg = prepare_pattern(
             query, use_regex, case_sensitive, self.report_error, self.report_warning
         )

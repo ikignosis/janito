@@ -10,8 +10,6 @@ from janito.tooling.tool_base import ToolBase, ToolPermissions
 
 
 class FunctionToolAdapter(ToolBase):
-    """Adapter that wraps a function into a ToolBase class."""
-    
     def __init__(self, func, tool_name: str = None, description: str = None):
         super().__init__()
         self._func = func
@@ -20,7 +18,10 @@ class FunctionToolAdapter(ToolBase):
         self.permissions = ToolPermissions(read=True, write=True, execute=True)
         
     def run(self, **kwargs) -> Any:
-        """Execute the wrapped function."""
+        """
+        Adapter that wraps a function into a ToolBase class.
+        Execute the wrapped function.
+        """
         return self._func(**kwargs)
     
     def get_signature(self) -> Dict[str, Any]:

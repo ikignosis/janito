@@ -69,36 +69,35 @@ def validate_file_syntax(
 
 
 class ValidateFileSyntaxTool(ToolBase):
-    """
-    Validate a file for syntax issues.
-
-    Supported types:
-      - Python (.py, .pyw)
-      - JSON (.json)
-      - YAML (.yml, .yaml)
-      - PowerShell (.ps1)
-      - XML (.xml)
-      - HTML (.html, .htm) [lxml]
-      - Markdown (.md)
-      - JavaScript (.js)
-      - Jinja2 templates (.j2, .jinja2)
-      - Text files (.txt, .text) [UTF-8 validation]
-
-    Args:
-        path (str): Path to the file to validate.
-    Returns:
-        str: Validation status message. Example:
-            - "✅ Syntax OK"
-            - "⚠️ Warning: Syntax error: <error message>"
-            - "⚠️ Warning: UTF-8 decoding error: <error details>"
-            - "⚠️ Warning: Unsupported file extension: <ext>"
-    """
-
     permissions = ToolPermissions(read=True)
     tool_name = "validate_file_syntax"
 
     @protect_against_loops(max_calls=5, time_window=10.0, key_field="path")
     def run(self, path: str) -> str:
+        """
+        Validate a file for syntax issues.
+
+        Supported types:
+          - Python (.py, .pyw)
+          - JSON (.json)
+          - YAML (.yml, .yaml)
+          - PowerShell (.ps1)
+          - XML (.xml)
+          - HTML (.html, .htm) [lxml]
+          - Markdown (.md)
+          - JavaScript (.js)
+          - Jinja2 templates (.j2, .jinja2)
+          - Text files (.txt, .text) [UTF-8 validation]
+
+        Args:
+            path (str): Path to the file to validate.
+        Returns:
+            str: Validation status message. Example:
+                - "✅ Syntax OK"
+                - "⚠️ Warning: Syntax error: <error message>"
+                - "⚠️ Warning: UTF-8 decoding error: <error details>"
+                - "⚠️ Warning: Unsupported file extension: <ext>"
+        """
         path = expand_path(path)
         disp_path = display_path(path)
         self.report_action(

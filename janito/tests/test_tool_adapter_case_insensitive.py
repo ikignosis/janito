@@ -24,7 +24,9 @@ class TestArgsTool(ToolBase):
     permissions = ToolPermissions(read=True, write=False, execute=False)
     
     def execute(self, test_path: str, test_mode: str = "default") -> str:
-        """Test tool that returns its arguments."""
+        """
+        Test tool that returns its arguments.
+        """
         return f"Received: test_path={test_path}, test_mode={test_mode}"
 
 register_local_tool(TestArgsTool)

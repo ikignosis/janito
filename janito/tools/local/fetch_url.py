@@ -15,47 +15,6 @@ from janito.tooling.loop_protection_decorator import protect_against_loops
 
 
 class FetchUrlTool(ToolBase):
-    """
-    Fetch the content of a web page and extract its text.
-
-    This tool implements a **session-based caching mechanism** that provides
-    **in-memory caching** for the lifetime of the tool instance. URLs are cached
-    in RAM during the session, providing instant access to previously fetched
-    content without making additional HTTP requests.
-
-    **Session Cache Behavior:**
-    - **Lifetime**: Cache exists for the lifetime of the FetchUrlTool instance
-    - **Scope**: In-memory (RAM) cache, not persisted to disk
-    - **Storage**: Successful responses are cached as raw HTML content
-    - **Key**: Cache key is the exact URL string
-    - **Invalidation**: Cache is automatically cleared when the tool instance is destroyed
-    - **Performance**: Subsequent requests for the same URL return instantly
-
-    **Error Cache Behavior:**
-    - HTTP 403 errors: Cached for 24 hours (more permanent)
-    - HTTP 404 errors: Cached for 1 hour (shorter duration)
-    - Other 4xx errors: Cached for 30 minutes
-    - 5xx errors: Not cached (retried on each request)
-
-    Args:
-        url (str): The URL of the web page to fetch.
-        search_strings (list[str], optional): Strings to search for in the page content.
-        max_length (int, optional): Maximum number of characters to return. Defaults to 5000.
-        max_lines (int, optional): Maximum number of lines to return. Defaults to 200.
-        context_chars (int, optional): Characters of context around search matches. Defaults to 400.
-        timeout (int, optional): Timeout in seconds for the HTTP request. Defaults to 10.
-        save_to_file (str, optional): File path to save the full resource content. If provided,
-            the complete response will be saved to this file instead of being processed.
-        headers (Dict[str, str], optional): Custom HTTP headers to send with the request.
-        cookies (Dict[str, str], optional): Custom cookies to send with the request.
-        follow_redirects (bool, optional): Whether to follow HTTP redirects. Defaults to True.
-    Returns:
-        str: Extracted text content from the web page, or a warning message. Example:
-            - "<main text content...>"
-            - "No lines found for the provided search strings."
-            - "Warning: Empty URL provided. Operation skipped."
-    """
-
     permissions = ToolPermissions(read=True)
 
     def __init__(self):
@@ -385,6 +344,46 @@ class FetchUrlTool(ToolBase):
         cookies: Dict[str, str] = None,
         follow_redirects: bool = True,
     ) -> str:
+        """
+        Fetch the content of a web page and extract its text.
+
+        This tool implements a **session-based caching mechanism** that provides
+        **in-memory caching** for the lifetime of the tool instance. URLs are cached
+        in RAM during the session, providing instant access to previously fetched
+        content without making additional HTTP requests.
+
+        **Session Cache Behavior:**
+        - **Lifetime**: Cache exists for the lifetime of the FetchUrlTool instance
+        - **Scope**: In-memory (RAM) cache, not persisted to disk
+        - **Storage**: Successful responses are cached as raw HTML content
+        - **Key**: Cache key is the exact URL string
+        - **Invalidation**: Cache is automatically cleared when the tool instance is destroyed
+        - **Performance**: Subsequent requests for the same URL return instantly
+
+        **Error Cache Behavior:**
+        - HTTP 403 errors: Cached for 24 hours (more permanent)
+        - HTTP 404 errors: Cached for 1 hour (shorter duration)
+        - Other 4xx errors: Cached for 30 minutes
+        - 5xx errors: Not cached (retried on each request)
+
+        Args:
+            url (str): The URL of the web page to fetch.
+            search_strings (list[str], optional): Strings to search for in the page content.
+            max_length (int, optional): Maximum number of characters to return. Defaults to 5000.
+            max_lines (int, optional): Maximum number of lines to return. Defaults to 200.
+            context_chars (int, optional): Characters of context around search matches. Defaults to 400.
+            timeout (int, optional): Timeout in seconds for the HTTP request. Defaults to 10.
+            save_to_file (str, optional): File path to save the full resource content. If provided,
+                the complete response will be saved to this file instead of being processed.
+            headers (Dict[str, str], optional): Custom HTTP headers to send with the request.
+            cookies (Dict[str, str], optional): Custom cookies to send with the request.
+            follow_redirects (bool, optional): Whether to follow HTTP redirects. Defaults to True.
+        Returns:
+            str: Extracted text content from the web page, or a warning message. Example:
+                - "<main text content...>"
+                - "No lines found for the provided search strings."
+                - "Warning: Empty URL provided. Operation skipped."
+        """
         if not url.strip():
             self.report_warning(tr("ℹ️ Empty URL provided."), ReportAction.READ)
             return tr("Warning: Empty URL provided. Operation skipped.")

@@ -10,17 +10,6 @@ from janito.i18n import tr
 
 
 class MoveFileTool(ToolBase):
-    """
-    Move a file or directory from src_path to dest_path.
-
-    Args:
-        src_path (str): Source file or directory path.
-        dest_path (str): Destination file or directory path.
-        overwrite (bool, optional): Whether to overwrite if the destination exists. Defaults to False.
-    Returns:
-        str: Status message indicating the result.
-    """
-
     permissions = ToolPermissions(read=True, write=True)
 
     def run(
@@ -29,6 +18,16 @@ class MoveFileTool(ToolBase):
         dest_path: str,
         overwrite: bool = False,
     ) -> str:
+        """
+        Move a file or directory from src_path to dest_path.
+
+        Args:
+            src_path (str): Source file or directory path.
+            dest_path (str): Destination file or directory path.
+            overwrite (bool, optional): Whether to overwrite if the destination exists. Defaults to False.
+        Returns:
+            str: Status message indicating the result.
+        """
         src = expand_path(src_path)
         dest = expand_path(dest_path)
         original_src = src_path

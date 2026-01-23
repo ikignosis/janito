@@ -15,18 +15,17 @@ from janito.tooling.loop_protection_decorator import protect_against_loops
 
 
 class GetFileOutlineTool(ToolBase):
-    """
-    Get an outline of a file's structure. Supports Python and Markdown files.
-
-    Args:
-        path (str): Path to the file to outline.
-    """
-
     permissions = ToolPermissions(read=True)
     tool_name = "get_file_outline"
 
     @protect_against_loops(max_calls=5, time_window=10.0, key_field="path")
     def run(self, path: str) -> str:
+        """
+        Get an outline of a file's structure. Supports Python and Markdown files.
+
+        Args:
+            path (str): Path to the file to outline.
+        """
         try:
             path = expand_path(path)
             self.report_action(

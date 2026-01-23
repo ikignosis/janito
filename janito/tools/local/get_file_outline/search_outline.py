@@ -4,20 +4,19 @@ from janito.tooling.loop_protection_decorator import protect_against_loops
 
 
 class SearchOutlineTool(ToolBase):
-    """
-    Tool for searching outlines in files.
-
-    Args:
-        path (str): Path to the file for which to generate an outline.
-    Returns:
-        str: Outline search result or status message.
-    """
-
     permissions = ToolPermissions(read=True)
     tool_name = "search_outline"
 
     @protect_against_loops(max_calls=5, time_window=10.0, key_field="path")
     def run(self, path: str) -> str:
+        """
+        Tool for searching outlines in files.
+
+        Args:
+            path (str): Path to the file for which to generate an outline.
+        Returns:
+            str: Outline search result or status message.
+        """
         from janito.tooling.tool_utils import display_path
         from janito.i18n import tr
 

@@ -11,24 +11,6 @@ import threading
 
 
 class RunPowershellCommandTool(ToolBase):
-    """
-    Execute a non-interactive command using the PowerShell shell and capture live output.
-    This tool explicitly invokes 'powershell.exe' (on Windows) or 'pwsh' (on other platforms if available).
-    All commands are automatically prepended with UTF-8 output encoding:
-    $OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8;
-    For file output, it is recommended to use -Encoding utf8 in your PowerShell commands (e.g., Out-File -Encoding utf8) to ensure correct file encoding.
-
-    Args:
-        command (str): The PowerShell command to execute. This string is passed directly to PowerShell using the --Command argument (not as a script file).
-        timeout (int): Timeout in seconds for the command. Defaults to 60.
-        require_confirmation (bool): If True, require user confirmation before running. Defaults to False.
-        requires_user_input (bool): If True, warns that the command may require user input and might hang. Defaults to False. Non-interactive commands are preferred for automation and reliability.
-        silent (bool): If True, suppresses progress and status messages. Defaults to False.
-
-    Returns:
-        str: Output and status message, or file paths/line counts if output is large.
-    """
-
     permissions = ToolPermissions(execute=True)
 
     def _confirm_and_warn(self, command, require_confirmation, requires_user_input):
@@ -130,6 +112,23 @@ class RunPowershellCommandTool(ToolBase):
         requires_user_input: bool = False,
         silent: bool = False,
     ) -> str:
+        """
+        Execute a non-interactive command using the PowerShell shell and capture live output.
+        This tool explicitly invokes 'powershell.exe' (on Windows) or 'pwsh' (on other platforms if available).
+        All commands are automatically prepended with UTF-8 output encoding:
+        $OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8;
+        For file output, it is recommended to use -Encoding utf8 in your PowerShell commands (e.g., Out-File -Encoding utf8) to ensure correct file encoding.
+
+        Args:
+            command (str): The PowerShell command to execute. This string is passed directly to PowerShell using the --Command argument (not as a script file).
+            timeout (int): Timeout in seconds for the command. Defaults to 60.
+            require_confirmation (bool): If True, require user confirmation before running. Defaults to False.
+            requires_user_input (bool): If True, warns that the command may require user input and might hang. Defaults to False. Non-interactive commands are preferred for automation and reliability.
+            silent (bool): If True, suppresses progress and status messages. Defaults to False.
+
+        Returns:
+            str: Output and status message, or file paths/line counts if output is large.
+        """
         if not command.strip():
             self.report_warning(tr("ℹ️ Empty command provided."), ReportAction.EXECUTE)
             return tr("Warning: Empty command provided. Operation skipped.")

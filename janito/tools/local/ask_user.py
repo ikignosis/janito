@@ -18,22 +18,21 @@ toolbar_style = Style.from_dict({"bottom-toolbar": "fg:yellow bg:darkred"})
 
 
 class AskUserTool(ToolBase):
-    """
-    Prompts the user for clarification or input with a question.
-
-    Args:
-        question (str): The question to ask the user. This parameter is required and should be a string containing the prompt or question to display to the user.
-    Returns:
-        str: The user's response as a string. Example:
-            - "Yes"
-            - "No"
-            - "Some detailed answer..."
-    """
-
     permissions = ToolPermissions(read=True)
 
     @protect_against_loops(max_calls=5, time_window=10.0, key_field="question")
     def run(self, question: str) -> str:
+        """
+        Prompts the user for clarification or input with a question.
+
+        Args:
+            question (str): The question to ask the user. This parameter is required and should be a string containing the prompt or question to display to the user.
+        Returns:
+            str: The user's response as a string. Example:
+                - "Yes"
+                - "No"
+                - "Some detailed answer..."
+        """
 
         print()  # Print an empty line before the question panel
         rich_print(Panel.fit(Markdown(question), title=tr("Question"), style="cyan"))

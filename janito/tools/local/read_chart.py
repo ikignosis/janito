@@ -10,25 +10,24 @@ from janito.tooling.loop_protection_decorator import protect_against_loops
 
 
 class ReadChartTool(ToolBase):
-    """
-    Display charts and data visualizations in the terminal using rich.
-
-    Args:
-        data (dict): Chart data in JSON format. Should contain 'type' (bar, line, pie, table) and 'data' keys.
-        title (str, optional): Chart title. Defaults to "Chart".
-        width (int, optional): Chart width. Defaults to 80.
-        height (int, optional): Chart height. Defaults to 20.
-
-    Returns:
-        str: Formatted chart display in terminal or error message.
-    """
-
     permissions = ToolPermissions(read=True)
 
     @protect_against_loops(max_calls=5, time_window=10.0, key_field="data")
     def run(
         self, data: dict, title: str = "Chart", width: int = 80, height: int = 20
     ) -> str:
+        """
+        Display charts and data visualizations in the terminal using rich.
+
+        Args:
+            data (dict): Chart data in JSON format. Should contain 'type' (bar, line, pie, table) and 'data' keys.
+            title (str, optional): Chart title. Defaults to "Chart".
+            width (int, optional): Chart width. Defaults to 80.
+            height (int, optional): Chart height. Defaults to 20.
+
+        Returns:
+            str: Formatted chart display in terminal or error message.
+        """
         try:
             from rich.console import Console
             from rich.table import Table

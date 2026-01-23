@@ -8,30 +8,29 @@ from janito.tooling.loop_protection_decorator import protect_against_loops
 
 
 class ViewFileTool(ToolBase):
-    """
-    Read lines from a file. You can specify a line range, or read the entire file by simply omitting the from_line and to_line parameters.
-
-    Args:
-        path (str): Path to the file to read lines from.
-        from_line (int, optional): Starting line number (1-based). Omit to start from the first line.
-        to_line (int, optional): Ending line number (1-based). Omit to read to the end of the file.
-        as_base64 (bool, optional): If True, returns the file content as base64-encoded string instead of plain text. Default: False.
-
-    To read the full file, just provide path and leave from_line and to_line unset.
-
-    Returns:
-        str: File content with a header indicating the file name and line range. Example:
-            - "---\nFile: /path/to/file.py | Lines: 1-10 (of 100)\n---\n<lines...>"
-            - "---\nFile: /path/to/file.py | All lines (total: 100 ∞)\n---\n<all lines...>"
-            - "Error reading file: <error message>"
-            - "❗ not found"
-            - When as_base64=True: "---\nFile: /path/to/file.py | Base64 encoded (total: 12345 bytes)\n---\n<base64_string>"
-    """
-
     permissions = ToolPermissions(read=True)
 
     @protect_against_loops(max_calls=5, time_window=10.0, key_field="path")
     def run(self, path: str, from_line: int = None, to_line: int = None, as_base64: bool = False) -> str:
+        """
+        Read lines from a file. You can specify a line range, or read the entire file by simply omitting the from_line and to_line parameters.
+
+        Args:
+            path (str): Path to the file to read lines from.
+            from_line (int, optional): Starting line number (1-based). Omit to start from the first line.
+            to_line (int, optional): Ending line number (1-based). Omit to read to the end of the file.
+            as_base64 (bool, optional): If True, returns the file content as base64-encoded string instead of plain text. Default: False.
+
+        To read the full file, just provide path and leave from_line and to_line unset.
+
+        Returns:
+            str: File content with a header indicating the file name and line range. Example:
+                - "---\nFile: /path/to/file.py | Lines: 1-10 (of 100)\n---\n<lines...>"
+                - "---\nFile: /path/to/file.py | All lines (total: 100 ∞)\n---\n<all lines...>"
+                - "Error reading file: <error message>"
+                - "❗ not found"
+                - When as_base64=True: "---\nFile: /path/to/file.py | Base64 encoded (total: 12345 bytes)\n---\n<base64_string>"
+        """
         import os
         import base64
         from janito.tooling.tool_utils import display_path

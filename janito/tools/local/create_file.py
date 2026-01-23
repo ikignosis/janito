@@ -14,90 +14,89 @@ from janito.tools.local.validate_file_syntax.core import validate_file_syntax
 
 
 class CreateFileTool(ToolBase):
-    """
-    Create a new file with specified content at the given path.
-
-    This tool provides comprehensive file creation capabilities with built-in safety features,
-    automatic syntax validation, and detailed feedback. It handles path expansion, directory
-    creation, encoding issues, and provides clear status messages for both success and failure cases.
-
-    Key Features:
-    - Automatic directory creation for nested paths
-    - UTF-8 encoding with error handling for special characters
-    - Built-in syntax validation for common file types (Python, JavaScript, JSON, YAML, etc.)
-    - Loop protection to prevent excessive file creation
-    - Detailed error messages with context
-    - Safe overwrite protection with preview of existing content
-    - Cross-platform path handling (Windows, macOS, Linux)
-    - Base64 decoding support for binary files
-
-    Args:
-        path (str, required): Target file path. Supports relative and absolute paths, with automatic
-                   expansion of user home directory (~) and environment variables.
-                   Examples: "src/main.py", "~/Documents/config.json", "$HOME/.env"
-        content (str, optional): File content to write. Empty string creates empty file.
-                      Supports any text content including Unicode characters, newlines,
-                      and binary-safe text representation. Default: "" (empty file)
-        overwrite (bool, optional): If True, allows overwriting existing files. Default: False.
-                                   When False, prevents accidental overwrites by checking
-                                   file existence and showing current content. Always review
-                                   existing content before enabling overwrite.
-        is_base64 (bool, optional): If True, treats the content as base64-encoded data and decodes it
-                           before writing to the file. This enables creation of binary files
-                           (images, executables, archives, etc.). Default: False.
-
-    Returns:
-        str: Detailed status message including:
-            - Success confirmation with line count (for text files) or byte count (for binary files)
-            - File path (display-friendly format)
-            - Syntax validation results (for text files)
-            - Existing content preview (when overwrite blocked)
-            - Error details (when creation fails)
-
-    Raises:
-        No direct exceptions - all errors are caught and returned as user-friendly messages.
-        Common error cases include: permission denied, invalid path format, disk full,
-        or file exists (when overwrite=False).
-
-    Security Features:
-        - Loop protection: Maximum 5 calls per 10 seconds for the same file path
-        - Path traversal prevention: Validates and sanitizes file paths
-        - Permission checking: Respects file system permissions
-        - Atomic writes: Prevents partial file creation on errors
-
-    Examples:
-        Basic file creation:
-        >>> create_file("hello.py", "print('Hello, World!')")
-        ✅ Created file 1 lines.
-        ✅ Syntax OK
-
-        Creating nested directories:
-        >>> create_file("src/utils/helpers.py", "def helper(): pass")
-        ✅ Created file 2 lines.
-        ✅ Syntax OK
-
-        Creating empty file:
-        >>> create_file("empty.txt", "")
-        ✅ Created file 0 lines.
-
-        Creating a binary file from base64:
-        >>> create_file("image.png", "/9j/4AAQSkZJRgABAQEASABIAAD/...", is_base64=True)
-        ✅ Created file 12345 bytes.
-
-        Overwrite protection:
-        >>> create_file("existing.txt", "new content")
-        ❗ Cannot create file: file already exists at 'existing.txt'.
-        --- Current file content ---
-        old content
-
-    Note: After successful creation, automatic syntax validation is performed based on
-    file extension. Results are appended to the return message for immediate feedback.
-    """
-
     permissions = ToolPermissions(write=True)
 
     @protect_against_loops(max_calls=5, time_window=10.0, key_field="path")
     def run(self, path: str, content: str = "", overwrite: bool = False, is_base64: bool = False) -> str:
+        """
+        Create a new file with specified content at the given path.
+
+        This tool provides comprehensive file creation capabilities with built-in safety features,
+        automatic syntax validation, and detailed feedback. It handles path expansion, directory
+        creation, encoding issues, and provides clear status messages for both success and failure cases.
+
+        Key Features:
+        - Automatic directory creation for nested paths
+        - UTF-8 encoding with error handling for special characters
+        - Built-in syntax validation for common file types (Python, JavaScript, JSON, YAML, etc.)
+        - Loop protection to prevent excessive file creation
+        - Detailed error messages with context
+        - Safe overwrite protection with preview of existing content
+        - Cross-platform path handling (Windows, macOS, Linux)
+        - Base64 decoding support for binary files
+
+        Args:
+            path (str, required): Target file path. Supports relative and absolute paths, with automatic
+                       expansion of user home directory (~) and environment variables.
+                       Examples: "src/main.py", "~/Documents/config.json", "$HOME/.env"
+            content (str, optional): File content to write. Empty string creates empty file.
+                          Supports any text content including Unicode characters, newlines,
+                          and binary-safe text representation. Default: "" (empty file)
+            overwrite (bool, optional): If True, allows overwriting existing files. Default: False.
+                                       When False, prevents accidental overwrites by checking
+                                       file existence and showing current content. Always review
+                                       existing content before enabling overwrite.
+            is_base64 (bool, optional): If True, treats the content as base64-encoded data and decodes it
+                               before writing to the file. This enables creation of binary files
+                               (images, executables, archives, etc.). Default: False.
+
+        Returns:
+            str: Detailed status message including:
+                - Success confirmation with line count (for text files) or byte count (for binary files)
+                - File path (display-friendly format)
+                - Syntax validation results (for text files)
+                - Existing content preview (when overwrite blocked)
+                - Error details (when creation fails)
+
+        Raises:
+            No direct exceptions - all errors are caught and returned as user-friendly messages.
+            Common error cases include: permission denied, invalid path format, disk full,
+            or file exists (when overwrite=False).
+
+        Security Features:
+            - Loop protection: Maximum 5 calls per 10 seconds for the same file path
+            - Path traversal prevention: Validates and sanitizes file paths
+            - Permission checking: Respects file system permissions
+            - Atomic writes: Prevents partial file creation on errors
+
+        Examples:
+            Basic file creation:
+            >>> create_file("hello.py", "print('Hello, World!')")
+            ✅ Created file 1 lines.
+            ✅ Syntax OK
+
+            Creating nested directories:
+            >>> create_file("src/utils/helpers.py", "def helper(): pass")
+            ✅ Created file 2 lines.
+            ✅ Syntax OK
+
+            Creating empty file:
+            >>> create_file("empty.txt", "")
+            ✅ Created file 0 lines.
+
+            Creating a binary file from base64:
+            >>> create_file("image.png", "/9j/4AAQSkZJRgABAQEASABIAAD/...", is_base64=True)
+            ✅ Created file 12345 bytes.
+
+            Overwrite protection:
+            >>> create_file("existing.txt", "new content")
+            ❗ Cannot create file: file already exists at 'existing.txt'.
+            --- Current file content ---
+            old content
+
+        Note: After successful creation, automatic syntax validation is performed based on
+        file extension. Results are appended to the return message for immediate feedback.
+        """
         path = expand_path(path)
         disp_path = display_path(path)
         if os.path.exists(path) and not overwrite:

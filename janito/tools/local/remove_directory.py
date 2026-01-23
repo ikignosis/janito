@@ -11,21 +11,20 @@ from janito.tooling.path_utils import expand_path
 
 
 class RemoveDirectoryTool(ToolBase):
-    """
-    Remove a directory.
-
-    Args:
-        path (str): Path to the directory to remove.
-        recursive (bool, optional): If True, remove non-empty directories recursively. If False, only remove empty directories. Defaults to False.
-    Returns:
-        str: Status message indicating result. Example:
-            - "Directory removed: /path/to/dir"
-            - "Error removing directory: <error message>"
-    """
-
     permissions = ToolPermissions(write=True)
 
     def run(self, path: str, recursive: bool = False) -> str:
+        """
+        Remove a directory.
+
+        Args:
+            path (str): Path to the directory to remove.
+            recursive (bool, optional): If True, remove non-empty directories recursively. If False, only remove empty directories. Defaults to False.
+        Returns:
+            str: Status message indicating result. Example:
+                - "Directory removed: /path/to/dir"
+                - "Error removing directory: <error message>"
+        """
         path = expand_path(path)
         disp_path = display_path(path)
         self.report_action(

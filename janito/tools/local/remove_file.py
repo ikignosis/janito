@@ -11,20 +11,19 @@ from janito.i18n import tr
 
 
 class RemoveFileTool(ToolBase):
-    """
-    Remove a file at the specified path.
-
-    Args:
-        path (str): Path to the file to remove.
-    Returns:
-        str: Status message indicating the result. Example:
-            - "			 Successfully removed the file at ..."
-            - "			 Cannot remove file: ..."
-    """
-
     permissions = ToolPermissions(write=True)
 
     def run(self, path: str) -> str:
+        """
+        Remove a file at the specified path.
+
+        Args:
+            path (str): Path to the file to remove.
+        Returns:
+            str: Status message indicating the result. Example:
+                - "Successfully removed the file at ..."
+                - "Cannot remove file: ..."
+        """
         path = expand_path(path)
         disp_path = display_path(path)
 

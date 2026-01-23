@@ -9,19 +9,18 @@ from janito.tooling.loop_protection_decorator import protect_against_loops
 
 
 class OpenHtmlInBrowserTool(ToolBase):
-    """
-    Open the supplied HTML file in the default web browser.
-
-    Args:
-        path (str): Path to the HTML file to open.
-    Returns:
-        str: Status message indicating the result.
-    """
-
     permissions = ToolPermissions(read=True)
 
     @protect_against_loops(max_calls=5, time_window=10.0, key_field="path")
     def run(self, path: str) -> str:
+        """
+        Open the supplied HTML file in the default web browser.
+
+        Args:
+            path (str): Path to the HTML file to open.
+        Returns:
+            str: Status message indicating the result.
+        """
         if not path.strip():
             self.report_warning(tr("ℹ️ Empty file path provided."))
             return tr("Warning: Empty file path provided. Operation skipped.")

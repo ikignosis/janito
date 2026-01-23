@@ -8,20 +8,19 @@ from janito.tooling.loop_protection_decorator import protect_against_loops
 
 
 class ReadFilesTool(ToolBase):
-    """
-    Read all text content from multiple files.
-
-    Args:
-        paths (list[str]): List of file paths to read.
-
-    Returns:
-        str: Concatenated content of all files, each prefixed by a header with the file name. If a file cannot be read, an error message is included for that file.
-    """
-
     permissions = ToolPermissions(read=True)
 
     @protect_against_loops(max_calls=5, time_window=10.0, key_field="paths")
     def run(self, paths: list[str]) -> str:
+        """
+        Read all text content from multiple files.
+
+        Args:
+            paths (list[str]): List of file paths to read.
+
+        Returns:
+            str: Concatenated content of all files, each prefixed by a header with the file name. If a file cannot be read, an error message is included for that file.
+        """
         from janito.tooling.tool_utils import display_path
         import os
         from janito.tooling.path_utils import expand_path

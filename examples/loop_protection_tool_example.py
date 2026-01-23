@@ -13,18 +13,16 @@ from janito.plugins.tools.local.adapter import register_local_tool
 
 
 class CustomFileAnalyzerTool(ToolBase):
-    """
-    Example custom tool that analyzes files with loop protection.
-
-    This tool demonstrates how to use the @protect_against_loops decorator
-    to prevent excessive operations on the same file.
-    """
-
     permissions = ToolPermissions(read=True)
 
     @protect_against_loops(max_calls=5, time_window=10.0)
     def run(self, path: str, analysis_type: str = "basic") -> str:
         """
+        Example custom tool that analyzes files with loop protection.
+
+        This tool demonstrates how to use the @protect_against_loops decorator
+        to prevent excessive operations on the same file.
+
         Analyze a file with the specified analysis type.
 
         Args:
@@ -68,18 +66,16 @@ class CustomFileAnalyzerTool(ToolBase):
 
 
 class BatchFileProcessorTool(ToolBase):
-    """
-    Example tool that processes multiple files with loop protection.
-
-    This tool demonstrates how to use the @protect_against_loops decorator
-    with tools that operate on multiple files.
-    """
-
     permissions = ToolPermissions(read=True)
 
     @protect_against_loops(max_calls=5, time_window=10.0)
     def run(self, file_paths: list, operation: str = "count") -> str:
         """
+        Example tool that processes multiple files with loop protection.
+
+        This tool demonstrates how to use the @protect_against_loops decorator
+        with tools that operate on multiple files.
+
         Process multiple files with the specified operation.
 
         Args:

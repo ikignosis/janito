@@ -11,21 +11,20 @@ from janito.i18n import tr
 
 
 class PythonFileRunTool(ToolBase):
-    """
-    Tool to execute a specified Python script file.
-
-    Args:
-        path (str): Path to the Python script file to execute.
-        timeout (int): Timeout in seconds for the command. Defaults to 60.
-        silent (bool): If True, suppresses progress and status messages. Defaults to False.
-
-    Returns:
-        str: Output and status message, or file paths/line counts if output is large.
-    """
-
     permissions = ToolPermissions(execute=True)
 
     def run(self, path: str, timeout: int = 60, silent: bool = False) -> str:
+        """
+        Tool to execute a specified Python script file.
+
+        Args:
+            path (str): Path to the Python script file to execute.
+            timeout (int): Timeout in seconds for the command. Defaults to 60.
+            silent (bool): If True, suppresses progress and status messages. Defaults to False.
+
+        Returns:
+            str: Output and status message, or file paths/line counts if output is large.
+        """
         from janito.tooling.path_utils import expand_path
 
         path = expand_path(path)

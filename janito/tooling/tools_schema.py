@@ -70,8 +70,8 @@ class ToolSchemaBase:
             )
         if not hasattr(tool_class, "run") or not callable(getattr(tool_class, "run")):
             raise ValueError("Tool class must have a callable 'run' method.")
-        func = tool_class.run
-        sig = inspect.signature(func)
+        run_func = tool_class.run
+        sig = inspect.signature(run_func)
         if sig.return_annotation is inspect._empty or sig.return_annotation is not str:
             raise ValueError(
                 f"Tool '{tool_name}' must have an explicit return type of 'str'. Found: {sig.return_annotation}"
@@ -85,10 +85,10 @@ class ToolSchemaBase:
             raise ValueError(
                 f"Tool '{tool_name}' is missing type hints for parameter(s): {', '.join(missing_type_hints)}.\nAll parameters must have explicit type hints for schema generation."
             )
-        class_doc = (
-            tool_class.__doc__.strip() if tool_class and tool_class.__doc__ else ""
+        run_doc = (
+            run_func.__doc__.strip() if run_func and run_func.__doc__ else ""
         )
-        summary, param_descs, return_desc = self.parse_docstring(class_doc)
+        summary, param_descs, return_desc = self.parse_docstring(run_doc)
         description = summary
         if return_desc:
             description += f"\n\nReturns: {return_desc}"
@@ -101,4 +101,4 @@ class ToolSchemaBase:
             raise ValueError(
                 f"Tool '{tool_name}' is missing docstring documentation for parameter(s): {', '.join(undocumented)}.\nParameter documentation must be provided in the Tool class docstring, not the method docstring."
             )
-        return func, tool_name, sig, summary, param_descs, return_desc, description
+        return run_func, tool_name, sig, summary, param_descs, return_desc, description

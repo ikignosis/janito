@@ -11,19 +11,18 @@ from pathlib import Path
 
 
 class CreateDirectoryTool(ToolBase):
-    """
-    Create a new directory at the specified path.
-    Args:
-        path (str): Path for the new directory.
-    Returns:
-        str: Status message indicating the result. Example:
-            - "5c5 Successfully created the directory at ..."
-            - "5d7 Cannot create directory: ..."
-    """
-
     permissions = ToolPermissions(write=True)
 
     def run(self, path: str) -> str:
+        """
+        Create a new directory at the specified path.
+        Args:
+            path (str): Path for the new directory.
+        Returns:
+            str: Status message indicating the result. Example:
+                - "Successfully created the directory at ..."
+                - "Cannot create directory: ..."
+        """
         path = expand_path(path)
         disp_path = display_path(path)
         self.report_action(
