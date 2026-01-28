@@ -135,6 +135,16 @@ MODEL_SPECS = {
         thinking=False,
         max_cot=65536,
     ),
+    "qwen3-max-2026-01-23": LLMModelInfo(
+        name="qwen3-max-2026-01-23",
+        context=262144,  # 256K context window (Qwen3-Max-Thinking Latest)
+        max_response=65536,  # Matches Qwen3-Max-Thinking output limit
+        category="Alibaba Qwen3-Max-Thinking Latest - Advanced reasoning with adaptive tool use (OpenAI-compatible)",
+        driver="OpenAIModelDriver",
+        thinking=True,
+        thinking_supported=True,
+        max_cot=65536,
+    ),
     "qwen-omni-turbo": LLMModelInfo(
         name="qwen-omni-turbo",
         context=32768,

@@ -88,6 +88,7 @@ This document lists all supported large language models (LLMs) across providers,
 | `qwen3-next-80b-a3b-instruct` | 262,144 | 65,536 | Alibaba Qwen3-Max Preview (256K) - 80B A3B Instruct Model (OpenAI-compatible) |
 | `qwen3-next-80b-a3b-thinking` | 262,144 | 65,536 | Alibaba Qwen3-Max Preview (256K) - 80B A3B Thinking Model (OpenAI-compatible) |
 | `qwen3-max` | 262,144 | 65,536 | Alibaba Qwen3-Max Preview (256K) - Standard Model (OpenAI-compatible) |
+| `qwen3-max-2026-01-23` | 262,144 | 65,536 | Alibaba Qwen3-Max-Thinking Latest - Advanced reasoning with adaptive tool use (OpenAI-compatible) |
 
 ## DeepSeek
 

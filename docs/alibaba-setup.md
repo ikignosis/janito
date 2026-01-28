@@ -49,6 +49,7 @@ The Alibaba provider supports the following models:
 - `qwen3-235b-a22b-instruct-2507`: 1M context instruct model
 - `qwen3-30b-a3b-thinking-2507`: 1M context thinking model
 - `qwen3-30b-a3b-instruct-2507`: 1M context instruct model
+- `qwen3-max-2026-01-23`: Latest Qwen3-Max-Thinking model with advanced reasoning and adaptive tool use
 
 ## Default Model
 

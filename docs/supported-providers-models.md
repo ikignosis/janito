@@ -19,6 +19,7 @@ This page lists the supported providers and their available models, organized by
 - **Qwen Turbo** - High-speed general purpose
 - **Qwen Plus** - Balanced performance
 - **Qwen Max** - Maximum capability
+- **Qwen3-Max-Thinking (2026-01-23)** - Latest flagship reasoning model with adaptive tool use and test-time scaling
 
 ### Cerebras
 

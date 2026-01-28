@@ -65,6 +65,20 @@ Domain-specific models:
 - Free quota: 1 million tokens (validity: 90 days after activating Alibaba Cloud Model Studio)
 - Supports context cache
 
+### Qwen3-Max-Thinking (Latest)
+- Model name: `qwen3-max-2026-01-23`
+- Context window: 262,144 tokens  
+- Maximum input: 258,048 tokens
+- Maximum output: 65,536 tokens
+- Input pricing (tiered):
+  - 0-32K tokens: $1.8 per million tokens
+  - 32K-128K tokens: $3.2 per million tokens  
+  - 128K-252K tokens: $4 per million tokens
+- Output price: $8 per million tokens
+- Free quota: 500K tokens (validity: 90 days after activating Alibaba Cloud Model Studio)
+- Advanced reasoning with adaptive tool use and test-time scaling
+- Supports Search, Memory, and Code Interpreter capabilities
+
 ### Qwen-Max (Stable/Latest)
 - Context window: 32,768 tokens
 - Maximum input: 30,720 tokens
