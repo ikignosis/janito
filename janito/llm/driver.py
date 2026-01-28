@@ -41,8 +41,7 @@ class LLMDriver(ABC):
     The driver automatically creates its own input/output queues, accessible via .input_queue and .output_queue.
     """
 
-    available = True
-    unavailable_reason = None
+
 
     def __init__(self, tools_adapter=None, provider_name=None, enable_cache=True):
         self.input_queue = Queue()
@@ -92,17 +91,7 @@ class LLMDriver(ABC):
                     )
                 )
 
-    def handle_driver_unavailable(self, request_id):
-        self.output_queue.put(
-            RequestFinished(
-                driver_name=self.__class__.__name__,
-                request_id=request_id,
-                status=RequestStatus.ERROR,
-                error=self.unavailable_reason,
-                exception=ImportError(self.unavailable_reason),
-                traceback=None,
-            )
-        )
+
 
     def emit_response_received(
         self, driver_name, request_id, result, parts, timestamp=None, metadata=None
@@ -131,10 +120,7 @@ class LLMDriver(ABC):
 
         config = driver_input.config
         request_id = getattr(config, "request_id", None)
-        if not self.available:
-            self.handle_driver_unavailable(request_id)
-            return
-        
+
         # Check cache first if enabled
         if self.response_cache:
             cached_response = self.response_cache.get(driver_input)

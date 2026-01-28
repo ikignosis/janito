@@ -22,12 +22,8 @@ class OpenAIModelDriver(LLMDriver):
     # Check if required dependencies are available
     try:
         import openai
-
-        available = True
-        unavailable_reason = None
     except ImportError as e:
-        available = False
-        unavailable_reason = f"Missing dependency: {str(e)}"
+        raise ImportError(f"Missing dependency for OpenAI driver: {str(e)}")
 
     def _get_message_from_result(self, result):
         """Extract the message object from the provider result (OpenAI-specific)."""

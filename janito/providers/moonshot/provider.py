@@ -15,8 +15,7 @@ class MoonshotProvider(LLMProvider):
     MAINTAINER = "João Pinto <janito@ikignosis.org>"
     MODEL_SPECS = MODEL_SPECS
     DEFAULT_MODEL = DEFAULT_MODEL
-    available = OpenAIModelDriver.available
-    unavailable_reason = OpenAIModelDriver.unavailable_reason
+
 
     def __init__(
         self, auth_manager: LLMAuthManager = None, config: LLMDriverConfig = None
@@ -52,8 +51,7 @@ class MoonshotProvider(LLMProvider):
         Returns:
             A new OpenAIModelDriver instance configured for Moonshot API
         """
-        if not self.available:
-            raise ImportError(f"MoonshotProvider unavailable: {self.unavailable_reason}")
+
         
         driver = OpenAIModelDriver(
             tools_adapter=self.tools_adapter, 

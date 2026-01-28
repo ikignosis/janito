@@ -16,8 +16,7 @@ class OpenAIProvider(LLMProvider):
     MAINTAINER = "João Pinto <janito@ikignosis.org>"
     MODEL_SPECS = MODEL_SPECS
     DEFAULT_MODEL = DEFAULT_MODEL
-    available = OpenAIModelDriver.available
-    unavailable_reason = OpenAIModelDriver.unavailable_reason
+
 
     def __init__(
         self, auth_manager: LLMAuthManager = None, config: LLMDriverConfig = None
@@ -53,8 +52,7 @@ class OpenAIProvider(LLMProvider):
         Returns:
             A new OpenAIModelDriver instance configured for this provider
         """
-        if not self.available:
-            raise ImportError(f"OpenAIProvider unavailable: {self.unavailable_reason}")
+
         
         driver = OpenAIModelDriver(
             tools_adapter=self.tools_adapter, 

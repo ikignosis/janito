@@ -49,8 +49,9 @@ def _get_single_driver_info(module_path, class_name):
         module = importlib.import_module(module_path)
         driver_class = getattr(module, class_name)
 
-        available = getattr(driver_class, "available", True)
-        unavailable_reason = getattr(driver_class, "unavailable_reason", None)
+        # All drivers are assumed to be available
+
+
 
         # Read module file to detect imports
         module_file = Path(module.__file__)
@@ -63,7 +64,7 @@ def _get_single_driver_info(module_path, class_name):
         return {
             "name": class_name,
             "available": available,
-            "reason": unavailable_reason,
+
             "dependencies": dep_status,
         }
 

@@ -12,12 +12,8 @@ class AzureOpenAIModelDriver(OpenAIModelDriver):
     # Check if required dependencies are available
     try:
         from openai import AzureOpenAI
-
-        available = True
-        unavailable_reason = None
     except ImportError as e:
-        available = False
-        unavailable_reason = f"Missing dependency: {str(e)}"
+        raise ImportError(f"Missing dependency for Azure OpenAI driver: {str(e)}")
 
     def start(self, *args, **kwargs):
         # Ensure azure_deployment_name is set before starting

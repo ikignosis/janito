@@ -8,10 +8,6 @@ from janito.providers.registry import LLMProviderRegistry
 from janito.providers.zai.model_info import MODEL_SPECS, DEFAULT_MODEL
 
 
-available = OpenAIModelDriver.available
-unavailable_reason = OpenAIModelDriver.unavailable_reason
-
-
 class ZAIProvider(LLMProvider):
     """ZAI (Zhihu AI) LLM Provider implementation."""
     
@@ -20,8 +16,7 @@ class ZAIProvider(LLMProvider):
     MAINTAINER = "João Pinto <janito@ikignosis.org>"
     MODEL_SPECS = MODEL_SPECS
     DEFAULT_MODEL = DEFAULT_MODEL
-    available = OpenAIModelDriver.available
-    unavailable_reason = OpenAIModelDriver.unavailable_reason
+
 
     def __init__(
         self, auth_manager: LLMAuthManager = None, config: LLMDriverConfig = None
@@ -65,8 +60,7 @@ class ZAIProvider(LLMProvider):
         Returns:
             A new OpenAIModelDriver instance configured for ZAI API
         """
-        if not self.available:
-            raise ImportError(f"ZAIProvider unavailable: {self.unavailable_reason}")
+
         
         driver = OpenAIModelDriver(
             tools_adapter=self.tools_adapter, 

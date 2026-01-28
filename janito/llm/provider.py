@@ -30,7 +30,7 @@ class LLMProvider(ABC):
     # Optional attributes
     MODEL_SPECS: Optional[Dict[str, LLMModelInfo]] = None
     available: bool = True
-    unavailable_reason: Optional[str] = None
+
     
     def __init_subclass__(cls, **kwargs):
         """Validate that subclasses define required attributes."""

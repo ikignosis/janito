@@ -9,8 +9,6 @@ from .model_info import MODEL_SPECS, DEFAULT_MODEL
 
 from janito.drivers.azure_openai.driver import AzureOpenAIModelDriver
 
-available = AzureOpenAIModelDriver.available
-unavailable_reason = AzureOpenAIModelDriver.unavailable_reason
 maintainer = "Joao Pinto <janito@ikignosis.org>"
 
 
@@ -24,12 +22,8 @@ class AzureOpenAIProvider(LLMProvider):
     def __init__(
         self, auth_manager: LLMAuthManager = None, config: LLMDriverConfig = None
     ):
-        # Always create a tools adapter so that provider.execute_tool() works even when
-        # the underlying driver is not available (e.g. OpenAI SDK not installed).
+        # Always create a tools adapter so that provider.execute_tool() works
         self._tools_adapter = get_local_tools_adapter()
-        if not self.available:
-            self._driver = None
-            return
         self._auth_manager = auth_manager or LLMAuthManager()
         self._api_key = self._auth_manager.get_credentials(type(self).NAME)
         if not self._api_key:
@@ -56,19 +50,7 @@ class AzureOpenAIProvider(LLMProvider):
 
     @property
     def driver(self):
-        if not self.available:
-            raise ImportError(
-                f"AzureOpenAIProvider unavailable: {self.unavailable_reason}"
-            )
         return self._driver
-
-    @property
-    def available(self):
-        return available
-
-    @property
-    def unavailable_reason(self):
-        return unavailable_reason
 
     def is_model_available(self, model_name):
         """

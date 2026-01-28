@@ -16,8 +16,7 @@ class AnthropicProvider(LLMProvider):
     MAINTAINER = "Alberto Minetti <alberto.minetti@gmail.com>"
     MODEL_SPECS = MODEL_SPECS
     DEFAULT_MODEL = DEFAULT_MODEL
-    available = OpenAIModelDriver.available
-    unavailable_reason = OpenAIModelDriver.unavailable_reason
+
 
     def __init__(
         self, auth_manager: LLMAuthManager = None, config: LLMDriverConfig = None
@@ -56,10 +55,7 @@ class AnthropicProvider(LLMProvider):
         Returns:
             A new OpenAIModelDriver instance configured for Anthropic API
         """
-        if not self.available:
-            raise ImportError(
-                f"AnthropicProvider unavailable: {self.unavailable_reason}"
-            )
+
 
         driver = OpenAIModelDriver(
             tools_adapter=self.tools_adapter, provider_name=self.name

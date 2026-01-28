@@ -8,10 +8,6 @@ from janito.providers.registry import LLMProviderRegistry
 from janito.providers.deepseek.model_info import MODEL_SPECS, DEFAULT_MODEL
 
 
-available = OpenAIModelDriver.available
-unavailable_reason = OpenAIModelDriver.unavailable_reason
-
-
 class DeepSeekProvider(LLMProvider):
     """DeepSeek LLM Provider implementation."""
     
@@ -20,8 +16,7 @@ class DeepSeekProvider(LLMProvider):
     MAINTAINER = "João Pinto <janito@ikignosis.org>"
     MODEL_SPECS = MODEL_SPECS
     DEFAULT_MODEL = DEFAULT_MODEL
-    available = OpenAIModelDriver.available
-    unavailable_reason = OpenAIModelDriver.unavailable_reason
+
 
     def __init__(
         self, auth_manager: LLMAuthManager = None, config: LLMDriverConfig = None
@@ -32,8 +27,7 @@ class DeepSeekProvider(LLMProvider):
         super().__init__(auth_manager=auth_manager, config=config, tools_adapter=self._tools_adapter)
         
         # Initialize DeepSeek-specific configuration
-        if self.available:
-            self._initialize_deepseek_config()
+        self._initialize_deepseek_config()
 
     def _initialize_deepseek_config(self):
         """Initialize DeepSeek-specific configuration."""
@@ -58,8 +52,7 @@ class DeepSeekProvider(LLMProvider):
         Returns:
             A new OpenAIModelDriver instance configured for DeepSeek API
         """
-        if not self.available:
-            raise ImportError(f"DeepSeekProvider unavailable: {self.unavailable_reason}")
+
         
         driver = OpenAIModelDriver(
             tools_adapter=self.tools_adapter, 

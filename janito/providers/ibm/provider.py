@@ -7,14 +7,7 @@ from janito.tools.local import get_local_tools_adapter
 from janito.providers.registry import LLMProviderRegistry
 from janito.providers.ibm.model_info import MODEL_SPECS, DEFAULT_MODEL
 
-try:
-    from janito.drivers.openai.driver import OpenAIModelDriver
-
-    available = True
-    unavailable_reason = None
-except ImportError as e:
-    available = False
-    unavailable_reason = str(e)
+from janito.drivers.openai.driver import OpenAIModelDriver
 
 
 class IBMProvider(LLMProvider):
@@ -25,8 +18,7 @@ class IBMProvider(LLMProvider):
     MAINTAINER = "João Pinto <janito@ikignosis.org>"
     MODEL_SPECS = MODEL_SPECS
     DEFAULT_MODEL = DEFAULT_MODEL
-    available = available
-    unavailable_reason = unavailable_reason
+
 
     def __init__(
         self, auth_manager: LLMAuthManager = None, config: LLMDriverConfig = None
@@ -37,8 +29,7 @@ class IBMProvider(LLMProvider):
         super().__init__(auth_manager=auth_manager, config=config, tools_adapter=self._tools_adapter)
         
         # Initialize IBM-specific configuration
-        if self.available:
-            self._initialize_ibm_config()
+        self._initialize_ibm_config()
 
     def _initialize_ibm_config(self):
         """Initialize IBM-specific configuration."""
@@ -77,8 +68,7 @@ class IBMProvider(LLMProvider):
         Returns:
             A new OpenAIModelDriver instance configured for IBM WatsonX API
         """
-        if not self.available:
-            raise ImportError(f"IBMProvider unavailable: {self.unavailable_reason}")
+
         
         driver = OpenAIModelDriver(
             tools_adapter=self.tools_adapter, 
