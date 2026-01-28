@@ -89,8 +89,6 @@ class LLMAgent:
         self._template_vars[key] = value
 
     def refresh_system_prompt_from_template(self):
-        n_lines = self.system_prompt.count('\n') + 1
-        print(n_lines)
         if hasattr(self, "_template_vars") and hasattr(self, "system_prompt_template"):
             env = Environment(
                 loader=FileSystemLoader(Path(self.system_prompt_template).parent),
@@ -111,8 +109,6 @@ class LLMAgent:
             else:
                 self._template_vars["allowed_permissions"] = perms
             self.system_prompt = template.render(**self._template_vars)
-            n_lines = self.system_prompt.count('\n') + 1
-            print(n_lines)
 
     def get_system_prompt(self) -> str:
         return self.system_prompt

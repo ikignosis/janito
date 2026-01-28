@@ -38,33 +38,7 @@ def handle_restart(shell_state=None):
     # Reset the performance collector's last usage (so toolbar immediately reflects cleared stats)
     performance_collector.reset_last_request_usage()
 
-    default_perms = get_default_allowed_permissions()
-    if default_perms is not None:
-        set_global_allowed_permissions(default_perms)
-        tools_adapter = get_default_allowed_permissions()
-        tools_adapter.set_allowed_permissions(default_perms)
-        msg = None
 
-    else:
-        from janito.tooling.tool_base import ToolPermissions
-
-        set_global_allowed_permissions(
-            ToolPermissions(read=False, write=False, execute=False)
-        )
-        tools_adapter = get_local_tools_adapter()
-        tools_adapter.set_allowed_permissions(
-            ToolPermissions(read=False, write=False, execute=False)
-        )
-        msg = "[green]All tool permissions have been set to OFF (read, write, execute = False).[/green]"
-    # Refresh system prompt to reflect new permissions
-    if (
-        hasattr(shell_state, "agent")
-        and shell_state.agent
-        and hasattr(shell_state.agent, "refresh_system_prompt_from_template")
-    ):
-        shell_state.agent.refresh_system_prompt_from_template()
-    if msg:
-        shared_console.print(msg)
 
 
     # Clear the user tracker history

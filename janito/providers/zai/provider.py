@@ -2,14 +2,14 @@ from janito.llm.provider import LLMProvider
 from janito.llm.model import LLMModelInfo
 from janito.llm.auth import LLMAuthManager
 from janito.llm.driver_config import LLMDriverConfig
-from janito.drivers.zai.driver import ZAIModelDriver
+from janito.drivers.openai.driver import OpenAIModelDriver
 from janito.tools.local import get_local_tools_adapter
 from janito.providers.registry import LLMProviderRegistry
 from janito.providers.zai.model_info import MODEL_SPECS, DEFAULT_MODEL
 
 
-available = ZAIModelDriver.available
-unavailable_reason = ZAIModelDriver.unavailable_reason
+available = OpenAIModelDriver.available
+unavailable_reason = OpenAIModelDriver.unavailable_reason
 
 
 class ZAIProvider(LLMProvider):
@@ -20,8 +20,8 @@ class ZAIProvider(LLMProvider):
     MAINTAINER = "João Pinto <janito@ikignosis.org>"
     MODEL_SPECS = MODEL_SPECS
     DEFAULT_MODEL = DEFAULT_MODEL
-    available = ZAIModelDriver.available
-    unavailable_reason = ZAIModelDriver.unavailable_reason
+    available = OpenAIModelDriver.available
+    unavailable_reason = OpenAIModelDriver.unavailable_reason
 
     def __init__(
         self, auth_manager: LLMAuthManager = None, config: LLMDriverConfig = None
@@ -52,21 +52,23 @@ class ZAIProvider(LLMProvider):
         if not self.config.api_key:
             self.config.api_key = api_key
         
-        # Set base_url in config (default to Z.AI's official endpoint)
-        if not self.config.base_url:
+        # Set Z.AI endpoint as default base_url if not provided
+        if not getattr(self.config, "base_url", None):
             self.config.base_url = "https://api.z.ai/api/paas/v4/"
+            self.fill_missing_device_info(self.config)
+            self._driver = None  # to be provided by factory/agent
 
-    def create_driver(self) -> ZAIModelDriver:
+    def create_driver(self) -> OpenAIModelDriver:
         """
-        Create and return a new ZAIModelDriver instance for ZAI.
+        Create and return a new OpenAIModelDriver instance for ZAI.
         
         Returns:
-            A new ZAIModelDriver instance configured for ZAI API
+            A new OpenAIModelDriver instance configured for ZAI API
         """
         if not self.available:
             raise ImportError(f"ZAIProvider unavailable: {self.unavailable_reason}")
         
-        driver = ZAIModelDriver(
+        driver = OpenAIModelDriver(
             tools_adapter=self.tools_adapter, 
             provider_name=self.name
         )
