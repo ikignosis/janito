@@ -30,20 +30,6 @@ Janito supports the following LLM providers:
 - **Default Model**: `mistral-large-latest`
 - **Driver**: `OpenAIModelDriver`
 
-## Cerebras
-
-- **API Key Env Var**: `CEREBRAS_API_KEY`
-- **Base URL**: `https://api.cerebras.ai/v1`
-- **Default Model**: `qwen-3-coder-480b`
-- **Driver**: `OpenAIModelDriver`
-
-## Z.AI
-
-- **API Key Env Var**: `ZAI_API_KEY`
-- **Base URL**: `https://api.z.ai/v1`
-- **Default Model**: `glm-4.5`
-- **Driver**: `ZAIModelDriver`
-
 ## Alibaba Qwen
 
 - **API Key Env Var**: `ALIBABA_API_KEY`

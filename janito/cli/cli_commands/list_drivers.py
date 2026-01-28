@@ -19,16 +19,10 @@ def _detect_dependencies_from_content(content, class_name):
 
     if "import openai" in content or "from openai" in content:
         dependencies.append("openai")
-    if "import zai" in content or "from zai" in content:
-        dependencies.append("zai")
     if "import anthropic" in content or "from anthropic" in content:
         dependencies.append("anthropic")
     if "import google" in content or "from google" in content:
         dependencies.append("google-generativeai")
-
-    # Remove openai from zai driver dependencies
-    if "ZAIModelDriver" in class_name and "openai" in dependencies:
-        dependencies.remove("openai")
 
     return dependencies
 
@@ -91,8 +85,7 @@ def get_driver_info():
     driver_modules = [
         ("janito.drivers.openai.driver", "OpenAIModelDriver"),
         ("janito.drivers.azure_openai.driver", "AzureOpenAIModelDriver"),
-        ("janito.drivers.zai.driver", "ZAIModelDriver"),
-        ("janito.drivers.cerebras.driver", "CerebrasModelDriver"),
+
     ]
 
     for module_path, class_name in driver_modules:

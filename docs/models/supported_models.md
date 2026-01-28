@@ -53,7 +53,7 @@ This document lists all supported large language models (LLMs) across providers,
 | `devstral-small-latest` | 128,000 | 120,000 | 4,096 | No |
 | `devstral-medium-latest` | 128,000 | 120,000 | 4,096 | No |
 
-## Cerebras
+
 
 | Model Name | Max Input | Max Response | Description |
 |------------|-----------|--------------|-------------|

@@ -21,24 +21,7 @@ This page lists the supported providers and their available models, organized by
 - **Qwen Max** - Maximum capability
 - **Qwen3-Max-Thinking (2026-01-23)** - Latest flagship reasoning model with adaptive tool use and test-time scaling
 
-### Cerebras
 
-**Production Models:**
-
-- **Qwen-3 32B** - General instruction following
-
-**Preview Models:**
-
-- **Qwen-3 Coder 480B** - Programming-focused with 32k context
-- **Qwen-3 235B A22B Instruct** - Large-scale instruction model
-- **Qwen-3 235B A22B Thinking** - Reasoning-focused version
-- **GPT-OSS 120B** - Open-source model
-
-**Notes:**
-
-- All Cerebras models support 128k context window
-- Models are optimized for low-latency inference
-- Pricing varies by model size and capability
 
 ### DeepSeek
 

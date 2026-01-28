@@ -41,7 +41,7 @@ nav:
       - Anthropic Setup: anthropic-setup.md
       - Google Gemini Setup: google-setup.md
       - Mistral Setup: mistral-setup.md
-      - Cerebras Setup: cerebras-setup.md
+
       - Z.AI Setup: z-ai-setup.md
       - Alibaba Qwen Setup: alibaba-setup.md
       - DeepSeek Setup: deepseek-setup.md

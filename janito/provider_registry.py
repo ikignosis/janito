@@ -33,7 +33,7 @@ class ProviderRegistry:
             rows.append(info[:3])
 
         # Group providers by openness (open-source first, then proprietary)
-        open_providers = {"cerebras", "deepseek", "alibaba", "moonshot", "zai"}
+        open_providers = {"deepseek", "alibaba", "moonshot", "zai"}
 
         def sort_key(row):
             provider_name = row[0]

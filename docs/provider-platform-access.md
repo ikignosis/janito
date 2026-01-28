@@ -28,7 +28,7 @@ Open-source/open-weight models with complete accessibility.
 | Provider | Platform Access | Documentation | API Docs | Model Quality | Notes |
 |----------|-----------------|---------------|----------|---------------|-------|
 | **Alibaba** | [Alibaba Cloud Console](https://account.alibabacloud.com) | [Model Studio Help](https://www.alibabacloud.com/help/en/model-studio) | [API Reference](https://www.alibabacloud.com/help/en/model-studio/api-reference) | 🥇 High | Qwen3 235B - Leading open-source |
-| **Cerebras** | [API Dashboard](https://api.cerebras.ai) | [Inference Docs](https://cerebras.ai/inference) | [API Docs](https://cerebras.ai/inference) | 🥇 High | Qwen-3 32B - Fast inference |
+
 | **Moonshot** | [Platform](https://platform.moonshot.ai) | [API Docs](https://platform.moonshot.ai/docs) | [API Reference](https://platform.moonshot.ai/docs) | 🥈 Medium | Kimi K2 - Competitive open-source |
 | **Z.ai** | [API Management](https://z.ai/manage-apikey/apikey-list) | [Model API Docs](https://z.ai/model-api) | [API Reference](https://z.ai/model-api) | 🥈 Medium | GLM-4.5 - Solid performance |
 
@@ -57,12 +57,12 @@ Open-source/open-weight models with complete accessibility.
 ### For Production Use
 
 1. **Google** or **IBM WatsonX** - Full access + premium models
-2. **Alibaba** or **Cerebras** - Full access + high-quality open-source
+2. **Alibaba** - Full access + high-quality open-source
 
 ### For Development/Testing
 
 1. **Alibaba Qwen3** - Best open-source performance
-2. **Cerebras** - Fast inference for Qwen-3 models
+
 3. **Moonshot** or **Z.ai** - Good alternatives
 
 ### For Specialized Tasks

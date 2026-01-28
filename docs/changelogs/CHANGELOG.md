@@ -158,7 +158,7 @@ For users upgrading from previous versions:
 ### Added
 
 - **New Provider Support**
-  - **Cerebras Provider**: Added complete support for Cerebras with qwen-3-coder-480b model
+
     - qwen-3-coder-480b: 32k context, reasoning-focused model with function calling support
 
 - **Enhanced UX**
@@ -178,7 +178,7 @@ For users upgrading from previous versions:
 ### Fixed
 
 - **Bug Fixes**
-  - Added missing tools adapter to Cerebras provider
+
   - Improved error handling for invalid provider names in set-api-key command
 
 ## [2.16.0] - 2025-01-08

@@ -79,7 +79,7 @@ When no model is specified, Janito uses the provider's default model:
 - **Anthropic**: `claude-sonnet-4-5-20250929`
 - **Google**: `gemini-2.5-flash`
 - **Mistral**: `mistral-large-latest`
-- **Cerebras**: `qwen-3-coder-480b`
+
 - **Z.AI**: `glm-4.5`
 - **Alibaba**: `qwen3-next-80b-a3b-instruct`
 - **DeepSeek**: `deepseek-chat`
