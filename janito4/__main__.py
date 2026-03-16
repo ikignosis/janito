@@ -59,10 +59,14 @@ Environment Variables:
   OPENAI_API_KEY     - API key for authentication  
   OPENAI_MODEL       - Model name to use for completions
 
+Options:
+  --list-tools       List all available tools and their descriptions
+
 Examples:
   python -m janito4 "What is the capital of France?"  # Single prompt mode
   echo "Tell me a joke" | python -m janito4           # Pipe input mode
   python -m janito4                                 # Interactive chat mode
+  python -m janito4 --list-tools                     # List available tools
         """
     )
     
@@ -78,7 +82,70 @@ Examples:
         help="Enable verbose output (shows model and backend info)"
     )
     
+    parser.add_argument(
+        "--list-tools",
+        action="store_true",
+        help="List all available tools and exit"
+    )
+    
     args = parser.parse_args()
+    
+    # Handle --list-tools option
+    if args.list_tools:
+        try:
+            from .tooling.tools_registry import get_all_tool_schemas, get_all_tool_permissions
+        except ImportError:
+            from tooling.tools_registry import get_all_tool_schemas, get_all_tool_permissions
+        
+        schemas = get_all_tool_schemas()
+        permissions = get_all_tool_permissions()
+        
+        print("Available Tools:")
+        print("=" * 60)
+        
+        # Group tools by category based on name prefixes
+        categories = {
+            "File Operations": [],
+            "System Operations": [],
+            "Other": []
+        }
+        
+        for schema in schemas:
+            func_info = schema['function']
+            name = func_info['name']
+            perms = permissions.get(name, "")
+            
+            # Get parameter names only
+            params = func_info['parameters']['properties']
+            param_names = list(params.keys())
+            
+            tool_info = {
+                'name': name,
+                'permissions': perms,
+                'params': param_names
+            }
+            
+            if name.startswith(('Create', 'Delete', 'List', 'Read', 'Remove', 'Replace', 'Search')):
+                categories["File Operations"].append(tool_info)
+            elif name.startswith(('Get', 'Run')):
+                categories["System Operations"].append(tool_info)
+            else:
+                categories["Other"].append(tool_info)
+        
+        # Display tools by category
+        for category, tools_list in categories.items():
+            if tools_list:
+                print(f"\n{category}:")
+                print("-" * 40)
+                
+                for tool in sorted(tools_list, key=lambda x: x['name']):
+                    perms_str = f" [{tool['permissions']}]" if tool['permissions'] else ""
+                    params_str = f" ({', '.join(tool['params'])})" if tool['params'] else " (no params)"
+                    print(f"  {tool['name']}{perms_str}{params_str}")
+        
+        print(f"\nTotal: {len(schemas)} tools")
+        print("\nPermission codes: r=read, w=write, x=execute")
+        return
     
     # Check if stdin is not a tty (piped input)
     if args.prompt is None and not sys.stdin.isatty():
