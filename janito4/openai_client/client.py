@@ -6,7 +6,7 @@ import os
 import sys
 import json
 import threading
-from typing import Tuple, List, Dict, Any
+from typing import Tuple, List, Dict, Any, Optional
 from openai import OpenAI
 from rich.console import Console
 from rich.markdown import Markdown
@@ -28,9 +28,31 @@ except (ImportError, ValueError):
         def get_tool_by_name(name):
             raise NotImplementedError("Tools not available")
 
+# Import provider configuration for base URLs
+try:
+    from ..provider_config import get_base_url_from_provider
+    PROVIDER_CONFIG_AVAILABLE = True
+except ImportError:
+    try:
+        from provider_config import get_base_url_from_provider
+        PROVIDER_CONFIG_AVAILABLE = True
+    except ImportError:
+        PROVIDER_CONFIG_AVAILABLE = False
+        def get_base_url_from_provider(provider: str) -> Optional[str]:
+            return None
 
-def get_env_vars() -> Tuple[str, str, str]:
-    """Retrieve required environment variables."""
+
+def get_env_vars() -> Tuple[Optional[str], str, str]:
+    """
+    Retrieve required environment variables.
+    
+    When OPENAI_BASE_URL is not defined, attempts to determine it based on
+    the OPENAI_PROVIDER environment variable (if set).
+    
+    Returns:
+        Tuple of (base_url, api_key, model)
+        base_url may be None for standard OpenAI API
+    """
     base_url = os.getenv("OPENAI_BASE_URL")
     api_key = os.getenv("OPENAI_API_KEY")
     model = os.getenv("OPENAI_MODEL")
@@ -39,6 +61,12 @@ def get_env_vars() -> Tuple[str, str, str]:
         raise ValueError("OPENAI_API_KEY environment variable is required")
     if not model:
         raise ValueError("OPENAI_MODEL environment variable is required")
+    
+    # If base_url is not set, try to determine it from the provider
+    if not base_url and AUTH_CONFIG_AVAILABLE:
+        provider = os.getenv("OPENAI_PROVIDER")
+        if provider:
+            base_url = get_base_url_from_provider(provider)
     
     return base_url, api_key, model
 

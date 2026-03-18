@@ -7,17 +7,22 @@ This CLI uses environment variables for configuration:
 - OPENAI_API_KEY: The API key for authentication
 - OPENAI_MODEL: The model name to use for completions
 
+API keys can also be stored securely in ~/.janito/auth.json using the --set-api-key option.
+
 The CLI includes function calling tools that can be used by the AI model.
 
 Usage:
-    python -m janito4 "Your prompt here"    # Single prompt mode
-    echo "Your prompt" | python -m janito4 # Pipe input mode
-    python -m janito4                      # Interactive chat session
+    python -m janito4 "Your prompt here"                    # Single prompt mode
+    echo "Your prompt" | python -m janito4                  # Pipe input mode
+    python -m janito4                                       # Interactive chat session
+    python -m janito4 --set-api-key <key> --provider <name> # Store API key
 """
 
 import os
 import sys
+import json
 import argparse
+from pathlib import Path
 from typing import List, Dict, Any
 from .system_prompt import SYSTEM_PROMPT
 
@@ -28,6 +33,18 @@ except ImportError:
     # When running directly, not as a module
     from openai_client import send_prompt
 
+# Import auth configuration handling
+try:
+    from .auth_config import (
+        set_api_key, get_api_key, load_auth_config, 
+        get_auth_file_path, list_providers
+    )
+except ImportError:
+    from auth_config import (
+        set_api_key, get_api_key, load_auth_config,
+        get_auth_file_path, list_providers
+    )
+
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.key_binding import KeyBindings
@@ -35,8 +52,277 @@ from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.formatted_text import HTML
 
 
+def load_provider_from_config():
+    """Load provider name from ~/.janito/config.json if it exists.
+    
+    Returns:
+        str: Provider name from config, or None if not found
+        
+    Raises:
+        json.JSONDecodeError: If config file contains invalid JSON
+    """
+    config_path = Path.home() / ".janito" / "config.json"
+    try:
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+            return config.get("provider")
+    except FileNotFoundError:
+        return None
+
+
+def setup_api_key_from_config():
+    """Load API key from auth config if environment variable is not set.
+    
+    Priority:
+    1. Provider from config.json (highest)
+    2. Default provider from auth.json
+    3. Fallback to 'openai'
+    """
+    if not os.getenv("OPENAI_API_KEY"):
+        # Try to determine which provider to use
+        provider = None
+        
+        # 1. First check config.json for provider
+        config_provider = load_provider_from_config()
+        if config_provider:
+            provider = config_provider
+        else:
+            # 2. Check auth.json for default provider
+            try:
+                from .auth_config import get_default_provider
+            except ImportError:
+                from auth_config import get_default_provider
+            
+            default_provider = get_default_provider()
+            if default_provider:
+                provider = default_provider
+            else:
+                # 3. Fall back to 'openai'
+                provider = "openai"
+        
+        # Try to load API key for the determined provider
+        try:
+            from .auth_config import get_api_key
+        except ImportError:
+            from auth_config import get_api_key
+        
+        api_key = get_api_key(provider)
+        if api_key:
+            os.environ["OPENAI_API_KEY"] = api_key
+            return True
+    return False
+
+
+def load_model_from_config():
+    """Load model name from ~/.janito/config.json if it exists.
+    
+    Returns:
+        str: Model name from config, or None if not found
+        
+    Raises:
+        json.JSONDecodeError: If config file contains invalid JSON
+    """
+    config_path = Path.home() / ".janito" / "config.json"
+    try:
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+            return config.get("model")
+    except FileNotFoundError:
+        return None
+
+
 def main():
     """Main entry point."""
+    parser = argparse.ArgumentParser(
+        description="OpenAI CLI - Send prompts to OpenAI-compatible endpoints",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Environment Variables:
+  OPENAI_BASE_URL    - Base URL of the OpenAI-compatible API endpoint (optional for standard OpenAI)
+  OPENAI_API_KEY     - API key for authentication  
+  OPENAI_MODEL       - Model name to use for completions
+
+Configuration:
+  API keys can be stored in ~/.janito/auth.json using --set-api-key
+  If OPENAI_API_KEY is not set, the CLI will try to load from the auth config
+
+Options:
+  --set-api-key KEY  Set API key for the specified provider
+  --provider NAME    Provider name (e.g., openai, anthropic, azure)
+  --list-auth        List configured providers and keys
+  --list-tools       List all available tools and their descriptions
+
+Examples:
+  janito4 "What is the capital of France?"                    # Single prompt mode
+  echo "Tell me a joke" | janito4                             # Pipe input mode
+  janito4                                                     # Interactive chat mode
+  janito4 --set-api-key sk-xxx --provider openai             # Store OpenAI API key
+  janito4 --set-api-key xxx --provider anthropic             # Store API key for provider
+  janito4 --list-auth                                        # Show configured providers
+  janito4 --list-tools                                       # List available tools
+        """
+    )
+    
+    parser.add_argument(
+        "prompt", 
+        nargs="?", 
+        help="The prompt to send to the AI (if not provided, starts interactive chat)"
+    )
+    
+    parser.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Enable verbose output (shows model and backend info)"
+    )
+    
+    parser.add_argument(
+        "--list-tools",
+        action="store_true",
+        help="List all available tools and exit"
+    )
+    
+    parser.add_argument(
+        "--set-api-key",
+        metavar="KEY",
+        help="Set API key for the specified provider (requires --provider)"
+    )
+    
+    parser.add_argument(
+        "--provider",
+        metavar="NAME",
+        help="Provider name (e.g., openai, anthropic, azure)"
+    )
+    
+
+    
+    parser.add_argument(
+        "--list-auth",
+        action="store_true",
+        help="List configured authentication providers"
+    )
+    
+    parser.add_argument(
+        "--set",
+        metavar="KEY=VALUE",
+        help="Set a config key-value pair in ~/.janito/config.json (e.g., --set model=gpt-4)"
+    )
+    
+    parser.add_argument(
+        "--get",
+        metavar="KEY",
+        help="Get a config value from ~/.janito/config.json"
+    )
+    
+    args = parser.parse_args()
+    
+    # Handle --get option
+    if args.get:
+        config_path = Path.home() / ".janito" / "config.json"
+        try:
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+            value = config.get(args.get)
+            if value is not None:
+                print(value)
+            else:
+                print(f"Key '{args.get}' not found in config", file=sys.stderr)
+                sys.exit(1)
+        except FileNotFoundError:
+            print(f"Config file not found: {config_path}", file=sys.stderr)
+            sys.exit(1)
+        except json.JSONDecodeError as e:
+            print(f"Invalid JSON in config file: {e}", file=sys.stderr)
+            sys.exit(1)
+        return
+    
+    # Handle --set option
+    if args.set:
+        if '=' not in args.set:
+            print("Error: --set requires KEY=VALUE format", file=sys.stderr)
+            print("Usage: janito4 --set model=gpt-4", file=sys.stderr)
+            sys.exit(1)
+        
+        key, value = args.set.split('=', 1)
+        key = key.strip()
+        value = value.strip()
+        
+        config_path = Path.home() / ".janito" / "config.json"
+        
+        # Load existing config or create new one
+        config = {}
+        try:
+            if config_path.exists():
+                with open(config_path, 'r') as f:
+                    config = json.load(f)
+        except json.JSONDecodeError as e:
+            print(f"Warning: Invalid JSON in config file, overwriting: {e}", file=sys.stderr)
+        
+        # Update config
+        config[key] = value
+        
+        # Ensure directory exists
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Write config
+        with open(config_path, 'w') as f:
+            json.dump(config, f, indent=2)
+        
+        print(f"[OK] Set {key}={value} in {config_path}")
+        return
+    
+    # Handle --list-auth option
+    if args.list_auth:
+        providers = list_providers()
+        auth_file = get_auth_file_path()
+        
+        print("Configured Authentication Providers:")
+        print("=" * 40)
+        print(f"Config file: {auth_file}")
+        print()
+        
+        if not providers:
+            print("No providers configured.")
+            print("\nUse --set-api-key with --provider to add API keys:")
+            print("  janito4 --set-api-key <key> --provider openai")
+        else:
+            for provider in providers:
+                print(f"  {provider}: ***")
+        
+        return
+    
+    # Handle --set-api-key option
+    if args.set_api_key:
+        if not args.provider:
+            print("Error: --provider is required when using --set-api-key", file=sys.stderr)
+            print("Usage: janito4 --set-api-key <key> --provider <name>", file=sys.stderr)
+            sys.exit(1)
+        
+        success = set_api_key(args.provider, args.set_api_key)
+        
+        if success:
+            auth_file = get_auth_file_path()
+            print(f"✓ API key stored successfully for provider '{args.provider}'")
+            print(f"  Config file: {auth_file}")
+            
+            # If this is the openai provider, also set it for current session
+            if args.provider == "openai":
+                os.environ["OPENAI_API_KEY"] = args.set_api_key
+                print(f"  API key also set for current session")
+        else:
+            print("Error: Failed to store API key", file=sys.stderr)
+            sys.exit(1)
+        
+        return
+    
+    # Try to load API key from config if not set in environment
+    setup_api_key_from_config()
+    
+    # Try to load model from config if not set in environment
+    if not os.getenv("OPENAI_MODEL"):
+        config_model = load_model_from_config()
+        if config_model:
+            os.environ["OPENAI_MODEL"] = config_model
+    
     # Validate required environment variables at startup
     missing_vars = []
     if not os.getenv("OPENAI_API_KEY"):
@@ -48,6 +334,8 @@ def main():
     if missing_vars:
         print(f"Error: Missing required environment variable(s): {', '.join(missing_vars)}", file=sys.stderr)
         print("Please set these environment variables before running the CLI.", file=sys.stderr)
+        print("\nAlternatively, you can store your API key using:", file=sys.stderr)
+        print(f"  janito4 --set-api-key <your-key> --provider openai", file=sys.stderr)
         sys.exit(1)
     
     parser = argparse.ArgumentParser(
