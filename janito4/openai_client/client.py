@@ -128,8 +128,16 @@ def _run_with_progress_bar(func, *args, **kwargs):
     return result[0]
 
 
-def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict[str, Any]] = None) -> str:
-    """Send prompt to OpenAI endpoint and return response."""
+def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict[str, Any]] = None, tools: Optional[List[Dict[str, Any]]] = None) -> str:
+    """Send prompt to OpenAI endpoint and return response.
+    
+    Args:
+        prompt: The user prompt to send
+        verbose: If True, print model and backend info
+        previous_messages: List of previous message dicts for conversation context
+        tools: Optional list of tool schemas to pass. If None, uses all available tools.
+               If an empty list, no tools are passed.
+    """
     base_url, api_key, model = get_env_config()
     
     # Create OpenAI client - base_url can be None for standard OpenAI
@@ -138,8 +146,11 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
         base_url=base_url
     )
     
-    # Get available tools
-    tools_schemas = get_all_tool_schemas() if TOOLS_AVAILABLE else []
+    # Get available tools if not explicitly provided
+    if tools is None:
+        tools_schemas = get_all_tool_schemas() if TOOLS_AVAILABLE else []
+    else:
+        tools_schemas = tools
     
     console = Console()
 

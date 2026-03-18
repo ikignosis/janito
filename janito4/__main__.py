@@ -247,6 +247,7 @@ Options:
   --list-auth        List configured providers and keys
   --list-tools       List all available tools and their descriptions
   --debug            Enable debug output (shows configuration loading info)
+  -Z, --no-system-prompt  Do not set a system prompt or pass any tools to the CLI
 
 Examples:
   janito4 "What is the capital of France?"                    # Single prompt mode
@@ -277,6 +278,12 @@ Examples:
         "--debug",
         action="store_true",
         help="Enable debug output (shows configuration loading info)"
+    )
+    
+    parser.add_argument(
+        "-Z", "--no-system-prompt",
+        action="store_true",
+        help="Do not set a system prompt (send user prompt directly)"
     )
     
     parser.add_argument(
@@ -549,7 +556,11 @@ Examples:
         restart_requested = False
         do_it_requested = False
 
-        messages_history = [{"role": "system", "content": SYSTEM_PROMPT}]
+        # Initialize messages history (with or without system prompt based on -Z flag)
+        if args.no_system_prompt:
+            messages_history = []
+        else:
+            messages_history = [{"role": "system", "content": SYSTEM_PROMPT}]
         
         # Create key bindings
         kb = KeyBindings()
@@ -626,7 +637,8 @@ Examples:
                         continue
                     
                     if user_input.strip():
-                        response = send_prompt(user_input, verbose=args.verbose, previous_messages=messages_history)
+                        tools_to_use = [] if args.no_system_prompt else None
+                        response = send_prompt(user_input, verbose=args.verbose, previous_messages=messages_history, tools=tools_to_use)
                         # Add the user message and AI response to history
                         messages_history.append({"role": "user", "content": user_input})
                         if response:
@@ -654,10 +666,16 @@ Examples:
         print("Error: Empty prompt provided.", file=sys.stderr)
         sys.exit(1)
     
-    messages_history = [{"role": "system", "content": SYSTEM_PROMPT}]
+    # Initialize messages history (with or without system prompt based on -Z flag)
+    if args.no_system_prompt:
+        messages_history = []
+        tools_to_use = []
+    else:
+        messages_history = [{"role": "system", "content": SYSTEM_PROMPT}]
+        tools_to_use = None
 
     try:
-        send_prompt(prompt, verbose=args.verbose, previous_messages=messages_history)
+        send_prompt(prompt, verbose=args.verbose, previous_messages=messages_history, tools=tools_to_use)
     except KeyboardInterrupt:
         print("\nOperation cancelled by user.", file=sys.stderr)
         sys.exit(130)
