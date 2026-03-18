@@ -167,6 +167,8 @@ Examples:
         model = os.getenv("OPENAI_MODEL")
         
         print("Starting interactive chat session. Type 'exit' or 'quit' to end the session, 'restart' to clear conversation history.")
+        print("Special commands:")
+        print("  !<command>       - Execute shell command directly (e.g., !dir, !git status)")
         print("Key bindings: F2 = restart conversation, F12 = Do It (auto-execute)")
         
         messages_history: List[Dict[str, Any]] = []
@@ -220,6 +222,32 @@ Examples:
                         messages_history.clear()
                         print("Conversation history cleared. Starting fresh conversation.")
                         continue
+                    
+                    # Handle !cmd for direct shell execution
+                    if user_input.startswith('!'):
+                        cmd = user_input[1:].strip()
+                        if cmd:
+                            print(f"[Shell] Executing: {cmd}")
+                            import subprocess
+                            try:
+                                result = subprocess.run(
+                                    cmd, 
+                                    shell=True, 
+                                    capture_output=True, 
+                                    text=True,
+                                    timeout=60
+                                )
+                                if result.stdout:
+                                    print(result.stdout)
+                                if result.stderr:
+                                    print(result.stderr, file=sys.stderr)
+                                print(f"[Shell] Exit code: {result.returncode}")
+                            except subprocess.TimeoutExpired:
+                                print("[Shell] Command timed out after 60 seconds", file=sys.stderr)
+                            except Exception as e:
+                                print(f"[Shell] Error: {e}", file=sys.stderr)
+                        continue
+                    
                     if user_input.strip():
                         response = send_prompt(user_input, verbose=args.verbose, previous_messages=messages_history)
                         # Add the user message and AI response to history
