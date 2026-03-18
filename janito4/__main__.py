@@ -70,13 +70,16 @@ def load_provider_from_config():
         return None
 
 
-def setup_api_key_from_config():
+def setup_api_key_from_config(debug: bool = False):
     """Load API key from auth config if environment variable is not set.
     
     Priority:
     1. Provider from config.json (highest)
     2. Default provider from auth.json
     3. Fallback to 'openai'
+    
+    Args:
+        debug: If True, print debug messages
     """
     if not os.getenv("OPENAI_API_KEY"):
         # Try to determine which provider to use
@@ -86,6 +89,8 @@ def setup_api_key_from_config():
         config_provider = load_provider_from_config()
         if config_provider:
             provider = config_provider
+            if debug:
+                print(f"[DEBUG] Provider from config.json: {provider}")
         else:
             # 2. Check auth.json for default provider
             try:
@@ -96,9 +101,13 @@ def setup_api_key_from_config():
             default_provider = get_default_provider()
             if default_provider:
                 provider = default_provider
+                if debug:
+                    print(f"[DEBUG] Provider from auth.json (default): {provider}")
             else:
                 # 3. Fall back to 'openai'
                 provider = "openai"
+                if debug:
+                    print(f"[DEBUG] Using default provider: {provider}")
         
         # Try to load API key for the determined provider
         try:
@@ -109,7 +118,16 @@ def setup_api_key_from_config():
         api_key = get_api_key(provider)
         if api_key:
             os.environ["OPENAI_API_KEY"] = api_key
+            if debug:
+                print(f"[DEBUG] API key loaded from config for provider: {provider}")
             return True
+        else:
+            if debug:
+                print(f"[DEBUG] No API key found for provider: {provider}")
+    else:
+        if debug:
+            print(f"[DEBUG] API key already set from environment variable")
+    
     return False
 
 
@@ -131,6 +149,82 @@ def load_model_from_config():
         return None
 
 
+def get_masked_api_key(api_key: str) -> str:
+    """Mask an API key to show only first and last few characters.
+    
+    Args:
+        api_key: The API key to mask
+        
+    Returns:
+        str: Masked API key showing first 6 and last 4 characters
+    """
+    if not api_key:
+        return "(not set)"
+    if len(api_key) <= 12:
+        return "***"
+    return f"{api_key[:6]}...{api_key[-4:]}"
+
+
+def get_active_provider() -> str:
+    """Determine the active provider based on config and environment.
+    
+    Returns:
+        str: The active provider name
+    """
+    # 1. First check config.json for provider
+    config_provider = load_provider_from_config()
+    if config_provider:
+        return config_provider
+    
+    # 2. Check auth.json for default provider
+    try:
+        from .auth_config import get_default_provider
+    except ImportError:
+        from auth_config import get_default_provider
+    
+    default_provider = get_default_provider()
+    if default_provider:
+        return default_provider
+    
+    # 3. Fall back to 'openai'
+    return "openai"
+
+
+def print_info():
+    """Print current configuration info (provider, base_url, masked API key)."""
+    provider = get_active_provider()
+    api_key = os.getenv("OPENAI_API_KEY", "")
+    masked_key = get_masked_api_key(api_key)
+    
+    # Determine the actual base URL that will be used
+    base_url = os.getenv("OPENAI_BASE_URL")
+    if not base_url:
+        # Try to get base URL from provider configuration
+        try:
+            from .provider_config import get_base_url_from_provider
+            base_url = get_base_url_from_provider(provider)
+        except ImportError:
+            from provider_config import get_base_url_from_provider
+            base_url = get_base_url_from_provider(provider)
+        
+        if base_url:
+            base_url_display = f"{base_url} (from provider: {provider})"
+        else:
+            base_url_display = "(default OpenAI URL)"
+    else:
+        base_url_display = base_url
+    
+    print()
+    print("=" * 50)
+    print("Configuration Info")
+    print("=" * 50)
+    print(f"  Provider:    {provider}")
+    print(f"  Base URL:   {base_url_display}")
+    print(f"  API Key:    {masked_key}")
+    print("=" * 50)
+    print()
+
+
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
@@ -149,8 +243,10 @@ Configuration:
 Options:
   --set-api-key KEY  Set API key for the specified provider
   --provider NAME    Provider name (e.g., openai, anthropic, azure)
+  --model NAME       Model name to use (overrides OPENAI_MODEL env var and config)
   --list-auth        List configured providers and keys
   --list-tools       List all available tools and their descriptions
+  --debug            Enable debug output (shows configuration loading info)
 
 Examples:
   janito4 "What is the capital of France?"                    # Single prompt mode
@@ -160,6 +256,8 @@ Examples:
   janito4 --set-api-key xxx --provider anthropic             # Store API key for provider
   janito4 --list-auth                                        # Show configured providers
   janito4 --list-tools                                       # List available tools
+  janito4 --model gpt-4 "Your prompt"                        # Use specific model
+  janito4 --debug                                           # Enable debug output
         """
     )
     
@@ -176,6 +274,12 @@ Examples:
     )
     
     parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug output (shows configuration loading info)"
+    )
+    
+    parser.add_argument(
         "--list-tools",
         action="store_true",
         help="List all available tools and exit"
@@ -185,6 +289,12 @@ Examples:
         "--set-api-key",
         metavar="KEY",
         help="Set API key for the specified provider (requires --provider)"
+    )
+    
+    parser.add_argument(
+        "--model",
+        metavar="NAME",
+        help="Model name to use for completions (overrides OPENAI_MODEL env var and config)"
     )
     
     parser.add_argument(
@@ -315,13 +425,28 @@ Examples:
         return
     
     # Try to load API key from config if not set in environment
-    setup_api_key_from_config()
+    setup_api_key_from_config(debug=args.debug)
     
-    # Try to load model from config if not set in environment
-    if not os.getenv("OPENAI_MODEL"):
+    # Handle model selection with priority: CLI arg > env var > config
+    # 1. First, check if --model was passed on command line (highest priority)
+    if args.model:
+        os.environ["OPENAI_MODEL"] = args.model
+        if args.debug:
+            print(f"[DEBUG] Model from CLI argument: {args.model}")
+    # 2. Then check environment variable
+    elif not os.getenv("OPENAI_MODEL"):
+        # 3. Finally, check config file
         config_model = load_model_from_config()
         if config_model:
             os.environ["OPENAI_MODEL"] = config_model
+            if args.debug:
+                print(f"[DEBUG] Model from config file: {config_model}")
+        else:
+            if args.debug:
+                print(f"[DEBUG] No model configured (will fail validation)")
+    else:
+        if args.debug:
+            print(f"[DEBUG] Model from environment variable: {os.getenv('OPENAI_MODEL')}")
     
     # Validate required environment variables at startup
     missing_vars = []
@@ -337,46 +462,6 @@ Examples:
         print("\nAlternatively, you can store your API key using:", file=sys.stderr)
         print(f"  janito4 --set-api-key <your-key> --provider openai", file=sys.stderr)
         sys.exit(1)
-    
-    parser = argparse.ArgumentParser(
-        description="OpenAI CLI - Send prompts to OpenAI-compatible endpoints",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Environment Variables:
-  OPENAI_BASE_URL    - Base URL of the OpenAI-compatible API endpoint (optional for standard OpenAI)
-  OPENAI_API_KEY     - API key for authentication  
-  OPENAI_MODEL       - Model name to use for completions
-
-Options:
-  --list-tools       List all available tools and their descriptions
-
-Examples:
-  python -m janito4 "What is the capital of France?"  # Single prompt mode
-  echo "Tell me a joke" | python -m janito4           # Pipe input mode
-  python -m janito4                                 # Interactive chat mode
-  python -m janito4 --list-tools                     # List available tools
-        """
-    )
-    
-    parser.add_argument(
-        "prompt", 
-        nargs="?", 
-        help="The prompt to send to the AI (if not provided, starts interactive chat)"
-    )
-    
-    parser.add_argument(
-        "-v", "--verbose",
-        action="store_true",
-        help="Enable verbose output (shows model and backend info)"
-    )
-    
-    parser.add_argument(
-        "--list-tools",
-        action="store_true",
-        help="List all available tools and exit"
-    )
-    
-    args = parser.parse_args()
     
     # Handle --list-tools option
     if args.list_tools:
@@ -457,6 +542,7 @@ Examples:
         print("Starting interactive chat session. Type 'exit' or 'quit' to end the session, 'restart' to clear conversation history.")
         print("Special commands:")
         print("  !<command>       - Execute shell command directly (e.g., !dir, !git status)")
+        print("  /config        - Show current provider, base URL, and masked API key")
         print("Key bindings: F2 = restart conversation, F12 = Do It (auto-execute)")
         
         messages_history: List[Dict[str, Any]] = []
@@ -509,6 +595,9 @@ Examples:
                     if user_input.lower() == 'restart':
                         messages_history.clear()
                         print("Conversation history cleared. Starting fresh conversation.")
+                        continue
+                    if user_input.lower() == '/config':
+                        print_info()
                         continue
                     
                     # Handle !cmd for direct shell execution

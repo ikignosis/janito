@@ -42,12 +42,12 @@ except ImportError:
             return None
 
 
-def get_env_vars() -> Tuple[Optional[str], str, str]:
+def get_env_config() -> Tuple[Optional[str], str, str]:
     """
     Retrieve required environment variables.
     
     When OPENAI_BASE_URL is not defined, attempts to determine it based on
-    the OPENAI_PROVIDER environment variable (if set).
+    the OPENAI_PROVIDER environment variable (if set) or provider from config.
     
     Returns:
         Tuple of (base_url, api_key, model)
@@ -63,8 +63,34 @@ def get_env_vars() -> Tuple[Optional[str], str, str]:
         raise ValueError("OPENAI_MODEL environment variable is required")
     
     # If base_url is not set, try to determine it from the provider
-    if not base_url and AUTH_CONFIG_AVAILABLE:
+    if not base_url and PROVIDER_CONFIG_AVAILABLE:
         provider = os.getenv("OPENAI_PROVIDER")
+        if not provider:
+            # Try to get provider from config - use same logic as get_active_provider in __main__
+            # First check config.json (highest priority)
+            try:
+                from pathlib import Path
+                import json
+                config_path = Path.home() / ".janito" / "config.json"
+                if config_path.exists():
+                    with open(config_path, 'r') as f:
+                        config = json.load(f)
+                        provider = config.get("provider")
+            except Exception:
+                pass
+            
+            # If not in config.json, check auth.json for default provider
+            if not provider:
+                try:
+                    from ..auth_config import get_default_provider
+                    provider = get_default_provider()
+                except ImportError:
+                    try:
+                        from auth_config import get_default_provider
+                        provider = get_default_provider()
+                    except ImportError:
+                        pass
+        
         if provider:
             base_url = get_base_url_from_provider(provider)
     
@@ -104,7 +130,7 @@ def _run_with_progress_bar(func, *args, **kwargs):
 
 def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict[str, Any]] = None) -> str:
     """Send prompt to OpenAI endpoint and return response."""
-    base_url, api_key, model = get_env_vars()
+    base_url, api_key, model = get_env_config()
     
     # Create OpenAI client - base_url can be None for standard OpenAI
     client = OpenAI(
