@@ -41,6 +41,9 @@ except ImportError:
         def get_base_url_from_provider(provider: str) -> Optional[str]:
             return None
 
+# Import general configuration handling
+from janito4.general_config import load_provider_from_config, load_context_window_size
+
 
 def get_env_config() -> Tuple[Optional[str], str, str]:
     """
@@ -66,18 +69,7 @@ def get_env_config() -> Tuple[Optional[str], str, str]:
     if not base_url and PROVIDER_CONFIG_AVAILABLE:
         provider = os.getenv("OPENAI_PROVIDER")
         if not provider:
-            # Try to get provider from config - use same logic as get_active_provider in __main__
-            # First check config.json (highest priority)
-            try:
-                from pathlib import Path
-                import json
-                config_path = Path.home() / ".janito" / "config.json"
-                if config_path.exists():
-                    with open(config_path, 'r') as f:
-                        config = json.load(f)
-                        provider = config.get("provider")
-            except Exception:
-                pass
+            provider = load_provider_from_config()
             
             # If not in config.json, check auth.json for default provider
             if not provider:
@@ -152,6 +144,9 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
     else:
         tools_schemas = tools
     
+    # Load context window size from general config if set
+    context_window_size = load_context_window_size()
+    
     console = Console()
 
     # Print model and backend info only in verbose mode
@@ -167,22 +162,29 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
     messages.append({"role": "user", "content": prompt})
     
     while True:
+        # Build the base call parameters
+        call_kwargs = {
+            "model": model,
+            "messages": messages,
+            "temperature": 1.0,
+        }
+        
+        # Add max_tokens if context window size is set in config
+        if context_window_size is not None:
+            call_kwargs["max_tokens"] = context_window_size
+        
         # Make API call with tools if available
         if tools_schemas:
             response = _run_with_progress_bar(
                 client.chat.completions.create,
-                model=model,
-                messages=messages,
-                temperature=1.0,
+                **call_kwargs,
                 tools=tools_schemas,
                 tool_choice="auto"
             )
         else:
             response = _run_with_progress_bar(
                 client.chat.completions.create,
-                model=model,
-                messages=messages,
-                temperature=1.0
+                **call_kwargs
             )
         
         message = response.choices[0].message

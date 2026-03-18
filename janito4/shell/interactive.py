@@ -9,6 +9,7 @@ from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.formatted_text import HTML
+from prompt_toolkit.styles import Style
 
 if TYPE_CHECKING:
     from .cmds import CmdHandler
@@ -29,6 +30,7 @@ class InteractiveShell:
         self.messages_history: List[Dict[str, Any]] = []
         self.restart_requested = False
         self.do_it_requested = False
+        self.exit_requested = False
         self.session = self._create_session()
         
         # Auto-load registered commands if not provided
@@ -37,6 +39,36 @@ class InteractiveShell:
             self.commands = get_registered_commands()
         else:
             self.commands = commands
+    
+    def _get_bottom_toolbar(self) -> list:
+        """Get the bottom toolbar content."""
+        tokens = []
+        
+        # Messages count
+        msg_count = len([m for m in self.messages_history if m.get("role") != "system"])
+        tokens.append(("class:msg_count", f" msgs: {msg_count} "))
+        
+        # Model info
+        tokens.append(("class:model", f" model: {self.model} "))
+        
+        # Keyboard shortcuts
+        tokens.append(("", " │ "))
+        tokens.append(("class:key-label", "[F2] restart "))
+        tokens.append(("class:key-label", "[F12] do-it "))
+        tokens.append(("class:key-label", "[/exit] end "))
+        tokens.append(("class:key-label", "[!cmd] shell "))
+        
+        # Provider info (if available)
+        try:
+            from janito4.general_config import get_active_provider
+            provider = get_active_provider()
+            if provider:
+                tokens.append(("", " │ "))
+                tokens.append(("class:provider", f" provider: {provider} "))
+        except Exception:
+            pass
+        
+        return tokens
     
     def _create_session(self) -> PromptSession:
         """Create and configure the prompt_toolkit session."""
@@ -54,7 +86,34 @@ class InteractiveShell:
             self.do_it_requested = True
             event.app.exit(result="Do It")
         
-        return PromptSession(history=InMemoryHistory(), key_bindings=kb)
+        # Style for the chat shell
+        chat_shell_style = Style.from_dict(
+            {
+                "prompt": "bg:#2323af #ffffff bold",
+                "": "bg:#005fdd #ffffff",  # blue background for input area
+                "bottom-toolbar": "fg:#232323 bg:#f0f0f0",
+                "key-label": "bg:#ff9500 fg:#232323 bold",
+                "provider": "fg:#117fbf",
+                "model": "fg:#1f5fa9",
+                "role": "fg:#e87c32 bold",
+                "msg_count": "fg:#5454dd",
+                "session_id": "fg:#704ab9",
+                "tokens_total": "fg:#a022c7",
+                "tokens_in": "fg:#00af5f",
+                "tokens_out": "fg:#01814a",
+                "max-tokens": "fg:#888888",
+                "key-toggle-on": "bg:#ffd700 fg:#232323 bold",
+                "key-toggle-off": "bg:#444444 fg:#ffffff bold",
+                "cmd-label": "bg:#ff9500 fg:#232323 bold",
+            }
+        )
+        
+        return PromptSession(
+            history=InMemoryHistory(),
+            key_bindings=kb,
+            style=chat_shell_style,
+            bottom_toolbar=lambda: self._get_bottom_toolbar(),
+        )
     
     def initialize_history(self, system_prompt: Optional[str] = None) -> None:
         """
@@ -89,8 +148,9 @@ class InteractiveShell:
             while True:
                 self.restart_requested = False
                 self.do_it_requested = False
+                self.exit_requested = False
                 
-                # Use HTML formatting to apply dark blue background to prompt
+                # Use HTML formatting for prompt
                 prompt_text = HTML(f'<style bg="#00008b">{self.model} # </style>')
                 user_input = self.session.prompt(prompt_text)
                 
@@ -102,11 +162,11 @@ class InteractiveShell:
                 # Check if F2 was pressed (restart requested)
                 if self.restart_requested:
                     self.messages_history.clear()
-                    print("\n[Keybinding F2] Conversation history cleared. Starting fresh conversation.")
+                    # Clear screen before printing the message
+                    print('\033[2J\033[H', end='')
+                    print("[Keybinding F2] Conversation history cleared. Starting fresh conversation.")
                     continue
                 
-                if user_input.lower() in ['exit', 'quit']:
-                    break
                 if user_input.lower() == 'restart':
                     self.messages_history.clear()
                     print("Conversation history cleared. Starting fresh conversation.")
@@ -119,6 +179,9 @@ class InteractiveShell:
                         command_handled = True
                         break
                 if command_handled:
+                    # Check if exit was requested via a command
+                    if self.exit_requested:
+                        break
                     continue
                 
                 # Handle !cmd for direct shell execution

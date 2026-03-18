@@ -22,7 +22,6 @@ import os
 import sys
 import json
 import argparse
-from pathlib import Path
 from typing import List, Dict, Any
 from .system_prompt import SYSTEM_PROMPT
 
@@ -45,26 +44,17 @@ except ImportError:
         get_auth_file_path, list_providers
     )
 
+# Import general configuration handling
+from janito4.general_config import (
+    load_provider_from_config, load_model_from_config,
+    get_active_provider, get_config_path,
+    set_config_value, get_config_value,
+    get_config_from_cli, set_config_from_cli,
+    unset_config_value
+)
+
 # Import interactive shell
 from .shell import InteractiveShell
-
-
-def load_provider_from_config():
-    """Load provider name from ~/.janito/config.json if it exists.
-    
-    Returns:
-        str: Provider name from config, or None if not found
-        
-    Raises:
-        json.JSONDecodeError: If config file contains invalid JSON
-    """
-    config_path = Path.home() / ".janito" / "config.json"
-    try:
-        with open(config_path, 'r') as f:
-            config = json.load(f)
-            return config.get("provider")
-    except FileNotFoundError:
-        return None
 
 
 def setup_api_key_from_config(debug: bool = False):
@@ -128,24 +118,6 @@ def setup_api_key_from_config(debug: bool = False):
     return False
 
 
-def load_model_from_config():
-    """Load model name from ~/.janito/config.json if it exists.
-    
-    Returns:
-        str: Model name from config, or None if not found
-        
-    Raises:
-        json.JSONDecodeError: If config file contains invalid JSON
-    """
-    config_path = Path.home() / ".janito" / "config.json"
-    try:
-        with open(config_path, 'r') as f:
-            config = json.load(f)
-            return config.get("model")
-    except FileNotFoundError:
-        return None
-
-
 def get_masked_api_key(api_key: str) -> str:
     """Mask an API key to show only first and last few characters.
     
@@ -160,31 +132,6 @@ def get_masked_api_key(api_key: str) -> str:
     if len(api_key) <= 12:
         return "***"
     return f"{api_key[:6]}...{api_key[-4:]}"
-
-
-def get_active_provider() -> str:
-    """Determine the active provider based on config and environment.
-    
-    Returns:
-        str: The active provider name
-    """
-    # 1. First check config.json for provider
-    config_provider = load_provider_from_config()
-    if config_provider:
-        return config_provider
-    
-    # 2. Check auth.json for default provider
-    try:
-        from .auth_config import get_default_provider
-    except ImportError:
-        from auth_config import get_default_provider
-    
-    default_provider = get_default_provider()
-    if default_provider:
-        return default_provider
-    
-    # 3. Fall back to 'openai'
-    return "openai"
 
 
 def main():
@@ -220,6 +167,9 @@ Examples:
   janito4 --list-auth                                        # Show configured providers
   janito4 --list-tools                                       # List available tools
   janito4 --model gpt-4 "Your prompt"                        # Use specific model
+  janito4 --set model=gpt-4                                  # Set config value
+  janito4 --unset model                                      # Remove config value
+  janito4 --get model                                        # Get config value
   janito4 --debug                                           # Enable debug output
         """
     )
@@ -287,6 +237,12 @@ Examples:
     )
     
     parser.add_argument(
+        "--unset",
+        metavar="KEY",
+        help="Remove a config key from ~/.janito/config.json (e.g., --unset model)"
+    )
+    
+    parser.add_argument(
         "--get",
         metavar="KEY",
         help="Get a config value from ~/.janito/config.json"
@@ -296,18 +252,15 @@ Examples:
     
     # Handle --get option
     if args.get:
-        config_path = Path.home() / ".janito" / "config.json"
         try:
-            with open(config_path, 'r') as f:
-                config = json.load(f)
-            value = config.get(args.get)
+            value = get_config_from_cli(args.get)
             if value is not None:
                 print(value)
             else:
                 print(f"Key '{args.get}' not found in config", file=sys.stderr)
                 sys.exit(1)
         except FileNotFoundError:
-            print(f"Config file not found: {config_path}", file=sys.stderr)
+            print(f"Config file not found: {get_config_path()}", file=sys.stderr)
             sys.exit(1)
         except json.JSONDecodeError as e:
             print(f"Invalid JSON in config file: {e}", file=sys.stderr)
@@ -316,37 +269,22 @@ Examples:
     
     # Handle --set option
     if args.set:
-        if '=' not in args.set:
-            print("Error: --set requires KEY=VALUE format", file=sys.stderr)
+        try:
+            key, value = set_config_from_cli(args.set)
+            print(f"[OK] Set {key}={value} in {get_config_path()}")
+        except ValueError as e:
+            print(f"Error: {e}", file=sys.stderr)
             print("Usage: janito4 --set model=gpt-4", file=sys.stderr)
             sys.exit(1)
-        
-        key, value = args.set.split('=', 1)
-        key = key.strip()
-        value = value.strip()
-        
-        config_path = Path.home() / ".janito" / "config.json"
-        
-        # Load existing config or create new one
-        config = {}
-        try:
-            if config_path.exists():
-                with open(config_path, 'r') as f:
-                    config = json.load(f)
-        except json.JSONDecodeError as e:
-            print(f"Warning: Invalid JSON in config file, overwriting: {e}", file=sys.stderr)
-        
-        # Update config
-        config[key] = value
-        
-        # Ensure directory exists
-        config_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        # Write config
-        with open(config_path, 'w') as f:
-            json.dump(config, f, indent=2)
-        
-        print(f"[OK] Set {key}={value} in {config_path}")
+        return
+    
+    # Handle --unset option
+    if args.unset:
+        if unset_config_value(args.unset):
+            print(f"[OK] Removed '{args.unset}' from {get_config_path()}")
+        else:
+            print(f"Key '{args.unset}' not found in config", file=sys.stderr)
+            sys.exit(1)
         return
     
     # Handle --list-auth option
@@ -508,7 +446,7 @@ Examples:
         # Get model name for the prompt (already validated at startup)
         model = os.getenv("OPENAI_MODEL")
         
-        print("Starting interactive chat session. Type 'exit' or 'quit' to end the session, 'restart' to clear conversation history.")
+        print("Starting interactive chat session. Type '/exit' to end the session, 'restart' to clear conversation history.")
         print("Special commands:")
         print("  !<command>       - Execute shell command directly (e.g., !dir, !git status)")
         print("  /config        - Show current provider, base URL, and masked API key")
