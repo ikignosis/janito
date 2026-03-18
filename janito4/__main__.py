@@ -45,11 +45,8 @@ except ImportError:
         get_auth_file_path, list_providers
     )
 
-from prompt_toolkit import PromptSession
-from prompt_toolkit.history import InMemoryHistory
-from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.key_binding.key_processor import KeyPressEvent
-from prompt_toolkit.formatted_text import HTML
+# Import interactive shell
+from .shell import InteractiveShell
 
 
 def load_provider_from_config():
@@ -188,41 +185,6 @@ def get_active_provider() -> str:
     
     # 3. Fall back to 'openai'
     return "openai"
-
-
-def print_info():
-    """Print current configuration info (provider, base_url, masked API key)."""
-    provider = get_active_provider()
-    api_key = os.getenv("OPENAI_API_KEY", "")
-    masked_key = get_masked_api_key(api_key)
-    
-    # Determine the actual base URL that will be used
-    base_url = os.getenv("OPENAI_BASE_URL")
-    if not base_url:
-        # Try to get base URL from provider configuration
-        try:
-            from .provider_config import get_base_url_from_provider
-            base_url = get_base_url_from_provider(provider)
-        except ImportError:
-            from provider_config import get_base_url_from_provider
-            base_url = get_base_url_from_provider(provider)
-        
-        if base_url:
-            base_url_display = f"{base_url} (from provider: {provider})"
-        else:
-            base_url_display = "(default OpenAI URL)"
-    else:
-        base_url_display = base_url
-    
-    print()
-    print("=" * 50)
-    print("Configuration Info")
-    print("=" * 50)
-    print(f"  Provider:    {provider}")
-    print(f"  Base URL:   {base_url_display}")
-    print(f"  API Key:    {masked_key}")
-    print("=" * 50)
-    print()
 
 
 def main():
@@ -552,111 +514,15 @@ Examples:
         print("  /config        - Show current provider, base URL, and masked API key")
         print("Key bindings: F2 = restart conversation, F12 = Do It (auto-execute)")
         
-        messages_history: List[Dict[str, Any]] = []
-        restart_requested = False
-        do_it_requested = False
-
-        # Initialize messages history (with or without system prompt based on -Z flag)
-        if args.no_system_prompt:
-            messages_history = []
-        else:
-            messages_history = [{"role": "system", "content": SYSTEM_PROMPT}]
+        # Initialize and run the interactive shell
+        shell = InteractiveShell(model=model)
+        shell.initialize_history(system_prompt=None if args.no_system_prompt else SYSTEM_PROMPT)
+        shell.run(
+            send_prompt_func=send_prompt,
+            verbose=args.verbose,
+            no_tools=args.no_system_prompt
+        )
         
-        # Create key bindings
-        kb = KeyBindings()
-        
-        @kb.add('f2')
-        def restart_chat(event: KeyPressEvent) -> None:
-            """Handle F2 key to restart conversation."""
-            nonlocal restart_requested
-            restart_requested = True
-            event.app.exit(result=None)  # Exit the current prompt
-        
-        @kb.add('f12')
-        def do_it_action(event: KeyPressEvent) -> None:
-            """Handle F12 key to trigger 'Do It' auto-execution."""
-            nonlocal do_it_requested
-            do_it_requested = True
-            event.app.exit(result="Do It")  # Return special value to trigger auto-execution
-        
-        session = PromptSession(history=InMemoryHistory(), key_bindings=kb)
-        
-        try:
-            while True:
-                try:
-                    restart_requested = False
-                    do_it_requested = False
-                    # Use HTML formatting to apply dark blue background to prompt
-                    prompt_text = HTML(f'<style bg="#00008b">{model} # </style>')
-                    user_input = session.prompt(prompt_text)
-                    
-                    # Check if F12 was pressed (Do It requested)
-                    if do_it_requested:
-                        print("\n[Keybinding F12] 'Do It' to continue existing plan...")
-                        user_input = "Do It"  # Set input to trigger the action
-                    
-                    # Check if F2 was pressed (restart requested)
-                    if restart_requested:
-                        messages_history.clear()
-                        print("\n[Keybinding F2] Conversation history cleared. Starting fresh conversation.")
-                        continue
-                    
-                    if user_input.lower() in ['exit', 'quit']:
-                        break
-                    if user_input.lower() == 'restart':
-                        messages_history.clear()
-                        print("Conversation history cleared. Starting fresh conversation.")
-                        continue
-                    if user_input.lower() == '/config':
-                        print_info()
-                        continue
-                    
-                    # Handle !cmd for direct shell execution
-                    if user_input.startswith('!'):
-                        cmd = user_input[1:].strip()
-                        if cmd:
-                            print(f"[Shell] Executing: {cmd}")
-                            import subprocess
-                            try:
-                                result = subprocess.run(
-                                    cmd, 
-                                    shell=True, 
-                                    capture_output=True, 
-                                    text=True,
-                                    timeout=60
-                                )
-                                if result.stdout:
-                                    print(result.stdout)
-                                if result.stderr:
-                                    print(result.stderr, file=sys.stderr)
-                                print(f"[Shell] Exit code: {result.returncode}")
-                            except subprocess.TimeoutExpired:
-                                print("[Shell] Command timed out after 60 seconds", file=sys.stderr)
-                            except Exception as e:
-                                print(f"[Shell] Error: {e}", file=sys.stderr)
-                        continue
-                    
-                    if user_input.strip():
-                        tools_to_use = [] if args.no_system_prompt else None
-                        response = send_prompt(user_input, verbose=args.verbose, previous_messages=messages_history, tools=tools_to_use)
-                        # Add the user message and AI response to history
-                        messages_history.append({"role": "user", "content": user_input})
-                        if response:
-                            messages_history.append({"role": "assistant", "content": response})
-                except KeyboardInterrupt:
-                    # Prompt user for confirmation to quit
-                    try:
-                        confirm = session.prompt("\nDo you want to quit the conversation? (y/n): ")
-                        if confirm.lower().strip() in ['y', 'yes']:
-                            raise EOFError()  # Use EOFError to trigger graceful exit
-                        # If user says no, continue the loop
-                        continue
-                    except (KeyboardInterrupt, EOFError):
-                        # If user presses Ctrl+C or Ctrl+D during confirmation, just exit
-                        raise EOFError()
-        except EOFError:
-            pass  # Handle Ctrl+D gracefully
-        print("\nChat session ended.")
         return
     
     # Handle single prompt mode
