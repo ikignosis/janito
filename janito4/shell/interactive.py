@@ -44,19 +44,8 @@ class InteractiveShell:
         """Get the bottom toolbar content."""
         tokens = []
         
-        # Messages count
-        msg_count = len([m for m in self.messages_history if m.get("role") != "system"])
-        tokens.append(("class:msg_count", f" msgs: {msg_count} "))
-        
         # Model info
         tokens.append(("class:model", f" model: {self.model} "))
-        
-        # Keyboard shortcuts
-        tokens.append(("", " │ "))
-        tokens.append(("class:key-label", "[F2] restart "))
-        tokens.append(("class:key-label", "[F12] do-it "))
-        tokens.append(("class:key-label", "[/exit] end "))
-        tokens.append(("class:key-label", "[!cmd] shell "))
         
         # Provider info (if available)
         try:
@@ -67,6 +56,13 @@ class InteractiveShell:
                 tokens.append(("class:provider", f" provider: {provider} "))
         except Exception:
             pass
+        
+        # Keyboard shortcuts
+        tokens.append(("", " │ "))
+        tokens.append(("class:key-label", "[F2] restart "))
+        tokens.append(("class:key-label", "[F12] do-it "))
+        tokens.append(("class:key-label", "[/exit] end "))
+        tokens.append(("class:key-label", "[!cmd] shell "))
         
         return tokens
     
