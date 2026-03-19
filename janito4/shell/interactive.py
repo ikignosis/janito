@@ -140,92 +140,96 @@ class InteractiveShell:
         import sys
         import subprocess
         
-        try:
-            while True:
-                self.restart_requested = False
-                self.do_it_requested = False
-                self.exit_requested = False
-                
-                # Use HTML formatting for prompt
-                prompt_text = HTML(f'<style bg="#00008b">{self.model} # </style>')
-                user_input = self.session.prompt(prompt_text)
-                
-                # Check if F12 was pressed (Do It requested)
-                if self.do_it_requested:
-                    print("\n[Keybinding F12] 'Do It' to continue existing plan...")
-                    user_input = "Do It"
-                
-                # Check if F2 was pressed (restart requested)
-                if self.restart_requested:
-                    self.messages_history.clear()
-                    # Clear screen before printing the message
-                    print('\033[2J\033[H', end='')
-                    print("[Keybinding F2] Conversation history cleared. Starting fresh conversation.")
-                    continue
-                
-                if user_input.lower() == 'restart':
-                    self.messages_history.clear()
-                    print("Conversation history cleared. Starting fresh conversation.")
-                    continue
-                
-                # Handle registered commands
-                command_handled = False
-                for cmd_handler in self.commands:
-                    if cmd_handler.handle(self, user_input):
-                        command_handled = True
-                        break
-                if command_handled:
-                    # Check if exit was requested via a command
-                    if self.exit_requested:
-                        break
-                    continue
-                
-                # Handle !cmd for direct shell execution
-                if user_input.startswith('!'):
-                    cmd = user_input[1:].strip()
-                    if cmd:
-                        print(f"[Shell] Executing: {cmd}")
-                        try:
-                            result = subprocess.run(
-                                cmd,
-                                shell=True,
-                                capture_output=True,
-                                text=True,
-                                timeout=60
-                            )
-                            if result.stdout:
-                                print(result.stdout)
-                            if result.stderr:
-                                print(result.stderr, file=sys.stderr)
-                            print(f"[Shell] Exit code: {result.returncode}")
-                        except subprocess.TimeoutExpired:
-                            print("[Shell] Command timed out after 60 seconds", file=sys.stderr)
-                        except Exception as e:
-                            print(f"[Shell] Error: {e}", file=sys.stderr)
-                    continue
-                
-                if user_input.strip():
-                    tools_to_use = [] if no_tools else None
-                    response = send_prompt_func(
-                        user_input,
-                        verbose=verbose,
-                        previous_messages=self.messages_history,
-                        tools=tools_to_use
-                    )
-                    # Add the user message and AI response to history
-                    self.messages_history.append({"role": "user", "content": user_input})
-                    if response:
-                        self.messages_history.append({"role": "assistant", "content": response})
-        
-        except KeyboardInterrupt:
-            # Prompt user for confirmation to quit
+        while True:
+            self.restart_requested = False
+            self.do_it_requested = False
+            self.exit_requested = False
+            
+            # Use HTML formatting for prompt
+            prompt_text = HTML(f'<style bg="#00008b">{self.model} # </style>')
+            
             try:
-                confirm = self.session.prompt("\nDo you want to quit the conversation? (y/n): ")
-                if confirm and confirm.lower().strip() in ['y', 'yes']:
-                    raise EOFError()
-            except (KeyboardInterrupt, EOFError):
-                pass
-        except EOFError:
-            pass
+                user_input = self.session.prompt(prompt_text)
+            except KeyboardInterrupt:
+                # User pressed Ctrl+C - ask to confirm quit
+                try:
+                    confirm = self.session.prompt("\nDo you want to quit the conversation? (y/n): ")
+                    if confirm and confirm.lower().strip() in ['y', 'yes']:
+                        break  # User wants to quit
+                    else:
+                        continue  # User doesn't want to quit, continue to next iteration
+                except (KeyboardInterrupt, EOFError):
+                    # User pressed Ctrl+C or Ctrl+D again during confirmation
+                    break  # Quit
+            except EOFError:
+                # User pressed Ctrl+D at main prompt
+                break
+            
+            # Check if F12 was pressed (Do It requested)
+            if self.do_it_requested:
+                print("\n[Keybinding F12] 'Do It' to continue existing plan...")
+                user_input = "Do It"
+            
+            # Check if F2 was pressed (restart requested)
+            if self.restart_requested:
+                self.messages_history.clear()
+                # Clear screen before printing the message
+                print('\033[2J\033[H', end='')
+                print("[Keybinding F2] Conversation history cleared. Starting fresh conversation.")
+                continue
+            
+            if user_input.lower() == 'restart':
+                self.messages_history.clear()
+                print("Conversation history cleared. Starting fresh conversation.")
+                continue
+            
+            # Handle registered commands
+            command_handled = False
+            for cmd_handler in self.commands:
+                if cmd_handler.handle(self, user_input):
+                    command_handled = True
+                    break
+            if command_handled:
+                # Check if exit was requested via a command
+                if self.exit_requested:
+                    break
+                continue
+            
+            # Handle !cmd for direct shell execution
+            if user_input.startswith('!'):
+                cmd = user_input[1:].strip()
+                if cmd:
+                    print(f"[Shell] Executing: {cmd}")
+                    try:
+                        result = subprocess.run(
+                            cmd,
+                            shell=True,
+                            capture_output=True,
+                            text=True,
+                            timeout=60
+                        )
+                        if result.stdout:
+                            print(result.stdout)
+                        if result.stderr:
+                            print(result.stderr, file=sys.stderr)
+                        print(f"[Shell] Exit code: {result.returncode}")
+                    except subprocess.TimeoutExpired:
+                        print("[Shell] Command timed out after 60 seconds", file=sys.stderr)
+                    except Exception as e:
+                        print(f"[Shell] Error: {e}", file=sys.stderr)
+                continue
+            
+            if user_input.strip():
+                tools_to_use = [] if no_tools else None
+                response = send_prompt_func(
+                    user_input,
+                    verbose=verbose,
+                    previous_messages=self.messages_history,
+                    tools=tools_to_use
+                )
+                # Add the user message and AI response to history
+                self.messages_history.append({"role": "user", "content": user_input})
+                if response:
+                    self.messages_history.append({"role": "assistant", "content": response})
         
         print("\nChat session ended.")
