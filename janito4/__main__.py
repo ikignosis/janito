@@ -22,6 +22,7 @@ import os
 import sys
 import json
 import argparse
+import logging
 from typing import List, Dict, Any
 from .system_prompt import SYSTEM_PROMPT
 
@@ -57,46 +58,51 @@ from janito4.general_config import (
 from .shell import InteractiveShell
 
 
-def setup_api_key_from_config(debug: bool = False):
-    """Load API key from auth config if environment variable is not set.
-    
-    Priority:
-    1. Provider from config.json (highest)
-    2. Default provider from auth.json
-    3. Fallback to 'openai'
+def setup_logging(log_levels: str = None):
+    """Configure logging based on --log argument.
     
     Args:
-        debug: If True, print debug messages
+        log_levels: Comma-separated list of log levels (e.g., "info,debug")
+                   Valid levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+    """
+    # Configure root logger
+    logger = logging.getLogger()
+    
+    if log_levels:
+        # Parse log levels from comma-separated string
+        levels = [l.strip().upper() for l in log_levels.split(',')]
+        
+        # Set handlers for each level
+        for level in levels:
+            if level in ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'):
+                handler = logging.StreamHandler()
+                handler.setLevel(getattr(logging, level))
+                handler.setFormatter(logging.Formatter(
+                    f'%(levelname)s: %(message)s' if level == 'INFO' 
+                    else f'%(levelname)s: %(name)s: %(message)s'
+                ))
+                logger.addHandler(handler)
+                logger.setLevel(getattr(logging, level))
+    else:
+        # Default: no logging output
+        logger.setLevel(logging.CRITICAL + 1)
+
+
+def setup_api_key_from_config():
+    """Load API key from auth config if environment variable is not set.
+    
+    Priority (handled by get_active_provider):
+    1. JANITO_PROVIDER environment variable (from --provider CLI arg)
+    2. Provider from config.json
+    3. Default provider from auth.json
+    4. Fallback to 'openai'
     """
     if not os.getenv("OPENAI_API_KEY"):
-        # Try to determine which provider to use
-        provider = None
+        from .general_config import get_active_provider
         
-        # 1. First check config.json for provider
-        config_provider = load_provider_from_config()
-        if config_provider:
-            provider = config_provider
-            if debug:
-                print(f"[DEBUG] Provider from config.json: {provider}")
-        else:
-            # 2. Check auth.json for default provider
-            try:
-                from .auth_config import get_default_provider
-            except ImportError:
-                from auth_config import get_default_provider
-            
-            default_provider = get_default_provider()
-            if default_provider:
-                provider = default_provider
-                if debug:
-                    print(f"[DEBUG] Provider from auth.json (default): {provider}")
-            else:
-                # 3. Fall back to 'openai'
-                provider = "openai"
-                if debug:
-                    print(f"[DEBUG] Using default provider: {provider}")
+        # Use the existing get_active_provider() function which handles priority correctly
+        provider = get_active_provider()
         
-        # Try to load API key for the determined provider
         try:
             from .auth_config import get_api_key
         except ImportError:
@@ -105,15 +111,7 @@ def setup_api_key_from_config(debug: bool = False):
         api_key = get_api_key(provider)
         if api_key:
             os.environ["OPENAI_API_KEY"] = api_key
-            if debug:
-                print(f"[DEBUG] API key loaded from config for provider: {provider}")
             return True
-        else:
-            if debug:
-                print(f"[DEBUG] No API key found for provider: {provider}")
-    else:
-        if debug:
-            print(f"[DEBUG] API key already set from environment variable")
     
     return False
 
@@ -132,6 +130,111 @@ def get_masked_api_key(api_key: str) -> str:
     if len(api_key) <= 12:
         return "***"
     return f"{api_key[:6]}...{api_key[-4:]}"
+
+
+def print_config_info(cli_provider: str = None):
+    """Print information about the resolved configuration and exit.
+    
+    Shows the resolved provider, model, and API key (masked).
+    This helps users understand what configuration is being used.
+    
+    Args:
+        cli_provider: Provider specified via --provider CLI argument (highest priority)
+    """
+    from .general_config import (
+        load_provider_from_config, load_model_from_config,
+        get_active_provider, get_config_path
+    )
+    
+    # Determine resolved provider (priority: CLI arg/JANITO_PROVIDER > config.json > auth.json default > fallback)
+    provider = None
+    provider_source = ""
+    
+    # 1. First check JANITO_PROVIDER env var (set from --provider CLI arg)
+    env_provider = os.getenv("JANITO_PROVIDER")
+    if env_provider:
+        provider = env_provider
+        provider_source = "CLI argument"
+    # 2. Check CLI argument directly (if --info was called before env var was set)
+    elif cli_provider:
+        provider = cli_provider
+        provider_source = "CLI argument"
+    # 3. Check config.json for provider
+    else:
+        config_provider = load_provider_from_config()
+        if config_provider:
+            provider = config_provider
+            provider_source = "config.json"
+        else:
+            # 4. Check auth.json for default provider
+            try:
+                from .auth_config import get_default_provider
+            except ImportError:
+                from auth_config import get_default_provider
+            
+            default_provider = get_default_provider()
+            if default_provider:
+                provider = default_provider
+                provider_source = "auth.json (default)"
+            else:
+                # 5. Fall back to 'openai'
+                provider = "openai"
+                provider_source = "fallback"
+    
+    # Determine resolved model (priority: CLI > env var > config)
+    model = os.getenv("OPENAI_MODEL")
+    model_source = "environment variable"
+    
+    if not model:
+        config_model = load_model_from_config()
+        if config_model:
+            model = config_model
+            model_source = "config.json"
+        else:
+            model = None
+            model_source = "not set"
+    
+    # Determine API key (priority: env var > auth.json for resolved provider)
+    api_key = os.getenv("OPENAI_API_KEY")
+    api_key_source = "environment variable"
+    
+    if not api_key:
+        try:
+            from .auth_config import get_api_key
+        except ImportError:
+            from auth_config import get_api_key
+        
+        api_key = get_api_key(provider)
+        if api_key:
+            api_key_source = f"auth.json (provider: {provider})"
+        else:
+            api_key_source = "not set"
+    
+    # Print the info
+    print("Resolved Configuration:")
+    print("=" * 40)
+    print(f"Provider:     {provider} ({provider_source})")
+    print(f"Model:        {model or '(not set)'} ({model_source})")
+    print(f"API Key:      {get_masked_api_key(api_key)} ({api_key_source})")
+    print("=" * 40)
+    print(f"Config file:  {get_config_path()}")
+    
+    # Try to show auth file path too
+    try:
+        from .auth_config import get_auth_file_path
+        auth_path = get_auth_file_path()
+        if auth_path.exists():
+            print(f"Auth file:    {auth_path}")
+    except (ImportError, Exception):
+        pass
+    
+    print()
+    
+    # Show source details
+    if model_source == "not set":
+        print("Note: Model not configured. Use --model, OPENAI_MODEL env var, or config.json")
+    if api_key_source == "not set":
+        print("Note: API key not configured. Use --set-api-key or OPENAI_API_KEY env var")
 
 
 def main():
@@ -153,9 +256,9 @@ Options:
   --set-api-key KEY  Set API key for the specified provider
   --provider NAME    Provider name (e.g., openai, anthropic, azure)
   --model NAME       Model name to use (overrides OPENAI_MODEL env var and config)
+  --log LEVELS       Enable logging (e.g., --log=info,debug or --log=warning)
   --list-auth        List configured providers and keys
   --list-tools       List all available tools and their descriptions
-  --debug            Enable debug output (shows configuration loading info)
   -Z, --no-system-prompt  Do not set a system prompt or pass any tools to the CLI
 
 Examples:
@@ -166,11 +269,12 @@ Examples:
   janito4 --set-api-key xxx --provider anthropic             # Store API key for provider
   janito4 --list-auth                                        # Show configured providers
   janito4 --list-tools                                       # List available tools
+  janito4 --info                                             # Show resolved config info
+  janito4 --log=info,debug "Your prompt"                     # Enable logging
   janito4 --model gpt-4 "Your prompt"                        # Use specific model
   janito4 --set model=gpt-4                                  # Set config value
   janito4 --unset model                                      # Remove config value
   janito4 --get model                                        # Get config value
-  janito4 --debug                                           # Enable debug output
         """
     )
     
@@ -187,9 +291,15 @@ Examples:
     )
     
     parser.add_argument(
-        "--debug",
+        "--log",
+        metavar="LEVELS",
+        help="Enable logging (e.g., --log=info,debug or --log=warning,error)"
+    )
+    
+    parser.add_argument(
+        "--info",
         action="store_true",
-        help="Enable debug output (shows configuration loading info)"
+        help="Print resolved configuration (provider, model, API key) and exit"
     )
     
     parser.add_argument(
@@ -249,6 +359,19 @@ Examples:
     )
     
     args = parser.parse_args()
+    
+    # Configure logging based on --log argument
+    setup_logging(args.log)
+    
+    # Handle --info option (print config and exit)
+    if args.info:
+        print_config_info(cli_provider=args.provider)
+        return
+    
+    # Store --provider in environment for other parts of the CLI to access
+    # (This is needed because other modules use get_active_provider() which doesn't know about CLI args)
+    if args.provider:
+        os.environ["JANITO_PROVIDER"] = args.provider
     
     # Handle --get option
     if args.get:
@@ -332,28 +455,18 @@ Examples:
         return
     
     # Try to load API key from config if not set in environment
-    setup_api_key_from_config(debug=args.debug)
+    setup_api_key_from_config()
     
     # Handle model selection with priority: CLI arg > env var > config
     # 1. First, check if --model was passed on command line (highest priority)
     if args.model:
         os.environ["OPENAI_MODEL"] = args.model
-        if args.debug:
-            print(f"[DEBUG] Model from CLI argument: {args.model}")
     # 2. Then check environment variable
     elif not os.getenv("OPENAI_MODEL"):
         # 3. Finally, check config file
         config_model = load_model_from_config()
         if config_model:
             os.environ["OPENAI_MODEL"] = config_model
-            if args.debug:
-                print(f"[DEBUG] Model from config file: {config_model}")
-        else:
-            if args.debug:
-                print(f"[DEBUG] No model configured (will fail validation)")
-    else:
-        if args.debug:
-            print(f"[DEBUG] Model from environment variable: {os.getenv('OPENAI_MODEL')}")
     
     # Validate required environment variables at startup
     missing_vars = []

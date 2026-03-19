@@ -5,9 +5,14 @@ This module provides a centralized interface for all config.json-related operati
 """
 
 import json
+import os
 import sys
+import logging
 from pathlib import Path
 from typing import Optional, Dict, Any
+
+# Configure logger for this module
+logger = logging.getLogger(__name__)
 
 
 # Config file path
@@ -31,8 +36,14 @@ def load_config() -> Dict[str, Any]:
     """
     try:
         with open(CONFIG_PATH, 'r') as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
+            config = json.load(f)
+            logger.debug(f"Loaded config from {CONFIG_PATH}: {list(config.keys())}")
+            return config
+    except FileNotFoundError:
+        logger.debug(f"Config file not found: {CONFIG_PATH}")
+        return {}
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON in config file: {e}")
         return {}
 
 
@@ -48,6 +59,7 @@ def save_config(config: Dict[str, Any]) -> None:
     CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(CONFIG_PATH, 'w') as f:
         json.dump(config, f, indent=2)
+    logger.debug(f"Saved config to {CONFIG_PATH}")
 
 
 def get_config_value(key: str) -> Optional[Any]:
@@ -60,7 +72,9 @@ def get_config_value(key: str) -> Optional[Any]:
         The config value, or None if not found or config file doesn't exist
     """
     config = load_config()
-    return config.get(key)
+    value = config.get(key)
+    logger.debug(f"Getting config '{key}': {value if value is None else '(set)'}")
+    return value
 
 
 def set_config_value(key: str, value: Any) -> None:
@@ -70,6 +84,7 @@ def set_config_value(key: str, value: Any) -> None:
         key: The config key to set
         value: The value to set
     """
+    logger.debug(f"Setting config '{key}' = {value}")
     config = load_config()
     config[key] = value
     save_config(config)
@@ -88,7 +103,9 @@ def unset_config_value(key: str) -> bool:
     if key in config:
         del config[key]
         save_config(config)
+        logger.info(f"Removed config key: {key}")
         return True
+    logger.debug(f"Config key not found for removal: {key}")
     return False
 
 
@@ -148,32 +165,43 @@ def get_active_provider() -> str:
     """Determine the active provider based on config and environment.
     
     Priority:
-    1. Provider from config.json (highest)
-    2. Default provider from auth.json
-    3. Fallback to 'openai'
+    1. JANITO_PROVIDER environment variable (from --provider CLI arg)
+    2. Provider from config.json
+    3. Default provider from auth.json
+    4. Fallback to 'openai'
     
     Returns:
         str: The active provider name
     """
-    # 1. First check config.json for provider
+    # 1. First check JANITO_PROVIDER env var (set from --provider CLI arg)
+    env_provider = os.getenv("JANITO_PROVIDER")
+    if env_provider:
+        logger.debug(f"Active provider from env: {env_provider}")
+        return env_provider
+    
+    # 2. Check config.json for provider
     config_provider = load_provider_from_config()
     if config_provider:
+        logger.debug(f"Active provider from config: {config_provider}")
         return config_provider
     
-    # 2. Check auth.json for default provider
+    # 3. Check auth.json for default provider
     try:
         from .auth_config import get_default_provider
     except ImportError:
         try:
             from auth_config import get_default_provider
         except ImportError:
+            logger.debug("No provider config, using fallback: openai")
             return "openai"
     
     default_provider = get_default_provider()
     if default_provider:
+        logger.debug(f"Active provider from auth defaults: {default_provider}")
         return default_provider
     
-    # 3. Fall back to 'openai'
+    # 4. Fall back to 'openai'
+    logger.debug("No provider found, using fallback: openai")
     return "openai"
 
 

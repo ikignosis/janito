@@ -47,6 +47,7 @@ PROVIDER_BASE_URLS: Dict[str, Optional[str]] = {
     "StepFun": "https://api.stepfun.com/v1",
     "01ai": "https://api.01.ai/v1",
     "siliconflow": "https://api.siliconflow.cn/v1",
+    "xiaomi": "https://api.xiaomimimo.com/v1",
 }
 
 

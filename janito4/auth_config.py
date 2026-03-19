@@ -13,8 +13,12 @@ Structure:
 
 import json
 import os
+import logging
 from pathlib import Path
 from typing import Dict, Optional
+
+# Configure logger for this module
+logger = logging.getLogger(__name__)
 
 
 def get_auth_file_path() -> Path:
@@ -36,11 +40,13 @@ def load_auth_config() -> Dict[str, str]:
     auth_file = get_auth_file_path()
     
     if not auth_file.exists():
+        logger.debug(f"Auth config file not found: {auth_file}")
         return {}
     
     with open(auth_file, 'r', encoding='utf-8') as f:
         content = f.read()
-        return json.loads(content)
+    logger.debug(f"Loaded auth config from {auth_file}")
+    return json.loads(content)
 
 
 def save_auth_config(config: Dict[str, str]) -> bool:
@@ -54,8 +60,10 @@ def save_auth_config(config: Dict[str, str]) -> bool:
         
         # Set restrictive permissions (read/write for owner only)
         os.chmod(auth_file, 0o600)
+        logger.debug(f"Saved auth config to {auth_file}")
         return True
-    except (IOError, OSError):
+    except (IOError, OSError) as e:
+        logger.error(f"Failed to save auth config: {e}")
         return False
 
 
@@ -70,9 +78,13 @@ def set_api_key(provider: str, api_key: str) -> bool:
     Returns:
         True if successful, False otherwise
     """
+    logger.debug(f"Setting API key for provider: {provider}")
     config = load_auth_config()
     config[provider] = api_key
-    return save_auth_config(config)
+    result = save_auth_config(config)
+    if result:
+        logger.info(f"API key saved for provider: {provider}")
+    return result
 
 
 def get_api_key(provider: str) -> Optional[str]:
@@ -86,7 +98,12 @@ def get_api_key(provider: str) -> Optional[str]:
         The API key if found, None otherwise
     """
     config = load_auth_config()
-    return config.get(provider)
+    api_key = config.get(provider)
+    if api_key:
+        logger.debug(f"API key found for provider: {provider}")
+    else:
+        logger.debug(f"No API key found for provider: {provider}")
+    return api_key
 
 
 def list_providers() -> list:

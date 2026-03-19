@@ -61,6 +61,21 @@ python -m janito4
 # Type 'exit' or 'quit' to end the session, 'restart' to clear conversation history, or press Ctrl+D/Ctrl+Z
 ```
 
+### Logging:
+```bash
+# Enable info logging
+python -m janito4 --log=info "Your prompt"
+
+# Enable debug logging for detailed output
+python -m janito4 --log=debug "Your prompt"
+
+# Enable multiple log levels
+python -m janito4 --log=info,debug "Your prompt"
+
+# Enable warning and error only
+python -m janito4 --log=warning,error "Your prompt"
+```
+
 ## Examples
 
 ### OpenAI API:

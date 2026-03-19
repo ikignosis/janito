@@ -5,12 +5,16 @@ OpenAI client module for sending prompts to OpenAI-compatible endpoints.
 import os
 import sys
 import json
+import logging
 import threading
 from typing import Tuple, List, Dict, Any, Optional
 from openai import OpenAI
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.progress import Progress, SpinnerColumn, TextColumn
+
+# Configure logger for this module
+logger = logging.getLogger(__name__)
 
 # Import tools
 try:
@@ -60,16 +64,22 @@ def get_env_config() -> Tuple[Optional[str], str, str]:
     api_key = os.getenv("OPENAI_API_KEY")
     model = os.getenv("OPENAI_MODEL")
     
+    logger.debug(f"Environment config loaded: base_url={base_url}, model={model}")
+    
     if not api_key:
+        logger.error("OPENAI_API_KEY environment variable is required")
         raise ValueError("OPENAI_API_KEY environment variable is required")
     if not model:
+        logger.error("OPENAI_MODEL environment variable is required")
         raise ValueError("OPENAI_MODEL environment variable is required")
     
     # If base_url is not set, try to determine it from the provider
-    if not base_url and PROVIDER_CONFIG_AVAILABLE:
-        provider = os.getenv("OPENAI_PROVIDER")
+    if not base_url:
+        # Check JANITO_PROVIDER first (set from --provider CLI arg), then fallback to OPENAI_PROVIDER
+        provider = os.getenv("JANITO_PROVIDER") or os.getenv("OPENAI_PROVIDER")
         if not provider:
             provider = load_provider_from_config()
+            logger.debug(f"Provider from config: {provider}")
             
             # If not in config.json, check auth.json for default provider
             if not provider:
@@ -85,6 +95,7 @@ def get_env_config() -> Tuple[Optional[str], str, str]:
         
         if provider:
             base_url = get_base_url_from_provider(provider)
+            logger.debug(f"Base URL from provider '{provider}': {base_url}")
     
     return base_url, api_key, model
 
@@ -130,6 +141,7 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
         tools: Optional list of tool schemas to pass. If None, uses all available tools.
                If an empty list, no tools are passed.
     """
+    logger.info(f"Sending prompt to API")
     base_url, api_key, model = get_env_config()
     
     # Create OpenAI client - base_url can be None for standard OpenAI
@@ -138,11 +150,15 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
         base_url=base_url
     )
     
+    logger.debug(f"OpenAI client created with base_url={base_url}")
+    
     # Get available tools if not explicitly provided
     if tools is None:
         tools_schemas = get_all_tool_schemas() if TOOLS_AVAILABLE else []
     else:
         tools_schemas = tools
+    
+    logger.debug(f"Using {len(tools_schemas)} tools")
     
     # Load context window size from general config if set
     context_window_size = load_context_window_size()
@@ -161,6 +177,8 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
     messages = previous_messages if previous_messages else []
     messages.append({"role": "user", "content": prompt})
     
+    logger.debug(f"Starting message loop with {len(messages)} messages")
+    
     while True:
         # Build the base call parameters
         call_kwargs = {
@@ -175,6 +193,7 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
         
         # Make API call with tools if available
         if tools_schemas:
+            logger.debug(f"Calling API with {len(tools_schemas)} tools")
             response = _run_with_progress_bar(
                 client.chat.completions.create,
                 **call_kwargs,
@@ -182,10 +201,13 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
                 tool_choice="auto"
             )
         else:
+            logger.debug("Calling API without tools")
             response = _run_with_progress_bar(
                 client.chat.completions.create,
                 **call_kwargs
             )
+        
+        logger.debug("API response received")
         
         message = response.choices[0].message
         if message.content:
@@ -202,10 +224,14 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
                 tool_name = tool_call.function.name
                 tool_args = json.loads(tool_call.function.arguments)
                 
+                logger.info(f"Tool call: {tool_name}({tool_args})")
+                
                 try:
                     # Call the actual tool function
                     tool_function = get_tool_by_name(tool_name)
+                    logger.debug(f"Executing tool: {tool_name}")
                     tool_result = tool_function(**tool_args)
+                    logger.info(f"Tool {tool_name} completed successfully")
                     
                     # Add the tool response to messages
                     messages.append({
@@ -216,6 +242,7 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
                     })
                     
                 except Exception as e:
+                    logger.error(f"Tool {tool_name} failed: {e}")
                     # Handle tool execution errors
                     error_result = {
                         "success": False,
@@ -240,5 +267,6 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
                 token_text = Text(f"=== Total tokens: {total_tokens} | Messages: {len(messages)} ===")
                 token_text.stylize("white on magenta")
                 console.print(token_text, highlight=False)
+                logger.info(f"Request completed: {total_tokens} tokens, {len(messages)} messages")
             return message.content if message.content else ""
             
