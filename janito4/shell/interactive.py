@@ -221,7 +221,7 @@ class InteractiveShell:
             # Prompt user for confirmation to quit
             try:
                 confirm = self.session.prompt("\nDo you want to quit the conversation? (y/n): ")
-                if confirm.lower().strip() in ['y', 'yes']:
+                if confirm and confirm.lower().strip() in ['y', 'yes']:
                     raise EOFError()
             except (KeyboardInterrupt, EOFError):
                 pass

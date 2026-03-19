@@ -446,11 +446,8 @@ Examples:
         # Get model name for the prompt (already validated at startup)
         model = os.getenv("OPENAI_MODEL")
         
-        print("Starting interactive chat session. Type '/exit' to end the session, 'restart' to clear conversation history.")
-        print("Special commands:")
-        print("  !<command>       - Execute shell command directly (e.g., !dir, !git status)")
-        print("  /config        - Show current provider, base URL, and masked API key")
-        print("Key bindings: F2 = restart conversation, F12 = Do It (auto-execute)")
+        print("Starting interactive chat session. Type '/exit' or CTRL-D to end the session")
+ 
         
         # Initialize and run the interactive shell
         shell = InteractiveShell(model=model)
