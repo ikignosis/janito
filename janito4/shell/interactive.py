@@ -2,10 +2,11 @@
 Interactive shell implementation using prompt_toolkit.
 """
 
+from pathlib import Path
 from typing import List, Dict, Any, Callable, Optional, TYPE_CHECKING
 
 from prompt_toolkit import PromptSession
-from prompt_toolkit.history import InMemoryHistory
+from prompt_toolkit.history import FileHistory
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.formatted_text import HTML
@@ -13,6 +14,10 @@ from prompt_toolkit.styles import Style
 
 if TYPE_CHECKING:
     from .cmds import CmdHandler
+
+
+# History file path
+HISTORY_FILE = Path.cwd() / ".janito" / "history.log"
 
 
 class InteractiveShell:
@@ -31,7 +36,6 @@ class InteractiveShell:
         self.restart_requested = False
         self.do_it_requested = False
         self.exit_requested = False
-        self.session = self._create_session()
         
         # Auto-load registered commands if not provided
         if commands is None:
@@ -39,6 +43,9 @@ class InteractiveShell:
             self.commands = get_registered_commands()
         else:
             self.commands = commands
+        
+        # Create session after commands are loaded
+        self.session = self._create_session()
     
     def _get_bottom_toolbar(self) -> list:
         """Get the bottom toolbar content."""
@@ -104,8 +111,12 @@ class InteractiveShell:
             }
         )
         
+        # Ensure the .janito directory exists
+        HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Use FileHistory to persist input history to ~/.janito/history.log
         return PromptSession(
-            history=InMemoryHistory(),
+            history=FileHistory(str(HISTORY_FILE)),
             key_bindings=kb,
             style=chat_shell_style,
             bottom_toolbar=lambda: self._get_bottom_toolbar(),
@@ -122,6 +133,24 @@ class InteractiveShell:
             self.messages_history = [{"role": "system", "content": system_prompt}]
         else:
             self.messages_history = []
+    
+    @staticmethod
+    def get_history_file_path() -> Path:
+        """Get the path to the history log file.
+        
+        Returns:
+            Path: Path to ~/.janito/history.log
+        """
+        return HISTORY_FILE
+    
+    @staticmethod
+    def clear_input_history() -> None:
+        """Clear the input history log file."""
+        if HISTORY_FILE.exists():
+            HISTORY_FILE.unlink()
+            print(f"Input history cleared from: {HISTORY_FILE}")
+        else:
+            print("No input history file found.")
     
     def run(
         self,
@@ -221,14 +250,20 @@ class InteractiveShell:
             
             if user_input.strip():
                 tools_to_use = [] if no_tools else None
-                response = send_prompt_func(
-                    user_input,
-                    verbose=verbose,
-                    previous_messages=self.messages_history,
-                    tools=tools_to_use
-                )
+                try:
+                    response = send_prompt_func(
+                        user_input,
+                        verbose=verbose,
+                        previous_messages=self.messages_history,
+                        tools=tools_to_use
+                    )
+                except KeyboardInterrupt:
+                    print("Request interrupted")
+                    response = None
+                    user_input = None
                 # Add the user message and AI response to history
-                self.messages_history.append({"role": "user", "content": user_input})
+                if user_input:
+                    self.messages_history.append({"role": "user", "content": user_input})
                 if response:
                     self.messages_history.append({"role": "assistant", "content": response})
         

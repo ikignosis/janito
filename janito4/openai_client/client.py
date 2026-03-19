@@ -158,7 +158,7 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
         console.print(text, highlight=False)
 
     # Use previous messages if provided, otherwise start with the user prompt
-    messages = previous_messages.copy() if previous_messages else []
+    messages = previous_messages if previous_messages else []
     messages.append({"role": "user", "content": prompt})
     
     while True:

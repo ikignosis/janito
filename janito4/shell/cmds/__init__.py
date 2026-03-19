@@ -8,5 +8,7 @@ from .base import CmdHandler
 # Import all command handlers to register them
 from . import config
 from . import exit
+from . import help
+from . import history
 
 __all__ = ["CmdHandler", "get_registered_commands", "register_command"]
