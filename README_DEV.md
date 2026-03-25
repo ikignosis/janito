@@ -11,7 +11,7 @@ This guide covers how to set up Janito4 for development.
 ## Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/janito.git
+git clone https://github.com/ikignosis/janito4.git
 cd janito
 ```
 

@@ -30,8 +30,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/janito"
-Repository = "https://github.com/yourusername/janito"
+Homepage = "https://github.com/ikignosis/janito4"
+Repository = "https://github.com/ikignosis/janito4"
 
 [project.scripts]
 janito4 = "janito4.__main__:main"
