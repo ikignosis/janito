@@ -235,7 +235,7 @@ def main():
 
     project_version, tag = get_latest_version_tag()
     print_info(f"Project version from latest git tag: {project_version}")
-    check_version_on_pypi("janito", project_version)
+    check_version_on_pypi("janito4", project_version)
     print_info(f"Found git tag: {tag}")
     check_tag_points_to_head(tag)
     # Remove dist directory
