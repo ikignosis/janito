@@ -27,6 +27,24 @@ A simple command-line interface to interact with OpenAI-compatible endpoints (in
 
 ## Configuration
 
+### Interactive Configuration Setup
+
+You can set up your configuration interactively using the `--config` flag:
+
+```bash
+python -m janito4 --config
+```
+
+This will prompt you for:
+- **Provider name** (e.g., openai, anthropic, azure) - lists available providers
+- **API key** - masked for security, shows existing key if available
+- **Model name** - the model to use
+- **Context window size** - max tokens (default: 65536)
+
+Existing configuration values are used as defaults, so you can just press Enter to keep them.
+
+### Manual Configuration
+
 Set the following environment variables:
 
 ```bash
@@ -178,7 +196,7 @@ all_perms = get_all_tool_permissions()  # Returns {"read_file": "r", "write_file
 
 ## Tool Progress Reporting
 
-Tools can report their progress in real-time using the built-in progress reporting system located in `tooling/progress/`. This provides transparency into what the AI agent is doing during tool execution.
+Tools can report their progress in real-time using the built-in progress reporting system. This provides transparency into what the AI agent is doing during tool execution.
 
 ### Direct Tool Execution
 
@@ -199,6 +217,22 @@ This allows for testing and debugging tools independently while still having acc
 - **⚠️ Warning messages**: Show non-critical warnings
 
 Progress messages are displayed via `stderr` so they don't interfere with the tool's actual return value that gets sent back to the AI model.
+
+### MCP Tool Progress Reporting
+
+MCP tools also report their progress using the same system:
+
+```
+ 🔄 MCP tool: myserver_read_file [myserver]
+ ✅ returned 50 lines (2048 chars)
+```
+
+When calling an MCP tool, you'll see:
+1. **Start message** with the tool name
+2. **Progress message** showing which service is handling the call
+3. **Result message** summarizing the output (e.g., "returned 50 lines", "returned keys: success, content")
+
+This provides the same transparency for MCP tools as built-in tools, making it easy to track what the AI agent is doing across both local and remote tool sources.
 
 ## Error Handling
 

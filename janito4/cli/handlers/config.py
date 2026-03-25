@@ -10,12 +10,15 @@ try:
         set_config_from_cli,
         unset_config_value,
         load_provider_from_config,
+        load_model_from_config,
         load_context_window_size,
+        load_endpoint_from_config,
     )
     from ...auth_config import (
         get_api_key,
         set_api_key,
     )
+    from ...provider_config import list_supported_providers, is_custom_provider
 except ImportError:
     from janito4.general_config import (
         get_config_path,
@@ -23,12 +26,15 @@ except ImportError:
         set_config_from_cli,
         unset_config_value,
         load_provider_from_config,
+        load_model_from_config,
         load_context_window_size,
+        load_endpoint_from_config,
     )
     from janito4.auth_config import (
         get_api_key,
         set_api_key,
     )
+    from janito4.provider_config import list_supported_providers, is_custom_provider
 
 
 def handle_get_config(key: str) -> int:
@@ -97,16 +103,18 @@ def handle_config_interactive() -> int:
     
     Prompts the user for:
     - Provider name (with existing config value as default)
-    - API key (with existing auth value as default, masked)
+    - API key (with existing auth value for that provider as default, masked)
     - Max context window size (with existing config value as default, default 65536)
+    - Endpoint (required only for 'custom' provider)
     
     Returns:
         int: Exit code (0 for success, non-zero for error)
     """
     # Load existing values
     existing_provider = load_provider_from_config()
-    existing_api_key = get_api_key(existing_provider) if existing_provider else None
+    existing_model = load_model_from_config()
     existing_context_window = load_context_window_size()
+    existing_endpoint = load_endpoint_from_config()
     
     # Mask existing API key for display
     def mask_api_key(key: str) -> str:
@@ -156,6 +164,9 @@ def handle_config_interactive() -> int:
     # Provider name
     print("Provider Configuration")
     print("-" * 30)
+    supported = list_supported_providers()
+    print(f"Available providers: {', '.join(sorted(supported))}")
+    print()
     provider = prompt_with_default(
         "Enter provider name",
         default=existing_provider
@@ -165,6 +176,14 @@ def handle_config_interactive() -> int:
         return 1
     provider = provider.strip().lower()
     print(f"  Using provider: {provider}")
+    print()
+    
+    # Check if API key already exists for this provider in auth config
+    existing_api_key = get_api_key(provider)
+    if existing_api_key:
+        print(f"  Found existing API key for '{provider}': {mask_api_key(existing_api_key)}")
+    else:
+        print(f"  No API key found for '{provider}' in auth config")
     print()
     
     # API key
@@ -180,6 +199,20 @@ def handle_config_interactive() -> int:
         return 1
     api_key = api_key.strip()
     print(f"  API key: {mask_api_key(api_key)}")
+    print()
+    
+    # Model
+    print("Model")
+    print("-" * 30)
+    model = prompt_with_default(
+        "Enter model name",
+        default=existing_model
+    )
+    if not model:
+        print("Error: Model name is required.", file=sys.stderr)
+        return 1
+    model = model.strip()
+    print(f"  Using model: {model}")
     print()
     
     # Context window size
@@ -201,13 +234,32 @@ def handle_config_interactive() -> int:
     print(f"  Using context window: {context_window}")
     print()
     
+    # Endpoint (only required for 'custom' provider)
+    endpoint = None
+    if is_custom_provider(provider):
+        print("Endpoint (required for 'custom' provider)")
+        print("-" * 30)
+        endpoint = prompt_with_default(
+            "Enter API endpoint URL",
+            default=existing_endpoint
+        )
+        if not endpoint:
+            print("Error: Endpoint is required for 'custom' provider.", file=sys.stderr)
+            return 1
+        endpoint = endpoint.strip()
+        print(f"  Using endpoint: {endpoint}")
+        print()
+    
     # Confirm changes
     print("=" * 50)
     print("Configuration Summary:")
     print("-" * 30)
     print(f"  Provider:          {provider}")
+    print(f"  Model:             {model}")
     print(f"  API Key:           {mask_api_key(api_key)}")
     print(f"  Context Window:    {context_window}")
+    if endpoint:
+        print(f"  Endpoint:          {endpoint}")
     print("=" * 50)
     print()
     
@@ -222,9 +274,18 @@ def handle_config_interactive() -> int:
         set_config_from_cli(f"provider={provider}")
         print(f"[OK] Saved provider '{provider}' to config")
         
+        # Save model to config.json
+        set_config_from_cli(f"model={model}")
+        print(f"[OK] Saved model '{model}' to config")
+        
         # Save context window to config.json
         set_config_from_cli(f"context-window-size={context_window}")
         print(f"[OK] Saved context window {context_window} to config")
+        
+        # Save endpoint to config.json (only for custom provider)
+        if endpoint:
+            set_config_from_cli(f"endpoint={endpoint}")
+            print(f"[OK] Saved endpoint to config")
         
         # Save API key to auth.json
         if set_api_key(provider, api_key):

@@ -36,6 +36,7 @@ class InteractiveShell:
         self.restart_requested = False
         self.do_it_requested = False
         self.exit_requested = False
+        self.multiline_mode = False
         
         # Auto-load registered commands if not provided
         if commands is None:
@@ -71,9 +72,13 @@ class InteractiveShell:
         tokens.append(("class:key-label", "[/exit] end "))
         tokens.append(("class:key-label", "[!cmd] shell "))
         
+        # Multiline mode indicator
+        if getattr(self, 'multiline_mode', False):
+            tokens.append(("class:key-toggle-on", "[multi] "))
+        
         return tokens
     
-    def _create_session(self) -> PromptSession:
+    def _create_session(self, multiline: bool = False) -> PromptSession:
         """Create and configure the prompt_toolkit session."""
         kb = KeyBindings()
         
@@ -120,6 +125,7 @@ class InteractiveShell:
             key_bindings=kb,
             style=chat_shell_style,
             bottom_toolbar=lambda: self._get_bottom_toolbar(),
+            multiline=multiline,
         )
     
     def initialize_history(self, system_prompt: Optional[str] = None) -> None:
@@ -178,7 +184,7 @@ class InteractiveShell:
             prompt_text = HTML(f'<style bg="#00008b">{self.model} # </style>')
             
             try:
-                user_input = self.session.prompt(prompt_text)
+                user_input = self.session.prompt(prompt_text, multiline=self.multiline_mode)
             except KeyboardInterrupt:
                 # User pressed Ctrl+C - ask to confirm quit
                 try:

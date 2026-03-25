@@ -7,18 +7,22 @@ try:
     from ...general_config import (
         load_provider_from_config,
         load_model_from_config,
+        load_endpoint_from_config,
         get_active_provider,
         get_config_path
     )
     from ...auth_config import get_api_key, get_auth_file_path, get_default_provider
+    from ...provider_config import is_custom_provider, CUSTOM_ENDPOINT_MARKER
 except ImportError:
     from janito4.general_config import (
         load_provider_from_config,
         load_model_from_config,
+        load_endpoint_from_config,
         get_active_provider,
         get_config_path
     )
     from janito4.auth_config import get_api_key, get_auth_file_path, get_default_provider
+    from janito4.provider_config import is_custom_provider, CUSTOM_ENDPOINT_MARKER
 
 
 def get_masked_api_key(api_key: str) -> str:
@@ -104,12 +108,33 @@ def handle_info(args) -> int:
         else:
             api_key_source = "not set"
     
+    # Determine endpoint/base URL (priority: CLI/OPENAI_BASE_URL > config > provider default)
+    cli_endpoint = getattr(args, 'endpoint', None)
+    env_endpoint = os.getenv("OPENAI_BASE_URL")
+    config_endpoint = load_endpoint_from_config()
+    
+    endpoint = None
+    endpoint_source = "not set"
+    
+    if cli_endpoint:
+        endpoint = cli_endpoint
+        endpoint_source = "CLI argument"
+    elif env_endpoint:
+        endpoint = env_endpoint
+        endpoint_source = "environment variable"
+    elif config_endpoint:
+        endpoint = config_endpoint
+        endpoint_source = "config.json"
+    elif is_custom_provider(provider):
+        endpoint_source = "required but not set (use --endpoint or set endpoint in config.json)"
+    
     # Print the info
     print("Resolved Configuration:")
     print("=" * 40)
     print(f"Provider:     {provider} ({provider_source})")
     print(f"Model:        {model or '(not set)'} ({model_source})")
     print(f"API Key:      {get_masked_api_key(api_key)} ({api_key_source})")
+    print(f"Endpoint:     {endpoint or '(not set)'} ({endpoint_source})")
     print("=" * 40)
     print(f"Config file:  {get_config_path()}")
     
@@ -125,5 +150,7 @@ def handle_info(args) -> int:
         print("Note: Model not configured. Use --model, OPENAI_MODEL env var, or config.json")
     if api_key_source == "not set":
         print("Note: API key not configured. Use --set-api-key or OPENAI_API_KEY env var")
+    if is_custom_provider(provider) and not endpoint:
+        print("Note: Endpoint not configured. Use --endpoint or set endpoint in config.json")
     
     return 0

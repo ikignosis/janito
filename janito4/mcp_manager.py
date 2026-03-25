@@ -9,6 +9,12 @@ from typing import Dict, Any, List, Optional
 from .mcp_client.base import MCPTransport
 from .mcp_client.factory import create_transport
 from .mcp_config import list_services, get_service
+from .tooling.reporter import (
+    report_start,
+    report_progress,
+    report_result,
+    report_error,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -263,6 +269,9 @@ class MCPManager:
         if "_" not in prefixed_name:
             raise ValueError(f"Invalid MCP tool name format: {prefixed_name}")
         
+        # Report start of MCP tool call
+        report_start(f"MCP tool: {prefixed_name}", end="")
+        
         # Find the service (last underscore-separated part is the tool name)
         # We need to find the service name by checking which clients have this tool
         for service_name, client in self._clients.items():
@@ -277,14 +286,28 @@ class MCPManager:
                 tool_names = [t.get("name") for t in tools]
                 
                 if tool_name in tool_names:
-                    logger.info(f"Calling MCP tool: {service_name}.{tool_name}")
-                    result = client.call_tool(tool_name, arguments)
-                    return self._process_tool_result(result)
+                    # Show which service we're calling
+                    report_progress(f" [{service_name}]", end="")
                     
+                    try:
+                        result = client.call_tool(tool_name, arguments)
+                        processed_result = self._process_tool_result(result)
+                        
+                        # Report success with result summary
+                        result_summary = self._get_result_summary(processed_result)
+                        report_result(result_summary)
+                        
+                        return processed_result
+                        
+                    except Exception as e:
+                        report_error(f" MCP tool error: {str(e)}")
+                        raise
+                        
             except Exception as e:
                 logger.error(f"Error calling tool '{prefixed_name}': {e}")
                 raise
         
+        report_error(f"MCP tool not found: {prefixed_name}")
         raise ValueError(f"Tool not found: {prefixed_name}")
     
     def _process_tool_result(self, result: Any) -> Any:
@@ -319,6 +342,39 @@ class MCPManager:
         
         # Handle direct string or other results
         return result
+    
+    def _get_result_summary(self, result: Any) -> str:
+        """
+        Generate a human-readable summary of the tool result.
+        
+        Args:
+            result: The processed tool result
+            
+        Returns:
+            A summary string describing the result
+        """
+        if result is None:
+            return "completed (no output)"
+        
+        if isinstance(result, str):
+            # Truncate long results
+            if len(result) > 100:
+                lines = result.split("\n")
+                if len(lines) > 5:
+                    return f"returned {len(lines)} lines ({len(result)} chars)"
+                return f"returned {len(result)} chars"
+            return f"returned: {result[:100]}"
+        
+        if isinstance(result, list):
+            return f"returned {len(result)} items"
+        
+        if isinstance(result, dict):
+            keys = list(result.keys())
+            if len(keys) <= 3:
+                return f"returned keys: {', '.join(keys)}"
+            return f"returned {len(keys)} keys"
+        
+        return f"returned {type(result).__name__}"
     
     def get_service_for_tool(self, prefixed_name: str) -> Optional[str]:
         """

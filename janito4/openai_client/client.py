@@ -45,19 +45,22 @@ except ImportError:
 
 # Import provider configuration for base URLs
 try:
-    from ..provider_config import get_base_url_from_provider
+    from ..provider_config import get_base_url_from_provider, is_custom_provider, CUSTOM_ENDPOINT_MARKER
     PROVIDER_CONFIG_AVAILABLE = True
 except ImportError:
     try:
-        from provider_config import get_base_url_from_provider
+        from provider_config import get_base_url_from_provider, is_custom_provider, CUSTOM_ENDPOINT_MARKER
         PROVIDER_CONFIG_AVAILABLE = True
     except ImportError:
         PROVIDER_CONFIG_AVAILABLE = False
         def get_base_url_from_provider(provider: str) -> Optional[str]:
             return None
+        def is_custom_provider(provider: str) -> bool:
+            return False
+        CUSTOM_ENDPOINT_MARKER = "CUSTOM_ENDPOINT"
 
 # Import general configuration handling
-from janito4.general_config import load_provider_from_config, load_context_window_size
+from janito4.general_config import load_provider_from_config, load_context_window_size, load_endpoint_from_config
 
 
 def get_env_config() -> Tuple[Optional[str], str, str]:
@@ -66,6 +69,9 @@ def get_env_config() -> Tuple[Optional[str], str, str]:
     
     When OPENAI_BASE_URL is not defined, attempts to determine it based on
     the OPENAI_PROVIDER environment variable (if set) or provider from config.
+    
+    For 'custom' provider, the endpoint must be provided via --endpoint,
+    OPENAI_BASE_URL environment variable, or 'endpoint' key in config.json.
     
     Returns:
         Tuple of (base_url, api_key, model)
@@ -107,6 +113,18 @@ def get_env_config() -> Tuple[Optional[str], str, str]:
         if provider:
             base_url = get_base_url_from_provider(provider)
             logger.debug(f"Base URL from provider '{provider}': {base_url}")
+            
+            # Handle custom provider: requires explicit endpoint
+            if is_custom_provider(provider) and base_url == CUSTOM_ENDPOINT_MARKER:
+                # Try to get endpoint from config
+                config_endpoint = load_endpoint_from_config()
+                if config_endpoint:
+                    base_url = config_endpoint
+                    logger.debug(f"Using endpoint from config: {base_url}")
+                else:
+                    # No endpoint found - this will be caught by validation
+                    logger.warning("Custom provider selected but no endpoint configured")
+                    base_url = None
     
     return base_url, api_key, model
 
@@ -236,8 +254,11 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
         
         # Add max_tokens if context window size is set in config
         if context_window_size is not None:
-            call_kwargs["max_tokens"] = context_window_size
-        
+            if model.startswith("gpt-5"):
+                call_kwargs["max_completion_tokens"] = context_window_size
+            else:
+                call_kwargs["max_tokens"] = context_window_size
+
         # Make API call with tools if available
         if tools_schemas:
             logger.debug(f"Calling API with {len(tools_schemas)} tools")

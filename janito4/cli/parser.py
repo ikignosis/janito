@@ -48,6 +48,7 @@ Examples:
   janito4 --unset model                                      # Remove config value
   janito4 --get model                                        # Get config value
   janito4 --config                                           # Interactive configuration setup
+  janito4 --provider custom --endpoint https://api.example.com/v1  # Use custom provider
         """
     )
     
@@ -108,7 +109,13 @@ Examples:
     parser.add_argument(
         "--provider",
         metavar="NAME",
-        help="Provider name (e.g., openai, anthropic, azure)"
+        help="Provider name (e.g., openai, anthropic, azure, custom)"
+    )
+    
+    parser.add_argument(
+        "--endpoint",
+        metavar="URL",
+        help="API endpoint URL (required for 'custom' provider, or overrides provider base URL)"
     )
     
     parser.add_argument(

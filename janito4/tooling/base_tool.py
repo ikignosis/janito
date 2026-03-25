@@ -100,7 +100,7 @@ class BaseTool(ABC):
             message (str): The error message to display
             end (str): String appended after the message (default: "\n")
         """
-        print(f"❌{message}", file=sys.stderr, end=end, flush=True)
+        print(f"❌ {message}", file=sys.stderr, end=end, flush=True)
     
     def report_warning(self, message: str, end: str = "\n") -> None:
         """

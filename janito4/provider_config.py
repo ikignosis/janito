@@ -17,13 +17,16 @@ from typing import Dict, Optional
 
 # Provider to Base URL mapping
 # None means the standard OpenAI API endpoint (no custom base URL needed)
+# "custom" is a special case that requires an endpoint from --endpoint or config
 PROVIDER_BASE_URLS: Dict[str, Optional[str]] = {
     # AI Providers with OpenAI-compatible APIs
+    "openai": None,  # Standard OpenAI - no base_url needed
     "minimax": "https://api.minimax.io/v1",
     "xiaomi": "https://api.xiaomimimo.com/v1",
     "moonshot": "https://api.moonshot.ai/v1",
     "alibaba": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
-    "zai": "https://api.z.ai/api/paas/v4/"
+    "zai": "https://api.z.ai/api/paas/v4/",
+    "custom": "CUSTOM_ENDPOINT",  # Special marker - endpoint must be provided via --endpoint or config
 }
 
 
@@ -36,6 +39,7 @@ def get_base_url_from_provider(provider: str) -> Optional[str]:
     
     Returns:
         The base URL if found, None otherwise
+        For "custom" provider, returns "CUSTOM_ENDPOINT" marker
     """
     if not provider:
         return None
@@ -51,6 +55,24 @@ def get_base_url_from_provider(provider: str) -> Optional[str]:
             return value
     
     return None
+
+
+def is_custom_provider(provider: str) -> bool:
+    """
+    Check if a provider is the special "custom" provider.
+    
+    Args:
+        provider: The provider name (case-insensitive)
+    
+    Returns:
+        True if the provider is "custom", False otherwise
+    """
+    if not provider:
+        return False
+    return provider.lower() == "custom"
+
+
+CUSTOM_ENDPOINT_MARKER = "CUSTOM_ENDPOINT"
 
 
 def list_supported_providers() -> list:

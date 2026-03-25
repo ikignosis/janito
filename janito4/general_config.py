@@ -145,6 +145,17 @@ def load_context_window_size() -> Optional[int]:
     return None
 
 
+def load_endpoint_from_config() -> Optional[str]:
+    """Load custom endpoint URL from ~/.janito/config.json if it exists.
+    
+    This is used for the 'custom' provider or to override provider base URLs.
+    
+    Returns:
+        str: Endpoint URL from config, or None if not found
+    """
+    return get_config_value("endpoint")
+
+
 def get_masked_api_key(api_key: str) -> str:
     """Mask an API key to show only first and last few characters.
     
