@@ -131,17 +131,7 @@ class ReadEmails(BaseTool):
                 - 'error': error message if operation failed (only present if success=False)
         """
         try:
-            # Import secrets here to allow module to load without secrets dependency
-            try:
-                from janito4.secrets_config import get_secret
-            except ImportError:
-                # Fallback for when secrets_config is not available
-                self.report_error("Secrets module not available")
-                return {
-                    "success": False,
-                    "error": "Could not import secrets module. Ensure janito4 is properly installed.",
-                    "folder": folder
-                }
+            from janito4.secrets_config import get_secret
             
             # Fetch credentials from secrets
             self.report_start(f"Connecting to Gmail to read {folder}")
