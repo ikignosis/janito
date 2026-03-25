@@ -41,4 +41,4 @@ where = ["."]
 include = ["janito*"]
 
 [tool.setuptools_scm]
-version_scheme = "only-if-changed"
+version_scheme = "post-release"
