@@ -1,15 +1,12 @@
-# Janito4 - OpenAI CLI
-
-A powerful command-line interface for interacting with OpenAI-compatible APIs. Features built-in function calling, MCP support, real-time tool progress reporting, and an extensible tool system.
+# Janito4 - an OpenAI CLI with function calling and MCP
 
 ## Features
 
-- 🚀 **Easy Setup** - Interactive configuration with `--config` or quick setup with `--set` flags
 - 🔧 **Function Calling** - Built-in tools for file operations, web search, and more
+- 🔌 **MCP Support** - Connect to Model Context Protocol servers
 - 📊 **Real-time Progress** - Watch tool execution progress as it happens
-- 🔌 **Any OpenAI-Compatible API** - Works with OpenAI, Azure, local servers (LM Studio, Ollama), and custom endpoints
-- 💬 **Multiple Modes** - Single prompts, piped input, or interactive chat sessions
-- 🛠️ **Extensible** - Easy to add custom tools with automatic schema generation
+- 🚀 **Easy Setup** - Interactive configuration with `--config` or quick setup with `--set` flags
+- 🔌 **Any OpenAI-Compatible API** - Works with OpenAI, local servers (LM Studio, Ollama), and custom endpoints
 
 ## Quick Start
 
@@ -160,11 +157,20 @@ python -m janito4 "Search the web for the latest Python news"
 
 ### MCP Tools
 
-Connect to MCP servers for additional tools:
+Connect to MCP servers using the `/mcp` command inside the interactive shell:
 
 ```bash
-python -m janito4 --mcp-server=myserver "Use the read_file tool"
+# Add a stdio-based MCP server
+/mcp add myserver stdio python -m mcp.server
+
+# Add an HTTP-based MCP server
+/mcp add remote http https://api.example.com/mcp
+
+# List configured servers
+/mcp list
 ```
+
+For full MCP documentation, see [README_MCP.md](README_MCP.md).
 
 ## Tool Progress Reporting
 
