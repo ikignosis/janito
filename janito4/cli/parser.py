@@ -2,6 +2,8 @@
 
 import argparse
 
+from .. import __version__
+
 
 def create_parser() -> argparse.ArgumentParser:
     """Create and configure the CLI argument parser.
@@ -10,6 +12,7 @@ def create_parser() -> argparse.ArgumentParser:
         argparse.ArgumentParser: Configured argument parser
     """
     parser = argparse.ArgumentParser(
+        prog="janito4",
         description="OpenAI CLI - Send prompts to OpenAI-compatible endpoints",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
@@ -153,6 +156,13 @@ Examples:
         "--no-history",
         action="store_true",
         help="Don't persist input history to file (store only in memory)"
+    )
+    
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+        help="Show program's version number and exit"
     )
     
     return parser
