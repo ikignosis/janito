@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "OpenAI CLI with Function Calling Tools"
 readme = "README.md"
 authors = [{name = "Janito Developer", email = "developer@example.com"}]
-license = {text = "MIT"}
+license = "MIT"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
