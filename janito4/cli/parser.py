@@ -57,6 +57,7 @@ Examples:
   janito4 --config                                           # Interactive configuration setup
   janito4 --provider custom --endpoint https://api.example.com/v1  # Use custom provider
   janito4 --no-history                                          # Interactive chat without file history
+  janito4 --gmail                                              # Enable Gmail tools and email system prompt
         """
     )
     
@@ -184,6 +185,12 @@ Examples:
         "--no-history",
         action="store_true",
         help="Don't persist input history to file (store only in memory)"
+    )
+    
+    parser.add_argument(
+        "--gmail",
+        action="store_true",
+        help="Enable Gmail tools and use email-specific system prompt"
     )
     
     parser.add_argument(

@@ -13,6 +13,9 @@ import re
 # Configuration for auto-loading toolsets
 AUTOLOAD_TOOLSETS = ["files", "system"]
 
+# Track loaded toolsets to avoid duplicates
+_loaded_toolsets = set(AUTOLOAD_TOOLSETS.copy())
+
 
 def get_function_schema(func: Callable) -> Dict[str, Any]:
     """
@@ -136,6 +139,33 @@ def get_function_schema(func: Callable) -> Dict[str, Any]:
 
 # Dynamically discover and load tools from configured toolsets
 AVAILABLE_TOOLS = discover_toolsets(AUTOLOAD_TOOLSETS)
+
+
+def add_toolset(toolset_name: str) -> bool:
+    """
+    Dynamically add a toolset to the available tools.
+    
+    Args:
+        toolset_name: Name of the toolset to add (e.g., "gmail", "files", "system")
+        
+    Returns:
+        bool: True if the toolset was added, False if already loaded or invalid
+    """
+    global AVAILABLE_TOOLS, _loaded_toolsets
+    
+    if toolset_name in _loaded_toolsets:
+        return False
+    
+    _loaded_toolsets.add(toolset_name)
+    
+    # Discover and load tools from the new toolset
+    new_tools = discover_toolsets([toolset_name])
+    
+    if new_tools:
+        AVAILABLE_TOOLS.update(new_tools)
+        return True
+    
+    return False
 
 
 def get_all_tools() -> Dict[str, Callable]:

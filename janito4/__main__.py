@@ -22,7 +22,7 @@ import os
 import sys
 import logging
 
-from .system_prompt import SYSTEM_PROMPT
+from .system_prompt import SYSTEM_PROMPT, EMAIL_SYSTEM_PROMPT
 from .cli import create_parser
 from .cli.handlers import (
     handle_set_api_key,
@@ -201,11 +201,23 @@ def run_interactive_chat(args):
     Args:
         args: Parsed command line arguments
     """
+    # Set up Gmail mode if requested
+    if args.gmail:
+        from .tooling.tools_registry import add_toolset
+        add_toolset("gmail")
+        print("✓ Gmail tools enabled")
+    
     model = os.getenv("OPENAI_MODEL")
     print("Starting interactive chat session. Type '/exit' or CTRL-D to end the session")
     
+    # Choose system prompt based on Gmail mode
+    if args.gmail and not args.no_system_prompt:
+        effective_system_prompt = EMAIL_SYSTEM_PROMPT
+    else:
+        effective_system_prompt = None if args.no_system_prompt else SYSTEM_PROMPT
+    
     shell = InteractiveShell(model=model, no_history=args.no_history)
-    shell.initialize_history(system_prompt=None if args.no_system_prompt else SYSTEM_PROMPT)
+    shell.initialize_history(system_prompt=effective_system_prompt)
     shell.run(
         send_prompt_func=send_prompt,
         verbose=args.verbose,
@@ -219,6 +231,12 @@ def run_single_prompt(args):
     Args:
         args: Parsed command line arguments
     """
+    # Set up Gmail mode if requested
+    if args.gmail:
+        from .tooling.tools_registry import add_toolset
+        add_toolset("gmail")
+        print("✓ Gmail tools enabled")
+    
     prompt = args.prompt
     
     if not prompt:
@@ -230,7 +248,9 @@ def run_single_prompt(args):
         messages_history = []
         tools_to_use = []
     else:
-        messages_history = [{"role": "system", "content": SYSTEM_PROMPT}]
+        # Choose system prompt based on Gmail mode
+        effective_system_prompt = EMAIL_SYSTEM_PROMPT if args.gmail else SYSTEM_PROMPT
+        messages_history = [{"role": "system", "content": effective_system_prompt}]
         tools_to_use = None
 
     try:

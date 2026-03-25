@@ -87,7 +87,7 @@ class CreateDirectory(BaseTool):
             else:
                 os.mkdir(abs_directory)
             
-            self.report_result(f"Successfully created directory {norm_path_str}")
+            self.report_result(f"Successfully created directory")
             
             return {
                 "success": True,
