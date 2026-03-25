@@ -5,6 +5,8 @@ A simple command-line interface to interact with OpenAI-compatible endpoints
 with built-in function calling capabilities and MCP (Model Context Protocol) support.
 """
 
+from ._version import __version__, __version_tuple__
+
 # MCP modules
 from .mcp_config import (
     MCP_CONFIG_PATH,
@@ -28,6 +30,9 @@ from .mcp_manager import (
 )
 
 __all__ = [
+    # Version
+    "__version__",
+    "__version_tuple__",
     # MCP Config
     "MCP_CONFIG_PATH",
     "load_mcp_config",
