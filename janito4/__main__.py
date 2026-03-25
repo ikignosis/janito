@@ -18,12 +18,17 @@ Usage:
     python -m janito4 --set-api-key <key> --provider <name> # Store API key
 """
 
-import os
-import sys
-import logging
-
-from .system_prompt import SYSTEM_PROMPT, EMAIL_SYSTEM_PROMPT, ONEDRIVE_SYSTEM_PROMPT
+from .cli.logging_config import setup_logging
 from .cli import create_parser
+from .cli.setup import (
+    setup_api_key_from_config,
+    setup_provider_env,
+    setup_endpoint_env,
+    setup_model_env,
+    validate_required_config,
+)
+from .cli.input import read_stdin_prompt
+from .cli.chat import run_interactive_chat, run_single_prompt
 from .cli.handlers import (
     handle_set_api_key,
     handle_list_auth,
@@ -39,246 +44,11 @@ from .cli.handlers import (
     handle_delete_secret,
     handle_list_secrets,
 )
-from .general_config import (
-    load_model_from_config,
-    get_active_provider,
+from .cli.handlers.onedrive import (
+    handle_onedrive_auth,
+    handle_onedrive_logout,
+    handle_onedrive_status,
 )
-
-from .openai_client import send_prompt
-from .auth_config import get_api_key
-
-from .shell import InteractiveShell
-
-
-def setup_logging(log_levels: str = None):
-    """Configure logging based on --log argument.
-    
-    Args:
-        log_levels: Comma-separated list of log levels (e.g., "info,debug")
-                   Valid levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
-    """
-    # Configure root logger
-    logger = logging.getLogger()
-    
-    if log_levels:
-        # Parse log levels from comma-separated string
-        levels = [l.strip().upper() for l in log_levels.split(',')]
-        
-        # Set handlers for each level
-        for level in levels:
-            if level in ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'):
-                handler = logging.StreamHandler()
-                handler.setLevel(getattr(logging, level))
-                handler.setFormatter(logging.Formatter(
-                    f'%(levelname)s: %(message)s' if level == 'INFO' 
-                    else f'%(levelname)s: %(name)s: %(message)s'
-                ))
-                logger.addHandler(handler)
-                logger.setLevel(getattr(logging, level))
-    else:
-        # Default: no logging output
-        logger.setLevel(logging.CRITICAL + 1)
-
-
-def setup_api_key_from_config():
-    """Load API key from auth config if environment variable is not set.
-    
-    Priority (handled by get_active_provider):
-    1. JANITO_PROVIDER environment variable (from --provider CLI arg)
-    2. Provider from config.json
-    3. Default provider from auth.json
-    4. Fallback to 'openai'
-    """
-    if not os.getenv("OPENAI_API_KEY"):
-        provider = get_active_provider()
-        api_key = get_api_key(provider)
-        if api_key:
-            os.environ["OPENAI_API_KEY"] = api_key
-            return True
-    
-    return False
-
-
-def setup_provider_env(args):
-    """Set up provider environment variable from CLI args.
-    
-    Args:
-        args: Parsed command line arguments
-    """
-    if args.provider:
-        os.environ["JANITO_PROVIDER"] = args.provider
-
-
-def setup_endpoint_env(args):
-    """Set up endpoint environment variable from CLI args or config.
-    
-    For 'custom' provider, endpoint is required.
-    For other providers, endpoint from CLI overrides the provider's default base URL.
-    
-    Args:
-        args: Parsed command line arguments
-    """
-    # First check if --endpoint was passed on command line
-    if args.endpoint:
-        os.environ["OPENAI_BASE_URL"] = args.endpoint
-    # For custom provider, also check config if no CLI endpoint provided
-    elif args.provider and args.provider.lower() == "custom":
-        if not os.getenv("OPENAI_BASE_URL"):
-            from .general_config import load_endpoint_from_config
-            config_endpoint = load_endpoint_from_config()
-            if config_endpoint:
-                os.environ["OPENAI_BASE_URL"] = config_endpoint
-
-
-def setup_model_env(args):
-    """Set up model environment variable with priority: CLI > env > config.
-    
-    Args:
-        args: Parsed command line arguments
-    """
-    # 1. First, check if --model was passed on command line (highest priority)
-    if args.model:
-        os.environ["OPENAI_MODEL"] = args.model
-    # 2. Then check environment variable
-    elif not os.getenv("OPENAI_MODEL"):
-        # 3. Finally, check config file
-        config_model = load_model_from_config()
-        if config_model:
-            os.environ["OPENAI_MODEL"] = config_model
-
-
-def validate_required_config():
-    """Validate that required environment variables are set.
-    
-    Raises:
-        SystemExit: If required variables are missing
-    """
-    missing_vars = []
-    if not os.getenv("OPENAI_API_KEY"):
-        missing_vars.append("OPENAI_API_KEY")
-    if not os.getenv("OPENAI_MODEL"):
-        missing_vars.append("OPENAI_MODEL")
-    
-    # For custom provider, validate endpoint is set
-    provider = os.getenv("JANITO_PROVIDER")
-    if provider and provider.lower() == "custom":
-        if not os.getenv("OPENAI_BASE_URL"):
-            missing_vars.append("OPENAI_BASE_URL (required for 'custom' provider)")
-    
-    if missing_vars:
-        print(f"Error: Missing required environment variable(s): {', '.join(missing_vars)}", file=sys.stderr)
-        print("Please set these environment variables before running the CLI.", file=sys.stderr)
-        print("\nFor 'custom' provider, use --endpoint:", file=sys.stderr)
-        print(f"  janito4 --provider custom --endpoint https://api.example.com/v1", file=sys.stderr)
-        print("\nOr set the endpoint in config.json:", file=sys.stderr)
-        print(f"  janito4 --set endpoint=https://api.example.com/v1", file=sys.stderr)
-        sys.exit(1)
-
-
-def read_stdin_prompt():
-    """Read prompt from stdin if available.
-    
-    Returns:
-        str or None: The prompt from stdin, or None if not available
-    """
-    if not sys.stdin.isatty():
-        try:
-            prompt = sys.stdin.read().strip()
-            if prompt:
-                return prompt
-            else:
-                print("Error: Empty prompt provided via stdin.", file=sys.stderr)
-                sys.exit(1)
-        except KeyboardInterrupt:
-            print("\nOperation cancelled by user.", file=sys.stderr)
-            sys.exit(130)
-    return None
-
-
-def run_interactive_chat(args):
-    """Run the interactive chat session.
-    
-    Args:
-        args: Parsed command line arguments
-    """
-    # Set up Gmail mode if requested
-    if args.gmail:
-        from .tooling.tools_registry import add_toolset
-        add_toolset("gmail")
-        print("✓ Gmail tools enabled")
-    
-    # Set up OneDrive mode if requested
-    if args.onedrive:
-        from .tooling.tools_registry import add_toolset
-        add_toolset("onedrive")
-        print("✓ OneDrive tools enabled")
-    
-    model = os.getenv("OPENAI_MODEL")
-    print("Starting interactive chat session. Type '/exit' or CTRL-D to end the session")
-    
-    # Choose system prompt based on enabled modes
-    if args.no_system_prompt:
-        effective_system_prompt = None
-    elif args.onedrive:
-        effective_system_prompt = ONEDRIVE_SYSTEM_PROMPT
-    elif args.gmail:
-        effective_system_prompt = EMAIL_SYSTEM_PROMPT
-    else:
-        effective_system_prompt = SYSTEM_PROMPT
-    
-    shell = InteractiveShell(model=model, no_history=args.no_history)
-    shell.initialize_history(system_prompt=effective_system_prompt)
-    shell.run(
-        send_prompt_func=send_prompt,
-        verbose=args.verbose,
-        no_tools=args.no_system_prompt
-    )
-
-
-def run_single_prompt(args):
-    """Run a single prompt.
-    
-    Args:
-        args: Parsed command line arguments
-    """
-    # Set up Gmail mode if requested
-    if args.gmail:
-        from .tooling.tools_registry import add_toolset
-        add_toolset("gmail")
-        print("✓ Gmail tools enabled")
-    
-    # Set up OneDrive mode if requested
-    if args.onedrive:
-        from .tooling.tools_registry import add_toolset
-        add_toolset("onedrive")
-        print("✓ OneDrive tools enabled")
-    
-    prompt = args.prompt
-    
-    if not prompt:
-        print("Error: Empty prompt provided.", file=sys.stderr)
-        sys.exit(1)
-    
-    # Initialize messages history (with or without system prompt based on -Z flag)
-    if args.no_system_prompt:
-        messages_history = []
-        tools_to_use = []
-    else:
-        # Choose system prompt based on enabled modes
-        if args.onedrive:
-            effective_system_prompt = ONEDRIVE_SYSTEM_PROMPT
-        elif args.gmail:
-            effective_system_prompt = EMAIL_SYSTEM_PROMPT
-        else:
-            effective_system_prompt = SYSTEM_PROMPT
-        messages_history = [{"role": "system", "content": effective_system_prompt}]
-        tools_to_use = None
-
-    try:
-        send_prompt(prompt, verbose=args.verbose, previous_messages=messages_history, tools=tools_to_use)
-    except KeyboardInterrupt:
-        print("\nOperation cancelled by user.", file=sys.stderr)
-        sys.exit(130)
 
 
 def main():
@@ -334,112 +104,13 @@ def main():
     
     # Handle OneDrive auth commands
     if args.onedrive_auth:
-        from .tools.onedrive.device_code_auth import DeviceCodeAuth, store_token_data
-        from .secrets_config import get_secret
-        import sys
-        
-        client_id = get_secret("azure_client_id")
-        
-        if not client_id:
-            print("Error: azure_client_id not configured.", file=sys.stderr)
-            print("\nPlease set your Azure client ID first:", file=sys.stderr)
-            print("  janito4 --set-secret azure_client_id=your-client-id", file=sys.stderr)
-            print("\nTo get a client ID:", file=sys.stderr)
-            print("1. Go to https://portal.azure.com → Azure Active Directory → App registrations", file=sys.stderr)
-            print("2. Click 'New registration'", file=sys.stderr)
-            print("3. Enter name: 'Janito4 OneDrive'", file=sys.stderr)
-            print("4. For personal accounts: Select 'Accounts in any personal Microsoft account'", file=sys.stderr)
-            print("5. Click 'Register'", file=sys.stderr)
-            print("6. Copy the 'Application (client) ID'", file=sys.stderr)
-            return 1
-        
-        print("\n" + "=" * 60)
-        print("  MICROSOFT ONEDRIVE AUTHENTICATION")
-        print("=" * 60 + "\n")
-        
-        try:
-            # Get device code
-            auth = DeviceCodeAuth(client_id)
-            user_code, verification_url = auth.get_device_code()
-            
-            print(f"  Step 1: Open this URL in your browser:")
-            print(f"     {verification_url}")
-            print(f"\n  Step 2: Enter this code:")
-            print(f"     {user_code}")
-            print(f"\n  Step 3: Sign in with your Microsoft account")
-            print(f"  Step 4: Click 'Continue' to grant permissions")
-            print("\n  Waiting for authentication...")
-            
-            # Poll for token
-            token_data = auth.poll_for_token()
-            
-            # Store tokens
-            store_token_data(token_data)
-            
-            print("\n  [OK] Authentication successful!")
-            print("\nYour tokens have been saved and will be automatically refreshed.")
-            print("\nYou can now use OneDrive tools:")
-            print("  janito4 --onedrive \"List my files\"")
-            
-            return 0
-            
-        except KeyboardInterrupt:
-            print("\n\nAuthentication cancelled.")
-            return 130
-        except Exception as e:
-            print(f"\n\n[ERROR] Authentication failed: {e}", file=sys.stderr)
-            return 1
+        return handle_onedrive_auth()
     
     if args.onedrive_logout:
-        from .tools.onedrive.device_code_auth import clear_tokens
-        
-        print("Clearing OneDrive authentication tokens...")
-        clear_tokens()
-        print("[OK] Logged out successfully.")
-        print("\nTo log in again, run:")
-        print("  janito4 --onedrive-auth")
-        return 0
+        return handle_onedrive_logout()
     
     if args.onedrive_status:
-        from .secrets_config import get_secret
-        
-        client_id = get_secret("azure_client_id")
-        access_token = get_secret("azure_access_token")
-        refresh_token = get_secret("azure_refresh_token")
-        
-        print("OneDrive Authentication Status")
-        print("=" * 40)
-        
-        if not client_id:
-            print("Client ID: Not configured")
-            print("\nSet your client ID with:")
-            print("  janito4 --set-secret azure_client_id=your-client-id")
-            return 1
-        
-        print(f"Client ID: {client_id[:8]}...{client_id[-8:]}")
-        
-        if access_token and refresh_token:
-            import time
-            expires_at_str = get_secret("azure_token_expires_at")
-            if expires_at_str:
-                expires_at = float(expires_at_str)
-                remaining = expires_at - time.time()
-                if remaining > 0:
-                    print(f"Access Token: [OK] Valid (expires in {int(remaining)}s)")
-                else:
-                    print("Access Token: [EXPIRED] Will refresh automatically")
-            else:
-                print("Access Token: [OK] Stored")
-            print("Refresh Token: [OK] Stored")
-            print("\n[OK] Authenticated and ready to use!")
-        else:
-            print("Access Token: [MISSING] Not found")
-            print("Refresh Token: [MISSING] Not found")
-            print("\nRun authentication with:")
-            print("  janito4 --onedrive-auth")
-            return 1
-        
-        return 0
+        return handle_onedrive_status()
     
     # Try to load API key from config if not set in environment
     setup_api_key_from_config()
