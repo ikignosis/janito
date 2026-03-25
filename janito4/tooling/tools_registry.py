@@ -4,7 +4,7 @@ Main tools module for AI function calling.
 This module provides easy access to all available tools and their schemas.
 """
 
-from typing import Dict, Any, List, Callable, Optional, get_type_hints
+from typing import Dict, Any, List, Callable, Optional, get_type_hints, Union
 from ..tools import discover_toolsets
 import inspect
 import re
@@ -59,18 +59,56 @@ def get_function_schema(func: Callable) -> Dict[str, Any]:
     for param_name, param in sig.parameters.items():
         # Determine parameter type
         param_type = "string"  # default
+        items_type = "string"  # default for array items
+        is_array = False
+        
         if param_name in type_hints:
             hint = type_hints[param_name]
-            if hint == int or hint == Optional[int]:
+            
+            # Handle Optional[T] by unwrapping
+            origin = getattr(hint, '__origin__', None)
+            args = getattr(hint, '__args__', ())
+            
+            # Unwrap Optional (Union with None)
+            if origin is Union and type(None) in args:
+                # Get the non-None type
+                non_none_args = [a for a in args if a is not type(None)]
+                if len(non_none_args) == 1:
+                    hint = non_none_args[0]
+                    origin = getattr(hint, '__origin__', None)
+                    args = getattr(hint, '__args__', ())
+            
+            # Handle List[T] or List
+            if hint == List or origin is list:
+                is_array = True
+                if args:
+                    item_hint = args[0]
+                    if item_hint == int:
+                        items_type = "integer"
+                    elif item_hint == float:
+                        items_type = "number"
+                    elif item_hint == bool:
+                        items_type = "boolean"
+                    else:
+                        items_type = "string"
+                else:
+                    items_type = "string"
+            elif hint == int:
                 param_type = "integer"
-            elif hint == float or hint == Optional[float]:
+            elif hint == float:
                 param_type = "number"
-            elif hint == bool or hint == Optional[bool]:
+            elif hint == bool:
                 param_type = "boolean"
             # For other types, keep as string
         
         # Build property schema
-        prop_schema = {"type": param_type}
+        if is_array:
+            prop_schema = {
+                "type": "array",
+                "items": {"type": items_type}
+            }
+        else:
+            prop_schema = {"type": param_type}
         
         # Add description if available
         if param_name in param_descriptions:

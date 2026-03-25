@@ -23,12 +23,12 @@ class ReadMultipleFiles(BaseTool):
     Tool for reading the contents of multiple files.
     """
     
-    def run(self, filepaths: str, max_lines: Optional[int] = None) -> Dict[str, Any]:
+    def run(self, filepaths: List[str], max_lines: Optional[int] = None) -> Dict[str, Any]:
         """
         Read the contents of multiple files.
         
         Args:
-            filepaths (str): Comma-separated list of file paths to read
+            filepaths (List[str]): List of file paths to read
             max_lines (int, optional): Maximum number of lines to read per file (for large files)
         
         Returns:
@@ -39,7 +39,7 @@ class ReadMultipleFiles(BaseTool):
                 - 'successful_files': number of files successfully read
                 - 'error': error message if operation failed completely (only present if success=False)
         """
-        if not filepaths or not filepaths.strip():
+        if not filepaths or len(filepaths) == 0:
             self.report_error("No file paths provided")
             return {
                 "success": False,
@@ -49,9 +49,8 @@ class ReadMultipleFiles(BaseTool):
                 "files": []
             }
         
-        # Split the comma-separated string into a list of file paths
-        # Strip whitespace from each path
-        filepath_list = [path.strip() for path in filepaths.split(',') if path.strip()]
+        # Normalize the list (strip whitespace from each path)
+        filepath_list = [path.strip() for path in filepaths if path and path.strip()]
         
         if not filepath_list:
             self.report_error("No valid file paths provided")
@@ -170,21 +169,15 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(description="Read multiple files tool for AI function calling")
-    parser.add_argument("filepaths", help="Comma-separated list of file paths to read")
+    parser.add_argument("filepaths", nargs="+", help="File paths to read (multiple arguments)")
     parser.add_argument("--max-lines", "-m", type=int, help="Maximum number of lines to read per file")
     parser.add_argument("--json", "-j", action="store_true", help="Output in JSON format")
     
     args = parser.parse_args()
     
-    # Join the filepaths if multiple arguments were provided (for backward compatibility)
-    if isinstance(args.filepaths, list):
-        filepaths_str = ",".join(args.filepaths)
-    else:
-        filepaths_str = args.filepaths
-    
     tool_instance = ReadMultipleFiles()
     result = tool_instance.run(
-        filepaths=filepaths_str,
+        filepaths=args.filepaths,
         max_lines=args.max_lines
     )
     
