@@ -12,5 +12,6 @@ from . import help
 from . import history
 from . import mcp
 from . import multi
+from . import prompt
 
 __all__ = ["CmdHandler", "get_registered_commands", "register_command"]

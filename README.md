@@ -15,13 +15,13 @@
 pip install janito4
 
 # Configure interactively
-python -m janito4 --config
+janito4 --config
 
 # Or set options directly
-python -m janito4 --set provider=openai --set-api-key="sk-your-key" --set model=gpt-4
+janito4 --set provider=openai --set-api-key="sk-your-key" --set model=gpt-4
 
 # Start chatting
-python -m janito4 "Hello!"
+janito4 "Hello!"
 ```
 
 ## Installation
@@ -39,7 +39,7 @@ For development setup, see [README_DEV.md](README_DEV.md).
 ### Interactive Setup
 
 ```bash
-python -m janito4 --config
+janito4 --config
 ```
 
 You'll be prompted for:
@@ -54,22 +54,22 @@ Set options directly from the command line:
 
 ```bash
 # Set the provider
-python -m janito4 --set provider=openai
+janito4 --set provider=openai
 
 # Set your API key
-python -m janito4 --set-api-key="sk-your-key-here"
+janito4 --set-api-key="sk-your-key-here"
 
 # Set the model
-python -m janito4 --set model=gpt-4
+janito4 --set model=gpt-4
 
 # Combine multiple options
-python -m janito4 --set provider=openai --set model=gpt-4 --set-api-key="sk-your-key"
+janito4 --set provider=openai --set model=gpt-4 --set-api-key="sk-your-key"
 ```
 
 ### View Configuration
 
 ```bash
-python -m janito4 --show-config
+janito4 --show-config
 ```
 
 ### Available Options
@@ -87,19 +87,19 @@ For custom endpoints (base-url), see [README_LOCAL.md](README_LOCAL.md).
 ### Single Prompt
 
 ```bash
-python -m janito4 "What is the capital of France?"
+janito4 "What is the capital of France?"
 ```
 
 ### Pipe Input
 
 ```bash
-echo "Tell me a joke" | python -m janito4
+echo "Tell me a joke" | janito4
 ```
 
 ### Interactive Chat
 
 ```bash
-python -m janito4
+janito4
 ```
 
 Commands in chat mode:
@@ -110,9 +110,9 @@ Commands in chat mode:
 ### Logging
 
 ```bash
-python -m janito4 --log=info "Your prompt"      # Info level
-python -m janito4 --log=debug "Your prompt"     # Debug level
-python -m janito4 --log=info,debug "Your prompt" # Multiple levels
+janito4 --log=info "Your prompt"      # Info level
+janito4 --log=debug "Your prompt"     # Debug level
+janito4 --log=info,debug "Your prompt" # Multiple levels
 ```
 
 ## Examples
@@ -120,19 +120,19 @@ python -m janito4 --log=info,debug "Your prompt" # Multiple levels
 ### OpenAI
 
 ```bash
-python -m janito4 --set provider=openai --set-api-key="sk-your-key" --set model=gpt-4 "Explain quantum computing"
+janito4 --set provider=openai --set-api-key="sk-your-key" --set model=gpt-4 "Explain quantum computing"
 ```
 
 ### Local LLM (LM Studio, Ollama)
 
 ```bash
-python -m janito4 --set provider=openai --set-api-key="not-needed" --set model="local-model" "What is 2+2?"
+janito4 --set provider=openai --set-api-key="not-needed" --set model="local-model" "What is 2+2?"
 ```
 
 ### Azure OpenAI
 
 ```bash
-python -m janito4 --set provider=azure --set-api-key="your-key" --set model="gpt-4" "Hello"
+janito4 --set provider=azure --set-api-key="your-key" --set model="gpt-4" "Hello"
 ```
 
 ## Built-in Tools
@@ -143,16 +143,16 @@ Janito4 includes tools for common tasks:
 
 ```bash
 # List files
-python -m janito4.tools.files.list_files . --recursive --pattern "*.py"
+janito4.tools.files.list_files . --recursive --pattern "*.py"
 
 # Read file
-python -m janito4.tools.files.read_file README.md --max-lines 20
+janito4.tools.files.read_file README.md --max-lines 20
 ```
 
 ### Web Search
 
 ```bash
-python -m janito4 "Search the web for the latest Python news"
+janito4 "Search the web for the latest Python news"
 ```
 
 ### MCP Tools
