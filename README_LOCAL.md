@@ -10,10 +10,10 @@ You can pass configuration directly via command-line arguments:
 
 ```bash
 python -m janito4 \
-  --provider custom \
-  --endpoint http://localhost:8000/minimax/v1 \
-  --model MiniMax-M2.7 \
-  --api-key your-api-key-here \
+  --set provider=custom \
+  --set endpoint=http://localhost:8000/minimax/v1 \
+  --set model=MiniMax-M2.7 \
+  --set-api-key=your-api-key-here \
   "Your prompt here"
 ```
 
@@ -42,34 +42,10 @@ python -m janito4 "Your prompt here"
 
 | Argument | Description | Example |
 |----------|-------------|---------|
-| `--provider` | Provider type (openai, azure, custom) | `custom` |
-| `--endpoint` | Full API endpoint URL | `http://localhost:8000/minimax/v1` |
-| `--model` | Model name to use | `MiniMax-M2.7` |
-| `--api-key` | API key for authentication (optional if not required) | `sk-xxxxx` |
-
-## Environment Variables (Alternative)
-
-Instead of command-line arguments, you can set environment variables:
-
-```bash
-# Unix/Linux/macOS
-export JANITO_PROVIDER=custom
-export OPENAI_BASE_URL=http://localhost:8000/minimax/v1
-export OPENAI_MODEL=MiniMax-M2.7
-export OPENAI_API_KEY=your-api-key-here
-
-# Windows (PowerShell)
-$env:JANITO_PROVIDER = "custom"
-$env:OPENAI_BASE_URL = "http://localhost:8000/minimax/v1"
-$env:OPENAI_MODEL = "MiniMax-M2.7"
-$env:OPENAI_API_KEY = "your-api-key-here"
-```
-
-Then simply run:
-
-```bash
-python -m janito4 "Your prompt here"
-```
+| `--set provider=xxx` | Provider type (openai, azure, custom) | `custom` |
+| `--set endpoint=xxx` | Full API endpoint URL | `http://localhost:8000/minimax/v1` |
+| `--set model=xxx` | Model name to use | `MiniMax-M2.7` |
+| `--set-api-key=xxx` | API key for authentication (optional if not required) | `sk-xxxxx` |
 
 ## Usage Examples
 
@@ -77,9 +53,9 @@ python -m janito4 "Your prompt here"
 
 ```bash
 python -m janito4 \
-  --provider custom \
-  --endpoint http://localhost:8000/minimax/v1 \
-  --model MiniMax-M2.7 \
+  --set provider=custom \
+  --set endpoint=http://localhost:8000/minimax/v1 \
+  --set model=MiniMax-M2.7 \
   "What is 2+2?"
 ```
 
@@ -87,9 +63,9 @@ python -m janito4 \
 
 ```bash
 python -m janito4 \
-  --provider custom \
-  --endpoint http://localhost:8000/minimax/v1 \
-  --model MiniMax-M2.7
+  --set provider=custom \
+  --set endpoint=http://localhost:8000/minimax/v1 \
+  --set model=MiniMax-M2.7
 ```
 
 This starts an interactive session. Type your messages and press Enter. Type `exit` or `quit` to end.
@@ -98,18 +74,18 @@ This starts an interactive session. Type your messages and press Enter. Type `ex
 
 ```bash
 echo "Explain quantum computing" | python -m janito4 \
-  --provider custom \
-  --endpoint http://localhost:8000/minimax/v1 \
-  --model MiniMax-M2.7
+  --set provider=custom \
+  --set endpoint=http://localhost:8000/minimax/v1 \
+  --set model=MiniMax-M2.7
 ```
 
 ### With Tools
 
 ```bash
 python -m janito4 \
-  --provider custom \
-  --endpoint http://localhost:8000/minimax/v1 \
-  --model MiniMax-M2.7 \
+  --set provider=custom \
+  --set endpoint=http://localhost:8000/minimax/v1 \
+  --set model=MiniMax-M2.7 \
   "Read the first 10 lines of README.md and summarize it"
 ```
 
@@ -117,9 +93,9 @@ python -m janito4 \
 
 ```bash
 python -m janito4 \
-  --provider custom \
-  --endpoint http://localhost:8000/minimax/v1 \
-  --model MiniMax-M2.7 \
+  --set provider=custom \
+  --set endpoint=http://localhost:8000/minimax/v1 \
+  --set model=MiniMax-M2.7 \
   --log=debug \
   "Hello"
 ```
@@ -130,10 +106,10 @@ python -m janito4 \
 
 ```bash
 python -m janito4 \
-  --provider custom \
-  --endpoint http://localhost:1234/v1 \
-  --model local-model-name \
-  --api-key not-needed \
+  --set provider=custom \
+  --set endpoint=http://localhost:1234/v1 \
+  --set model=local-model-name \
+  --set-api-key=not-needed \
   "Your question"
 ```
 
@@ -141,10 +117,10 @@ python -m janito4 \
 
 ```bash
 python -m janito4 \
-  --provider custom \
-  --endpoint https://api.minimax.chat/minimax/v1 \
-  --model MiniMax-M2.7 \
-  --api-key your-minimax-api-key \
+  --set provider=custom \
+  --set endpoint=https://api.minimax.chat/minimax/v1 \
+  --set model=MiniMax-M2.7 \
+  --set-api-key=your-minimax-api-key \
   "Your question"
 ```
 
@@ -152,10 +128,10 @@ python -m janito4 \
 
 ```bash
 python -m janito4 \
-  --provider azure \
-  --endpoint https://your-resource.openai.azure.com \
-  --model your-deployment-name \
-  --api-key your-azure-key \
+  --set provider=azure \
+  --set endpoint=https://your-resource.openai.azure.com \
+  --set model=your-deployment-name \
+  --set-api-key=your-azure-key \
   "Your question"
 ```
 
@@ -170,7 +146,7 @@ python -m janito4 \
 ### Authentication Errors
 
 - **Invalid API key**: Verify your API key is correct
-- **Missing API key**: Some local servers don't require an API key - try setting `--api-key not-needed`
+- **Missing API key**: Some local servers don't require an API key - try setting `--set-api-key=not-needed`
 
 ### Model Not Found
 
@@ -192,7 +168,7 @@ python -m janito4 --help
 
    ```bash
    # ~/.bashrc or ~/.zshrc
-   alias janito-local='python -m janito4 --provider custom --endpoint http://localhost:8000/minimax/v1 --model MiniMax-M2.7'
+   alias janito-local='python -m janito4 --set provider=custom --set endpoint=http://localhost:8000/minimax/v1 --set model=MiniMax-M2.7'
    ```
 
    Then simply run: `janito-local "Your question"`

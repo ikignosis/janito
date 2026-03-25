@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "janito4"
 dynamic = ["version"]
-description = "OpenAI CLI with Function Calling Tools"
+description = "OpenAI CLI with Function Calling, MCP Support, and Extensible Tools"
 readme = "README.md"
 authors = [{name = "Janito Developer", email = "developer@example.com"}]
 license = "MIT"
@@ -26,6 +26,7 @@ dependencies = [
     "openai>=1.0.0",
     "rich>=10.0.0",
     "prompt-toolkit>=3.0.0",
+    "requests>=2.28.0",
 ]
 
 [project.urls]
