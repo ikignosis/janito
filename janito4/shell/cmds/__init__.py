@@ -10,5 +10,6 @@ from . import config
 from . import exit
 from . import help
 from . import history
+from . import mcp
 
 __all__ = ["CmdHandler", "get_registered_commands", "register_command"]

@@ -32,6 +32,17 @@ except (ImportError, ValueError):
         def get_tool_by_name(name):
             raise NotImplementedError("Tools not available")
 
+# Import MCP manager
+try:
+    from ..mcp_manager import get_mcp_manager, shutdown_mcp_manager
+    MCP_MANAGER_AVAILABLE = True
+except ImportError:
+    MCP_MANAGER_AVAILABLE = False
+    def get_mcp_manager():
+        return None
+    def shutdown_mcp_manager():
+        pass
+
 # Import provider configuration for base URLs
 try:
     from ..provider_config import get_base_url_from_provider
@@ -131,7 +142,18 @@ def _run_with_progress_bar(func, *args, **kwargs):
     return result[0]
 
 
-def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict[str, Any]] = None, tools: Optional[List[Dict[str, Any]]] = None) -> str:
+def _is_mcp_tool(tool_name: str) -> bool:
+    """Check if a tool name is an MCP tool (has service_ prefix)."""
+    # MCP tools are prefixed with their service name
+    # We check if the tool name starts with any known service prefix
+    mcp_manager = get_mcp_manager()
+    if mcp_manager:
+        service = mcp_manager.get_service_for_tool(tool_name)
+        return service is not None
+    return False
+
+
+def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict[str, Any]] = None, tools: Optional[List[Dict[str, Any]]] = None, use_mcp: bool = True) -> str:
     """Send prompt to OpenAI endpoint and return response.
     
     Args:
@@ -140,6 +162,7 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
         previous_messages: List of previous message dicts for conversation context
         tools: Optional list of tool schemas to pass. If None, uses all available tools.
                If an empty list, no tools are passed.
+        use_mcp: If True, load and use MCP tools (default True)
     """
     logger.info(f"Sending prompt to API")
     base_url, api_key, model = get_env_config()
@@ -152,13 +175,31 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
     
     logger.debug(f"OpenAI client created with base_url={base_url}")
     
+    # Initialize MCP manager and load services if enabled
+    mcp_manager = None
+    if use_mcp and MCP_MANAGER_AVAILABLE:
+        mcp_manager = get_mcp_manager()
+        try:
+            mcp_manager.load_services()
+            mcp_tools = mcp_manager.get_all_tools()
+            logger.info(f"Loaded {len(mcp_tools)} MCP tools from {len(mcp_manager.connected_services)} services")
+        except Exception as e:
+            logger.warning(f"Failed to load MCP tools: {e}")
+            mcp_tools = []
+    else:
+        mcp_tools = []
+    
     # Get available tools if not explicitly provided
     if tools is None:
-        tools_schemas = get_all_tool_schemas() if TOOLS_AVAILABLE else []
+        # Merge built-in tools with MCP tools
+        built_in_tools = get_all_tool_schemas() if TOOLS_AVAILABLE else []
+        tools_schemas = built_in_tools + mcp_tools
+        logger.debug(f"Using {len(built_in_tools)} built-in tools + {len(mcp_tools)} MCP tools")
     else:
         tools_schemas = tools
+        logger.debug(f"Using {len(tools_schemas)} provided tools")
     
-    logger.debug(f"Using {len(tools_schemas)} tools")
+    logger.debug(f"Using {len(tools_schemas)} tools total")
     
     # Load context window size from general config if set
     context_window_size = load_context_window_size()
@@ -172,6 +213,12 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
         text = Text(f"----- Model: {model} | Backend: {backend}")
         text.stylize("white on blue")
         console.print(text, highlight=False)
+        
+        # Show MCP status in verbose mode
+        if mcp_manager and mcp_manager.connected_services:
+            services_text = Text(f"----- MCP Services: {', '.join(mcp_manager.connected_services)}")
+            services_text.stylize("white on green")
+            console.print(services_text, highlight=False)
 
     # Use previous messages if provided, otherwise start with the user prompt
     messages = previous_messages if previous_messages else []
@@ -226,12 +273,21 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
                 
                 logger.info(f"Tool call: {tool_name}({tool_args})")
                 
+                # Check if this is an MCP tool
+                is_mcp = _is_mcp_tool(tool_name)
+                
                 try:
-                    # Call the actual tool function
-                    tool_function = get_tool_by_name(tool_name)
-                    logger.debug(f"Executing tool: {tool_name}")
-                    tool_result = tool_function(**tool_args)
-                    logger.info(f"Tool {tool_name} completed successfully")
+                    if is_mcp and mcp_manager:
+                        # Route to MCP manager
+                        logger.debug(f"Routing MCP tool call: {tool_name}")
+                        tool_result = mcp_manager.call_tool(tool_name, tool_args)
+                        logger.info(f"MCP tool {tool_name} completed successfully")
+                    else:
+                        # Route to built-in tool
+                        tool_function = get_tool_by_name(tool_name)
+                        logger.debug(f"Executing built-in tool: {tool_name}")
+                        tool_result = tool_function(**tool_args)
+                        logger.info(f"Tool {tool_name} completed successfully")
                     
                     # Add the tool response to messages
                     messages.append({
@@ -254,7 +310,7 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
                         "name": tool_name,
                         "content": json.dumps(error_result)
                     })
-                    print(f"❌ Tool error: {tool_name} - {e}", file=sys.stderr)
+                    print(f"\u274c Tool error: {tool_name} - {e}", file=sys.stderr)
             
             # Continue the loop to get the final response after tool calls
             continue

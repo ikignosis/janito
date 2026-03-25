@@ -258,7 +258,8 @@ Options:
   --model NAME       Model name to use (overrides OPENAI_MODEL env var and config)
   --log LEVELS       Enable logging (e.g., --log=info,debug or --log=warning)
   --list-auth        List configured providers and keys
-  --list-tools       List all available tools and their descriptions
+  --list-tools       List all available built-in tools
+  --list-mcp         List all MCP services and their tools
   -Z, --no-system-prompt  Do not set a system prompt or pass any tools to the CLI
 
 Examples:
@@ -268,7 +269,8 @@ Examples:
   janito4 --set-api-key sk-xxx --provider openai             # Store OpenAI API key
   janito4 --set-api-key xxx --provider anthropic             # Store API key for provider
   janito4 --list-auth                                        # Show configured providers
-  janito4 --list-tools                                       # List available tools
+  janito4 --list-tools                                       # List available built-in tools
+  janito4 --list-mcp                                         # List MCP services and tools
   janito4 --info                                             # Show resolved config info
   janito4 --log=info,debug "Your prompt"                     # Enable logging
   janito4 --model gpt-4 "Your prompt"                        # Use specific model
@@ -311,7 +313,13 @@ Examples:
     parser.add_argument(
         "--list-tools",
         action="store_true",
-        help="List all available tools and exit"
+        help="List all available built-in tools and exit"
+    )
+    
+    parser.add_argument(
+        "--list-mcp",
+        action="store_true",
+        help="List all MCP services and their tools"
     )
     
     parser.add_argument(
@@ -538,6 +546,63 @@ Examples:
         
         print(f"\nTotal: {len(schemas)} tools")
         print("\nPermission codes: r=read, w=write, x=execute")
+        return
+    
+    # Handle --list-mcp option
+    if args.list_mcp:
+        try:
+            from .mcp_config import list_services, MCP_CONFIG_PATH
+            from .mcp_manager import get_mcp_manager
+        except ImportError:
+            from mcp_config import list_services, MCP_CONFIG_PATH
+            from mcp_manager import get_mcp_manager
+        
+        services = list_services()
+        
+        print("MCP Services:")
+        print("=" * 60)
+        print(f"Config file: {MCP_CONFIG_PATH}")
+        print()
+        
+        if not services:
+            print("  No MCP services configured.")
+            print()
+            print("  Use /mcp add to configure MCP services in interactive mode")
+        else:
+            # Load MCP manager to get tools
+            manager = get_mcp_manager()
+            manager.load_services()
+            
+            for name, config in services.items():
+                transport = config.get("transport", "unknown")
+                connected = name in manager.connected_services
+                status = "[connected]" if connected else "[not connected]"
+                
+                print(f"  {name} ({transport}) {status}")
+                
+                if connected:
+                    # Get tools for this service
+                    try:
+                        # Refresh tools to get updated list
+                        tools = manager.get_all_tools(force_refresh=True)
+                        service_tools = [t for t in tools if t.get("function", {}).get("name", "").startswith(f"{name}_")]
+                        
+                        for tool in service_tools:
+                            func = tool.get("function", {})
+                            tool_name = func.get("name", "")
+                            # Remove prefix for display
+                            display_name = tool_name[len(name) + 1:] if tool_name else tool_name
+                            desc = func.get("description", "")[:50]
+                            print(f"    - {display_name}")
+                            if desc:
+                                print(f"      {desc}...")
+                    except Exception as e:
+                        print(f"    Error loading tools: {e}")
+                print()
+            
+            manager.unload_all()
+        
+        print("=" * 60)
         return
     
     # Check if stdin is not a tty (piped input)

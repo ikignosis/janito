@@ -39,6 +39,12 @@ class HelpCmdHandler(CmdHandler):
         print("Keyboard shortcuts:")
         print("  [F2]        - Restart conversation")
         print("  [F12]       - Do It (continue existing plan)")
+        print()
+        print("MCP Services:")
+        print("  /mcp add <name> stdio <cmd>  - Add stdio service")
+        print("  /mcp add <name> http <url>    - Add HTTP service")
+        print("  /mcp list                     - List MCP services")
+        print("  /mcp remove <name>            - Remove an MCP service")
         print("=" * 50)
         print()
 
