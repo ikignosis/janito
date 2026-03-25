@@ -50,6 +50,10 @@ Examples:
   janito4 --set model=gpt-4                                  # Set config value
   janito4 --unset model                                      # Remove config value
   janito4 --get model                                        # Get config value
+  janito4 --set-secret mykey=myvalue                        # Store a secret
+  janito4 --get-secret mykey                                # Retrieve a secret
+  janito4 --list-secrets                                    # List all secrets
+  janito4 --delete-secret mykey                             # Delete a secret
   janito4 --config                                           # Interactive configuration setup
   janito4 --provider custom --endpoint https://api.example.com/v1  # Use custom provider
   janito4 --no-history                                          # Interactive chat without file history
@@ -144,6 +148,30 @@ Examples:
         "--get",
         metavar="KEY",
         help="Get a config value from ~/.janito/config.json"
+    )
+    
+    parser.add_argument(
+        "--set-secret",
+        metavar="KEY=VALUE",
+        help="Set a secret in ~/.janito/secrets.json (e.g., --set-secret mykey=myvalue)"
+    )
+    
+    parser.add_argument(
+        "--get-secret",
+        metavar="KEY",
+        help="Get a secret value from ~/.janito/secrets.json"
+    )
+    
+    parser.add_argument(
+        "--delete-secret",
+        metavar="KEY",
+        help="Delete a secret from ~/.janito/secrets.json"
+    )
+    
+    parser.add_argument(
+        "--list-secrets",
+        action="store_true",
+        help="List all configured secrets"
     )
     
     parser.add_argument(

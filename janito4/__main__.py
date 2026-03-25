@@ -34,6 +34,10 @@ from .cli.handlers import (
     handle_info,
     handle_list_tools,
     handle_list_mcp,
+    handle_set_secret,
+    handle_get_secret,
+    handle_delete_secret,
+    handle_list_secrets,
 )
 from .general_config import (
     load_model_from_config,
@@ -273,6 +277,19 @@ def main():
     
     if args.set_api_key:
         return handle_set_api_key(args)
+    
+    # Handle secrets commands
+    if args.list_secrets:
+        return handle_list_secrets(args)
+    
+    if args.set_secret:
+        return handle_set_secret(args)
+    
+    if args.get_secret:
+        return handle_get_secret(args)
+    
+    if args.delete_secret:
+        return handle_delete_secret(args)
     
     # Try to load API key from config if not set in environment
     setup_api_key_from_config()
