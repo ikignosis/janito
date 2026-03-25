@@ -31,6 +31,7 @@ from .cli.handlers import (
     handle_get_config,
     handle_set_config,
     handle_unset_config,
+    handle_config_interactive,
     handle_info,
     handle_list_tools,
     handle_list_mcp,
@@ -241,6 +242,9 @@ def main():
     
     if args.unset:
         return handle_unset_config(args.unset)
+    
+    if args.config:
+        return handle_config_interactive()
     
     # Handle auth commands
     if args.list_auth:

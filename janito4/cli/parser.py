@@ -47,6 +47,7 @@ Examples:
   janito4 --set model=gpt-4                                  # Set config value
   janito4 --unset model                                      # Remove config value
   janito4 --get model                                        # Get config value
+  janito4 --config                                           # Interactive configuration setup
         """
     )
     
@@ -132,6 +133,12 @@ Examples:
         "--get",
         metavar="KEY",
         help="Get a config value from ~/.janito/config.json"
+    )
+    
+    parser.add_argument(
+        "--config",
+        action="store_true",
+        help="Interactive configuration setup for provider, API key, and context window"
     )
     
     return parser
