@@ -213,7 +213,6 @@ def create_github_release(tag, version):
 
 def main():
     build_only = "--build-only" in sys.argv
-    gh_release = "--gh-release" in sys.argv
     check_tool("build")
     check_tool("twine")
 
@@ -250,12 +249,12 @@ def main():
     print_info("Publishing to PyPI...")
     subprocess.run("twine upload dist/*", shell=True, check=True)
 
-    # Create GitHub release if requested
-    if gh_release:
+    # Create GitHub release (if GITHUB_TOKEN is set)
+    if os.environ.get("GITHUB_TOKEN"):
         print_info("Creating GitHub release...")
         create_github_release(tag, project_version)
     else:
-        print_info("Skipping GitHub release (use --gh-release to create release)")
+        print_warning("GITHUB_TOKEN not set. Skipping GitHub release creation.")
 
     print_info("Release process completed successfully.")
 
