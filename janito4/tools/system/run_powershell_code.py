@@ -96,7 +96,10 @@ class RunPowerShellCode(BaseTool):
                 code_preview = code[:200] + "..."
             self.report_start(f"Executing PowerShell code in {norm_working_dir}:\n{code_preview}")
 
-            encoding_prefix = "$OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; "
+            encoding_prefix = (
+                "$OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; "
+                "$InputEncoding = [Console]::InputEncoding = [System.Text.Encoding]::UTF8; "
+            )
             code_with_encoding = encoding_prefix + code
 
             # Build PowerShell command
