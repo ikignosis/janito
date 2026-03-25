@@ -3,8 +3,6 @@
 Setup script for Janito - OpenAI CLI with Function Calling Tools.
 """
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
-setup(
-    use_scm_data={"relative_to": __file__},
-)
+setup()
