@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Callable, Optional, TYPE_CHECKING
 
 from prompt_toolkit import PromptSession
-from prompt_toolkit.history import FileHistory
+from prompt_toolkit.history import FileHistory, InMemoryHistory
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.formatted_text import HTML
@@ -23,15 +23,17 @@ HISTORY_FILE = Path.cwd() / ".janito" / "history.log"
 class InteractiveShell:
     """Interactive shell for chat sessions using prompt_toolkit."""
     
-    def __init__(self, model: str, commands: Optional[List["CmdHandler"]] = None):
+    def __init__(self, model: str, commands: Optional[List["CmdHandler"]] = None, no_history: bool = False):
         """
         Initialize the interactive shell.
         
         Args:
             model: The model name to display in the prompt
             commands: List of command handlers (auto-loaded if not provided)
+            no_history: If True, use in-memory history only (no file persistence)
         """
         self.model = model
+        self.no_history = no_history
         self.messages_history: List[Dict[str, Any]] = []
         self.restart_requested = False
         self.do_it_requested = False
@@ -116,12 +118,17 @@ class InteractiveShell:
             }
         )
         
-        # Ensure the .janito directory exists
-        HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
+        # Set up history based on no_history flag
+        if self.no_history:
+            # In-memory only - don't persist to file
+            history = InMemoryHistory()
+        else:
+            # Persist to file in current directory
+            HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
+            history = FileHistory(str(HISTORY_FILE))
         
-        # Use FileHistory to persist input history to ~/.janito/history.log
         return PromptSession(
-            history=FileHistory(str(HISTORY_FILE)),
+            history=history,
             key_bindings=kb,
             style=chat_shell_style,
             bottom_toolbar=lambda: self._get_bottom_toolbar(),

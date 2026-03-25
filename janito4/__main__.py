@@ -211,7 +211,7 @@ def run_interactive_chat(args):
     model = os.getenv("OPENAI_MODEL")
     print("Starting interactive chat session. Type '/exit' or CTRL-D to end the session")
     
-    shell = InteractiveShell(model=model)
+    shell = InteractiveShell(model=model, no_history=args.no_history)
     shell.initialize_history(system_prompt=None if args.no_system_prompt else SYSTEM_PROMPT)
     shell.run(
         send_prompt_func=send_prompt,

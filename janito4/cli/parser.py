@@ -49,6 +49,7 @@ Examples:
   janito4 --get model                                        # Get config value
   janito4 --config                                           # Interactive configuration setup
   janito4 --provider custom --endpoint https://api.example.com/v1  # Use custom provider
+  janito4 --no-history                                          # Interactive chat without file history
         """
     )
     
@@ -146,6 +147,12 @@ Examples:
         "--config",
         action="store_true",
         help="Interactive configuration setup for provider, API key, and context window"
+    )
+    
+    parser.add_argument(
+        "--no-history",
+        action="store_true",
+        help="Don't persist input history to file (store only in memory)"
     )
     
     return parser

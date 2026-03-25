@@ -1,6 +1,6 @@
 # Janito4 - OpenAI CLI
 
-A simple command-line interface to interact with OpenAI-compatible endpoints (including OpenAI, Azure OpenAI, or any OpenAI-compatible API) with built-in function calling capabilities.
+A simple command-line interface to interact with OpenAI-compatible endpoints (including OpenAI or any OpenAI-compatible API) with built-in function calling capabilities.
 
 ## Features
 
@@ -54,7 +54,7 @@ export OPENAI_MODEL="gpt-4"
 
 # For OpenAI-compatible endpoints (set OPENAI_BASE_URL)
 export OPENAI_BASE_URL="https://api.openai.com"          # For OpenAI (explicit)
-# export OPENAI_BASE_URL="https://your-azure-endpoint.openai.azure.com"  # For Azure OpenAI
+
 # export OPENAI_BASE_URL="http://localhost:8080/v1"      # For local servers like LM Studio, Ollama, etc.
 export OPENAI_API_KEY="your-api-key-here"
 export OPENAI_MODEL="gpt-4"                              # Or your preferred model
@@ -112,14 +112,6 @@ export OPENAI_MODEL="local-model-name"
 python -m janito4 "What is 2+2?"
 ```
 
-### Azure OpenAI:
-```bash
-export OPENAI_BASE_URL="https://your-resource.openai.azure.com"
-export OPENAI_API_KEY="your-azure-api-key"
-export OPENAI_MODEL="your-deployment-name"
-python -m janito4 "Summarize this text: ..."
-```
-
 ### PowerShell Usage:
 ```powershell
 # Set environment variables for current session
@@ -139,60 +131,6 @@ echo "Tell me a joke" | python -m janito4
 | `OPENAI_BASE_URL` | Base URL of the OpenAI-compatible API | `https://api.openai.com` |
 | `OPENAI_API_KEY` | API key for authentication | `sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
 | `OPENAI_MODEL` | Model name/deployment name to use | `gpt-4`, `gpt-3.5-turbo`, `your-local-model` |
-
-## Tool Permissions System
-
-Tools must declare their required permissions using the `@tool` decorator with the `permissions` parameter. This allows the system to understand what capabilities each tool requires and enables permission-based security controls.
-
-### Permission Types
-
-- **`r`**: Read access (files, directories, system information)
-- **`w`**: Write access (create, modify, delete files/directories)  
-- **`x`**: Execute access (run commands, scripts, programs)
-- **`n`**: Network access (HTTP requests, network operations)
-
-Permissions can be combined (e.g., `"rw"`, `"rwx"`).
-
-### Usage Example
-
-```python
-from janito4.tooling import BaseTool
-from janito4.tools.decorator import tool
-
-@tool(permissions="r")
-class ReadFileTool(BaseTool):
-    """Tool for reading files from the filesystem."""
-    
-    def run(self, filepath: str):
-        """Read a file from the filesystem."""
-        self.report_start(f"Reading file: {filepath}")
-        # Implementation here
-        return {"success": True, "content": "file content"}
-
-@tool(permissions="rw")  
-class WriteFileTool(BaseTool):
-    """Tool for writing content to files."""
-    
-    def run(self, filepath: str, content: str):
-        """Write content to a file."""
-        self.report_start(f"Writing to file: {filepath}")
-        # Implementation here  
-        return {"success": True, "message": "File written successfully"}
-```
-
-### Accessing Permissions
-
-The permissions system provides functions to query tool permissions:
-
-```python
-from janito4.tooling.tools_registry import get_tool_permissions, get_all_tool_permissions
-
-# Get permissions for a specific tool
-perms = get_tool_permissions("read_file")  # Returns "r"
-
-# Get all tool permissions
-all_perms = get_all_tool_permissions()  # Returns {"read_file": "r", "write_file": "rw", ...}
-```
 
 ## Tool Progress Reporting
 
