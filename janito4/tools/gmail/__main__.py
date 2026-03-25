@@ -11,6 +11,7 @@ import json
 import sys
 
 from .read_emails import ReadEmails
+from .list_folders import ListFolders
 
 
 def main():
@@ -20,6 +21,23 @@ def main():
     )
     
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    
+    # List folders subcommand
+    list_parser = subparsers.add_parser(
+        "list-folders",
+        help="List all Gmail folders/labels",
+        description="List all available Gmail folders and labels via IMAP"
+    )
+    list_parser.add_argument(
+        "--counts", "-c",
+        action="store_true",
+        help="Include email counts for each folder (slower)"
+    )
+    list_parser.add_argument(
+        "--json", "-j",
+        action="store_true",
+        help="Output in JSON format"
+    )
     
     # Read emails subcommand
     read_parser = subparsers.add_parser(
@@ -61,7 +79,29 @@ def main():
     
     args = parser.parse_args()
     
-    if args.command == "read-emails" or args.command is None:
+    if args.command == "list-folders":
+        tool_instance = ListFolders()
+        result = tool_instance.run(include_counts=getattr(args, 'counts', False))
+        
+        if getattr(args, 'json', False):
+            print(json.dumps(result, indent=2, ensure_ascii=False))
+        else:
+            if result["success"]:
+                print(f"✓ Found {result['total_count']} folders/labels:\n")
+                
+                for folder in result["folders"]:
+                    desc = f" - {folder['description']}" if folder['description'] else ""
+                    if "total_count" in folder:
+                        unread_info = f" ({folder['unread_count']} unread)" if folder['unread_count'] else ""
+                        print(f"  • {folder['name']}{unread_info}{desc}")
+                    else:
+                        print(f"  • {folder['name']}{desc}")
+            else:
+                print(f"✗ Failed to list folders: {result['error']}")
+        
+        return 0 if result["success"] else 1
+    
+    elif args.command == "read-emails" or args.command is None:
         # Default to read-emails if no subcommand specified
         tool_instance = ReadEmails()
         result = tool_instance.run(

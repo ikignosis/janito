@@ -96,14 +96,15 @@ class CountEmails(BaseTool):
             mail = imaplib.IMAP4_SSL(self.IMAP_SERVER, self.IMAP_PORT)
             mail.login(username, password)
             
-            # Select the mailbox
-            status, messages = mail.select(folder)
+            # Select the mailbox (encode folder name as ASCII for Gmail compatibility)
+            folder_encoded = folder.encode('ascii', 'strict') if isinstance(folder, str) else folder
+            status, messages = mail.select(folder_encoded)
             if status != "OK":
                 mail.logout()
                 self.report_error(f"Failed to select folder: {folder}")
                 return {
                     "success": False,
-                    "error": f"Failed to select folder '{folder}': {messages[0].decode() if messages else 'Unknown error'}",
+                    "error": f"Failed to select folder '{folder}': {messages[0].decode() if isinstance(messages[0], bytes) else messages[0] if messages else 'Unknown error'}",
                     "folder": folder
                 }
             
@@ -171,7 +172,7 @@ class CountEmails(BaseTool):
             }
             
         except imaplib.IMAP4.error as e:
-            error_msg = e.args[0].decode() if e.args else str(e)
+            error_msg = e.args[0].decode() if e.args and isinstance(e.args[0], bytes) else str(e.args[0] if e.args else e)
             self.report_error(f"IMAP error: {error_msg}")
             return {
                 "success": False,
