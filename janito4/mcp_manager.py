@@ -6,7 +6,8 @@ import json
 import logging
 from typing import Dict, Any, List, Optional
 
-from .mcp_client import MCPTransport, create_transport
+from .mcp_client.base import MCPTransport
+from .mcp_client.factory import create_transport
 from .mcp_config import list_services, get_service
 
 logger = logging.getLogger(__name__)

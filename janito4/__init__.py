@@ -16,12 +16,10 @@ from .mcp_config import (
     list_services,
 )
 
-from .mcp_client import (
-    MCPTransport,
-    StdioTransport,
-    HttpTransport,
-    create_transport,
-)
+from .mcp_client.base import MCPTransport
+from .mcp_client.stdio import StdioTransport
+from .mcp_client.http import HttpTransport
+from .mcp_client.factory import create_transport
 
 from .mcp_manager import (
     MCPManager,

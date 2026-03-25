@@ -48,7 +48,7 @@ class CreateFile(BaseTool):
             
             # Check if file exists and overwrite is not allowed
             if os.path.exists(abs_filepath) and not overwrite:
-                self.report_error(f"File already exists: {norm_path_str} (use overwrite=True to replace)")
+                self.report_error("File already exists; (use overwrite=True to replace)")
                 return {
                     "success": False,
                     "error": f"File already exists: {norm_path_str} (use overwrite=True to replace)",

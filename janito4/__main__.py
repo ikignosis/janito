@@ -20,41 +20,39 @@ Usage:
 
 import os
 import sys
-import json
-import argparse
 import logging
 from typing import List, Dict, Any
+
 from .system_prompt import SYSTEM_PROMPT
+from .cli import create_parser
+from .cli.handlers import (
+    handle_set_api_key,
+    handle_list_auth,
+    handle_get_config,
+    handle_set_config,
+    handle_unset_config,
+    handle_info,
+    handle_list_tools,
+    handle_list_mcp,
+)
+from .general_config import (
+    load_provider_from_config,
+    load_model_from_config,
+    get_active_provider,
+)
 
 # Import the send_prompt function from the new module
 try:
     from .openai_client import send_prompt
 except ImportError:
-    # When running directly, not as a module
     from openai_client import send_prompt
 
 # Import auth configuration handling
 try:
-    from .auth_config import (
-        set_api_key, get_api_key, load_auth_config, 
-        get_auth_file_path, list_providers
-    )
+    from .auth_config import get_api_key
 except ImportError:
-    from auth_config import (
-        set_api_key, get_api_key, load_auth_config,
-        get_auth_file_path, list_providers
-    )
+    from auth_config import get_api_key
 
-# Import general configuration handling
-from janito4.general_config import (
-    load_provider_from_config, load_model_from_config,
-    get_active_provider, get_config_path,
-    set_config_value, get_config_value,
-    get_config_from_cli, set_config_from_cli,
-    unset_config_value
-)
-
-# Import interactive shell
 from .shell import InteractiveShell
 
 
@@ -98,16 +96,7 @@ def setup_api_key_from_config():
     4. Fallback to 'openai'
     """
     if not os.getenv("OPENAI_API_KEY"):
-        from .general_config import get_active_provider
-        
-        # Use the existing get_active_provider() function which handles priority correctly
         provider = get_active_provider()
-        
-        try:
-            from .auth_config import get_api_key
-        except ImportError:
-            from auth_config import get_api_key
-        
         api_key = get_api_key(provider)
         if api_key:
             os.environ["OPENAI_API_KEY"] = api_key
@@ -116,356 +105,22 @@ def setup_api_key_from_config():
     return False
 
 
-def get_masked_api_key(api_key: str) -> str:
-    """Mask an API key to show only first and last few characters.
+def setup_provider_env(args):
+    """Set up provider environment variable from CLI args.
     
     Args:
-        api_key: The API key to mask
-        
-    Returns:
-        str: Masked API key showing first 6 and last 4 characters
+        args: Parsed command line arguments
     """
-    if not api_key:
-        return "(not set)"
-    if len(api_key) <= 12:
-        return "***"
-    return f"{api_key[:6]}...{api_key[-4:]}"
-
-
-def print_config_info(cli_provider: str = None):
-    """Print information about the resolved configuration and exit.
-    
-    Shows the resolved provider, model, and API key (masked).
-    This helps users understand what configuration is being used.
-    
-    Args:
-        cli_provider: Provider specified via --provider CLI argument (highest priority)
-    """
-    from .general_config import (
-        load_provider_from_config, load_model_from_config,
-        get_active_provider, get_config_path
-    )
-    
-    # Determine resolved provider (priority: CLI arg/JANITO_PROVIDER > config.json > auth.json default > fallback)
-    provider = None
-    provider_source = ""
-    
-    # 1. First check JANITO_PROVIDER env var (set from --provider CLI arg)
-    env_provider = os.getenv("JANITO_PROVIDER")
-    if env_provider:
-        provider = env_provider
-        provider_source = "CLI argument"
-    # 2. Check CLI argument directly (if --info was called before env var was set)
-    elif cli_provider:
-        provider = cli_provider
-        provider_source = "CLI argument"
-    # 3. Check config.json for provider
-    else:
-        config_provider = load_provider_from_config()
-        if config_provider:
-            provider = config_provider
-            provider_source = "config.json"
-        else:
-            # 4. Check auth.json for default provider
-            try:
-                from .auth_config import get_default_provider
-            except ImportError:
-                from auth_config import get_default_provider
-            
-            default_provider = get_default_provider()
-            if default_provider:
-                provider = default_provider
-                provider_source = "auth.json (default)"
-            else:
-                # 5. Fall back to 'openai'
-                provider = "openai"
-                provider_source = "fallback"
-    
-    # Determine resolved model (priority: CLI > env var > config)
-    model = os.getenv("OPENAI_MODEL")
-    model_source = "environment variable"
-    
-    if not model:
-        config_model = load_model_from_config()
-        if config_model:
-            model = config_model
-            model_source = "config.json"
-        else:
-            model = None
-            model_source = "not set"
-    
-    # Determine API key (priority: env var > auth.json for resolved provider)
-    api_key = os.getenv("OPENAI_API_KEY")
-    api_key_source = "environment variable"
-    
-    if not api_key:
-        try:
-            from .auth_config import get_api_key
-        except ImportError:
-            from auth_config import get_api_key
-        
-        api_key = get_api_key(provider)
-        if api_key:
-            api_key_source = f"auth.json (provider: {provider})"
-        else:
-            api_key_source = "not set"
-    
-    # Print the info
-    print("Resolved Configuration:")
-    print("=" * 40)
-    print(f"Provider:     {provider} ({provider_source})")
-    print(f"Model:        {model or '(not set)'} ({model_source})")
-    print(f"API Key:      {get_masked_api_key(api_key)} ({api_key_source})")
-    print("=" * 40)
-    print(f"Config file:  {get_config_path()}")
-    
-    # Try to show auth file path too
-    try:
-        from .auth_config import get_auth_file_path
-        auth_path = get_auth_file_path()
-        if auth_path.exists():
-            print(f"Auth file:    {auth_path}")
-    except (ImportError, Exception):
-        pass
-    
-    print()
-    
-    # Show source details
-    if model_source == "not set":
-        print("Note: Model not configured. Use --model, OPENAI_MODEL env var, or config.json")
-    if api_key_source == "not set":
-        print("Note: API key not configured. Use --set-api-key or OPENAI_API_KEY env var")
-
-
-def main():
-    """Main entry point."""
-    parser = argparse.ArgumentParser(
-        description="OpenAI CLI - Send prompts to OpenAI-compatible endpoints",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Environment Variables:
-  OPENAI_BASE_URL    - Base URL of the OpenAI-compatible API endpoint (optional for standard OpenAI)
-  OPENAI_API_KEY     - API key for authentication  
-  OPENAI_MODEL       - Model name to use for completions
-
-Configuration:
-  API keys can be stored in ~/.janito/auth.json using --set-api-key
-  If OPENAI_API_KEY is not set, the CLI will try to load from the auth config
-
-Options:
-  --set-api-key KEY  Set API key for the specified provider
-  --provider NAME    Provider name (e.g., openai, anthropic, azure)
-  --model NAME       Model name to use (overrides OPENAI_MODEL env var and config)
-  --log LEVELS       Enable logging (e.g., --log=info,debug or --log=warning)
-  --list-auth        List configured providers and keys
-  --list-tools       List all available built-in tools
-  --list-mcp         List all MCP services and their tools
-  -Z, --no-system-prompt  Do not set a system prompt or pass any tools to the CLI
-
-Examples:
-  janito4 "What is the capital of France?"                    # Single prompt mode
-  echo "Tell me a joke" | janito4                             # Pipe input mode
-  janito4                                                     # Interactive chat mode
-  janito4 --set-api-key sk-xxx --provider openai             # Store OpenAI API key
-  janito4 --set-api-key xxx --provider anthropic             # Store API key for provider
-  janito4 --list-auth                                        # Show configured providers
-  janito4 --list-tools                                       # List available built-in tools
-  janito4 --list-mcp                                         # List MCP services and tools
-  janito4 --info                                             # Show resolved config info
-  janito4 --log=info,debug "Your prompt"                     # Enable logging
-  janito4 --model gpt-4 "Your prompt"                        # Use specific model
-  janito4 --set model=gpt-4                                  # Set config value
-  janito4 --unset model                                      # Remove config value
-  janito4 --get model                                        # Get config value
-        """
-    )
-    
-    parser.add_argument(
-        "prompt", 
-        nargs="?", 
-        help="The prompt to send to the AI (if not provided, starts interactive chat)"
-    )
-    
-    parser.add_argument(
-        "-v", "--verbose",
-        action="store_true",
-        help="Enable verbose output (shows model and backend info)"
-    )
-    
-    parser.add_argument(
-        "--log",
-        metavar="LEVELS",
-        help="Enable logging (e.g., --log=info,debug or --log=warning,error)"
-    )
-    
-    parser.add_argument(
-        "--info",
-        action="store_true",
-        help="Print resolved configuration (provider, model, API key) and exit"
-    )
-    
-    parser.add_argument(
-        "-Z", "--no-system-prompt",
-        action="store_true",
-        help="Do not set a system prompt (send user prompt directly)"
-    )
-    
-    parser.add_argument(
-        "--list-tools",
-        action="store_true",
-        help="List all available built-in tools and exit"
-    )
-    
-    parser.add_argument(
-        "--list-mcp",
-        action="store_true",
-        help="List all MCP services and their tools"
-    )
-    
-    parser.add_argument(
-        "--set-api-key",
-        metavar="KEY",
-        help="Set API key for the specified provider (requires --provider)"
-    )
-    
-    parser.add_argument(
-        "--model",
-        metavar="NAME",
-        help="Model name to use for completions (overrides OPENAI_MODEL env var and config)"
-    )
-    
-    parser.add_argument(
-        "--provider",
-        metavar="NAME",
-        help="Provider name (e.g., openai, anthropic, azure)"
-    )
-    
-
-    
-    parser.add_argument(
-        "--list-auth",
-        action="store_true",
-        help="List configured authentication providers"
-    )
-    
-    parser.add_argument(
-        "--set",
-        metavar="KEY=VALUE",
-        help="Set a config key-value pair in ~/.janito/config.json (e.g., --set model=gpt-4)"
-    )
-    
-    parser.add_argument(
-        "--unset",
-        metavar="KEY",
-        help="Remove a config key from ~/.janito/config.json (e.g., --unset model)"
-    )
-    
-    parser.add_argument(
-        "--get",
-        metavar="KEY",
-        help="Get a config value from ~/.janito/config.json"
-    )
-    
-    args = parser.parse_args()
-    
-    # Configure logging based on --log argument
-    setup_logging(args.log)
-    
-    # Handle --info option (print config and exit)
-    if args.info:
-        print_config_info(cli_provider=args.provider)
-        return
-    
-    # Store --provider in environment for other parts of the CLI to access
-    # (This is needed because other modules use get_active_provider() which doesn't know about CLI args)
     if args.provider:
         os.environ["JANITO_PROVIDER"] = args.provider
+
+
+def setup_model_env(args):
+    """Set up model environment variable with priority: CLI > env > config.
     
-    # Handle --get option
-    if args.get:
-        try:
-            value = get_config_from_cli(args.get)
-            if value is not None:
-                print(value)
-            else:
-                print(f"Key '{args.get}' not found in config", file=sys.stderr)
-                sys.exit(1)
-        except FileNotFoundError:
-            print(f"Config file not found: {get_config_path()}", file=sys.stderr)
-            sys.exit(1)
-        except json.JSONDecodeError as e:
-            print(f"Invalid JSON in config file: {e}", file=sys.stderr)
-            sys.exit(1)
-        return
-    
-    # Handle --set option
-    if args.set:
-        try:
-            key, value = set_config_from_cli(args.set)
-            print(f"[OK] Set {key}={value} in {get_config_path()}")
-        except ValueError as e:
-            print(f"Error: {e}", file=sys.stderr)
-            print("Usage: janito4 --set model=gpt-4", file=sys.stderr)
-            sys.exit(1)
-        return
-    
-    # Handle --unset option
-    if args.unset:
-        if unset_config_value(args.unset):
-            print(f"[OK] Removed '{args.unset}' from {get_config_path()}")
-        else:
-            print(f"Key '{args.unset}' not found in config", file=sys.stderr)
-            sys.exit(1)
-        return
-    
-    # Handle --list-auth option
-    if args.list_auth:
-        providers = list_providers()
-        auth_file = get_auth_file_path()
-        
-        print("Configured Authentication Providers:")
-        print("=" * 40)
-        print(f"Config file: {auth_file}")
-        print()
-        
-        if not providers:
-            print("No providers configured.")
-            print("\nUse --set-api-key with --provider to add API keys:")
-            print("  janito4 --set-api-key <key> --provider openai")
-        else:
-            for provider in providers:
-                print(f"  {provider}: ***")
-        
-        return
-    
-    # Handle --set-api-key option
-    if args.set_api_key:
-        if not args.provider:
-            print("Error: --provider is required when using --set-api-key", file=sys.stderr)
-            print("Usage: janito4 --set-api-key <key> --provider <name>", file=sys.stderr)
-            sys.exit(1)
-        
-        success = set_api_key(args.provider, args.set_api_key)
-        
-        if success:
-            auth_file = get_auth_file_path()
-            print(f"✓ API key stored successfully for provider '{args.provider}'")
-            print(f"  Config file: {auth_file}")
-            
-            # If this is the openai provider, also set it for current session
-            if args.provider == "openai":
-                os.environ["OPENAI_API_KEY"] = args.set_api_key
-                print(f"  API key also set for current session")
-        else:
-            print("Error: Failed to store API key", file=sys.stderr)
-            sys.exit(1)
-        
-        return
-    
-    # Try to load API key from config if not set in environment
-    setup_api_key_from_config()
-    
-    # Handle model selection with priority: CLI arg > env var > config
+    Args:
+        args: Parsed command line arguments
+    """
     # 1. First, check if --model was passed on command line (highest priority)
     if args.model:
         os.environ["OPENAI_MODEL"] = args.model
@@ -475,14 +130,19 @@ Examples:
         config_model = load_model_from_config()
         if config_model:
             os.environ["OPENAI_MODEL"] = config_model
+
+
+def validate_required_config():
+    """Validate that required environment variables are set.
     
-    # Validate required environment variables at startup
+    Raises:
+        SystemExit: If required variables are missing
+    """
     missing_vars = []
     if not os.getenv("OPENAI_API_KEY"):
         missing_vars.append("OPENAI_API_KEY")
     if not os.getenv("OPENAI_MODEL"):
         missing_vars.append("OPENAI_MODEL")
-    # Note: OPENAI_BASE_URL is optional for standard OpenAI, so we don't require it
     
     if missing_vars:
         print(f"Error: Missing required environment variable(s): {', '.join(missing_vars)}", file=sys.stderr)
@@ -490,155 +150,52 @@ Examples:
         print("\nAlternatively, you can store your API key using:", file=sys.stderr)
         print(f"  janito4 --set-api-key <your-key> --provider openai", file=sys.stderr)
         sys.exit(1)
+
+
+def read_stdin_prompt():
+    """Read prompt from stdin if available.
     
-    # Handle --list-tools option
-    if args.list_tools:
-        try:
-            from .tooling.tools_registry import get_all_tool_schemas, get_all_tool_permissions
-        except ImportError:
-            from tooling.tools_registry import get_all_tool_schemas, get_all_tool_permissions
-        
-        schemas = get_all_tool_schemas()
-        permissions = get_all_tool_permissions()
-        
-        print("Available Tools:")
-        print("=" * 60)
-        
-        # Group tools by category based on name prefixes
-        categories = {
-            "File Operations": [],
-            "System Operations": [],
-            "Other": []
-        }
-        
-        for schema in schemas:
-            func_info = schema['function']
-            name = func_info['name']
-            perms = permissions.get(name, "")
-            
-            # Get parameter names only
-            params = func_info['parameters']['properties']
-            param_names = list(params.keys())
-            
-            tool_info = {
-                'name': name,
-                'permissions': perms,
-                'params': param_names
-            }
-            
-            if name.startswith(('Create', 'Delete', 'List', 'Read', 'Remove', 'Replace', 'Search')):
-                categories["File Operations"].append(tool_info)
-            elif name.startswith(('Get', 'Run')):
-                categories["System Operations"].append(tool_info)
-            else:
-                categories["Other"].append(tool_info)
-        
-        # Display tools by category
-        for category, tools_list in categories.items():
-            if tools_list:
-                print(f"\n{category}:")
-                print("-" * 40)
-                
-                for tool in sorted(tools_list, key=lambda x: x['name']):
-                    perms_str = f" [{tool['permissions']}]" if tool['permissions'] else ""
-                    params_str = f" ({', '.join(tool['params'])})" if tool['params'] else " (no params)"
-                    print(f"  {tool['name']}{perms_str}{params_str}")
-        
-        print(f"\nTotal: {len(schemas)} tools")
-        print("\nPermission codes: r=read, w=write, x=execute")
-        return
-    
-    # Handle --list-mcp option
-    if args.list_mcp:
-        try:
-            from .mcp_config import list_services, MCP_CONFIG_PATH
-            from .mcp_manager import get_mcp_manager
-        except ImportError:
-            from mcp_config import list_services, MCP_CONFIG_PATH
-            from mcp_manager import get_mcp_manager
-        
-        services = list_services()
-        
-        print("MCP Services:")
-        print("=" * 60)
-        print(f"Config file: {MCP_CONFIG_PATH}")
-        print()
-        
-        if not services:
-            print("  No MCP services configured.")
-            print()
-            print("  Use /mcp add to configure MCP services in interactive mode")
-        else:
-            # Load MCP manager to get tools
-            manager = get_mcp_manager()
-            manager.load_services()
-            
-            for name, config in services.items():
-                transport = config.get("transport", "unknown")
-                connected = name in manager.connected_services
-                status = "[connected]" if connected else "[not connected]"
-                
-                print(f"  {name} ({transport}) {status}")
-                
-                if connected:
-                    # Get tools for this service
-                    try:
-                        # Refresh tools to get updated list
-                        tools = manager.get_all_tools(force_refresh=True)
-                        service_tools = [t for t in tools if t.get("function", {}).get("name", "").startswith(f"{name}_")]
-                        
-                        for tool in service_tools:
-                            func = tool.get("function", {})
-                            tool_name = func.get("name", "")
-                            # Remove prefix for display
-                            display_name = tool_name[len(name) + 1:] if tool_name else tool_name
-                            desc = func.get("description", "")[:50]
-                            print(f"    - {display_name}")
-                            if desc:
-                                print(f"      {desc}...")
-                    except Exception as e:
-                        print(f"    Error loading tools: {e}")
-                print()
-            
-            manager.unload_all()
-        
-        print("=" * 60)
-        return
-    
-    # Check if stdin is not a tty (piped input)
-    if args.prompt is None and not sys.stdin.isatty():
-        # Read prompt from stdin
+    Returns:
+        str or None: The prompt from stdin, or None if not available
+    """
+    if not sys.stdin.isatty():
         try:
             prompt = sys.stdin.read().strip()
-            if not prompt:
+            if prompt:
+                return prompt
+            else:
                 print("Error: Empty prompt provided via stdin.", file=sys.stderr)
                 sys.exit(1)
-            args.prompt = prompt
         except KeyboardInterrupt:
             print("\nOperation cancelled by user.", file=sys.stderr)
             sys.exit(130)
+    return None
+
+
+def run_interactive_chat(args):
+    """Run the interactive chat session.
     
-    # Handle chat mode (when no prompt is provided)
-    if args.prompt is None:
-        
-        # Get model name for the prompt (already validated at startup)
-        model = os.getenv("OPENAI_MODEL")
-        
-        print("Starting interactive chat session. Type '/exit' or CTRL-D to end the session")
- 
-        
-        # Initialize and run the interactive shell
-        shell = InteractiveShell(model=model)
-        shell.initialize_history(system_prompt=None if args.no_system_prompt else SYSTEM_PROMPT)
-        shell.run(
-            send_prompt_func=send_prompt,
-            verbose=args.verbose,
-            no_tools=args.no_system_prompt
-        )
-        
-        return
+    Args:
+        args: Parsed command line arguments
+    """
+    model = os.getenv("OPENAI_MODEL")
+    print("Starting interactive chat session. Type '/exit' or CTRL-D to end the session")
     
-    # Handle single prompt mode
+    shell = InteractiveShell(model=model)
+    shell.initialize_history(system_prompt=None if args.no_system_prompt else SYSTEM_PROMPT)
+    shell.run(
+        send_prompt_func=send_prompt,
+        verbose=args.verbose,
+        no_tools=args.no_system_prompt
+    )
+
+
+def run_single_prompt(args):
+    """Run a single prompt.
+    
+    Args:
+        args: Parsed command line arguments
+    """
     prompt = args.prompt
     
     if not prompt:
@@ -658,6 +215,66 @@ Examples:
     except KeyboardInterrupt:
         print("\nOperation cancelled by user.", file=sys.stderr)
         sys.exit(130)
+
+
+def main():
+    """Main entry point."""
+    parser = create_parser()
+    args = parser.parse_args()
+    
+    # Configure logging based on --log argument
+    setup_logging(args.log)
+    
+    # Handle --info option (print config and exit)
+    if args.info:
+        return handle_info(args)
+    
+    # Set up provider from CLI args
+    setup_provider_env(args)
+    
+    # Handle config commands (these return early)
+    if args.get:
+        return handle_get_config(args.get)
+    
+    if args.set:
+        return handle_set_config(args.set)
+    
+    if args.unset:
+        return handle_unset_config(args.unset)
+    
+    # Handle auth commands
+    if args.list_auth:
+        return handle_list_auth(args)
+    
+    if args.set_api_key:
+        return handle_set_api_key(args)
+    
+    # Try to load API key from config if not set in environment
+    setup_api_key_from_config()
+    
+    # Set up model environment variable
+    setup_model_env(args)
+    
+    # Handle info/list commands (these return early)
+    if args.list_tools:
+        return handle_list_tools(args)
+    
+    if args.list_mcp:
+        return handle_list_mcp(args)
+    
+    # Validate required configuration
+    validate_required_config()
+    
+    # Check for stdin input
+    stdin_prompt = read_stdin_prompt()
+    if stdin_prompt:
+        args.prompt = stdin_prompt
+    
+    # Run chat or single prompt
+    if args.prompt is None:
+        run_interactive_chat(args)
+    else:
+        run_single_prompt(args)
 
 
 if __name__ == "__main__":
