@@ -3,10 +3,12 @@
 ## Features
 
 - 🔧 **Function Calling** - Built-in tools for file operations, web search, and more
+- 📧 **Gmail Integration** - Read, search, and manage emails
+- ☁️ **OneDrive Integration** - Browse, upload, download, and share files
 - 🔌 **MCP Support** - Connect to Model Context Protocol servers
 - 📊 **Real-time Progress** - Watch tool execution progress as it happens
 - 🚀 **Easy Setup** - Interactive configuration with `--config` or quick setup with `--set` flags
-- 🔌 **Any OpenAI-Compatible API** - Works with OpenAI, local servers (LM Studio, Ollama), and custom endpoints
+- 🔗 **Any OpenAI-Compatible API** - Works with OpenAI, local servers (LM Studio, Ollama), and custom endpoints
 
 ## Quick Start
 
@@ -138,6 +140,36 @@ janito4 --set provider=azure --set-api-key="your-key" --set model="gpt-4" "Hello
 ## Built-in Tools
 
 Janito4 includes tools for common tasks:
+
+### Email Integration (Gmail)
+
+```bash
+# Authenticate with Gmail
+janito4 --gmail-auth
+
+# Use Gmail in chat mode
+janito4 --gmail
+
+# Check emails
+janito4 --gmail "Show my unread emails from today"
+```
+
+For full Gmail documentation, see [janito4/tools/README.gmail.md](janito4/tools/README.gmail.md).
+
+### Cloud Storage (OneDrive)
+
+```bash
+# Authenticate with Microsoft OneDrive
+janito4 --onedrive-auth
+
+# Use OneDrive in chat mode
+janito4 --onedrive
+
+# List files
+janito4 --onedrive "List my files in Documents"
+```
+
+For full OneDrive documentation, see [janito4/tools/README.onedrive.md](janito4/tools/README.onedrive.md).
 
 ### File Operations
 

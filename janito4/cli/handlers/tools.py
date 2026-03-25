@@ -27,6 +27,14 @@ def handle_list_tools(args) -> int:
             from janito4.tooling.tools_registry import add_toolset
         add_toolset("gmail")
     
+    # Add onedrive toolset if --onedrive flag is set
+    if getattr(args, 'onedrive', False):
+        try:
+            from ...tooling.tools_registry import add_toolset
+        except ImportError:
+            from janito4.tooling.tools_registry import add_toolset
+        add_toolset("onedrive")
+    
     schemas = get_all_tool_schemas()
     permissions = get_all_tool_permissions()
     
@@ -38,6 +46,7 @@ def handle_list_tools(args) -> int:
         "File Operations": [],
         "System Operations": [],
         "Email Operations": [],
+        "OneDrive Operations": [],
         "Other": []
     }
     
@@ -56,12 +65,14 @@ def handle_list_tools(args) -> int:
             'params': param_names
         }
         
-        if name.startswith(('Create', 'Delete', 'List', 'Read', 'Remove', 'Replace', 'Search')) and 'Email' not in name:
+        if name.startswith(('Create', 'Delete', 'List', 'Read', 'Remove', 'Replace', 'Search', 'Move')) and 'Email' not in name and 'OneDrive' not in name:
             categories["File Operations"].append(tool_info)
         elif name.startswith(('Get', 'Run')):
             categories["System Operations"].append(tool_info)
         elif name.startswith(('Send', 'Read', 'Compose', 'SearchEmail')) or 'Email' in name:
             categories["Email Operations"].append(tool_info)
+        elif 'OneDrive' in name:
+            categories["OneDrive Operations"].append(tool_info)
         else:
             categories["Other"].append(tool_info)
     

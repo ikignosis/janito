@@ -58,6 +58,7 @@ Examples:
   janito4 --provider custom --endpoint https://api.example.com/v1  # Use custom provider
   janito4 --no-history                                          # Interactive chat without file history
   janito4 --gmail                                              # Enable Gmail tools and email system prompt
+  janito4 --onedrive                                           # Enable OneDrive tools and file system prompt
         """
     )
     
@@ -191,6 +192,30 @@ Examples:
         "--gmail",
         action="store_true",
         help="Enable Gmail tools and use email-specific system prompt"
+    )
+    
+    parser.add_argument(
+        "--onedrive",
+        action="store_true",
+        help="Enable OneDrive tools and use file-specific system prompt"
+    )
+    
+    parser.add_argument(
+        "--onedrive-auth",
+        action="store_true",
+        help="Authenticate with Microsoft OneDrive using device code flow"
+    )
+    
+    parser.add_argument(
+        "--onedrive-logout",
+        action="store_true",
+        help="Clear OneDrive authentication tokens"
+    )
+    
+    parser.add_argument(
+        "--onedrive-status",
+        action="store_true",
+        help="Show OneDrive authentication status"
     )
     
     parser.add_argument(

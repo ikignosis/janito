@@ -22,7 +22,7 @@ import os
 import sys
 import logging
 
-from .system_prompt import SYSTEM_PROMPT, EMAIL_SYSTEM_PROMPT
+from .system_prompt import SYSTEM_PROMPT, EMAIL_SYSTEM_PROMPT, ONEDRIVE_SYSTEM_PROMPT
 from .cli import create_parser
 from .cli.handlers import (
     handle_set_api_key,
@@ -207,14 +207,24 @@ def run_interactive_chat(args):
         add_toolset("gmail")
         print("✓ Gmail tools enabled")
     
+    # Set up OneDrive mode if requested
+    if args.onedrive:
+        from .tooling.tools_registry import add_toolset
+        add_toolset("onedrive")
+        print("✓ OneDrive tools enabled")
+    
     model = os.getenv("OPENAI_MODEL")
     print("Starting interactive chat session. Type '/exit' or CTRL-D to end the session")
     
-    # Choose system prompt based on Gmail mode
-    if args.gmail and not args.no_system_prompt:
+    # Choose system prompt based on enabled modes
+    if args.no_system_prompt:
+        effective_system_prompt = None
+    elif args.onedrive:
+        effective_system_prompt = ONEDRIVE_SYSTEM_PROMPT
+    elif args.gmail:
         effective_system_prompt = EMAIL_SYSTEM_PROMPT
     else:
-        effective_system_prompt = None if args.no_system_prompt else SYSTEM_PROMPT
+        effective_system_prompt = SYSTEM_PROMPT
     
     shell = InteractiveShell(model=model, no_history=args.no_history)
     shell.initialize_history(system_prompt=effective_system_prompt)
@@ -237,6 +247,12 @@ def run_single_prompt(args):
         add_toolset("gmail")
         print("✓ Gmail tools enabled")
     
+    # Set up OneDrive mode if requested
+    if args.onedrive:
+        from .tooling.tools_registry import add_toolset
+        add_toolset("onedrive")
+        print("✓ OneDrive tools enabled")
+    
     prompt = args.prompt
     
     if not prompt:
@@ -248,8 +264,13 @@ def run_single_prompt(args):
         messages_history = []
         tools_to_use = []
     else:
-        # Choose system prompt based on Gmail mode
-        effective_system_prompt = EMAIL_SYSTEM_PROMPT if args.gmail else SYSTEM_PROMPT
+        # Choose system prompt based on enabled modes
+        if args.onedrive:
+            effective_system_prompt = ONEDRIVE_SYSTEM_PROMPT
+        elif args.gmail:
+            effective_system_prompt = EMAIL_SYSTEM_PROMPT
+        else:
+            effective_system_prompt = SYSTEM_PROMPT
         messages_history = [{"role": "system", "content": effective_system_prompt}]
         tools_to_use = None
 
@@ -310,6 +331,115 @@ def main():
     
     if args.delete_secret:
         return handle_delete_secret(args)
+    
+    # Handle OneDrive auth commands
+    if args.onedrive_auth:
+        from .tools.onedrive.device_code_auth import DeviceCodeAuth, store_token_data
+        from .secrets_config import get_secret
+        import sys
+        
+        client_id = get_secret("azure_client_id")
+        
+        if not client_id:
+            print("Error: azure_client_id not configured.", file=sys.stderr)
+            print("\nPlease set your Azure client ID first:", file=sys.stderr)
+            print("  janito4 --set-secret azure_client_id=your-client-id", file=sys.stderr)
+            print("\nTo get a client ID:", file=sys.stderr)
+            print("1. Go to https://portal.azure.com → Azure Active Directory → App registrations", file=sys.stderr)
+            print("2. Click 'New registration'", file=sys.stderr)
+            print("3. Enter name: 'Janito4 OneDrive'", file=sys.stderr)
+            print("4. For personal accounts: Select 'Accounts in any personal Microsoft account'", file=sys.stderr)
+            print("5. Click 'Register'", file=sys.stderr)
+            print("6. Copy the 'Application (client) ID'", file=sys.stderr)
+            return 1
+        
+        print("\n" + "=" * 60)
+        print("  MICROSOFT ONEDRIVE AUTHENTICATION")
+        print("=" * 60 + "\n")
+        
+        try:
+            # Get device code
+            auth = DeviceCodeAuth(client_id)
+            user_code, verification_url = auth.get_device_code()
+            
+            print(f"  Step 1: Open this URL in your browser:")
+            print(f"     {verification_url}")
+            print(f"\n  Step 2: Enter this code:")
+            print(f"     {user_code}")
+            print(f"\n  Step 3: Sign in with your Microsoft account")
+            print(f"  Step 4: Click 'Continue' to grant permissions")
+            print("\n  Waiting for authentication...")
+            
+            # Poll for token
+            token_data = auth.poll_for_token()
+            
+            # Store tokens
+            store_token_data(token_data)
+            
+            print("\n  [OK] Authentication successful!")
+            print("\nYour tokens have been saved and will be automatically refreshed.")
+            print("\nYou can now use OneDrive tools:")
+            print("  janito4 --onedrive \"List my files\"")
+            
+            return 0
+            
+        except KeyboardInterrupt:
+            print("\n\nAuthentication cancelled.")
+            return 130
+        except Exception as e:
+            print(f"\n\n[ERROR] Authentication failed: {e}", file=sys.stderr)
+            return 1
+    
+    if args.onedrive_logout:
+        from .tools.onedrive.device_code_auth import clear_tokens
+        
+        print("Clearing OneDrive authentication tokens...")
+        clear_tokens()
+        print("[OK] Logged out successfully.")
+        print("\nTo log in again, run:")
+        print("  janito4 --onedrive-auth")
+        return 0
+    
+    if args.onedrive_status:
+        from .secrets_config import get_secret
+        
+        client_id = get_secret("azure_client_id")
+        access_token = get_secret("azure_access_token")
+        refresh_token = get_secret("azure_refresh_token")
+        
+        print("OneDrive Authentication Status")
+        print("=" * 40)
+        
+        if not client_id:
+            print("Client ID: Not configured")
+            print("\nSet your client ID with:")
+            print("  janito4 --set-secret azure_client_id=your-client-id")
+            return 1
+        
+        print(f"Client ID: {client_id[:8]}...{client_id[-8:]}")
+        
+        if access_token and refresh_token:
+            import time
+            expires_at_str = get_secret("azure_token_expires_at")
+            if expires_at_str:
+                expires_at = float(expires_at_str)
+                remaining = expires_at - time.time()
+                if remaining > 0:
+                    print(f"Access Token: [OK] Valid (expires in {int(remaining)}s)")
+                else:
+                    print("Access Token: [EXPIRED] Will refresh automatically")
+            else:
+                print("Access Token: [OK] Stored")
+            print("Refresh Token: [OK] Stored")
+            print("\n[OK] Authenticated and ready to use!")
+        else:
+            print("Access Token: [MISSING] Not found")
+            print("Refresh Token: [MISSING] Not found")
+            print("\nRun authentication with:")
+            print("  janito4 --onedrive-auth")
+            return 1
+        
+        return 0
     
     # Try to load API key from config if not set in environment
     setup_api_key_from_config()
