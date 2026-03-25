@@ -114,36 +114,3 @@ class MCPTransport(ABC):
             "arguments": arguments
         })
         return result
-    
-    def list_prompts(self) -> List[Dict]:
-        """
-        List available prompts from the server.
-        
-        Returns:
-            List of prompt definitions
-        """
-        try:
-            result = self.send_request("prompts/list")
-            prompts = result.get("prompts", [])
-            logger.debug(f"Listed {len(prompts)} prompts from MCP server")
-            return prompts
-        except Exception as e:
-            logger.error(f"Failed to list prompts: {e}")
-            return []
-    
-    def get_prompt(self, name: str, arguments: Dict = None) -> Any:
-        """
-        Get a prompt from the server with arguments.
-        
-        Args:
-            name: Prompt name to retrieve
-            arguments: Optional prompt arguments
-            
-        Returns:
-            Prompt content and messages
-        """
-        result = self.send_request("prompts/get", {
-            "name": name,
-            "arguments": arguments or {}
-        })
-        return result
