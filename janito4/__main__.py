@@ -21,7 +21,6 @@ Usage:
 import os
 import sys
 import logging
-from typing import List, Dict, Any
 
 from .system_prompt import SYSTEM_PROMPT
 from .cli import create_parser
@@ -37,22 +36,12 @@ from .cli.handlers import (
     handle_list_mcp,
 )
 from .general_config import (
-    load_provider_from_config,
     load_model_from_config,
     get_active_provider,
 )
 
-# Import the send_prompt function from the new module
-try:
-    from .openai_client import send_prompt
-except ImportError:
-    from openai_client import send_prompt
-
-# Import auth configuration handling
-try:
-    from .auth_config import get_api_key
-except ImportError:
-    from auth_config import get_api_key
+from .openai_client import send_prompt
+from .auth_config import get_api_key
 
 from .shell import InteractiveShell
 
