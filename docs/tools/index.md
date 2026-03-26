@@ -10,6 +10,7 @@ Janito4 includes built-in tools for common tasks.
 | **Gmail** | Email management | Read, count, delete, move, and search emails |
 | **OneDrive** | Cloud storage | Browse, upload, download, search files |
 | **System** | Execution | Run Python code, execute PowerShell commands |
+| **Skills** | Extensions | Install and use task-specific skills |
 | **MCP** | Extensions | Connect to MCP servers for custom tools |
 
 ## Enabling Tools
@@ -44,4 +45,5 @@ Progress messages go to stderr so they don't interfere with tool output.
 - [File Tools](files.md)
 - [Gmail Tools](gmail.md)
 - [OneDrive Tools](onedrive.md)
+- [Skills](skills.md)
 - [MCP Support](mcp.md)
