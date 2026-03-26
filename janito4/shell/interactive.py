@@ -142,10 +142,15 @@ class InteractiveShell:
         Args:
             system_prompt: Optional system prompt to prepend
         """
+        self._system_prompt = system_prompt
         if system_prompt:
             self.messages_history = [{"role": "system", "content": system_prompt}]
         else:
             self.messages_history = []
+    
+    def get_system_prompt(self) -> Optional[str]:
+        """Get the current system prompt."""
+        return self._system_prompt
     
     @staticmethod
     def get_history_file_path() -> Path:
