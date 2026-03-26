@@ -1,5 +1,7 @@
 # Janito4 - an OpenAI CLI with function calling and MCP
 
+> 📖 **Full documentation available at [https://ikignosis.org/janito4/](https://ikignosis.org/janito4/)**
+
 ## Features
 
 - 🔧 **Function Calling** - Built-in tools for file operations, web search, and more
