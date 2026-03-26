@@ -69,66 +69,23 @@ janito4 --onedrive
 janito4 --onedrive "List my files in Documents folder"
 ```
 
-### List Files
+### Example Prompts
 
-```python
-from janito4.tools.onedrive import ListOneDriveFiles
+```bash
+# List files in a folder
+janito4 --onedrive "List my files in Documents"
 
-tool = ListOneDriveFiles()
-result = tool.run(path="Documents/Projects", limit=50)
-```
+# Search for files
+janito4 --onedrive "Find all PDF files in my OneDrive"
 
-### Search Files
+# Download a file
+janito4 --onedrive "Download the quarterly report from the Finance folder"
 
-```python
-from janito4.tools.onedrive import SearchOneDriveFiles
+# Upload a file
+janito4 --onedrive "Upload notes.txt to Documents"
 
-tool = SearchOneDriveFiles()
-result = tool.run(query="report", file_type_filter="pdf")
-```
-
-### Download a File
-
-```python
-from janito4.tools.onedrive import DownloadOneDriveFile
-
-tool = DownloadOneDriveFile()
-result = tool.run(
-    path="Documents/report.pdf",
-    output_path="/tmp/local_report.pdf"
-)
-```
-
-### Upload a File
-
-```python
-from janito4.tools.onedrive import UploadOneDriveFile
-
-# Upload text content
-tool = UploadOneDriveFile()
-result = tool.run(
-    path="Documents/notes.txt",
-    content="These are my notes..."
-)
-
-# Upload local file
-result = tool.run(
-    path="Documents/backup.zip",
-    local_path="/tmp/backup.zip"
-)
-```
-
-### Create Share Link
-
-```python
-from janito4.tools.onedrive import GetOneDriveShareLink
-
-tool = GetOneDriveShareLink()
-result = tool.run(
-    path="Documents/report.pdf",
-    link_type="view",  # "view" or "edit"
-    scope="anonymous"   # "anonymous" or "organization"
-)
+# Create a share link
+janito4 --onedrive "Create a share link for report.pdf"
 ```
 
 ## Authentication Commands
