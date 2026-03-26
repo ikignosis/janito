@@ -46,54 +46,23 @@ janito4 --gmail
 janito4 --gmail "Show my unread emails from today"
 ```
 
-### Read Emails
+### Example Prompts
 
-```python
-from janito4.tools.gmail import ReadEmails
+```bash
+# Check unread emails
+janito4 --gmail "Show my unread emails from today"
 
-tool = ReadEmails()
-result = tool.run(
-    folder="INBOX",
-    limit=10,
-    unread_only=False,
-    max_body_length=1000
-)
-```
+# Find emails from a sender
+janito4 --gmail "Find emails from newsletter@example.com"
 
-### Count Emails
+# Search by subject
+janito4 --gmail "Search for emails with 'invoice' in subject"
 
-```python
-from janito4.tools.gmail import CountEmails
+# Count emails older than 30 days
+janito4 --gmail "How many emails in inbox are older than 30 days?"
 
-tool = CountEmails()
-result = tool.run(folder="INBOX", unread_only=True)
-```
-
-### Delete Emails
-
-```python
-from janito4.tools.gmail import DeleteEmails
-
-tool = DeleteEmails()
-result = tool.run(
-    folder="INBOX",
-    older_than_days=30,
-    dry_run=True  # Always test with dry_run first!
-)
-```
-
-### Move Emails
-
-```python
-from janito4.tools.gmail import MoveEmails
-
-tool = MoveEmails()
-result = tool.run(
-    folder="INBOX",
-    destination="[Gmail]/All Mail",
-    sender="newsletter@example.com",
-    dry_run=True
-)
+# Delete old spam (always safe to ask first!)
+janito4 --gmail "Show me spam emails older than 90 days"
 ```
 
 ## Gmail Labels/Folders
