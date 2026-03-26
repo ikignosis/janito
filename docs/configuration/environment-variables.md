@@ -9,7 +9,7 @@ Configure Janito4 using environment variables for automation and scripting.
 | `OPENAI_BASE_URL` | Base URL of the OpenAI-compatible API | `https://api.openai.com` |
 | `OPENAI_API_KEY` | API key for authentication | `sk-xxxxxxxx...` |
 | `OPENAI_MODEL` | Model name/deployment name | `gpt-4` |
-| `JANITO_PROVIDER` | Provider type | `openai`, `azure`, `custom` |
+| `JANITO_PROVIDER` | Provider type | `openai`, `custom` |
 
 ## Unix/Linux/macOS
 
@@ -24,12 +24,6 @@ export OPENAI_MODEL="gpt-4"
 export OPENAI_BASE_URL="http://localhost:1234/v1"
 export OPENAI_API_KEY="not-needed"
 export OPENAI_MODEL="local-model"
-
-# For Azure
-export JANITO_PROVIDER="azure"
-export OPENAI_BASE_URL="https://your-resource.openai.azure.com"
-export OPENAI_API_KEY="your-azure-key"
-export OPENAI_MODEL="your-deployment-name"
 
 # For custom providers
 export JANITO_PROVIDER="custom"
@@ -60,12 +54,6 @@ $env:OPENAI_MODEL = "gpt-4"
 $env:OPENAI_BASE_URL = "http://localhost:1234/v1"
 $env:OPENAI_API_KEY = "not-needed"
 $env:OPENAI_MODEL = "local-model"
-
-# For Azure
-$env:JANITO_PROVIDER = "azure"
-$env:OPENAI_BASE_URL = "https://your-resource.openai.azure.com"
-$env:OPENAI_API_KEY = "your-azure-key"
-$env:OPENAI_MODEL = "your-deployment-name"
 ```
 
 ### Command Prompt (cmd)
@@ -93,16 +81,6 @@ export OPENAI_BASE_URL="http://localhost:1234/v1"
 export OPENAI_API_KEY="not-needed"
 export OPENAI_MODEL="local-model-name"
 janito4 "What is 2+2?"
-```
-
-### Azure OpenAI
-
-```bash
-export JANITO_PROVIDER="azure"
-export OPENAI_BASE_URL="https://your-resource.openai.azure.com"
-export OPENAI_MODEL="your-deployment-name"
-export OPENAI_API_KEY="your-azure-key"
-janito4 "Hello"
 ```
 
 ### Custom Provider (MiniMax)

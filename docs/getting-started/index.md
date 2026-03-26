@@ -13,7 +13,7 @@ Before installing Janito4, ensure you have:
 
 - **Python 3.6+** - Janito4 requires Python 3.6 or higher
 - **pip** - Python package installer (usually included with Python)
-- **API Key** - An API key from your preferred provider (OpenAI, Anthropic, Azure, etc.)
+- **API Key** - An API key from your preferred provider (OpenAI, local LLM, etc.)
 
 ## Next Steps
 

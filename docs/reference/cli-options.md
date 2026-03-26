@@ -26,7 +26,7 @@ janito4 [options] [prompt]
 
 | Option | Description |
 |--------|-------------|
-| `--set provider=<provider>` | Set provider (`openai`, `anthropic`, `azure`, `custom`) |
+| `--set provider=<provider>` | Set provider (`openai`, `custom`) |
 | `--set model=<model>` | Set model name |
 | `--set endpoint=<url>` | Set API endpoint URL |
 | `--set context-window=<size>` | Set context window size |

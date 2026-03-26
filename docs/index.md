@@ -10,7 +10,7 @@
 - 🔌 **MCP Support** - Connect to Model Context Protocol servers
 - 📊 **Real-time Progress** - Watch tool execution progress as it happens
 - 🚀 **Easy Setup** - Interactive configuration with `--config` or quick setup with `--set` flags
-- 🌐 **Any OpenAI-Compatible API** - Works with OpenAI, local servers (LM Studio, Ollama), Azure, and custom endpoints
+- 🌐 **Any OpenAI-Compatible API** - Works with OpenAI, local servers (LM Studio, Ollama), and custom endpoints
 
 ## Quick Example
 
@@ -48,7 +48,7 @@ Connect to [Model Context Protocol](https://modelcontextprotocol.io/) servers to
 
 ### Works with Any Provider
 
-Use OpenAI, Anthropic, Azure OpenAI, local LLM servers, or any OpenAI-compatible API.
+Use OpenAI, local LLM servers (LM Studio, Ollama), or any OpenAI-compatible API.
 
 ## Getting Started
 

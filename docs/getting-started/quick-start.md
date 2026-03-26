@@ -18,7 +18,7 @@ You'll be prompted for:
 
 | Setting | Description | Example |
 |---------|-------------|---------|
-| **Provider** | Your API provider | `openai`, `anthropic`, `azure`, `custom` |
+| **Provider** | Your API provider | `openai`, `custom` |
 | **API Key** | Your API key (masked for security) | `sk-xxxxxxxxxxxxxxxx` |
 | **Model** | Model name to use | `gpt-4`, `claude-3-opus` |
 | **Context Window** | Maximum tokens (default: 65536) | `65536` |
@@ -81,12 +81,6 @@ janito4 --set provider=openai --set-api-key="sk-your-key" --set model=gpt-4 "Exp
 
 ```bash
 janito4 --set provider=openai --set model="local-model" --set-api-key="not-needed" "What is 2+2?"
-```
-
-### Azure OpenAI
-
-```bash
-janito4 --set provider=azure --set-api-key="your-key" --set model="gpt-4" "Hello"
 ```
 
 ### Custom Provider

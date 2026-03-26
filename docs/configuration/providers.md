@@ -7,9 +7,7 @@ Janito4 supports multiple AI providers. This guide covers configuration for each
 | Provider | Type | Description |
 |----------|------|-------------|
 | `openai` | Standard | OpenAI API (default) |
-| `anthropic` | Standard | Anthropic Claude API |
-| `azure` | Azure | Microsoft Azure OpenAI |
-| `custom` | Custom | Any OpenAI-compatible API |
+| `custom` | Custom | Any OpenAI-compatible API (local servers, third-party) |
 
 ## OpenAI
 
@@ -31,45 +29,6 @@ janito4 --config
 export OPENAI_API_KEY="sk-your-key"
 export OPENAI_MODEL="gpt-4"
 ```
-
-## Anthropic
-
-### Configuration
-
-```bash
-janito4 --set provider=anthropic --set-api-key="sk-ant-api-key" --set model=claude-3-opus-20240229
-```
-
-### Environment Variables
-
-```bash
-export JANITO_PROVIDER="anthropic"
-export OPENAI_API_KEY="sk-ant-api-key"
-export OPENAI_MODEL="claude-3-opus-20240229"
-```
-
-## Azure OpenAI
-
-### Configuration
-
-```bash
-janito4 --set provider=azure --set-api-key="your-azure-key" --set model="your-deployment-name"
-```
-
-### Environment Variables
-
-```bash
-export JANITO_PROVIDER="azure"
-export OPENAI_BASE_URL="https://your-resource.openai.azure.com"
-export OPENAI_API_KEY="your-azure-key"
-export OPENAI_MODEL="your-deployment-name"
-```
-
-### Notes
-
-- The `endpoint` or `OPENAI_BASE_URL` should point to your Azure OpenAI resource
-- The `model` should be your deployment name in Azure
-- Azure uses the same API format as OpenAI
 
 ## Custom Providers (OpenAI-Compatible)
 
@@ -111,12 +70,12 @@ janito4 --set provider=custom \
 
 ## Provider Comparison
 
-| Feature | OpenAI | Anthropic | Azure | Custom |
-|---------|--------|-----------|-------|--------|
-| Function Calling | ✅ | ✅ (Claude 3+) | ✅ | Depends on API |
-| Streaming | ✅ | ✅ | ✅ | Depends on API |
-| Vision | ✅ | ✅ | ✅ | Depends on API |
-| Context Window | Up to 128k | Up to 200k | Up to 128k | Varies |
+| Feature | OpenAI | Custom |
+|---------|--------|--------|
+| Function Calling | ✅ | Depends on API |
+| Streaming | ✅ | Depends on API |
+| Vision | ✅ | Depends on API |
+| Context Window | Up to 128k | Varies |
 
 ## Troubleshooting
 
