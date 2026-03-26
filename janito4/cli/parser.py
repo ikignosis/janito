@@ -59,6 +59,9 @@ Examples:
   janito4 --no-history                                          # Interactive chat without file history
   janito4 --gmail                                              # Enable Gmail tools and email system prompt
   janito4 --onedrive                                           # Enable OneDrive tools and file system prompt
+  janito4 --install-skill https://github.com/user/repo/tree/main/skills/git-commit  # Install a skill
+  janito4 --list-skills                                        # List installed skills
+  janito4 --uninstall-skill git-commit                         # Uninstall a skill
         """
     )
     
@@ -216,6 +219,24 @@ Examples:
         "--onedrive-status",
         action="store_true",
         help="Show OneDrive authentication status"
+    )
+    
+    parser.add_argument(
+        "--install-skill",
+        metavar="URL",
+        help="Install a skill from a GitHub URL (e.g., https://github.com/user/awesome-copilot/tree/main/skills/git-commit)"
+    )
+    
+    parser.add_argument(
+        "--list-skills",
+        action="store_true",
+        help="List all installed skills"
+    )
+    
+    parser.add_argument(
+        "--uninstall-skill",
+        metavar="NAME",
+        help="Uninstall a skill by name"
     )
     
     parser.add_argument(

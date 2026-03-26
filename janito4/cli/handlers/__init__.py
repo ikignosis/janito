@@ -10,6 +10,11 @@ from .secrets import (
     handle_delete_secret,
     handle_list_secrets,
 )
+from .skills import (
+    handle_install_skill,
+    handle_list_skills,
+    handle_uninstall_skill,
+)
 
 __all__ = [
     "handle_set_api_key",
@@ -25,4 +30,7 @@ __all__ = [
     "handle_get_secret",
     "handle_delete_secret",
     "handle_list_secrets",
+    "handle_install_skill",
+    "handle_list_skills",
+    "handle_uninstall_skill",
 ]

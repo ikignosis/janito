@@ -4,7 +4,7 @@
 
 from .base import CmdHandler
 from .registry import register_command
-from janito4.system_prompt import SYSTEM_PROMPT
+from janito4.system_prompt import SYSTEM_PROMPT, get_system_prompt_with_skills
 
 
 class PromptCmdHandler(CmdHandler):
@@ -22,13 +22,16 @@ class PromptCmdHandler(CmdHandler):
         return False
     
     def _print_prompt(self) -> None:
-        """Print the current system prompt."""
+        """Print the current system prompt with skills."""
+        # Get system prompt with skills advertisement
+        effective_prompt = get_system_prompt_with_skills()
+        
         print()
-        print("=" * 50)
-        print("System Prompt")
-        print("=" * 50)
-        print(SYSTEM_PROMPT.strip())
-        print("=" * 50)
+        print("=" * 60)
+        print("System Prompt (with Skills)")
+        print("=" * 60)
+        print(effective_prompt.strip())
+        print("=" * 60)
         print()
 
 

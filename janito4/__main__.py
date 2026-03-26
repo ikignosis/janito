@@ -43,6 +43,9 @@ from .cli.handlers import (
     handle_get_secret,
     handle_delete_secret,
     handle_list_secrets,
+    handle_install_skill,
+    handle_list_skills,
+    handle_uninstall_skill,
 )
 from .cli.handlers.onedrive import (
     handle_onedrive_auth,
@@ -111,6 +114,16 @@ def main():
     
     if args.onedrive_status:
         return handle_onedrive_status()
+    
+    # Handle skill commands
+    if args.install_skill:
+        return handle_install_skill(args.install_skill)
+    
+    if args.list_skills:
+        return handle_list_skills(args)
+    
+    if args.uninstall_skill:
+        return handle_uninstall_skill(args.uninstall_skill)
     
     # Try to load API key from config if not set in environment
     setup_api_key_from_config()

@@ -6,6 +6,13 @@ This module provides easy access to all available tools and their schemas.
 
 from typing import Dict, Any, List, Callable, Optional, get_type_hints, Union
 from ..tools import discover_toolsets
+from .skills_provider import (
+    get_skills_provider,
+    load_skill,
+    read_skill_resource,
+    get_skills_advertisement,
+    get_skills_tools,
+)
 import inspect
 import re
 
@@ -15,6 +22,9 @@ AUTOLOAD_TOOLSETS = ["files", "system"]
 
 # Track loaded toolsets to avoid duplicates
 _loaded_toolsets = set(AUTOLOAD_TOOLSETS.copy())
+
+# Flag to enable skills support
+_skills_enabled = True
 
 
 def get_function_schema(func: Callable) -> Dict[str, Any]:
@@ -140,6 +150,10 @@ def get_function_schema(func: Callable) -> Dict[str, Any]:
 # Dynamically discover and load tools from configured toolsets
 AVAILABLE_TOOLS = discover_toolsets(AUTOLOAD_TOOLSETS)
 
+# Add skill tools if enabled
+if _skills_enabled:
+    AVAILABLE_TOOLS.update(get_skills_tools())
+
 
 def add_toolset(toolset_name: str) -> bool:
     """
@@ -250,6 +264,49 @@ def get_tool_permissions(name: str) -> str:
     if name not in AVAILABLE_TOOLS:
         raise KeyError(f"Tool '{name}' not found. Available tools: {list(AVAILABLE_TOOLS.keys())}")
     return getattr(AVAILABLE_TOOLS[name], '_tool_permissions', "")
+
+
+def get_skills_section() -> str:
+    """
+    Get the skills advertisement section to append to system prompts.
+    
+    Returns:
+        String with skill names, descriptions, and tool instructions
+    """
+    if not _skills_enabled:
+        return ""
+    
+    advertisement = get_skills_advertisement()
+    
+    if not advertisement:
+        return ""
+    
+    # Add tool usage instructions
+    tools_section = """
+
+## Skill Tools
+Use these tools to load skill content when needed:
+- **load_skill(skill_name)**: Load the full instructions from a skill's SKILL.md file
+- **read_skill_resource(skill_name, resource_name)**: Read a supplementary file from a skill
+
+You should load a skill when the user's request matches its description or you need specialized guidance."""
+    
+    return advertisement + tools_section
+
+
+def enable_skills() -> None:
+    """Enable skills support."""
+    global _skills_enabled
+    _skills_enabled = True
+    AVAILABLE_TOOLS.update(get_skills_tools())
+
+
+def disable_skills() -> None:
+    """Disable skills support."""
+    global _skills_enabled, AVAILABLE_TOOLS
+    _skills_enabled = False
+    for tool_name in ["load_skill", "read_skill_resource"]:
+        AVAILABLE_TOOLS.pop(tool_name, None)
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ CLI chat execution modes: interactive and single prompt.
 
 import os
 
-from ..system_prompt import SYSTEM_PROMPT, EMAIL_SYSTEM_PROMPT, ONEDRIVE_SYSTEM_PROMPT
+from ..system_prompt import SYSTEM_PROMPT, EMAIL_SYSTEM_PROMPT, ONEDRIVE_SYSTEM_PROMPT, get_system_prompt_with_skills
 from ..openai_client import send_prompt
 from ..shell import InteractiveShell
 
@@ -27,6 +27,12 @@ def run_interactive_chat(args):
         add_toolset("onedrive")
         print("✓ OneDrive tools enabled")
     
+    # Check if any skills are installed
+    from ..tooling.skills_provider import get_skills_provider
+    skills = get_skills_provider().list_skills()
+    if skills:
+        print(f"✓ {len(skills)} skill(s) available")
+    
     model = os.getenv("OPENAI_MODEL")
     print("Starting interactive chat session. Type '/exit' or CTRL-D to end the session")
     
@@ -38,7 +44,8 @@ def run_interactive_chat(args):
     elif args.gmail:
         effective_system_prompt = EMAIL_SYSTEM_PROMPT
     else:
-        effective_system_prompt = SYSTEM_PROMPT
+        # Use system prompt with skills advertisement
+        effective_system_prompt = get_system_prompt_with_skills()
     
     shell = InteractiveShell(model=model, no_history=args.no_history)
     shell.initialize_history(system_prompt=effective_system_prompt)
@@ -86,7 +93,8 @@ def run_single_prompt(args):
         elif args.gmail:
             effective_system_prompt = EMAIL_SYSTEM_PROMPT
         else:
-            effective_system_prompt = SYSTEM_PROMPT
+            # Use system prompt with skills advertisement
+            effective_system_prompt = get_system_prompt_with_skills()
         messages_history = [{"role": "system", "content": effective_system_prompt}]
         tools_to_use = None
 
