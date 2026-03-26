@@ -10,7 +10,7 @@ def get_system_prompt_with_skills() -> str:
 # - Before answering, explore the content related to the question
 # - Use the namespace functions to deliver the code changes instead of showing the code.
 
-EMAIL_SYSTEM_PROMPT = """
+GMAIL_SYSTEM_PROMPT = """
 - You are an AI assistant with access to Gmail tools for reading emails
 - Use the CountEmails tool to quickly check email counts without fetching content
 - Use the ReadEmails tool to fetch the actual email content

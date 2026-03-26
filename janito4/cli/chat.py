@@ -4,7 +4,7 @@ CLI chat execution modes: interactive and single prompt.
 
 import os
 
-from ..system_prompt import SYSTEM_PROMPT, EMAIL_SYSTEM_PROMPT, ONEDRIVE_SYSTEM_PROMPT, get_system_prompt_with_skills
+from ..system_prompt import SYSTEM_PROMPT, GMAIL_SYSTEM_PROMPT, ONEDRIVE_SYSTEM_PROMPT, get_system_prompt_with_skills
 from ..openai_client import send_prompt
 from ..shell import InteractiveShell
 
@@ -42,7 +42,7 @@ def run_interactive_chat(args):
     elif args.onedrive:
         effective_system_prompt = ONEDRIVE_SYSTEM_PROMPT
     elif args.gmail:
-        effective_system_prompt = EMAIL_SYSTEM_PROMPT
+        effective_system_prompt = GMAIL_SYSTEM_PROMPT
     else:
         # Use system prompt with skills advertisement
         effective_system_prompt = get_system_prompt_with_skills()
@@ -91,7 +91,7 @@ def run_single_prompt(args):
         if args.onedrive:
             effective_system_prompt = ONEDRIVE_SYSTEM_PROMPT
         elif args.gmail:
-            effective_system_prompt = EMAIL_SYSTEM_PROMPT
+            effective_system_prompt = GMAIL_SYSTEM_PROMPT
         else:
             # Use system prompt with skills advertisement
             effective_system_prompt = get_system_prompt_with_skills()
