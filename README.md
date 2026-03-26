@@ -8,6 +8,7 @@
 - 📧 **Gmail Integration** - Read, search, and manage emails
 - ☁️ **OneDrive Integration** - Browse, upload, download, and share files
 - 🔌 **MCP Support** - Connect to Model Context Protocol servers
+- 🧩 **Skills** - Install and use task-specific skills from GitHub
 - 📊 **Real-time Progress** - Watch tool execution progress as it happens
 - 🚀 **Easy Setup** - Interactive configuration with `--config` or quick setup with `--set` flags
 - 🔗 **Any OpenAI-Compatible API** - Works with OpenAI, local servers (LM Studio, Ollama), and custom endpoints
