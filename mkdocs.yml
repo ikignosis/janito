@@ -1,0 +1,85 @@
+site_name: Janito4 Documentation
+site_description: OpenAI CLI with Function Calling, MCP Support, and Extensible Tools
+site_author: Janito Developer
+site_url: https://github.com/ikignosis/janito4
+
+repo_name: ikignosis/janito4
+repo_url: https://github.com/ikignosis/janito4
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - search.suggest
+    - search.highlight
+    - content.tabs.integrated
+    - content.code.copy
+
+plugins:
+  - search
+  - git_revision_date_localized:
+      enabled: !ENV [CI, false]
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - getting-started/index.md
+      - getting-started/installation.md
+      - getting-started/quick-start.md
+  - Configuration:
+      - configuration/index.md
+      - configuration/providers.md
+      - configuration/environment-variables.md
+      - configuration/secrets.md
+  - Usage:
+      - usage/index.md
+      - usage/interactive-mode.md
+      - usage/single-prompt.md
+      - usage/logging.md
+  - Tools:
+      - tools/index.md
+      - tools/files.md
+      - tools/gmail.md
+      - tools/onedrive.md
+      - tools/mcp.md
+  - Development:
+      - development/index.md
+      - development/contributing.md
+  - Reference:
+      - reference/cli-options.md
+      - reference/exit-codes.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - admonition
+  - pymdownx.details
+  - pymdownx.mark
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/ikignosis/janito4
