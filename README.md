@@ -128,12 +128,6 @@ janito --log=info,debug "Your prompt" # Multiple levels
 janito --set provider=openai --set-api-key="sk-your-key" --set model=gpt-4 "Explain quantum computing"
 ```
 
-### Local LLM (LM Studio, Ollama)
-
-```bash
-janito --set provider=openai --set-api-key="not-needed" --set model="local-model" "What is 2+2?"
-```
-
 ## Built-in Tools
 
 janito includes tools for common tasks:
