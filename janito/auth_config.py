@@ -72,7 +72,7 @@ def set_api_key(provider: str, api_key: str) -> bool:
     Set an API key for a specific provider.
     
     Args:
-        provider: The provider name (e.g., 'openai', 'anthropic', 'azure')
+        provider: The provider name (e.g., 'openai', 'anthropic')
         api_key: The actual API key value
     
     Returns:
@@ -187,7 +187,7 @@ def get_environment_api_key() -> Optional[str]:
     Returns:
         The API key if found in environment, None otherwise
     """
-    env_vars = ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'AZURE_OPENAI_API_KEY']
+    env_vars = ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY']
     
     for var in env_vars:
         key = os.getenv(var)

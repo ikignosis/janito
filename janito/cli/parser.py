@@ -27,7 +27,7 @@ Configuration:
 
 Options:
   --set-api-key KEY  Set API key for the specified provider
-  --provider NAME    Provider name (e.g., openai, anthropic, azure)
+  --provider NAME    Provider name (e.g., openai, anthropic)
   --model NAME       Model name to use (overrides OPENAI_MODEL env var and config)
   --log LEVELS       Enable logging (e.g., --log=info,debug or --log=warning)
   --list-auth        List configured providers and keys
@@ -123,7 +123,7 @@ Examples:
     parser.add_argument(
         "--provider",
         metavar="NAME",
-        help="Provider name (e.g., openai, anthropic, azure, custom)"
+        help="Provider name (e.g., openai, anthropic, custom)"
     )
     
     parser.add_argument(
