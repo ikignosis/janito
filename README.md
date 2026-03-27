@@ -169,12 +169,6 @@ janito.tools.files.list_files . --recursive --pattern "*.py"
 janito.tools.files.read_file README.md --max-lines 20
 ```
 
-### Web Search
-
-```bash
-janito "Search the web for the latest Python news"
-```
-
 ### MCP Tools
 
 Connect to MCP servers using the `/mcp` command inside the interactive shell:
