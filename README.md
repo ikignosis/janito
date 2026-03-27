@@ -135,9 +135,6 @@ janito includes tools for common tasks:
 ### Email Integration (Gmail)
 
 ```bash
-# Authenticate with Gmail
-janito --gmail-auth
-
 # Use Gmail in chat mode
 janito --gmail
 
