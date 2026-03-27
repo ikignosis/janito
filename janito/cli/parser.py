@@ -45,6 +45,7 @@ Examples:
   janito --list-tools                                       # List available built-in tools
   janito --list-mcp                                         # List MCP services and tools
   janito --info                                             # Show resolved config info
+  janito --show-config                                      # Show configured provider and model
   janito --log=info,debug "Your prompt"                     # Enable logging
   janito --model gpt-4 "Your prompt"                        # Use specific model
   janito --set model=gpt-4                                  # Set config value
@@ -244,6 +245,12 @@ Examples:
         action="version",
         version=f"%(prog)s {__version__}",
         help="Show program's version number and exit"
+    )
+    
+    parser.add_argument(
+        "--show-config",
+        action="store_true",
+        help="Display the currently configured provider and model from config files"
     )
     
     return parser

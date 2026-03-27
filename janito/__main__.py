@@ -37,6 +37,7 @@ from .cli.handlers import (
     handle_unset_config,
     handle_config_interactive,
     handle_info,
+    handle_show_config,
     handle_list_tools,
     handle_list_mcp,
     handle_set_secret,
@@ -65,6 +66,10 @@ def main():
     # Handle --info option (print config and exit)
     if args.info:
         return handle_info(args)
+    
+    # Handle --show-config option (display configured provider and model)
+    if args.show_config:
+        return handle_show_config()
     
     # Set up provider from CLI args
     setup_provider_env(args)

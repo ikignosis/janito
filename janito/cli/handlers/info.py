@@ -154,3 +154,24 @@ def handle_info(args) -> int:
         print("Note: Endpoint not configured. Use --endpoint or set endpoint in config.json")
     
     return 0
+
+
+def handle_show_config() -> int:
+    """Handle --show-config command.
+    
+    Displays the currently configured provider and model from config files.
+    
+    Returns:
+        int: Exit code (0 for success)
+    """
+    # Load configured values from config.json
+    provider = load_provider_from_config()
+    model = load_model_from_config()
+    
+    print("Current Configuration:")
+    print("=" * 40)
+    print(f"Provider:  {provider or '(not configured)'}")
+    print(f"Model:     {model or '(not configured)'}")
+    print("=" * 40)
+    
+    return 0
