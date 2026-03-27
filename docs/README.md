@@ -1,60 +1,52 @@
-# janito Documentation
+# janito
 
-This directory contains the MkDocs documentation for janito.
+**janito** is a powerful CLI tool that brings AI assistants directly to your terminal. Built with function calling capabilities and MCP (Model Context Protocol) support, janito lets you interact with OpenAI-compatible AI models while accessing real-world tools and integrations.
 
-## Prerequisites
+## What is janito?
 
-Install the documentation dependencies:
+janito transforms your terminal into an AI-powered workspace. Instead of switching between browser tabs or separate applications, you can chat with AI models, manage files, check emails, and execute commands — all from a single command-line interface.
 
-```bash
-pip install -r requirements.txt
-```
+## Key Features
 
-## Building
+- **Function Calling** — Leverage built-in tools for file operations, web search, Gmail, OneDrive, and more
+- **MCP Support** — Connect to Model Context Protocol servers to extend functionality with custom tools
+- **Any OpenAI-Compatible API** — Works with OpenAI, local servers (LM Studio, Ollama), and custom endpoints
+- **Real-time Progress** — Watch tool execution progress as it happens
+- **Easy Setup** — Interactive configuration with `janito --config` or quick setup with `janito --set`
 
-Build the documentation:
-
-```bash
-mkdocs build
-```
-
-## Local Development Server
-
-Start a local development server:
+## Quick Start
 
 ```bash
-mkdocs serve
+# Install janito
+pip install janito
+
+# Configure your API settings
+janito --config
+
+# Start chatting
+janito "Hello!"
 ```
 
-The documentation will be available at `http://localhost:8000`.
+## Built-in Tools
 
-## Deployment
+| Category | Capabilities |
+|----------|--------------|
+| **Files** | List, read, write, search files and directories |
+| **Gmail** | Read, count, delete, move, and search emails |
+| **OneDrive** | Browse, upload, download, and search files |
+| **System** | Execute Python code and PowerShell commands |
 
-Deploy to GitHub Pages:
+## Documentation
 
-```bash
-mkdocs gh-deploy
-```
+| Section | Description |
+|---------|-------------|
+| [Getting Started](docs/getting-started/) | Installation and quick start guides |
+| [Configuration](docs/configuration/) | Environment variables, providers, and secrets |
+| [Usage](docs/usage/) | Interactive mode, logging, and single prompt mode |
+| [Tools](docs/tools/) | Detailed documentation for each built-in tool |
+| [Development](docs/development/) | Contributing guide |
+| [Reference](docs/reference/) | CLI options and exit codes |
 
-## Project Structure
+## License
 
-```
-docs/
-├── mkdocs.yml           # MkDocs configuration
-├── docs/
-│   ├── index.md         # Home page
-│   ├── getting-started/ # Getting started guide
-│   ├── configuration/   # Configuration documentation
-│   ├── usage/           # Usage documentation
-│   ├── tools/           # Tools documentation
-│   ├── development/     # Development guide
-│   └── reference/       # Reference documentation
-└── requirements.txt     # Documentation dependencies
-```
-
-## Editing
-
-1. Make changes to the `.md` files in `docs/docs/`
-2. Preview locally with `mkdocs serve`
-3. Commit and push changes
-4. The documentation will be automatically deployed to GitHub Pages
+MIT License
