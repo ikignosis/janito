@@ -64,23 +64,55 @@ You'll see instructions like:
   ✓ Authentication successful!
 ```
 
-### 4. Verify Authentication
-
-```bash
-# Check auth status
-janito --onedrive status
-
-# Or just try listing files
-janito --onedrive "List my files"
-```
-
 ### Authentication Commands
 
 | Command | Description |
 |---------|-------------|
 | `janito --onedrive-auth` | Authenticate with Microsoft account |
-| `janito --onedrive status` | Check authentication status |
-| `janito --onedrive logout` | Clear tokens and log out |
+| `janito --onedrive-status` | Check current authentication status |
+| `janito --onedrive-logout` | Sign out and clear stored credentials |
+
+### Checking Authentication Status
+
+```bash
+janito --onedrive-status
+```
+
+This command displays:
+- ✅ **Authenticated**: Shows account email, account type (Personal/Work), and token expiration
+- ❌ **Not authenticated**: Prompts you to run `--onedrive-auth`
+
+Example output when authenticated:
+```
+============================================================
+  ONEDRIVE AUTHENTICATION STATUS
+============================================================
+
+  Status:     Authenticated
+  Account:    user@outlook.com
+  Type:       Personal Microsoft Account
+  Expires:    Token auto-refreshes (no action needed)
+
+============================================================
+```
+
+### Logging Out
+
+```bash
+janito --onedrive-logout
+```
+
+This command:
+- ❌ Clears stored access and refresh tokens
+- Removes authentication session from `.janito/onedrive/`
+- Does **not** revoke app permissions (manage in Microsoft account settings)
+
+After logging out, you'll need to re-authenticate with `--onedrive-auth` to use OneDrive tools again.
+
+```bash
+# After logout, you'll see:
+# "Not authenticated. Run: janito --onedrive-auth"
+```
 
 ## Usage
 
@@ -217,16 +249,6 @@ janito --onedrive-auth
 
 - Simple upload: Up to 4MB
 - Resumable upload: Supports large files (automatically used for files >4MB)
-
-### Need to Use a Different Account?
-
-```bash
-# Log out first
-janito --onedrive logout
-
-# Then authenticate with the new account
-janito --onedrive-auth
-```
 
 ## Graph API Reference
 

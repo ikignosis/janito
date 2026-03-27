@@ -93,8 +93,24 @@ janito --onedrive "Create a share link for report.pdf"
 | Command | Description |
 |---------|-------------|
 | `janito --onedrive-auth` | Authenticate with Microsoft |
-| `janito --onedrive status` | Check auth status |
-| `janito --onedrive logout` | Clear tokens and logout |
+| `janito --onedrive-status` | Check authentication status |
+| `janito --onedrive-logout` | Sign out and clear credentials |
+
+### Check Status
+
+```bash
+janito --onedrive-status
+```
+
+Displays authentication state, account email, type, and token expiration.
+
+### Logout
+
+```bash
+janito --onedrive-logout
+```
+
+Clears stored tokens. You'll need to re-authenticate with `--onedrive-auth` to use OneDrive tools again.
 
 ## Troubleshooting
 

@@ -39,8 +39,8 @@ janito [options] [prompt]
 | `--gmail-auth` | Authenticate with Gmail |
 | `--onedrive` | Enable OneDrive tools |
 | `--onedrive-auth` | Authenticate with OneDrive |
-| `--onedrive status` | Check OneDrive auth status |
-| `--onedrive logout` | Log out from OneDrive |
+| `--onedrive-status` | Check OneDrive auth status |
+| `--onedrive-logout` | Log out from OneDrive |
 
 ### Logging
 
@@ -79,7 +79,6 @@ janito --clear-secret gmail_password
 ```bash
 janito --gmail "Show my emails"
 janito --onedrive "List files"
-janito --onedrive status
 ```
 
 ### Logging
