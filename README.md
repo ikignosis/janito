@@ -48,7 +48,7 @@ janito --config
 ```
 
 You'll be prompted for:
-- **Provider** - `openai`, `anthropic`, or `custom`
+- **Provider** - `openai` or `custom`
 - **API Key** - Masked for security
 - **Model** - e.g., `gpt-4`, `gpt-3.5-turbo`
 - **Context Window** - Max tokens (default: 65536)
@@ -81,7 +81,7 @@ janito --show-config
 
 | Option | Description | Example |
 |--------|-------------|---------|
-| `provider` | Provider name | `openai`, `anthropic`, `custom` |
+| `provider` | Provider name | `openai`, `custom` |
 | `model` | Model name | `gpt-4`, `claude-3-opus` |
 | `context-window` | Context window size | `65536` |
 
