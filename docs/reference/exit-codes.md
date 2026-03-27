@@ -1,6 +1,6 @@
 # Exit Codes
 
-Janito4 returns standard exit codes for scripting and automation.
+janito returns standard exit codes for scripting and automation.
 
 ## Exit Code Reference
 
@@ -37,14 +37,14 @@ The user cancelled the operation by pressing Ctrl+C. This is a standard Unix-sty
 ### Bash
 
 ```bash
-janito4 "Hello"
+janito "Hello"
 echo "Exit code: $?"
 ```
 
 ### PowerShell
 
 ```powershell
-janito4 "Hello"
+janito "Hello"
 Write-Host "Exit code: $LASTEXITCODE"
 ```
 
@@ -52,7 +52,7 @@ Write-Host "Exit code: $LASTEXITCODE"
 
 ```bash
 #!/bin/bash
-janito4 "Your prompt"
+janito "Your prompt"
 
 if [ $? -eq 0 ]; then
     echo "Success!"

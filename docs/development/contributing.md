@@ -1,14 +1,14 @@
 # Contributing
 
-We welcome contributions to Janito4! This guide explains how to get involved.
+We welcome contributions to janito! This guide explains how to get involved.
 
 ## Getting Started
 
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/janito4.git
-   cd janito4
+   git clone https://github.com/YOUR_USERNAME/janito.git
+   cd janito
    ```
 
 3. **Create a feature branch**:
@@ -116,7 +116,7 @@ When reporting issues, please include:
 
 - Your operating system and version
 - Python version
-- Janito4 version
+- janito version
 - Steps to reproduce
 - Expected vs actual behavior
 - Error messages or logs

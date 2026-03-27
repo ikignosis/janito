@@ -20,7 +20,7 @@ This is the recommended authentication method as it:
 
 1. Go to [Azure Portal](https://portal.azure.com) → **Azure Active Directory** → **App registrations**
 2. Click **"New registration"**
-3. Set a name (e.g., "Janito4 OneDrive")
+3. Set a name (e.g., "janito OneDrive")
 4. Choose supported account types:
    - **For personal Microsoft accounts only**: Select "Accounts in any personal Microsoft account (e.g. hotmail.com, outlook.com, live.com)"
      - **Important**: This uses the `/consumers` endpoint
@@ -34,14 +34,14 @@ This is the recommended authentication method as it:
 
 ```bash
 # Set your client ID
-janito4 --set-secret azure_client_id=your-client-id
+janito --set-secret azure_client_id=your-client-id
 ```
 
 ### 3. Authenticate (One-Time Only)
 
 ```bash
 # Start authentication
-janito4 --onedrive-auth
+janito --onedrive-auth
 ```
 
 You'll see instructions like:
@@ -68,19 +68,19 @@ You'll see instructions like:
 
 ```bash
 # Check auth status
-janito4 --onedrive status
+janito --onedrive status
 
 # Or just try listing files
-janito4 --onedrive "List my files"
+janito --onedrive "List my files"
 ```
 
 ### Authentication Commands
 
 | Command | Description |
 |---------|-------------|
-| `janito4 --onedrive-auth` | Authenticate with Microsoft account |
-| `janito4 --onedrive status` | Check authentication status |
-| `janito4 --onedrive logout` | Clear tokens and log out |
+| `janito --onedrive-auth` | Authenticate with Microsoft account |
+| `janito --onedrive status` | Check authentication status |
+| `janito --onedrive logout` | Clear tokens and log out |
 
 ## Usage
 
@@ -88,10 +88,10 @@ janito4 --onedrive "List my files"
 
 ```bash
 # Interactive chat mode with OneDrive
-janito4 --onedrive
+janito --onedrive
 
 # Single prompt with OneDrive
-janito4 --onedrive "List my files in Documents folder"
+janito --onedrive "List my files in Documents folder"
 ```
 
 ### Available Tools
@@ -111,21 +111,21 @@ janito4 --onedrive "List my files in Documents folder"
 
 ```bash
 # List files
-python -m janito4.tools.onedrive list-files
-python -m janito4.tools.onedrive list-files --path Documents --folders-only
+python -m janito.tools.onedrive list-files
+python -m janito.tools.onedrive list-files --path Documents --folders-only
 
 # Search files
-python -m janito4.tools.onedrive search-files "report"
-python -m janito4.tools.onedrive search-files "report" --type docx --folder Projects
+python -m janito.tools.onedrive search-files "report"
+python -m janito.tools.onedrive search-files "report" --type docx --folder Projects
 
 # Read file metadata
-python -m janito4.tools.onedrive read-file "Documents/readme.txt"
-python -m janito4.tools.onedrive read-file "Documents/readme.txt" --content
+python -m janito.tools.onedrive read-file "Documents/readme.txt"
+python -m janito.tools.onedrive read-file "Documents/readme.txt" --content
 
 # Authenticate
-python -m janito4.tools.onedrive authenticate
-python -m janito4.tools.onedrive status
-python -m janito4.tools.onedrive logout
+python -m janito.tools.onedrive authenticate
+python -m janito.tools.onedrive status
+python -m janito.tools.onedrive logout
 ```
 
 ## Common Use Cases
@@ -192,17 +192,17 @@ GetOneDriveShareLink(
 ### Authentication Errors
 
 **Error: "azure_client_id not configured"**
-- Run: `janito4 --set-secret azure_client_id=your-client-id`
+- Run: `janito --set-secret azure_client_id=your-client-id`
 - See Setup section above
 
 **Error: "Not authenticated"**
-- Run: `janito4 --onedrive-auth`
+- Run: `janito --onedrive-auth`
 
 **Error: "Authentication expired"**
-- Run: `janito4 --onedrive-auth` to re-authenticate
+- Run: `janito --onedrive-auth` to re-authenticate
 
 **Error: "Refresh token expired"**
-- Run: `janito4 --onedrive-auth` to re-authenticate
+- Run: `janito --onedrive-auth` to re-authenticate
 
 ### Token Expiration
 
@@ -210,7 +210,7 @@ Access tokens typically expire after 1 hour. The tool automatically refreshes to
 
 If you see "Refresh token expired", run:
 ```bash
-janito4 --onedrive-auth
+janito --onedrive-auth
 ```
 
 ### File Size Limits
@@ -222,10 +222,10 @@ janito4 --onedrive-auth
 
 ```bash
 # Log out first
-janito4 --onedrive logout
+janito --onedrive logout
 
 # Then authenticate with the new account
-janito4 --onedrive-auth
+janito --onedrive-auth
 ```
 
 ## Graph API Reference

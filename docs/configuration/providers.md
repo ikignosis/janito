@@ -1,6 +1,6 @@
 # Providers
 
-Janito4 supports multiple AI providers. This guide covers configuration for each.
+janito supports multiple AI providers. This guide covers configuration for each.
 
 ## Supported Providers
 
@@ -14,13 +14,13 @@ Janito4 supports multiple AI providers. This guide covers configuration for each
 ### Configuration
 
 ```bash
-janito4 --set provider=openai --set-api-key="sk-your-key" --set model=gpt-4
+janito --set provider=openai --set-api-key="sk-your-key" --set model=gpt-4
 ```
 
 Or interactively:
 
 ```bash
-janito4 --config
+janito --config
 ```
 
 ### Environment Variables
@@ -37,7 +37,7 @@ Use any OpenAI-compatible API, including local servers like LM Studio, Ollama, o
 ### Configuration
 
 ```bash
-janito4 --set provider=custom --set endpoint="http://localhost:8000/v1" --set model="my-model" --set-api-key="optional-key"
+janito --set provider=custom --set endpoint="http://localhost:8000/v1" --set model="my-model" --set-api-key="optional-key"
 ```
 
 ### Environment Variables
@@ -61,7 +61,7 @@ export OPENAI_MODEL="my-model"
 ### Example: LM Studio
 
 ```bash
-janito4 --set provider=custom \
+janito --set provider=custom \
         --set endpoint="http://localhost:1234/v1" \
         --set model="local-model-name" \
         --set-api-key="not-needed" \

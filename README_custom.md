@@ -1,6 +1,6 @@
-# Using Janito4 with Custom Providers (Local/MiniMax)
+# Using janito with Custom Providers (Local/MiniMax)
 
-This guide explains how to use Janito4 with custom OpenAI-compatible API endpoints, such as local servers or third-party providers like MiniMax.
+This guide explains how to use janito with custom OpenAI-compatible API endpoints, such as local servers or third-party providers like MiniMax.
 
 ## Quick Start
 
@@ -9,7 +9,7 @@ This guide explains how to use Janito4 with custom OpenAI-compatible API endpoin
 You can pass configuration directly via command-line arguments:
 
 ```bash
-python -m janito4 \
+python -m janito \
   --set provider=custom \
   --set endpoint=http://localhost:8000/minimax/v1 \
   --set model=MiniMax-M2.7 \
@@ -22,7 +22,7 @@ python -m janito4 \
 First, configure your settings interactively:
 
 ```bash
-python -m janito4 --config
+python -m janito --config
 ```
 
 When prompted, select or enter:
@@ -32,10 +32,10 @@ When prompted, select or enter:
 - **API key**: Your API key (if required by your endpoint)
 - **Context window size**: Press Enter for default (65536) or specify a value
 
-After configuration, you can use Janito4 without specifying the endpoint each time:
+After configuration, you can use janito without specifying the endpoint each time:
 
 ```bash
-python -m janito4 "Your prompt here"
+python -m janito "Your prompt here"
 ```
 
 ## Command-Line Arguments Reference
@@ -52,7 +52,7 @@ python -m janito4 "Your prompt here"
 ### Single Prompt
 
 ```bash
-python -m janito4 \
+python -m janito \
   --set provider=custom \
   --set endpoint=http://localhost:8000/minimax/v1 \
   --set model=MiniMax-M2.7 \
@@ -62,7 +62,7 @@ python -m janito4 \
 ### Interactive Chat Mode
 
 ```bash
-python -m janito4 \
+python -m janito \
   --set provider=custom \
   --set endpoint=http://localhost:8000/minimax/v1 \
   --set model=MiniMax-M2.7
@@ -73,7 +73,7 @@ This starts an interactive session. Type your messages and press Enter. Type `ex
 ### Pipe Input
 
 ```bash
-echo "Explain quantum computing" | python -m janito4 \
+echo "Explain quantum computing" | python -m janito \
   --set provider=custom \
   --set endpoint=http://localhost:8000/minimax/v1 \
   --set model=MiniMax-M2.7
@@ -82,7 +82,7 @@ echo "Explain quantum computing" | python -m janito4 \
 ### With Tools
 
 ```bash
-python -m janito4 \
+python -m janito \
   --set provider=custom \
   --set endpoint=http://localhost:8000/minimax/v1 \
   --set model=MiniMax-M2.7 \
@@ -92,7 +92,7 @@ python -m janito4 \
 ### Enable Logging
 
 ```bash
-python -m janito4 \
+python -m janito \
   --set provider=custom \
   --set endpoint=http://localhost:8000/minimax/v1 \
   --set model=MiniMax-M2.7 \
@@ -105,7 +105,7 @@ python -m janito4 \
 ### Local LM Studio / Ollama Server
 
 ```bash
-python -m janito4 \
+python -m janito \
   --set provider=custom \
   --set endpoint=http://localhost:1234/v1 \
   --set model=local-model-name \
@@ -116,7 +116,7 @@ python -m janito4 \
 ### MiniMax API
 
 ```bash
-python -m janito4 \
+python -m janito \
   --set provider=custom \
   --set endpoint=https://api.minimax.chat/minimax/v1 \
   --set model=MiniMax-M2.7 \
@@ -127,7 +127,7 @@ python -m janito4 \
 ### Azure OpenAI
 
 ```bash
-python -m janito4 \
+python -m janito \
   --set provider=azure \
   --set endpoint=https://your-resource.openai.azure.com \
   --set model=your-deployment-name \
@@ -157,18 +157,18 @@ python -m janito4 \
 
 ```bash
 # Show all available options
-python -m janito4 --help
+python -m janito --help
 ```
 
 ## Tips
 
 1. **Save configuration**: Use `--config` once to save your settings, then use the CLI without arguments
-2. **Combine with tools**: The custom provider works with all Janito4 tools (file operations, web search, etc.)
+2. **Combine with tools**: The custom provider works with all janito tools (file operations, web search, etc.)
 3. **Use aliases**: Add a shell alias for quick access:
 
    ```bash
    # ~/.bashrc or ~/.zshrc
-   alias janito-local='python -m janito4 --set provider=custom --set endpoint=http://localhost:8000/minimax/v1 --set model=MiniMax-M2.7'
+   alias janito-local='python -m janito --set provider=custom --set endpoint=http://localhost:8000/minimax/v1 --set model=MiniMax-M2.7'
    ```
 
    Then simply run: `janito-local "Your question"`

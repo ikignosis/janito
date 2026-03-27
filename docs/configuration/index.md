@@ -1,6 +1,6 @@
 # Configuration
 
-Learn how to configure Janito4 for your needs.
+Learn how to configure janito for your needs.
 
 ## Topics
 
@@ -10,12 +10,12 @@ Learn how to configure Janito4 for your needs.
 
 ## Configuration File
 
-Janito4 stores your configuration in `~/.janito/`. The main configuration file is `~/.janito/config.json`.
+janito stores your configuration in `~/.janito/`. The main configuration file is `~/.janito/config.json`.
 
 ### View Configuration
 
 ```bash
-janito4 --show-config
+janito --show-config
 ```
 
 ### Configuration Options

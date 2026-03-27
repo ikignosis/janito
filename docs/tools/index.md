@@ -1,6 +1,6 @@
 # Tools
 
-Janito4 includes built-in tools for common tasks.
+janito includes built-in tools for common tasks.
 
 ## Available Tools
 
@@ -19,13 +19,13 @@ Tools are automatically available in chat mode. For single prompts:
 
 ```bash
 # File tools are always available
-janito4 "Read the README.md file"
+janito "Read the README.md file"
 
 # Enable Gmail tools
-janito4 --gmail "Show my unread emails"
+janito --gmail "Show my unread emails"
 
 # Enable OneDrive tools
-janito4 --onedrive "List my files"
+janito --onedrive "List my files"
 ```
 
 ## Tool Progress

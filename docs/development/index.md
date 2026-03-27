@@ -4,7 +4,7 @@ This section covers development setup and contribution guidelines.
 
 ## Topics
 
-- [Contributing](contributing.md) - How to contribute to Janito4
+- [Contributing](contributing.md) - How to contribute to janito
 
 ## Prerequisites
 
@@ -16,8 +16,8 @@ This section covers development setup and contribution guidelines.
 
 ```bash
 # Clone the repository
-git clone https://github.com/ikignosis/janito4.git
-cd janito4
+git clone https://github.com/ikignosis/janito.git
+cd janito
 
 # Install dependencies
 pip install -r requirements.txt
@@ -29,8 +29,8 @@ pip install -e .
 ## Running from Source
 
 ```bash
-python -m janito4 --config
-python -m janito4 "Hello"
+python -m janito --config
+python -m janito "Hello"
 ```
 
 ## Testing
@@ -40,7 +40,7 @@ python -m janito4 "Hello"
 pytest
 
 # Run with coverage
-pytest --cov=janito4
+pytest --cov=janito
 
 # Run specific test file
 pytest tests/test_core.py
@@ -48,7 +48,7 @@ pytest tests/test_core.py
 
 ## Version Management
 
-Janito4 uses [setuptools-scm](https://github.com/pypa/setuptools_scm) for automatic versioning.
+janito uses [setuptools-scm](https://github.com/pypa/setuptools_scm) for automatic versioning.
 
 - Version is derived from the latest git tag
 - To release a new version:

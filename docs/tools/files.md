@@ -1,6 +1,6 @@
 # File Tools
 
-Janito4 provides tools for file operations on your local filesystem.
+janito provides tools for file operations on your local filesystem.
 
 ## Available Tools
 
@@ -24,11 +24,11 @@ Janito4 provides tools for file operations on your local filesystem.
 ### List Files
 
 ```bash
-janito4 "List all Python files in the current directory"
+janito "List all Python files in the current directory"
 ```
 
 ```python
-from janito4.tools.files import ListFiles
+from janito.tools.files import ListFiles
 
 tool = ListFiles()
 result = tool.run(path=".", pattern="*.py", recursive=True)
@@ -37,11 +37,11 @@ result = tool.run(path=".", pattern="*.py", recursive=True)
 ### Read a File
 
 ```bash
-janito4 "Read the first 20 lines of README.md"
+janito "Read the first 20 lines of README.md"
 ```
 
 ```python
-from janito4.tools.files import ReadFile
+from janito.tools.files import ReadFile
 
 tool = ReadFile()
 result = tool.run(filepath="README.md", max_lines=20)
@@ -50,11 +50,11 @@ result = tool.run(filepath="README.md", max_lines=20)
 ### Create a File
 
 ```bash
-janito4 "Create a new file called hello.py with print('Hello, World!')"
+janito "Create a new file called hello.py with print('Hello, World!')"
 ```
 
 ```python
-from janito4.tools.files import CreateFile
+from janito.tools.files import CreateFile
 
 tool = CreateFile()
 result = tool.run(filepath="hello.py", content="print('Hello, World!')")
@@ -63,11 +63,11 @@ result = tool.run(filepath="hello.py", content="print('Hello, World!')")
 ### Search in Files
 
 ```bash
-janito4 "Find all files containing 'TODO' in the project"
+janito "Find all files containing 'TODO' in the project"
 ```
 
 ```python
-from janito4.tools.files import SearchText
+from janito.tools.files import SearchText
 
 tool = SearchText()
 result = tool.run(path=".", query="TODO", case_sensitive=False)
@@ -76,11 +76,11 @@ result = tool.run(path=".", query="TODO", case_sensitive=False)
 ### Replace Text
 
 ```bash
-janito4 "Replace 'old text' with 'new text' in file.txt"
+janito "Replace 'old text' with 'new text' in file.txt"
 ```
 
 ```python
-from janito4.tools.files import ReplaceTextInFile
+from janito.tools.files import ReplaceTextInFile
 
 tool = ReplaceTextInFile()
 result = tool.run(filepath="file.txt", old_str="old text", new_str="new text")
@@ -92,13 +92,13 @@ You can also use file tools directly from the command line:
 
 ```bash
 # List files
-python -m janito4.tools.files list-files . --recursive --pattern "*.py"
+python -m janito.tools.files list-files . --recursive --pattern "*.py"
 
 # Read file
-python -m janito4.tools.files read-file README.md --max-lines 20
+python -m janito.tools.files read-file README.md --max-lines 20
 
 # Create directory
-python -m janito4.tools.files create-directory new_folder
+python -m janito.tools.files create-directory new_folder
 ```
 
 ## Safety

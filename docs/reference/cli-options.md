@@ -1,11 +1,11 @@
 # CLI Options
 
-Complete reference for Janito4 command-line options.
+Complete reference for janito command-line options.
 
 ## Usage
 
 ```bash
-janito4 [options] [prompt]
+janito [options] [prompt]
 ```
 
 ## Options
@@ -60,34 +60,34 @@ janito4 [options] [prompt]
 ### Configure
 
 ```bash
-janito4 --config
-janito4 --show-config
-janito4 --set provider=openai --set model=gpt-4
+janito --config
+janito --show-config
+janito --set provider=openai --set model=gpt-4
 ```
 
 ### Set Secrets
 
 ```bash
-janito4 --set-secret gmail_username=user@gmail.com
-janito4 --set-secret gmail_password=xxxx xxxx xxxx xxxx
-janito4 --set-secret azure_client_id=xxx-xxx
-janito4 --clear-secret gmail_password
+janito --set-secret gmail_username=user@gmail.com
+janito --set-secret gmail_password=xxxx xxxx xxxx xxxx
+janito --set-secret azure_client_id=xxx-xxx
+janito --clear-secret gmail_password
 ```
 
 ### Enable Tools
 
 ```bash
-janito4 --gmail "Show my emails"
-janito4 --onedrive "List files"
-janito4 --onedrive status
+janito --gmail "Show my emails"
+janito --onedrive "List files"
+janito --onedrive status
 ```
 
 ### Logging
 
 ```bash
-janito4 --log=info "prompt"
-janito4 --log=debug "prompt"
-janito4 --log=info,debug "prompt"
+janito --log=info "prompt"
+janito --log=debug "prompt"
+janito --log=info,debug "prompt"
 ```
 
 ## Configuration Keys

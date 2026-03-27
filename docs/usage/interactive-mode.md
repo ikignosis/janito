@@ -5,13 +5,13 @@ Interactive mode provides a chat shell for multi-turn conversations with context
 ## Starting Interactive Mode
 
 ```bash
-janito4
+janito
 ```
 
-Without arguments, Janito4 starts an interactive shell:
+Without arguments, janito starts an interactive shell:
 
 ```
-Welcome to Janito4! Type 'exit' to quit, 'restart' to clear history.
+Welcome to janito! Type 'exit' to quit, 'restart' to clear history.
 You: 
 ```
 
@@ -44,8 +44,8 @@ Additional commands available in chat:
 ### Basic Chat
 
 ```bash
-$ janito4
-Welcome to Janito4! Type 'exit' to quit, 'restart' to clear history.
+$ janito
+Welcome to janito! Type 'exit' to quit, 'restart' to clear history.
 You: What is Python?
 Assistant: Python is a high-level programming language...
 You: Tell me more about it
@@ -57,7 +57,7 @@ Goodbye!
 ### Multi-turn with File Operations
 
 ```bash
-$ janito4
+$ janito
 You: Read the README.md file and summarize it
 Assistant: [File content summary]
 You: Now create a similar file called backup.md
@@ -67,7 +67,7 @@ Assistant: [File created successfully]
 ### Using Tools
 
 ```bash
-$ janito4 --onedrive
+$ janito --onedrive
 You: List my files in Documents
 Assistant: [Lists OneDrive files]
 You: Upload notes.txt to the Documents folder

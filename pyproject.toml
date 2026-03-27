@@ -3,7 +3,7 @@ requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "janito4"
+name = "janito"
 dynamic = ["version"]
 description = "OpenAI CLI with Function Calling, MCP Support, and Extensible Tools"
 readme = "README.md"
@@ -30,11 +30,11 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/ikignosis/janito4"
-Repository = "https://github.com/ikignosis/janito4"
+Homepage = "https://github.com/ikignosis/janito"
+Repository = "https://github.com/ikignosis/janito"
 
 [project.scripts]
-janito4 = "janito4.__main__:main"
+janito = "janito.__main__:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

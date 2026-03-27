@@ -1,6 +1,6 @@
 # Usage
 
-Learn different ways to use Janito4.
+Learn different ways to use janito.
 
 ## Topics
 
@@ -10,13 +10,13 @@ Learn different ways to use Janito4.
 
 ## Input Methods
 
-Janito4 supports multiple ways to provide input:
+janito supports multiple ways to provide input:
 
 | Method | Command | Use Case |
 |--------|---------|----------|
-| Single prompt | `janito4 "question"` | Quick questions |
-| Interactive chat | `janito4` | Multi-turn conversations |
-| Pipe input | `echo "text" \| janito4` | Scripting, integration |
+| Single prompt | `janito "question"` | Quick questions |
+| Interactive chat | `janito` | Multi-turn conversations |
+| Pipe input | `echo "text" \| janito` | Scripting, integration |
 
 ## Next Steps
 

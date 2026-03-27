@@ -1,6 +1,6 @@
-# Janito4 Documentation
+# janito Documentation
 
-This directory contains the MkDocs documentation for Janito4.
+This directory contains the MkDocs documentation for janito.
 
 ## Prerequisites
 

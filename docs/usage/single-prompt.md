@@ -5,25 +5,25 @@ Run a single prompt and get a response without entering interactive mode.
 ## Basic Usage
 
 ```bash
-janito4 "What is the capital of France?"
+janito "What is the capital of France?"
 ```
 
 ## With Configuration
 
 ```bash
-janito4 --set provider=openai --set model=gpt-4 "Your question here"
+janito --set provider=openai --set model=gpt-4 "Your question here"
 ```
 
 ## Piping Input
 
-You can pipe text into Janito4:
+You can pipe text into janito:
 
 ```bash
-echo "Explain this code" | janito4
+echo "Explain this code" | janito
 ```
 
 ```bash
-cat readme.md | janito4 "Summarize this"
+cat readme.md | janito "Summarize this"
 ```
 
 ## Examples
@@ -31,25 +31,25 @@ cat readme.md | janito4 "Summarize this"
 ### Quick Question
 
 ```bash
-janito4 "What is 2+2?"
+janito "What is 2+2?"
 ```
 
 ### With Tools
 
 ```bash
-janito4 "List all Python files in the current directory"
+janito "List all Python files in the current directory"
 ```
 
 ### With Gmail
 
 ```bash
-janito4 --gmail "Show my unread emails from today"
+janito --gmail "Show my unread emails from today"
 ```
 
 ### With OneDrive
 
 ```bash
-janito4 --onedrive "List my files in Documents"
+janito --onedrive "List my files in Documents"
 ```
 
 ## Exit Codes

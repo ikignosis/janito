@@ -1,6 +1,6 @@
 # Gmail Tools
 
-Janito4 provides comprehensive tools for interacting with Gmail via IMAP.
+janito provides comprehensive tools for interacting with Gmail via IMAP.
 
 ## Setup
 
@@ -14,13 +14,13 @@ Janito4 provides comprehensive tools for interacting with Gmail via IMAP.
    - Go to [Google Account Security](https://myaccount.google.com/security)
    - Enable 2-Factor Authentication if not already enabled
    - Go to App Passwords → Create a new app password
-   - Use a name like "Janito4" to generate a 16-character password
+   - Use a name like "janito" to generate a 16-character password
 
 3. **Configure Secrets:**
 
    ```bash
-   janito4 --set-secret gmail_username=your-email@gmail.com
-   janito4 --set-secret gmail_password=your-app-password
+   janito --set-secret gmail_username=your-email@gmail.com
+   janito --set-secret gmail_password=your-app-password
    ```
 
 ## Available Tools
@@ -40,29 +40,29 @@ Janito4 provides comprehensive tools for interacting with Gmail via IMAP.
 
 ```bash
 # Interactive chat with Gmail
-janito4 --gmail
+janito --gmail
 
 # Single prompt with Gmail
-janito4 --gmail "Show my unread emails from today"
+janito --gmail "Show my unread emails from today"
 ```
 
 ### Example Prompts
 
 ```bash
 # Check unread emails
-janito4 --gmail "Show my unread emails from today"
+janito --gmail "Show my unread emails from today"
 
 # Find emails from a sender
-janito4 --gmail "Find emails from newsletter@example.com"
+janito --gmail "Find emails from newsletter@example.com"
 
 # Search by subject
-janito4 --gmail "Search for emails with 'invoice' in subject"
+janito --gmail "Search for emails with 'invoice' in subject"
 
 # Count emails older than 30 days
-janito4 --gmail "How many emails in inbox are older than 30 days?"
+janito --gmail "How many emails in inbox are older than 30 days?"
 
 # Delete old spam (always safe to ask first!)
-janito4 --gmail "Show me spam emails older than 90 days"
+janito --gmail "Show me spam emails older than 90 days"
 ```
 
 ## Gmail Labels/Folders

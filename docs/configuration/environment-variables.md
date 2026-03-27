@@ -1,6 +1,6 @@
 # Environment Variables
 
-Configure Janito4 using environment variables for automation and scripting.
+Configure janito using environment variables for automation and scripting.
 
 ## Available Variables
 
@@ -71,7 +71,7 @@ set OPENAI_MODEL=gpt-4
 export OPENAI_BASE_URL="https://api.openai.com"
 export OPENAI_API_KEY="sk-your-key"
 export OPENAI_MODEL="gpt-4"
-janito4 "Explain quantum computing"
+janito "Explain quantum computing"
 ```
 
 ### Local LLM (LM Studio, Ollama)
@@ -80,7 +80,7 @@ janito4 "Explain quantum computing"
 export OPENAI_BASE_URL="http://localhost:1234/v1"
 export OPENAI_API_KEY="not-needed"
 export OPENAI_MODEL="local-model-name"
-janito4 "What is 2+2?"
+janito "What is 2+2?"
 ```
 
 ### Custom Provider (MiniMax)
@@ -90,7 +90,7 @@ export JANITO_PROVIDER="custom"
 export OPENAI_BASE_URL="https://api.minimax.chat/minimax/v1"
 export OPENAI_MODEL="MiniMax-M2.7"
 export OPENAI_API_KEY="your-api-key"
-janito4 "Hello"
+janito "Hello"
 ```
 
 ## Using .env Files
@@ -120,8 +120,8 @@ export $(cat .env | xargs)
 # Or use python-dotenv
 python -c "from dotenv import load_dotenv; load_dotenv()"
 
-# Run janito4
-janito4 "Hello"
+# Run janito
+janito "Hello"
 ```
 
 !!! warning "Security Note"

@@ -1,6 +1,6 @@
 # MCP (Model Context Protocol) Services
 
-Janito4 supports MCP services with two transport types: **stdio** (for local processes) and **http** (for remote servers).
+janito supports MCP services with two transport types: **stdio** (for local processes) and **http** (for remote servers).
 
 ## Command Reference
 

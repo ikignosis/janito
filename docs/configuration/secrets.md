@@ -1,6 +1,6 @@
 # Secrets
 
-Janito4 stores sensitive configuration like API keys securely in a separate secrets file.
+janito stores sensitive configuration like API keys securely in a separate secrets file.
 
 ## Secrets File Location
 
@@ -12,30 +12,30 @@ Secrets are stored in `~/.janito/secrets.json`
 
 ```bash
 # Set Gmail username
-janito4 --set-secret gmail_username=your-email@gmail.com
+janito --set-secret gmail_username=your-email@gmail.com
 
 # Set Gmail app password
-janito4 --set-secret gmail_password=your-app-password
+janito --set-secret gmail_password=your-app-password
 ```
 
 ### OneDrive Credentials
 
 ```bash
 # Set Azure client ID
-janito4 --set-secret azure_client_id=your-client-id
+janito --set-secret azure_client_id=your-client-id
 ```
 
 ### Custom Secrets
 
 ```bash
-janito4 --set-secret my_api_key=your-key
-janito4 --set-secret another_service=token123
+janito --set-secret my_api_key=your-key
+janito --set-secret another_service=token123
 ```
 
 ## Viewing Secrets
 
 ```bash
-janito4 --show-secrets
+janito --show-secrets
 ```
 
 Secrets are partially masked in the output for security.
@@ -45,7 +45,7 @@ Secrets are partially masked in the output for security.
 Remove a specific secret:
 
 ```bash
-janito4 --clear-secret gmail_username
+janito --clear-secret gmail_username
 ```
 
 ## Security Notes

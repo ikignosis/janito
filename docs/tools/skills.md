@@ -15,7 +15,7 @@ Skills follow a progressive disclosure pattern:
 Install skills from GitHub repositories:
 
 ```bash
-janito4 --install-skill https://github.com/user/repo/tree/main/skills/git-commit
+janito --install-skill https://github.com/user/repo/tree/main/skills/git-commit
 ```
 
 Skills are installed to `~/.janito/skills/<skill-name>/`.
@@ -23,13 +23,13 @@ Skills are installed to `~/.janito/skills/<skill-name>/`.
 ## List Installed Skills
 
 ```bash
-janito4 --list-skills
+janito --list-skills
 ```
 
 ## Uninstall a Skill
 
 ```bash
-janito4 --uninstall-skill git-commit
+janito --uninstall-skill git-commit
 ```
 
 ## Available Tools
@@ -66,7 +66,7 @@ A skill's SKILL.md should include:
 
 ```bash
 # Find a skills repository on GitHub
-janito4 --install-skill https://github.com/ikignosis/janito4/tree/main/skills/git-commit
+janito --install-skill https://github.com/ikignosis/janito/tree/main/skills/git-commit
 ```
 
 ## Tips

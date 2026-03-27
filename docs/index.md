@@ -1,6 +1,6 @@
-# Janito4
+# janito
 
-**Janito4** is an OpenAI CLI (Command-Line Interface) with function calling capabilities and MCP (Model Context Protocol) support. It allows you to interact with AI models from the terminal with built-in tools and integrations.
+**janito** is an OpenAI CLI (Command-Line Interface) with function calling capabilities and MCP (Model Context Protocol) support. It allows you to interact with AI models from the terminal with built-in tools and integrations.
 
 ## Features
 
@@ -16,16 +16,16 @@
 
 ```bash
 # Install
-pip install janito4
+pip install janito
 
 # Configure interactively
-janito4 --config
+janito --config
 
 # Start chatting
-janito4 "Hello!"
+janito "Hello!"
 ```
 
-## Why Janito4?
+## Why janito?
 
 ### Work Directly in Your Terminal
 
@@ -33,7 +33,7 @@ No need to switch between browser tabs or other applications. Chat with AI model
 
 ### Powerful Built-in Tools
 
-Janito4 comes with tools for common tasks:
+janito comes with tools for common tasks:
 
 | Category | Tools |
 |----------|-------|
@@ -52,7 +52,7 @@ Use OpenAI, local LLM servers (LM Studio, Ollama), or any OpenAI-compatible API.
 
 ## Getting Started
 
-1. [Install Janito4](getting-started/installation.md)
+1. [Install janito](getting-started/installation.md)
 2. [Configure your settings](getting-started/quick-start.md)
 3. [Start chatting](usage/interactive-mode.md)
 

@@ -1,13 +1,13 @@
 # Installation
 
-This guide covers how to install Janito4.
+This guide covers how to install janito.
 
 ## From PyPI
 
-The easiest way to install Janito4 is from PyPI:
+The easiest way to install janito is from PyPI:
 
 ```bash
-pip install janito4
+pip install janito
 ```
 
 ## From Source
@@ -24,8 +24,8 @@ For development or the latest features, install from source:
 
 ```bash
 # Clone the repository
-git clone https://github.com/ikignosis/janito4.git
-cd janito4
+git clone https://github.com/ikignosis/janito.git
+cd janito
 
 # Install dependencies
 pip install -r requirements.txt
@@ -36,29 +36,29 @@ pip install -e .
 
 ### Running Without Installation
 
-You can also run Janito4 directly without installing:
+You can also run janito directly without installing:
 
 ```bash
-python -m janito4 "Your prompt here"
+python -m janito "Your prompt here"
 ```
 
 ## Verify Installation
 
-Check that Janito4 is installed correctly:
+Check that janito is installed correctly:
 
 ```bash
-janito4 --version
+janito --version
 ```
 
 Or run the help command:
 
 ```bash
-janito4 --help
+janito --help
 ```
 
 ## Dependencies
 
-Janito4 requires the following dependencies:
+janito requires the following dependencies:
 
 | Package | Version | Purpose |
 |---------|---------|---------|
@@ -67,7 +67,7 @@ Janito4 requires the following dependencies:
 | `prompt-toolkit` | >=3.0.0 | Interactive shell |
 | `requests` | >=2.28.0 | HTTP library |
 
-These are automatically installed when you install `janito4`.
+These are automatically installed when you install `janito`.
 
 ## System Requirements
 
@@ -77,4 +77,4 @@ These are automatically installed when you install `janito4`.
 
 ## Next Steps
 
-Now that Janito4 is installed, head to the [Quick Start](quick-start.md) guide to configure and run your first prompt.
+Now that janito is installed, head to the [Quick Start](quick-start.md) guide to configure and run your first prompt.

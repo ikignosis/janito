@@ -1,6 +1,6 @@
-# Using Janito4 with Environment Variables
+# Using janito with Environment Variables
 
-This guide explains how to configure Janito4 using environment variables.
+This guide explains how to configure janito using environment variables.
 
 ## Environment Variables
 
@@ -39,7 +39,7 @@ export OPENAI_MODEL="your-deployment-name"
 export OPENAI_API_KEY="your-azure-key"
 
 # Use the CLI
-python -m janito4 "Your prompt here"
+python -m janito "Your prompt here"
 ```
 
 ### Windows (PowerShell)
@@ -68,7 +68,7 @@ $env:OPENAI_MODEL = "your-deployment-name"
 $env:OPENAI_API_KEY = "your-azure-key"
 
 # Use the CLI
-python -m janito4 "Your prompt here"
+python -m janito "Your prompt here"
 ```
 
 ## Examples
@@ -79,7 +79,7 @@ python -m janito4 "Your prompt here"
 export OPENAI_BASE_URL="https://api.openai.com"
 export OPENAI_API_KEY="sk-your-openai-key"
 export OPENAI_MODEL="gpt-4"
-python -m janito4 "Explain quantum computing in simple terms"
+python -m janito "Explain quantum computing in simple terms"
 ```
 
 ### Local LLM (e.g., LM Studio, Ollama)
@@ -88,7 +88,7 @@ python -m janito4 "Explain quantum computing in simple terms"
 export OPENAI_BASE_URL="http://localhost:1234/v1"  # LM Studio default
 export OPENAI_API_KEY="not-needed"                 # Often not required for local servers
 export OPENAI_MODEL="local-model-name"
-python -m janito4 "What is 2+2?"
+python -m janito "What is 2+2?"
 ```
 
 ### Custom Provider (e.g., MiniMax)
@@ -98,7 +98,7 @@ export JANITO_PROVIDER="custom"
 export OPENAI_BASE_URL="https://api.minimax.chat/minimax/v1"
 export OPENAI_MODEL="MiniMax-M2.7"
 export OPENAI_API_KEY="your-minimax-api-key"
-python -m janito4 "Hello"
+python -m janito "Hello"
 ```
 
 ### Azure OpenAI
@@ -108,7 +108,7 @@ export JANITO_PROVIDER="azure"
 export OPENAI_BASE_URL="https://your-resource.openai.azure.com"
 export OPENAI_MODEL="your-deployment-name"
 export OPENAI_API_KEY="your-azure-key"
-python -m janito4 "Hello"
+python -m janito "Hello"
 ```
 
 ## Notes

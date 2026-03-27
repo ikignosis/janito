@@ -1,6 +1,6 @@
-# Janito4 - an OpenAI CLI with function calling and MCP
+# janito - an OpenAI CLI with function calling and MCP
 
-> 📖 **Full documentation available at [https://ikignosis.org/janito4/](https://ikignosis.org/janito4/)**
+> 📖 **Full documentation available at [https://ikignosis.org/janito/](https://ikignosis.org/janito/)**
 
 ## Features
 
@@ -17,16 +17,16 @@
 
 ```bash
 # Install
-pip install janito4
+pip install janito
 
 # Configure interactively
-janito4 --config
+janito --config
 
 # Or set options directly
-janito4 --set provider=openai --set-api-key="sk-your-key" --set model=gpt-4
+janito --set provider=openai --set-api-key="sk-your-key" --set model=gpt-4
 
 # Start chatting
-janito4 "Hello!"
+janito "Hello!"
 ```
 
 ## Installation
@@ -34,7 +34,7 @@ janito4 "Hello!"
 ### From PyPI
 
 ```bash
-pip install janito4
+pip install janito
 ```
 
 For development setup, see [README_DEV.md](README_DEV.md).
@@ -44,7 +44,7 @@ For development setup, see [README_DEV.md](README_DEV.md).
 ### Interactive Setup
 
 ```bash
-janito4 --config
+janito --config
 ```
 
 You'll be prompted for:
@@ -59,22 +59,22 @@ Set options directly from the command line:
 
 ```bash
 # Set the provider
-janito4 --set provider=openai
+janito --set provider=openai
 
 # Set your API key
-janito4 --set-api-key="sk-your-key-here"
+janito --set-api-key="sk-your-key-here"
 
 # Set the model
-janito4 --set model=gpt-4
+janito --set model=gpt-4
 
 # Combine multiple options
-janito4 --set provider=openai --set model=gpt-4 --set-api-key="sk-your-key"
+janito --set provider=openai --set model=gpt-4 --set-api-key="sk-your-key"
 ```
 
 ### View Configuration
 
 ```bash
-janito4 --show-config
+janito --show-config
 ```
 
 ### Available Options
@@ -92,19 +92,19 @@ For custom endpoints (base-url), see [README_LOCAL.md](README_LOCAL.md).
 ### Single Prompt
 
 ```bash
-janito4 "What is the capital of France?"
+janito "What is the capital of France?"
 ```
 
 ### Pipe Input
 
 ```bash
-echo "Tell me a joke" | janito4
+echo "Tell me a joke" | janito
 ```
 
 ### Interactive Chat
 
 ```bash
-janito4
+janito
 ```
 
 Commands in chat mode:
@@ -115,9 +115,9 @@ Commands in chat mode:
 ### Logging
 
 ```bash
-janito4 --log=info "Your prompt"      # Info level
-janito4 --log=debug "Your prompt"     # Debug level
-janito4 --log=info,debug "Your prompt" # Multiple levels
+janito --log=info "Your prompt"      # Info level
+janito --log=debug "Your prompt"     # Debug level
+janito --log=info,debug "Your prompt" # Multiple levels
 ```
 
 ## Examples
@@ -125,69 +125,69 @@ janito4 --log=info,debug "Your prompt" # Multiple levels
 ### OpenAI
 
 ```bash
-janito4 --set provider=openai --set-api-key="sk-your-key" --set model=gpt-4 "Explain quantum computing"
+janito --set provider=openai --set-api-key="sk-your-key" --set model=gpt-4 "Explain quantum computing"
 ```
 
 ### Local LLM (LM Studio, Ollama)
 
 ```bash
-janito4 --set provider=openai --set-api-key="not-needed" --set model="local-model" "What is 2+2?"
+janito --set provider=openai --set-api-key="not-needed" --set model="local-model" "What is 2+2?"
 ```
 
 ### Azure OpenAI
 
 ```bash
-janito4 --set provider=azure --set-api-key="your-key" --set model="gpt-4" "Hello"
+janito --set provider=azure --set-api-key="your-key" --set model="gpt-4" "Hello"
 ```
 
 ## Built-in Tools
 
-Janito4 includes tools for common tasks:
+janito includes tools for common tasks:
 
 ### Email Integration (Gmail)
 
 ```bash
 # Authenticate with Gmail
-janito4 --gmail-auth
+janito --gmail-auth
 
 # Use Gmail in chat mode
-janito4 --gmail
+janito --gmail
 
 # Check emails
-janito4 --gmail "Show my unread emails from today"
+janito --gmail "Show my unread emails from today"
 ```
 
-For full Gmail documentation, see [janito4/tools/README.gmail.md](janito4/tools/README.gmail.md).
+For full Gmail documentation, see [janito/tools/README.gmail.md](janito/tools/README.gmail.md).
 
 ### Cloud Storage (OneDrive)
 
 ```bash
 # Authenticate with Microsoft OneDrive
-janito4 --onedrive-auth
+janito --onedrive-auth
 
 # Use OneDrive in chat mode
-janito4 --onedrive
+janito --onedrive
 
 # List files
-janito4 --onedrive "List my files in Documents"
+janito --onedrive "List my files in Documents"
 ```
 
-For full OneDrive documentation, see [janito4/tools/README.onedrive.md](janito4/tools/README.onedrive.md).
+For full OneDrive documentation, see [janito/tools/README.onedrive.md](janito/tools/README.onedrive.md).
 
 ### File Operations
 
 ```bash
 # List files
-janito4.tools.files.list_files . --recursive --pattern "*.py"
+janito.tools.files.list_files . --recursive --pattern "*.py"
 
 # Read file
-janito4.tools.files.read_file README.md --max-lines 20
+janito.tools.files.read_file README.md --max-lines 20
 ```
 
 ### Web Search
 
 ```bash
-janito4 "Search the web for the latest Python news"
+janito "Search the web for the latest Python news"
 ```
 
 ### MCP Tools

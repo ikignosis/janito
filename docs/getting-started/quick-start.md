@@ -1,17 +1,17 @@
 # Quick Start
 
-This guide gets you up and running with Janito4 in minutes.
+This guide gets you up and running with janito in minutes.
 
 ## 1. Configure Your Settings
 
-The first time you run Janito4, you'll need to configure your API settings. You can do this interactively or with command-line flags.
+The first time you run janito, you'll need to configure your API settings. You can do this interactively or with command-line flags.
 
 ### Interactive Configuration
 
 Run the configuration wizard:
 
 ```bash
-janito4 --config
+janito --config
 ```
 
 You'll be prompted for:
@@ -29,10 +29,10 @@ Set options directly from the command line:
 
 ```bash
 # OpenAI example
-janito4 --set provider=openai --set-api-key="sk-your-key" --set model=gpt-4
+janito --set provider=openai --set-api-key="sk-your-key" --set model=gpt-4
 
 # Local LLM example
-janito4 --set provider=openai --set model="local-model" --set-api-key="not-needed"
+janito --set provider=openai --set model="local-model" --set-api-key="not-needed"
 ```
 
 ## 2. Run Your First Prompt
@@ -40,13 +40,13 @@ janito4 --set provider=openai --set model="local-model" --set-api-key="not-neede
 ### Single Prompt
 
 ```bash
-janito4 "What is the capital of France?"
+janito "What is the capital of France?"
 ```
 
 ### Interactive Chat
 
 ```bash
-janito4
+janito
 ```
 
 Type your messages and press Enter. Commands:
@@ -60,13 +60,13 @@ Type your messages and press Enter. Commands:
 ### Pipe Input
 
 ```bash
-echo "Tell me a joke" | janito4
+echo "Tell me a joke" | janito
 ```
 
 ## 3. View Your Configuration
 
 ```bash
-janito4 --show-config
+janito --show-config
 ```
 
 ## Examples
@@ -74,19 +74,19 @@ janito4 --show-config
 ### OpenAI
 
 ```bash
-janito4 --set provider=openai --set-api-key="sk-your-key" --set model=gpt-4 "Explain quantum computing"
+janito --set provider=openai --set-api-key="sk-your-key" --set model=gpt-4 "Explain quantum computing"
 ```
 
 ### Local LLM (LM Studio, Ollama)
 
 ```bash
-janito4 --set provider=openai --set model="local-model" --set-api-key="not-needed" "What is 2+2?"
+janito --set provider=openai --set model="local-model" --set-api-key="not-needed" "What is 2+2?"
 ```
 
 ### Custom Provider
 
 ```bash
-janito4 --set provider=custom --set endpoint="http://localhost:8000/v1" --set model="my-model" "Hello"
+janito --set provider=custom --set endpoint="http://localhost:8000/v1" --set model="my-model" "Hello"
 ```
 
 ## What's Next?

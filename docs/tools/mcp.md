@@ -1,6 +1,6 @@
 # MCP Support
 
-Janito4 supports the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) for extending functionality with custom tools and servers.
+janito supports the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) for extending functionality with custom tools and servers.
 
 ## What is MCP?
 

@@ -1,6 +1,6 @@
 # Gmail Tools
 
-This document explains how to set up and use Gmail tools with janito4.
+This document explains how to set up and use Gmail tools with janito.
 
 ## Setup
 
@@ -10,10 +10,10 @@ Gmail tools require two secrets to be stored securely:
 
 ```bash
 # Set your Gmail address
-janito4 --set-secret gmail_username=your-email@gmail.com
+janito --set-secret gmail_username=your-email@gmail.com
 
 # Set your Gmail app password
-janito4 --set-secret gmail_password=your-app-password
+janito --set-secret gmail_password=your-app-password
 ```
 
 ### 2. Generate an App Password (Required for Gmail)
@@ -24,7 +24,7 @@ If your Gmail account has **2-Step Verification** enabled (which is recommended)
 2. Under "2-Step Verification", make sure it's turned on
 3. Go to "App passwords"
 4. Select "Mail" and "Other (Custom name)" 
-5. Enter a name like "janito4" and click "Generate"
+5. Enter a name like "janito" and click "Generate"
 6. Copy the 16-character password that appears
 7. Use this app password for `gmail_password`
 
@@ -46,7 +46,7 @@ Make sure IMAP is enabled in your Gmail settings:
 
 ```bash
 # Start interactive chat with Gmail tools enabled
-janito4 --gmail
+janito --gmail
 ```
 
 Example conversation:
@@ -69,19 +69,19 @@ Here are your 5 most recent emails:
 
 ```bash
 # Count unread emails
-janito4 --gmail "How many unread emails do I have?"
+janito --gmail "How many unread emails do I have?"
 
 # Read recent emails
-janito4 --gmail "Show me my last 5 emails"
+janito --gmail "Show me my last 5 emails"
 
 # Search for specific emails
-janito4 --gmail "Find emails from last week about the project"
+janito --gmail "Find emails from last week about the project"
 ```
 
 ### List Available Gmail Tools
 
 ```bash
-janito4 --gmail --list-tools
+janito --gmail --list-tools
 ```
 
 Output:
@@ -140,13 +140,13 @@ Use `search_query` parameter with IMAP syntax for advanced searches:
 
 ```bash
 # Count emails from a specific sender
-janito4 --gmail "How many emails did John send me?"
+janito --gmail "How many emails did John send me?"
 
 # Read emails from this week
-janito4 --gmail -- "Read emails from the last 7 days"
+janito --gmail -- "Read emails from the last 7 days"
 
 # Find all unread invoices
-janito4 --gmail "Find any unread emails about invoices"
+janito --gmail "Find any unread emails about invoices"
 ```
 
 ## Troubleshooting
@@ -157,7 +157,7 @@ janito4 --gmail "Find any unread emails about invoices"
 
 **Solution:** 
 1. Make sure you created an App Password (not your regular password)
-2. Re-set the secret: `janito4 --set-secret gmail_password=your-new-app-password`
+2. Re-set the secret: `janito --set-secret gmail_password=your-new-app-password`
 
 ### "Failed to select folder"
 
@@ -175,8 +175,8 @@ janito4 --gmail "Find any unread emails about invoices"
 
 **Solution:** 
 ```bash
-janito4 --set-secret gmail_username=your-email@gmail.com
-janito4 --set-secret gmail_password=your-app-password
+janito --set-secret gmail_username=your-email@gmail.com
+janito --set-secret gmail_password=your-app-password
 ```
 
 ### Connection Timeout

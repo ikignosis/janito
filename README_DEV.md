@@ -1,6 +1,6 @@
 # Development Guide
 
-This guide covers how to set up Janito4 for development.
+This guide covers how to set up janito for development.
 
 ## Prerequisites
 
@@ -11,7 +11,7 @@ This guide covers how to set up Janito4 for development.
 ## Clone the Repository
 
 ```bash
-git clone https://github.com/ikignosis/janito4.git
+git clone https://github.com/ikignosis/janito.git
 cd janito
 ```
 
@@ -45,7 +45,7 @@ This installs the package in "editable" mode, so changes to the source code take
 You can also run the package directly without installing:
 
 ```bash
-python -m janito4 --config
+python -m janito --config
 ```
 
 ## Running Tests
@@ -55,7 +55,7 @@ python -m janito4 --config
 pytest
 
 # Run with coverage
-pytest --cov=janito4
+pytest --cov=janito
 
 # Run specific test file
 pytest tests/test_core.py
