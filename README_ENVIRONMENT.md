@@ -9,7 +9,7 @@ This guide explains how to configure janito using environment variables.
 | `OPENAI_BASE_URL` | Base URL of the OpenAI-compatible API | `https://api.openai.com` |
 | `OPENAI_API_KEY` | API key for authentication | `sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
 | `OPENAI_MODEL` | Model name/deployment name to use | `gpt-4`, `gpt-3.5-turbo`, `your-local-model` |
-| `JANITO_PROVIDER` | Provider type (openai, azure, custom) | `openai`, `azure`, `custom` |
+| `JANITO_PROVIDER` | Provider type (openai, custom) | `openai`, `custom` |
 
 ## Usage
 
@@ -31,12 +31,6 @@ export JANITO_PROVIDER="custom"
 export OPENAI_BASE_URL="http://localhost:8000/minimax/v1"
 export OPENAI_MODEL="MiniMax-M2.7"
 export OPENAI_API_KEY="your-api-key-here"
-
-# For Azure OpenAI
-export JANITO_PROVIDER="azure"
-export OPENAI_BASE_URL="https://your-resource.openai.azure.com"
-export OPENAI_MODEL="your-deployment-name"
-export OPENAI_API_KEY="your-azure-key"
 
 # Use the CLI
 python -m janito "Your prompt here"
@@ -60,12 +54,6 @@ $env:JANITO_PROVIDER = "custom"
 $env:OPENAI_BASE_URL = "http://localhost:8000/minimax/v1"
 $env:OPENAI_MODEL = "MiniMax-M2.7"
 $env:OPENAI_API_KEY = "your-api-key-here"
-
-# For Azure OpenAI
-$env:JANITO_PROVIDER = "azure"
-$env:OPENAI_BASE_URL = "https://your-resource.openai.azure.com"
-$env:OPENAI_MODEL = "your-deployment-name"
-$env:OPENAI_API_KEY = "your-azure-key"
 
 # Use the CLI
 python -m janito "Your prompt here"
@@ -98,16 +86,6 @@ export JANITO_PROVIDER="custom"
 export OPENAI_BASE_URL="https://api.minimax.chat/minimax/v1"
 export OPENAI_MODEL="MiniMax-M2.7"
 export OPENAI_API_KEY="your-minimax-api-key"
-python -m janito "Hello"
-```
-
-### Azure OpenAI
-
-```bash
-export JANITO_PROVIDER="azure"
-export OPENAI_BASE_URL="https://your-resource.openai.azure.com"
-export OPENAI_MODEL="your-deployment-name"
-export OPENAI_API_KEY="your-azure-key"
 python -m janito "Hello"
 ```
 

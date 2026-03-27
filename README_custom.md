@@ -42,7 +42,7 @@ python -m janito "Your prompt here"
 
 | Argument | Description | Example |
 |----------|-------------|---------|
-| `--set provider=xxx` | Provider type (openai, azure, custom) | `custom` |
+| `--set provider=xxx` | Provider type (openai, custom) | `custom` |
 | `--set endpoint=xxx` | Full API endpoint URL | `http://localhost:8000/minimax/v1` |
 | `--set model=xxx` | Model name to use | `MiniMax-M2.7` |
 | `--set-api-key=xxx` | API key for authentication (optional if not required) | `sk-xxxxx` |
@@ -121,17 +121,6 @@ python -m janito \
   --set endpoint=https://api.minimax.chat/minimax/v1 \
   --set model=MiniMax-M2.7 \
   --set-api-key=your-minimax-api-key \
-  "Your question"
-```
-
-### Azure OpenAI
-
-```bash
-python -m janito \
-  --set provider=azure \
-  --set endpoint=https://your-resource.openai.azure.com \
-  --set model=your-deployment-name \
-  --set-api-key=your-azure-key \
   "Your question"
 ```
 

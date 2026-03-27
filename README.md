@@ -48,7 +48,7 @@ janito --config
 ```
 
 You'll be prompted for:
-- **Provider** - `openai`, `anthropic`, `azure`, or `custom`
+- **Provider** - `openai`, `anthropic`, or `custom`
 - **API Key** - Masked for security
 - **Model** - e.g., `gpt-4`, `gpt-3.5-turbo`
 - **Context Window** - Max tokens (default: 65536)
@@ -81,7 +81,7 @@ janito --show-config
 
 | Option | Description | Example |
 |--------|-------------|---------|
-| `provider` | Provider name | `openai`, `anthropic`, `azure`, `custom` |
+| `provider` | Provider name | `openai`, `anthropic`, `custom` |
 | `model` | Model name | `gpt-4`, `claude-3-opus` |
 | `context-window` | Context window size | `65536` |
 
@@ -132,12 +132,6 @@ janito --set provider=openai --set-api-key="sk-your-key" --set model=gpt-4 "Expl
 
 ```bash
 janito --set provider=openai --set-api-key="not-needed" --set model="local-model" "What is 2+2?"
-```
-
-### Azure OpenAI
-
-```bash
-janito --set provider=azure --set-api-key="your-key" --set model="gpt-4" "Hello"
 ```
 
 ## Built-in Tools
