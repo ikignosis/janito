@@ -142,7 +142,7 @@ janito --gmail
 janito --gmail "Show my unread emails from today"
 ```
 
-For full Gmail documentation, see [janito/tools/README.gmail.md](janito/tools/README.gmail.md).
+For full Gmail documentation, see [README.gmail.md](README.gmail.md).
 
 ### Cloud Storage (OneDrive)
 
@@ -157,7 +157,7 @@ janito --onedrive
 janito --onedrive "List my files in Documents"
 ```
 
-For full OneDrive documentation, see [janito/tools/README.onedrive.md](janito/tools/README.onedrive.md).
+For full OneDrive documentation, see [README.onedrive.md](README.onedrive.md).
 
 ### File Operations
 
