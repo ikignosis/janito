@@ -7,7 +7,6 @@ Provider Base URLs:
 {
     "minimax": "https://api.minimax.io/v1",
     "openai": None,  # Standard OpenAI - no base_url needed
-    "anthropic": "https://api.anthropic.com/v1",
     # ... more providers
 }
 """

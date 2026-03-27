@@ -27,7 +27,7 @@ Configuration:
 
 Options:
   --set-api-key KEY  Set API key for the specified provider
-  --provider NAME    Provider name (e.g., openai, anthropic)
+  --provider NAME    Provider name (e.g., openai)
   --model NAME       Model name to use (overrides OPENAI_MODEL env var and config)
   --log LEVELS       Enable logging (e.g., --log=info,debug or --log=warning)
   --list-auth        List configured providers and keys
@@ -40,7 +40,6 @@ Examples:
   echo "Tell me a joke" | janito                             # Pipe input mode
   janito                                                     # Interactive chat mode
   janito --set-api-key sk-xxx --provider openai             # Store OpenAI API key
-  janito --set-api-key xxx --provider anthropic             # Store API key for provider
   janito --list-auth                                        # Show configured providers
   janito --list-tools                                       # List available built-in tools
   janito --list-mcp                                         # List MCP services and tools
@@ -123,7 +122,7 @@ Examples:
     parser.add_argument(
         "--provider",
         metavar="NAME",
-        help="Provider name (e.g., openai, anthropic, custom)"
+        help="Provider name (e.g., openai, custom)"
     )
     
     parser.add_argument(

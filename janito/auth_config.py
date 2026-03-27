@@ -6,8 +6,7 @@ Handles storage and retrieval of API keys in ~/.janito/auth.json
 Structure:
 {
     "provider": "openai",  # Optional: default provider to use
-    "openai": "sk-xxxxx...",
-    "anthropic": "sk-ant-xxxxx..."
+    "openai": "sk-xxxxx..."
 }
 """
 
@@ -72,7 +71,7 @@ def set_api_key(provider: str, api_key: str) -> bool:
     Set an API key for a specific provider.
     
     Args:
-        provider: The provider name (e.g., 'openai', 'anthropic')
+        provider: The provider name (e.g., 'openai')
         api_key: The actual API key value
     
     Returns:
@@ -143,7 +142,7 @@ def set_default_provider(provider: str) -> bool:
     Set the default provider to use.
     
     Args:
-        provider: The provider name (e.g., 'openai', 'anthropic')
+        provider: The provider name (e.g., 'openai')
     
     Returns:
         True if successful, False otherwise
@@ -187,7 +186,7 @@ def get_environment_api_key() -> Optional[str]:
     Returns:
         The API key if found in environment, None otherwise
     """
-    env_vars = ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY']
+    env_vars = ['OPENAI_API_KEY']
     
     for var in env_vars:
         key = os.getenv(var)
