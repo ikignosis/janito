@@ -12,6 +12,8 @@ import re
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 
+from janito.tooling.reporter import report_start, report_result, report_error, report_warning
+
 
 # Default skills directory
 DEFAULT_SKILLS_DIR = Path.home() / ".janito" / "skills"
@@ -270,19 +272,31 @@ def load_skill(skill_name: str) -> str:
     Returns:
         The full SKILL.md content, or error message if not found
     """
+    report_start(f"Loading skill '{skill_name}'...", end="")
+    
     provider = get_skills_provider()
     skill = provider.get_skill(skill_name)
     
     if skill is None:
         available = [s["name"] for s in provider.list_skills()]
         if available:
-            return f"Skill '{skill_name}' not found. Available skills: {', '.join(available)}"
-        return f"Skill '{skill_name}' not found. No skills are currently installed."
+            error_msg = f"Skill '{skill_name}' not found. Available skills: {', '.join(available)}"
+            report_error(error_msg)
+            return error_msg
+        error_msg = f"Skill '{skill_name}' not found. No skills are currently installed."
+        report_error(error_msg)
+        return error_msg
     
     content = skill.load_content()
     
     if not content:
-        return f"Skill '{skill_name}' has no SKILL.md content."
+        error_msg = f"Skill '{skill_name}' has no SKILL.md content."
+        report_error(error_msg)
+        return error_msg
+    
+    # Count lines for result message
+    line_count = len(content.split('\n'))
+    report_result(f"Loaded '{skill_name}' ({line_count} lines)")
     
     return f"# {skill_name}\n\n{content}"
 
@@ -298,22 +312,36 @@ def read_skill_resource(skill_name: str, resource_name: str) -> str:
     Returns:
         The resource content, or error message if not found
     """
+    report_start(f"Reading resource '{resource_name}' from skill '{skill_name}'...", end="")
+    
     provider = get_skills_provider()
     skill = provider.get_skill(skill_name)
     
     if skill is None:
         available = [s["name"] for s in provider.list_skills()]
         if available:
-            return f"Skill '{skill_name}' not found. Available skills: {', '.join(available)}"
-        return f"Skill '{skill_name}' not found. No skills are currently installed."
+            error_msg = f"Skill '{skill_name}' not found. Available skills: {', '.join(available)}"
+            report_error(error_msg)
+            return error_msg
+        error_msg = f"Skill '{skill_name}' not found. No skills are currently installed."
+        report_error(error_msg)
+        return error_msg
     
     content = skill.get_resource(resource_name)
     
     if content is None:
         available = list(skill.resources.keys())
         if available:
-            return f"Resource '{resource_name}' not found in skill '{skill_name}'. Available resources: {', '.join(available)}"
-        return f"Resource '{resource_name}' not found in skill '{skill_name}'. This skill has no additional resources."
+            error_msg = f"Resource '{resource_name}' not found in skill '{skill_name}'. Available resources: {', '.join(available)}"
+            report_error(error_msg)
+            return error_msg
+        error_msg = f"Resource '{resource_name}' not found in skill '{skill_name}'. This skill has no additional resources."
+        report_error(error_msg)
+        return error_msg
+    
+    # Count lines for result message
+    line_count = len(content.split('\n'))
+    report_result(f"Read resource '{resource_name}' from '{skill_name}' ({line_count} lines)")
     
     return f"# {skill_name}/{resource_name}\n\n{content}"
 
