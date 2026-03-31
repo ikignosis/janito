@@ -87,8 +87,8 @@ def get_env_config() -> Tuple[Optional[str], str, str]:
         logger.error("OPENAI_API_KEY environment variable is required")
         raise ValueError("OPENAI_API_KEY environment variable is required")
     if not model:
-        logger.error("OPENAI_MODEL environment variable is required")
-        raise ValueError("OPENAI_MODEL environment variable is required")
+        logger.error("OPENAI_MODEL environment variable is required or --set model")
+        raise ValueError("OPENAI_MODEL environment variable is required or --set model")
     
     # If base_url is not set, try to determine it from the provider
     if not base_url:
