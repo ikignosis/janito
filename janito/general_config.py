@@ -173,24 +173,17 @@ def get_masked_api_key(api_key: str) -> str:
 
 
 def get_active_provider() -> str:
-    """Determine the active provider based on config and environment.
+    """Determine the active provider based on config.
     
     Priority:
-    1. JANITO_PROVIDER environment variable (from --provider CLI arg)
-    2. Provider from config.json
-    3. Default provider from auth.json
-    4. Fallback to 'openai'
+    1. Provider from config.json
+    2. Default provider from auth.json
+    3. Fallback to 'openai'
     
     Returns:
         str: The active provider name
     """
-    # 1. First check JANITO_PROVIDER env var (set from --provider CLI arg)
-    env_provider = os.getenv("JANITO_PROVIDER")
-    if env_provider:
-        logger.debug(f"Active provider from env: {env_provider}")
-        return env_provider
-    
-    # 2. Check config.json for provider
+    # 1. Check config.json for provider
     config_provider = load_provider_from_config()
     if config_provider:
         logger.debug(f"Active provider from config: {config_provider}")

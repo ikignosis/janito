@@ -22,7 +22,6 @@ from .cli.logging_config import setup_logging
 from .cli import create_parser
 from .cli.setup import (
     setup_api_key_from_config,
-    setup_provider_env,
     setup_endpoint_env,
     setup_model_env,
     validate_required_config,
@@ -122,9 +121,6 @@ def main():
     # Handle --show-config option (display configured provider and model)
     if args.show_config:
         return handle_show_config()
-    
-    # Set up provider from CLI args
-    setup_provider_env(args)
     
     # Set up endpoint from CLI args or config (for custom provider)
     setup_endpoint_env(args)

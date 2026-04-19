@@ -54,33 +54,28 @@ def handle_info(args) -> int:
     """
     cli_provider = getattr(args, 'provider', None)
     
-    # Determine resolved provider (priority: CLI arg/JANITO_PROVIDER > config.json > auth.json default > fallback)
+    # Determine resolved provider (priority: config.json > auth.json default > fallback)
     provider = None
     provider_source = ""
     
-    # 1. First check JANITO_PROVIDER env var (set from --provider CLI arg)
-    env_provider = os.getenv("JANITO_PROVIDER")
-    if env_provider:
-        provider = env_provider
-        provider_source = "CLI argument"
-    # 2. Check CLI argument directly (if --info was called before env var was set)
-    elif cli_provider:
+    # 1. Check CLI argument directly
+    if cli_provider:
         provider = cli_provider
         provider_source = "CLI argument"
-    # 3. Check config.json for provider
+    # 2. Check config.json for provider
     else:
         config_provider = load_provider_from_config()
         if config_provider:
             provider = config_provider
             provider_source = "config.json"
         else:
-            # 4. Check auth.json for default provider
+            # 3. Check auth.json for default provider
             default_provider = get_default_provider()
             if default_provider:
                 provider = default_provider
                 provider_source = "auth.json (default)"
             else:
-                # 5. Fall back to 'openai'
+                # 4. Fall back to 'openai'
                 provider = "openai"
                 provider_source = "fallback"
     

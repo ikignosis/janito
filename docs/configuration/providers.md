@@ -51,15 +51,6 @@ janito --set provider=custom --set endpoint="http://localhost:8000/v1" --set mod
 janito --set-api-key="optional-key" --provider custom
 ```
 
-### Environment Variables
-
-```bash
-export JANITO_PROVIDER="custom"
-export OPENAI_BASE_URL="http://localhost:8000/v1"
-export OPENAI_API_KEY="optional-key"
-export OPENAI_MODEL="my-model"
-```
-
 ### Common Endpoints
 
 | Provider | Endpoint Example |
@@ -94,14 +85,6 @@ Use Alibaba Cloud DashScope to access Qwen models.
 janito --set provider=alibaba --set model=qwen-plus
 # Step 2: Store API key
 janito --set-api-key="your-dashscope-api-key" --provider alibaba
-```
-
-### Environment Variables
-
-```bash
-export JANITO_PROVIDER="alibaba"
-export OPENAI_API_KEY="your-dashscope-api-key"
-export OPENAI_MODEL="qwen-plus"
 ```
 
 ### Popular Models
@@ -139,14 +122,6 @@ janito --set provider=minimax --set model=abab6.5s-chat
 janito --set-api-key="your-minimax-api-key" --provider minimax
 ```
 
-### Environment Variables
-
-```bash
-export JANITO_PROVIDER="minimax"
-export OPENAI_API_KEY="your-minimax-api-key"
-export OPENAI_MODEL="abab6.5s-chat"
-```
-
 ### Popular Models
 
 | Model | Description |
@@ -179,14 +154,6 @@ Use Xiaomi AI to access Mimo models.
 janito --set provider=xiaomi --set model=mimo-v2
 # Step 2: Store API key
 janito --set-api-key="your-xiaomi-api-key" --provider xiaomi
-```
-
-### Environment Variables
-
-```bash
-export JANITO_PROVIDER="xiaomi"
-export OPENAI_API_KEY="your-xiaomi-api-key"
-export OPENAI_MODEL="mimo-v2"
 ```
 
 ### Popular Models
@@ -222,14 +189,6 @@ janito --set provider=moonshot --set model=moonshot-v1-8k
 janito --set-api-key="your-moonshot-api-key" --provider moonshot
 ```
 
-### Environment Variables
-
-```bash
-export JANITO_PROVIDER="moonshot"
-export OPENAI_API_KEY="your-moonshot-api-key"
-export OPENAI_MODEL="moonshot-v1-8k"
-```
-
 ### Popular Models
 
 | Model | Description |
@@ -262,14 +221,6 @@ Use Z.AI to access GLM models (Zhipu AI).
 janito --set provider=zai --set model=glm-4-plus
 # Step 2: Store API key
 janito --set-api-key="your-zai-api-key" --provider zai
-```
-
-### Environment Variables
-
-```bash
-export JANITO_PROVIDER="zai"
-export OPENAI_API_KEY="your-zai-api-key"
-export OPENAI_MODEL="glm-4-plus"
 ```
 
 ### Popular Models

@@ -16,10 +16,9 @@ def setup_api_key_from_config():
     """Load API key from auth config if environment variable is not set.
     
     Priority (handled by get_active_provider):
-    1. JANITO_PROVIDER environment variable (from --provider CLI arg)
-    2. Provider from config.json
-    3. Default provider from auth.json
-    4. Fallback to 'openai'
+    1. Provider from config.json
+    2. Default provider from auth.json
+    3. Fallback to 'openai'
     """
     if not os.getenv("OPENAI_API_KEY"):
         provider = get_active_provider()
@@ -29,16 +28,6 @@ def setup_api_key_from_config():
             return True
     
     return False
-
-
-def setup_provider_env(args):
-    """Set up provider environment variable from CLI args.
-    
-    Args:
-        args: Parsed command line arguments
-    """
-    if args.provider:
-        os.environ["JANITO_PROVIDER"] = args.provider
 
 
 def setup_endpoint_env(args):
@@ -92,7 +81,8 @@ def validate_required_config():
         missing_vars.append("OPENAI_MODEL")
     
     # For custom provider, validate endpoint is set
-    provider = os.getenv("JANITO_PROVIDER")
+    from ..general_config import load_provider_from_config
+    provider = load_provider_from_config()
     if provider and provider.lower() == "custom":
         if not os.getenv("OPENAI_BASE_URL"):
             missing_vars.append("OPENAI_BASE_URL (required for 'custom' provider)")

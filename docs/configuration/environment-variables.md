@@ -9,7 +9,6 @@ Configure janito using environment variables for automation and scripting.
 | `OPENAI_BASE_URL` | Base URL of the OpenAI-compatible API | `https://api.openai.com` |
 | `OPENAI_API_KEY` | API key for authentication | `sk-xxxxxxxx...` |
 | `OPENAI_MODEL` | Model name/deployment name | `gpt-4` |
-| `JANITO_PROVIDER` | Provider type | `openai`, `custom` |
 
 ## Unix/Linux/macOS
 
@@ -24,12 +23,6 @@ export OPENAI_MODEL="gpt-4"
 export OPENAI_BASE_URL="http://localhost:1234/v1"
 export OPENAI_API_KEY="not-needed"
 export OPENAI_MODEL="local-model"
-
-# For custom providers
-export JANITO_PROVIDER="custom"
-export OPENAI_BASE_URL="http://localhost:8000/minimax/v1"
-export OPENAI_MODEL="MiniMax-M2.7"
-export OPENAI_API_KEY="your-api-key"
 ```
 
 ### Zsh
@@ -85,10 +78,13 @@ janito "What is 2+2?"
 
 ### Custom Provider (MiniMax)
 
+Configure the provider using CLI, then set the endpoint and credentials via environment variables:
+
 ```bash
-export JANITO_PROVIDER="custom"
-export OPENAI_BASE_URL="https://api.minimax.chat/minimax/v1"
-export OPENAI_MODEL="MiniMax-M2.7"
+# Configure provider (writes to config.json)
+janito --set provider=custom --set endpoint="https://api.minimax.chat/minimax/v1" --set model="MiniMax-M2.7"
+
+# Set API key via environment variable
 export OPENAI_API_KEY="your-api-key"
 janito "Hello"
 ```

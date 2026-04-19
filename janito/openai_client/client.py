@@ -97,23 +97,21 @@ def get_env_config() -> Tuple[Optional[str], str, str]:
     
     # If base_url is not set, try to determine it from the provider
     if not base_url:
-        # Check JANITO_PROVIDER first (set from --provider CLI arg), then fallback to OPENAI_PROVIDER
-        provider = os.getenv("JANITO_PROVIDER") or os.getenv("OPENAI_PROVIDER")
+        # Check provider from config, then auth.json
+        provider = load_provider_from_config()
+        logger.debug(f"Provider from config: {provider}")
+        
+        # If not in config.json, check auth.json for default provider
         if not provider:
-            provider = load_provider_from_config()
-            logger.debug(f"Provider from config: {provider}")
-            
-            # If not in config.json, check auth.json for default provider
-            if not provider:
+            try:
+                from ..auth_config import get_default_provider
+                provider = get_default_provider()
+            except ImportError:
                 try:
-                    from ..auth_config import get_default_provider
+                    from auth_config import get_default_provider
                     provider = get_default_provider()
                 except ImportError:
-                    try:
-                        from auth_config import get_default_provider
-                        provider = get_default_provider()
-                    except ImportError:
-                        pass
+                    pass
         
         if provider:
             base_url = get_base_url_from_provider(provider)
