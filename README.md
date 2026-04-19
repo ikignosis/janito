@@ -106,6 +106,28 @@ Commands in chat mode:
 - `restart` - Clear conversation history
 - `Ctrl+D` / `Ctrl+Z` - Exit
 
+### System Prompt Options
+
+Control how the system prompt is handled:
+
+```bash
+# Use default system prompt (with tools enabled)
+janito "What can you do?"
+
+# Disable system prompt entirely (no tools)
+janito -Z "Simple prompt without system context"
+
+# Override with a custom system prompt (no tools)
+janito -S "You are a concise coding assistant" "Explain recursion"
+```
+
+| Flag | Description |
+|------|-------------|
+| `-Z`, `--no-system-prompt` | Skip system prompt and disable tools |
+| `-S`, `--system-prompt` | Custom system prompt (also disables tools) |
+
+> **Note:** When using `-S` or `-Z`, built-in tools (file operations, Gmail, OneDrive, MCP) are disabled. Use the default mode or `--gmail`/`--onedrive` flags when you need tool access.
+
 ### Logging
 
 ```bash

@@ -37,22 +37,29 @@ def run_interactive_chat(args):
     print("Starting interactive chat session. Type '/exit' or CTRL-D to end the session")
     
     # Choose system prompt based on enabled modes
-    if args.no_system_prompt:
+    if args.system_prompt:
+        effective_system_prompt = args.system_prompt
+        no_tools = True
+    elif args.no_system_prompt:
         effective_system_prompt = None
+        no_tools = True
     elif args.onedrive:
         effective_system_prompt = ONEDRIVE_SYSTEM_PROMPT
+        no_tools = False
     elif args.gmail:
         effective_system_prompt = GMAIL_SYSTEM_PROMPT
+        no_tools = False
     else:
         # Use system prompt with skills advertisement
         effective_system_prompt = get_system_prompt_with_skills()
+        no_tools = False
     
     shell = InteractiveShell(model=model, no_history=args.no_history)
     shell.initialize_history(system_prompt=effective_system_prompt)
     shell.run(
         send_prompt_func=send_prompt,
         verbose=args.verbose,
-        no_tools=args.no_system_prompt,
+        no_tools=no_tools,
         thinking=args.thinking
     )
 
@@ -83,8 +90,11 @@ def run_single_prompt(args):
         print("Error: Empty prompt provided.", file=sys.stderr)
         sys.exit(1)
     
-    # Initialize messages history (with or without system prompt based on -Z flag)
-    if args.no_system_prompt:
+    # Initialize messages history (with or without system prompt based on -Z or -S flag)
+    if args.system_prompt:
+        messages_history = [{"role": "system", "content": args.system_prompt}]
+        tools_to_use = []
+    elif args.no_system_prompt:
         messages_history = []
         tools_to_use = []
     else:

@@ -60,6 +60,7 @@ Examples:
   janito -t                                                    # Enable thinking mode
   janito --gmail                                              # Enable Gmail tools and email system prompt
   janito --onedrive                                           # Enable OneDrive tools and file system prompt
+  janito -S "You are a cow"                                   # Override system prompt (no tools)
   janito --install-skill https://github.com/user/repo/tree/main/skills/git-commit  # Install a skill
   janito --list-skills                                        # List installed skills
   janito --uninstall-skill git-commit                         # Uninstall a skill
@@ -99,6 +100,12 @@ Note: --set and --set-api-key must be used in separate commands.
         "-Z", "--no-system-prompt",
         action="store_true",
         help="Do not set a system prompt (send user prompt directly)"
+    )
+    
+    parser.add_argument(
+        "-S", "--system-prompt",
+        metavar="PROMPT",
+        help="Override the system prompt (implies --no-system-prompt / no tools)"
     )
     
     parser.add_argument(
