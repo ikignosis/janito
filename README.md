@@ -126,23 +126,21 @@ janito --log=info,debug "Your prompt" # Multiple levels
 ### OpenAI
 
 ```bash
-janito --set provider=openai --set-api-key="sk-your-key" --set model=gpt-4 "Explain quantum computing"
+# Store key and select model
+janito --set provider=openai --set model=gpt-4 --set-api-key="sk-your-key"
+
+# Then run any prompt
+janito "Explain quantum computing"
 ```
 
 ### Alibaba (Qwen)
 
-Set up your configuration first:
-
 ```bash
-janito --set provider=alibaba \
-       --set model="qwen3.6-flash" \
-       --set-api-key="sk-your-alibaba-key" \
-       --set preserve_thinking=true
-```
+# Store key and select model
+janito --set provider=alibaba --set model=qwen3.6-flash \
+       --set preserve_thinking=true --set-api-key="sk-your-alibaba-key"
 
-Then use it with any prompt:
-
-```bash
+# Then run any prompt
 janito "Explain how AI works"
 ```
 
