@@ -60,7 +60,12 @@ except ImportError:
         CUSTOM_ENDPOINT_MARKER = "CUSTOM_ENDPOINT"
 
 # Import general configuration handling
-from janito.general_config import load_provider_from_config, load_context_window_size, load_endpoint_from_config
+from janito.general_config import (
+    load_provider_from_config, 
+    load_context_window_size, 
+    load_endpoint_from_config,
+    get_config_value
+)
 
 
 def get_env_config() -> Tuple[Optional[str], str, str]:
@@ -222,6 +227,11 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
     # Load context window size from general config if set
     context_window_size = load_context_window_size()
     
+    # Check for preserve_thinking in config
+    preserve_thinking = get_config_value("preserve_thinking")
+    if preserve_thinking is not None:
+        logger.debug(f"Using preserve_thinking from config: {preserve_thinking}")
+        
     console = Console()
 
     # Print model and backend info only in verbose mode
@@ -258,6 +268,12 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
                 call_kwargs["max_completion_tokens"] = context_window_size
             else:
                 call_kwargs["max_tokens"] = context_window_size
+
+        # Pass preserve_thinking in extra_body if defined in config
+        if preserve_thinking is not None:
+            if "extra_body" not in call_kwargs:
+                call_kwargs["extra_body"] = {}
+            call_kwargs["extra_body"]["preserve_thinking"] = preserve_thinking
 
         # Make API call with tools if available
         if tools_schemas:
