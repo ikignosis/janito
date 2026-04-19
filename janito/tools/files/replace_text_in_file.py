@@ -87,7 +87,7 @@ class ReplaceTextInFile(BaseTool):
             occurrences = content.count(old_str)
             
             if occurrences == 0:
-                error_msg = f"Warning: Search text '{old_str}' not found in file"
+                error_msg = "Warning: Search text not found in file"
                 self.report_error(error_msg)
                 return {
                     "success": False,

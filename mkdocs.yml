@@ -44,7 +44,6 @@ nav:
   - Configuration:
       - configuration/index.md
       - configuration/providers.md
-      - configuration/alibaba.md
       - configuration/environment-variables.md
       - configuration/secrets.md
   - Usage:

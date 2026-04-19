@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 import os
-import re
 import shutil
 import subprocess
 import sys
 import urllib.request
 import json
-import os
 
 # Colors for output
 GREEN = "\033[0;32m"

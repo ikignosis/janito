@@ -60,14 +60,6 @@ Set options directly from the command line:
 ```bash
 # Single key-value
 janito --set model=gpt-4
-
-# Multiple keys (batch set)
-janito --set provider=custom \
-       --set endpoint="https://api.example.com/v1" \
-       --set model="my-model"
-
-# Set API key and config together
-janito --set-api-key="sk-your-key-here" --set model=gpt-4
 ```
 
 You can also use `--get`, `--unset`, and `--set-secret` with multiple values.
@@ -127,7 +119,8 @@ janito --log=info,debug "Your prompt" # Multiple levels
 
 ```bash
 # Store key and select model
-janito --set provider=openai --set model=gpt-4 --set-api-key="sk-your-key"
+janito --set provider=openai --set-api-key="sk-your-key"
+janito --set model=gpt-4
 
 # Then run any prompt
 janito "Explain quantum computing"
@@ -137,14 +130,18 @@ janito "Explain quantum computing"
 
 ```bash
 # Store key and select model
-janito --set provider=alibaba --set model=qwen3.6-flash \
-       --set preserve_thinking=true --set-api-key="sk-your-alibaba-key"
+janito --set provider=alibaba --set-api-key="your-dashscope-api-key"
+janito --set model=qwen-plus
 
 # Then run any prompt
-janito "Explain how AI works"
+janito "Explain quantum computing"
 ```
 
-For more models and configuration options, see [docs/configuration/alibaba.md](docs/configuration/alibaba.md).
+### Custom Endpoint
+
+```bash
+janito --set provider=custom --set base-url=http://localhost:8000/v1
+```
 
 ## Built-in Tools
 
