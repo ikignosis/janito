@@ -57,6 +57,7 @@ Examples:
   janito --config                                           # Interactive configuration setup
   janito --provider custom --endpoint https://api.example.com/v1  # Use custom provider (with env API key)
   janito --no-history                                          # Interactive chat without file history
+  janito -t                                                    # Enable thinking mode
   janito --gmail                                              # Enable Gmail tools and email system prompt
   janito --onedrive                                           # Enable OneDrive tools and file system prompt
   janito --install-skill https://github.com/user/repo/tree/main/skills/git-commit  # Install a skill
@@ -98,6 +99,12 @@ Note: --set and --set-api-key must be used in separate commands.
         "-Z", "--no-system-prompt",
         action="store_true",
         help="Do not set a system prompt (send user prompt directly)"
+    )
+    
+    parser.add_argument(
+        "-t", "--thinking",
+        action="store_true",
+        help="Enable thinking mode (sends extra_body={'enable_thinking': True} to the API)"
     )
     
     parser.add_argument(

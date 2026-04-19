@@ -174,7 +174,8 @@ class InteractiveShell:
         self,
         send_prompt_func: Callable,
         verbose: bool = False,
-        no_tools: bool = False
+        no_tools: bool = False,
+        thinking: bool = False
     ) -> None:
         """
         Run the interactive chat loop.
@@ -183,6 +184,7 @@ class InteractiveShell:
             send_prompt_func: Function to call to send prompts to the AI
             verbose: Enable verbose output
             no_tools: If True, don't pass any tools to the AI
+            thinking: If True, enable thinking mode
         """
         import sys
         import subprocess
@@ -273,16 +275,14 @@ class InteractiveShell:
                         user_input,
                         verbose=verbose,
                         previous_messages=self.messages_history,
-                        tools=tools_to_use
+                        tools=tools_to_use,
+                        thinking=thinking
                     )
                 except KeyboardInterrupt:
                     print("Request interrupted")
                     response = None
-                    user_input = None
-                # Add the user message and AI response to history
-                if user_input:
-                    self.messages_history.append({"role": "user", "content": user_input})
-                if response:
-                    self.messages_history.append({"role": "assistant", "content": response})
+                # Note: send_prompt_func already appends user and assistant messages
+                # to previous_messages (which is self.messages_history), so we don't
+                # need to append them here.
         
         print("\nChat session ended.")

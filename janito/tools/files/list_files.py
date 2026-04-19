@@ -91,7 +91,7 @@ class ListFiles(BaseTool):
             
             # Report start of operation
             recursive_str = "recursively" if recursive else ""
-            self.report_start(f"Listing files at {norm_dir} {recursive_str}", end="")
+            self.report_start(f"📁 Listing files at {norm_dir} {recursive_str}", end="")
             
             files = []
             dir_count = 0

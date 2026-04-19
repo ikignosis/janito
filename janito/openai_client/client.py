@@ -174,7 +174,7 @@ def _is_mcp_tool(tool_name: str) -> bool:
     return False
 
 
-def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict[str, Any]] = None, tools: Optional[List[Dict[str, Any]]] = None, use_mcp: bool = True) -> str:
+def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict[str, Any]] = None, tools: Optional[List[Dict[str, Any]]] = None, use_mcp: bool = True, thinking: bool = False) -> str:
     """Send prompt to OpenAI endpoint and return response.
     
     Args:
@@ -184,6 +184,7 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
         tools: Optional list of tool schemas to pass. If None, uses all available tools.
                If an empty list, no tools are passed.
         use_mcp: If True, load and use MCP tools (default True)
+        thinking: If True, enable thinking mode (extra_body={'enable_thinking': True})
     """
     logger.info(f"Sending prompt to API")
     base_url, api_key, model = get_env_config()
@@ -273,6 +274,12 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
                 call_kwargs["extra_body"] = {}
             call_kwargs["extra_body"]["preserve_thinking"] = preserve_thinking
 
+        # Pass enable_thinking in extra_body if thinking flag is set
+        if thinking:
+            if "extra_body" not in call_kwargs:
+                call_kwargs["extra_body"] = {}
+            call_kwargs["extra_body"]["enable_thinking"] = True
+
         # Make API call with tools if available
         if tools_schemas:
             logger.debug(f"Calling API with {len(tools_schemas)} tools")
@@ -292,6 +299,24 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
         logger.debug("API response received")
         
         message = response.choices[0].message
+        
+        # Handle reasoning/thinking content (e.g., DeepSeek R1, OpenAI o1/o3)
+        reasoning_content = None
+        for attr in ('reasoning_content', 'reasoning'):
+            if hasattr(message, attr):
+                val = getattr(message, attr)
+                if val:
+                    reasoning_content = val
+                    break
+        
+        if reasoning_content:
+            # Display reasoning content in a styled thinking block
+            from rich.panel import Panel
+            from rich.text import Text
+            reasoning_text = Text(reasoning_content)
+            console.print(Panel(reasoning_text, title="[bold cyan]💭 Reasoning[/bold cyan]", border_style="cyan", padding=(1, 2)))
+            logger.debug("Reasoning content displayed")
+        
         if message.content:
             # print the message using rich markdown
             console.print(Markdown(message.content))
@@ -351,6 +376,14 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
             continue
         else:
             # No more tool calls, return the final response
+            # Build the assistant message with reasoning_content if available
+            assistant_message = {"role": "assistant", "content": message.content if message.content else ""}
+            if reasoning_content:
+                assistant_message["reasoning_content"] = reasoning_content
+            
+            # Add assistant message to conversation history
+            messages.append(assistant_message)
+            
             # Display token usage with cyan background
             if hasattr(response, 'usage') and response.usage:
                 total_tokens = response.usage.total_tokens

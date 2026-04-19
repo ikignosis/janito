@@ -52,7 +52,8 @@ def run_interactive_chat(args):
     shell.run(
         send_prompt_func=send_prompt,
         verbose=args.verbose,
-        no_tools=args.no_system_prompt
+        no_tools=args.no_system_prompt,
+        thinking=args.thinking
     )
 
 
@@ -99,7 +100,7 @@ def run_single_prompt(args):
         tools_to_use = None
 
     try:
-        send_prompt(prompt, verbose=args.verbose, previous_messages=messages_history, tools=tools_to_use)
+        send_prompt(prompt, verbose=args.verbose, previous_messages=messages_history, tools=tools_to_use, thinking=args.thinking)
     except KeyboardInterrupt:
         print("\nOperation cancelled by user.", file=sys.stderr)
         sys.exit(130)
