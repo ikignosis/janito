@@ -131,12 +131,19 @@ janito --set provider=openai --set-api-key="sk-your-key" --set model=gpt-4 "Expl
 
 ### Alibaba (Qwen)
 
+Set up your configuration first:
+
 ```bash
 janito --set provider=alibaba \
        --set model="qwen3.6-flash" \
        --set-api-key="sk-your-alibaba-key" \
-       --set preserve_thinking=true \
-       "Explain how AI works"
+       --set preserve_thinking=true
+```
+
+Then use it with any prompt:
+
+```bash
+janito "Explain how AI works"
 ```
 
 For more models and configuration options, see [docs/configuration/alibaba.md](docs/configuration/alibaba.md).
