@@ -55,6 +55,19 @@ from .cli.handlers.onedrive import (
 )
 
 
+def _flatten(values):
+    """Flatten [['a', 'b'], ['c']] -> ['a', 'b', 'c']"""
+    if not values:
+        return []
+    flat = []
+    for item in values:
+        if isinstance(item, list):
+            flat.extend(item)
+        else:
+            flat.append(item)
+    return flat
+
+
 def main():
     """Main entry point."""
     parser = create_parser()
@@ -67,27 +80,35 @@ def main():
     if args.set is not None or args.unset is not None or args.get is not None or args.set_secret is not None or args.delete_secret is not None:
         exit_code = 0
         
-        if args.set is not None:
-            rc = handle_set_config(args.set)
+        set_values = _flatten(args.set) if args.set is not None else None
+        unset_keys = _flatten(args.unset) if args.unset is not None else None
+        get_keys = _flatten(args.get) if args.get is not None else None
+        set_secret_vals = _flatten(args.set_secret) if args.set_secret is not None else None
+        delete_secret_keys = _flatten(args.delete_secret) if args.delete_secret is not None else None
+        
+        if set_values is not None:
+            rc = handle_set_config(set_values)
             if rc != 0:
                 exit_code = rc
         
-        if args.unset is not None:
-            rc = handle_unset_config(args.unset)
+        if unset_keys is not None:
+            rc = handle_unset_config(unset_keys)
             if rc != 0:
                 exit_code = rc
         
-        if args.get is not None:
-            rc = handle_get_config(args.get)
+        if get_keys is not None:
+            rc = handle_get_config(get_keys)
             if rc != 0:
                 exit_code = rc
         
-        if args.set_secret is not None:
+        if set_secret_vals is not None:
+            args._set_secret_vals = set_secret_vals
             rc = handle_set_secret(args)
             if rc != 0:
                 exit_code = rc
         
-        if args.delete_secret is not None:
+        if delete_secret_keys is not None:
+            args._delete_secret_keys = delete_secret_keys
             rc = handle_delete_secret(args)
             if rc != 0:
                 exit_code = rc
@@ -127,7 +148,7 @@ def main():
     if args.list_secrets:
         return handle_list_secrets(args)
     
-    if args.get_secret:
+    if args.get_secret is not None:
         return handle_get_secret(args)
     
     # Handle OneDrive auth commands
