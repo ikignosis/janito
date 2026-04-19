@@ -8,6 +8,7 @@ janito supports multiple AI providers. This guide covers configuration for each.
 |----------|------|-------------|
 | `openai` | Standard | OpenAI API (default) |
 | `custom` | Custom | Any OpenAI-compatible API (local servers, third-party) |
+| `alibaba` | Third-party | [Alibaba Cloud DashScope](https://dashscope.aliyuncs.com/) (Qwen models) |
 
 ## OpenAI
 
@@ -57,6 +58,9 @@ export OPENAI_MODEL="my-model"
 | Ollama | `http://localhost:11434/v1` |
 | LocalAI | `http://localhost:8080/v1` |
 | MiniMax | `https://api.minimax.chat/minimax/v1` |
+| **Alibaba (Qwen)** | `https://dashscope.aliyuncs.com/compatible-mode/v1` |
+
+For full Alibaba/Qwen setup with `preserve_thinking` examples, see [Alibaba Configuration](alibaba.md).
 
 ### Example: LM Studio
 

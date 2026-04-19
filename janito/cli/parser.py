@@ -139,38 +139,44 @@ Examples:
     
     parser.add_argument(
         "--set",
+        nargs="*",
         metavar="KEY=VALUE",
-        help="Set a config key-value pair in ~/.janito/config.json (e.g., --set model=gpt-4)"
+        help="Set one or more config key-value pairs in ~/.janito/config.json\n  Example: --set model=gpt-4 --set endpoint=https://api.example.com/v1"
     )
     
     parser.add_argument(
         "--unset",
+        nargs="*",
         metavar="KEY",
-        help="Remove a config key from ~/.janito/config.json (e.g., --unset model)"
+        help="Remove one or more config keys from ~/.janito/config.json\n  Example: --unset model --unset provider"
     )
     
     parser.add_argument(
         "--get",
+        nargs="*",
         metavar="KEY",
-        help="Get a config value from ~/.janito/config.json"
+        help="Get one or more config values from ~/.janito/config.json\n  Example: --get model provider"
     )
     
     parser.add_argument(
         "--set-secret",
+        nargs="*",
         metavar="KEY=VALUE",
-        help="Set a secret in ~/.janito/secrets.json (e.g., --set-secret mykey=myvalue)"
+        help="Set one or more secrets in ~/.janito/secrets.json\n  Example: --set-secret mykey=myvalue --set-secret api_key=abc123"
     )
     
     parser.add_argument(
         "--get-secret",
+        nargs="*",
         metavar="KEY",
-        help="Get a secret value from ~/.janito/secrets.json"
+        help="Get one or more secret values from ~/.janito/secrets.json\n  Example: --get-secret mykey api_key"
     )
     
     parser.add_argument(
         "--delete-secret",
+        nargs="*",
         metavar="KEY",
-        help="Delete a secret from ~/.janito/secrets.json"
+        help="Delete one or more secrets from ~/.janito/secrets.json\n  Example: --delete-secret mykey old_secret"
     )
     
     parser.add_argument(

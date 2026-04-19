@@ -30,35 +30,35 @@ def handle_set_secret(args) -> int:
         int: Exit code (0 for success, non-zero for error)
     """
     if not args.set_secret:
-        print("Error: --set-secret requires a key=value argument", file=sys.stderr)
-        print("Usage: janito --set-secret key=value", file=sys.stderr)
+        print("[ERROR] At least one KEY=VALUE pair required.", file=sys.stderr)
+        print("Usage: janito --set-secret key=value other_key=other_value", file=sys.stderr)
         return 1
     
-    # Parse key=value
-    if '=' not in args.set_secret:
-        print("Error: --set-secret requires key=value format", file=sys.stderr)
-        print("Usage: janito --set-secret key=value", file=sys.stderr)
-        return 1
+    errors = False
+    for item in args.set_secret:
+        if '=' not in item:
+            print(f"[ERROR] Invalid format '{item}': requires key=value", file=sys.stderr)
+            errors = True
+            continue
+        
+        key, value = item.split('=', 1)
+        key = key.strip()
+        value = value.strip()
+        
+        if not key:
+            print("[ERROR] Secret key cannot be empty", file=sys.stderr)
+            errors = True
+            continue
+        
+        success = set_secret(key, value)
+        
+        if success:
+            print(f"[OK] Stored secret '{key}'")
+        else:
+            print(f"[ERROR] Failed to store secret '{key}'", file=sys.stderr)
+            errors = True
     
-    key, value = args.set_secret.split('=', 1)
-    key = key.strip()
-    value = value.strip()
-    
-    if not key:
-        print("Error: Secret key cannot be empty", file=sys.stderr)
-        return 1
-    
-    success = set_secret(key, value)
-    
-    if success:
-        secrets_file = get_secrets_file_path()
-        print(f"[OK] Secret stored successfully")
-        print(f"  Key: {key}")
-        print(f"  Config file: {secrets_file}")
-        return 0
-    else:
-        print("Error: Failed to store secret", file=sys.stderr)
-        return 1
+    return 1 if errors else 0
 
 
 def handle_get_secret(args) -> int:
@@ -71,24 +71,32 @@ def handle_get_secret(args) -> int:
         int: Exit code (0 for success, non-zero for error)
     """
     if not args.get_secret:
-        print("Error: --get-secret requires a key argument", file=sys.stderr)
-        print("Usage: janito --get-secret key", file=sys.stderr)
-        return 1
-    
-    key = args.get_secret.strip()
-    
-    if not key:
-        print("Error: Secret key cannot be empty", file=sys.stderr)
-        return 1
-    
-    value = get_secret(key)
-    
-    if value is not None:
-        print(value)
+        # No keys specified, show all secrets
+        secrets = list_secrets()
+        secrets_file = get_secrets_file_path()
+        
+        import json
+        print(json.dumps(secrets, indent=2))
         return 0
-    else:
-        print(f"Secret '{key}' not found", file=sys.stderr)
-        return 1
+    
+    errors = False
+    for key in args.get_secret:
+        key = key.strip()
+        
+        if not key:
+            print("[ERROR] Secret key cannot be empty", file=sys.stderr)
+            errors = True
+            continue
+        
+        value = get_secret(key)
+        
+        if value is not None:
+            print(value)
+        else:
+            print(f"[WARN] Secret '{key}' not found", file=sys.stderr)
+            errors = True
+    
+    return 1 if errors else 0
 
 
 def handle_delete_secret(args) -> int:
@@ -101,22 +109,26 @@ def handle_delete_secret(args) -> int:
         int: Exit code (0 for success, non-zero for error)
     """
     if not args.delete_secret:
-        print("Error: --delete-secret requires a key argument", file=sys.stderr)
-        print("Usage: janito --delete-secret key", file=sys.stderr)
+        print("[ERROR] At least one key required.", file=sys.stderr)
+        print("Usage: janito --delete-secret key1 key2", file=sys.stderr)
         return 1
     
-    key = args.delete_secret.strip()
+    errors = False
+    for key in args.delete_secret:
+        key = key.strip()
+        
+        if not key:
+            print("[ERROR] Secret key cannot be empty", file=sys.stderr)
+            errors = True
+            continue
+        
+        if delete_secret(key):
+            print(f"[OK] Deleted secret: {key}")
+        else:
+            print(f"[WARN] Secret '{key}' not found", file=sys.stderr)
+            errors = True
     
-    if not key:
-        print("Error: Secret key cannot be empty", file=sys.stderr)
-        return 1
-    
-    if delete_secret(key):
-        print(f"[OK] Secret deleted: {key}")
-        return 0
-    else:
-        print(f"Secret '{key}' not found", file=sys.stderr)
-        return 1
+    return 1 if errors else 0
 
 
 def handle_list_secrets(args) -> int:

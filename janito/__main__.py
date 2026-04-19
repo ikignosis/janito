@@ -63,6 +63,37 @@ def main():
     # Configure logging based on --log argument
     setup_logging(args.log)
     
+    # Handle batch config operations (--set, --unset, --get, secrets)
+    if args.set is not None or args.unset is not None or args.get is not None or args.set_secret is not None or args.delete_secret is not None:
+        exit_code = 0
+        
+        if args.set is not None:
+            rc = handle_set_config(args.set)
+            if rc != 0:
+                exit_code = rc
+        
+        if args.unset is not None:
+            rc = handle_unset_config(args.unset)
+            if rc != 0:
+                exit_code = rc
+        
+        if args.get is not None:
+            rc = handle_get_config(args.get)
+            if rc != 0:
+                exit_code = rc
+        
+        if args.set_secret is not None:
+            rc = handle_set_secret(args)
+            if rc != 0:
+                exit_code = rc
+        
+        if args.delete_secret is not None:
+            rc = handle_delete_secret(args)
+            if rc != 0:
+                exit_code = rc
+        
+        return exit_code
+    
     # Handle --info option (print config and exit)
     if args.info:
         return handle_info(args)
@@ -77,16 +108,11 @@ def main():
     # Set up endpoint from CLI args or config (for custom provider)
     setup_endpoint_env(args)
     
-    # Handle config commands (these return early)
-    if args.get:
-        return handle_get_config(args.get)
+    # Handle --get for a single key (legacy: no --set/--unset provided)
+    # Note: --get without --set/--unset was handled above, but if only --get was passed
+    # alone with nargs="*", it would be caught by the batch block. This path handles edge cases.
     
-    if args.set:
-        return handle_set_config(args.set)
-    
-    if args.unset:
-        return handle_unset_config(args.unset)
-    
+    # Handle interactive config setup
     if args.config:
         return handle_config_interactive()
     
@@ -97,18 +123,12 @@ def main():
     if args.set_api_key:
         return handle_set_api_key(args)
     
-    # Handle secrets commands
+    # Handle secrets get/list/delete
     if args.list_secrets:
         return handle_list_secrets(args)
     
-    if args.set_secret:
-        return handle_set_secret(args)
-    
     if args.get_secret:
         return handle_get_secret(args)
-    
-    if args.delete_secret:
-        return handle_delete_secret(args)
     
     # Handle OneDrive auth commands
     if args.onedrive_auth:

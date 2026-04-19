@@ -37,23 +37,34 @@ except ImportError:
     from janito.provider_config import list_supported_providers, is_custom_provider
 
 
-def handle_get_config(key: str) -> int:
+def handle_get_config(keys: list[str]) -> int:
     """Handle --get command.
     
     Args:
-        key: Configuration key to retrieve
+        keys: List of configuration keys to retrieve
         
     Returns:
         int: Exit code (0 for success, non-zero for error)
     """
     try:
-        value = get_config_from_cli(key)
-        if value is not None:
-            print(value)
+        if not keys:
+            # No keys specified, show all config
+            import json
+            with open(get_config_path(), 'r') as f:
+                config = json.load(f)
+            print(json.dumps(config, indent=2))
             return 0
-        else:
-            print(f"Key '{key}' not found in config", file=sys.stderr)
-            return 1
+        
+        errors = False
+        for key in keys:
+            value = get_config_from_cli(key)
+            if value is not None:
+                print(value)
+            else:
+                print(f"[WARN] Key '{key}' not found in config", file=sys.stderr)
+                errors = True
+        
+        return 1 if errors else 0
     except FileNotFoundError:
         print(f"Config file not found: {get_config_path()}", file=sys.stderr)
         return 1
@@ -62,40 +73,55 @@ def handle_get_config(key: str) -> int:
         return 1
 
 
-def handle_set_config(value_str: str) -> int:
+def handle_set_config(values: list[str]) -> int:
     """Handle --set command.
     
     Args:
-        value_str: Key=value string to set
+        values: List of KEY=VALUE strings to set
         
     Returns:
         int: Exit code (0 for success, non-zero for error)
     """
-    try:
-        key, value = set_config_from_cli(value_str)
-        print(f"[OK] Set {key}={value} in {get_config_path()}")
-        return 0
-    except ValueError as e:
-        print(f"Error: {e}", file=sys.stderr)
-        print("Usage: janito --set model=gpt-4", file=sys.stderr)
+    if not values:
+        print("[ERROR] At least one KEY=VALUE pair required.", file=sys.stderr)
+        print("Usage: janito --set model=gpt-4 endpoint=https://api.example.com/v1", file=sys.stderr)
         return 1
+    
+    errors = False
+    for value_str in values:
+        try:
+            key, value = set_config_from_cli(value_str)
+            print(f"[OK] Set {key}={value}")
+        except ValueError as e:
+            print(f"[ERROR] Invalid format '{value_str}': {e}", file=sys.stderr)
+            errors = True
+    
+    return 1 if errors else 0
 
 
-def handle_unset_config(key: str) -> int:
+def handle_unset_config(keys: list[str]) -> int:
     """Handle --unset command.
     
     Args:
-        key: Configuration key to remove
+        keys: List of configuration keys to remove
         
     Returns:
         int: Exit code (0 for success, non-zero for error)
     """
-    if unset_config_value(key):
-        print(f"[OK] Removed '{key}' from {get_config_path()}")
-        return 0
-    else:
-        print(f"Key '{key}' not found in config", file=sys.stderr)
+    if not keys:
+        print("[ERROR] At least one key required.", file=sys.stderr)
+        print("Usage: janito --unset model provider", file=sys.stderr)
         return 1
+    
+    errors = False
+    for key in keys:
+        if unset_config_value(key):
+            print(f"[OK] Removed '{key}'")
+        else:
+            print(f"[WARN] Key '{key}' not found in config", file=sys.stderr)
+            errors = True
+    
+    return 1 if errors else 0
 
 
 def handle_config_interactive() -> int:
