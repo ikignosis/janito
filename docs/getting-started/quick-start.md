@@ -25,14 +25,16 @@ You'll be prompted for:
 
 ### Quick Configuration with Flags
 
-Set options directly from the command line:
+Set options directly from the command line. Note that `--set` and `--set-api-key` must be used in **separate commands**:
 
 ```bash
-# OpenAI example
-janito --set provider=openai --set-api-key="sk-your-key" --set model=gpt-4
+# OpenAI example (two steps: config, then API key)
+janito --set provider=openai --set model=gpt-4
+janito --set-api-key="sk-your-key" --provider openai
 
 # Local LLM example
-janito --set provider=openai --set model="local-model" --set-api-key="not-needed"
+janito --set provider=openai --set model="local-model"
+janito --set-api-key="not-needed" --provider openai
 ```
 
 ## 2. Run Your First Prompt
@@ -74,19 +76,32 @@ janito --show-config
 ### OpenAI
 
 ```bash
-janito --set provider=openai --set-api-key="sk-your-key" --set model=gpt-4 "Explain quantum computing"
+# Step 1: Set provider and model
+janito --set provider=openai --set model=gpt-4
+# Step 2: Store API key
+janito --set-api-key="sk-your-key" --provider openai
+# Step 3: Run prompt
+janito "Explain quantum computing"
 ```
 
 ### Local LLM (LM Studio, Ollama)
 
 ```bash
-janito --set provider=openai --set model="local-model" --set-api-key="not-needed" "What is 2+2?"
+# Step 1: Set provider and model
+janito --set provider=openai --set model="local-model"
+# Step 2: Store placeholder API key
+janito --set-api-key="not-needed" --provider openai
+# Step 3: Run prompt
+janito "What is 2+2?"
 ```
 
 ### Custom Provider
 
 ```bash
-janito --set provider=custom --set endpoint="http://localhost:8000/v1" --set model="my-model" "Hello"
+# Step 1: Set provider, endpoint, and model
+janito --set provider=custom --set endpoint="http://localhost:8000/v1" --set model="my-model"
+# Step 2: Run prompt
+janito "Hello"
 ```
 
 ## What's Next?

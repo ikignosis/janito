@@ -22,8 +22,9 @@ pip install janito
 # Configure interactively
 janito --config
 
-# Or set options directly
-janito --set provider=openai --set-api-key="sk-your-key" --set model=gpt-4
+# Or set options directly (two steps: config, then API key)
+janito --set provider=openai --set model=gpt-4
+janito --set-api-key="sk-your-key" --provider openai
 
 # Start chatting
 janito "Hello!"
@@ -118,9 +119,10 @@ janito --log=info,debug "Your prompt" # Multiple levels
 ### OpenAI
 
 ```bash
-# Store key and select model
-janito --set provider=openai --set-api-key="sk-your-key"
-janito --set model=gpt-4
+# Step 1: Set provider and model
+janito --set provider=openai --set model=gpt-4
+# Step 2: Store API key
+janito --set-api-key="sk-your-key" --provider openai
 
 # Then run any prompt
 janito "Explain quantum computing"
@@ -129,9 +131,10 @@ janito "Explain quantum computing"
 ### Alibaba (Qwen)
 
 ```bash
-# Store key and select model
-janito --set provider=alibaba --set-api-key="your-dashscope-api-key"
-janito --set model=qwen-plus
+# Step 1: Set provider and model
+janito --set provider=alibaba --set model=qwen-plus
+# Step 2: Store API key
+janito --set-api-key="your-dashscope-api-key" --provider alibaba
 
 # Then run any prompt
 janito "Explain quantum computing"

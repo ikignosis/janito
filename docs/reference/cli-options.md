@@ -18,9 +18,11 @@ janito [options] [prompt]
 | `--show-config` | Display current configuration |
 | `--show-secrets` | Display current secrets (masked) |
 | `--set <key=value>` | Set a configuration option |
-| `--set-api-key <key>` | Set the API key |
+| `--set-api-key <key>` | Set the API key (requires `--provider`) |
 | `--set-secret <key=value>` | Set a secret value |
 | `--clear-secret <key>` | Clear a secret value |
+
+> **Note:** `--set` and `--set-api-key` must be used in **separate commands**, not together on the same line.
 
 ### Providers
 

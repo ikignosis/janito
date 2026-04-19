@@ -19,7 +19,10 @@ janito supports multiple AI providers. This guide covers configuration for each.
 ### Configuration
 
 ```bash
-janito --set provider=openai --set-api-key="sk-your-key" --set model=gpt-4
+# Step 1: Set provider and model
+janito --set provider=openai --set model=gpt-4
+# Step 2: Store API key
+janito --set-api-key="sk-your-key" --provider openai
 ```
 
 Or interactively:
@@ -42,7 +45,10 @@ Use any OpenAI-compatible API, including local servers like LM Studio, Ollama, o
 ### Configuration
 
 ```bash
-janito --set provider=custom --set endpoint="http://localhost:8000/v1" --set model="my-model" --set-api-key="optional-key"
+# Step 1: Set provider, endpoint, and model
+janito --set provider=custom --set endpoint="http://localhost:8000/v1" --set model="my-model"
+# Step 2: Store API key (optional)
+janito --set-api-key="optional-key" --provider custom
 ```
 
 ### Environment Variables
@@ -65,11 +71,14 @@ export OPENAI_MODEL="my-model"
 ### Example: LM Studio
 
 ```bash
+# Step 1: Configure provider
 janito --set provider=custom \
         --set endpoint="http://localhost:1234/v1" \
-        --set model="local-model-name" \
-        --set-api-key="not-needed" \
-        "Hello"
+        --set model="local-model-name"
+# Step 2: Set placeholder API key
+janito --set-api-key="not-needed" --provider custom
+# Step 3: Run prompt
+janito "Hello"
 ```
 
 ## Alibaba (Qwen)
@@ -81,7 +90,10 @@ Use Alibaba Cloud DashScope to access Qwen models.
 ### Configuration
 
 ```bash
-janito --set provider=alibaba --set-api-key="your-dashscope-api-key" --set model=qwen-plus
+# Step 1: Set provider and model
+janito --set provider=alibaba --set model=qwen-plus
+# Step 2: Store API key
+janito --set-api-key="your-dashscope-api-key" --provider alibaba
 ```
 
 ### Environment Variables
@@ -104,10 +116,12 @@ export OPENAI_MODEL="qwen-plus"
 ### Example
 
 ```bash
-janito --set provider=alibaba \
-        --set model=qwen-plus \
-        --set-api-key="your-dashscope-api-key" \
-        "Explain quantum computing"
+# Step 1: Set provider and model
+janito --set provider=alibaba --set model=qwen-plus
+# Step 2: Store API key
+janito --set-api-key="your-dashscope-api-key" --provider alibaba
+# Step 3: Run prompt
+janito "Explain quantum computing"
 ```
 
 ## MiniMax
@@ -119,7 +133,10 @@ Use MiniMax AI to access abab models.
 ### Configuration
 
 ```bash
-janito --set provider=minimax --set-api-key="your-minimax-api-key" --set model=abab6.5s-chat
+# Step 1: Set provider and model
+janito --set provider=minimax --set model=abab6.5s-chat
+# Step 2: Store API key
+janito --set-api-key="your-minimax-api-key" --provider minimax
 ```
 
 ### Environment Variables
@@ -141,10 +158,12 @@ export OPENAI_MODEL="abab6.5s-chat"
 ### Example
 
 ```bash
-janito --set provider=minimax \
-        --set model=abab6.5s-chat \
-        --set-api-key="your-minimax-api-key" \
-        "Explain quantum computing"
+# Step 1: Set provider and model
+janito --set provider=minimax --set model=abab6.5s-chat
+# Step 2: Store API key
+janito --set-api-key="your-minimax-api-key" --provider minimax
+# Step 3: Run prompt
+janito "Explain quantum computing"
 ```
 
 ## Xiaomi (Mimo)
@@ -156,7 +175,10 @@ Use Xiaomi AI to access Mimo models.
 ### Configuration
 
 ```bash
-janito --set provider=xiaomi --set-api-key="your-xiaomi-api-key" --set model=mimo-v2
+# Step 1: Set provider and model
+janito --set provider=xiaomi --set model=mimo-v2
+# Step 2: Store API key
+janito --set-api-key="your-xiaomi-api-key" --provider xiaomi
 ```
 
 ### Environment Variables
@@ -177,10 +199,12 @@ export OPENAI_MODEL="mimo-v2"
 ### Example
 
 ```bash
-janito --set provider=xiaomi \
-        --set model=mimo-v2 \
-        --set-api-key="your-xiaomi-api-key" \
-        "Explain quantum computing"
+# Step 1: Set provider and model
+janito --set provider=xiaomi --set model=mimo-v2
+# Step 2: Store API key
+janito --set-api-key="your-xiaomi-api-key" --provider xiaomi
+# Step 3: Run prompt
+janito "Explain quantum computing"
 ```
 
 ## Moonshot (Kimi)
@@ -192,7 +216,10 @@ Use Moonshot AI to access Kimi models.
 ### Configuration
 
 ```bash
-janito --set provider=moonshot --set-api-key="your-moonshot-api-key" --set model=moonshot-v1-8k
+# Step 1: Set provider and model
+janito --set provider=moonshot --set model=moonshot-v1-8k
+# Step 2: Store API key
+janito --set-api-key="your-moonshot-api-key" --provider moonshot
 ```
 
 ### Environment Variables
@@ -214,10 +241,12 @@ export OPENAI_MODEL="moonshot-v1-8k"
 ### Example
 
 ```bash
-janito --set provider=moonshot \
-        --set model=moonshot-v1-8k \
-        --set-api-key="your-moonshot-api-key" \
-        "Explain quantum computing"
+# Step 1: Set provider and model
+janito --set provider=moonshot --set model=moonshot-v1-8k
+# Step 2: Store API key
+janito --set-api-key="your-moonshot-api-key" --provider moonshot
+# Step 3: Run prompt
+janito "Explain quantum computing"
 ```
 
 ## Z.AI (GLM)
@@ -229,7 +258,10 @@ Use Z.AI to access GLM models (Zhipu AI).
 ### Configuration
 
 ```bash
-janito --set provider=zai --set-api-key="your-zai-api-key" --set model=glm-4-plus
+# Step 1: Set provider and model
+janito --set provider=zai --set model=glm-4-plus
+# Step 2: Store API key
+janito --set-api-key="your-zai-api-key" --provider zai
 ```
 
 ### Environment Variables
@@ -252,10 +284,12 @@ export OPENAI_MODEL="glm-4-plus"
 ### Example
 
 ```bash
-janito --set provider=zai \
-        --set model=glm-4-plus \
-        --set-api-key="your-zai-api-key" \
-        "Explain quantum computing"
+# Step 1: Set provider and model
+janito --set provider=zai --set model=glm-4-plus
+# Step 2: Store API key
+janito --set-api-key="your-zai-api-key" --provider zai
+# Step 3: Run prompt
+janito "Explain quantum computing"
 ```
 
 ## Provider Comparison

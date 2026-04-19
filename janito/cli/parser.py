@@ -55,13 +55,18 @@ Examples:
   janito --list-secrets                                    # List all secrets
   janito --delete-secret mykey                             # Delete a secret
   janito --config                                           # Interactive configuration setup
-  janito --provider custom --endpoint https://api.example.com/v1  # Use custom provider
+  janito --provider custom --endpoint https://api.example.com/v1  # Use custom provider (with env API key)
   janito --no-history                                          # Interactive chat without file history
   janito --gmail                                              # Enable Gmail tools and email system prompt
   janito --onedrive                                           # Enable OneDrive tools and file system prompt
   janito --install-skill https://github.com/user/repo/tree/main/skills/git-commit  # Install a skill
   janito --list-skills                                        # List installed skills
   janito --uninstall-skill git-commit                         # Uninstall a skill
+
+Note: --set and --set-api-key must be used in separate commands.
+  Example:
+    janito --set provider=openai --set model=gpt-4            # Step 1: Set provider and model
+    janito --set-api-key sk-xxx --provider openai             # Step 2: Store API key
         """
     )
     

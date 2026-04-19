@@ -37,6 +37,8 @@ Configuration values are loaded in this order (later overrides earlier):
 3. Configuration file (`~/.janito/config.json`)
 4. Command-line arguments (`--set`, `--set-api-key`)
 
+> **Note:** When using CLI arguments, `--set` and `--set-api-key` must be run as **separate commands**. They cannot be combined in a single invocation.
+
 ## Next Steps
 
 - [Configure providers](providers.md) for different AI services

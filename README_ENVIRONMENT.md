@@ -93,4 +93,5 @@ python -m janito "Hello"
 
 - Environment variables take precedence over saved configuration
 - For security, avoid hardcoding API keys in scripts; consider using a `.env` file with a tool like `python-dotenv`
-- The `--set`, `--set-api-key`, and `--config` CLI options override environment variables at runtime
+- CLI options (`--set`, `--set-api-key`, `--config`) override environment variables at runtime
+  - Note: `--set` and `--set-api-key` must be used in **separate commands**

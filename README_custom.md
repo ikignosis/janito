@@ -6,15 +6,20 @@ This guide explains how to use janito with custom OpenAI-compatible API endpoint
 
 ### Command Line Arguments
 
-You can pass configuration directly via command-line arguments:
+You can pass configuration directly via command-line arguments. Note that `--set` and `--set-api-key` must be used in **separate commands**:
 
 ```bash
+# Step 1: Set provider, endpoint, and model
 python -m janito \
   --set provider=custom \
   --set endpoint=http://localhost:8000/minimax/v1 \
-  --set model=MiniMax-M2.7 \
-  --set-api-key=your-api-key-here \
-  "Your prompt here"
+  --set model=MiniMax-M2.7
+
+# Step 2: Store API key
+python -m janito --set-api-key=your-api-key-here --provider custom
+
+# Step 3: Run prompt
+python -m janito "Your prompt here"
 ```
 
 ### Interactive Configuration
@@ -52,16 +57,19 @@ python -m janito "Your prompt here"
 ### Single Prompt
 
 ```bash
+# Step 1: Set provider, endpoint, and model
 python -m janito \
   --set provider=custom \
   --set endpoint=http://localhost:8000/minimax/v1 \
-  --set model=MiniMax-M2.7 \
-  "What is 2+2?"
+  --set model=MiniMax-M2.7
+# Step 2: Run prompt
+python -m janito "What is 2+2?"
 ```
 
 ### Interactive Chat Mode
 
 ```bash
+# Step 1: Set provider, endpoint, and model
 python -m janito \
   --set provider=custom \
   --set endpoint=http://localhost:8000/minimax/v1 \
@@ -73,31 +81,28 @@ This starts an interactive session. Type your messages and press Enter. Type `ex
 ### Pipe Input
 
 ```bash
-echo "Explain quantum computing" | python -m janito \
+# Step 1: Set provider, endpoint, and model
+python -m janito \
   --set provider=custom \
   --set endpoint=http://localhost:8000/minimax/v1 \
   --set model=MiniMax-M2.7
+
+# Step 2: Pipe input (run again with no args after config is set)
+echo "Explain quantum computing" | python -m janito
 ```
 
 ### With Tools
 
 ```bash
-python -m janito \
-  --set provider=custom \
-  --set endpoint=http://localhost:8000/minimax/v1 \
-  --set model=MiniMax-M2.7 \
-  "Read the first 10 lines of README.md and summarize it"
+# After setting provider and model (see above), run with tools
+python -m janito "Read the first 10 lines of README.md and summarize it"
 ```
 
 ### Enable Logging
 
 ```bash
-python -m janito \
-  --set provider=custom \
-  --set endpoint=http://localhost:8000/minimax/v1 \
-  --set model=MiniMax-M2.7 \
-  --log=debug \
-  "Hello"
+# After setting provider and model (see above), run with logging
+python -m janito --log=debug "Hello"
 ```
 
 ## Common Use Cases
@@ -105,23 +110,29 @@ python -m janito \
 ### Local LM Studio / Ollama Server
 
 ```bash
+# Step 1: Configure provider
 python -m janito \
   --set provider=custom \
   --set endpoint=http://localhost:1234/v1 \
-  --set model=local-model-name \
-  --set-api-key=not-needed \
-  "Your question"
+  --set model=local-model-name
+# Step 2: Set placeholder API key
+python -m janito --set-api-key=not-needed --provider custom
+# Step 3: Run prompt
+python -m janito "Your question"
 ```
 
 ### MiniMax API
 
 ```bash
+# Step 1: Configure provider
 python -m janito \
   --set provider=custom \
   --set endpoint=https://api.minimax.chat/minimax/v1 \
-  --set model=MiniMax-M2.7 \
-  --set-api-key=your-minimax-api-key \
-  "Your question"
+  --set model=MiniMax-M2.7
+# Step 2: Store API key
+python -m janito --set-api-key=your-minimax-api-key --provider custom
+# Step 3: Run prompt
+python -m janito "Your question"
 ```
 
 ## Troubleshooting
