@@ -11,11 +11,12 @@ Connect janito to [Alibaba Cloud's DashScope API](https://dashscope.aliyuncs.com
 ## Quick Setup
 
 ```bash
-janito --set provider=custom \
-       --set endpoint="https://dashscope.aliyuncs.com/compatible-mode/v1" \
+janito --set provider=alibaba \
        --set model="qwen-plus" \
        --set-api-key="sk-your-alibaba-api-key"
 ```
+
+The base URL (`https://dashscope-intl.aliyuncs.com/compatible-mode/v1`) is automatically resolved — no need to set `--endpoint`.
 
 ## Available Models
 
@@ -25,8 +26,9 @@ janito --set provider=custom \
 | `qwen-plus` | Balanced performance | 8K / 130K (extended) |
 | `qwen-max` | Highest capability | 8K / 130K (extended) |
 | `qwen-long` | Long document processing | 100K |
-| `qwen-vl-max` | Vision-language ( multimodal ) | 7.5K |
-| `qwen-vl-plus` | Vision-language ( multimodal ) | 7.5K |
+| `qwen-vl-max` | Vision-language (multimodal) | 7.5K |
+| `qwen-vl-plus` | Vision-language (multimodal) | 7.5K |
+| `qwen3.6-flash` | Advanced reasoning with thinking mode | Varies |
 
 ## Preserve Thinking Mode
 
@@ -34,18 +36,12 @@ For Qwen models that support extended thinking/reasoning (such as **qwen3.6-flas
 
 ### Via Command Line
 
-Set the config value first:
+Set the config value alongside your Alibaba config:
 
 ```bash
-janito --set preserve_thinking=true
-```
-
-Then run with your Alibaba configuration:
-
-```bash
-janito --set provider=custom \
-       --set endpoint="https://dashscope.aliyuncs.com/compatible-mode/v1" \
+janito --set provider=alibaba \
        --set model="qwen3.6-flash" \
+       --set preserve_thinking=true \
        --set-api-key="sk-your-alibaba-api-key"
 ```
 
@@ -66,8 +62,7 @@ Add the key manually:
 
 ```json
 {
-    "provider": "custom",
-    "endpoint": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "provider": "alibaba",
     "model": "qwen3.6-flash",
     "api_key": "sk-your-alibaba-api-key",
     "preserve_thinking": true
@@ -77,8 +72,7 @@ Add the key manually:
 ### Environment Variables
 
 ```bash
-export JANITO_PROVIDER="custom"
-export OPENAI_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
+export JANITO_PROVIDER="alibaba"
 export OPENAI_API_KEY="sk-your-alibaba-api-key"
 export OPENAI_MODEL="qwen3.6-flash"
 export PRESERVE_THINKING="true"
@@ -88,8 +82,7 @@ export PRESERVE_THINKING="true"
 
 ```bash
 # Set up once
-janito --set provider=custom \
-       --set endpoint="https://dashscope.aliyuncs.com/compatible-mode/v1" \
+janito --set provider=alibaba \
        --set model="qwen-plus" \
        --set-api-key="sk-your-alibaba-api-key" \
        --set preserve_thinking=true
@@ -108,8 +101,12 @@ janito
 
 ### Endpoint Errors
 
-- The correct endpoint is `https://dashscope.aliyuncs.com/compatible-mode/v1` (not the default DashScope REST URL)
-- This endpoint provides OpenAI-compatible API format
+- The built-in `alibaba` provider uses `https://dashscope-intl.aliyuncs.com/compatible-mode/v1`
+- If you need the China mainland endpoint instead, switch to `custom` provider:
+  ```bash
+  janito --set provider=custom \
+         --set endpoint="https://dashscope.aliyuncs.com/compatible-mode/v1"
+  ```
 
 ### Model Not Found
 

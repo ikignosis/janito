@@ -132,8 +132,7 @@ janito --set provider=openai --set-api-key="sk-your-key" --set model=gpt-4 "Expl
 ### Alibaba (Qwen)
 
 ```bash
-janito --set provider=custom \
-       --set endpoint="https://dashscope.aliyuncs.com/compatible-mode/v1" \
+janito --set provider=alibaba \
        --set model="qwen3.6-flash" \
        --set-api-key="sk-your-alibaba-key" \
        --set preserve_thinking=true \
