@@ -30,7 +30,7 @@ Options:
   --provider NAME    Provider name (e.g., openai)
   --model NAME       Model name to use (overrides OPENAI_MODEL env var and config)
   --log LEVELS       Enable logging (e.g., --log=info,debug or --log=warning)
-  --list-auth        List configured providers and keys
+  --list-keys        List configured providers and keys
   --list-tools       List all available built-in tools
   --list-mcp         List all MCP services and their tools
   -Z, --no-system-prompt  Do not set a system prompt or pass any tools to the CLI
@@ -40,7 +40,7 @@ Examples:
   echo "Tell me a joke" | janito                             # Pipe input mode
   janito                                                     # Interactive chat mode
   janito --set-api-key sk-xxx --provider openai             # Store OpenAI API key
-  janito --list-auth                                        # Show configured providers
+  janito --list-keys                                        # Show configured providers
   janito --list-tools                                       # List available built-in tools
   janito --list-mcp                                         # List MCP services and tools
   janito --info                                             # Show resolved config info
@@ -151,9 +151,9 @@ Note: --set and --set-api-key must be used in separate commands.
     )
     
     parser.add_argument(
-        "--list-auth",
+        "--list-keys",
         action="store_true",
-        help="List configured authentication providers"
+        help="List configured providers and keys"
     )
     
     parser.add_argument(

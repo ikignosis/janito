@@ -1,6 +1,6 @@
 """CLI command handlers."""
 
-from .auth import handle_set_api_key, handle_list_auth
+from .auth import handle_set_api_key, handle_list_keys
 from .config import handle_get_config, handle_set_config, handle_unset_config, handle_config_interactive
 from .info import handle_info, handle_show_config
 from .tools import handle_list_tools, handle_list_mcp
@@ -18,7 +18,7 @@ from .skills import (
 
 __all__ = [
     "handle_set_api_key",
-    "handle_list_auth",
+    "handle_list_keys",
     "handle_get_config",
     "handle_set_config",
     "handle_unset_config",

@@ -41,8 +41,8 @@ def handle_set_api_key(args) -> int:
         return 1
 
 
-def handle_list_auth(args) -> int:
-    """Handle --list-auth command.
+def handle_list_keys(args) -> int:
+    """Handle --list-keys command.
     
     Args:
         args: Parsed command line arguments

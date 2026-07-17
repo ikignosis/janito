@@ -30,7 +30,7 @@ from .cli.input import read_stdin_prompt
 from .cli.chat import run_interactive_chat, run_single_prompt
 from .cli.handlers import (
     handle_set_api_key,
-    handle_list_auth,
+    handle_list_keys,
     handle_get_config,
     handle_set_config,
     handle_unset_config,
@@ -134,8 +134,8 @@ def main():
         return handle_config_interactive()
     
     # Handle auth commands
-    if args.list_auth:
-        return handle_list_auth(args)
+    if args.list_keys:
+        return handle_list_keys(args)
     
     if args.set_api_key:
         return handle_set_api_key(args)
