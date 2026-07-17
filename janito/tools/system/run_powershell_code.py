@@ -16,26 +16,129 @@ Only execute trusted code and be aware of security implications.
 import subprocess
 import json
 import os
+import shutil
 import sys
 from typing import Dict, Any, Optional, List
 from ...tooling import BaseTool, norm_path
 from ..decorator import tool
 
 
+# Candidate executable names, in order of preference.
+# 'pwsh' is PowerShell Core 6+/7+ (modern, cross-platform) and is preferred;
+# 'powershell' is Windows PowerShell 5.1 (built into Windows, legacy).
+_POWERSHELL_CANDIDATES = ("pwsh", "pwsh.exe", "powershell", "powershell.exe")
+
+
+def _well_known_powershell_paths() -> List[str]:
+    """
+    Build a list of well-known PowerShell Core install locations.
+
+    These are probed as a fallback when no PowerShell executable is found
+    on PATH. Only existing paths are relevant; non-existent ones are skipped.
+    """
+    paths = []
+
+    if os.name == "nt":
+        program_files = os.environ.get("ProgramFiles", r"C:\Program Files")
+        program_files_x86 = os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")
+        local_app_data = os.environ.get("LOCALAPPDATA", "")
+        paths.extend([
+            os.path.join(program_files, "PowerShell", "7", "pwsh.exe"),
+            os.path.join(program_files_x86, "PowerShell", "7", "pwsh.exe"),
+        ])
+        if local_app_data:
+            paths.append(
+                os.path.join(local_app_data, "Programs", "PowerShell", "7", "pwsh.exe")
+            )
+    elif sys.platform == "darwin":
+        paths.extend([
+            "/usr/local/bin/pwsh",                 # Homebrew (Intel) / pkg installer symlink
+            "/opt/homebrew/bin/pwsh",              # Homebrew (Apple Silicon)
+            "/usr/local/microsoft/powershell/7/pwsh",  # pkg installer payload
+        ])
+    else:  # Linux and other POSIX
+        paths.extend([
+            "/usr/bin/pwsh",
+            "/usr/local/bin/pwsh",
+            "/opt/microsoft/powershell/7/pwsh",
+            "/snap/bin/pwsh",
+        ])
+
+    return paths
+
+
 @tool(permissions="x")
 class RunPowerShellCode(BaseTool):
     """
     Tool for executing PowerShell commands and scripts.
-    
+
     This tool runs PowerShell code and returns the output, errors, and exit code.
     It supports both single commands and multi-line scripts.
-    
+
+    The tool automatically detects the best available PowerShell executable,
+    preferring PowerShell Core (pwsh, 6+/7+) and falling back to Windows
+    PowerShell 5.1 (powershell). Detection results are cached for the
+    lifetime of the process.
+
     Security Notes:
     - Only execute trusted PowerShell code
     - Be cautious with scripts that modify system state
     - Consider using -WhatIf parameter for potentially destructive operations
     """
-    
+
+    # Cached result of executable detection (None = not found or not checked yet)
+    _powershell_path: Optional[str] = None
+    _powershell_checked: bool = False
+
+    @classmethod
+    def _find_powershell(cls) -> Optional[str]:
+        """
+        Locate the best available PowerShell executable.
+
+        PowerShell Core (pwsh) is preferred over legacy Windows PowerShell
+        (powershell). The search checks PATH first, then well-known install
+        locations. The result is cached on the class for subsequent calls.
+
+        Returns:
+            Optional[str]: Absolute path to the executable, or None if not found
+        """
+        if cls._powershell_checked:
+            return cls._powershell_path
+        cls._powershell_checked = True
+        cls._powershell_path = None
+
+        # 1) Search PATH (prefers pwsh over powershell)
+        for name in _POWERSHELL_CANDIDATES:
+            path = shutil.which(name)
+            if path:
+                cls._powershell_path = path
+                return path
+
+        # 2) Probe well-known install locations (PowerShell Core only)
+        for path in _well_known_powershell_paths():
+            if os.path.isfile(path) and os.access(path, os.X_OK):
+                cls._powershell_path = path
+                return path
+
+        return None
+
+    @classmethod
+    def should_load(cls) -> bool:
+        """
+        Only load this tool if a PowerShell executable is available.
+
+        Returns:
+            bool: True if PowerShell Core (pwsh) or Windows PowerShell
+                (powershell) is found, False otherwise
+        """
+        if cls._find_powershell() is None:
+            cls._load_skip_reason = (
+                "no PowerShell executable found (looked for 'pwsh' and "
+                "'powershell' on PATH and in well-known install locations)"
+            )
+            return False
+        return True
+
     def run(
         self, 
         code: str, 
@@ -61,19 +164,36 @@ class RunPowerShellCode(BaseTool):
                 - 'stdout': captured standard output (if capture_output=True)
                 - 'stderr': captured standard error (if capture_errors=True)
                 - 'command': the PowerShell command that was executed
+                - 'powershell_executable': path of the PowerShell executable used
                 - 'working_directory': the working directory used
                 - 'execution_time_ms': execution time in milliseconds
                 - 'error': error message if execution failed (only present if success=False)
-        
+
         Example:
             >>> tool = RunPowerShellCode()
             >>> result = tool.run(code="Get-Process | Select-Object -First 5")
             >>> print(result['stdout'])
         """
         import time
-        
+
         start_time = time.time()
-        
+
+        # Resolve the PowerShell executable (prefers PowerShell Core 'pwsh')
+        powershell_path = self._find_powershell()
+        if powershell_path is None:
+            self.report_error("PowerShell not found")
+            return {
+                "success": False,
+                "error": (
+                    "No PowerShell executable found. Install PowerShell Core "
+                    "(pwsh) or ensure Windows PowerShell (powershell) is on PATH."
+                ),
+                "exit_code": -1,
+                "command": code,
+                "working_directory": working_directory or os.getcwd(),
+                "execution_time_ms": int((time.time() - start_time) * 1000)
+            }
+
         try:
             # Determine working directory
             if working_directory:
@@ -96,22 +216,23 @@ class RunPowerShellCode(BaseTool):
                 code_preview = code[:200] + "..."
             self.report_start(f"Executing PowerShell code in {norm_working_dir}:\n{code_preview}")
 
+            # Wrapped in try/catch: setting console encodings can fail when
+            # stdin/stdout are redirected (common with pwsh on non-Windows),
+            # and must never abort the user's script.
             encoding_prefix = (
-                "$OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; "
-                "$InputEncoding = [Console]::InputEncoding = [System.Text.Encoding]::UTF8; "
+                "try { $OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}; "
+                "try { $InputEncoding = [Console]::InputEncoding = [System.Text.Encoding]::UTF8 } catch {}; "
             )
             code_with_encoding = encoding_prefix + code
 
             # Build PowerShell command
-            # Use -Command for both single commands and multi-line scripts
-            # -NoProfile for faster execution, -ExecutionPolicy Bypass for broader compatibility
-            ps_command = [
-                "powershell.exe",
-                "-NoProfile",
-                "-ExecutionPolicy", "Bypass",
-                "-Command",
-                code_with_encoding
-            ]
+            # Use -Command for both single commands and multi-line scripts.
+            # -NoProfile for faster execution, -NonInteractive to never block
+            # on prompts. -ExecutionPolicy only exists on Windows.
+            ps_command = [powershell_path, "-NoProfile", "-NonInteractive"]
+            if os.name == "nt":
+                ps_command += ["-ExecutionPolicy", "Bypass"]
+            ps_command += ["-Command", code_with_encoding]
             
             # Execute PowerShell with real-time streaming
             import threading
@@ -252,6 +373,7 @@ class RunPowerShellCode(BaseTool):
                 "success": success,
                 "exit_code": result.returncode,
                 "command": code,
+                "powershell_executable": powershell_path,
                 "working_directory": working_directory or abs_working_dir,
                 "execution_time_ms": execution_time_ms
             }
@@ -298,7 +420,11 @@ class RunPowerShellCode(BaseTool):
             self.report_error("PowerShell not found")
             return {
                 "success": False,
-                "error": "PowerShell executable not found. Ensure PowerShell is installed.",
+                "error": (
+                    f"PowerShell executable not found: {powershell_path}. "
+                    "Install PowerShell Core (pwsh) or ensure Windows "
+                    "PowerShell (powershell) is available."
+                ),
                 "exit_code": -1,
                 "command": code,
                 "working_directory": working_directory or os.getcwd(),
@@ -389,8 +515,9 @@ Examples:
             print(f"✓ PowerShell execution successful (exit code {result['exit_code']})")
             print(f"  Working directory: {norm_path(result['working_directory'])}")
             print(f"  Execution time: {result['execution_time_ms']}ms")
-            
+
             if args.verbose:
+                print(f"  Executable: {result.get('powershell_executable', 'unknown')}")
                 print(f"\nCommand:")
                 print(f"  {result['command']}")
             
