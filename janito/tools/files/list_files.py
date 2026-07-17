@@ -156,9 +156,8 @@ class ListFiles(BaseTool):
                 gitignore_spec = _load_gitignore_spec(abs_directory)
             
             # Report start of operation
-            gitignore_str = " (respecting .gitignore)" if gitignore_spec else ""
             recursive_str = "recursively" if recursive else ""
-            self.report_start(f"📁 Listing files at {norm_dir} {recursive_str}{gitignore_str}", end="")
+            self.report_start(f"📁 Listing files at {norm_dir} {recursive_str}", end="")
             
             files = []
             dir_count = 0
