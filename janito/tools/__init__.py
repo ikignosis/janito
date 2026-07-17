@@ -14,6 +14,47 @@ from typing import Dict, Callable, List, get_type_hints
 from .decorator import is_tool
 
 
+# Tools that were skipped during discovery because their should_load()
+# validation failed, mapped to a human-readable reason.
+_skipped_tools: Dict[str, str] = {}
+
+
+def get_skipped_tools() -> Dict[str, str]:
+    """
+    Get tools that were skipped during discovery.
+
+    Returns:
+        Dict[str, str]: Mapping of tool class names to skip reasons
+    """
+    return _skipped_tools.copy()
+
+
+def _check_should_load(cls: type) -> bool:
+    """
+    Run a tool class's should_load() validation.
+
+    Tools that fail validation (or raise during validation) are recorded
+    in _skipped_tools and excluded from discovery.
+
+    Args:
+        cls: The tool class to validate
+
+    Returns:
+        bool: True if the tool should be loaded, False to skip it
+    """
+    should_load = getattr(cls, "should_load", None)
+    if not callable(should_load):
+        return True
+    try:
+        if should_load():
+            return True
+        reason = getattr(cls, "_load_skip_reason", "") or "should_load() returned False"
+        _skipped_tools[cls.__name__] = reason
+    except Exception as e:
+        _skipped_tools[cls.__name__] = f"should_load() raised {type(e).__name__}: {e}"
+    return False
+
+
 def discover_toolsets(toolset_names: List[str]) -> Dict[str, Callable]:
     """
     Discover and load tools from specified toolsets.
@@ -55,6 +96,11 @@ def discover_toolsets(toolset_names: List[str]) -> Dict[str, Callable]:
                         if hasattr(attr, '__module__') and attr.__module__ == full_module_name:
                             # Check if the class is explicitly marked as a tool
                             if is_tool(attr):
+                                # Let tools opt out of loading (missing binaries,
+                                # unsupported platform, missing credentials, ...)
+                                if not _check_should_load(attr):
+                                    continue
+
                                 # Create a wrapper function that instantiates and calls run
                                 def make_class_tool(cls):
                                     # Get the run method signature and type hints
@@ -77,6 +123,8 @@ def discover_toolsets(toolset_names: List[str]) -> Dict[str, Callable]:
                                     class_tool_wrapper.__doc__ = cls.__doc__
                                     class_tool_wrapper._is_tool = True
                                     class_tool_wrapper._tool_permissions = getattr(cls, '_tool_permissions', "")
+                                    # Propagate the load validation hook for later introspection
+                                    class_tool_wrapper.should_load = getattr(cls, 'should_load', None)
                                     
                                     # Preserve type hints (excluding 'self')
                                     class_tool_wrapper.__annotations__ = {

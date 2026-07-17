@@ -23,11 +23,33 @@ class BaseTool(ABC):
     
     # Class-level permissions attribute (set by the @tool decorator)
     _tool_permissions: str = ""
-    
+
+    # Optional human-readable explanation for why the tool was not loaded.
+    # Tools may set this inside should_load() before returning False.
+    _load_skip_reason: str = ""
+
     def __init__(self):
         """Initialize the base tool."""
         pass
-    
+
+    @classmethod
+    def should_load(cls) -> bool:
+        """
+        Validate whether this tool should be loaded and made available.
+
+        Tools can override this class method to check runtime requirements
+        such as external binaries, platform support, environment variables,
+        or credentials. Tools returning False are skipped during discovery:
+        they are never registered, advertised to the LLM, or callable.
+
+        When returning False, tools may set `cls._load_skip_reason` to a
+        human-readable explanation (used for diagnostics, e.g. /tools).
+
+        Returns:
+            bool: True if the tool should be loaded (default), False to skip it
+        """
+        return True
+
     @abstractmethod
     def run(self, **kwargs) -> Dict[str, Any]:
         """

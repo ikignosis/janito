@@ -64,6 +64,18 @@ class ToolsCmdHandler(CmdHandler):
             print("\n[Built-in Tools]")
             print("  (none loaded)")
         
+        # Print tools skipped during discovery (failed should_load() validation)
+        try:
+            from janito.tools import get_skipped_tools
+            skipped_tools = get_skipped_tools()
+        except Exception:
+            skipped_tools = {}
+        if skipped_tools:
+            print("\n[Skipped Tools]")
+            print("-" * 40)
+            for name, reason in sorted(skipped_tools.items()):
+                print(f"  {name:<25} {reason}")
+
         # Print MCP tools section
         if mcp_tools:
             print("\n[MCP Tools]")
