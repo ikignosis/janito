@@ -125,7 +125,7 @@ class RunPythonCode(BaseTool):
                 text=True,
                 shell=False,
                 bufsize=1,  # Line buffered
-                universal_newlines=True
+                universal_newlines=True,
                 encoding="utf-8",
                 env={**os.environ, "PYTHONIOENCODING": "utf-8"},
             )
