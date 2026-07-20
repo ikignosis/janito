@@ -35,6 +35,7 @@ class InteractiveShell:
         self.model = model
         self.no_history = no_history
         self.messages_history: List[Dict[str, Any]] = []
+        self.history_checkpoint: int = 0
         self.restart_requested = False
         self.do_it_requested = False
         self.exit_requested = False
@@ -147,6 +148,8 @@ class InteractiveShell:
             self.messages_history = [{"role": "system", "content": system_prompt}]
         else:
             self.messages_history = []
+        # Checkpoint starts after the system prompt (if any)
+        self.history_checkpoint = len(self.messages_history)
     
     def get_system_prompt(self) -> Optional[str]:
         """Get the current system prompt."""
@@ -222,6 +225,7 @@ class InteractiveShell:
             # Check if F2 was pressed (restart requested)
             if self.restart_requested:
                 self.messages_history.clear()
+                self.history_checkpoint = 0
                 # Clear screen before printing the message
                 print('\033[2J\033[H', end='')
                 print("[Keybinding F2] Conversation history cleared. Starting fresh conversation.")
@@ -229,6 +233,7 @@ class InteractiveShell:
             
             if user_input.lower() == 'restart':
                 self.messages_history.clear()
+                self.history_checkpoint = 0
                 print("Conversation history cleared. Starting fresh conversation.")
                 continue
             
@@ -270,6 +275,8 @@ class InteractiveShell:
             
             if user_input.strip():
                 tools_to_use = [] if no_tools else None
+                # Save checkpoint so we can rollback history on cancel/error
+                self.history_checkpoint = len(self.messages_history)
                 try:
                     response = send_prompt_func(
                         user_input,
@@ -278,8 +285,18 @@ class InteractiveShell:
                         tools=tools_to_use,
                         thinking=thinking
                     )
+                    # On success, keep the checkpoint where it is (before this turn)
+                    # so /rollback can undo the last exchange. The next turn will
+                    # update it before its own send_prompt call.
                 except KeyboardInterrupt:
+                    # Rollback any messages appended during this prompt
+                    del self.messages_history[self.history_checkpoint:]
                     print("Request interrupted")
+                    response = None
+                except Exception as e:
+                    # Rollback on any other unexpected error as well
+                    del self.messages_history[self.history_checkpoint:]
+                    print(f"Error: {e}")
                     response = None
                 # Note: send_prompt_func already appends user and assistant messages
                 # to previous_messages (which is self.messages_history), so we don't

@@ -13,6 +13,7 @@ from . import history
 from . import mcp
 from . import multi
 from . import prompt
+from . import rollback
 from . import tools
 
 __all__ = ["CmdHandler", "get_registered_commands", "register_command"]
