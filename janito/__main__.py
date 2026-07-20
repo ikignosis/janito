@@ -20,6 +20,8 @@ Usage:
 
 from .cli.logging_config import setup_logging
 from .cli import create_parser
+from . import privileges as _privileges_mod
+from .privileges import Privileges
 from .cli.setup import (
     setup_api_key_from_config,
     setup_endpoint_env,
@@ -74,6 +76,17 @@ def main():
     
     # Configure logging based on --log argument
     setup_logging(args.log)
+    
+    # Set up privileges from -r, -w, -x flags
+    if args.read or args.write or args.exec:
+        if _privileges_mod.running_privileges is None:
+            _privileges_mod.running_privileges = Privileges()
+        if args.read:
+            _privileges_mod.running_privileges.READ = True
+        if args.write:
+            _privileges_mod.running_privileges.WRITE = True
+        if args.exec:
+            _privileges_mod.running_privileges.EXEC = True
     
     # Handle batch config operations (--set, --unset, --get, secrets)
     if args.set is not None or args.unset is not None or args.get is not None or args.set_secret is not None or args.delete_secret is not None:

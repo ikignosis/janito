@@ -60,6 +60,8 @@ Examples:
   janito -t                                                    # Enable thinking mode
   janito --gmail                                              # Enable Gmail tools and email system prompt
   janito --onedrive                                           # Enable OneDrive tools and file system prompt
+  janito -r -w                                                   # Grant READ and WRITE privileges
+  janito -r -w -x                                                # Grant READ, WRITE, and EXEC privileges
   janito -S "You are a cow"                                   # Override system prompt (no tools)
   janito --install-skill https://github.com/user/repo/tree/main/skills/git-commit  # Install a skill
   janito --list-skills                                        # List installed skills
@@ -112,6 +114,24 @@ Note: --set and --set-api-key must be used in separate commands.
         "-t", "--thinking",
         action="store_true",
         help="Enable thinking mode (sends extra_body={'enable_thinking': True} to the API)"
+    )
+    
+    parser.add_argument(
+        "-r", "--read",
+        action="store_true",
+        help="Grant READ privilege"
+    )
+    
+    parser.add_argument(
+        "-w", "--write",
+        action="store_true",
+        help="Grant WRITE privilege"
+    )
+    
+    parser.add_argument(
+        "-x", "--exec",
+        action="store_true",
+        help="Grant EXEC privilege"
     )
     
     parser.add_argument(

@@ -55,6 +55,70 @@ def _check_should_load(cls: type) -> bool:
     return False
 
 
+# Maps permission characters to Privileges dataclass attribute names.
+_PERMISSION_TO_PRIVILEGE = {
+    "r": "READ",
+    "w": "WRITE",
+    "x": "EXEC",
+}
+
+
+def _check_tool_privileges(cls: type) -> bool:
+    """
+    Check whether the current ``running_privileges`` satisfy the tool's
+    required permissions.
+
+    If ``running_privileges`` is ``None`` (no ``-r``/``-w``/``-x`` flags
+    were passed), all tools are allowed — this preserves backward
+    compatibility with the default "everything is permitted" behaviour.
+
+    When ``running_privileges`` *is* set, every character in the tool's
+    ``_tool_permissions`` string must be satisfied:
+
+    * ``'r'`` → ``Privileges.READ``
+    * ``'w'`` → ``Privileges.WRITE``
+    * ``'x'`` → ``Privileges.EXEC``
+
+    Tools whose requirements are not met are recorded in
+    ``_skipped_tools`` with a human-readable reason and excluded from
+    discovery.
+
+    Args:
+        cls: The tool class to validate
+
+    Returns:
+        bool: ``True`` if the tool should be loaded, ``False`` to skip it
+    """
+    from .. import privileges as _privileges_mod
+
+    running = _privileges_mod.running_privileges
+    if running is None:
+        # No privilege restrictions configured — allow everything.
+        return True
+
+    tool_permissions: str = getattr(cls, "_tool_permissions", "") or ""
+    if not tool_permissions:
+        # Tools that declare no permissions don't require any privilege.
+        return True
+
+    missing: list[str] = []
+    for char in tool_permissions:
+        attr = _PERMISSION_TO_PRIVILEGE.get(char)
+        if attr is not None and not getattr(running, attr, False):
+            missing.append(char)
+
+    if missing:
+        missing_descriptions = [
+            f"'{c}' ({_PERMISSION_TO_PRIVILEGE[c]})" for c in missing
+        ]
+        _skipped_tools[cls.__name__] = (
+            f"insufficient privileges: requires {', '.join(missing_descriptions)}"
+        )
+        return False
+
+    return True
+
+
 def discover_toolsets(toolset_names: List[str]) -> Dict[str, Callable]:
     """
     Discover and load tools from specified toolsets.
@@ -99,6 +163,11 @@ def discover_toolsets(toolset_names: List[str]) -> Dict[str, Callable]:
                                 # Let tools opt out of loading (missing binaries,
                                 # unsupported platform, missing credentials, ...)
                                 if not _check_should_load(attr):
+                                    continue
+
+                                # Skip tools whose permission requirements
+                                # are not satisfied by running_privileges.
+                                if not _check_tool_privileges(attr):
                                     continue
 
                                 # Create a wrapper function that instantiates and calls run

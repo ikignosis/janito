@@ -147,12 +147,30 @@ def get_function_schema(func: Callable) -> Dict[str, Any]:
     }
 
 
-# Dynamically discover and load tools from configured toolsets
-AVAILABLE_TOOLS = discover_toolsets(AUTOLOAD_TOOLSETS)
+# Lazily-initialized registry of available tools.
+# Discovery is deferred until first access so that CLI flags (e.g. -r, -w, -x)
+# can set running_privileges *before* tools are filtered.
+AVAILABLE_TOOLS: Dict[str, Callable] = {}
+_tools_initialized: bool = False
 
-# Add skill tools if enabled
-if _skills_enabled:
-    AVAILABLE_TOOLS.update(get_skills_tools())
+
+def _ensure_initialized() -> None:
+    """
+    Run tool discovery on first access (lazy initialization).
+
+    This ensures ``running_privileges`` is already set by the time
+    ``discover_toolsets`` applies its privilege-based filtering.
+    """
+    global AVAILABLE_TOOLS, _tools_initialized
+    if _tools_initialized:
+        return
+    _tools_initialized = True
+
+    AVAILABLE_TOOLS.update(discover_toolsets(AUTOLOAD_TOOLSETS))
+
+    # Add skill tools if enabled
+    if _skills_enabled:
+        AVAILABLE_TOOLS.update(get_skills_tools())
 
 
 def add_toolset(toolset_name: str) -> bool:
@@ -166,6 +184,8 @@ def add_toolset(toolset_name: str) -> bool:
         bool: True if the toolset was added, False if already loaded or invalid
     """
     global AVAILABLE_TOOLS, _loaded_toolsets
+
+    _ensure_initialized()
     
     if toolset_name in _loaded_toolsets:
         return False
@@ -189,6 +209,7 @@ def get_all_tools() -> Dict[str, Callable]:
     Returns:
         Dict[str, Callable]: Dictionary of tool names to functions
     """
+    _ensure_initialized()
     return AVAILABLE_TOOLS.copy()
 
 
@@ -199,6 +220,7 @@ def get_all_tool_schemas() -> List[Dict[str, Any]]:
     Returns:
         List[Dict[str, Any]]: List of tool schemas
     """
+    _ensure_initialized()
     return [get_function_schema(tool) for tool in AVAILABLE_TOOLS.values()]
 
 
@@ -209,6 +231,7 @@ def get_all_tool_permissions() -> Dict[str, str]:
     Returns:
         Dict[str, str]: Dictionary mapping tool names to their permission strings
     """
+    _ensure_initialized()
     return {name: getattr(tool, '_tool_permissions', "") for name, tool in AVAILABLE_TOOLS.items()}
 
 
@@ -225,6 +248,7 @@ def get_tool_by_name(name: str) -> Callable:
     Raises:
         KeyError: If tool with given name doesn't exist
     """
+    _ensure_initialized()
     if name not in AVAILABLE_TOOLS:
         raise KeyError(f"Tool '{name}' not found. Available tools: {list(AVAILABLE_TOOLS.keys())}")
     return AVAILABLE_TOOLS[name]
@@ -243,6 +267,7 @@ def get_tool_schema_by_name(name: str) -> Dict[str, Any]:
     Raises:
         KeyError: If tool with given name doesn't exist
     """
+    _ensure_initialized()
     if name not in AVAILABLE_TOOLS:
         raise KeyError(f"Tool '{name}' not found. Available tools: {list(AVAILABLE_TOOLS.keys())}")
     return get_function_schema(AVAILABLE_TOOLS[name])
@@ -261,6 +286,7 @@ def get_tool_permissions(name: str) -> str:
     Raises:
         KeyError: If tool with given name doesn't exist
     """
+    _ensure_initialized()
     if name not in AVAILABLE_TOOLS:
         raise KeyError(f"Tool '{name}' not found. Available tools: {list(AVAILABLE_TOOLS.keys())}")
     return getattr(AVAILABLE_TOOLS[name], '_tool_permissions', "")
@@ -297,6 +323,7 @@ You should load a skill when the user's request matches its description or you n
 def enable_skills() -> None:
     """Enable skills support."""
     global _skills_enabled
+    _ensure_initialized()
     _skills_enabled = True
     AVAILABLE_TOOLS.update(get_skills_tools())
 
@@ -304,6 +331,7 @@ def enable_skills() -> None:
 def disable_skills() -> None:
     """Disable skills support."""
     global _skills_enabled, AVAILABLE_TOOLS
+    _ensure_initialized()
     _skills_enabled = False
     for tool_name in ["load_skill", "read_skill_resource"]:
         AVAILABLE_TOOLS.pop(tool_name, None)

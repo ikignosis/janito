@@ -12,6 +12,7 @@ from . import help
 from . import history
 from . import mcp
 from . import multi
+from . import priv
 from . import prompt
 from . import rollback
 from . import tools
