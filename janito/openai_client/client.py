@@ -384,13 +384,29 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
             # Add assistant message to conversation history
             messages.append(assistant_message)
             
-            # Display token usage with cyan background
+            # Display token usage with magenta background
             if hasattr(response, 'usage') and response.usage:
-                total_tokens = response.usage.total_tokens
+                usage = response.usage
+                total_tokens = usage.total_tokens
+                input_tokens = getattr(usage, 'prompt_tokens', None)
+                output_tokens = getattr(usage, 'completion_tokens', None)
+                cached_tokens = None
+                if hasattr(usage, 'prompt_tokens_details') and usage.prompt_tokens_details:
+                    cached_tokens = getattr(usage.prompt_tokens_details, 'cached_tokens', None)
+                
                 from rich.text import Text
-                token_text = Text(f"=== Total tokens: {total_tokens} | Messages: {len(messages)} ===")
+                parts = [f"Total: {total_tokens}"]
+                if input_tokens is not None:
+                    parts.append(f"In: {input_tokens}")
+                if output_tokens is not None:
+                    parts.append(f"Out: {output_tokens}")
+                if cached_tokens is not None:
+                    parts.append(f"Cached: {cached_tokens}")
+                parts.append(f"Messages: {len(messages)}")
+                
+                token_text = Text(f"=== {' | '.join(parts)} ===")
                 token_text.stylize("white on magenta")
                 console.print(token_text, highlight=False)
-                logger.info(f"Request completed: {total_tokens} tokens, {len(messages)} messages")
+                logger.info(f"Request completed: {total_tokens} tokens (in={input_tokens}, out={output_tokens}, cached={cached_tokens}), {len(messages)} messages")
             return message.content if message.content else ""
             
