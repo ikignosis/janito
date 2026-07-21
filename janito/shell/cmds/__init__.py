@@ -6,6 +6,7 @@ from .registry import register_command, get_registered_commands
 from .base import CmdHandler
 
 # Import all command handlers to register them
+from . import ask
 from . import config
 from . import exit
 from . import help

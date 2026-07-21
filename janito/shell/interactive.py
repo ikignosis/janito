@@ -192,6 +192,12 @@ class InteractiveShell:
         import sys
         import subprocess
         
+        # Store references so command handlers (e.g. /ask) can use them
+        self.send_prompt_func = send_prompt_func
+        self.verbose = verbose
+        self.no_tools = no_tools
+        self.thinking = thinking
+        
         while True:
             self.restart_requested = False
             self.do_it_requested = False
