@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
+      contents: write  # Required to create GitHub releases
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -30,3 +31,12 @@ jobs:
       - name: Publish distribution 📦 to PyPI
         if: startsWith(github.ref, 'refs/tags')
         uses: pypa/gh-action-pypi-publish@release/v1
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          draft: false
+          prerelease: false
