@@ -230,16 +230,20 @@ class InteractiveShell:
             
             # Check if F2 was pressed (restart requested)
             if self.restart_requested:
-                self.messages_history.clear()
-                self.history_checkpoint = 0
+                # Reset to a fresh conversation while preserving the system
+                # prompt (matches startup behaviour). A plain .clear() would
+                # drop the system prompt and leave an empty history.
+                self.initialize_history(system_prompt=self._system_prompt)
                 # Clear screen before printing the message
                 print('\033[2J\033[H', end='')
                 print("[Keybinding F2] Conversation history cleared. Starting fresh conversation.")
                 continue
             
             if user_input.lower() == 'restart':
-                self.messages_history.clear()
-                self.history_checkpoint = 0
+                # Reset to a fresh conversation while preserving the system
+                # prompt (matches startup behaviour). A plain .clear() would
+                # drop the system prompt and leave an empty history.
+                self.initialize_history(system_prompt=self._system_prompt)
                 print("Conversation history cleared. Starting fresh conversation.")
                 continue
             

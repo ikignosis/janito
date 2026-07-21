@@ -247,8 +247,13 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
             services_text.stylize("white on green")
             console.print(services_text, highlight=False)
 
-    # Use previous messages if provided, otherwise start with the user prompt
-    messages = previous_messages if previous_messages else []
+    # Use previous messages if provided, otherwise start with the user prompt.
+    # NOTE: check `is not None` (not truthiness). An empty list is a valid,
+    # caller-owned history (e.g. after a restart or with --no-system-prompt);
+    # using a truthy check would replace it with a new local list and the
+    # appended messages would never propagate back to the caller, silently
+    # resetting the conversation history on every turn.
+    messages = previous_messages if previous_messages is not None else []
     messages.append({"role": "user", "content": prompt})
     
     logger.debug(f"Starting message loop with {len(messages)} messages")
