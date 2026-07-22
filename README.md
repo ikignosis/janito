@@ -1,6 +1,6 @@
 # janito - a development agent with function calling, MCP and skills
 
-> 📖 **Full documentation available at [https://ikignosis.org/janito/](https://ikignosis.org/janito/)**
+> 📖 **Full documentation available at [https://ikignosis.github.io/janito/](https://ikignosis.github.io/janito/)**
 
 ## Features
 
