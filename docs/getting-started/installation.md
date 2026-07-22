@@ -16,7 +16,7 @@ For development or the latest features, install from source:
 
 ### Prerequisites
 
-- Python 3.6+
+- Python 3.10+
 - Git
 - GitHub CLI (optional)
 
@@ -65,14 +65,15 @@ janito requires the following dependencies:
 | `openai` | >=1.0.0 | OpenAI API client |
 | `rich` | >=10.0.0 | Rich terminal output |
 | `prompt-toolkit` | >=3.0.0 | Interactive shell |
-| `requests` | >=2.28.0 | HTTP library |
+| `requests` | >=2.28.0 | HTTP library (MCP support) |
+| `pathspec` | >=0.11.0 | `.gitignore`-aware file listing |
 
 These are automatically installed when you install `janito`.
 
 ## System Requirements
 
 - **Operating System**: Windows, macOS, Linux
-- **Python**: 3.6, 3.7, 3.8, 3.9, 3.10, 3.11+
+- **Python**: 3.10, 3.11, 3.12, 3.13, 3.14
 - **Terminal**: Any modern terminal (PowerShell, Bash, Zsh, etc.)
 
 ## Next Steps

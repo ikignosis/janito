@@ -32,7 +32,7 @@ theme:
 
 plugins:
   - search
-  - git_revision_date_localized:
+  - git-revision-date-localized:
       enabled: !ENV [CI, false]
 
 nav:

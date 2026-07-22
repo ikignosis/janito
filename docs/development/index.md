@@ -8,7 +8,7 @@ This section covers development setup and contribution guidelines.
 
 ## Prerequisites
 
-- Python 3.6+
+- Python 3.10+
 - Git
 - GitHub CLI (optional)
 

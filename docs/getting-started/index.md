@@ -11,7 +11,7 @@ This section guides you through setting up and running janito.
 
 Before installing janito, ensure you have:
 
-- **Python 3.6+** - janito requires Python 3.6 or higher
+- **Python 3.10+** - janito requires Python 3.10 or higher
 - **pip** - Python package installer (usually included with Python)
 - **API Key** - An API key from your preferred provider (OpenAI, local LLM, etc.)
 

@@ -79,9 +79,9 @@ janito --show-config
 |--------|-------------|---------|
 | `provider` | Provider name | `openai`, `custom` |
 | `model` | Model name | `gpt-4`, `claude-3-opus` |
-| `context-window` | Context window size | `65536` |
+| `context-window-size` | Context window size | `65536` |
 
-For custom endpoints (base-url), see [README_LOCAL.md](README_LOCAL.md).
+For custom endpoints (base-url), see [README_custom.md](README_custom.md).
 
 ## Usage
 
@@ -205,10 +205,10 @@ For full OneDrive documentation, see [README.onedrive.md](README.onedrive.md).
 
 ```bash
 # List files
-janito.tools.files.list_files . --recursive --pattern "*.py"
+python -m janito.tools.files.list_files . --recursive --pattern "*.py"
 
 # Read file
-janito.tools.files.read_file README.md --max-lines 20
+python -m janito.tools.files.read_file README.md --max-lines 20
 ```
 
 ### MCP Tools
@@ -250,11 +250,12 @@ Progress messages go to stderr so they don't interfere with tool output.
 
 ## Dependencies
 
-- Python 3.6+
+- Python 3.10+
 - `openai>=1.0.0`
 - `rich>=10.0.0`
 - `prompt-toolkit>=3.0.0`
-- `requests` (for MCP support)
+- `requests>=2.28.0` (for MCP support)
+- `pathspec>=0.11.0` (for `.gitignore`-aware file listing)
 
 ## License
 

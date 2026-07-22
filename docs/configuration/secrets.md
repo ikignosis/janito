@@ -1,10 +1,12 @@
 # Secrets
 
-janito stores sensitive configuration like API keys securely in a separate secrets file.
+janito stores sensitive configuration like API keys and credentials in a separate secrets file.
 
 ## Secrets File Location
 
-Secrets are stored in `~/.janito/secrets.json`
+Secrets are stored in `~/.janito/secrets.json`.
+
+> **Note:** Provider API keys set with `--set-api-key` are stored separately in `~/.janito/auth.json`. The secrets file is for arbitrary credentials such as Gmail app passwords or Azure client IDs.
 
 ## Setting Secrets
 
@@ -32,27 +34,41 @@ janito --set-secret my_api_key=your-key
 janito --set-secret another_service=token123
 ```
 
-## Viewing Secrets
+You can set multiple secrets in one command:
 
 ```bash
-janito --show-secrets
+janito --set-secret gmail_username=you@gmail.com gmail_password="xxxx xxxx xxxx xxxx"
 ```
 
-Secrets are partially masked in the output for security.
+## Listing Secrets
 
-## Clearing Secrets
+List the names of all configured secrets (values are not shown):
+
+```bash
+janito --list-secrets
+```
+
+## Retrieving a Secret
+
+Print the value of a specific secret:
+
+```bash
+janito --get-secret gmail_username
+```
+
+## Deleting Secrets
 
 Remove a specific secret:
 
 ```bash
-janito --clear-secret gmail_username
+janito --delete-secret gmail_username
 ```
 
 ## Security Notes
 
 - Secrets are stored locally in `~/.janito/secrets.json`
 - The file is stored with restricted permissions (600 on Unix systems)
-- API keys are partially masked when displayed
+- `--list-secrets` shows only key names, never values
 - Never share your secrets file or commit it to version control
 
 ## Secrets Format
