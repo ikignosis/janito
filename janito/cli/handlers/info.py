@@ -170,3 +170,46 @@ def handle_show_config() -> int:
     print("=" * 40)
     
     return 0
+
+
+def handle_show_system_prompt(args) -> int:
+    """Handle --show-system-prompt command.
+    
+    Resolves and displays the effective system prompt based on the current
+    CLI flags (e.g., --gmail, --onedrive, -S, -Z) and exits.
+    
+    Args:
+        args: Parsed command line arguments
+        
+    Returns:
+        int: Exit code (0 for success)
+    """
+    from ...system_prompt import (
+        SYSTEM_PROMPT,
+        GMAIL_SYSTEM_PROMPT,
+        ONEDRIVE_SYSTEM_PROMPT,
+        get_system_prompt_with_skills,
+    )
+
+    if args.system_prompt:
+        prompt = args.system_prompt
+        source = "CLI override (-S)"
+    elif args.no_system_prompt:
+        print("System prompt: (disabled via -Z / --no-system-prompt)")
+        return 0
+    elif args.onedrive:
+        prompt = ONEDRIVE_SYSTEM_PROMPT
+        source = "OneDrive mode (--onedrive)"
+    elif args.gmail:
+        prompt = GMAIL_SYSTEM_PROMPT
+        source = "Gmail mode (--gmail)"
+    else:
+        prompt = get_system_prompt_with_skills()
+        source = "default (with skills)"
+
+    print(f"System prompt ({source}):")
+    print("=" * 40)
+    print(prompt)
+    print("=" * 40)
+
+    return 0

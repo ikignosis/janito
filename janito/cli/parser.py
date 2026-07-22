@@ -45,6 +45,7 @@ Examples:
   janito --list-mcp                                         # List MCP services and tools
   janito --info                                             # Show resolved config info
   janito --show-config                                      # Show configured provider and model
+  janito --show-system-prompt                               # Show the resolved system prompt
   janito --log=info,debug "Your prompt"                     # Enable logging
   janito --model gpt-4 "Your prompt"                        # Use specific model
   janito --set model=gpt-4                                  # Set config value
@@ -301,6 +302,12 @@ Note: --set and --set-api-key must be used in separate commands.
         "--show-config",
         action="store_true",
         help="Display the currently configured provider and model from config files"
+    )
+    
+    parser.add_argument(
+        "--show-system-prompt",
+        action="store_true",
+        help="Display the resolved system prompt and exit"
     )
     
     return parser

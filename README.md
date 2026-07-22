@@ -1,4 +1,4 @@
-# janito - an OpenAI CLI with function calling and MCP
+# janito - a development agent with function calling, MCP and skills
 
 > 📖 **Full documentation available at [https://ikignosis.org/janito/](https://ikignosis.org/janito/)**
 
@@ -12,6 +12,8 @@
 - 📊 **Real-time Progress** - Watch tool execution progress as it happens
 - 🚀 **Easy Setup** - Interactive configuration with `--config` or quick setup with `--set` flags
 - 🔗 **Any OpenAI-Compatible API** - Works with OpenAI, local servers (LM Studio, Ollama), and custom endpoints
+
+ NOTE: Janito should be used on development systems on which data loss is tolerable and there are no critical secrets
 
 ## Quick Start
 

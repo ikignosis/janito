@@ -39,6 +39,7 @@ from .cli.handlers import (
     handle_config_interactive,
     handle_info,
     handle_show_config,
+    handle_show_system_prompt,
     handle_list_tools,
     handle_list_mcp,
     handle_set_secret,
@@ -87,6 +88,9 @@ def main():
             _privileges_mod.running_privileges.WRITE = True
         if args.exec:
             _privileges_mod.running_privileges.EXEC = True
+
+    if _privileges_mod.running_privileges is None:
+        print("\033[33mWARNING: Running with full privileges, consider using -r, -w, -x\033[0m")
     
     # Handle batch config operations (--set, --unset, --get, secrets)
     if args.set is not None or args.unset is not None or args.get is not None or args.set_secret is not None or args.delete_secret is not None:
@@ -134,6 +138,10 @@ def main():
     # Handle --show-config option (display configured provider and model)
     if args.show_config:
         return handle_show_config()
+    
+    # Handle --show-system-prompt option (display resolved system prompt and exit)
+    if args.show_system_prompt:
+        return handle_show_system_prompt(args)
     
     # Set up endpoint from CLI args or config (for custom provider)
     setup_endpoint_env(args)
