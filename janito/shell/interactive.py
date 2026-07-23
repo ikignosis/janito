@@ -34,12 +34,12 @@ class InteractiveShell:
         """
         self.model = model
         self.no_history = no_history
-        self.messages_history: List[Dict[str, Any]] = []
-        self.history_checkpoint: int = 0
-        self.restart_requested = False
-        self.do_it_requested = False
-        self.exit_requested = False
-        self.multiline_mode = False
+        self.messages_history: List[Dict[str, Any]] = []  # conversation messages (role/content dicts) passed to the AI as context
+        self.history_checkpoint: int = 0  # index into messages_history marking the last known-good state; /rollback and error recovery truncate back to here
+        self.restart_requested = False  # set True by the F2 key binding; signals the run loop to clear history and start a fresh conversation
+        self.do_it_requested = False  # set True by the F12 key binding; signals the run loop to auto-send a "Do It" prompt
+        self.exit_requested = False  # set True by the /exit command handler; signals the run loop to break and end the session
+        self.multiline_mode = False  # toggled by /multi; when True the prompt accepts multiline input (ESC+ENTER to submit)
         
         # Auto-load registered commands if not provided
         if commands is None:
@@ -143,7 +143,7 @@ class InteractiveShell:
         Args:
             system_prompt: Optional system prompt to prepend
         """
-        self._system_prompt = system_prompt
+        self._system_prompt = system_prompt  # stored so it can be restored on F2/restart without re-reading config
         if system_prompt:
             self.messages_history = [{"role": "system", "content": system_prompt}]
         else:
