@@ -1,5 +1,6 @@
 """
 OpenAI client module for sending prompts to OpenAI-compatible endpoints.
+Uses streaming (SSE) to display tokens as they arrive.
 """
 
 import os
@@ -175,7 +176,7 @@ def _is_mcp_tool(tool_name: str) -> bool:
 
 
 def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict[str, Any]] = None, tools: Optional[List[Dict[str, Any]]] = None, use_mcp: bool = True, thinking: bool = False) -> str:
-    """Send prompt to OpenAI endpoint and return response.
+    """Send prompt to OpenAI endpoint and return response using streaming.
     
     Args:
         prompt: The user prompt to send
@@ -285,62 +286,112 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
                 call_kwargs["extra_body"] = {}
             call_kwargs["extra_body"]["enable_thinking"] = True
 
-        # Make API call with tools if available
+        # ------ Streaming API call ------
+        call_kwargs["stream"] = True
+        call_kwargs["stream_options"] = {"include_usage": True}
+
         if tools_schemas:
-            logger.debug(f"Calling API with {len(tools_schemas)} tools")
-            response = _run_with_progress_bar(
-                client.chat.completions.create,
+            logger.debug(f"Calling API (streaming) with {len(tools_schemas)} tools")
+            stream = client.chat.completions.create(
                 **call_kwargs,
                 tools=tools_schemas,
-                tool_choice="auto"
+                tool_choice="auto",
             )
         else:
-            logger.debug("Calling API without tools")
-            response = _run_with_progress_bar(
-                client.chat.completions.create,
-                **call_kwargs
-            )
-        
-        logger.debug("API response received")
-        
-        message = response.choices[0].message
-        
-        # Handle reasoning/thinking content (e.g., DeepSeek R1, OpenAI o1/o3)
-        reasoning_content = None
-        for attr in ('reasoning_content', 'reasoning'):
-            if hasattr(message, attr):
-                val = getattr(message, attr)
+            logger.debug("Calling API (streaming) without tools")
+            stream = client.chat.completions.create(**call_kwargs)
+
+        # Accumulators for the streamed response
+        collected_content: List[str] = []
+        collected_reasoning: List[str] = []
+        tool_calls_map: Dict[int, Dict[str, str]] = {}  # index -> {id, name, arguments}
+        usage_info = None
+
+        for chunk in stream:
+            # Usage stats arrive in the final chunk when include_usage is set
+            if hasattr(chunk, "usage") and chunk.usage:
+                usage_info = chunk.usage
+
+            if not chunk.choices:
+                continue
+
+            delta = chunk.choices[0].delta
+
+            # Collect reasoning / thinking content (DeepSeek R1, OpenAI o1/o3, …)
+            for attr in ("reasoning_content", "reasoning"):
+                val = getattr(delta, attr, None)
                 if val:
-                    reasoning_content = val
+                    collected_reasoning.append(val)
                     break
-        
+
+            # Accumulate main content silently
+            if delta.content:
+                collected_content.append(delta.content)
+
+            # Accumulate tool-call deltas (split across many chunks)
+            if hasattr(delta, "tool_calls") and delta.tool_calls:
+                for tc_delta in delta.tool_calls:
+                    idx = tc_delta.index
+                    if idx not in tool_calls_map:
+                        tool_calls_map[idx] = {"id": "", "name": "", "arguments": ""}
+                    if tc_delta.id:
+                        tool_calls_map[idx]["id"] = tc_delta.id
+                    if tc_delta.function:
+                        if tc_delta.function.name:
+                            tool_calls_map[idx]["name"] = tc_delta.function.name
+                        if tc_delta.function.arguments:
+                            tool_calls_map[idx]["arguments"] += tc_delta.function.arguments
+
+        # Assemble the full response from streamed chunks
+        full_content = "".join(collected_content)
+
+        logger.debug("API streaming response completed")
+
+        # Display reasoning content in a styled thinking block (before main content)
+        reasoning_content = "".join(collected_reasoning) if collected_reasoning else None
         if reasoning_content:
-            # Display reasoning content in a styled thinking block
             from rich.panel import Panel
             from rich.text import Text
             reasoning_text = Text(reasoning_content)
-            console.print(Panel(reasoning_text, title="[bold cyan]💭 Reasoning[/bold cyan]", border_style="cyan", padding=(1, 2)))
+            console.print(Panel(reasoning_text, title="[bold cyan]\U0001f4ad Reasoning[/bold cyan]", border_style="cyan", padding=(1, 2)))
             logger.debug("Reasoning content displayed")
-        
-        if message.content:
-            # print the message using rich markdown
-            console.print(Markdown(message.content))
-        
-        # Check if the model wants to call a function
-        if hasattr(message, 'tool_calls') and message.tool_calls:
-            # Add the model's response to messages
-            messages.append(message)
-            
+
+        # Display the assembled response using rich markdown
+        if full_content:
+            console.print(Markdown(full_content))
+
+        # Check if the model wants to call tools
+        if tool_calls_map:
+            # Build an assistant message dict (with tool_calls) for the history
+            tool_calls_list = []
+            for idx in sorted(tool_calls_map):
+                tc = tool_calls_map[idx]
+                tool_calls_list.append({
+                    "id": tc["id"],
+                    "type": "function",
+                    "function": {
+                        "name": tc["name"],
+                        "arguments": tc["arguments"],
+                    },
+                })
+            assistant_msg: Dict[str, Any] = {
+                "role": "assistant",
+                "content": full_content or None,
+                "tool_calls": tool_calls_list,
+            }
+            messages.append(assistant_msg)
+
             # Process each tool call
-            for tool_call in message.tool_calls:
-                tool_name = tool_call.function.name
-                tool_args = json.loads(tool_call.function.arguments)
-                
+            for tc in tool_calls_list:
+                tool_name = tc["function"]["name"]
+                tool_args = json.loads(tc["function"]["arguments"])
+                tool_call_id = tc["id"]
+
                 logger.info(f"Tool call: {tool_name}({tool_args})")
-                
+
                 # Check if this is an MCP tool
                 is_mcp = _is_mcp_tool(tool_name)
-                
+
                 try:
                     if is_mcp and mcp_manager:
                         # Route to MCP manager
@@ -353,15 +404,15 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
                         logger.debug(f"Executing built-in tool: {tool_name}")
                         tool_result = tool_function(**tool_args)
                         logger.info(f"Tool {tool_name} completed successfully")
-                    
+
                     # Add the tool response to messages
                     messages.append({
-                        "tool_call_id": tool_call.id,
+                        "tool_call_id": tool_call_id,
                         "role": "tool",
                         "name": tool_name,
                         "content": json.dumps(tool_result)
                     })
-                    
+
                 except Exception as e:
                     logger.error(f"Tool {tool_name} failed: {e}")
                     # Handle tool execution errors
@@ -370,37 +421,38 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
                         "error": f"Tool execution failed: {str(e)}"
                     }
                     messages.append({
-                        "tool_call_id": tool_call.id,
+                        "tool_call_id": tool_call_id,
                         "role": "tool",
                         "name": tool_name,
                         "content": json.dumps(error_result)
                     })
                     print(f"\u274c Tool error: {tool_name} - {e}", file=sys.stderr)
-            
+
             # Continue the loop to get the final response after tool calls
             continue
         else:
             # No more tool calls, return the final response
             # Build the assistant message with reasoning_content if available
-            assistant_message = {"role": "assistant", "content": message.content if message.content else ""}
+            assistant_message = {"role": "assistant", "content": full_content}
             if reasoning_content:
                 assistant_message["reasoning_content"] = reasoning_content
-            
+
             # Add assistant message to conversation history
             messages.append(assistant_message)
-            
+
             # Display token usage with magenta background
-            if hasattr(response, 'usage') and response.usage:
-                usage = response.usage
-                total_tokens = usage.total_tokens
-                input_tokens = getattr(usage, 'prompt_tokens', None)
-                output_tokens = getattr(usage, 'completion_tokens', None)
+            if usage_info:
+                total_tokens = getattr(usage_info, "total_tokens", None)
+                input_tokens = getattr(usage_info, "prompt_tokens", None)
+                output_tokens = getattr(usage_info, "completion_tokens", None)
                 cached_tokens = None
-                if hasattr(usage, 'prompt_tokens_details') and usage.prompt_tokens_details:
-                    cached_tokens = getattr(usage.prompt_tokens_details, 'cached_tokens', None)
-                
+                if hasattr(usage_info, "prompt_tokens_details") and usage_info.prompt_tokens_details:
+                    cached_tokens = getattr(usage_info.prompt_tokens_details, "cached_tokens", None)
+
                 from rich.text import Text
-                parts = [f"Total: {total_tokens}"]
+                parts = []
+                if total_tokens is not None:
+                    parts.append(f"Total: {total_tokens}")
                 if input_tokens is not None:
                     parts.append(f"In: {input_tokens}")
                 if output_tokens is not None:
@@ -408,10 +460,9 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
                 if cached_tokens is not None:
                     parts.append(f"Cached: {cached_tokens}")
                 parts.append(f"Messages: {len(messages)}")
-                
+
                 token_text = Text(f"=== {' | '.join(parts)} ===")
                 token_text.stylize("white on magenta")
                 console.print(token_text, highlight=False)
-                logger.info(f"Request completed: {total_tokens} tokens (in={input_tokens}, out={output_tokens}, cached={cached_tokens}), {len(messages)} messages")
-            return message.content if message.content else ""
-            
+                logger.info(f"Request completed: total={total_tokens} tokens (in={input_tokens}, out={output_tokens}, cached={cached_tokens}), {len(messages)} messages")
+            return full_content

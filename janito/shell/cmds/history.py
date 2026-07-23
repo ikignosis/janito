@@ -34,11 +34,11 @@ class HistoryCmdHandler(CmdHandler):
             for i, msg in enumerate(shell.messages_history):
                 if isinstance(msg, dict):
                     role = msg.get("role", "unknown")
-                    content = msg.get("content", "")
+                    content = msg.get("content") or ""
                 else:
                     print(msg)
                     role = msg.role
-                    content = msg.content
+                    content = msg.content or ""
 
                 # Truncate long content for display
                 if len(content) > 200:
