@@ -17,6 +17,36 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 # Configure logger for this module
 logger = logging.getLogger(__name__)
 
+
+def format_tokens(count):
+    """Convert a token count to a human-readable format.
+
+    Examples:
+        2000 -> "2k"
+        4000000 -> "4m"
+        150 -> "150"
+        12345 -> "12.3k"
+    """
+    if count is None:
+        return None
+    try:
+        value = float(count)
+    except (TypeError, ValueError):
+        return count
+
+    def _format(number):
+        # Trim trailing ".0" for whole numbers (e.g. "2.0k" -> "2k")
+        if number == int(number):
+            return str(int(number))
+        return f"{number:.1f}"
+
+    if value >= 1_000_000:
+        return f"{_format(value / 1_000_000)}m"
+    if value >= 1_000:
+        return f"{_format(value / 1_000)}k"
+    return str(int(value))
+
+
 # Import tools
 try:
     from ..tooling.tools_registry import get_all_tool_schemas, get_tool_by_name
@@ -472,13 +502,13 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
                 from rich.text import Text
                 parts = []
                 if total_tokens is not None:
-                    parts.append(f"Total: {total_tokens}")
+                    parts.append(f"Total: {format_tokens(total_tokens)}")
                 if input_tokens is not None:
-                    parts.append(f"In: {input_tokens}")
+                    parts.append(f"In: {format_tokens(input_tokens)}")
                 if output_tokens is not None:
-                    parts.append(f"Out: {output_tokens}")
+                    parts.append(f"Out: {format_tokens(output_tokens)}")
                 if cached_tokens is not None:
-                    parts.append(f"Cached: {cached_tokens}")
+                    parts.append(f"Cached: {format_tokens(cached_tokens)}")
                 parts.append(f"Messages: {len(messages)}")
 
                 token_text = Text(f"=== {' | '.join(parts)} ===")

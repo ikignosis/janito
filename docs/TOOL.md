@@ -16,7 +16,7 @@ step-by-step walkthrough with a working example.
 6. [The Permission System](#the-permission-system)
 7. [The `should_load()` Gate](#the-should_load-gate)
 8. [Progress Reporting](#progress-reporting)
-9. [Toolset Organization & Discovery](#toolset-organization--discovery)
+9. [Toolset Organization and Discovery](#toolset-organization-and-discovery)
 10. [Return Value Contract](#return-value-contract)
 11. [CLI Testing Harness](#cli-testing-harness)
 12. [Complete Worked Example](#complete-worked-example)
@@ -476,7 +476,7 @@ report_result("Done")
 
 ---
 
-## Toolset Organization & Discovery
+## Toolset Organization and Discovery
 
 ### Directory layout
 

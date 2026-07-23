@@ -61,6 +61,7 @@ nav:
   - Development:
       - development/index.md
       - development/contributing.md
+      - Creating Tools: TOOL.md
   - Reference:
       - reference/cli-options.md
       - reference/exit-codes.md
