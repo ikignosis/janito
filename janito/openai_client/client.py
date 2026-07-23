@@ -164,6 +164,75 @@ def _run_with_progress_bar(func, *args, **kwargs):
     return result[0]
 
 
+def _consume_stream(stream):
+    """Consume a streaming completion and assemble the response parts.
+
+    Returns ``(full_content, reasoning_content, tool_calls_map, usage_info)``.
+    """
+    collected_content: List[str] = []
+    collected_reasoning: List[str] = []
+    tool_calls_map: Dict[int, Dict[str, str]] = {}  # index -> {id, name, arguments}
+    usage_info = None
+
+    for chunk in stream:
+        # Usage stats arrive in the final chunk when include_usage is set
+        if hasattr(chunk, "usage") and chunk.usage:
+            usage_info = chunk.usage
+
+        if not chunk.choices:
+            continue
+
+        delta = chunk.choices[0].delta
+
+        # Collect reasoning / thinking content (DeepSeek R1, OpenAI o1/o3, …)
+        for attr in ("reasoning_content", "reasoning"):
+            val = getattr(delta, attr, None)
+            if val:
+                collected_reasoning.append(val)
+                break
+
+        # Accumulate main content silently
+        if delta.content:
+            collected_content.append(delta.content)
+
+        # Accumulate tool-call deltas (split across many chunks)
+        if hasattr(delta, "tool_calls") and delta.tool_calls:
+            for tc_delta in delta.tool_calls:
+                idx = tc_delta.index
+                if idx not in tool_calls_map:
+                    tool_calls_map[idx] = {"id": "", "name": "", "arguments": ""}
+                if tc_delta.id:
+                    tool_calls_map[idx]["id"] = tc_delta.id
+                if tc_delta.function:
+                    if tc_delta.function.name:
+                        tool_calls_map[idx]["name"] = tc_delta.function.name
+                    if tc_delta.function.arguments:
+                        tool_calls_map[idx]["arguments"] += tc_delta.function.arguments
+
+    full_content = "".join(collected_content)
+    reasoning_content = "".join(collected_reasoning) if collected_reasoning else None
+    return full_content, reasoning_content, tool_calls_map, usage_info
+
+
+def _stream_response(client, call_kwargs, tools_schemas):
+    """Open a streaming completion and fully consume it.
+
+    Returns ``(full_content, reasoning_content, tool_calls_map, usage_info)``.
+    """
+    if tools_schemas:
+        logger.debug(f"Calling API (streaming) with {len(tools_schemas)} tools")
+        stream = client.chat.completions.create(
+            **call_kwargs,
+            tools=tools_schemas,
+            tool_choice="auto",
+        )
+    else:
+        logger.debug("Calling API (streaming) without tools")
+        stream = client.chat.completions.create(**call_kwargs)
+
+    return _consume_stream(stream)
+
+
 def _is_mcp_tool(tool_name: str) -> bool:
     """Check if a tool name is an MCP tool (has service_ prefix)."""
     # MCP tools are prefixed with their service name
@@ -290,65 +359,16 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
         call_kwargs["stream"] = True
         call_kwargs["stream_options"] = {"include_usage": True}
 
-        if tools_schemas:
-            logger.debug(f"Calling API (streaming) with {len(tools_schemas)} tools")
-            stream = client.chat.completions.create(
-                **call_kwargs,
-                tools=tools_schemas,
-                tool_choice="auto",
-            )
-        else:
-            logger.debug("Calling API (streaming) without tools")
-            stream = client.chat.completions.create(**call_kwargs)
-
-        # Accumulators for the streamed response
-        collected_content: List[str] = []
-        collected_reasoning: List[str] = []
-        tool_calls_map: Dict[int, Dict[str, str]] = {}  # index -> {id, name, arguments}
-        usage_info = None
-
-        for chunk in stream:
-            # Usage stats arrive in the final chunk when include_usage is set
-            if hasattr(chunk, "usage") and chunk.usage:
-                usage_info = chunk.usage
-
-            if not chunk.choices:
-                continue
-
-            delta = chunk.choices[0].delta
-
-            # Collect reasoning / thinking content (DeepSeek R1, OpenAI o1/o3, …)
-            for attr in ("reasoning_content", "reasoning"):
-                val = getattr(delta, attr, None)
-                if val:
-                    collected_reasoning.append(val)
-                    break
-
-            # Accumulate main content silently
-            if delta.content:
-                collected_content.append(delta.content)
-
-            # Accumulate tool-call deltas (split across many chunks)
-            if hasattr(delta, "tool_calls") and delta.tool_calls:
-                for tc_delta in delta.tool_calls:
-                    idx = tc_delta.index
-                    if idx not in tool_calls_map:
-                        tool_calls_map[idx] = {"id": "", "name": "", "arguments": ""}
-                    if tc_delta.id:
-                        tool_calls_map[idx]["id"] = tc_delta.id
-                    if tc_delta.function:
-                        if tc_delta.function.name:
-                            tool_calls_map[idx]["name"] = tc_delta.function.name
-                        if tc_delta.function.arguments:
-                            tool_calls_map[idx]["arguments"] += tc_delta.function.arguments
-
-        # Assemble the full response from streamed chunks
-        full_content = "".join(collected_content)
+        # Consume the full stream under a progress bar. The blocking work
+        # (connection setup + full response generation) runs in a worker thread
+        # via _run_with_progress_bar while the main thread drives the spinner,
+        # mirroring the pre-streaming behaviour where the spinner covered the
+        # entire request.
+        full_content, reasoning_content, tool_calls_map, usage_info = _run_with_progress_bar(
+            _stream_response, client, call_kwargs, tools_schemas
+        )
 
         logger.debug("API streaming response completed")
-
-        # Display reasoning content in a styled thinking block (before main content)
-        reasoning_content = "".join(collected_reasoning) if collected_reasoning else None
         if reasoning_content:
             from rich.panel import Panel
             from rich.text import Text
