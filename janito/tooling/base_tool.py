@@ -6,10 +6,13 @@ This module provides a base class that tools can inherit from to get automatic
 progress reporting capabilities and permission awareness.
 """
 
-import sys
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
 
+from rich.console import Console
+
+# Shared console for stderr output (no auto-highlighting or markup interpretation)
+_console = Console(stderr=True, highlight=False, markup=False)
 
 
 class BaseTool(ABC):
@@ -73,23 +76,22 @@ class BaseTool(ABC):
             message (str): The message to display
             end (str): String appended after the message (default: "\n")
         """
-        # Get permission-based color for start messages only
+        # Get permission-based style for start messages only
         permissions = getattr(self, '_tool_permissions', "")
         if not permissions:
-            color = "\033[36m"  # Cyan for no permissions (default)
+            style = "cyan"  # Cyan for no permissions (default)
         elif "x" in permissions:
-            color = "\033[33m"  # Yellow for execute
+            style = "yellow"  # Yellow for execute
         elif "w" in permissions:
-            color = "\033[33m"  # Yellow for write (same as execute)
+            style = "yellow"  # Yellow for write (same as execute)
         elif "r" in permissions:
-            color = "\033[32m"  # Green for read-only (safe)
+            style = "green"  # Green for read-only (safe)
         else:
-            color = "\033[36m"  # Cyan as fallback
+            style = "cyan"  # Cyan as fallback
         
-        reset_color = "\033[0m"
         # we put a space before the message to differentiate tool msgs from llm msgs
-        colored_message = f" {color}{message}{reset_color}"
-        print(colored_message, file=sys.stderr, end=end, flush=True)
+        _console.print(f" {message}", style=style, end=end)
+        _console.file.flush()
     
     def report_progress(self, message: str, end: str = "\n") -> None:
         """
@@ -99,7 +101,8 @@ class BaseTool(ABC):
             message (str): The progress message to display
             end (str): String appended after the message (default: "\n")
         """
-        print(f"{message}", file=sys.stderr, end=end, flush=True)
+        _console.print(f"{message}", end=end)
+        _console.file.flush()
     
     def report_result(self, message: str, end: str = "\n") -> None:
         """
@@ -109,10 +112,8 @@ class BaseTool(ABC):
             message (str): The result message to display
             end (str): String appended after the message (default: "\n")
         """
-        white_color = "\033[37m"
-        reset_color = "\033[0m"
-        colored_message = f"{white_color} ✅ {message}{reset_color}"
-        print(colored_message, file=sys.stderr, end=end, flush=True)
+        _console.print(f" \u2705 {message}", style="white", end=end)
+        _console.file.flush()
     
     def report_error(self, message: str, end: str = "\n") -> None:
         """
@@ -122,7 +123,8 @@ class BaseTool(ABC):
             message (str): The error message to display
             end (str): String appended after the message (default: "\n")
         """
-        print(f"❌ {message}", file=sys.stderr, end=end, flush=True)
+        _console.print(f"\u274c {message}", style="red", end=end)
+        _console.file.flush()
     
     def report_warning(self, message: str, end: str = "\n") -> None:
         """
@@ -132,26 +134,27 @@ class BaseTool(ABC):
             message (str): The warning message to display
             end (str): String appended after the message (default: "\n")
         """
-        print(f"⚠️{message}", file=sys.stderr, end=end, flush=True)
+        _console.print(f"\u26a0\ufe0f{message}", style="yellow", end=end)
+        _console.file.flush()
     
     def _get_permission_color(self) -> str:
         """
-        Get ANSI color code based on tool permissions.
+        Get rich style name based on tool permissions.
         
         Returns:
-            str: ANSI color escape sequence
+            str: Rich style name
         """
         permissions = getattr(self, '_tool_permissions', "")
         if not permissions:
-            return "\033[36m"  # Cyan for no permissions (default)
+            return "cyan"  # Cyan for no permissions (default)
         elif "x" in permissions:
-            return "\033[31m"  # Red for execute (dangerous)
+            return "red"  # Red for execute (dangerous)
         elif "w" in permissions:
-            return "\033[33m"  # Orange for write
+            return "yellow"  # Yellow for write
         elif "r" in permissions:
-            return "\033[32m"  # Green for read-only (safe)
+            return "green"  # Green for read-only (safe)
         else:
-            return "\033[36m"  # Cyan as fallback
+            return "cyan"  # Cyan as fallback
     
     def _report_with_permissions(self, message: str, end: str, report_type: str) -> None:
         """
@@ -162,11 +165,9 @@ class BaseTool(ABC):
             end (str): String appended after the message
             report_type (str): Type of report ("start", "progress", "result")
         """
-        color = self._get_permission_color()
-        reset_color = "\033[0m"
         if report_type == "result":
-            white_color = "\033[37m"
-            colored_message = f"{white_color}{message}{reset_color}"
+            style = "white"
         else:
-            colored_message = f"{color}{message}{reset_color}"
-        print(colored_message, file=sys.stderr, end=end, flush=True)
+            style = self._get_permission_color()
+        _console.print(message, style=style, end=end)
+        _console.file.flush()

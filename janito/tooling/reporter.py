@@ -6,18 +6,20 @@ This module provides progress reporting functions that can be used
 by any code that needs to report progress to the user, including MCP tools.
 """
 
-import sys
-from typing import Optional
+from rich.console import Console
+
+# Shared console for stderr output (no auto-highlighting or markup interpretation)
+_console = Console(stderr=True, highlight=False, markup=False)
 
 
-# ANSI color codes
+# Rich style names (replaces raw ANSI escape codes)
 class Colors:
-    CYAN = "\033[36m"
-    GREEN = "\033[32m"
-    YELLOW = "\033[33m"
-    RED = "\033[31m"
-    WHITE = "\033[37m"
-    RESET = "\033[0m"
+    CYAN = "cyan"
+    GREEN = "green"
+    YELLOW = "yellow"
+    RED = "red"
+    WHITE = "white"
+    RESET = ""
 
 
 def report_start(message: str, end: str = "\n", color: str = Colors.CYAN) -> None:
@@ -27,10 +29,10 @@ def report_start(message: str, end: str = "\n", color: str = Colors.CYAN) -> Non
     Args:
         message: The message to display
         end: String appended after the message (default: "\n")
-        color: The color to use (default: CYAN)
+        color: The rich style to use (default: CYAN)
     """
-    colored_message = f" {color}🔄 {message}{Colors.RESET}"
-    print(colored_message, file=sys.stderr, end=end, flush=True)
+    _console.print(f" \U0001f504 {message}", style=color, end=end)
+    _console.file.flush()
 
 
 def report_progress(message: str, end: str = "\n") -> None:
@@ -41,7 +43,8 @@ def report_progress(message: str, end: str = "\n") -> None:
         message: The progress message to display
         end: String appended after the message (default: "\n")
     """
-    print(f"{message}", file=sys.stderr, end=end, flush=True)
+    _console.print(f"{message}", end=end)
+    _console.file.flush()
 
 
 def report_result(message: str, end: str = "\n") -> None:
@@ -52,8 +55,8 @@ def report_result(message: str, end: str = "\n") -> None:
         message: The result message to display
         end: String appended after the message (default: "\n")
     """
-    colored_message = f"{Colors.WHITE} ✅ {message}{Colors.RESET}"
-    print(colored_message, file=sys.stderr, end=end, flush=True)
+    _console.print(f" \u2705 {message}", style=Colors.WHITE, end=end)
+    _console.file.flush()
 
 
 def report_error(message: str, end: str = "\n") -> None:
@@ -64,7 +67,8 @@ def report_error(message: str, end: str = "\n") -> None:
         message: The error message to display
         end: String appended after the message (default: "\n")
     """
-    print(f"❌ {message}", file=sys.stderr, end=end, flush=True)
+    _console.print(f"\u274c {message}", style=Colors.RED, end=end)
+    _console.file.flush()
 
 
 def report_warning(message: str, end: str = "\n") -> None:
@@ -75,7 +79,8 @@ def report_warning(message: str, end: str = "\n") -> None:
         message: The warning message to display
         end: String appended after the message (default: "\n")
     """
-    print(f"⚠️  {message}", file=sys.stderr, end=end, flush=True)
+    _console.print(f"\u26a0\ufe0f  {message}", style=Colors.YELLOW, end=end)
+    _console.file.flush()
 
 
 def report_info(message: str, end: str = "\n") -> None:
@@ -86,4 +91,5 @@ def report_info(message: str, end: str = "\n") -> None:
         message: The info message to display
         end: String appended after the message (default: "\n")
     """
-    print(f"{Colors.CYAN}ℹ️  {message}{Colors.RESET}", file=sys.stderr, end=end, flush=True)
+    _console.print(f"\u2139\ufe0f  {message}", style=Colors.CYAN, end=end)
+    _console.file.flush()

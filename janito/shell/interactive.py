@@ -2,8 +2,13 @@
 Interactive shell implementation using prompt_toolkit.
 """
 
+import os
 from pathlib import Path
 from typing import List, Dict, Any, Callable, Optional, TYPE_CHECKING
+
+from rich.console import Console
+
+_rich_console = Console(markup=False)
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.history import FileHistory, InMemoryHistory
@@ -235,8 +240,8 @@ class InteractiveShell:
                 # drop the system prompt and leave an empty history.
                 self.initialize_history(system_prompt=self._system_prompt)
                 # Clear screen before printing the message
-                print('\033[2J\033[H', end='')
-                print("[Keybinding F2] Conversation history cleared. Starting fresh conversation.")
+                os.system('cls' if os.name == 'nt' else 'clear')
+                _rich_console.print("[Keybinding F2] Conversation history cleared. Starting fresh conversation.", style="bold white on green")
                 continue
             
             if user_input.lower() == 'restart':
@@ -244,7 +249,7 @@ class InteractiveShell:
                 # prompt (matches startup behaviour). A plain .clear() would
                 # drop the system prompt and leave an empty history.
                 self.initialize_history(system_prompt=self._system_prompt)
-                print("Conversation history cleared. Starting fresh conversation.")
+                _rich_console.print("Conversation history cleared. Starting fresh conversation.", style="bold white on green")
                 continue
             
             # Handle registered commands
