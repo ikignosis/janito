@@ -186,10 +186,10 @@ def handle_show_system_prompt(args) -> int:
     """
     from ...system_prompt import (
         SYSTEM_PROMPT,
-        GMAIL_SYSTEM_PROMPT,
-        ONEDRIVE_SYSTEM_PROMPT,
         get_system_prompt_with_skills,
     )
+    from ...tools.gmail import GMAIL_SYSTEM_PROMPT
+    from ...tools.onedrive import ONEDRIVE_SYSTEM_PROMPT
 
     if args.system_prompt:
         prompt = args.system_prompt

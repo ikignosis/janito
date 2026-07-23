@@ -4,7 +4,9 @@ CLI chat execution modes: interactive and single prompt.
 
 import os
 
-from ..system_prompt import SYSTEM_PROMPT, GMAIL_SYSTEM_PROMPT, ONEDRIVE_SYSTEM_PROMPT, get_system_prompt_with_skills
+from ..system_prompt import SYSTEM_PROMPT, get_system_prompt_with_skills
+from ..tools.gmail import GMAIL_SYSTEM_PROMPT
+from ..tools.onedrive import ONEDRIVE_SYSTEM_PROMPT
 from ..openai_client import send_prompt
 from ..shell import InteractiveShell
 
