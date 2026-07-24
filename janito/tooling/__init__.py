@@ -13,10 +13,13 @@ from .path_utils import norm_path
 from .reporter import (
     report_start,
     report_progress,
+    report_output,
     report_result,
     report_error,
     report_warning,
     report_info,
+    set_report_handler,
+    get_report_handler,
 )
 
 # Note: tools_registry is not imported here to avoid circular imports
@@ -27,8 +30,11 @@ __all__ = [
     "norm_path",
     "report_start",
     "report_progress",
+    "report_output",
     "report_result",
     "report_error",
     "report_warning",
     "report_info",
+    "set_report_handler",
+    "get_report_handler",
 ]

@@ -199,13 +199,13 @@ class RunPythonFile(BaseTool):
                         if stream_name == 'stdout':
                             if not displayed_any_output:
                                 displayed_any_output = True
-                            print(line)
+                            self.report_output(line)
                         elif stream_name == 'stderr':
                             if not displayed_any_output:
                                 displayed_any_output = True
-                            print(line, file=sys.stderr)
+                            self.report_output(line)
                         elif stream_name == 'error':
-                            print(f"STREAM ERROR: {line}", file=sys.stderr)
+                            self.report_output(f"STREAM ERROR: {line}")
                 except queue.Empty:
                     pass
                 
@@ -235,11 +235,11 @@ class RunPythonFile(BaseTool):
                     if stream_name == 'stdout':
                         if not displayed_any_output:
                             displayed_any_output = True
-                        print(line)
+                        self.report_output(line)
                     elif stream_name == 'stderr':
                         if not displayed_any_output:
                             displayed_any_output = True
-                        print(line, file=sys.stderr)
+                        self.report_output(line)
             except queue.Empty:
                 pass
             

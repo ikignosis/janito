@@ -336,16 +336,16 @@ class RunBashCode(BaseTool):
                         stream_name, line = output_queue.get_nowait()
                         if stream_name == 'stdout':
                             if not displayed_any_output:
-                                print()  # Add newline after the initial message
+                                self.report_output("")  # Add newline after the initial message
                                 displayed_any_output = True
-                            print(line)
+                            self.report_output(line)
                         elif stream_name == 'stderr':
                             if not displayed_any_output:
-                                print()  # Add newline after the initial message
+                                self.report_output("")  # Add newline after the initial message
                                 displayed_any_output = True
-                            print(line, file=sys.stderr)
+                            self.report_output(line)
                         elif stream_name == 'error':
-                            print(f"STREAM ERROR: {line}", file=sys.stderr)
+                            self.report_output(f"STREAM ERROR: {line}")
                 except queue.Empty:
                     pass
 
@@ -374,14 +374,14 @@ class RunBashCode(BaseTool):
                     stream_name, line = output_queue.get_nowait()
                     if stream_name == 'stdout':
                         if not displayed_any_output:
-                            print()
+                            self.report_output("")
                             displayed_any_output = True
-                        print(line)
+                        self.report_output(line)
                     elif stream_name == 'stderr':
                         if not displayed_any_output:
-                            print()
+                            self.report_output("")
                             displayed_any_output = True
-                        print(f"{line}", file=sys.stderr)
+                        self.report_output(f"{line}")
             except queue.Empty:
                 pass
 

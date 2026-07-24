@@ -309,7 +309,35 @@ Note: --set and --set-api-key must be used in separate commands.
         action="store_true",
         help="Display the resolved system prompt and exit"
     )
-    
+
+    # --- Web UI options ---
+    parser.add_argument(
+        "--web",
+        action="store_true",
+        help="Start the web UI server instead of the terminal chat"
+    )
+
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8080,
+        metavar="PORT",
+        help="Port for the web server (default: 8080, used with --web)"
+    )
+
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        metavar="HOST",
+        help="Bind address for the web server (default: 127.0.0.1, used with --web)"
+    )
+
+    parser.add_argument(
+        "--no-open",
+        action="store_true",
+        help="Don't automatically open the browser (used with --web)"
+    )
+
     return parser
 
 

@@ -205,7 +205,27 @@ def main():
     
     # Validate required configuration
     validate_required_config()
-    
+
+    # Web mode: skip stdin check — the server doesn't consume stdin.
+    # Must come BEFORE read_stdin_prompt() to avoid blocking on non-tty
+    # stdin in headless / service contexts.
+    if args.web:
+        try:
+            from .web.backend.app import run_web
+        except ImportError as e:
+            # The [web] extra (fastapi / uvicorn) is not installed.
+            # Fail with an actionable message instead of a raw traceback.
+            import sys as _sys
+            print("Error: the web UI requires optional dependencies that "
+                  "are not installed.", file=_sys.stderr)
+            print("Install them with:\n\n    pip install janito[web]\n",
+                  file=_sys.stderr)
+            print(f"(missing module: {getattr(e, 'name', e)})",
+                  file=_sys.stderr)
+            _sys.exit(1)
+        run_web(args)
+        return
+
     # Check for stdin input
     stdin_prompt = read_stdin_prompt()
     if stdin_prompt:

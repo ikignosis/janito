@@ -1,5 +1,8 @@
 moonshot_env.txt
 
+# Agent workspace
+.agents/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

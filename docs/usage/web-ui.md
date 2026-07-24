@@ -1,0 +1,213 @@
+# Janito Web UI
+
+A browser-based chat interface for Janito that exposes the full agentic
+tool-calling experience — streaming responses, tool execution, MCP services,
+and skills — through any modern web browser.
+
+The web server reuses ~80% of the existing Janito Python codebase. The one
+critical new piece is a **headless agentic loop** (`janito/web/backend/agent.py`)
+that yields structured events instead of printing to a terminal.
+
+---
+
+## Installation
+
+The web UI requires optional dependencies (FastAPI + Uvicorn) that are **not**
+part of the core install, keeping `janito` itself dependency-light:
+
+```bash
+pip install janito[web]
+```
+
+If you run `janito --web` without the `[web]` extra installed, you'll get a
+clear error message instead of a traceback:
+
+```
+Error: the web UI requires optional dependencies that are not installed.
+Install them with:
+
+    pip install janito[web]
+```
+
+---
+
+## Quick Start
+
+```bash
+# Basic web server (opens your browser automatically)
+janito --web
+
+# Full-featured: read+write privileges, gmail tools, thinking mode, specific model
+janito --web -r -w --gmail -t --model gpt-4o
+
+# Custom provider + endpoint
+janito --web --provider custom --endpoint https://api.example.com/v1
+
+# Restricted: read-only, no system prompt, no tools, custom port
+janito --web -r -Z --port 9090
+
+# Don't auto-open the browser (headless / SSH sessions)
+janito --web --no-open
+```
+
+The server prints the URL it's listening on, then opens your default browser
+(unless `--no-open` is passed). Press `Ctrl+C` to stop.
+
+---
+
+## CLI Options
+
+`--web` inherits **all** existing Janito CLI options as runtime configuration:
+
+| Flag | Effect on the web server |
+|---|---|
+| `--web` | Start the web UI instead of the terminal chat |
+| `--port PORT` | Bind port (default `8080`) |
+| `--host HOST` | Bind address (default `127.0.0.1` — localhost only) |
+| `--no-open` | Don't auto-open the browser |
+| `-r` / `-w` / `-x` | Privileges (READ / WRITE / EXEC), enforced exactly like the CLI |
+| `--provider` | Provider name (resolved into env before dispatch) |
+| `--model` | Model name (resolved into env before dispatch) |
+| `--endpoint` | Custom API endpoint |
+| `--gmail` | Enable Gmail toolset + email system prompt |
+| `--onedrive` | Enable OneDrive toolset + file system prompt |
+| `-t, --thinking` | Enable thinking/reasoning mode for all sessions |
+| `-S "prompt"` | Override system prompt (implies no tools) |
+| `-Z, --no-system-prompt` | No system prompt, no tools |
+| `-v, --verbose` | Verbose backend logging |
+| `--no-history` | Don't persist session history to disk |
+
+---
+
+## Features
+
+- **Streaming text** — tokens appear in real time over WebSocket
+- **Reasoning / thinking panel** — collapsible `💭 Reasoning` section
+- **Tool call cards** — tool name, arguments, permission badge
+  (🟢 read / 🟡 write / 🔴 exec), live spinner, result preview, execution time
+- **Live tool output** — `report_*()` calls and subprocess stdout/stderr stream
+  into the tool card in real time (rendered in a monospace block)
+- **Token usage bar** — total / in / out / cached after each turn
+- **Markdown rendering** — with syntax-highlighted code blocks
+- **Session management** — sidebar with conversation list, new chat, delete, rename
+- **Settings drawer** — change model / thinking / verbose at runtime (PATCH)
+- **MCP dashboard** — see connected services, connect/disconnect
+- **Status bar** — model, provider, active CLI flags, connection state, tokens
+- **Keyboard shortcuts** — Enter to send, Shift+Enter for newline
+
+---
+
+## Security
+
+- **Localhost-only by default.** The server binds to `127.0.0.1`. Only bind to
+  a public address (`--host 0.0.0.0`) if you understand the risks — Janito tools
+  can read/write files and execute code.
+- **Privileges are enforced.** Tools are filtered by `-r/-w/-x` exactly as in the
+  CLI. With no privilege flags, all tools are available (matching CLI behaviour).
+- **Optional bearer-token auth.** Set the `JANITO_WEB_TOKEN` environment variable
+  to require a token on all `/api` requests:
+
+  ```bash
+  export JANITO_WEB_TOKEN=my-secret-token
+  janito --web --host 0.0.0.0
+  ```
+
+  The token is sent via `Authorization: Bearer <token>` (REST) or
+  `?token=<token>` (WebSocket).
+
+---
+
+## Architecture
+
+```
+janito --web [options]
+   │
+   ▼  (existing __main__.py pipeline — unchanged)
+   parse → logging → privileges → env setup → api key → validate
+   │
+   ▼  if args.web: run_web(args)        ← new dispatch point
+janito/web/backend/
+   config.py     WebServerConfig (built from argparse)
+   app.py        create_app(config) + run_web(args)  [FastAPI + uvicorn]
+   agent.py      stream_prompt() — async event generator (headless agentic loop)
+   events.py     TokenEvent, ToolCallEvent, ToolProgressEvent, …
+   session.py    ConversationSession + SessionManager
+   security.py   Token auth middleware + CORS
+   routers/
+     chat.py     WS /api/chat/ws/{session} + REST session CRUD + SSE
+     config.py   GET/PATCH /api/config, /status, /providers, /cli
+     tools.py    GET /api/tools, /skipped, POST /toolsets/{name}
+     mcp.py      GET/POST /api/mcp/services/*
+   │
+   ▼  reuses (unchanged)
+openai_client • tooling/* • tools/* • mcp_manager • general_config • …
+
+janito/web/frontend/   (Alpine.js — no build step)
+   index.html • css/theme.css • js/{app,chat,websocket,sessions,
+   settings,mcp,statusBar,markdown,api}.js
+```
+
+### API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/health` | Health check |
+| `POST` | `/api/chat/sessions` | Create a session |
+| `GET` | `/api/chat/sessions` | List sessions |
+| `GET` | `/api/chat/sessions/{id}` | Get session history |
+| `PATCH` | `/api/chat/sessions/{id}` | Rename a session |
+| `DELETE` | `/api/chat/sessions/{id}` | Delete a session |
+| `WS` | `/api/chat/ws/{id}` | Bidirectional streaming chat |
+| `POST` | `/api/chat/prompt` | One-shot SSE streaming |
+| `GET` | `/api/config` | Runtime config |
+| `PATCH` | `/api/config` | Update mutable config |
+| `GET` | `/api/config/providers` | Supported providers |
+| `GET` | `/api/config/status` | API key status, provider, privileges |
+| `GET` | `/api/config/cli` | CLI args the server started with |
+| `GET` | `/api/tools` | Loaded tools + schemas + permissions |
+| `GET` | `/api/tools/skipped` | Skipped tools + reasons |
+| `POST` | `/api/tools/toolsets/{name}` | Add a toolset |
+| `GET` | `/api/mcp/services` | MCP services + status |
+| `POST` | `/api/mcp/services/{name}/connect` | Connect a service |
+| `POST` | `/api/mcp/services/{name}/disconnect` | Disconnect a service |
+| `GET` | `/api/mcp/tools` | All MCP tools |
+
+### WebSocket Protocol
+
+```
+Client → Server:  {"type": "prompt", "content": "list files"}
+Server → Client:  {"type": "waiting", "phase": "initial"}
+Server → Client:  {"type": "token", "content": "Here"}
+Server → Client:  {"type": "reasoning", "content": "Let me check..."}
+Server → Client:  {"type": "tool_call", "id": "tc_1", "name": "ListFiles", "args": {...}, "permissions": "r"}
+Server → Client:  {"type": "tool_progress", "id": "tc_1", "level": "start", "message": "📁 Listing..."}
+Server → Client:  {"type": "tool_result", "id": "tc_1", "name": "ListFiles", "result": "..."}
+Server → Client:  {"type": "usage", "total": 1234, "input": 1000, "output": 234}
+Server → Client:  {"type": "done", "content": "Here are the files..."}
+Server → Client:  {"type": "error", "message": "API key invalid"}
+```
+
+---
+
+## Frontend
+
+The frontend is **plain HTML + Alpine.js + CSS** with **no build step**. Libraries
+(Alpine.js, marked.js, highlight.js) load from a CDN. FastAPI serves
+`janito/web/frontend/` directly via `StaticFiles`, so `pip install janito[web]`
+makes the UI work immediately — no `npm`, no bundler.
+
+> To run fully offline, vendor the CDN libraries into
+> `frontend/js/vendor/` and update the `<script>` tags in `index.html`.
+
+---
+
+## Development
+
+Run the server in development:
+
+```bash
+janito --web --no-open -v
+```
+
+The frontend is served live from source — edit files under
+`janito/web/frontend/` and refresh the browser (no rebuild needed).

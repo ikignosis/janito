@@ -4,15 +4,22 @@ Base Tool Class - A foundation for AI tools with built-in progress reporting.
 
 This module provides a base class that tools can inherit from to get automatic
 progress reporting capabilities and permission awareness.
+
+The report_*() methods delegate to the module-level reporter functions so that
+a context-variable-based report handler (set in web mode) can intercept output.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
-from rich.console import Console
-
-# Shared console for stderr output (no auto-highlighting or markup interpretation)
-_console = Console(stderr=True, highlight=False, markup=False)
+from .reporter import (
+    report_start as _report_start,
+    report_progress as _report_progress,
+    report_output as _report_output,
+    report_result as _report_result,
+    report_error as _report_error,
+    report_warning as _report_warning,
+)
 
 
 class BaseTool(ABC):
@@ -67,80 +74,95 @@ class BaseTool(ABC):
             Dict[str, Any]: Tool result dictionary
         """
         pass
-    
+
+    def _get_start_style(self) -> str:
+        """Compute the rich style for start messages based on permissions."""
+        permissions = getattr(self, '_tool_permissions', "")
+        if not permissions:
+            return "cyan"  # Cyan for no permissions (default)
+        elif "x" in permissions:
+            return "yellow"  # Yellow for execute
+        elif "w" in permissions:
+            return "yellow"  # Yellow for write (same as execute)
+        elif "r" in permissions:
+            return "green"  # Green for read-only (safe)
+        else:
+            return "cyan"  # Cyan as fallback
+
     def report_start(self, message: str, end: str = "\n") -> None:
         """
         Report that the tool operation is starting.
-        
+
+        Delegates to the module-level reporter so a web-mode handler can
+        intercept the message. Uses prefix=" " (space, no emoji) to preserve
+        the existing BaseTool output format — this differentiates tool
+        messages from LLM messages in the CLI.
+
         Args:
             message (str): The message to display
             end (str): String appended after the message (default: "\n")
         """
-        # Get permission-based style for start messages only
-        permissions = getattr(self, '_tool_permissions', "")
-        if not permissions:
-            style = "cyan"  # Cyan for no permissions (default)
-        elif "x" in permissions:
-            style = "yellow"  # Yellow for execute
-        elif "w" in permissions:
-            style = "yellow"  # Yellow for write (same as execute)
-        elif "r" in permissions:
-            style = "green"  # Green for read-only (safe)
-        else:
-            style = "cyan"  # Cyan as fallback
-        
-        # we put a space before the message to differentiate tool msgs from llm msgs
-        _console.print(f" {message}", style=style, end=end)
-        _console.file.flush()
-    
+        style = self._get_start_style()
+        _report_start(message, end=end, color=style, prefix=" ")
+
     def report_progress(self, message: str, end: str = "\n") -> None:
         """
         Report ongoing progress of the tool operation.
-        
+
         Args:
             message (str): The progress message to display
             end (str): String appended after the message (default: "\n")
         """
-        _console.print(f"{message}", end=end)
-        _console.file.flush()
-    
+        _report_progress(message, end=end)
+
+    def report_output(self, message: str, end: str = "\n") -> None:
+        """
+        Report raw command/subprocess output (stdout/stderr lines).
+
+        In CLI mode this prints the line as-is (no emoji, no colour).
+        In web mode it becomes a ToolProgressEvent(level="output") rendered
+        in a monospace terminal block.
+
+        Args:
+            message (str): The output line to display
+            end (str): String appended after the message (default: "\n")
+        """
+        _report_output(message, end=end)
+
     def report_result(self, message: str, end: str = "\n") -> None:
         """
         Report intermediate or final results from the tool operation.
-        
+
         Args:
             message (str): The result message to display
             end (str): String appended after the message (default: "\n")
         """
-        _console.print(f" \u2705 {message}", style="white", end=end)
-        _console.file.flush()
-    
+        _report_result(message, end=end)
+
     def report_error(self, message: str, end: str = "\n") -> None:
         """
         Report an error during tool execution.
-        
+
         Args:
             message (str): The error message to display
             end (str): String appended after the message (default: "\n")
         """
-        _console.print(f"\u274c {message}", style="red", end=end)
-        _console.file.flush()
-    
+        _report_error(message, end=end)
+
     def report_warning(self, message: str, end: str = "\n") -> None:
         """
         Report a warning during tool execution.
-        
+
         Args:
             message (str): The warning message to display
             end (str): String appended after the message (default: "\n")
         """
-        _console.print(f"\u26a0\ufe0f{message}", style="yellow", end=end)
-        _console.file.flush()
-    
+        _report_warning(message, end=end)
+
     def _get_permission_color(self) -> str:
         """
         Get rich style name based on tool permissions.
-        
+
         Returns:
             str: Rich style name
         """
@@ -155,19 +177,3 @@ class BaseTool(ABC):
             return "green"  # Green for read-only (safe)
         else:
             return "cyan"  # Cyan as fallback
-    
-    def _report_with_permissions(self, message: str, end: str, report_type: str) -> None:
-        """
-        Internal method to report messages with permission-based coloring.
-        
-        Args:
-            message (str): The message to display
-            end (str): String appended after the message
-            report_type (str): Type of report ("start", "progress", "result")
-        """
-        if report_type == "result":
-            style = "white"
-        else:
-            style = self._get_permission_color()
-        _console.print(message, style=style, end=end)
-        _console.file.flush()

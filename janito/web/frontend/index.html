@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Janito Web</title>
+
+    <!-- Theme -->
+    <link rel="stylesheet" href="/css/theme.css">
+    <!-- highlight.js theme -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/styles/tokyo-night-dark.min.css">
+
+    <!-- Libraries (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/highlight.min.js"></script>
+
+    <!-- Alpine.js (must be deferred so components are defined first) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+
+    <!-- App scripts (order matters: helpers first) -->
+    <script src="/js/api.js"></script>
+    <script src="/js/markdown.js"></script>
+    <script src="/js/websocket.js"></script>
+    <script src="/js/chat.js"></script>
+    <script src="/js/sessions.js"></script>
+    <script src="/js/settings.js"></script>
+    <script src="/js/mcp.js"></script>
+    <script src="/js/statusBar.js"></script>
+    <script src="/js/app.js"></script>
+
+    <style>
+        .inline-icon { cursor: pointer; }
+        .tool-args-toggle, .tool-result-toggle {
+            font-size: 11px; color: var(--text-muted); cursor: pointer;
+            text-transform: uppercase; margin-top: 8px; user-select: none;
+        }
+        .tool-args-toggle:hover, .tool-result-toggle:hover { color: var(--accent); }
+    </style>
+</head>
+<body>
+
+<div class="app-layout" x-data="appComponent()" x-cloak>
+
+    <!-- ============ Sidebar (sessions) ============ -->
+    <aside class="sidebar" x-show="sidebarOpen"
+           x-data="sessionsComponent()" x-ref="sessions">
+        <div class="sidebar-header">
+            <span class="sidebar-title">⚡ Janito</span>
+            <button class="btn btn-icon" @click="create()" title="New conversation">＋</button>
+        </div>
+
+        <div class="session-list">
+            <template x-if="loading">
+                <div class="empty-state" style="padding:20px">Loading…</div>
+            </template>
+            <template x-for="s in sessions" :key="s.session_id">
+                <div class="session-item"
+                     :class="{ active: s.session_id === activeId }"
+                     @click="select(s.session_id)">
+                    <span class="title" x-text="s.title || 'New conversation'"></span>
+                    <button class="delete" @click="remove(s.session_id, $event)" title="Delete">✕</button>
+                </div>
+            </template>
+            <template x-if="!loading && sessions.length === 0">
+                <div class="empty-state" style="padding:20px;font-size:12px">No conversations yet</div>
+            </template>
+        </div>
+
+        <div class="sidebar-footer">
+            <button class="btn" style="flex:1" @click="create()">New Chat</button>
+        </div>
+    </aside>
+
+    <!-- ============ Main content ============ -->
+    <div class="main-content"
+         x-data="chatComponent()" x-ref="chat">
+
+        <!-- Top bar -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <button class="btn btn-icon" @click="$root.toggleSidebar()" title="Toggle sidebar">☰</button>
+                <span class="topbar-title">Janito Web</span>
+            </div>
+            <div class="topbar-actions">
+                <button class="btn" @click="$root.toggleMcp()" title="MCP services">🔌 MCP</button>
+                <button class="btn" @click="$root.toggleSettings()" title="Settings">⚙ Settings</button>
+            </div>
+        </div>
+
+        <!-- Chat area -->
+        <div class="chat-area" x-ref="chatArea">
+            <div class="chat-inner">
+
+                <!-- Empty state -->
+                <template x-if="messages.length === 0">
+                    <div class="empty-state">
+                        <h2>⚡ Janito Web</h2>
+                        <p>Start a conversation below. Streaming responses, tool calls, and MCP services are all live.</p>
+                    </div>
+                </template>
+
+                <!-- Messages -->
+                <template x-for="(msg, idx) in messages" :key="idx">
+                    <div class="message" :class="msg.role">
+                        <div class="avatar" :class="msg.role"
+                             x-text="msg.role === 'user' ? 'U' : '⚡'"></div>
+                        <div class="message-body">
+
+                            <!-- Reasoning panel -->
+                            <template x-if="msg.reasoning">
+                                <div class="reasoning-panel">
+                                    <div class="reasoning-header" @click="msg.reasoningOpen = !msg.reasoningOpen">
+                                        <span x-text="msg.reasoningOpen ? '▼' : '▶'"></span>
+                                        💭 Reasoning
+                                    </div>
+                                    <div class="reasoning-body" x-show="msg.reasoningOpen" x-text="msg.reasoning"></div>
+                                </div>
+                            </template>
+
+                            <!-- Tool call cards (interleaved with text) -->
+                            <template x-for="tc in msg.toolCalls" :key="tc.id">
+                                <div class="tool-card">
+                                    <div class="tool-card-header" @click="tc.open = !tc.open">
+                                        <span x-text="tc.open ? '▼' : '▶'" style="color:var(--text-muted)"></span>
+                                        <span class="tool-name" x-text="tc.name"></span>
+                                        <template x-if="permLabel(tc.permissions)">
+                                            <span class="perm-badge" :class="permClass(tc.permissions)"
+                                                  x-text="permLabel(tc.permissions)"></span>
+                                        </template>
+                                        <span class="tool-status" :class="tc.status">
+                                            <template x-if="tc.status === 'running'">
+                                                <span><span class="spinner"></span> Running</span>
+                                            </template>
+                                            <template x-if="tc.status === 'done'">
+                                                <span>✅ Done<template x-if="tc.execution_time_ms"> · <span x-text="tc.execution_time_ms + 'ms'"></span></template></span>
+                                            </template>
+                                            <template x-if="tc.status === 'error'">
+                                                <span>❌ Error</span>
+                                            </template>
+                                        </span>
+                                    </div>
+
+                                    <div class="tool-card-body" x-show="tc.open">
+                                        <!-- Arguments -->
+                                        <div class="tool-args-toggle" @click.stop="tc.argsOpen = !tc.argsOpen">
+                                            Arguments <span x-text="tc.argsOpen ? '▾' : '▸'"></span>
+                                        </div>
+                                        <template x-if="tc.argsOpen">
+                                            <div class="tool-args" x-text="toolArgsStr(tc.args)"></div>
+                                        </template>
+
+                                        <!-- Live progress / output -->
+                                        <template x-for="(p, pi) in tc.progress" :key="pi">
+                                            <div class="tool-progress" :class="p.level">
+                                                <template x-if="p.level !== 'output'">
+                                                    <span><span class="level-tag" x-text="levelIcon(p.level)"></span> <span x-text="p.message"></span></span>
+                                                </template>
+                                                <template x-if="p.level === 'output'">
+                                                    <span x-text="p.message" style="white-space:pre-wrap"></span>
+                                                </template>
+                                            </div>
+                                        </template>
+
+                                        <!-- Result -->
+                                        <template x-if="tc.result !== null || tc.error">
+                                            <div>
+                                                <div class="tool-result-toggle" @click.stop="tc.resultOpen = !tc.resultOpen">
+                                                    Result <span x-text="tc.resultOpen ? '▾' : '▸'"></span>
+                                                </div>
+                                                <template x-if="tc.resultOpen">
+                                                    <div class="tool-result"
+                                                         :style="tc.error ? 'color:var(--red)' : ''"
+                                                         x-text="tc.error ? tc.error : toolResultStr(tc.result)"></div>
+                                                </template>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- Assistant text (markdown) -->
+                            <template x-if="msg.role === 'assistant' && msg.rawContent">
+                                <div x-html="renderMarkdown(msg.rawContent)"></div>
+                            </template>
+
+                            <!-- User text (plain, escaped via textContent) -->
+                            <template x-if="msg.role === 'user'">
+                                <div x-text="msg.content" style="white-space:pre-wrap"></div>
+                            </template>
+
+                            <!-- Waiting indicator (no content yet) -->
+                            <template x-if="msg.streaming && !msg.rawContent && msg.toolCalls.length === 0 && msg.reasoning === '' && (status === 'waiting')">
+                                <div class="waiting">
+                                    <span class="dot-pulse"><span></span><span></span><span></span></span>
+                                    Thinking…
+                                </div>
+                            </template>
+
+                            <!-- Usage -->
+                            <template x-if="msg.usage">
+                                <div style="margin-top:8px;font-size:11px;color:var(--text-muted)">
+                                    tokens <span x-text="formatTokens(msg.usage.total)"></span>
+                                    · in <span x-text="formatTokens(msg.usage.input)"></span>
+                                    · out <span x-text="formatTokens(msg.usage.output)"></span>
+                                    <template x-if="msg.usage.cached">
+                                        <span>· cached <span x-text="formatTokens(msg.usage.cached)"></span></span>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Global error banner -->
+                <template x-if="error">
+                    <div class="message">
+                        <div class="message-body" style="border:1px solid var(--red);color:var(--red)">
+                            ⚠ <span x-text="error"></span>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Input area -->
+        <div class="input-area">
+            <div class="input-inner">
+                <textarea x-ref="input"
+                          x-model="input"
+                          @keydown="onKeydown($event)"
+                          @input="_autoResize()"
+                          rows="1"
+                          placeholder="Send a message… (Enter to send, Shift+Enter for newline)"></textarea>
+                <button class="btn btn-primary"
+                        @click="sendPrompt()"
+                        :disabled="!input.trim() || status === 'waiting' || status === 'streaming'">
+                    Send
+                </button>
+            </div>
+        </div>
+
+        <!-- Status bar -->
+        <div class="status-bar" x-data="statusBarComponent()">
+            <div class="status-item">
+                <span class="conn-dot" :class="$root.connection"></span>
+                <span x-text="$root.connection"></span>
+            </div>
+            <div class="status-item"><strong>Model:</strong> <span x-text="model"></span></div>
+            <div class="status-item"><strong>Provider:</strong> <span x-text="provider"></span></div>
+
+            <div class="status-item" style="gap:4px">
+                <span class="flag-badge" :class="{ active: config.thinking }">thinking</span>
+                <span class="flag-badge" :class="{ active: config.gmail }">gmail</span>
+                <span class="flag-badge" :class="{ active: config.onedrive }">onedrive</span>
+                <span class="flag-badge" :class="{ active: privileges.read }">read</span>
+                <span class="flag-badge" :class="{ active: privileges.write }">write</span>
+                <span class="flag-badge" :class="{ active: privileges.exec }">exec</span>
+            </div>
+
+            <template x-if="lastUsage">
+                <div class="status-item" style="margin-left:auto">
+                    <strong>Tokens:</strong>
+                    <span x-text="formatTokens(lastUsage.total)"></span>
+                    (in <span x-text="formatTokens(lastUsage.input)"></span> /
+                    out <span x-text="formatTokens(lastUsage.output)"></span>)
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- ============ Settings drawer ============ -->
+    <template x-if="settingsOpen">
+        <div class="drawer-overlay" @click.self="$root.closeDrawers()"
+             x-data="settingsComponent()" x-init="open=true; load()">
+            <div class="drawer">
+                <h2>⚙ Settings</h2>
+
+                <template x-if="message">
+                    <div style="color:var(--yellow);margin-bottom:12px" x-text="message"></div>
+                </template>
+
+                <div class="form-group">
+                    <label>Model</label>
+                    <input type="text" x-model="model" placeholder="e.g. gpt-4o">
+                </div>
+
+                <div class="form-group">
+                    <label>Provider (read-only — set via CLI)</label>
+                    <input type="text" :value="config.provider || status.active_provider || ''" disabled>
+                </div>
+
+                <div class="checkbox-row">
+                    <input type="checkbox" id="thinking" x-model="thinking">
+                    <label for="thinking" style="margin:0">Thinking mode (-t)</label>
+                </div>
+                <div class="checkbox-row">
+                    <input type="checkbox" id="verbose" x-model="verbose">
+                    <label for="verbose" style="margin:0">Verbose logging (-v)</label>
+                </div>
+
+                <div class="form-group">
+                    <label>API Key</label>
+                    <input type="text" :value="status.api_key || ''" disabled>
+                </div>
+
+                <div style="display:flex;gap:8px;margin-top:16px">
+                    <button class="btn btn-primary" @click="save()" :disabled="saving">Save</button>
+                    <button class="btn" @click="$root.closeDrawers()">Close</button>
+                </div>
+
+                <div style="margin-top:24px;font-size:12px;color:var(--text-muted)">
+                    <div><strong>Privileges:</strong>
+                        read <span x-text="config.privileges?.read"></span> ·
+                        write <span x-text="config.privileges?.write"></span> ·
+                        exec <span x-text="config.privileges?.exec"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- ============ MCP drawer ============ -->
+    <template x-if="mcpOpen">
+        <div class="drawer-overlay" @click.self="$root.closeDrawers()"
+             x-data="mcpComponent()" x-init="open=true; load()">
+            <div class="drawer">
+                <h2>🔌 MCP Services</h2>
+
+                <template x-if="message">
+                    <div style="color:var(--yellow);margin-bottom:12px" x-text="message"></div>
+                </template>
+
+                <template x-if="loading">
+                    <div class="empty-state" style="padding:20px">Loading…</div>
+                </template>
+
+                <template x-if="!loading && services.length === 0">
+                    <div class="empty-state" style="padding:20px">
+                        No MCP services configured.<br>
+                        <small>Add services to <code>~/.janito/mcp_services.json</code></small>
+                    </div>
+                </template>
+
+                <template x-for="svc in services" :key="svc.name">
+                    <div class="mcp-service">
+                        <div class="mcp-service-header">
+                            <span class="conn-dot" :class="svc.connected ? 'connected' : 'disconnected'"></span>
+                            <span class="mcp-service-name" x-text="svc.name"></span>
+                            <span style="margin-left:auto;font-size:11px;color:var(--text-muted)"
+                                  x-text="svc.transport"></span>
+                        </div>
+                        <div style="display:flex;gap:8px">
+                            <template x-if="!svc.connected">
+                                <button class="btn" @click="connect(svc.name)" :disabled="busy === svc.name">
+                                    Connect
+                                </button>
+                            </template>
+                            <template x-if="svc.connected">
+                                <button class="btn" @click="disconnect(svc.name)" :disabled="busy === svc.name">
+                                    Disconnect
+                                </button>
+                            </template>
+                            <span style="font-size:12px;color:var(--text-muted);align-self:center"
+                                  x-text="svc.connected ? 'Connected' : 'Disconnected'"></span>
+                        </div>
+                    </div>
+                </template>
+
+                <div style="margin-top:16px">
+                    <button class="btn" @click="$root.closeDrawers()">Close</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+</div>
+
+</body>
+</html>
