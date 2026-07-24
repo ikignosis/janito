@@ -1,5 +1,7 @@
 // WebSocket connection + reconnect logic for the Janito web chat.
 
+const WS_STATES = { 0: 'CONNECTING', 1: 'OPEN', 2: 'CLOSING', 3: 'CLOSED' };
+
 class ChatSocket {
     constructor(sessionId, handlers = {}) {
         this.sessionId = sessionId;
@@ -9,6 +11,7 @@ class ChatSocket {
         this.maxReconnectAttempts = 5;
         this.reconnectDelay = 1000;
         this.manualClose = false;
+        this.pending = [];          // messages queued while CONNECTING
     }
 
     connect() {
@@ -16,46 +19,112 @@ class ChatSocket {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         let url = `${protocol}//${window.location.host}/api/chat/ws/${encodeURIComponent(this.sessionId)}`;
         const token = window.__JANITO_TOKEN__;
+        const hasToken = !!token;
         if (token) {
             url += `?token=${encodeURIComponent(token)}`;
         }
+
+        console.log('[WS] connecting', {
+            session: this.sessionId,
+            url: url.replace(/token=[^&]+/, 'token=***'),
+            hasToken,
+            attempt: this.reconnectAttempts,
+        });
 
         this.ws = new WebSocket(url);
 
         this.ws.onopen = () => {
             this.reconnectAttempts = 0;
+            console.log('[WS] OPEN', { session: this.sessionId });
+            // Flush any messages queued while the socket was CONNECTING.
+            const queued = this.pending;
+            this.pending = [];
+            if (queued.length) {
+                console.log('[WS] flushing queued messages', queued.length);
+            }
+            for (const obj of queued) {
+                this._rawSend(obj);
+            }
             if (this.handlers.onOpen) this.handlers.onOpen();
         };
 
         this.ws.onmessage = (msg) => {
             try {
                 const event = JSON.parse(msg.data);
+                console.log('[WS] <- event', event.type, event);
+                // A "Session not found" error will never resolve by retrying,
+                // so mark the socket as manually closed to stop reconnection.
+                if (event.type === 'error' && /session not found/i.test(event.message || '')) {
+                    console.warn('[WS] session not found on server, will NOT reconnect');
+                    this.manualClose = true;
+                }
                 if (this.handlers.onEvent) this.handlers.onEvent(event);
             } catch (e) {
-                console.error('Failed to parse WS message:', e, msg.data);
+                console.error('[WS] Failed to parse message:', e, msg.data);
             }
         };
 
         this.ws.onclose = (e) => {
+            console.warn('[WS] CLOSE', {
+                session: this.sessionId,
+                code: e.code,
+                reason: e.reason,
+                wasClean: e.wasClean,
+                manualClose: this.manualClose,
+                attempts: this.reconnectAttempts,
+            });
+            if (e.code === 1008) {
+                console.error('[WS] close 1008 = policy violation -> token rejected by server (check JANITO_WEB_TOKEN / window.__JANITO_TOKEN__)');
+            }
             if (this.handlers.onClose) this.handlers.onClose(e);
             if (!this.manualClose && this.reconnectAttempts < this.maxReconnectAttempts) {
                 this.reconnectAttempts++;
                 const delay = this.reconnectDelay * this.reconnectAttempts;
+                console.log('[WS] reconnecting in', delay, 'ms (attempt', this.reconnectAttempts + ')');
                 setTimeout(() => this.connect(), delay);
+            } else {
+                console.error('[WS] giving up reconnecting', {
+                    manualClose: this.manualClose,
+                    attempts: this.reconnectAttempts,
+                    max: this.maxReconnectAttempts,
+                });
             }
         };
 
         this.ws.onerror = (e) => {
-            console.error('WebSocket error:', e);
+            console.error('[WS] ERROR', { session: this.sessionId, event: e });
             if (this.handlers.onError) this.handlers.onError(e);
         };
     }
 
-    send(obj) {
+    _rawSend(obj) {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
             this.ws.send(JSON.stringify(obj));
             return true;
         }
+        console.warn('[WS] _rawSend failed, state =',
+            this.ws ? WS_STATES[this.ws.readyState] : 'no-socket');
+        return false;
+    }
+
+    send(obj) {
+        if (!this.ws) {
+            console.error('[WS] send() called but no socket exists');
+            return false;
+        }
+        const state = this.ws.readyState;
+        console.log('[WS] send()', obj.type, 'state =', WS_STATES[state]);
+        if (state === WebSocket.OPEN) {
+            return this._rawSend(obj);
+        }
+        if (state === WebSocket.CONNECTING) {
+            // Socket exists but the handshake isn't done yet — queue the
+            // message so it's flushed in onopen instead of failing the send.
+            console.log('[WS] socket CONNECTING, queueing message');
+            this.pending.push(obj);
+            return true;
+        }
+        console.error('[WS] send() failed: socket in state', WS_STATES[state]);
         return false;
     }
 
@@ -70,6 +139,7 @@ class ChatSocket {
     close() {
         this.manualClose = true;
         if (this.ws) {
+            console.log('[WS] manual close', { session: this.sessionId });
             this.ws.close();
             this.ws = null;
         }

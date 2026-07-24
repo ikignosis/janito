@@ -5,11 +5,15 @@
 - CORS middleware for development.
 """
 
+import logging
 from typing import Optional
+from urllib.parse import parse_qs
 
 from fastapi import FastAPI, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+
+logger = logging.getLogger(__name__)
 
 
 def add_cors(app: FastAPI) -> None:
@@ -54,22 +58,32 @@ class TokenAuthMiddleware:
                                 request.query_params.get("token")):
                 await self.app(scope, receive, send)
                 return
+            logger.warning("[auth] HTTP 401 Unauthorized: %s %s",
+                           request.method, path)
             response = JSONResponse(
                 {"detail": "Unauthorized"}, status_code=401
             )
             await response(scope, receive, send)
 
         elif scope["type"] == "websocket":
-            # For WebSockets, check the token query param during handshake
+            # For WebSockets, check the token query param during handshake.
+            # The client sends it URL-encoded (encodeURIComponent), so decode
+            # it with parse_qs before comparing.
+            path = scope.get("path", "")
             query_string = scope.get("query_string", b"").decode()
             token = None
-            for part in query_string.split("&"):
-                if part.startswith("token="):
-                    token = part[len("token="):]
+            params = parse_qs(query_string)
+            if "token" in params:
+                token = params["token"][0]
+            logger.warning(
+                "[auth] WS handshake path=%s token_present=%s token_match=%s",
+                path, token is not None, token == self.auth_token,
+            )
             if token == self.auth_token:
                 await self.app(scope, receive, send)
                 return
             # Reject the handshake
+            logger.warning("[auth] WS handshake REJECTED (1008) for %s", path)
             close_message = {"type": "websocket.close", "code": 1008}
             await send(close_message)
         else:

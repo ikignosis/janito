@@ -15,8 +15,23 @@ function sessionsComponent() {
             // Reload when chat.js signals a change (e.g. auto-title, new session)
             window.addEventListener('janito-sessions-refresh', () => this.load());
 
+            // A session vanished on the server (e.g. server restarted) —
+            // re-bootstrap: reload the live session list and pick/create one.
+            window.addEventListener('janito-session-lost', (e) => this._recover(e.detail));
+
             // Self-bootstrap: load sessions and open the most recent (or create new)
             this.$nextTick(() => this.bootstrap());
+        },
+
+        async _recover(lostId) {
+            console.warn('[sessions] recovering from lost session', lostId);
+            if (this.activeId === lostId) this.activeId = null;
+            await this.load();
+            if (this.sessions.length > 0) {
+                this.select(this.sessions[0].session_id);
+            } else {
+                await this.create();
+            }
         },
 
         async bootstrap() {
@@ -66,6 +81,9 @@ function sessionsComponent() {
             try {
                 await Api.deleteSession(id);
                 await this.load();
+                // Tell chat.js to release this session's socket/store, whether
+                // or not it is the currently active tab.
+                window.dispatchEvent(new CustomEvent('janito-session-deleted', { detail: id }));
                 if (this.activeId === id) {
                     this.activeId = null;
                     window.dispatchEvent(new CustomEvent('janito-clear-session'));

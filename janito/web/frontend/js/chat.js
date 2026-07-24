@@ -1,160 +1,270 @@
 // Chat Alpine.js component — messages, streaming, input, tool monitor.
 //
-// UI state machine:
+// Multi-session design
+// --------------------
+// The app supports many open conversations, and a conversation may keep
+// receiving data (tokens, tool calls, tool results) even while the user is
+// looking at a *different* tab. To support that, this component keeps a
+// **persistent store per session**, each with its own live WebSocket:
+//
+//     _sessions[sessionId] = {
+//         id, messages[], status, error, connection,
+//         current,      // the in-flight assistant message (or null)
+//         loaded, loading, dirty
+//     }
+//
+//   * Sockets are created once per session and are NEVER closed just because
+//     the user switched tabs — so a background conversation keeps streaming
+//     and its history keeps growing.
+//   * Every socket event is routed to *its own* session's store via
+//     `_handleEvent(event, store)`, never to shared component state.
+//   * The top-level reactive properties (`messages`, `status`, `connection`,
+//     `error`, `_current`) are merely a **projection of the active session**.
+//     Switching tabs re-points this projection at the chosen session's store.
+//
+// Because `this.messages` references the active store's array, a background
+// session writing to its own store never disturbs the visible tab — and when
+// the user returns, the tab already contains the fully up-to-date conversation.
+//
+// UI state machine (per session):
 //   idle -> [send prompt] -> waiting -> [first token] -> streaming
 //        -> [tool_call] -> tool_running -> [tool_result] -> waiting -> streaming
 //        -> [done] -> idle
 
+// Persistent sockets live OUTSIDE the Alpine component so they are never made
+// reactive (proxying a live WebSocket is undesirable). Keyed by session id.
+const _sessionSockets = new Map();
+
 function chatComponent() {
     return {
-        // Reactive state
-        messages: [],            // UI message objects (see below)
+        // ---- Projection of the ACTIVE session (drives the template) ----
+        messages: [],            // UI message objects for the active session
         input: '',
         status: 'idle',          // idle | waiting | streaming | tool_running
         connection: 'disconnected',  // disconnected | connecting | connected
         error: null,
-        socket: null,
-        config: {},
-        sessionId: null,
+        sessionId: null,         // active session id
+        _current: null,          // active session's in-flight assistant message
 
-        // Track the currently-streaming assistant message
-        _current: null,
+        // ---- Per-session persistent state (reactive) ----
+        _sessions: {},           // id -> store (see header comment)
 
         init() {
-            // Listen for session selection from sessions.js
+            // Session selected / created in the sidebar.
             window.addEventListener('janito-open-session', (e) => {
-                this.connectToSession(e.detail);
+                this.openSession(e.detail);
             });
-            // Listen for session clear (deleted active session)
+            // A session was deleted (release its socket/store unconditionally).
+            window.addEventListener('janito-session-deleted', (e) => {
+                this._releaseSession(e.detail);
+            });
+            // The active session was deleted -> also clear the visible view.
             window.addEventListener('janito-clear-session', () => {
-                if (this.socket) this.socket.close();
-                this.socket = null;
-                this.sessionId = null;
-                this.messages = [];
-                this.status = 'idle';
-                this.connection = 'disconnected';
-                this._broadcastConn();
+                this.clearActive();
             });
         },
 
-        async connectToSession(sessionId) {
-            if (this.socket) this.socket.close();
-            this.sessionId = sessionId;
-            this.messages = [];
-            this.status = 'idle';
-            this.error = null;
-            this.connection = 'connecting';
+        // ---------------------------------------------------------------
+        // Store management
+        // ---------------------------------------------------------------
 
-            // Load existing history
-            try {
-                const session = await Api.getSession(sessionId);
-                this.messages = this._historyToUi(session.messages || []);
-            } catch (e) {
-                console.error('Failed to load session history:', e);
+        // Get (or lazily create) the persistent store for a session.
+        _store(id) {
+            if (!this._sessions[id]) {
+                this._sessions[id] = {
+                    id,
+                    messages: [],
+                    status: 'idle',
+                    error: null,
+                    connection: 'disconnected',
+                    current: null,
+                    loaded: false,     // history fetched from the server yet?
+                    loading: false,    // a history fetch is in flight
+                    dirty: false,      // user already sent a message locally
+                };
             }
+            return this._sessions[id];
+        },
 
-            this.socket = new ChatSocket(sessionId, {
-                onOpen: () => { this.connection = 'connected'; this._broadcastConn(); },
-                onClose: () => {
-                    this.connection = this.socket && this.socket.reconnectAttempts < this.socket.maxReconnectAttempts
-                        ? 'connecting' : 'disconnected';
-                    this._broadcastConn();
-                },
-                onEvent: (event) => this._handleEvent(event),
-            });
-            this.socket.connect();
+        _socket(id) {
+            return _sessionSockets.get(id) || null;
+        },
+
+        // ---------------------------------------------------------------
+        // Tab switching
+        // ---------------------------------------------------------------
+
+        async openSession(id) {
+            console.log('[chat] openSession', id);
+            this.sessionId = id;
+            const store = this._store(id);
+
+            // Project this session's store into the visible state.
+            this.messages = store.messages;
+            this.status = store.status;
+            this.error = store.error;
+            this.connection = store.connection;
+            this._current = store.current;
             this._broadcastConn();
             this._scrollToBottom();
-        },
 
-        _broadcastConn() {
-            window.dispatchEvent(new CustomEvent('janito-connection', { detail: this.connection }));
-        },
-
-        // Convert stored message history into UI message objects
-        _historyToUi(stored) {
-            const ui = [];
-            for (const msg of stored) {
-                if (msg.role === 'system') continue;
-                if (msg.role === 'user') {
-                    ui.push(this._newMessage('user', msg.content));
-                } else if (msg.role === 'assistant') {
-                    const m = this._newMessage('assistant', msg.content || '');
-                    m.rawContent = msg.content || '';
-                    m.reasoning = msg.reasoning_content || '';
-                    m.done = true;
-                    ui.push(m);
-                }
-                // tool messages are not shown standalone in history
+            // Ensure this session has a live socket (created once, reused).
+            if (!this._socket(id)) {
+                console.log('[chat] creating socket for', id);
+                this._createSocket(id);
+            } else {
+                console.log('[chat] reusing existing socket for', id,
+                    'state =', this._socket(id).ws ? this._socket(id).ws.readyState : 'null');
             }
-            return ui;
+
+            // Load history exactly once per session.
+            if (!store.loaded && !store.loading) {
+                await this._loadHistory(id);
+            }
         },
 
-        _newMessage(role, content = '') {
-            return {
-                role,
-                content: content,
-                rawContent: content,
-                reasoning: '',
-                reasoningOpen: false,
-                toolCalls: [],
-                usage: null,
-                streaming: false,
-                done: role === 'user',
-            };
+        // Create a persistent socket for a session. Its callbacks always write
+        // to that session's own store, regardless of which tab is visible.
+        _createSocket(id) {
+            const store = this._store(id);
+            const socket = new ChatSocket(id, {
+                onOpen: () => {
+                    console.log('[chat] socket OPEN for', id);
+                    store.connection = 'connected';
+                    this._reflectConnection(id);
+                },
+                onClose: () => {
+                    store.connection =
+                        socket.reconnectAttempts < socket.maxReconnectAttempts
+                            ? 'connecting' : 'disconnected';
+                    console.log('[chat] socket CLOSE for', id, '->', store.connection);
+                    this._reflectConnection(id);
+                },
+                onEvent: (event) => this._handleEvent(event, store),
+            });
+            _sessionSockets.set(id, socket);
+            socket.connect();
         },
+
+        // Load a session's stored history into its store (once).
+        async _loadHistory(id) {
+            const store = this._store(id);
+            store.loading = true;
+            try {
+                const session = await Api.getSession(id);
+                // If the user already started chatting in this session while
+                // the fetch was in flight, don't clobber their live messages.
+                if (!store.dirty) {
+                    const loaded = this._historyToUi(session.messages || []);
+                    // Mutate in place so any `this.messages` already pointing
+                    // at this array picks up the loaded content.
+                    store.messages.splice(0, store.messages.length, ...loaded);
+                }
+                store.loaded = true;
+                if (this.sessionId === id) this._scrollToBottom();
+            } catch (e) {
+                console.error('Failed to load session history:', e);
+            } finally {
+                store.loading = false;
+            }
+        },
+
+        // If the given session is the active one, mirror its connection state
+        // into the top-level `connection` property (and notify the status bar).
+        _reflectConnection(id) {
+            if (this.sessionId === id) {
+                this.connection = this._store(id).connection;
+                this._broadcastConn();
+            }
+        },
+
+        // ---------------------------------------------------------------
+        // Sending
+        // ---------------------------------------------------------------
 
         sendPrompt() {
             const content = this.input.trim();
             if (!content) return;
             if (this.status === 'waiting' || this.status === 'streaming') return;
 
+            const id = this.sessionId;
+            if (!id) return;
+            const store = this._store(id);
+
+            store.error = null;
             this.error = null;
-            // Add user message
-            this.messages.push(this._newMessage('user', content));
+            store.dirty = true;   // protect the pending _loadHistory from clobbering
+
+            // User message
+            store.messages.push(this._newMessage('user', content));
             this.input = '';
             this._autoResize();
             this._scrollToBottom();
 
-            // Start assistant message
-            this._current = this._newMessage('assistant', '');
-            this._current.streaming = true;
-            this.messages.push(this._current);
+            // Start the assistant message for this turn.
+            const assistant = this._newMessage('assistant', '');
+            assistant.streaming = true;
+            store.messages.push(assistant);
+            store.current = assistant;
+            store.status = 'waiting';
+            this._current = store.current;   // proxied reference
             this.status = 'waiting';
 
-            if (!this.socket || !this.socket.sendPrompt(content)) {
-                this.error = 'Not connected to server.';
+            const socket = this._socket(id);
+            console.log('[chat] sendPrompt', {
+                session: id,
+                hasSocket: !!socket,
+                wsState: socket && socket.ws ? socket.ws.readyState : 'none',
+                len: content.length,
+            });
+            if (!socket || !socket.sendPrompt(content)) {
+                console.error('[chat] sendPrompt FAILED -> "Not connected to server."');
+                store.error = 'Not connected to server.';
+                this.error = store.error;
+                store.status = 'idle';
                 this.status = 'idle';
-                this._current.streaming = false;
+                assistant.streaming = false;
+                store.current = null;
+                this._current = null;
             }
             this._scrollToBottom();
         },
 
-        _handleEvent(event) {
-            const m = this._current;
+        // ---------------------------------------------------------------
+        // Event routing
+        // ---------------------------------------------------------------
+
+        // Apply a streamed event to a specific session's store. Only mutates
+        // the visible projection when that session is the active tab.
+        _handleEvent(event, store) {
+            const isActive = (store.id === this.sessionId);
+            const m = store.current;   // proxied -> mutations are reactive
             if (!m && event.type !== 'error') return;
 
             switch (event.type) {
                 case 'waiting':
-                    this.status = 'waiting';
+                    store.status = 'waiting';
+                    if (isActive) this.status = 'waiting';
                     break;
 
                 case 'token':
-                    this.status = 'streaming';
-                    m.rawContent += event.content;
-                    m.content = m.rawContent;   // markdown re-rendered in template
-                    this._scrollToBottom();
+                    store.status = 'streaming';
+                    if (isActive) this.status = 'streaming';
+                    this._appendTextPart(m, event.content);
+                    if (isActive) this._scrollToBottom();
                     break;
 
                 case 'reasoning':
-                    m.reasoning += event.content;
-                    m.reasoningOpen = true;
-                    this._scrollToBottom();
+                    // Reasoning bursts are interleaved with text/tool parts, so
+                    // each burst separated by other content becomes its own card.
+                    this._appendReasoningPart(m, event.content, true);
+                    if (isActive) this._scrollToBottom();
                     break;
 
-                case 'tool_call':
-                    this.status = 'tool_running';
-                    m.toolCalls.push({
+                case 'tool_call': {
+                    store.status = 'tool_running';
+                    if (isActive) this.status = 'tool_running';
+                    const tool = {
                         id: event.id,
                         name: event.name,
                         args: event.args,
@@ -165,21 +275,23 @@ function chatComponent() {
                         execution_time_ms: null,
                         progress: [],
                         open: true,
-                    });
-                    this._scrollToBottom();
+                    };
+                    m.toolCalls.push(tool);            // flat list for id lookup
+                    m.parts.push({ kind: 'tool', tool });  // same ref, ordered
+                    if (isActive) this._scrollToBottom();
                     break;
+                }
 
                 case 'tool_progress': {
                     const tc = this._findToolCall(m, event.id);
                     if (tc) {
-                        // Aggregate consecutive "output" lines into a single block
                         const last = tc.progress[tc.progress.length - 1];
                         if (event.level === 'output' && last && last.level === 'output') {
                             last.message += '\n' + event.message;
                         } else {
                             tc.progress.push({ level: event.level, message: event.message });
                         }
-                        this._scrollToBottom();
+                        if (isActive) this._scrollToBottom();
                     }
                     break;
                 }
@@ -192,7 +304,7 @@ function chatComponent() {
                         tc.error = event.error;
                         tc.execution_time_ms = event.execution_time_ms;
                     }
-                    this._scrollToBottom();
+                    if (isActive) this._scrollToBottom();
                     break;
                 }
 
@@ -203,23 +315,41 @@ function chatComponent() {
                         output: event.output,
                         cached: event.cached,
                     };
-                    window.dispatchEvent(new CustomEvent('janito-usage', { detail: m.usage }));
+                    if (isActive) {
+                        window.dispatchEvent(new CustomEvent('janito-usage', { detail: m.usage }));
+                    }
                     break;
 
                 case 'done':
                     m.streaming = false;
                     m.done = true;
-                    this._current = null;
-                    this.status = 'idle';
-                    this._scrollToBottom();
+                    store.current = null;
+                    store.status = 'idle';
+                    if (isActive) {
+                        this._current = null;
+                        this.status = 'idle';
+                        this._scrollToBottom();
+                    }
                     break;
 
                 case 'error':
-                    this.error = event.message;
-                    if (m) { m.streaming = false; }
-                    this._current = null;
-                    this.status = 'idle';
-                    this._scrollToBottom();
+                    store.error = event.message;
+                    if (m) m.streaming = false;
+                    store.current = null;
+                    store.status = 'idle';
+                    if (isActive) {
+                        this.error = event.message;
+                        this._current = null;
+                        this.status = 'idle';
+                        this._scrollToBottom();
+                    }
+                    // Session was lost (e.g. server restarted) — clean up the
+                    // dead socket and let the sidebar create a fresh session.
+                    if (/session not found/i.test(event.message || '')) {
+                        console.warn('[chat] session lost on server, recovering…');
+                        this._releaseSession(store.id);
+                        window.dispatchEvent(new CustomEvent('janito-session-lost', { detail: store.id }));
+                    }
                     break;
             }
         },
@@ -227,6 +357,163 @@ function chatComponent() {
         _findToolCall(msg, id) {
             return msg.toolCalls.find(tc => tc.id === id);
         },
+
+        // ---------------------------------------------------------------
+        // Session deletion
+        // ---------------------------------------------------------------
+
+        // Release a session's persistent socket and store. Safe to call for a
+        // session that is active, background, or unknown.
+        _releaseSession(id) {
+            const socket = this._socket(id);
+            if (socket) {
+                socket.close();
+                _sessionSockets.delete(id);
+            }
+            delete this._sessions[id];
+        },
+
+        // The active session was deleted: free its resources and clear the view.
+        clearActive() {
+            if (this.sessionId) this._releaseSession(this.sessionId);
+            this.sessionId = null;
+            this.messages = [];
+            this.status = 'idle';
+            this.connection = 'disconnected';
+            this.error = null;
+            this._current = null;
+            this._broadcastConn();
+        },
+
+        // ---------------------------------------------------------------
+        // History reconstruction
+        // ---------------------------------------------------------------
+
+        // Convert a session's stored message history into UI message objects.
+        //
+        // The backend stores one entry per agentic-loop turn, so a single user
+        // prompt can produce: assistant(tool_calls) -> tool(result) -> ... ->
+        // assistant(final text). During live streaming all of those render into
+        // ONE assistant bubble (chat.js reuses `current` until `done`). To make
+        // a reloaded tab look identical, we merge every turn between two user
+        // messages into a single assistant UI message, reconstructing the
+        // ordered interleaving of reasoning / text / tool-call parts (each
+        // reasoning burst becomes its own card, matching live streaming) and
+        // attaching tool results to their cards instead of dropping them.
+        _historyToUi(stored) {
+            const ui = [];
+            let current = null;   // assistant UI message for the current turn
+            for (const msg of stored) {
+                if (msg.role === 'system') {
+                    continue;
+                } else if (msg.role === 'user') {
+                    current = null;   // a new user prompt starts a fresh turn
+                    ui.push(this._newMessage('user', msg.content));
+                } else if (msg.role === 'assistant') {
+                    if (!current || current.role !== 'assistant') {
+                        current = this._newMessage('assistant', '');
+                        ui.push(current);
+                    }
+                    // Order of parts within one assistant turn mirrors the
+                    // model's actual output: reasoning -> content -> tool calls.
+                    // Because a different part kind always intervenes between
+                    // turns, each reasoning burst ends up as its own card.
+                    if (msg.reasoning_content) {
+                        this._appendReasoningPart(current, msg.reasoning_content, false);
+                    }
+                    if (msg.content) {
+                        this._appendTextPart(current, msg.content, '\n\n');
+                    }
+                    if (Array.isArray(msg.tool_calls)) {
+                        for (const tc of msg.tool_calls) {
+                            let args = {};
+                            try { args = JSON.parse(tc.function.arguments); } catch (e) { /* keep {} */ }
+                            const tool = {
+                                id: tc.id,
+                                name: tc.function.name,
+                                args,
+                                permissions: '',
+                                status: 'done',
+                                result: null,
+                                error: null,
+                                execution_time_ms: null,
+                                progress: [],
+                                open: false,
+                            };
+                            current.toolCalls.push(tool);
+                            current.parts.push({ kind: 'tool', tool });
+                        }
+                    }
+                    current.done = true;
+                } else if (msg.role === 'tool') {
+                    // Attach the tool result to its matching tool-call card.
+                    if (current) {
+                        const tc = current.toolCalls.find(t => t.id === msg.tool_call_id);
+                        if (tc) {
+                            let result = msg.content;
+                            try { result = JSON.parse(msg.content); } catch (e) { /* keep raw string */ }
+                            if (result && typeof result === 'object' && result.success === false && result.error) {
+                                tc.status = 'error';
+                                tc.error = result.error;
+                            }
+                            tc.result = result;
+                        }
+                    }
+                }
+            }
+            return ui;
+        },
+
+        // ---------------------------------------------------------------
+        // Message part builders (ordered reasoning / text / tool cards)
+        // ---------------------------------------------------------------
+
+        // Append streamed/history text. Consecutive text merges into the last
+        // text part; `joiner` separates history turns ('\n\n'), streaming uses ''.
+        _appendTextPart(m, text, joiner = '') {
+            const last = m.parts[m.parts.length - 1];
+            if (last && last.kind === 'text') {
+                last.text += joiner + text;
+            } else {
+                m.parts.push({ kind: 'text', text });
+            }
+            m.rawContent = (m.rawContent ? m.rawContent + joiner : '') + text;
+            m.content = m.rawContent;
+        },
+
+        // Append reasoning. `open=true` for live streaming (card starts expanded),
+        // `open=false` for history (collapsed). Reasoning that arrives right
+        // after reasoning continues the same card; any other part kind in
+        // between starts a NEW reasoning card -> multiple interleaved cards.
+        _appendReasoningPart(m, text, open) {
+            const last = m.parts[m.parts.length - 1];
+            if (last && last.kind === 'reasoning') {
+                last.text += text;
+            } else {
+                m.parts.push({ kind: 'reasoning', text, open });
+            }
+        },
+
+        _newMessage(role, content = '') {
+            const msg = {
+                role,
+                content: content,
+                rawContent: content,
+                parts: [],           // ordered: {kind:'reasoning'|'text'|'tool', ...}
+                toolCalls: [],       // flat list (for id lookup on tool_* events)
+                usage: null,
+                streaming: false,
+                done: role === 'user',
+            };
+            // Assistant text parts are added via _appendTextPart as they stream.
+            // (User messages render through a dedicated block, not `parts`, so
+            //  we never seed a part for them here to avoid double-rendering.)
+            return msg;
+        },
+
+        // ---------------------------------------------------------------
+        // Input + UI helpers
+        // ---------------------------------------------------------------
 
         // Keyboard: Enter to send, Shift+Enter for newline
         onKeydown(e) {
@@ -253,7 +540,14 @@ function chatComponent() {
             });
         },
 
+        _broadcastConn() {
+            window.dispatchEvent(new CustomEvent('janito-connection', { detail: this.connection }));
+        },
+
+        // ---------------------------------------------------------------
         // Format helpers
+        // ---------------------------------------------------------------
+
         formatTokens(n) {
             if (n === null || n === undefined) return '';
             if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'm';
@@ -276,10 +570,10 @@ function chatComponent() {
 
         levelIcon(level) {
             const icons = {
-                start: '▶', progress: '·', output: '', result: '✅',
-                error: '❌', warning: '⚠️', info: 'ℹ️',
+                start: '', progress: '\u00b7', output: '', result: '\u2705',
+                error: '\u274c', warning: '\u26a0\ufe0f', info: '\u2139\ufe0f',
             };
-            return icons[level] || '·';
+            return level in icons ? icons[level] : '\u00b7';
         },
 
         statusLabel(status) {

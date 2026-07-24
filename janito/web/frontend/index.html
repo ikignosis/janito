@@ -106,81 +106,90 @@
                              x-text="msg.role === 'user' ? 'U' : '⚡'"></div>
                         <div class="message-body">
 
-                            <!-- Reasoning panel -->
-                            <template x-if="msg.reasoning">
-                                <div class="reasoning-panel">
-                                    <div class="reasoning-header" @click="msg.reasoningOpen = !msg.reasoningOpen">
-                                        <span x-text="msg.reasoningOpen ? '▼' : '▶'"></span>
-                                        💭 Reasoning
-                                    </div>
-                                    <div class="reasoning-body" x-show="msg.reasoningOpen" x-text="msg.reasoning"></div>
-                                </div>
-                            </template>
-
-                            <!-- Tool call cards (interleaved with text) -->
-                            <template x-for="tc in msg.toolCalls" :key="tc.id">
-                                <div class="tool-card">
-                                    <div class="tool-card-header" @click="tc.open = !tc.open">
-                                        <span x-text="tc.open ? '▼' : '▶'" style="color:var(--text-muted)"></span>
-                                        <span class="tool-name" x-text="tc.name"></span>
-                                        <template x-if="permLabel(tc.permissions)">
-                                            <span class="perm-badge" :class="permClass(tc.permissions)"
-                                                  x-text="permLabel(tc.permissions)"></span>
-                                        </template>
-                                        <span class="tool-status" :class="tc.status">
-                                            <template x-if="tc.status === 'running'">
-                                                <span><span class="spinner"></span> Running</span>
-                                            </template>
-                                            <template x-if="tc.status === 'done'">
-                                                <span>✅ Done<template x-if="tc.execution_time_ms"> · <span x-text="tc.execution_time_ms + 'ms'"></span></template></span>
-                                            </template>
-                                            <template x-if="tc.status === 'error'">
-                                                <span>❌ Error</span>
-                                            </template>
-                                        </span>
-                                    </div>
-
-                                    <div class="tool-card-body" x-show="tc.open">
-                                        <!-- Arguments -->
-                                        <div class="tool-args-toggle" @click.stop="tc.argsOpen = !tc.argsOpen">
-                                            Arguments <span x-text="tc.argsOpen ? '▾' : '▸'"></span>
+                            <!-- Message parts rendered in arrival order:
+                                 reasoning cards, text, and tool-call cards are
+                                 interleaved exactly as the model produced them.
+                                 NOTE: x-for requires a SINGLE child element, so
+                                 all part variants are wrapped in one div. -->
+                            <template x-for="(part, pi) in msg.parts" :key="pi">
+                                <div>
+                                    <!-- Reasoning card -->
+                                    <template x-if="part.kind === 'reasoning'">
+                                        <div class="reasoning-panel">
+                                            <div class="reasoning-header" @click="part.open = !part.open">
+                                                <span x-text="part.open ? '▼' : '▶'"></span>
+                                                💭 Reasoning
+                                            </div>
+                                            <div class="reasoning-body" x-show="part.open" x-text="part.text"></div>
                                         </div>
-                                        <template x-if="tc.argsOpen">
-                                            <div class="tool-args" x-text="toolArgsStr(tc.args)"></div>
-                                        </template>
+                                    </template>
 
-                                        <!-- Live progress / output -->
-                                        <template x-for="(p, pi) in tc.progress" :key="pi">
-                                            <div class="tool-progress" :class="p.level">
-                                                <template x-if="p.level !== 'output'">
-                                                    <span><span class="level-tag" x-text="levelIcon(p.level)"></span> <span x-text="p.message"></span></span>
+                                    <!-- Assistant text (markdown) -->
+                                    <template x-if="part.kind === 'text'">
+                                        <div x-html="renderMarkdown(part.text)"></div>
+                                    </template>
+
+                                    <!-- Tool call card -->
+                                    <template x-if="part.kind === 'tool'">
+                                        <div class="tool-card">
+                                            <div class="tool-card-header" @click="part.tool.open = !part.tool.open">
+                                                <span x-text="part.tool.open ? '▼' : '▶'" style="color:var(--text-muted)"></span>
+                                                <span class="tool-name" x-text="part.tool.name"></span>
+                                                <template x-if="permLabel(part.tool.permissions)">
+                                                    <span class="perm-badge" :class="permClass(part.tool.permissions)"
+                                                          x-text="permLabel(part.tool.permissions)"></span>
                                                 </template>
-                                                <template x-if="p.level === 'output'">
-                                                    <span x-text="p.message" style="white-space:pre-wrap"></span>
-                                                </template>
+                                                <span class="tool-status" :class="part.tool.status">
+                                                    <template x-if="part.tool.status === 'running'">
+                                                        <span><span class="spinner"></span> Running</span>
+                                                    </template>
+                                                    <template x-if="part.tool.status === 'done'">
+                                                        <span>✅ Done<template x-if="part.tool.execution_time_ms"> · <span x-text="part.tool.execution_time_ms + 'ms'"></span></template></span>
+                                                    </template>
+                                                    <template x-if="part.tool.status === 'error'">
+                                                        <span>❌ Error</span>
+                                                    </template>
+                                                </span>
                                             </div>
-                                        </template>
 
-                                        <!-- Result -->
-                                        <template x-if="tc.result !== null || tc.error">
-                                            <div>
-                                                <div class="tool-result-toggle" @click.stop="tc.resultOpen = !tc.resultOpen">
-                                                    Result <span x-text="tc.resultOpen ? '▾' : '▸'"></span>
+                                            <div class="tool-card-body" x-show="part.tool.open">
+                                                <!-- Arguments -->
+                                                <div class="tool-args-toggle" @click.stop="part.tool.argsOpen = !part.tool.argsOpen">
+                                                    Arguments <span x-text="part.tool.argsOpen ? '▾' : '▸'"></span>
                                                 </div>
-                                                <template x-if="tc.resultOpen">
-                                                    <div class="tool-result"
-                                                         :style="tc.error ? 'color:var(--red)' : ''"
-                                                         x-text="tc.error ? tc.error : toolResultStr(tc.result)"></div>
+                                                <template x-if="part.tool.argsOpen">
+                                                    <div class="tool-args" x-text="toolArgsStr(part.tool.args)"></div>
+                                                </template>
+
+                                                <!-- Live progress / output -->
+                                                <template x-for="(p, ppi) in part.tool.progress" :key="ppi">
+                                                    <div class="tool-progress" :class="p.level">
+                                                        <template x-if="p.level !== 'output'">
+                                                            <span><span class="level-tag" x-text="levelIcon(p.level)"></span><span x-text="p.message"></span></span>
+                                                        </template>
+                                                        <template x-if="p.level === 'output'">
+                                                            <span x-text="p.message" style="white-space:pre-wrap"></span>
+                                                        </template>
+                                                    </div>
+                                                </template>
+
+                                                <!-- Result -->
+                                                <template x-if="part.tool.result !== null || part.tool.error">
+                                                    <div>
+                                                        <div class="tool-result-toggle" @click.stop="part.tool.resultOpen = !part.tool.resultOpen">
+                                                            Result <span x-text="part.tool.resultOpen ? '▾' : '▸'"></span>
+                                                        </div>
+                                                        <template x-if="part.tool.resultOpen">
+                                                            <div class="tool-result"
+                                                                 :style="part.tool.error ? 'color:var(--red)' : ''"
+                                                                 x-text="part.tool.error ? part.tool.error : toolResultStr(part.tool.result)"></div>
+                                                        </template>
+                                                    </div>
                                                 </template>
                                             </div>
-                                        </template>
-                                    </div>
+                                        </div>
+                                    </template>
                                 </div>
-                            </template>
-
-                            <!-- Assistant text (markdown) -->
-                            <template x-if="msg.role === 'assistant' && msg.rawContent">
-                                <div x-html="renderMarkdown(msg.rawContent)"></div>
                             </template>
 
                             <!-- User text (plain, escaped via textContent) -->
@@ -189,7 +198,7 @@
                             </template>
 
                             <!-- Waiting indicator (no content yet) -->
-                            <template x-if="msg.streaming && !msg.rawContent && msg.toolCalls.length === 0 && msg.reasoning === '' && (status === 'waiting')">
+                            <template x-if="msg.streaming && msg.parts.length === 0 && (status === 'waiting')">
                                 <div class="waiting">
                                     <span class="dot-pulse"><span></span><span></span><span></span></span>
                                     Thinking…
@@ -198,12 +207,25 @@
 
                             <!-- Usage -->
                             <template x-if="msg.usage">
-                                <div style="margin-top:8px;font-size:11px;color:var(--text-muted)">
-                                    tokens <span x-text="formatTokens(msg.usage.total)"></span>
-                                    · in <span x-text="formatTokens(msg.usage.input)"></span>
-                                    · out <span x-text="formatTokens(msg.usage.output)"></span>
+                                <div class="usage-strip" role="note"
+                                     :aria-label="'Tokens: ' + formatTokens(msg.usage.total) + ' total, ' + formatTokens(msg.usage.input) + ' input, ' + formatTokens(msg.usage.output) + ' output' + (msg.usage.cached ? ', ' + formatTokens(msg.usage.cached) + ' cached' : '')">
+                                    <span class="usage-chip usage-total" title="Total tokens used for this response">
+                                        <span class="usage-label">tokens</span>
+                                        <span class="usage-value" x-text="formatTokens(msg.usage.total)"></span>
+                                    </span>
+                                    <span class="usage-chip" title="Input tokens sent to the model">
+                                        <span class="usage-label">in</span>
+                                        <span class="usage-value" x-text="formatTokens(msg.usage.input)"></span>
+                                    </span>
+                                    <span class="usage-chip" title="Output tokens generated by the model">
+                                        <span class="usage-label">out</span>
+                                        <span class="usage-value" x-text="formatTokens(msg.usage.output)"></span>
+                                    </span>
                                     <template x-if="msg.usage.cached">
-                                        <span>· cached <span x-text="formatTokens(msg.usage.cached)"></span></span>
+                                        <span class="usage-chip usage-cached" title="Input tokens served from the provider's cache">
+                                            <span class="usage-label">cached</span>
+                                            <span class="usage-value" x-text="formatTokens(msg.usage.cached)"></span>
+                                        </span>
                                     </template>
                                 </div>
                             </template>

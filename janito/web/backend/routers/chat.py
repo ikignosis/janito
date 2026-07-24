@@ -81,13 +81,18 @@ async def chat_websocket(websocket: WebSocket, session_id: str):
       Client -> Server:  {"type": "prompt", "content": "..."}
       Server -> Client:  {"type": "token"|"reasoning"|"tool_call"|...}
     """
+    logger.warning("[ws] handshake received session=%s client=%s",
+                   session_id, websocket.client)
     await websocket.accept()
+    logger.warning("[ws] accepted session=%s", session_id)
 
     sessions: SessionManager = websocket.app.state.sessions
     config = websocket.app.state.config
 
     session = sessions.get(session_id)
     if not session:
+        logger.warning("[ws] session NOT FOUND: %s (known=%s)",
+                       session_id, [s.session_id for s in sessions.list_sessions()])
         await websocket.send_json({"type": "error", "message": "Session not found"})
         await websocket.close()
         return

@@ -203,6 +203,56 @@ html, body {
 }
 .message-body th { background: var(--bg-secondary); }
 
+/* Token usage strip */
+.usage-strip {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+}
+
+.usage-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    transition: border-color 0.15s, transform 0.15s;
+}
+.usage-chip:hover {
+    border-color: var(--text-muted);
+    transform: translateY(-1px);
+}
+
+.usage-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.usage-value {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.usage-total .usage-label { color: var(--accent); }
+.usage-total .usage-value { color: var(--accent); font-size: 14px; }
+.usage-total { border-color: rgba(122, 162, 247, 0.35); background: rgba(122, 162, 247, 0.08); }
+
+.usage-cached .usage-label { color: var(--green); }
+.usage-cached .usage-value { color: var(--green); }
+.usage-cached { border-color: rgba(158, 206, 106, 0.35); background: rgba(158, 206, 106, 0.08); }
+
 /* Reasoning panel */
 .reasoning-panel {
     border: 1px solid var(--border);
@@ -282,6 +332,7 @@ html, body {
     gap: 6px;
 }
 .tool-progress .level-tag { color: var(--text-muted); flex-shrink: 0; }
+.tool-progress .level-tag:not(:empty) { margin-right: 0.5ch; }
 .tool-progress.output {
     font-family: var(--font-mono);
     background: var(--bg-primary);
