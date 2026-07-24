@@ -4,8 +4,9 @@ This guide covers how to set up janito for development.
 
 ## Prerequisites
 
-- Python 3.6+
+- Python 3.10+
 - Git
+- [uv](https://docs.astral.sh/uv/) (project & package manager)
 - GitHub CLI (optional, for cloning)
 
 ## Clone the Repository
@@ -26,39 +27,70 @@ The project uses [setuptools-scm](https://github.com/pypa/setuptools_scm) for au
   git push origin v1.0.0
   ```
 
-## Install Dependencies
+## Install Dependencies (Editable Install)
+
+janito uses [uv](https://docs.astral.sh/uv/) to manage the virtual environment, dependencies, and the lock file (`uv.lock`).
 
 ```bash
-pip install -r requirements.txt
+# Create the virtual environment and install the project + dev dependencies
+uv sync
 ```
 
-## Install in Development Mode
+`uv sync` reads `pyproject.toml` and `uv.lock` and installs janito in **editable
+mode** by default, plus the `dev` dependency group. An editable install means your
+source-code changes take effect immediately — you never need to reinstall after
+editing the code. This is the equivalent of the old `pip install -e .`.
+
+To also install the documentation tooling:
 
 ```bash
-pip install -e .
+uv sync --group docs
 ```
 
-This installs the package in "editable" mode, so changes to the source code take effect immediately without reinstallation.
+If you ever want a regular (non-editable) install instead, pass `--no-editable`:
+
+```bash
+uv sync --no-editable
+```
+
+## Common Commands
+
+```bash
+# Run the CLI
+uv run janito --config
+
+# Add a runtime dependency
+uv add <package>
+
+# Add a dev-only dependency
+uv add --group dev <package>
+
+# Update the lock file
+uv lock
+
+# Upgrade a dependency
+uv lock --upgrade-package <package>
+```
 
 ## Running from Source
 
-You can also run the package directly without installing:
+You can also run the package directly from the synced environment:
 
 ```bash
-python -m janito --config
+uv run python -m janito --config
 ```
 
 ## Running Tests
 
 ```bash
 # Run all tests
-pytest
+uv run pytest
 
 # Run with coverage
-pytest --cov=janito
+uv run pytest --cov=janito
 
 # Run specific test file
-pytest tests/test_core.py
+uv run pytest tests/test_core.py
 ```
 
 ## Code Style

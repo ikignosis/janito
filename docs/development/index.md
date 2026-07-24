@@ -10,6 +10,7 @@ This section covers development setup and contribution guidelines.
 
 - Python 3.10+
 - Git
+- [uv](https://docs.astral.sh/uv/) (project & package manager)
 - GitHub CLI (optional)
 
 ## Quick Setup
@@ -19,31 +20,38 @@ This section covers development setup and contribution guidelines.
 git clone https://github.com/ikignosis/janito.git
 cd janito
 
-# Install dependencies
-pip install -r requirements.txt
+# Create the virtual environment and install the project + dev dependencies
+uv sync
+```
 
-# Install in development mode
-pip install -e .
+`uv sync` reads `pyproject.toml` and `uv.lock` and installs janito in **editable
+mode** by default, plus the `dev` dependency group. An editable install means your
+source-code changes take effect immediately (the equivalent of `pip install -e .`).
+
+To also install the documentation tooling:
+
+```bash
+uv sync --group docs
 ```
 
 ## Running from Source
 
 ```bash
-python -m janito --config
-python -m janito "Hello"
+uv run python -m janito --config
+uv run python -m janito "Hello"
 ```
 
 ## Testing
 
 ```bash
 # Run all tests
-pytest
+uv run pytest
 
 # Run with coverage
-pytest --cov=janito
+uv run pytest --cov=janito
 
 # Run specific test file
-pytest tests/test_core.py
+uv run pytest tests/test_core.py
 ```
 
 ## Version Management

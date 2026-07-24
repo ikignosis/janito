@@ -12,7 +12,7 @@ This section guides you through setting up and running janito.
 Before installing janito, ensure you have:
 
 - **Python 3.10+** - janito requires Python 3.10 or higher
-- **pip** - Python package installer (usually included with Python)
+- **pip** or **[uv](https://docs.astral.sh/uv/)** - a Python package installer (uv recommended)
 - **API Key** - An API key from your preferred provider (OpenAI, local LLM, etc.)
 
 ## Next Steps

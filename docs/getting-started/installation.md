@@ -10,6 +10,12 @@ The easiest way to install janito is from PyPI:
 pip install janito
 ```
 
+Or, with [uv](https://docs.astral.sh/uv/) (recommended):
+
+```bash
+uv tool install janito
+```
+
 ## From Source
 
 For development or the latest features, install from source:
@@ -18,6 +24,7 @@ For development or the latest features, install from source:
 
 - Python 3.10+
 - Git
+- [uv](https://docs.astral.sh/uv/) (project & package manager)
 - GitHub CLI (optional)
 
 ### Clone and Install
@@ -27,19 +34,25 @@ For development or the latest features, install from source:
 git clone https://github.com/ikignosis/janito.git
 cd janito
 
-# Install dependencies
-pip install -r requirements.txt
+# Create the virtual environment and install the project + dev dependencies
+uv sync
+```
 
-# Install in development mode
-pip install -e .
+`uv sync` installs janito in **editable mode** by default and installs the `dev`
+dependency group. An editable install means your source-code changes take effect
+immediately without reinstalling (the equivalent of `pip install -e .`). To also
+install the documentation tooling:
+
+```bash
+uv sync --group docs
 ```
 
 ### Running Without Installation
 
-You can also run janito directly without installing:
+You can also run janito directly from the synced environment:
 
 ```bash
-python -m janito "Your prompt here"
+uv run python -m janito "Your prompt here"
 ```
 
 ## Verify Installation
@@ -47,13 +60,13 @@ python -m janito "Your prompt here"
 Check that janito is installed correctly:
 
 ```bash
-janito --version
+uv run janito --version
 ```
 
 Or run the help command:
 
 ```bash
-janito --help
+uv run janito --help
 ```
 
 ## Dependencies

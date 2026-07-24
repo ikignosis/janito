@@ -18,6 +18,9 @@
 # Install
 pip install janito
 
+# Or, with uv (recommended)
+uv tool install janito
+
 # Configure interactively
 janito --config
 

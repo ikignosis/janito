@@ -16,17 +16,16 @@ We welcome contributions to janito! This guide explains how to get involved.
    git checkout -b feature/my-feature
    ```
 
-4. **Set up development environment**:
+4. **Set up development environment** (using [uv](https://docs.astral.sh/uv/)):
    ```bash
-   pip install -r requirements.txt
-   pip install -e .
+   uv sync
    ```
 
 5. **Make your changes** and test them
 
 6. **Run tests**:
    ```bash
-   pytest
+   uv run pytest
    ```
 
 7. **Commit your changes**:

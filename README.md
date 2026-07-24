@@ -21,6 +21,9 @@
 # Install
 pip install janito
 
+# Or, with uv (recommended)
+uv tool install janito
+
 # Configure interactively
 janito --config
 
@@ -38,6 +41,12 @@ janito "Hello!"
 
 ```bash
 pip install janito
+```
+
+Or, with [uv](https://docs.astral.sh/uv/):
+
+```bash
+uv tool install janito
 ```
 
 For development setup, see [README_DEV.md](README_DEV.md).
