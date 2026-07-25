@@ -44,7 +44,7 @@ class InteractiveShell:
         self.restart_requested = False  # set True by the F2 key binding; signals the run loop to clear history and start a fresh conversation
         self.do_it_requested = False  # set True by the F12 key binding; signals the run loop to auto-send a "Do It" prompt
         self.exit_requested = False  # set True by the /exit command handler; signals the run loop to break and end the session
-        self.multiline_mode = False  # toggled by /multi; when True the prompt accepts multiline input (ESC+ENTER to submit)
+        self.multiline_mode = False  # set by /multi for the next prompt only; automatically resets after a multiline input is submitted
         
         # Auto-load registered commands if not provided
         if commands is None:
@@ -227,6 +227,11 @@ class InteractiveShell:
             except EOFError:
                 # User pressed Ctrl+D at main prompt
                 break
+            
+            # Reset multiline mode after input is received (single-use)
+            if self.multiline_mode:
+                self.multiline_mode = False
+                self.session = self._create_session(multiline=False)
             
             # Check if F12 was pressed (Do It requested)
             if self.do_it_requested:

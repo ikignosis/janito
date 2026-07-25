@@ -97,6 +97,20 @@ async def chat_websocket(websocket: WebSocket, session_id: str):
         await websocket.close()
         return
 
+    # Greet the client with a tools summary so the UI can render it at the
+    # start of the session (web counterpart of the CLI startup line — #10).
+    from janito.tooling.tools_registry import get_all_tools
+    from janito.tools import get_skipped_tools
+
+    active_tools = get_all_tools()
+    skipped_tools = get_skipped_tools()
+    await websocket.send_json({
+        "type": "session_start",
+        "active_tools": len(active_tools),
+        "skipped_tools": len(skipped_tools),
+        "skipped": skipped_tools,
+    })
+
     try:
         while True:
             raw = await websocket.receive_text()

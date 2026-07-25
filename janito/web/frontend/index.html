@@ -16,7 +16,7 @@
     </script>
 
     <!-- Theme (?v=N busts the browser cache on upgrades) -->
-    <link rel="stylesheet" href="/css/theme.css?v=3">
+    <link rel="stylesheet" href="/css/theme.css?v=4">
     <!-- highlight.js theme -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/styles/tokyo-night-dark.min.css">
 
@@ -28,15 +28,15 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
 
     <!-- App scripts (order matters: helpers first). ?v=N busts the browser cache. -->
-    <script src="/js/api.js?v=3"></script>
-    <script src="/js/markdown.js?v=3"></script>
-    <script src="/js/websocket.js?v=3"></script>
-    <script src="/js/chat.js?v=3"></script>
-    <script src="/js/sessions.js?v=3"></script>
-    <script src="/js/settings.js?v=3"></script>
-    <script src="/js/mcp.js?v=3"></script>
-    <script src="/js/statusBar.js?v=3"></script>
-    <script src="/js/app.js?v=3"></script>
+    <script src="/js/api.js?v=4"></script>
+    <script src="/js/markdown.js?v=4"></script>
+    <script src="/js/websocket.js?v=4"></script>
+    <script src="/js/chat.js?v=4"></script>
+    <script src="/js/sessions.js?v=4"></script>
+    <script src="/js/settings.js?v=4"></script>
+    <script src="/js/mcp.js?v=4"></script>
+    <script src="/js/statusBar.js?v=4"></script>
+    <script src="/js/app.js?v=4"></script>
 
     <style>
         .inline-icon { cursor: pointer; }
@@ -120,6 +120,29 @@
         <!-- Chat area -->
         <div class="chat-area" x-ref="chatArea">
             <div class="chat-inner">
+
+                <!-- Session start: tools summary (sent by the backend when
+                     the WebSocket connects — web counterpart of the CLI's
+                     startup "N tools active, M skipped" line). -->
+                <template x-if="toolsSummary">
+                    <div class="session-start-banner">
+                        <span class="ssb-main">
+                            ⚡ <strong x-text="toolsSummary.active"></strong> tool(s) active
+                            <span class="ssb-sep">·</span>
+                            <strong x-text="toolsSummary.skipped"></strong> skipped
+                        </span>
+                        <template x-if="toolsSummary.skipped > 0">
+                            <details class="ssb-details">
+                                <summary>why?</summary>
+                                <ul class="ssb-skipped-list">
+                                    <template x-for="(reason, name) in toolsSummary.skippedList" :key="name">
+                                        <li><code x-text="name"></code> — <span x-text="reason"></span></li>
+                                    </template>
+                                </ul>
+                            </details>
+                        </template>
+                    </div>
+                </template>
 
                 <!-- Empty state -->
                 <template x-if="messages.length === 0">

@@ -673,6 +673,39 @@ html[data-theme="dark"] .theme-icon.moon  { color: var(--accent); opacity: 1; }
 }
 .empty-state h2 { color: var(--text-secondary); }
 
+/* Session start tools summary banner */
+.session-start-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 4px 0 16px;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+.session-start-banner .ssb-main strong { color: var(--accent-hover); font-weight: 700; }
+.session-start-banner .ssb-sep { color: var(--text-muted); margin: 0 4px; }
+.session-start-banner .ssb-details summary {
+    cursor: pointer;
+    color: var(--text-muted);
+    user-select: none;
+}
+.session-start-banner .ssb-details summary:hover { color: var(--accent); }
+.session-start-banner .ssb-skipped-list {
+    margin: 8px 0 2px;
+    padding-left: 18px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+.session-start-banner .ssb-skipped-list code {
+    font-family: var(--font-mono);
+    color: var(--text-secondary);
+}
+
 /* Scrollbars */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: var(--bg-secondary); }

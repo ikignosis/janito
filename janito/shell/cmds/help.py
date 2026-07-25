@@ -37,7 +37,7 @@ class HelpCmdHandler(CmdHandler):
         print("  !<command>  - Execute a shell command directly")
         print("  /prompt      - Show the system prompt")
         print("  /tools       - List all available tools")
-        print("  /multi       - Toggle multiline input mode (ESC ENTER to submit)")
+        print("  /multi       - Enable multiline input for next prompt (ESC ENTER to submit)")
         print()
         print("Keyboard shortcuts:")
         print("  [F2]        - Restart conversation")

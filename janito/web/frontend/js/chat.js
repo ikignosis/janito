@@ -45,6 +45,7 @@ function chatComponent() {
         error: null,
         sessionId: null,         // active session id
         _current: null,          // active session's in-flight assistant message
+        toolsSummary: null,      // active session's { active, skipped, skippedList }
 
         // ---- Per-session persistent state (reactive) ----
         _sessions: {},           // id -> store (see header comment)
@@ -78,6 +79,7 @@ function chatComponent() {
                     error: null,
                     connection: 'disconnected',
                     current: null,
+                    toolsSummary: null, // { active, skipped, skippedList } from session_start
                     loaded: false,     // history fetched from the server yet?
                     loading: false,    // a history fetch is in flight
                     dirty: false,      // user already sent a message locally
@@ -104,6 +106,7 @@ function chatComponent() {
             this.error = store.error;
             this.connection = store.connection;
             this._current = store.current;
+            this.toolsSummary = store.toolsSummary;
             this._broadcastConn();
             this._scrollToBottom();
 
@@ -225,6 +228,19 @@ function chatComponent() {
         // the visible projection when that session is the active tab.
         _handleEvent(event, store) {
             const isActive = (store.id === this.sessionId);
+
+            // Server greets us on connect with a tools summary. This arrives
+            // before any assistant message exists, so handle it up front.
+            if (event.type === 'session_start') {
+                store.toolsSummary = {
+                    active: event.active_tools || 0,
+                    skipped: event.skipped_tools || 0,
+                    skippedList: event.skipped || {},
+                };
+                if (isActive) this.toolsSummary = store.toolsSummary;
+                return;
+            }
+
             const m = store.current;   // proxied -> mutations are reactive
             if (!m && event.type !== 'error') return;
 
@@ -369,6 +385,7 @@ function chatComponent() {
             this.connection = 'disconnected';
             this.error = null;
             this._current = null;
+            this.toolsSummary = null;
             this._broadcastConn();
         },
 
