@@ -1,5 +1,11 @@
 # Janito Web UI
 
+> **⚠️ Alpha** — The `--web` mode is currently in **alpha**. It is functional
+> and actively developed, but the interface, CLI flags, API endpoints, and
+> WebSocket protocol may change in incompatible ways between releases. Pin a
+> specific version if you depend on its current behaviour, and please report
+> any issues you encounter.
+
 A browser-based chat interface for Janito that exposes the full agentic
 tool-calling experience — streaming responses, tool execution, MCP services,
 and skills — through any modern web browser.
@@ -61,7 +67,7 @@ The server prints the URL it's listening on, then opens your default browser
 
 | Flag | Effect on the web server |
 |---|---|
-| `--web` | Start the web UI instead of the terminal chat |
+| `--web` | Start the web UI instead of the terminal chat (alpha) |
 | `--web-port PORT` | Bind port (default `8080`) |
 | `--web-host HOST` | Bind address (default `127.0.0.1` — localhost only) |
 | `--no-web-open` | Don't auto-open the browser |

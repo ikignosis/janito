@@ -314,7 +314,8 @@ Note: --set and --set-api-key must be used in separate commands.
     parser.add_argument(
         "--web",
         action="store_true",
-        help="Start the web UI server instead of the terminal chat"
+        help="Start the web UI server instead of the terminal chat "
+             "(alpha: interface and behavior may change)"
     )
 
     parser.add_argument(

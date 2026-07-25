@@ -9,6 +9,7 @@
 - ☁️ **OneDrive Integration** - Browse, upload, download, and share files
 - 🔌 **MCP Support** - Connect to Model Context Protocol servers
 - 🧩 **Skills** - Install and use task-specific skills from GitHub
+- 🌐 **Web UI (Alpha)** - Chat through a browser instead of the terminal with `--web`
 - 📊 **Real-time Progress** - Watch tool execution progress as it happens
 - 🚀 **Easy Setup** - Interactive configuration with `--config` or quick setup with `--set` flags
 - 🔗 **Any OpenAI-Compatible API** - Works with OpenAI, local servers (LM Studio, Ollama), and custom endpoints
@@ -116,6 +117,35 @@ Commands in chat mode:
 - `exit` / `quit` - End session
 - `restart` - Clear conversation history
 - `Ctrl+D` / `Ctrl+Z` - Exit
+
+### Web UI (Alpha)
+
+> ⚠️ **Alpha** — The `--web` mode is currently in alpha. It works, but the
+> interface, CLI flags, and API may change between releases.
+
+Janito can serve a browser-based chat interface instead of the terminal. This
+requires optional dependencies that are **not** part of the core install:
+
+```bash
+# Install with the web extra
+pip install janito[web]
+# or
+uv tool install janito[web]
+```
+
+Then start the server (opens your browser automatically):
+
+```bash
+janito --web
+
+# All normal Janito flags still apply, plus web-specific ones:
+janito --web -r -w --gmail --web-port 9090      # privileges + gmail, custom port
+janito --web --no-web-open                      # don't auto-open the browser
+```
+
+The server binds to `127.0.0.1` by default (localhost only). For full details
+(features, security, API endpoints, architecture), see the
+[Web UI documentation](https://ikignosis.github.io/janito/usage/web-ui/).
 
 ### System Prompt Options
 
