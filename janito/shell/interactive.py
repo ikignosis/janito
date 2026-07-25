@@ -3,6 +3,8 @@ Interactive shell implementation using prompt_toolkit.
 """
 
 import os
+import subprocess
+import time
 from pathlib import Path
 from typing import List, Dict, Any, Callable, Optional, TYPE_CHECKING
 
@@ -45,6 +47,10 @@ class InteractiveShell:
         self.do_it_requested = False  # set True by the F12 key binding; signals the run loop to auto-send a "Do It" prompt
         self.exit_requested = False  # set True by the /exit command handler; signals the run loop to break and end the session
         self.multiline_mode = False  # set by /multi for the next prompt only; automatically resets after a multiline input is submitted
+        
+        # Git diff tracking (issue #7)
+        self.last_git_diff: Optional[str] = None  # last git diff output after a prompt
+        self.last_git_diff_time: Optional[float] = None  # timestamp when git diff finished
         
         # Auto-load registered commands if not provided
         if commands is None:
@@ -178,6 +184,56 @@ class InteractiveShell:
         else:
             print("No input history file found.")
     
+    def _run_git_diff(self) -> None:
+        """
+        Run 'git diff' after a prompt is processed to track file changes.
+        
+        Only runs if .git is present in the current working directory.
+        Streams output/stderr to the screen and stores the result for
+        validation and reuse. If there are no changes, nothing is printed.
+        
+        Stores:
+            last_git_diff: The diff output (or None if no changes / not a git repo)
+            last_git_diff_time: Timestamp of when git diff finished
+        """
+        cwd = Path.cwd()
+        if not (cwd / ".git").exists():
+            return
+        
+        try:
+            result = subprocess.run(
+                ["git", "diff"],
+                capture_output=True,
+                text=True,
+                timeout=30,
+                cwd=str(cwd),
+            )
+            self.last_git_diff_time = time.time()
+            
+            diff_output = result.stdout or ""
+            stderr_output = result.stderr or ""
+            
+            # Store the diff (even if empty, to record the timestamp)
+            self.last_git_diff = diff_output if diff_output else None
+            
+            # Only print to the user if there are actual changes
+            if diff_output:
+                _rich_console.print("── Git Diff ──", style="bold cyan")
+                print(diff_output, end="")
+                _rich_console.print("──────────────", style="bold cyan")
+                print()
+            
+            # Stream stderr if any
+            if stderr_output:
+                _rich_console.print(stderr_output, style="yellow", end="")
+                
+        except subprocess.TimeoutExpired:
+            self.last_git_diff_time = time.time()
+            self.last_git_diff = None
+        except Exception:
+            self.last_git_diff_time = time.time()
+            self.last_git_diff = None
+    
     def run(
         self,
         send_prompt_func: Callable,
@@ -195,7 +251,6 @@ class InteractiveShell:
             thinking: If True, enable thinking mode
         """
         import sys
-        import subprocess
         
         # Store references so command handlers (e.g. /ask) can use them
         self.send_prompt_func = send_prompt_func
@@ -308,6 +363,8 @@ class InteractiveShell:
                     # On success, keep the checkpoint where it is (before this turn)
                     # so /rollback can undo the last exchange. The next turn will
                     # update it before its own send_prompt call.
+                    # Run git diff to track file changes (issue #7)
+                    self._run_git_diff()
                 except KeyboardInterrupt:
                     # Rollback any messages appended during this prompt
                     del self.messages_history[self.history_checkpoint:]
