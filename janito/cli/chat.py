@@ -35,6 +35,17 @@ def run_interactive_chat(args):
     if skills:
         print(f"✓ {len(skills)} skill(s) available")
     
+    # Report the total number of active and skipped tools
+    from ..tooling.tools_registry import get_all_tools
+    from ..tools import get_skipped_tools
+
+    active_tools = get_all_tools()
+    skipped_tools = get_skipped_tools()
+    print(f"✓ {len(active_tools)} tool(s) active, {len(skipped_tools)} skipped")
+    if skipped_tools and args.verbose:
+        for tool_name, reason in skipped_tools.items():
+            print(f"    - {tool_name}: {reason}")
+
     model = os.getenv("OPENAI_MODEL")
     print("Starting interactive chat session. Type '/exit' or CTRL-D to end the session")
     
