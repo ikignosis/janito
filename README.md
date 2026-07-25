@@ -2,6 +2,8 @@
 
 > 📖 **Full documentation available at [https://ikignosis.github.io/janito/](https://ikignosis.github.io/janito/)**
 
+> ⚠️ **Disclaimer:** The code on this repo has been developed mostly using AI, more specifically the Qwen models.
+
 ## Features
 
 - 🔧 **Function Calling** - Built-in tools for file operations, web search, and more
