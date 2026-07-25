@@ -118,6 +118,7 @@
         </div>
 
         <!-- Chat area -->
+        <div class="chat-area-wrapper">
         <div class="chat-area" x-ref="chatArea">
             <div class="chat-inner">
 
@@ -295,6 +296,19 @@
                     </div>
                 </template>
             </div>
+        </div>
+
+        <!-- "Jump to latest" — appears when the user scrolls up mid-stream.
+             Pinned over the chat area; hidden again once at the bottom. -->
+        <button class="jump-to-latest"
+                x-show="!_followBottom"
+                x-transition.opacity.duration.150ms
+                @click="_forceScrollToBottom()"
+                title="Jump to latest" aria-label="Jump to latest message">
+            <span class="jump-dot" :class="{ live: status === 'streaming' || status === 'tool_running' }"></span>
+            Jump to latest
+            <span class="jump-arrow" aria-hidden="true">↓</span>
+        </button>
         </div>
 
         <!-- Input area -->

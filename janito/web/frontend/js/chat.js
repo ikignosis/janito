@@ -46,11 +46,21 @@ function chatComponent() {
         sessionId: null,         // active session id
         _current: null,          // active session's in-flight assistant message
         toolsSummary: null,      // active session's { active, skipped, skippedList }
+        _followBottom: true,     // auto-follow the scroll bottom? false = user "locked" the scroll
+        _scrollThreshold: 80,    // px tolerance for "at the bottom" (avoids scrollbar jitter)
 
         // ---- Per-session persistent state (reactive) ----
         _sessions: {},           // id -> store (see header comment)
 
         init() {
+            // Track scroll position so we only auto-follow new content while
+            // the user is "at the bottom". Scrolling up locks the view so the
+            // user can read without being yanked down mid-stream.
+            this.$nextTick(() => {
+                const el = this.$refs.chatArea;
+                if (el) el.addEventListener('scroll', () => this._updateFollowBottom());
+            });
+
             // Session selected / created in the sidebar.
             window.addEventListener('janito-open-session', (e) => {
                 this.openSession(e.detail);
@@ -108,7 +118,7 @@ function chatComponent() {
             this._current = store.current;
             this.toolsSummary = store.toolsSummary;
             this._broadcastConn();
-            this._scrollToBottom();
+            this._forceScrollToBottom();
 
             // Ensure this session has a live socket (created once, reused).
             if (!this._socket(id)) {
@@ -157,7 +167,7 @@ function chatComponent() {
                     store.messages.splice(0, store.messages.length, ...loaded);
                 }
                 store.loaded = true;
-                if (this.sessionId === id) this._scrollToBottom();
+                if (this.sessionId === id) this._forceScrollToBottom();
             } catch (e) {
                 console.error('Failed to load session history:', e);
             } finally {
@@ -195,7 +205,7 @@ function chatComponent() {
             store.messages.push(this._newMessage('user', content));
             this.input = '';
             this._autoResize();
-            this._scrollToBottom();
+            this._forceScrollToBottom();
 
             // Start the assistant message for this turn.
             const assistant = this._newMessage('assistant', '');
@@ -217,7 +227,7 @@ function chatComponent() {
                 store.current = null;
                 this._current = null;
             }
-            this._scrollToBottom();
+            this._forceScrollToBottom();
         },
 
         // ---------------------------------------------------------------
@@ -537,7 +547,29 @@ function chatComponent() {
             });
         },
 
+        _updateFollowBottom() {
+            const el = this.$refs.chatArea;
+            if (!el) return;
+            const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
+            this._followBottom = dist <= this._scrollThreshold;
+        },
+
+        // Snap to the bottom unconditionally (tab switch, history load, sending
+        // a message, "jump to latest"). Also re-arms the auto-follow state so
+        // subsequent streaming keeps the view pinned.
+        _forceScrollToBottom() {
+            this._followBottom = true;
+            this.$nextTick(() => {
+                const el = this.$refs.chatArea;
+                if (el) el.scrollTop = el.scrollHeight;
+            });
+        },
+
+        // Follow new content ONLY if the user was already at (or near) the
+        // bottom. If they scrolled up to read, their position is preserved
+        // ("scroll lock").
         _scrollToBottom() {
+            if (!this._followBottom) return;
             this.$nextTick(() => {
                 const el = this.$refs.chatArea;
                 if (el) el.scrollTop = el.scrollHeight;
