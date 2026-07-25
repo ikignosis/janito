@@ -22,7 +22,6 @@ class WebServerConfig:
     # These are read from env for display/status, but kept for /api/config.
     provider: Optional[str] = None       # args.provider
     model: Optional[str] = None          # args.model (or from env)
-    endpoint: Optional[str] = None       # args.endpoint
 
     # --- Session defaults (from CLI flags) ---
     thinking: bool = False               # -t / --thinking
@@ -53,7 +52,6 @@ class WebServerConfig:
             no_web_open=getattr(args, "no_web_open", False),
             provider=getattr(args, "provider", None),
             model=getattr(args, "model", None) or os.getenv("OPENAI_MODEL"),
-            endpoint=getattr(args, "endpoint", None),
             thinking=getattr(args, "thinking", False),
             verbose=getattr(args, "verbose", False),
             no_history=getattr(args, "no_history", False),
@@ -65,7 +63,7 @@ class WebServerConfig:
         # Capture a subset of CLI args for the /api/config/cli endpoint
         config.cli_args = {
             k: getattr(args, k, None)
-            for k in ("provider", "model", "endpoint", "thinking", "verbose",
+            for k in ("provider", "model", "thinking", "verbose",
                       "no_history", "gmail", "onedrive", "read", "write", "exec",
                       "system_prompt", "no_system_prompt", "log", "web_host",
                       "web_port", "no_web_open", "web")

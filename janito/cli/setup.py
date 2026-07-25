@@ -7,6 +7,7 @@ import sys
 
 from ..general_config import (
     load_model_from_config,
+    load_provider_from_config,
     get_active_provider,
     load_endpoint_from_config,
 )
@@ -43,39 +44,43 @@ def setup_endpoint_env(args):
     """Set up endpoint environment variable from CLI args or config.
     
     Priority:
-    1. --endpoint CLI argument (highest priority, works for any provider)
-    2. --provider CLI argument: resolves the base URL from the provider map
-    3. For 'custom' provider: falls back to endpoint from config.json
+    1. --provider CLI argument: resolves the base URL from the provider map
+    2. For 'custom' provider: falls back to endpoint from config.json
+    3. For known providers: falls back to endpoint from config.json, then
+       to the provider's built-in base URL
+    4. If no --provider is given, resolves from the configured provider
+       (config.json) so that ``--set endpoint=...`` works without
+       repeating ``--provider`` on every invocation.
     
     Args:
         args: Parsed command line arguments
     """
-    # First check if --endpoint was passed on command line (highest priority)
-    if args.endpoint:
-        os.environ["OPENAI_BASE_URL"] = args.endpoint
-    # If --provider was passed, resolve the base URL from the provider map
-    elif args.provider:
-        base_url = get_base_url_from_provider(args.provider)
-        if is_custom_provider(args.provider):
-            # Custom provider: base_url is the CUSTOM_ENDPOINT marker,
-            # so we need an explicit endpoint from config or env
-            if not os.getenv("OPENAI_BASE_URL"):
-                config_endpoint = load_endpoint_from_config(args.provider)
-                if config_endpoint:
-                    os.environ["OPENAI_BASE_URL"] = config_endpoint
-        elif base_url is not None:
-            # Known provider: fall back to the provider's built-in base URL.
-            # An already-set OPENAI_BASE_URL (from the environment or config)
-            # is an explicit override and must NOT be clobbered. This matters
-            # for providers like Alibaba, where some API keys (e.g. token-plan
-            # "sk-sp-" keys) are only valid against a non-default endpoint;
-            # overwriting the user's endpoint with the provider default causes
-            # a 401 "invalid_api_key" even though the correct key is selected.
-            if not os.getenv("OPENAI_BASE_URL"):
-                config_endpoint = load_endpoint_from_config(args.provider)
-                os.environ["OPENAI_BASE_URL"] = config_endpoint or base_url
-        # If base_url is None (e.g. "openai"), leave OPENAI_BASE_URL unset
-        # so the standard OpenAI endpoint is used
+    # Resolve the provider: CLI arg first, then config.json
+    provider = args.provider or load_provider_from_config()
+    if not provider:
+        return
+
+    base_url = get_base_url_from_provider(provider)
+    if is_custom_provider(provider):
+        # Custom provider: base_url is the CUSTOM_ENDPOINT marker,
+        # so we need an explicit endpoint from config or env
+        if not os.getenv("OPENAI_BASE_URL"):
+            config_endpoint = load_endpoint_from_config(provider)
+            if config_endpoint:
+                os.environ["OPENAI_BASE_URL"] = config_endpoint
+    elif base_url is not None:
+        # Known provider: fall back to the provider's built-in base URL.
+        # An already-set OPENAI_BASE_URL (from the environment or config)
+        # is an explicit override and must NOT be clobbered. This matters
+        # for providers like Alibaba, where some API keys (e.g. token-plan
+        # "sk-sp-" keys) are only valid against a non-default endpoint;
+        # overwriting the user's endpoint with the provider default causes
+        # a 401 "invalid_api_key" even though the correct key is selected.
+        if not os.getenv("OPENAI_BASE_URL"):
+            config_endpoint = load_endpoint_from_config(provider)
+            os.environ["OPENAI_BASE_URL"] = config_endpoint or base_url
+    # If base_url is None (e.g. "openai"), leave OPENAI_BASE_URL unset
+    # so the standard OpenAI endpoint is used
 
 
 def setup_model_env(args):
@@ -113,7 +118,6 @@ def validate_required_config():
         missing_vars.append("OPENAI_MODEL")
     
     # For custom provider, validate endpoint is set
-    from ..general_config import load_provider_from_config
     provider = load_provider_from_config()
     if provider and provider.lower() == "custom":
         if not os.getenv("OPENAI_BASE_URL"):
@@ -122,8 +126,6 @@ def validate_required_config():
     if missing_vars:
         print(f"Error: Missing required environment variable(s): {', '.join(missing_vars)}", file=sys.stderr)
         print("Please set these environment variables before running the CLI.", file=sys.stderr)
-        print("\nFor 'custom' provider, use --endpoint:", file=sys.stderr)
-        print(f"  janito --provider custom --endpoint https://api.example.com/v1", file=sys.stderr)
-        print("\nOr set the endpoint in config.json:", file=sys.stderr)
-        print(f"  janito --set endpoint=https://api.example.com/v1", file=sys.stderr)
+        print("\nFor 'custom' provider, set the endpoint in config.json:", file=sys.stderr)
+        print(f"  janito --provider custom --set endpoint=https://api.example.com/v1", file=sys.stderr)
         sys.exit(1)

@@ -47,7 +47,7 @@ janito --web
 janito --web -r -w --gmail -t --model gpt-4o
 
 # Custom provider + endpoint
-janito --web --provider custom --endpoint https://api.example.com/v1
+janito --web --provider custom --set endpoint=https://api.example.com/v1
 
 # Restricted: read-only, no system prompt, no tools, custom port
 janito --web -r -Z --web-port 9090
@@ -74,7 +74,6 @@ The server prints the URL it's listening on, then opens your default browser
 | `-r` / `-w` / `-x` | Privileges (READ / WRITE / EXEC), enforced exactly like the CLI |
 | `--provider` | Provider name (resolved into env before dispatch) |
 | `--model` | Model name (resolved into env before dispatch) |
-| `--endpoint` | Custom API endpoint |
 | `--gmail` | Enable Gmail toolset + email system prompt |
 | `--onedrive` | Enable OneDrive toolset + file system prompt |
 | `-t, --thinking` | Enable thinking/reasoning mode for all sessions |

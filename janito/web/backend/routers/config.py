@@ -17,7 +17,7 @@ def _get_config(request: Request):
 
 @router.get("")
 async def get_config(request: Request):
-    """Current runtime config (provider, model, endpoint, flags from CLI)."""
+    """Current runtime config (provider, model, flags from CLI)."""
     config = _get_config(request)
     from janito import privileges as _privileges_mod
 
@@ -32,7 +32,6 @@ async def get_config(request: Request):
     return {
         "provider": config.provider,
         "model": config.model,
-        "endpoint": config.endpoint,
         "thinking": config.thinking,
         "gmail": config.gmail,
         "onedrive": config.onedrive,
@@ -52,7 +51,7 @@ async def patch_config(request: Request):
     """Update mutable config values (model, thinking, etc.).
 
     Only a safe subset of fields is mutable at runtime. Changing the
-    provider/endpoint requires a restart (they're baked into env vars).
+    provider requires a restart (it's baked into env vars).
     """
     config = _get_config(request)
     try:

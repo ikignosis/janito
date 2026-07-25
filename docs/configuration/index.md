@@ -42,7 +42,7 @@ For `model` and `endpoint`, values are resolved in this order (later overrides e
 1. Default values
 2. Configuration file (`~/.janito/config.json`)
 3. Environment variables (`OPENAI_MODEL`, `OPENAI_BASE_URL`)
-4. Command-line arguments (`--model`, `--endpoint`)
+4. Command-line arguments (`--model`, `--set endpoint=...`)
 
 API keys are resolved from the `OPENAI_API_KEY` environment variable first, then from the per-provider key stored in `~/.janito/auth.json` (set with `--set-api-key`).
 

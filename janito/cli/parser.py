@@ -58,7 +58,7 @@ Examples:
   janito --delete-secret mykey                             # Delete a secret
   janito --config                                           # Interactive configuration setup
   janito -c ~/myconf --set provider=openai                 # Use a custom config dir for all config
-  janito --provider custom --endpoint https://api.example.com/v1  # Use custom provider (with env API key)
+  janito --provider custom --set endpoint=https://api.example.com/v1  # Use custom provider (set endpoint in config)
   janito --no-history                                          # Interactive chat without file history
   janito -t                                                    # Enable thinking mode
   janito --gmail                                              # Enable Gmail tools and email system prompt
@@ -175,12 +175,6 @@ Note: --set and --set-api-key must be used in separate commands.
         "--provider",
         metavar="NAME",
         help="Provider name (e.g., openai, custom)"
-    )
-    
-    parser.add_argument(
-        "--endpoint",
-        metavar="URL",
-        help="API endpoint URL (required for 'custom' provider, or overrides provider base URL)"
     )
     
     parser.add_argument(

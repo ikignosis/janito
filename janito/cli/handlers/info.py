@@ -95,25 +95,21 @@ def handle_info(args) -> int:
         else:
             api_key_source = "not set"
     
-    # Determine endpoint/base URL (priority: CLI/OPENAI_BASE_URL > config > provider default)
-    cli_endpoint = getattr(args, 'endpoint', None)
+    # Determine endpoint/base URL (priority: OPENAI_BASE_URL > config > provider default)
     env_endpoint = os.getenv("OPENAI_BASE_URL")
     config_endpoint = load_endpoint_from_config(provider)
     
     endpoint = None
     endpoint_source = "not set"
     
-    if cli_endpoint:
-        endpoint = cli_endpoint
-        endpoint_source = "CLI argument"
-    elif env_endpoint:
+    if env_endpoint:
         endpoint = env_endpoint
         endpoint_source = "environment variable"
     elif config_endpoint:
         endpoint = config_endpoint
         endpoint_source = f"config.json ({provider}.endpoint)"
     elif is_custom_provider(provider):
-        endpoint_source = "required but not set (use --endpoint or set endpoint in config.json)"
+        endpoint_source = "required but not set (set endpoint in config.json)"
     
     # Print the info
     print("Resolved Configuration:")
@@ -138,7 +134,7 @@ def handle_info(args) -> int:
     if api_key_source == "not set":
         print("Note: API key not configured. Use --set-api-key or OPENAI_API_KEY env var")
     if is_custom_provider(provider) and not endpoint:
-        print("Note: Endpoint not configured. Use --endpoint or set endpoint in config.json")
+        print("Note: Endpoint not configured. Set endpoint in config.json (janito --set endpoint=URL)")
     
     return 0
 
@@ -187,7 +183,7 @@ def handle_show_config(args=None) -> int:
                 endpoint = provider_base
                 endpoint_source = f"{provider} default"
         elif provider and is_custom_provider(provider):
-            endpoint_source = "required but not set (use --endpoint or set endpoint in config.json)"
+            endpoint_source = "required but not set (set endpoint in config.json)"
 
     print("Current Configuration:")
     print("=" * 40)

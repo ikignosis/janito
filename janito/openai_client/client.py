@@ -108,8 +108,9 @@ def get_env_config() -> Tuple[Optional[str], str, str]:
     When OPENAI_BASE_URL is not defined, attempts to determine it based on
     the OPENAI_PROVIDER environment variable (if set) or provider from config.
     
-    For 'custom' provider, the endpoint must be provided via --endpoint,
-    OPENAI_BASE_URL environment variable, or 'endpoint' key in config.json.
+    For 'custom' provider, the endpoint must be provided via the
+    OPENAI_BASE_URL environment variable or the 'endpoint' key in config.json
+    (set with ``--set endpoint=...``).
     
     Returns:
         Tuple of (base_url, api_key, model)

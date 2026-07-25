@@ -16,7 +16,7 @@ from typing import Dict, Optional
 
 # Provider to Base URL mapping
 # None means the standard OpenAI API endpoint (no custom base URL needed)
-# "custom" is a special case that requires an endpoint from --endpoint or config
+# "custom" is a special case that requires an endpoint from config (--set endpoint)
 PROVIDER_BASE_URLS: Dict[str, Optional[str]] = {
     # AI Providers with OpenAI-compatible APIs
     "openai": None,  # Standard OpenAI - no base_url needed
@@ -26,7 +26,7 @@ PROVIDER_BASE_URLS: Dict[str, Optional[str]] = {
     "alibaba": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
     "zai": "https://api.z.ai/api/paas/v4/",
     "xai": "https://api.x.ai/v1",
-    "custom": "CUSTOM_ENDPOINT",  # Special marker - endpoint must be provided via --endpoint or config
+    "custom": "CUSTOM_ENDPOINT",  # Special marker - endpoint must be provided via config (--set endpoint)
 }
 
 

@@ -30,7 +30,6 @@ If no prompt is given, janito starts an interactive chat shell.
 | `--set-api-key <key>` | Set the API key for a provider (requires `--provider`) |
 | `--provider <name>` | Provider name (e.g., `openai`, `custom`) |
 | `--model <name>` | Model name (overrides `OPENAI_MODEL` and config) |
-| `--endpoint <url>` | API endpoint URL (required for `custom`, or overrides a provider base URL) |
 | `--list-keys` | List configured providers and keys |
 
 > **Note:** `--set` and `--set-api-key` must be used in **separate commands**, not together on the same line.
