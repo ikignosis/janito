@@ -9,7 +9,8 @@ try:
         load_model_from_config,
         load_endpoint_from_config,
         get_active_provider,
-        get_config_path
+        get_config_path,
+        get_masked_api_key
     )
     from ...auth_config import get_api_key, get_auth_file_path, get_default_provider
     from ...provider_config import is_custom_provider, CUSTOM_ENDPOINT_MARKER, get_base_url_from_provider
@@ -19,26 +20,11 @@ except ImportError:
         load_model_from_config,
         load_endpoint_from_config,
         get_active_provider,
-        get_config_path
+        get_config_path,
+        get_masked_api_key
     )
     from janito.auth_config import get_api_key, get_auth_file_path, get_default_provider
     from janito.provider_config import is_custom_provider, CUSTOM_ENDPOINT_MARKER, get_base_url_from_provider
-
-
-def get_masked_api_key(api_key: str) -> str:
-    """Mask an API key to show only first and last few characters.
-    
-    Args:
-        api_key: The API key to mask
-        
-    Returns:
-        str: Masked API key showing first 6 and last 4 characters
-    """
-    if not api_key:
-        return "(not set)"
-    if len(api_key) <= 12:
-        return "***"
-    return f"{api_key[:6]}...{api_key[-4:]}"
 
 
 def handle_info(args) -> int:

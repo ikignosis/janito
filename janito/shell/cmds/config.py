@@ -16,7 +16,7 @@ def _print_config_info() -> None:
     provider = get_active_provider()
     api_key = os.getenv("OPENAI_API_KEY", "")
     masked_key = get_masked_api_key(api_key)
-    context_window_size = load_context_window_size()
+    context_window_size = load_context_window_size(provider)
     
     # Determine the actual base URL that will be used
     base_url = os.getenv("OPENAI_BASE_URL")

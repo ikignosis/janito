@@ -324,8 +324,9 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
     
     logger.debug(f"Using {len(tools_schemas)} tools total")
     
-    # Load context window size from general config if set
-    context_window_size = load_context_window_size()
+    # Load max tokens from general config if set
+    provider = get_active_provider()
+    context_window_size = load_context_window_size(provider)
     
     # Check for preserve_thinking in config
     preserve_thinking = get_config_value("preserve_thinking")

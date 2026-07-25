@@ -1,10 +1,14 @@
 """
 Tests for provider-scoped configuration in general_config.
 
-The ``model`` and ``endpoint`` config keys are stored per-provider as
-``<provider>.model`` and ``<provider>.endpoint`` so that each provider can have
-its own default model and endpoint. The provider is resolved from the
-``--provider`` CLI argument first, then from the configured ``provider`` value.
+The ``model`` and ``endpoint`` config keys are stored per-provider under
+``providers.<provider>.model`` and ``providers.<provider>.endpoint`` so that each
+provider can have its own default model and endpoint. The provider is resolved
+from the ``--provider`` CLI argument first, then from the configured ``provider``
+value.
+
+Note: Legacy flat keys (e.g. "openai.model") are NOT automatically migrated.
+Users with old configs must manually update them to the new nested structure.
 """
 
 import json
@@ -51,14 +55,14 @@ if pytest is not None:
         key, value = gc.set_config_from_cli("model=gpt-4", "openai")
         assert key == "openai.model"
         assert value == "gpt-4"
-        assert _read_config(config_path) == {"openai.model": "gpt-4"}
+        assert _read_config(config_path) == {"providers": {"openai": {"model": "gpt-4"}}}
 
     def test_set_model_uses_configured_provider(monkeypatch, tmp_path):
         config_path = _use_temp_config(monkeypatch, tmp_path)
         gc.set_config_from_cli("provider=minimax")
         key, _ = gc.set_config_from_cli("model=abab6.5")
         assert key == "minimax.model"
-        assert _read_config(config_path)["minimax.model"] == "abab6.5"
+        assert _read_config(config_path)["providers"]["minimax"]["model"] == "abab6.5"
 
     def test_cli_provider_overrides_configured_provider(monkeypatch, tmp_path):
         config_path = _use_temp_config(monkeypatch, tmp_path)
@@ -81,7 +85,7 @@ if pytest is not None:
     def test_get_model_without_provider_errors(monkeypatch, tmp_path):
         config_path = _use_temp_config(monkeypatch, tmp_path)
         # A config file must exist for --get; write an unrelated (non-scoped) key.
-        gc.set_config_from_cli("context-window-size=8192")
+        gc.set_config_from_cli("provider=openai")
         with pytest.raises(ProviderRequiredError):
             gc.get_config_from_cli("model")
         assert config_path.exists()
@@ -110,8 +114,8 @@ if pytest is not None:
         gc.set_config_from_cli("model=abab6.5", "minimax")
         assert gc.unset_config_key_from_cli("model", "openai") is True
         config = _read_config(config_path)
-        assert "openai.model" not in config
-        assert config["minimax.model"] == "abab6.5"
+        assert "openai" not in config.get("providers", {})
+        assert config["providers"]["minimax"]["model"] == "abab6.5"
         # Removing again returns False (already gone)
         assert gc.unset_config_key_from_cli("model", "openai") is False
 
@@ -123,10 +127,10 @@ if pytest is not None:
 
     def test_non_scoped_keys_unaffected(monkeypatch, tmp_path):
         config_path = _use_temp_config(monkeypatch, tmp_path)
-        key, _ = gc.set_config_from_cli("context-window-size=8192")
-        assert key == "context-window-size"
-        assert gc.get_config_from_cli("context-window-size") == "8192"
-        assert gc.unset_config_key_from_cli("context-window-size") is True
+        key, _ = gc.set_config_from_cli("provider=openai")
+        assert key == "provider"
+        assert gc.get_config_from_cli("provider") == "openai"
+        assert gc.unset_config_key_from_cli("provider") is True
         assert _read_config(config_path) == {}
 
     def test_set_endpoint_without_provider_errors(monkeypatch, tmp_path):
@@ -141,14 +145,14 @@ if pytest is not None:
         key, value = gc.set_config_from_cli("endpoint=http://x/v1", "custom")
         assert key == "custom.endpoint"
         assert value == "http://x/v1"
-        assert _read_config(config_path) == {"custom.endpoint": "http://x/v1"}
+        assert _read_config(config_path) == {"providers": {"custom": {"endpoint": "http://x/v1"}}}
 
     def test_set_endpoint_uses_configured_provider(monkeypatch, tmp_path):
         config_path = _use_temp_config(monkeypatch, tmp_path)
         gc.set_config_from_cli("provider=custom")
         key, _ = gc.set_config_from_cli("endpoint=http://x/v1")
         assert key == "custom.endpoint"
-        assert _read_config(config_path)["custom.endpoint"] == "http://x/v1"
+        assert _read_config(config_path)["providers"]["custom"]["endpoint"] == "http://x/v1"
 
     def test_get_endpoint_per_provider(monkeypatch, tmp_path):
         _use_temp_config(monkeypatch, tmp_path)
@@ -182,8 +186,8 @@ if pytest is not None:
         gc.set_config_from_cli("endpoint=http://b/v1", "openai")
         assert gc.unset_config_key_from_cli("endpoint", "custom") is True
         config = _read_config(config_path)
-        assert "custom.endpoint" not in config
-        assert config["openai.endpoint"] == "http://b/v1"
+        assert "custom" not in config.get("providers", {})
+        assert config["providers"]["openai"]["endpoint"] == "http://b/v1"
         # Removing again returns False (already gone)
         assert gc.unset_config_key_from_cli("endpoint", "custom") is False
 
@@ -194,6 +198,30 @@ if pytest is not None:
     def test_model_config_key_helper():
         assert gc.model_config_key("openai") == "openai.model"
         assert gc.model_config_key("  MiniMax ") == "minimax.model"
+
+    def test_set_context_window_size_per_provider(monkeypatch, tmp_path):
+        config_path = _use_temp_config(monkeypatch, tmp_path)
+        gc.set_config_from_cli("provider=openai")
+        gc.set_config_from_cli("context-window-size=8192")
+        gc.set_config_from_cli("context-window-size=4096", "minimax")
+        # Each provider has its own context-window-size
+        assert gc.load_context_window_size("openai") == 8192
+        assert gc.load_context_window_size("minimax") == 4096
+        # Verify storage structure
+        config = _read_config(config_path)
+        assert config["providers"]["openai"]["context-window-size"] == 8192
+        assert config["providers"]["minimax"]["context-window-size"] == 4096
+
+    def test_unset_context_window_size_per_provider(monkeypatch, tmp_path):
+        config_path = _use_temp_config(monkeypatch, tmp_path)
+        gc.set_config_from_cli("context-window-size=8192", "openai")
+        gc.set_config_from_cli("context-window-size=4096", "minimax")
+        assert gc.unset_config_key_from_cli("context-window-size", "openai") is True
+        config = _read_config(config_path)
+        assert "openai" not in config.get("providers", {})
+        assert config["providers"]["minimax"]["context-window-size"] == 4096
+        # Removing again returns False (already gone)
+        assert gc.unset_config_key_from_cli("context-window-size", "openai") is False
 
     def test_determine_provider_priority(monkeypatch, tmp_path):
         _use_temp_config(monkeypatch, tmp_path)

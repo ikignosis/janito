@@ -17,6 +17,10 @@ def run_interactive_chat(args):
     Args:
         args: Parsed command line arguments
     """
+    if getattr(args, "full_privileges", False):
+        from rich.console import Console
+        Console().print("WARNING: Running with full privileges, consider using -r, -w, -x", style="yellow")
+
     # Set up Gmail mode if requested
     if args.gmail:
         from ..tooling.tools_registry import add_toolset
@@ -85,6 +89,10 @@ def run_single_prompt(args):
     """
     import sys
     
+    if getattr(args, "full_privileges", False):
+        from rich.console import Console
+        Console().print("WARNING: Running with full privileges, consider using -r, -w, -x", style="yellow")
+
     # Set up Gmail mode if requested
     if args.gmail:
         from ..tooling.tools_registry import add_toolset

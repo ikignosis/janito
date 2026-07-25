@@ -25,6 +25,7 @@ from janito.openai_client.client import get_env_config, format_tokens
 from janito.general_config import (
     load_context_window_size,
     get_config_value,
+    get_active_provider,
 )
 
 from .config import WebServerConfig
@@ -180,7 +181,7 @@ async def stream_prompt(
         tools_schemas = []
         mcp_tools = []
 
-    context_window_size = load_context_window_size()
+    context_window_size = load_context_window_size(get_active_provider())
     preserve_thinking = get_config_value("preserve_thinking")
 
     messages.append({"role": "user", "content": prompt})

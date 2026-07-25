@@ -14,6 +14,7 @@ try:
         load_model_from_config,
         load_context_window_size,
         load_endpoint_from_config,
+        get_masked_api_key,
         ProviderRequiredError,
     )
     from ...auth_config import (
@@ -32,6 +33,7 @@ except ImportError:
         load_model_from_config,
         load_context_window_size,
         load_endpoint_from_config,
+        get_masked_api_key,
         ProviderRequiredError,
     )
     from janito.auth_config import (
@@ -163,16 +165,12 @@ def handle_config_interactive() -> int:
     # Load existing values
     existing_provider = load_provider_from_config()
     existing_model = load_model_from_config(existing_provider)
-    existing_context_window = load_context_window_size()
+    existing_context_window = load_context_window_size(existing_provider)
     existing_endpoint = load_endpoint_from_config()
     
     # Mask existing API key for display
     def mask_api_key(key: str) -> str:
-        if not key:
-            return "(not set)"
-        if len(key) <= 12:
-            return "***"
-        return f"{key[:6]}...{key[-4:]}"
+        return get_masked_api_key(key)
     
     # Helper for prompting with default
     def prompt_with_default(prompt_text: str, default: str = None, is_password: bool = False) -> str:
@@ -333,9 +331,10 @@ def handle_config_interactive() -> int:
         set_config_from_cli(f"model={model}", provider)
         print(f"[OK] Saved model '{model}' to config ({provider}.model)")
         
-        # Save context window to config.json
-        set_config_from_cli(f"context-window-size={context_window}")
-        print(f"[OK] Saved context window {context_window} to config")
+        # Save context window to config.json under the provider-scoped key
+        # (e.g. "openai.context-window-size") so each provider has its own context window.
+        set_config_from_cli(f"context-window-size={context_window}", provider)
+        print(f"[OK] Saved context window {context_window} to config ({provider}.context-window-size)")
         
         # Save endpoint to config.json under the provider-scoped key
         # (e.g. "custom.endpoint") so each provider has its own endpoint.

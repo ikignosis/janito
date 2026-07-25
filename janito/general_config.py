@@ -18,6 +18,9 @@ logger = logging.getLogger(__name__)
 # Config file path
 CONFIG_PATH = Path.home() / ".janito" / "config.json"
 
+# Config keys that are stored per-provider (as ``<provider>.<key>``)
+PROVIDER_SCOPED_KEYS = {"model", "endpoint", "context-window-size"}
+
 
 def get_config_path() -> Path:
     """Get the path to the config.json file.
@@ -65,6 +68,10 @@ def save_config(config: Dict[str, Any]) -> None:
 def get_config_value(key: str) -> Optional[Any]:
     """Get a config value by key.
     
+    Supports both flat keys and provider-scoped keys in the nested structure.
+    For provider-scoped keys (e.g., "openai.model"), it reads from the nested
+    providers structure.
+    
     Args:
         key: The config key to retrieve
         
@@ -72,6 +79,21 @@ def get_config_value(key: str) -> Optional[Any]:
         The config value, or None if not found or config file doesn't exist
     """
     config = load_config()
+    
+    # Check if this is a provider-scoped key (e.g., "openai.model")
+    if '.' in key:
+        parts = key.split('.', 1)
+        if len(parts) == 2:
+            provider, subkey = parts
+            providers = config.get("providers", {})
+            if isinstance(providers, dict) and provider in providers:
+                provider_config = providers[provider]
+                if isinstance(provider_config, dict):
+                    value = provider_config.get(subkey)
+                    logger.debug(f"Getting config '{key}': {value if value is None else '(set)'}")
+                    return value
+    
+    # Fall back to flat key lookup
     value = config.get(key)
     logger.debug(f"Getting config '{key}': {value if value is None else '(set)'}")
     return value
@@ -80,18 +102,48 @@ def get_config_value(key: str) -> Optional[Any]:
 def set_config_value(key: str, value: Any) -> None:
     """Set a config value.
     
+    Supports both flat keys and provider-scoped keys in the nested structure.
+    For provider-scoped keys (e.g., "openai.model"), it writes to the nested
+    providers structure.
+    
     Args:
         key: The config key to set
         value: The value to set
     """
     logger.debug(f"Setting config '{key}' = {value}")
     config = load_config()
+    
+    # Check if this is a provider-scoped key (e.g., "openai.model")
+    if '.' in key:
+        parts = key.split('.', 1)
+        if len(parts) == 2:
+            provider, subkey = parts
+            if subkey in PROVIDER_SCOPED_KEYS:
+                # Write to nested providers structure
+                providers = config.get("providers")
+                if not isinstance(providers, dict):
+                    providers = {}
+                    config["providers"] = providers
+                provider_config = providers.get(provider)
+                if not isinstance(provider_config, dict):
+                    provider_config = {}
+                    providers[provider] = provider_config
+                provider_config[subkey] = value
+                save_config(config)
+                return
+    
+    # Fall back to flat key storage
     config[key] = value
     save_config(config)
 
 
 def unset_config_value(key: str) -> bool:
     """Remove a config value by key.
+    
+    Supports both flat keys and provider-scoped keys in the nested structure.
+    For provider-scoped keys (e.g., "openai.model"), it removes from the nested
+    providers structure.  If the provider dict becomes empty after removal, the
+    provider entry itself is also removed.
     
     Args:
         key: The config key to remove
@@ -100,6 +152,34 @@ def unset_config_value(key: str) -> bool:
         bool: True if the key was removed, False if it didn't exist
     """
     config = load_config()
+
+    # Check if this is a provider-scoped key (e.g., "openai.model")
+    if '.' in key:
+        parts = key.split('.', 1)
+        if len(parts) == 2:
+            provider, subkey = parts
+            if subkey in PROVIDER_SCOPED_KEYS:
+                providers = config.get("providers")
+                if not isinstance(providers, dict):
+                    logger.debug(f"Config key not found for removal: {key}")
+                    return False
+                provider_config = providers.get(provider)
+                if not isinstance(provider_config, dict):
+                    logger.debug(f"Config key not found for removal: {key}")
+                    return False
+                if subkey not in provider_config:
+                    logger.debug(f"Config key not found for removal: {key}")
+                    return False
+                del provider_config[subkey]
+                if not provider_config:
+                    del providers[provider]
+                if not providers:
+                    del config["providers"]
+                save_config(config)
+                logger.info(f"Removed config key: {key}")
+                return True
+
+    # Fall back to flat key removal
     if key in config:
         del config[key]
         save_config(config)
@@ -205,19 +285,30 @@ def load_model_from_config(cli_provider: Optional[str] = None) -> Optional[str]:
     return get_config_value(model_config_key(provider))
 
 
-def load_context_window_size() -> Optional[int]:
+def load_context_window_size(cli_provider: Optional[str] = None) -> Optional[int]:
     """Load context window size from ~/.janito/config.json if it exists.
     
     This value can be used to limit the context window size for API calls.
+    The context window size is stored per-provider under the nested providers
+    structure (e.g. providers.openai.context-window-size).
+    
+    Args:
+        cli_provider: Provider passed via ``--provider`` (may be None). If not
+            provided, the provider is read from config.json.
     
     Returns:
         int: Context window size from config, or None if not found
     """
+    provider = determine_provider(cli_provider)
+    if not provider:
+        return None
     # Support both hyphenated and underscore formats in config
-    value = get_config_value("context-window-size")
+    key = f"{provider}.context-window-size"
+    value = get_config_value(key)
     if value is not None:
         return int(value)
-    value = get_config_value("context_window_size")
+    key = f"{provider}.context_window_size"
+    value = get_config_value(key)
     if value is not None:
         return int(value)
     return None
@@ -253,19 +344,29 @@ def load_endpoint_from_config(cli_provider: Optional[str] = None) -> Optional[st
 
 
 def get_masked_api_key(api_key: str) -> str:
-    """Mask an API key to show only first and last few characters.
-    
+    """Mask an API key, preserving its length for display.
+
+    The returned string has the same length as ``api_key``: the first few and
+    last few characters are shown and the middle is filled with ``.`` so the
+    output never reveals the full key.
+
     Args:
         api_key: The API key to mask
-        
+
     Returns:
-        str: Masked API key showing first 6 and last 4 characters
+        str: Masked API key with the same length as the input, or
+            ``(not set)`` when the key is empty.
     """
     if not api_key:
         return "(not set)"
-    if len(api_key) <= 12:
-        return "***"
-    return f"{api_key[:6]}...{api_key[-4:]}"
+    prefix_len = 6
+    suffix_len = 4
+    n = len(api_key)
+    middle = n - prefix_len - suffix_len
+    if middle <= 0:
+        # Key too short to keep both ends while preserving length; mask it all.
+        return "." * n
+    return f"{api_key[:prefix_len]}{'.' * middle}{api_key[-suffix_len:]}"
 
 
 def get_active_provider() -> str:
@@ -303,10 +404,6 @@ def get_active_provider() -> str:
     # 4. Fall back to 'openai'
     logger.debug("No provider found, using fallback: openai")
     return "openai"
-
-
-# Config keys that are stored per-provider (as ``<provider>.<key>``)
-PROVIDER_SCOPED_KEYS = {"model", "endpoint"}
 
 
 class ProviderRequiredError(ValueError):
@@ -403,10 +500,8 @@ def get_config_from_cli(key: str, cli_provider: Optional[str] = None) -> Optiona
     if key in PROVIDER_SCOPED_KEYS:
         key = _resolve_provider_scoped_key(key, cli_provider)
 
-    with open(CONFIG_PATH, 'r') as f:
-        config = json.load(f)
-
-    value = config.get(key)
+    # Use get_config_value which handles the nested structure
+    value = get_config_value(key)
     if value is None:
         return None
 

@@ -18,7 +18,6 @@ Usage:
     python -m janito --set-api-key <key> --provider <name> # Store API key
 """
 
-from rich.console import Console
 
 from .cli.logging_config import setup_logging
 from .cli import create_parser
@@ -92,7 +91,7 @@ def main():
             _privileges_mod.running_privileges.EXEC = True
 
     if _privileges_mod.running_privileges is None:
-        Console().print("WARNING: Running with full privileges, consider using -r, -w, -x", style="yellow")
+        args.full_privileges = True
     
     # Handle batch config operations (--set, --unset, --get, secrets)
     if args.set is not None or args.unset is not None or args.get is not None or args.set_secret is not None or args.delete_secret is not None:
