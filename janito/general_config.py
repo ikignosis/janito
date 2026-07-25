@@ -118,13 +118,91 @@ def load_provider_from_config() -> Optional[str]:
     return get_config_value("provider")
 
 
-def load_model_from_config() -> Optional[str]:
-    """Load model name from ~/.janito/config.json if it exists.
-    
+def normalize_provider(provider: Optional[str]) -> Optional[str]:
+    """Normalize a provider name for use as a config key prefix.
+
+    Args:
+        provider: The raw provider name (may be None)
+
     Returns:
-        str: Model name from config, or None if not found
+        The lowercased/stripped provider name, or None if empty/None
     """
-    return get_config_value("model")
+    if not provider:
+        return None
+    normalized = provider.strip().lower()
+    return normalized or None
+
+
+def determine_provider(cli_provider: Optional[str] = None) -> Optional[str]:
+    """Determine the provider used for provider-scoped config (e.g. model).
+
+    Unlike :func:`get_active_provider`, this does *not* fall back to a default
+    provider. It is used for operations (such as ``--set model``) where a
+    provider must be explicitly known.
+
+    Priority:
+    1. ``--provider`` CLI argument
+    2. ``provider`` value from config.json
+
+    Args:
+        cli_provider: Provider passed via ``--provider`` (may be None)
+
+    Returns:
+        The normalized provider name, or None if it cannot be determined
+    """
+    provider = normalize_provider(cli_provider)
+    if provider:
+        return provider
+    return normalize_provider(load_provider_from_config())
+
+
+def model_config_key(provider: str) -> str:
+    """Return the config key used to store the model for a given provider.
+
+    Models are stored per-provider using the ``<provider>.model`` key so that
+    each provider can have its own default model.
+
+    Args:
+        provider: The provider name
+
+    Returns:
+        The provider-scoped config key, e.g. ``"openai.model"``
+    """
+    return f"{normalize_provider(provider)}.model"
+
+
+def endpoint_config_key(provider: str) -> str:
+    """Return the config key used to store the endpoint for a given provider.
+
+    Endpoints are stored per-provider using the ``<provider>.endpoint`` key so
+    that each provider can have its own endpoint override.
+
+    Args:
+        provider: The provider name
+
+    Returns:
+        The provider-scoped config key, e.g. ``"custom.endpoint"``
+    """
+    return f"{normalize_provider(provider)}.endpoint"
+
+
+def load_model_from_config(cli_provider: Optional[str] = None) -> Optional[str]:
+    """Load the model name for the active provider from ~/.janito/config.json.
+
+    The model is stored under a provider-scoped key (``<provider>.model``) so
+    that different providers can each have their own default model.
+
+    Args:
+        cli_provider: Provider passed via ``--provider`` (may be None). If not
+            provided, the provider is read from config.json.
+
+    Returns:
+        str: Model name from config, or None if not found or provider unknown
+    """
+    provider = determine_provider(cli_provider)
+    if not provider:
+        return None
+    return get_config_value(model_config_key(provider))
 
 
 def load_context_window_size() -> Optional[int]:
@@ -145,14 +223,32 @@ def load_context_window_size() -> Optional[int]:
     return None
 
 
-def load_endpoint_from_config() -> Optional[str]:
+def load_endpoint_from_config(cli_provider: Optional[str] = None) -> Optional[str]:
     """Load custom endpoint URL from ~/.janito/config.json if it exists.
-    
+
     This is used for the 'custom' provider or to override provider base URLs.
-    
+
+    The endpoint is stored under a provider-scoped key
+    (``<provider>.endpoint``) so that different providers can each have their
+    own endpoint. The provider is resolved from ``cli_provider`` first, then
+    from the configured ``provider`` value.
+
+    For backward compatibility, the legacy top-level ``endpoint`` key is still
+    honored as a fallback when no provider-scoped endpoint is set.
+
+    Args:
+        cli_provider: Provider passed via ``--provider`` (may be None). If not
+            provided, the provider is read from config.json.
+
     Returns:
-        str: Endpoint URL from config, or None if not found
+        str: Endpoint URL from config, or None if not found or provider unknown
     """
+    provider = determine_provider(cli_provider)
+    if provider:
+        value = get_config_value(endpoint_config_key(provider))
+        if value is not None:
+            return value
+    # Backward compatibility: legacy top-level 'endpoint' key
     return get_config_value("endpoint")
 
 
@@ -209,54 +305,135 @@ def get_active_provider() -> str:
     return "openai"
 
 
-def set_config_from_cli(key_value: str) -> tuple[str, str]:
+# Config keys that are stored per-provider (as ``<provider>.<key>``)
+PROVIDER_SCOPED_KEYS = {"model", "endpoint"}
+
+
+class ProviderRequiredError(ValueError):
+    """Raised when a provider-scoped config key is used without a provider.
+
+    This happens when a key such as ``model`` is set/get/unset via the CLI but
+    the provider cannot be determined (neither ``--provider`` nor a configured
+    ``provider`` value is available).
+    """
+
+
+def _resolve_provider_scoped_key(key: str, cli_provider: Optional[str] = None) -> str:
+    """Resolve a provider-scoped config key (e.g. ``model``) to its full key.
+
+    Args:
+        key: The config key requested (e.g. ``model``)
+        cli_provider: Provider passed via ``--provider`` (may be None)
+
+    Returns:
+        The full provider-scoped key (e.g. ``openai.model``)
+
+    Raises:
+        ProviderRequiredError: If the key is provider-scoped but the provider
+            cannot be determined
+    """
+    provider = determine_provider(cli_provider)
+    if not provider:
+        raise ProviderRequiredError(
+            f"Cannot determine provider for config key '{key}'. "
+            f"Set one first with: janito --set provider=<name> "
+            f"or pass --provider <name>."
+        )
+    return f"{provider}.{key}"
+
+
+def set_config_from_cli(key_value: str, cli_provider: Optional[str] = None) -> tuple[str, str]:
     """Set a config key-value pair from CLI input.
-    
+
+    Provider-scoped keys (such as ``model``) are stored under a
+    ``<provider>.<key>`` key so each provider can have its own value. The
+    provider is taken from ``--provider`` or the configured ``provider`` value.
+
     Args:
         key_value: A string in the format "KEY=VALUE"
-        
+        cli_provider: Provider passed via ``--provider`` (may be None)
+
     Returns:
-        tuple: (key, value) that was set
-        
+        tuple: (key, value) that was set. For provider-scoped keys the returned
+            key is the full provider-scoped key (e.g. ``openai.model``).
+
     Raises:
         ValueError: If the format is invalid
+        ProviderRequiredError: If a provider-scoped key is used but the
+            provider cannot be determined
     """
     if '=' not in key_value:
         raise ValueError("--set requires KEY=VALUE format")
-    
+
     key, value = key_value.split('=', 1)
     key = key.strip()
     value = value.strip()
-    
+
+    if key in PROVIDER_SCOPED_KEYS:
+        key = _resolve_provider_scoped_key(key, cli_provider)
+
     set_config_value(key, value)
-    
+
     return key, value
 
 
-def get_config_from_cli(key: str) -> Optional[str]:
+def get_config_from_cli(key: str, cli_provider: Optional[str] = None) -> Optional[str]:
     """Get a config value from CLI.
-    
+
+    Provider-scoped keys (such as ``model``) are read from the
+    ``<provider>.<key>`` key. The provider is taken from ``--provider`` or the
+    configured ``provider`` value.
+
     Args:
         key: The config key to retrieve
-        
+        cli_provider: Provider passed via ``--provider`` (may be None)
+
     Returns:
         The config value, or None if not found
-        
+
     Raises:
         FileNotFoundError: If config file doesn't exist
         json.JSONDecodeError: If config file contains invalid JSON
+        ProviderRequiredError: If a provider-scoped key is used but the
+            provider cannot be determined
     """
     if not CONFIG_PATH.exists():
         raise FileNotFoundError(f"Config file not found: {CONFIG_PATH}")
-    
+
+    if key in PROVIDER_SCOPED_KEYS:
+        key = _resolve_provider_scoped_key(key, cli_provider)
+
     with open(CONFIG_PATH, 'r') as f:
         config = json.load(f)
-    
+
     value = config.get(key)
     if value is None:
         return None
-    
+
     # Convert non-string values to string for printing
     if not isinstance(value, str):
         return json.dumps(value)
     return value
+
+
+def unset_config_key_from_cli(key: str, cli_provider: Optional[str] = None) -> bool:
+    """Remove a config value by key from CLI.
+
+    Provider-scoped keys (such as ``model``) are removed from the
+    ``<provider>.<key>`` key. The provider is taken from ``--provider`` or the
+    configured ``provider`` value.
+
+    Args:
+        key: The config key to remove
+        cli_provider: Provider passed via ``--provider`` (may be None)
+
+    Returns:
+        bool: True if the key was removed, False if it didn't exist
+
+    Raises:
+        ProviderRequiredError: If a provider-scoped key is used but the
+            provider cannot be determined
+    """
+    if key in PROVIDER_SCOPED_KEYS:
+        key = _resolve_provider_scoped_key(key, cli_provider)
+    return unset_config_value(key)

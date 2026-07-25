@@ -12,7 +12,7 @@ try:
         get_config_path
     )
     from ...auth_config import get_api_key, get_auth_file_path, get_default_provider
-    from ...provider_config import is_custom_provider, CUSTOM_ENDPOINT_MARKER
+    from ...provider_config import is_custom_provider, CUSTOM_ENDPOINT_MARKER, get_base_url_from_provider
 except ImportError:
     from janito.general_config import (
         load_provider_from_config,
@@ -22,7 +22,7 @@ except ImportError:
         get_config_path
     )
     from janito.auth_config import get_api_key, get_auth_file_path, get_default_provider
-    from janito.provider_config import is_custom_provider, CUSTOM_ENDPOINT_MARKER
+    from janito.provider_config import is_custom_provider, CUSTOM_ENDPOINT_MARKER, get_base_url_from_provider
 
 
 def get_masked_api_key(api_key: str) -> str:
@@ -80,17 +80,23 @@ def handle_info(args) -> int:
                 provider_source = "fallback"
     
     # Determine resolved model (priority: CLI > env var > config)
-    model = os.getenv("OPENAI_MODEL")
-    model_source = "environment variable"
-    
-    if not model:
-        config_model = load_model_from_config()
+    model = None
+    model_source = "not set"
+
+    cli_model = getattr(args, 'model', None)
+    env_model = os.getenv("OPENAI_MODEL")
+
+    if cli_model:
+        model = cli_model
+        model_source = "CLI argument"
+    elif env_model:
+        model = env_model
+        model_source = "environment variable"
+    else:
+        config_model = load_model_from_config(provider)
         if config_model:
             model = config_model
-            model_source = "config.json"
-        else:
-            model = None
-            model_source = "not set"
+            model_source = f"config.json ({provider}.model)"
     
     # Determine API key (priority: env var > auth.json for resolved provider)
     api_key = os.getenv("OPENAI_API_KEY")
@@ -106,7 +112,7 @@ def handle_info(args) -> int:
     # Determine endpoint/base URL (priority: CLI/OPENAI_BASE_URL > config > provider default)
     cli_endpoint = getattr(args, 'endpoint', None)
     env_endpoint = os.getenv("OPENAI_BASE_URL")
-    config_endpoint = load_endpoint_from_config()
+    config_endpoint = load_endpoint_from_config(provider)
     
     endpoint = None
     endpoint_source = "not set"
@@ -119,7 +125,7 @@ def handle_info(args) -> int:
         endpoint_source = "environment variable"
     elif config_endpoint:
         endpoint = config_endpoint
-        endpoint_source = "config.json"
+        endpoint_source = f"config.json ({provider}.endpoint)"
     elif is_custom_provider(provider):
         endpoint_source = "required but not set (use --endpoint or set endpoint in config.json)"
     
@@ -151,24 +157,70 @@ def handle_info(args) -> int:
     return 0
 
 
-def handle_show_config() -> int:
+def handle_show_config(args=None) -> int:
     """Handle --show-config command.
-    
-    Displays the currently configured provider and model from config files.
-    
+
+    Displays the currently configured provider, model, and API key (truncated
+    for security) from config files. The model shown is the one configured for
+    the active provider.
+
+    Args:
+        args: Parsed command line arguments (optional). Used to honor
+            ``--provider`` when displaying the model.
+
     Returns:
         int: Exit code (0 for success)
     """
     # Load configured values from config.json
-    provider = load_provider_from_config()
-    model = load_model_from_config()
-    
+    cli_provider = getattr(args, 'provider', None) if args is not None else None
+    provider = cli_provider or load_provider_from_config()
+    model = load_model_from_config(provider)
+
+    # Resolve API key (priority: env var > auth.json) and determine its source
+    api_key = os.getenv("OPENAI_API_KEY")
+    api_key_source = "env"
+    if not api_key:
+        api_key = get_api_key(provider) if provider else None
+        if api_key:
+            api_key_source = "auth.json"
+
+    # Resolve the endpoint, mirroring the runtime resolution in
+    # setup_endpoint_env: explicit env OPENAI_BASE_URL > config.json endpoint
+    # > provider's built-in base URL. Displaying this makes key/endpoint
+    # mismatches (e.g. a token-plan key sent to the dashscope endpoint) visible.
+    endpoint = os.getenv("OPENAI_BASE_URL")
+    endpoint_source = "env"
+    if not endpoint:
+        config_endpoint = load_endpoint_from_config(provider)
+        if config_endpoint:
+            endpoint = config_endpoint
+            endpoint_source = "config.json"
+        elif provider and not is_custom_provider(provider):
+            provider_base = get_base_url_from_provider(provider)
+            if provider_base and provider_base != CUSTOM_ENDPOINT_MARKER:
+                endpoint = provider_base
+                endpoint_source = f"{provider} default"
+        elif provider and is_custom_provider(provider):
+            endpoint_source = "required but not set (use --endpoint or set endpoint in config.json)"
+
     print("Current Configuration:")
     print("=" * 40)
     print(f"Provider:  {provider or '(not configured)'}")
-    print(f"Model:     {model or '(not configured)'}")
+    if model:
+        print(f"Model:     {model} ({provider}.model)")
+    else:
+        print(f"Model:     (not configured)")
+    masked = get_masked_api_key(api_key)
+    if api_key:
+        print(f"API Key:   {masked} ({api_key_source})")
+    else:
+        print(f"API Key:   (not set)")
+    if endpoint:
+        print(f"Endpoint:  {endpoint} ({endpoint_source})")
+    else:
+        print(f"Endpoint:  (default OpenAI) ({endpoint_source})")
     print("=" * 40)
-    
+
     return 0
 
 

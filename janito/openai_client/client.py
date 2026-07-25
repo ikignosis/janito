@@ -9,7 +9,7 @@ import json
 import logging
 import threading
 from typing import Tuple, List, Dict, Any, Optional
-from openai import OpenAI
+from openai import OpenAI, NotFoundError, AuthenticationError
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.progress import Progress, SpinnerColumn, TextColumn
@@ -95,7 +95,9 @@ from janito.general_config import (
     load_provider_from_config, 
     load_context_window_size, 
     load_endpoint_from_config,
-    get_config_value
+    get_config_value,
+    get_active_provider,
+    get_masked_api_key
 )
 
 
@@ -145,20 +147,19 @@ def get_env_config() -> Tuple[Optional[str], str, str]:
                     pass
         
         if provider:
-            base_url = get_base_url_from_provider(provider)
-            logger.debug(f"Base URL from provider '{provider}': {base_url}")
-            
-            # Handle custom provider: requires explicit endpoint
-            if is_custom_provider(provider) and base_url == CUSTOM_ENDPOINT_MARKER:
-                # Try to get endpoint from config
-                config_endpoint = load_endpoint_from_config()
-                if config_endpoint:
-                    base_url = config_endpoint
-                    logger.debug(f"Using endpoint from config: {base_url}")
-                else:
-                    # No endpoint found - this will be caught by validation
-                    logger.warning("Custom provider selected but no endpoint configured")
-                    base_url = None
+            # Check for a user-configured endpoint override first (any provider)
+            config_endpoint = load_endpoint_from_config(provider)
+            if config_endpoint:
+                base_url = config_endpoint
+                logger.debug(f"Using endpoint from config for provider '{provider}': {base_url}")
+            elif is_custom_provider(provider):
+                # Custom provider *requires* an explicit endpoint
+                logger.warning("Custom provider selected but no endpoint configured")
+                base_url = None
+            else:
+                # Fall back to the built-in default for this provider
+                base_url = get_base_url_from_provider(provider)
+                logger.debug(f"Base URL from provider '{provider}': {base_url}")
     
     return base_url, api_key, model
 
@@ -394,9 +395,51 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
         # via _run_with_progress_bar while the main thread drives the spinner,
         # mirroring the pre-streaming behaviour where the spinner covered the
         # entire request.
-        full_content, reasoning_content, tool_calls_map, usage_info = _run_with_progress_bar(
-            _stream_response, client, call_kwargs, tools_schemas
-        )
+        try:
+            full_content, reasoning_content, tool_calls_map, usage_info = _run_with_progress_bar(
+                _stream_response, client, call_kwargs, tools_schemas
+            )
+        except NotFoundError as e:
+            if "Model not exist" in str(e) or "model not exist" in str(e).lower():
+                api_url = base_url if base_url else "https://api.openai.com"
+                console.print(
+                    f"[bold red]Error: Model not found.[/bold red] "
+                    f"Current model being used: [bold]{model}[/bold] | API URL: [bold]{api_url}[/bold]"
+                )
+                console.print(
+                    f"[dim]Please check that the model name is correct and available "
+                    f"for your API key/provider.[/dim]"
+                )
+                logger.error(f"Model '{model}' not found at API URL '{api_url}': {e}")
+            raise
+        except AuthenticationError as e:
+            provider = get_active_provider()
+            masked_key = get_masked_api_key(api_key)
+            api_url = base_url if base_url else "https://api.openai.com"
+            console.print(
+                f"[bold red]Error: Authentication failed (invalid API key).[/bold red]"
+            )
+            console.print(
+                f"  Provider: [bold]{provider}[/bold]"
+            )
+            console.print(
+                f"  Model:    [bold]{model}[/bold]"
+            )
+            console.print(
+                f"  API URL:  [bold]{api_url}[/bold]"
+            )
+            console.print(
+                f"  API Key:  [bold]{masked_key}[/bold]"
+            )
+            console.print(
+                f"[dim]Please verify your API key for the '{provider}' provider "
+                f"and try again.[/dim]"
+            )
+            logger.error(
+                f"Authentication failed - provider: {provider}, model: {model}, "
+                f"api_url: {api_url}, api_key: {masked_key}: {e}"
+            )
+            raise
 
         logger.debug("API streaming response completed")
         if reasoning_content:

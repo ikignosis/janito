@@ -48,7 +48,8 @@ Examples:
   janito --show-system-prompt                               # Show the resolved system prompt
   janito --log=info,debug "Your prompt"                     # Enable logging
   janito --model gpt-4 "Your prompt"                        # Use specific model
-  janito --set model=gpt-4                                  # Set config value
+  janito --set model=gpt-4                                  # Set model for the active provider
+  janito --provider openai --set model=gpt-4                # Set model for a specific provider
   janito --unset model                                      # Remove config value
   janito --get model                                        # Get config value
   janito --set-secret mykey=myvalue                        # Store a secret
@@ -69,9 +70,12 @@ Examples:
   janito --uninstall-skill git-commit                         # Uninstall a skill
 
 Note: --set and --set-api-key must be used in separate commands.
+  The 'model' key is stored per-provider (e.g. "openai.model"); the provider is
+  taken from --provider or the configured 'provider' value.
   Example:
-    janito --set provider=openai --set model=gpt-4            # Step 1: Set provider and model
-    janito --set-api-key sk-xxx --provider openai             # Step 2: Store API key
+    janito --set provider=openai                              # Step 1: Set provider
+    janito --set model=gpt-4                                  # Step 2: Set model (stored as openai.model)
+    janito --set-api-key sk-xxx --provider openai             # Step 3: Store API key
         """
     )
     
@@ -182,7 +186,9 @@ Note: --set and --set-api-key must be used in separate commands.
         nargs="*",
         action="append",
         metavar="KEY=VALUE",
-        help="Set one or more config key-value pairs in ~/.janito/config.json\n  Examples:\n    janito --set model=gpt-4 endpoint=https://api.example.com/v1\n    janito --set model=gpt-4 --set endpoint=https://api.example.com/v1"
+        help="Set one or more config key-value pairs in ~/.janito/config.json\n"
+             "  The 'model' key is stored per-provider (e.g. openai.model); the\n"
+             "  provider is taken from --provider or the configured 'provider'.\n  Examples:\n    janito --set model=gpt-4 endpoint=https://api.example.com/v1\n    janito --provider openai --set model=gpt-4"
     )
     
     parser.add_argument(

@@ -9,10 +9,12 @@ try:
         get_config_from_cli,
         set_config_from_cli,
         unset_config_value,
+        unset_config_key_from_cli,
         load_provider_from_config,
         load_model_from_config,
         load_context_window_size,
         load_endpoint_from_config,
+        ProviderRequiredError,
     )
     from ...auth_config import (
         get_api_key,
@@ -25,10 +27,12 @@ except ImportError:
         get_config_from_cli,
         set_config_from_cli,
         unset_config_value,
+        unset_config_key_from_cli,
         load_provider_from_config,
         load_model_from_config,
         load_context_window_size,
         load_endpoint_from_config,
+        ProviderRequiredError,
     )
     from janito.auth_config import (
         get_api_key,
@@ -37,11 +41,13 @@ except ImportError:
     from janito.provider_config import list_supported_providers, is_custom_provider
 
 
-def handle_get_config(keys: list[str]) -> int:
+def handle_get_config(keys: list[str], cli_provider: str = None) -> int:
     """Handle --get command.
     
     Args:
         keys: List of configuration keys to retrieve
+        cli_provider: Provider passed via ``--provider`` (used for
+            provider-scoped keys such as ``model``)
         
     Returns:
         int: Exit code (0 for success, non-zero for error)
@@ -57,7 +63,12 @@ def handle_get_config(keys: list[str]) -> int:
         
         errors = False
         for key in keys:
-            value = get_config_from_cli(key)
+            try:
+                value = get_config_from_cli(key, cli_provider)
+            except ProviderRequiredError as e:
+                print(f"[ERROR] {e}", file=sys.stderr)
+                errors = True
+                continue
             if value is not None:
                 print(value)
             else:
@@ -73,11 +84,13 @@ def handle_get_config(keys: list[str]) -> int:
         return 1
 
 
-def handle_set_config(values: list[str]) -> int:
+def handle_set_config(values: list[str], cli_provider: str = None) -> int:
     """Handle --set command.
     
     Args:
         values: List of KEY=VALUE strings to set
+        cli_provider: Provider passed via ``--provider`` (used for
+            provider-scoped keys such as ``model``)
         
     Returns:
         int: Exit code (0 for success, non-zero for error)
@@ -90,8 +103,11 @@ def handle_set_config(values: list[str]) -> int:
     errors = False
     for value_str in values:
         try:
-            key, value = set_config_from_cli(value_str)
+            key, value = set_config_from_cli(value_str, cli_provider)
             print(f"[OK] Set {key}={value}")
+        except ProviderRequiredError as e:
+            print(f"[ERROR] {e}", file=sys.stderr)
+            errors = True
         except ValueError as e:
             print(f"[ERROR] Invalid format '{value_str}': {e}", file=sys.stderr)
             errors = True
@@ -99,11 +115,13 @@ def handle_set_config(values: list[str]) -> int:
     return 1 if errors else 0
 
 
-def handle_unset_config(keys: list[str]) -> int:
+def handle_unset_config(keys: list[str], cli_provider: str = None) -> int:
     """Handle --unset command.
     
     Args:
         keys: List of configuration keys to remove
+        cli_provider: Provider passed via ``--provider`` (used for
+            provider-scoped keys such as ``model``)
         
     Returns:
         int: Exit code (0 for success, non-zero for error)
@@ -115,7 +133,13 @@ def handle_unset_config(keys: list[str]) -> int:
     
     errors = False
     for key in keys:
-        if unset_config_value(key):
+        try:
+            removed = unset_config_key_from_cli(key, cli_provider)
+        except ProviderRequiredError as e:
+            print(f"[ERROR] {e}", file=sys.stderr)
+            errors = True
+            continue
+        if removed:
             print(f"[OK] Removed '{key}'")
         else:
             print(f"[WARN] Key '{key}' not found in config", file=sys.stderr)
@@ -138,7 +162,7 @@ def handle_config_interactive() -> int:
     """
     # Load existing values
     existing_provider = load_provider_from_config()
-    existing_model = load_model_from_config()
+    existing_model = load_model_from_config(existing_provider)
     existing_context_window = load_context_window_size()
     existing_endpoint = load_endpoint_from_config()
     
@@ -230,9 +254,11 @@ def handle_config_interactive() -> int:
     # Model
     print("Model")
     print("-" * 30)
+    # Default to the model already configured for the selected provider.
+    default_model = load_model_from_config(provider) or existing_model
     model = prompt_with_default(
         "Enter model name",
-        default=existing_model
+        default=default_model
     )
     if not model:
         print("Error: Model name is required.", file=sys.stderr)
@@ -265,9 +291,11 @@ def handle_config_interactive() -> int:
     if is_custom_provider(provider):
         print("Endpoint (required for 'custom' provider)")
         print("-" * 30)
+        # Default to the endpoint already configured for the selected provider.
+        default_endpoint = load_endpoint_from_config(provider) or existing_endpoint
         endpoint = prompt_with_default(
             "Enter API endpoint URL",
-            default=existing_endpoint
+            default=default_endpoint
         )
         if not endpoint:
             print("Error: Endpoint is required for 'custom' provider.", file=sys.stderr)
@@ -299,19 +327,21 @@ def handle_config_interactive() -> int:
         # Save provider to config.json
         set_config_from_cli(f"provider={provider}")
         print(f"[OK] Saved provider '{provider}' to config")
-        
-        # Save model to config.json
-        set_config_from_cli(f"model={model}")
-        print(f"[OK] Saved model '{model}' to config")
+
+        # Save model to config.json under the provider-scoped key
+        # (e.g. "openai.model") so each provider has its own default model.
+        set_config_from_cli(f"model={model}", provider)
+        print(f"[OK] Saved model '{model}' to config ({provider}.model)")
         
         # Save context window to config.json
         set_config_from_cli(f"context-window-size={context_window}")
         print(f"[OK] Saved context window {context_window} to config")
         
-        # Save endpoint to config.json (only for custom provider)
+        # Save endpoint to config.json under the provider-scoped key
+        # (e.g. "custom.endpoint") so each provider has its own endpoint.
         if endpoint:
-            set_config_from_cli(f"endpoint={endpoint}")
-            print(f"[OK] Saved endpoint to config")
+            set_config_from_cli(f"endpoint={endpoint}", provider)
+            print(f"[OK] Saved endpoint to config ({provider}.endpoint)")
         
         # Save API key to auth.json
         if set_api_key(provider, api_key):

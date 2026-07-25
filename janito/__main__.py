@@ -104,18 +104,22 @@ def main():
         set_secret_vals = _flatten(args.set_secret) if args.set_secret is not None else None
         delete_secret_keys = _flatten(args.delete_secret) if args.delete_secret is not None else None
         
+        # Provider used for provider-scoped config keys (e.g. model). It is
+        # taken from --provider, falling back to the configured provider value.
+        cli_provider = getattr(args, "provider", None)
+        
         if set_values is not None:
-            rc = handle_set_config(set_values)
+            rc = handle_set_config(set_values, cli_provider)
             if rc != 0:
                 exit_code = rc
         
         if unset_keys is not None:
-            rc = handle_unset_config(unset_keys)
+            rc = handle_unset_config(unset_keys, cli_provider)
             if rc != 0:
                 exit_code = rc
         
         if get_keys is not None:
-            rc = handle_get_config(get_keys)
+            rc = handle_get_config(get_keys, cli_provider)
             if rc != 0:
                 exit_code = rc
         
@@ -139,7 +143,7 @@ def main():
     
     # Handle --show-config option (display configured provider and model)
     if args.show_config:
-        return handle_show_config()
+        return handle_show_config(args)
     
     # Handle --show-system-prompt option (display resolved system prompt and exit)
     if args.show_system_prompt:
@@ -191,7 +195,7 @@ def main():
         return handle_uninstall_skill(args.uninstall_skill)
     
     # Try to load API key from config if not set in environment
-    setup_api_key_from_config()
+    setup_api_key_from_config(args)
     
     # Set up model environment variable
     setup_model_env(args)
