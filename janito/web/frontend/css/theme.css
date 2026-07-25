@@ -455,6 +455,7 @@ html[data-theme="dark"] .theme-icon.moon  { color: var(--accent); opacity: 1; }
 .perm-badge.exec { background: rgba(247, 118, 142, 0.15); color: var(--tool-exec); }
 
 .tool-status { margin-left: auto; font-size: 12px; }
+.tool-exec-time { margin-left: 6px; }
 .tool-status.running { color: var(--cyan); }
 .tool-status.done { color: var(--green); }
 .tool-status.error { color: var(--red); }

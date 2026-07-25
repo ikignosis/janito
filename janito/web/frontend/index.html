@@ -197,7 +197,7 @@
                                                         <span><span class="spinner"></span> Running</span>
                                                     </template>
                                                     <template x-if="part.tool.status === 'done'">
-                                                        <span>✅ Done<template x-if="part.tool.execution_time_ms"> · <span x-text="part.tool.execution_time_ms + 'ms'"></span></template></span>
+                                                        <span>✅ Done<template x-if="part.tool.execution_time_ms != null"><span class="tool-exec-time" x-text="'· ' + part.tool.execution_time_ms + 'ms'"></span></template></span>
                                                     </template>
                                                     <template x-if="part.tool.status === 'error'">
                                                         <span>❌ Error</span>
