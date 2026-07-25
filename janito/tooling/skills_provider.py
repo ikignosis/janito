@@ -13,10 +13,17 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any
 
 from janito.tooling.reporter import report_start, report_result, report_error, report_warning
+from janito.config_dir import get_config_dir
 
 
-# Default skills directory
-DEFAULT_SKILLS_DIR = Path.home() / ".janito" / "skills"
+def get_default_skills_dir() -> Path:
+    """Get the default skills directory (honors -c/--config-dir)."""
+    return get_config_dir() / "skills"
+
+
+# Default skills directory (at import time). Retained for backward compatibility;
+# prefer :func:`get_default_skills_dir` which honors the -c/--config-dir override.
+DEFAULT_SKILLS_DIR = get_default_skills_dir()
 
 
 class Skill:
@@ -85,7 +92,7 @@ class SkillsProvider:
                         Defaults to ~/.janito/skills
         """
         if skill_paths is None:
-            skill_paths = [DEFAULT_SKILLS_DIR]
+            skill_paths = [get_default_skills_dir()]
         
         self.skill_paths = skill_paths
         self._skills: Dict[str, Skill] = {}

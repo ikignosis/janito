@@ -19,6 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import janito.general_config as gc
+import janito.config_dir as config_dir_mod
 from janito.general_config import ProviderRequiredError
 
 try:
@@ -28,9 +29,11 @@ except ImportError:  # pragma: no cover - pytest is a dev dependency
 
 
 def _use_temp_config(monkeypatch, tmp_path):
-    """Point CONFIG_PATH at a temporary config file."""
+    """Point the config directory at a temporary directory."""
     config_path = tmp_path / ".janito" / "config.json"
-    monkeypatch.setattr(gc, "CONFIG_PATH", config_path)
+    # The config dir is the single source of truth for all config file paths,
+    # so override it (instead of the legacy CONFIG_PATH constant).
+    monkeypatch.setattr(config_dir_mod, "_config_dir", config_path.parent)
     return config_path
 
 

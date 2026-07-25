@@ -11,12 +11,15 @@ import logging
 from pathlib import Path
 from typing import Optional, Dict, Any
 
+from .config_dir import get_config_dir
+
 # Configure logger for this module
 logger = logging.getLogger(__name__)
 
 
-# Config file path
-CONFIG_PATH = Path.home() / ".janito" / "config.json"
+# Default config file path. Retained for backward compatibility; prefer
+# :func:`get_config_path` which honors the runtime -c/--config-dir override.
+CONFIG_PATH = get_config_dir() / "config.json"
 
 # Config keys that are stored per-provider (as ``<provider>.<key>``)
 PROVIDER_SCOPED_KEYS = {"model", "endpoint", "context-window-size"}
@@ -26,9 +29,9 @@ def get_config_path() -> Path:
     """Get the path to the config.json file.
     
     Returns:
-        Path: Path to ~/.janito/config.json
+        Path: Path to <config-dir>/config.json (defaults to ~/.janito/config.json)
     """
-    return CONFIG_PATH
+    return get_config_dir() / "config.json"
 
 
 def load_config() -> Dict[str, Any]:
@@ -37,13 +40,14 @@ def load_config() -> Dict[str, Any]:
     Returns:
         Dict containing the config, or empty dict if file doesn't exist or is invalid
     """
+    config_path = get_config_path()
     try:
-        with open(CONFIG_PATH, 'r') as f:
+        with open(config_path, 'r') as f:
             config = json.load(f)
-            logger.debug(f"Loaded config from {CONFIG_PATH}: {list(config.keys())}")
+            logger.debug(f"Loaded config from {config_path}: {list(config.keys())}")
             return config
     except FileNotFoundError:
-        logger.debug(f"Config file not found: {CONFIG_PATH}")
+        logger.debug(f"Config file not found: {config_path}")
         return {}
     except json.JSONDecodeError as e:
         logger.error(f"Invalid JSON in config file: {e}")
@@ -59,10 +63,11 @@ def save_config(config: Dict[str, Any]) -> None:
     Raises:
         IOError: If unable to write to the config file
     """
-    CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with open(CONFIG_PATH, 'w') as f:
+    config_path = get_config_path()
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(config_path, 'w') as f:
         json.dump(config, f, indent=2)
-    logger.debug(f"Saved config to {CONFIG_PATH}")
+    logger.debug(f"Saved config to {config_path}")
 
 
 def get_config_value(key: str) -> Optional[Any]:
@@ -494,8 +499,8 @@ def get_config_from_cli(key: str, cli_provider: Optional[str] = None) -> Optiona
         ProviderRequiredError: If a provider-scoped key is used but the
             provider cannot be determined
     """
-    if not CONFIG_PATH.exists():
-        raise FileNotFoundError(f"Config file not found: {CONFIG_PATH}")
+    if not get_config_path().exists():
+        raise FileNotFoundError(f"Config file not found: {get_config_path()}")
 
     if key in PROVIDER_SCOPED_KEYS:
         key = _resolve_provider_scoped_key(key, cli_provider)

@@ -20,6 +20,7 @@ If no prompt is given, janito starts an interactive chat shell.
 
 | Option | Description |
 |--------|-------------|
+| `-c`, `--config-dir <dir>` | Directory for all janito config (config, auth, secrets, MCP, skills). Defaults to `~/.janito` |
 | `--config` | Open the interactive configuration wizard |
 | `--show-config` | Display the configured provider and model |
 | `--info` | Print resolved configuration (provider, model, API key) and exit |

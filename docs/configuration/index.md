@@ -12,6 +12,10 @@ Learn how to configure janito for your needs.
 
 janito stores your configuration in `~/.janito/`. The main configuration file is `~/.janito/config.json`.
 
+> **Custom config directory:** Use `-c`/`--config-dir <dir>` to store *all* config
+> (config, auth, secrets, MCP services and skills) in a different directory
+> instead of `~/.janito`. For example: `janito -c ~/myconf --set provider=openai`.
+
 ### View Configuration
 
 ```bash

@@ -20,15 +20,15 @@ import logging
 from pathlib import Path
 from typing import Dict, Optional
 
+from .config_dir import get_config_dir
+
 # Configure logger for this module
 logger = logging.getLogger(__name__)
 
 
 def get_secrets_file_path() -> Path:
     """Get the path to the secrets configuration file."""
-    home_dir = Path.home()
-    janito_dir = home_dir / ".janito"
-    return janito_dir / "secrets.json"
+    return get_config_dir() / "secrets.json"
 
 
 def ensure_secrets_directory() -> Path:

@@ -7,20 +7,23 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, Optional
 
+from .config_dir import get_config_dir
+
 # Configure logger for this module
 logger = logging.getLogger(__name__)
 
-# MCP services configuration path
-MCP_CONFIG_PATH = Path.home() / ".janito" / "mcp_services.json"
+# Default MCP services configuration path. Retained for backward compatibility;
+# prefer :func:`get_mcp_config_path` which honors the -c/--config-dir override.
+MCP_CONFIG_PATH = get_config_dir() / "mcp_services.json"
 
 
 def get_mcp_config_path() -> Path:
     """Get the path to the MCP services config file.
     
     Returns:
-        Path: Path to ~/.janito/mcp_services.json
+        Path: Path to <config-dir>/mcp_services.json (defaults to ~/.janito/mcp_services.json)
     """
-    return MCP_CONFIG_PATH
+    return get_config_dir() / "mcp_services.json"
 
 
 def load_mcp_config() -> Dict[str, Any]:
@@ -29,13 +32,14 @@ def load_mcp_config() -> Dict[str, Any]:
     Returns:
         Dict containing the config, or {"services": {}} if file doesn't exist or is invalid
     """
+    mcp_config_path = get_mcp_config_path()
     try:
-        with open(MCP_CONFIG_PATH, 'r') as f:
+        with open(mcp_config_path, 'r') as f:
             config = json.load(f)
-            logger.debug(f"Loaded MCP config from {MCP_CONFIG_PATH}: {len(config.get('services', {}))} services")
+            logger.debug(f"Loaded MCP config from {mcp_config_path}: {len(config.get('services', {}))} services")
             return config
     except FileNotFoundError:
-        logger.debug(f"MCP config file not found: {MCP_CONFIG_PATH}")
+        logger.debug(f"MCP config file not found: {mcp_config_path}")
         return {"services": {}}
     except json.JSONDecodeError as e:
         logger.error(f"Invalid JSON in MCP config file: {e}")
@@ -51,10 +55,11 @@ def save_mcp_config(config: Dict[str, Any]) -> None:
     Raises:
         IOError: If unable to write to the config file
     """
-    MCP_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with open(MCP_CONFIG_PATH, 'w') as f:
+    mcp_config_path = get_mcp_config_path()
+    mcp_config_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(mcp_config_path, 'w') as f:
         json.dump(config, f, indent=2)
-    logger.debug(f"Saved MCP config to {MCP_CONFIG_PATH}")
+    logger.debug(f"Saved MCP config to {mcp_config_path}")
 
 
 def get_service(name: str) -> Optional[Dict[str, Any]]:

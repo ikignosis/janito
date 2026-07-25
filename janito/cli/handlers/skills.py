@@ -13,15 +13,30 @@ import subprocess
 from pathlib import Path
 from typing import Optional, List, Dict, Any, Tuple
 
+try:
+    from ...config_dir import get_config_dir
+except ImportError:
+    from janito.config_dir import get_config_dir
 
-# Path to store installed skills
-SKILLS_DIR = Path.home() / ".janito" / "skills"
+
+def get_skills_dir() -> Path:
+    """Get the path to the installed skills directory.
+
+    Honors the -c/--config-dir override. Defaults to ~/.janito/skills.
+    """
+    return get_config_dir() / "skills"
+
+
+# Path to store installed skills (default). Retained for backward compatibility;
+# prefer :func:`get_skills_dir` which honors the -c/--config-dir override.
+SKILLS_DIR = get_skills_dir()
 
 
 def _ensure_skills_dir() -> Path:
     """Ensure the skills directory exists."""
-    SKILLS_DIR.mkdir(parents=True, exist_ok=True)
-    return SKILLS_DIR
+    skills_dir = get_skills_dir()
+    skills_dir.mkdir(parents=True, exist_ok=True)
+    return skills_dir
 
 
 def _get_installed_skills() -> List[Dict[str, Any]]:
@@ -30,9 +45,9 @@ def _get_installed_skills() -> List[Dict[str, Any]]:
     Returns:
         List of skill entries with name and path
     """
-    _ensure_skills_dir()
+    skills_dir = _ensure_skills_dir()
     skills = []
-    for item in SKILLS_DIR.iterdir():
+    for item in skills_dir.iterdir():
         if item.is_dir() and not item.name.startswith('.'):
             skills.append({
                 "name": item.name,
@@ -136,7 +151,7 @@ def handle_install_skill(url: str) -> int:
         
         # Source and destination paths
         skill_src = Path(temp_dir) / skill_path
-        skill_dst = SKILLS_DIR / skill_name
+        skill_dst = get_skills_dir() / skill_name
         
         # Validate skill directory exists
         if not skill_src.exists():
@@ -240,7 +255,7 @@ def handle_uninstall_skill(name: str) -> int:
         return 1
     
     # Remove skill directory
-    skill_path = SKILLS_DIR / name
+    skill_path = get_skills_dir() / name
     
     if skill_path.exists():
         print(f"Removing skill files from {skill_path}...")

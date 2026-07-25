@@ -23,6 +23,7 @@ from .cli.logging_config import setup_logging
 from .cli import create_parser
 from . import privileges as _privileges_mod
 from .privileges import Privileges
+from .config_dir import set_config_dir
 from .cli.setup import (
     setup_api_key_from_config,
     setup_endpoint_env,
@@ -75,6 +76,11 @@ def main():
     """Main entry point."""
     parser = create_parser()
     args = parser.parse_args()
+    
+    # Apply the -c/--config-dir override as early as possible so that all
+    # subsequent config/auth/secrets/MCP/skills reads and writes use the
+    # requested directory instead of the default ~/.janito.
+    set_config_dir(getattr(args, "config_dir", None))
     
     # Configure logging based on --log argument
     setup_logging(args.log)

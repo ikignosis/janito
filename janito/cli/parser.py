@@ -57,6 +57,7 @@ Examples:
   janito --list-secrets                                    # List all secrets
   janito --delete-secret mykey                             # Delete a secret
   janito --config                                           # Interactive configuration setup
+  janito -c ~/myconf --set provider=openai                 # Use a custom config dir for all config
   janito --provider custom --endpoint https://api.example.com/v1  # Use custom provider (with env API key)
   janito --no-history                                          # Interactive chat without file history
   janito -t                                                    # Enable thinking mode
@@ -83,6 +84,13 @@ Note: --set and --set-api-key must be used in separate commands.
         "prompt", 
         nargs="?", 
         help="The prompt to send to the AI (if not provided, starts interactive chat)"
+    )
+    
+    parser.add_argument(
+        "-c", "--config-dir",
+        metavar="DIR",
+        help="Directory for all janito config (config, auth, secrets, MCP, skills). "
+             "Defaults to ~/.janito"
     )
     
     parser.add_argument(
