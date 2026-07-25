@@ -19,29 +19,17 @@ class ChatSocket {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         let url = `${protocol}//${window.location.host}/api/chat/ws/${encodeURIComponent(this.sessionId)}`;
         const token = window.__JANITO_TOKEN__;
-        const hasToken = !!token;
         if (token) {
             url += `?token=${encodeURIComponent(token)}`;
         }
-
-        console.log('[WS] connecting', {
-            session: this.sessionId,
-            url: url.replace(/token=[^&]+/, 'token=***'),
-            hasToken,
-            attempt: this.reconnectAttempts,
-        });
 
         this.ws = new WebSocket(url);
 
         this.ws.onopen = () => {
             this.reconnectAttempts = 0;
-            console.log('[WS] OPEN', { session: this.sessionId });
             // Flush any messages queued while the socket was CONNECTING.
             const queued = this.pending;
             this.pending = [];
-            if (queued.length) {
-                console.log('[WS] flushing queued messages', queued.length);
-            }
             for (const obj of queued) {
                 this._rawSend(obj);
             }
@@ -51,7 +39,6 @@ class ChatSocket {
         this.ws.onmessage = (msg) => {
             try {
                 const event = JSON.parse(msg.data);
-                console.log('[WS] <- event', event.type, event);
                 // A "Session not found" error will never resolve by retrying,
                 // so mark the socket as manually closed to stop reconnection.
                 if (event.type === 'error' && /session not found/i.test(event.message || '')) {
@@ -80,7 +67,6 @@ class ChatSocket {
             if (!this.manualClose && this.reconnectAttempts < this.maxReconnectAttempts) {
                 this.reconnectAttempts++;
                 const delay = this.reconnectDelay * this.reconnectAttempts;
-                console.log('[WS] reconnecting in', delay, 'ms (attempt', this.reconnectAttempts + ')');
                 setTimeout(() => this.connect(), delay);
             } else {
                 console.error('[WS] giving up reconnecting', {
@@ -113,14 +99,12 @@ class ChatSocket {
             return false;
         }
         const state = this.ws.readyState;
-        console.log('[WS] send()', obj.type, 'state =', WS_STATES[state]);
         if (state === WebSocket.OPEN) {
             return this._rawSend(obj);
         }
         if (state === WebSocket.CONNECTING) {
             // Socket exists but the handshake isn't done yet — queue the
             // message so it's flushed in onopen instead of failing the send.
-            console.log('[WS] socket CONNECTING, queueing message');
             this.pending.push(obj);
             return true;
         }
@@ -139,7 +123,6 @@ class ChatSocket {
     close() {
         this.manualClose = true;
         if (this.ws) {
-            console.log('[WS] manual close', { session: this.sessionId });
             this.ws.close();
             this.ws = null;
         }

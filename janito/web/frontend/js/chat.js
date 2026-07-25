@@ -95,7 +95,6 @@ function chatComponent() {
         // ---------------------------------------------------------------
 
         async openSession(id) {
-            console.log('[chat] openSession', id);
             this.sessionId = id;
             const store = this._store(id);
 
@@ -110,11 +109,7 @@ function chatComponent() {
 
             // Ensure this session has a live socket (created once, reused).
             if (!this._socket(id)) {
-                console.log('[chat] creating socket for', id);
                 this._createSocket(id);
-            } else {
-                console.log('[chat] reusing existing socket for', id,
-                    'state =', this._socket(id).ws ? this._socket(id).ws.readyState : 'null');
             }
 
             // Load history exactly once per session.
@@ -129,7 +124,6 @@ function chatComponent() {
             const store = this._store(id);
             const socket = new ChatSocket(id, {
                 onOpen: () => {
-                    console.log('[chat] socket OPEN for', id);
                     store.connection = 'connected';
                     this._reflectConnection(id);
                 },
@@ -137,7 +131,6 @@ function chatComponent() {
                     store.connection =
                         socket.reconnectAttempts < socket.maxReconnectAttempts
                             ? 'connecting' : 'disconnected';
-                    console.log('[chat] socket CLOSE for', id, '->', store.connection);
                     this._reflectConnection(id);
                 },
                 onEvent: (event) => this._handleEvent(event, store),
@@ -211,12 +204,6 @@ function chatComponent() {
             this.status = 'waiting';
 
             const socket = this._socket(id);
-            console.log('[chat] sendPrompt', {
-                session: id,
-                hasSocket: !!socket,
-                wsState: socket && socket.ws ? socket.ws.readyState : 'none',
-                len: content.length,
-            });
             if (!socket || !socket.sendPrompt(content)) {
                 console.error('[chat] sendPrompt FAILED -> "Not connected to server."');
                 store.error = 'Not connected to server.';
