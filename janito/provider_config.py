@@ -25,6 +25,7 @@ PROVIDER_BASE_URLS: Dict[str, Optional[str]] = {
     "moonshot": "https://api.moonshot.ai/v1",
     "alibaba": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
     "zai": "https://api.z.ai/api/paas/v4/",
+    "xai": "https://api.x.ai/v1",
     "custom": "CUSTOM_ENDPOINT",  # Special marker - endpoint must be provided via --endpoint or config
 }
 

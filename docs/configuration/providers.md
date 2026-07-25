@@ -13,6 +13,7 @@ janito supports multiple AI providers. This guide covers configuration for each.
 | `xiaomi` | Third-party | Xiaomi AI (Mimo models) |
 | `moonshot` | Third-party | Moonshot AI (Kimi models) |
 | `zai` | Third-party | Z.AI (GLM models) |
+| `xai` | Third-party | xAI (Grok models) |
 
 ## OpenAI
 
@@ -239,6 +240,40 @@ janito --set-api-key="your-zai-api-key" --provider zai
 janito --set provider=zai --set model=glm-4-plus
 # Step 2: Store API key
 janito --set-api-key="your-zai-api-key" --provider zai
+# Step 3: Run prompt
+janito "Explain quantum computing"
+```
+
+## xAI (Grok)
+
+Use xAI to access Grok models.
+
+> **Get an API key:** Visit [xAI Console](https://console.x.ai/) to create an account and generate an API key.
+
+### Configuration
+
+```bash
+# Step 1: Set provider and model
+janito --set provider=xai --set model=grok-4
+# Step 2: Store API key
+janito --set-api-key="your-xai-api-key" --provider xai
+```
+
+### Popular Models
+
+| Model | Description |
+|-------|-------------|
+| `grok-4` | Latest flagship model |
+| `grok-3` | High-capability model |
+| `grok-2` | Balanced performance model |
+
+### Example
+
+```bash
+# Step 1: Set provider and model
+janito --set provider=xai --set model=grok-4
+# Step 2: Store API key
+janito --set-api-key="your-xai-api-key" --provider xai
 # Step 3: Run prompt
 janito "Explain quantum computing"
 ```
