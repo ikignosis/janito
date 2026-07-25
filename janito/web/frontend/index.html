@@ -4,9 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Janito Web</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
 
-    <!-- Theme -->
-    <link rel="stylesheet" href="/css/theme.css">
+    <!-- Apply the saved theme BEFORE first paint (light is the default) -->
+    <script>
+        try {
+            var saved = localStorage.getItem('janito-theme');
+            if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        } catch (e) { /* storage unavailable — fall back to light */ }
+    </script>
+
+    <!-- Theme (?v=N busts the browser cache on upgrades) -->
+    <link rel="stylesheet" href="/css/theme.css?v=3">
     <!-- highlight.js theme -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/styles/tokyo-night-dark.min.css">
 
@@ -17,16 +27,16 @@
     <!-- Alpine.js (must be deferred so components are defined first) -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
 
-    <!-- App scripts (order matters: helpers first) -->
-    <script src="/js/api.js"></script>
-    <script src="/js/markdown.js"></script>
-    <script src="/js/websocket.js"></script>
-    <script src="/js/chat.js"></script>
-    <script src="/js/sessions.js"></script>
-    <script src="/js/settings.js"></script>
-    <script src="/js/mcp.js"></script>
-    <script src="/js/statusBar.js"></script>
-    <script src="/js/app.js"></script>
+    <!-- App scripts (order matters: helpers first). ?v=N busts the browser cache. -->
+    <script src="/js/api.js?v=3"></script>
+    <script src="/js/markdown.js?v=3"></script>
+    <script src="/js/websocket.js?v=3"></script>
+    <script src="/js/chat.js?v=3"></script>
+    <script src="/js/sessions.js?v=3"></script>
+    <script src="/js/settings.js?v=3"></script>
+    <script src="/js/mcp.js?v=3"></script>
+    <script src="/js/statusBar.js?v=3"></script>
+    <script src="/js/app.js?v=3"></script>
 
     <style>
         .inline-icon { cursor: pointer; }
@@ -78,12 +88,32 @@
         <!-- Top bar -->
         <div class="topbar">
             <div class="topbar-left">
-                <button class="btn btn-icon" @click="$root.toggleSidebar()" title="Toggle sidebar">☰</button>
+                <button class="btn btn-icon" @click="toggleSidebar()" title="Toggle sidebar">☰</button>
                 <span class="topbar-title">Janito Web</span>
             </div>
             <div class="topbar-actions">
-                <button class="btn" @click="$root.toggleMcp()" title="MCP services">🔌 MCP</button>
-                <button class="btn" @click="$root.toggleSettings()" title="Settings">⚙ Settings</button>
+                <button class="theme-toggle" @click="toggleTheme()"
+                        :title="theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+                        :aria-label="theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'">
+                    <span class="theme-icon sun" aria-hidden="true">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <circle cx="12" cy="12" r="5"/>
+                            <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                        </svg>
+                    </span>
+                    <span class="theme-icon moon" aria-hidden="true">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                        </svg>
+                    </span>
+                    <span class="theme-knob" :class="{ dark: theme === 'dark' }"></span>
+                </button>
+                <button class="btn" @click="toggleMcp()" title="MCP services">🔌 MCP</button>
+                <button class="btn" @click="toggleSettings()" title="Settings">⚙ Settings</button>
             </div>
         </div>
 
@@ -264,8 +294,8 @@
         <!-- Status bar -->
         <div class="status-bar" x-data="statusBarComponent()">
             <div class="status-item">
-                <span class="conn-dot" :class="$root.connection"></span>
-                <span x-text="$root.connection"></span>
+                <span class="conn-dot" :class="connection"></span>
+                <span x-text="connection"></span>
             </div>
             <div class="status-item"><strong>Model:</strong> <span x-text="model"></span></div>
             <div class="status-item"><strong>Provider:</strong> <span x-text="provider"></span></div>
@@ -292,7 +322,7 @@
 
     <!-- ============ Settings drawer ============ -->
     <template x-if="settingsOpen">
-        <div class="drawer-overlay" @click.self="$root.closeDrawers()"
+        <div class="drawer-overlay" @click.self="closeDrawers()"
              x-data="settingsComponent()" x-init="open=true; load()">
             <div class="drawer">
                 <h2>⚙ Settings</h2>
@@ -327,7 +357,7 @@
 
                 <div style="display:flex;gap:8px;margin-top:16px">
                     <button class="btn btn-primary" @click="save()" :disabled="saving">Save</button>
-                    <button class="btn" @click="$root.closeDrawers()">Close</button>
+                    <button class="btn" @click="closeDrawers()">Close</button>
                 </div>
 
                 <div style="margin-top:24px;font-size:12px;color:var(--text-muted)">
@@ -343,7 +373,7 @@
 
     <!-- ============ MCP drawer ============ -->
     <template x-if="mcpOpen">
-        <div class="drawer-overlay" @click.self="$root.closeDrawers()"
+        <div class="drawer-overlay" @click.self="closeDrawers()"
              x-data="mcpComponent()" x-init="open=true; load()">
             <div class="drawer">
                 <h2>🔌 MCP Services</h2>
@@ -389,7 +419,7 @@
                 </template>
 
                 <div style="margin-top:16px">
-                    <button class="btn" @click="$root.closeDrawers()">Close</button>
+                    <button class="btn" @click="closeDrawers()">Close</button>
                 </div>
             </div>
         </div>

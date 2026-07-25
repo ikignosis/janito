@@ -44,14 +44,14 @@ janito --web -r -w --gmail -t --model gpt-4o
 janito --web --provider custom --endpoint https://api.example.com/v1
 
 # Restricted: read-only, no system prompt, no tools, custom port
-janito --web -r -Z --port 9090
+janito --web -r -Z --web-port 9090
 
 # Don't auto-open the browser (headless / SSH sessions)
-janito --web --no-open
+janito --web --no-web-open
 ```
 
 The server prints the URL it's listening on, then opens your default browser
-(unless `--no-open` is passed). Press `Ctrl+C` to stop.
+(unless `--no-web-open` is passed). Press `Ctrl+C` to stop.
 
 ---
 
@@ -62,9 +62,9 @@ The server prints the URL it's listening on, then opens your default browser
 | Flag | Effect on the web server |
 |---|---|
 | `--web` | Start the web UI instead of the terminal chat |
-| `--port PORT` | Bind port (default `8080`) |
-| `--host HOST` | Bind address (default `127.0.0.1` — localhost only) |
-| `--no-open` | Don't auto-open the browser |
+| `--web-port PORT` | Bind port (default `8080`) |
+| `--web-host HOST` | Bind address (default `127.0.0.1` — localhost only) |
+| `--no-web-open` | Don't auto-open the browser |
 | `-r` / `-w` / `-x` | Privileges (READ / WRITE / EXEC), enforced exactly like the CLI |
 | `--provider` | Provider name (resolved into env before dispatch) |
 | `--model` | Model name (resolved into env before dispatch) |
@@ -100,7 +100,7 @@ The server prints the URL it's listening on, then opens your default browser
 ## Security
 
 - **Localhost-only by default.** The server binds to `127.0.0.1`. Only bind to
-  a public address (`--host 0.0.0.0`) if you understand the risks — Janito tools
+  a public address (`--web-host 0.0.0.0`) if you understand the risks — Janito tools
   can read/write files and execute code.
 - **Privileges are enforced.** Tools are filtered by `-r/-w/-x` exactly as in the
   CLI. With no privilege flags, all tools are available (matching CLI behaviour).
@@ -109,7 +109,7 @@ The server prints the URL it's listening on, then opens your default browser
 
   ```bash
   export JANITO_WEB_TOKEN=my-secret-token
-  janito --web --host 0.0.0.0
+  janito --web --web-host 0.0.0.0
   ```
 
   The token is sent via `Authorization: Bearer <token>` (REST) or
@@ -206,7 +206,7 @@ makes the UI work immediately — no `npm`, no bundler.
 Run the server in development:
 
 ```bash
-janito --web --no-open -v
+janito --web --no-web-open -v
 ```
 
 The frontend is served live from source — edit files under

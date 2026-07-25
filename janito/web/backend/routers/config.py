@@ -41,8 +41,8 @@ async def get_config(request: Request):
         "verbose": config.verbose,
         "no_history": config.no_history,
         "privileges": privileges,
-        "host": config.host,
-        "port": config.port,
+        "web_host": config.web_host,
+        "web_port": config.web_port,
         "auth_required": config.auth_token is not None,
     }
 

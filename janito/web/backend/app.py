@@ -66,17 +66,23 @@ def create_app(config: WebServerConfig) -> FastAPI:
         index_file = frontend_dir / "index.html"
 
         if index_file.exists():
-            _base_html = index_file.read_text(encoding="utf-8")
             _token_script = (
                 "<script>window.__JANITO_TOKEN__ = "
                 + json.dumps(config.auth_token)
                 + ";</script>"
             )
-            _served_html = _base_html.replace("</head>", _token_script + "\n</head>", 1)
 
             @app.get("/", response_class=HTMLResponse, include_in_schema=False)
             async def serve_index():
-                return HTMLResponse(_served_html)
+                # Read the file per request so frontend edits apply without
+                # restarting the server, and send ``no-store`` so browsers
+                # never serve a stale shell. (JS/CSS assets remain cacheable
+                # and are invalidated with ?v=N query strings instead.)
+                html = index_file.read_text(encoding="utf-8")
+                return HTMLResponse(
+                    html.replace("</head>", _token_script + "\n</head>", 1),
+                    headers={"Cache-Control": "no-store"},
+                )
 
         # Mount everything else (css/, js/, favicon, etc.) as static files.
         # html=False so "/" is handled by our dynamic route above.
@@ -119,9 +125,9 @@ def run_web(args) -> None:
     config = WebServerConfig.from_args(args)
     app = create_app(config)
 
-    url = f"http://{config.host}:{config.port}"
+    url = f"http://{config.web_host}:{config.web_port}"
 
-    if config.open_browser:
+    if not config.no_web_open:
         import threading
         import webbrowser
 
@@ -142,7 +148,7 @@ def run_web(args) -> None:
     print("  Press Ctrl+C to stop.")
 
     try:
-        uvicorn.run(app, host=config.host, port=config.port, log_level="warning")
+        uvicorn.run(app, host=config.web_host, port=config.web_port, log_level="warning")
     finally:
         from janito.mcp_manager import shutdown_mcp_manager
         try:

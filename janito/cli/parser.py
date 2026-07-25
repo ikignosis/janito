@@ -318,7 +318,7 @@ Note: --set and --set-api-key must be used in separate commands.
     )
 
     parser.add_argument(
-        "--port",
+        "--web-port",
         type=int,
         default=8080,
         metavar="PORT",
@@ -326,14 +326,14 @@ Note: --set and --set-api-key must be used in separate commands.
     )
 
     parser.add_argument(
-        "--host",
+        "--web-host",
         default="127.0.0.1",
         metavar="HOST",
         help="Bind address for the web server (default: 127.0.0.1, used with --web)"
     )
 
     parser.add_argument(
-        "--no-open",
+        "--no-web-open",
         action="store_true",
         help="Don't automatically open the browser (used with --web)"
     )

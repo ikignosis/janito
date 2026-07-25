@@ -1,6 +1,6 @@
 """Security middleware for the web backend.
 
-- Localhost-only by default (the server binds to 127.0.0.1 unless --host is set).
+- Localhost-only by default (the server binds to 127.0.0.1 unless --web-host is set).
 - Optional bearer-token auth via the ``JANITO_WEB_TOKEN`` env var.
 - CORS middleware for development.
 """

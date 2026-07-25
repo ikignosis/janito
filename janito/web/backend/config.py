@@ -14,9 +14,9 @@ class WebServerConfig:
     """
 
     # --- Server binding ---
-    host: str = "127.0.0.1"
-    port: int = 8080
-    open_browser: bool = True
+    web_host: str = "127.0.0.1"
+    web_port: int = 8080
+    no_web_open: bool = False
 
     # --- AI / provider (already resolved into env vars by cli/setup.py) ---
     # These are read from env for display/status, but kept for /api/config.
@@ -48,9 +48,9 @@ class WebServerConfig:
     def from_args(cls, args) -> "WebServerConfig":
         """Build config from parsed argparse.Namespace."""
         config = cls(
-            host=getattr(args, "host", "127.0.0.1"),
-            port=getattr(args, "port", 8080),
-            open_browser=not getattr(args, "no_open", False),
+            web_host=getattr(args, "web_host", "127.0.0.1"),
+            web_port=getattr(args, "web_port", 8080),
+            no_web_open=getattr(args, "no_web_open", False),
             provider=getattr(args, "provider", None),
             model=getattr(args, "model", None) or os.getenv("OPENAI_MODEL"),
             endpoint=getattr(args, "endpoint", None),
@@ -67,8 +67,8 @@ class WebServerConfig:
             k: getattr(args, k, None)
             for k in ("provider", "model", "endpoint", "thinking", "verbose",
                       "no_history", "gmail", "onedrive", "read", "write", "exec",
-                      "system_prompt", "no_system_prompt", "log", "host", "port",
-                      "no_open", "web")
+                      "system_prompt", "no_system_prompt", "log", "web_host",
+                      "web_port", "no_web_open", "web")
         }
 
         # System prompt resolution (mirrors cli/chat.py logic)
