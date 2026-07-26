@@ -12,6 +12,7 @@ Changes since `v4.12.0` (2026-07-26).
 ### Changed
 
 - Release workflow: upload only `dist/*.whl` and `dist/*.tar.gz` as release assets, excluding stray build artifacts (e.g. `default.gitignore`).
+- Interactive shell: print an "Unknown command" message for unrecognized `/` commands instead of sending them to the LLM.
 
 ## [v4.12.0](https://github.com/joaopinto/janito/compare/v4.11.0...v4.12.0) - 2026-07-26
 

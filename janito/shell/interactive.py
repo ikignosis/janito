@@ -289,6 +289,13 @@ class InteractiveShell:
                     break
                 continue
 
+            # Reject unrecognized slash commands instead of sending them to the LLM
+            if user_input.strip().startswith("/"):
+                cmd_name = user_input.strip().split()[0]
+                print(f"Unknown command: {cmd_name}")
+                print("Type /help to see available commands.")
+                continue
+
             # Handle !cmd for direct shell execution
             if user_input.startswith("!"):
                 cmd = user_input[1:].strip()
