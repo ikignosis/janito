@@ -44,7 +44,7 @@ ONEDRIVE_SYSTEM_PROMPT = """
 - Use the ReadOneDriveFile tool to get file metadata
 - Use the DownloadOneDriveFile tool to download file content
 - Use the UploadOneDriveFile tool to upload files to OneDrive
-- Use the DeleteOneDriveFile tool to delete files (with dry_run option)
+- Use the DeleteOneDriveFile tool to delete files
 - Use the CreateOneDriveFolder tool to create new folders
 - Use the GetOneDriveShareLink tool to create sharing links
 - Explore the current directory for potential content related to the question

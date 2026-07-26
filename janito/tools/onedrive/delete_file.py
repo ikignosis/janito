@@ -28,27 +28,24 @@ class DeleteOneDriveFile(BaseTool):
         https://docs.microsoft.com/en-us/graph/api/driveitem-delete
     """
 
-    def run(self, path: str, dry_run: bool = False) -> dict[str, Any]:
+    def run(self, path: str) -> dict[str, Any]:
         """
         Delete a file or folder from OneDrive.
 
         Args:
             path (str): Full path to the file or folder to delete
-            dry_run (bool): If True, only check if item exists without deleting (default: False)
 
         Returns:
             Dict[str, Any]: A dictionary containing:
                 - 'success': bool indicating if operation succeeded
                 - 'path': the item path
-                - 'deleted': True if item was deleted (False if dry_run)
-                - 'item_info': metadata of the item if dry_run=True
+                - 'deleted': True if item was deleted
                 - 'error': error message if operation failed (only present if success=False)
         """
         try:
             from .base_client import OneDriveBaseClient
 
-            action = "Checking (dry run)" if dry_run else "Deleting"
-            self.report_start(f"{action}: {path}")
+            self.report_start(f"Deleting: {path}")
 
             client = OneDriveBaseClient()
 
@@ -85,16 +82,6 @@ class DeleteOneDriveFile(BaseTool):
                 "size": item_size,
             }
 
-            if dry_run:
-                self.report_result(f"DRY RUN: Would delete {item_type}: {item_name}")
-                return {
-                    "success": True,
-                    "path": path,
-                    "deleted": False,
-                    "dry_run": True,
-                    "item_info": item_summary,
-                }
-
             # Perform deletion
             self.report_progress(f" Deleting {item_type}: {item_name}...")
 
@@ -106,7 +93,6 @@ class DeleteOneDriveFile(BaseTool):
                 "success": True,
                 "path": path,
                 "deleted": True,
-                "dry_run": False,
                 "deleted_item": item_summary,
             }
 
