@@ -60,7 +60,7 @@ class AskCmdHandler(CmdHandler):
                 thinking=thinking,
             )
         except KeyboardInterrupt:
-            print("Request interrupted")
+            print("Request interrupted. The interrupted request was removed from the conversation history.")
         except Exception as e:
             print(f"Error: {e}")
 
