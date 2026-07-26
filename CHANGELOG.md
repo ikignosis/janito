@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Changes since `v4.12.0` (2026-07-26).
 
+### Changed
+
+- Release workflow: upload only `dist/*.whl` and `dist/*.tar.gz` as release assets, excluding stray build artifacts (e.g. `default.gitignore`).
+
 ## [v4.12.0](https://github.com/joaopinto/janito/compare/v4.11.0...v4.12.0) - 2026-07-26
 
 Changes since `v4.11.0` (2026-07-25).
