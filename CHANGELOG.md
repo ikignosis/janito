@@ -12,6 +12,7 @@ Changes since `v4.12.0` (2026-07-26).
 ### Added
 
 - `GetCurrentTime` tool: returns the current date and time in ISO 8601 format with local/UTC representations and timezone info ([068625d](https://github.com/joaopinto/janito/commit/068625d)).
+- Project-specific instructions: automatically load an `AGENTS.md` file from the current working directory and append its content to the system prompt under a "Project-Specific Instructions" section.
 
 ### Changed
 
