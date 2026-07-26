@@ -1,46 +1,52 @@
 """Info and configuration display CLI handlers."""
 
 try:
-    from ...general_config import (
-        load_provider_from_config,
-        load_model_from_config,
-        load_endpoint_from_config,
-        get_active_provider,
-        get_config_path,
-        get_masked_api_key
-    )
     from ...auth_config import get_api_key, get_auth_file_path, get_default_provider
-    from ...provider_config import is_custom_provider, CUSTOM_ENDPOINT_MARKER, get_base_url_from_provider
-except ImportError:
-    from janito.general_config import (
-        load_provider_from_config,
-        load_model_from_config,
-        load_endpoint_from_config,
-        get_active_provider,
+    from ...general_config import (
         get_config_path,
-        get_masked_api_key
+        get_masked_api_key,
+        load_endpoint_from_config,
+        load_model_from_config,
+        load_provider_from_config,
     )
+    from ...provider_config import (
+        CUSTOM_ENDPOINT_MARKER,
+        get_base_url_from_provider,
+        is_custom_provider,
+    )
+except ImportError:
     from janito.auth_config import get_api_key, get_auth_file_path, get_default_provider
-    from janito.provider_config import is_custom_provider, CUSTOM_ENDPOINT_MARKER, get_base_url_from_provider
+    from janito.general_config import (
+        get_config_path,
+        get_masked_api_key,
+        load_endpoint_from_config,
+        load_model_from_config,
+        load_provider_from_config,
+    )
+    from janito.provider_config import (
+        CUSTOM_ENDPOINT_MARKER,
+        get_base_url_from_provider,
+        is_custom_provider,
+    )
 
 
 def handle_info(args) -> int:
     """Handle --info command.
-    
+
     Prints information about the resolved configuration and exits.
-    
+
     Args:
         args: Parsed command line arguments
-        
+
     Returns:
         int: Exit code (0 for success)
     """
-    cli_provider = getattr(args, 'provider', None)
-    
+    cli_provider = getattr(args, "provider", None)
+
     # Determine resolved provider (priority: config.json > auth.json default > fallback)
     provider = None
     provider_source = ""
-    
+
     # 1. Check CLI argument directly
     if cli_provider:
         provider = cli_provider
@@ -61,12 +67,12 @@ def handle_info(args) -> int:
                 # 4. Fall back to 'openai'
                 provider = "openai"
                 provider_source = "fallback"
-    
+
     # Determine resolved model (priority: CLI > config)
     model = None
     model_source = "not set"
 
-    cli_model = getattr(args, 'model', None)
+    cli_model = getattr(args, "model", None)
 
     if cli_model:
         model = cli_model
@@ -76,20 +82,20 @@ def handle_info(args) -> int:
         if config_model:
             model = config_model
             model_source = f"config.json ({provider}.model)"
-    
+
     # Determine API key (from auth.json for the resolved provider)
     api_key = get_api_key(provider)
     if api_key:
         api_key_source = f"auth.json (provider: {provider})"
     else:
         api_key_source = "not set"
-    
+
     # Determine endpoint/base URL (priority: config > provider default)
     config_endpoint = load_endpoint_from_config(provider)
-    
+
     endpoint = None
     endpoint_source = "not set"
-    
+
     if config_endpoint:
         endpoint = config_endpoint
         endpoint_source = f"config.json ({provider}.endpoint)"
@@ -102,7 +108,7 @@ def handle_info(args) -> int:
             endpoint_source = f"{provider} default"
         elif provider_default is None:
             endpoint_source = "default OpenAI"
-    
+
     # Print the info
     print("Resolved Configuration:")
     print("=" * 40)
@@ -112,22 +118,26 @@ def handle_info(args) -> int:
     print(f"Endpoint:     {endpoint or '(not set)'} ({endpoint_source})")
     print("=" * 40)
     print(f"Config file:  {get_config_path()}")
-    
+
     # Try to show auth file path too
     auth_path = get_auth_file_path()
     if auth_path.exists():
         print(f"Auth file:    {auth_path}")
-    
+
     print()
-    
+
     # Show source details
     if model_source == "not set":
-        print("Note: Model not configured. Use --model or set it in config.json (janito --set model=NAME)")
+        print(
+            "Note: Model not configured. Use --model or set it in config.json (janito --set model=NAME)"
+        )
     if api_key_source == "not set":
         print("Note: API key not configured. Use --set-api-key --provider NAME")
     if is_custom_provider(provider) and not endpoint:
-        print("Note: Endpoint not configured. Set endpoint in config.json (janito --set endpoint=URL)")
-    
+        print(
+            "Note: Endpoint not configured. Set endpoint in config.json (janito --set endpoint=URL)"
+        )
+
     return 0
 
 
@@ -146,7 +156,7 @@ def handle_show_config(args=None) -> int:
         int: Exit code (0 for success)
     """
     # Load configured values from config.json
-    cli_provider = getattr(args, 'provider', None) if args is not None else None
+    cli_provider = getattr(args, "provider", None) if args is not None else None
     provider = cli_provider or load_provider_from_config()
     model = load_model_from_config(provider)
 
@@ -180,12 +190,12 @@ def handle_show_config(args=None) -> int:
     if model:
         print(f"Model:     {model} ({provider}.model)")
     else:
-        print(f"Model:     (not configured)")
+        print("Model:     (not configured)")
     masked = get_masked_api_key(api_key)
     if api_key:
         print(f"API Key:   {masked} ({api_key_source})")
     else:
-        print(f"API Key:   (not set)")
+        print("API Key:   (not set)")
     if endpoint:
         print(f"Endpoint:  {endpoint} ({endpoint_source})")
     else:
@@ -197,20 +207,17 @@ def handle_show_config(args=None) -> int:
 
 def handle_show_system_prompt(args) -> int:
     """Handle --show-system-prompt command.
-    
+
     Resolves and displays the effective system prompt based on the current
     CLI flags (e.g., --gmail, --onedrive, -S, -Z) and exits.
-    
+
     Args:
         args: Parsed command line arguments
-        
+
     Returns:
         int: Exit code (0 for success)
     """
-    from ...system_prompt import (
-        SYSTEM_PROMPT,
-        get_system_prompt_with_skills,
-    )
+    from ...system_prompt import get_system_prompt_with_skills
     from ...tools.gmail import GMAIL_SYSTEM_PROMPT
     from ...tools.onedrive import ONEDRIVE_SYSTEM_PROMPT
 

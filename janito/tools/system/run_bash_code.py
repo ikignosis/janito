@@ -13,15 +13,15 @@ WARNING: This tool executes system commands and should be used with caution.
 Only execute trusted code and be aware of security implications.
 """
 
-import subprocess
 import json
 import os
 import shutil
+import subprocess
 import sys
-from typing import Dict, Any, Optional, List
+from typing import Any
+
 from ...tooling import BaseTool, norm_path
 from ..decorator import tool
-
 
 # Candidate executable names, in order of preference.
 # 'bash' is the Bourne Again SHell (full-featured) and is preferred;
@@ -31,7 +31,7 @@ _BASH_CANDIDATES = ("bash", "bash.exe")
 _SH_FALLBACK_CANDIDATES = ("sh", "sh.exe")
 
 
-def _well_known_bash_paths() -> List[str]:
+def _well_known_bash_paths() -> list[str]:
     """
     Build a list of well-known Bash install locations.
 
@@ -43,38 +43,46 @@ def _well_known_bash_paths() -> List[str]:
     if os.name == "nt":
         # Git Bash and WSL locations on Windows
         program_files = os.environ.get("ProgramFiles", r"C:\Program Files")
-        program_files_x86 = os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")
+        program_files_x86 = os.environ.get(
+            "ProgramFiles(x86)", r"C:\Program Files (x86)"
+        )
         system_root = os.environ.get("SystemRoot", r"C:\Windows")
         local_app_data = os.environ.get("LOCALAPPDATA", "")
-        paths.extend([
-            os.path.join(program_files, "Git", "bin", "bash.exe"),
-            os.path.join(program_files, "Git", "usr", "bin", "bash.exe"),
-            os.path.join(program_files_x86, "Git", "bin", "bash.exe"),
-            os.path.join(system_root, "System32", "bash.exe"),  # WSL launcher
-        ])
+        paths.extend(
+            [
+                os.path.join(program_files, "Git", "bin", "bash.exe"),
+                os.path.join(program_files, "Git", "usr", "bin", "bash.exe"),
+                os.path.join(program_files_x86, "Git", "bin", "bash.exe"),
+                os.path.join(system_root, "System32", "bash.exe"),  # WSL launcher
+            ]
+        )
         if local_app_data:
             paths.append(
                 os.path.join(local_app_data, "Programs", "Git", "bin", "bash.exe")
             )
     elif sys.platform == "darwin":
-        paths.extend([
-            "/bin/bash",                          # System bash (3.2, always present)
-            "/usr/local/bin/bash",                # Homebrew (Intel)
-            "/opt/homebrew/bin/bash",             # Homebrew (Apple Silicon)
-            "/opt/local/bin/bash",                # MacPorts
-        ])
+        paths.extend(
+            [
+                "/bin/bash",  # System bash (3.2, always present)
+                "/usr/local/bin/bash",  # Homebrew (Intel)
+                "/opt/homebrew/bin/bash",  # Homebrew (Apple Silicon)
+                "/opt/local/bin/bash",  # MacPorts
+            ]
+        )
     else:  # Linux and other POSIX
-        paths.extend([
-            "/bin/bash",
-            "/usr/bin/bash",
-            "/usr/local/bin/bash",
-            "/data/data/com.termux/files/usr/bin/bash",  # Termux (Android)
-        ])
+        paths.extend(
+            [
+                "/bin/bash",
+                "/usr/bin/bash",
+                "/usr/local/bin/bash",
+                "/data/data/com.termux/files/usr/bin/bash",  # Termux (Android)
+            ]
+        )
 
     return paths
 
 
-def _well_known_sh_paths() -> List[str]:
+def _well_known_sh_paths() -> list[str]:
     """Well-known POSIX sh locations, probed only when bash is unavailable."""
     if os.name == "nt":
         program_files = os.environ.get("ProgramFiles", r"C:\Program Files")
@@ -102,11 +110,11 @@ class RunBashCode(BaseTool):
     """
 
     # Cached result of executable detection (None = not found or not checked yet)
-    _shell_path: Optional[str] = None
+    _shell_path: str | None = None
     _shell_checked: bool = False
 
     @classmethod
-    def _find_shell(cls) -> Optional[str]:
+    def _find_shell(cls) -> str | None:
         """
         Locate the best available shell executable.
 
@@ -174,12 +182,12 @@ class RunBashCode(BaseTool):
     def run(
         self,
         code: str,
-        working_directory: Optional[str] = None,
-        timeout: Optional[int] = 60,
+        working_directory: str | None = None,
+        timeout: int | None = 60,
         capture_output: bool = True,
         capture_errors: bool = True,
-        bash_executable: Optional[str] = None
-    ) -> Dict[str, Any]:
+        bash_executable: str | None = None,
+    ) -> dict[str, Any]:
         """
         Execute Bash code and return results.
 
@@ -225,7 +233,7 @@ class RunBashCode(BaseTool):
                 "exit_code": -1,
                 "command": code,
                 "working_directory": working_directory or os.getcwd(),
-                "execution_time_ms": int((time.time() - start_time) * 1000)
+                "execution_time_ms": int((time.time() - start_time) * 1000),
             }
 
         try:
@@ -237,7 +245,7 @@ class RunBashCode(BaseTool):
                         "success": False,
                         "error": f"Working directory does not exist: {abs_working_dir}",
                         "exit_code": -1,
-                        "working_directory": working_directory
+                        "working_directory": working_directory,
                     }
             else:
                 abs_working_dir = os.getcwd()
@@ -248,7 +256,9 @@ class RunBashCode(BaseTool):
             code_preview = code
             if len(code) > 200:
                 code_preview = code[:200] + "..."
-            self.report_start(f"Executing Bash code in {norm_working_dir}:\n{code_preview}")
+            self.report_start(
+                f"Executing Bash code in {norm_working_dir}:\n{code_preview}"
+            )
 
             # Build shell command
             # Use -c for both single commands and multi-line scripts.
@@ -260,8 +270,8 @@ class RunBashCode(BaseTool):
                 shell_command = [shell_path, "-c", code]
 
             # Execute with real-time streaming
-            import threading
             import queue
+            import threading
 
             # Initialize captured output
             captured_stdout = []
@@ -282,7 +292,7 @@ class RunBashCode(BaseTool):
                 universal_newlines=True,
                 encoding="utf-8",
                 errors="replace",
-                env=env
+                env=env,
             )
 
             # Queue for handling output from threads
@@ -291,22 +301,22 @@ class RunBashCode(BaseTool):
             def read_stream(stream, stream_name, capture_list):
                 """Read from a stream and put lines into the queue."""
                 try:
-                    for line in iter(stream.readline, ''):
+                    for line in iter(stream.readline, ""):
                         if line:
-                            output_queue.put((stream_name, line.rstrip('\r\n')))
+                            output_queue.put((stream_name, line.rstrip("\r\n")))
                             if capture_list is not None:
                                 capture_list.append(line)
                     stream.close()
                 except Exception as e:
-                    output_queue.put(('error', f"Error reading {stream_name}: {e}"))
+                    output_queue.put(("error", f"Error reading {stream_name}: {e}"))
 
             # Start reader threads for stdout and stderr
             threads = []
             if capture_output and process.stdout:
                 stdout_thread = threading.Thread(
                     target=read_stream,
-                    args=(process.stdout, 'stdout', captured_stdout),
-                    daemon=True
+                    args=(process.stdout, "stdout", captured_stdout),
+                    daemon=True,
                 )
                 stdout_thread.start()
                 threads.append(stdout_thread)
@@ -314,8 +324,8 @@ class RunBashCode(BaseTool):
             if capture_errors and process.stderr:
                 stderr_thread = threading.Thread(
                     target=read_stream,
-                    args=(process.stderr, 'stderr', captured_stderr),
-                    daemon=True
+                    args=(process.stderr, "stderr", captured_stderr),
+                    daemon=True,
                 )
                 stderr_thread.start()
                 threads.append(stderr_thread)
@@ -334,17 +344,14 @@ class RunBashCode(BaseTool):
                 try:
                     while True:
                         stream_name, line = output_queue.get_nowait()
-                        if stream_name == 'stdout':
+                        if stream_name == "stdout" or stream_name == "stderr":
                             if not displayed_any_output:
-                                self.report_output("")  # Add newline after the initial message
+                                self.report_output(
+                                    ""
+                                )  # Add newline after the initial message
                                 displayed_any_output = True
                             self.report_output(line)
-                        elif stream_name == 'stderr':
-                            if not displayed_any_output:
-                                self.report_output("")  # Add newline after the initial message
-                                displayed_any_output = True
-                            self.report_output(line)
-                        elif stream_name == 'error':
+                        elif stream_name == "error":
                             self.report_output(f"STREAM ERROR: {line}")
                 except queue.Empty:
                     pass
@@ -372,12 +379,12 @@ class RunBashCode(BaseTool):
             try:
                 while True:
                     stream_name, line = output_queue.get_nowait()
-                    if stream_name == 'stdout':
+                    if stream_name == "stdout":
                         if not displayed_any_output:
                             self.report_output("")
                             displayed_any_output = True
                         self.report_output(line)
-                    elif stream_name == 'stderr':
+                    elif stream_name == "stderr":
                         if not displayed_any_output:
                             self.report_output("")
                             displayed_any_output = True
@@ -391,8 +398,8 @@ class RunBashCode(BaseTool):
             class MockResult:
                 def __init__(self, returncode, stdout_lines, stderr_lines):
                     self.returncode = returncode
-                    self.stdout = ''.join(stdout_lines) if stdout_lines else ""
-                    self.stderr = ''.join(stderr_lines) if stderr_lines else ""
+                    self.stdout = "".join(stdout_lines) if stdout_lines else ""
+                    self.stderr = "".join(stderr_lines) if stderr_lines else ""
 
             result = MockResult(exit_code, captured_stdout, captured_stderr)
 
@@ -406,7 +413,7 @@ class RunBashCode(BaseTool):
                 "command": code,
                 "bash_executable": shell_path,
                 "working_directory": working_directory or abs_working_dir,
-                "execution_time_ms": execution_time_ms
+                "execution_time_ms": execution_time_ms,
             }
 
             if capture_output:
@@ -418,7 +425,7 @@ class RunBashCode(BaseTool):
             if success:
                 output_summary = f"Completed in {execution_time_ms}ms"
                 if capture_output and result.stdout:
-                    lines = result.stdout.strip().split('\n')
+                    lines = result.stdout.strip().split("\n")
                     if len(lines) > 0:
                         output_summary += f" ({len(lines)} lines output)"
                 self.report_result(output_summary)
@@ -426,12 +433,14 @@ class RunBashCode(BaseTool):
                 error_msg = f"Exit code {result.returncode}"
                 if capture_errors and result.stderr:
                     # Truncate long error messages for display
-                    stderr_preview = result.stderr[:100].replace('\n', ' ')
+                    stderr_preview = result.stderr[:100].replace("\n", " ")
                     if len(result.stderr) > 100:
                         stderr_preview += "..."
                     error_msg += f": {stderr_preview}"
                 self.report_error(error_msg)
-                output_result["error"] = f"Bash execution failed with exit code {result.returncode}"
+                output_result[
+                    "error"
+                ] = f"Bash execution failed with exit code {result.returncode}"
 
             return output_result
 
@@ -444,7 +453,7 @@ class RunBashCode(BaseTool):
                 "exit_code": -1,
                 "command": code,
                 "working_directory": working_directory or os.getcwd(),
-                "execution_time_ms": execution_time_ms
+                "execution_time_ms": execution_time_ms,
             }
 
         except FileNotFoundError:
@@ -458,19 +467,19 @@ class RunBashCode(BaseTool):
                 "exit_code": -1,
                 "command": code,
                 "working_directory": working_directory or os.getcwd(),
-                "execution_time_ms": int((time.time() - start_time) * 1000)
+                "execution_time_ms": int((time.time() - start_time) * 1000),
             }
 
         except Exception as e:
             execution_time_ms = int((time.time() - start_time) * 1000)
-            self.report_error(f"Execution error: {str(e)}")
+            self.report_error(f"Execution error: {e!s}")
             return {
                 "success": False,
-                "error": f"Failed to execute Bash: {str(e)}",
+                "error": f"Failed to execute Bash: {e!s}",
                 "exit_code": -1,
                 "command": code,
                 "working_directory": working_directory or os.getcwd(),
-                "execution_time_ms": execution_time_ms
+                "execution_time_ms": execution_time_ms,
             }
 
 
@@ -488,23 +497,32 @@ Examples:
   %(prog)s -c "for i in 1 2 3; do echo $i; done" -d "/tmp"
   %(prog)s -c "echo 'Hello World'" --json
   %(prog)s -f script.sh
-        """
+        """,
     )
 
     parser.add_argument("-c", "--code", help="Bash code to execute")
     parser.add_argument("-f", "--file", help="File containing Bash code")
     parser.add_argument("-d", "--directory", help="Working directory for execution")
-    parser.add_argument("-s", "--shell", help="Shell executable to use (default: auto-detected bash, falling back to sh)")
-    parser.add_argument("-t", "--timeout", type=int, default=60,
-                       help="Timeout in seconds (default: 60)")
-    parser.add_argument("--no-capture-output", action="store_true",
-                       help="Don't capture standard output")
-    parser.add_argument("--no-capture-errors", action="store_true",
-                       help="Don't capture standard error")
-    parser.add_argument("--json", "-j", action="store_true",
-                       help="Output in JSON format")
-    parser.add_argument("--verbose", "-v", action="store_true",
-                       help="Show verbose output")
+    parser.add_argument(
+        "-s",
+        "--shell",
+        help="Shell executable to use (default: auto-detected bash, falling back to sh)",
+    )
+    parser.add_argument(
+        "-t", "--timeout", type=int, default=60, help="Timeout in seconds (default: 60)"
+    )
+    parser.add_argument(
+        "--no-capture-output", action="store_true", help="Don't capture standard output"
+    )
+    parser.add_argument(
+        "--no-capture-errors", action="store_true", help="Don't capture standard error"
+    )
+    parser.add_argument(
+        "--json", "-j", action="store_true", help="Output in JSON format"
+    )
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Show verbose output"
+    )
 
     args = parser.parse_args()
 
@@ -522,7 +540,7 @@ Examples:
             print(f"Error: File not found: {args.file}")
             return 1
         try:
-            with open(args.file, 'r', encoding='utf-8') as f:
+            with open(args.file, "r", encoding="utf-8") as f:
                 code = f.read()
         except Exception as e:
             print(f"Error reading file: {e}")
@@ -536,7 +554,7 @@ Examples:
         timeout=args.timeout,
         capture_output=not args.no_capture_output,
         capture_errors=not args.no_capture_errors,
-        bash_executable=args.shell
+        bash_executable=args.shell,
     )
 
     # Output results
@@ -550,32 +568,32 @@ Examples:
 
             if args.verbose:
                 print(f"  Executable: {result.get('bash_executable', 'unknown')}")
-                print(f"\nCommand:")
+                print("\nCommand:")
                 print(f"  {result['command']}")
 
-            if 'stdout' in result and result['stdout']:
-                print(f"\nOutput:")
-                print(result['stdout'])
+            if result.get("stdout"):
+                print("\nOutput:")
+                print(result["stdout"])
 
-            if 'stderr' in result and result['stderr']:
-                print(f"\nStderr:")
-                print(result['stderr'])
+            if result.get("stderr"):
+                print("\nStderr:")
+                print(result["stderr"])
         else:
-            print(f"✗ Bash execution failed")
+            print("✗ Bash execution failed")
             print(f"  Error: {result.get('error', 'Unknown error')}")
             print(f"  Exit code: {result['exit_code']}")
 
             if args.verbose:
-                print(f"\nCommand:")
+                print("\nCommand:")
                 print(f"  {result['command']}")
 
-            if 'stdout' in result and result['stdout']:
-                print(f"\nOutput:")
-                print(result['stdout'])
+            if result.get("stdout"):
+                print("\nOutput:")
+                print(result["stdout"])
 
-            if 'stderr' in result and result['stderr']:
-                print(f"\nStderr:")
-                print(result['stderr'])
+            if result.get("stderr"):
+                print("\nStderr:")
+                print(result["stderr"])
 
     return 0 if result["success"] else 1
 

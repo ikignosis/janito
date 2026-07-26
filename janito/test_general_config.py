@@ -18,8 +18,8 @@ from pathlib import Path
 # Add the repo root to sys.path to allow importing the package directly.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import janito.general_config as gc
 import janito.config_dir as config_dir_mod
+import janito.general_config as gc
 from janito.general_config import ProviderRequiredError
 
 try:
@@ -58,7 +58,9 @@ if pytest is not None:
         key, value = gc.set_config_from_cli("model=gpt-4", "openai")
         assert key == "openai.model"
         assert value == "gpt-4"
-        assert _read_config(config_path) == {"providers": {"openai": {"model": "gpt-4"}}}
+        assert _read_config(config_path) == {
+            "providers": {"openai": {"model": "gpt-4"}}
+        }
 
     def test_set_model_uses_configured_provider(monkeypatch, tmp_path):
         config_path = _use_temp_config(monkeypatch, tmp_path)
@@ -68,13 +70,13 @@ if pytest is not None:
         assert _read_config(config_path)["providers"]["minimax"]["model"] == "abab6.5"
 
     def test_cli_provider_overrides_configured_provider(monkeypatch, tmp_path):
-        config_path = _use_temp_config(monkeypatch, tmp_path)
+        _use_temp_config(monkeypatch, tmp_path)
         gc.set_config_from_cli("provider=minimax")
         key, _ = gc.set_config_from_cli("model=gpt-4", "openai")
         assert key == "openai.model"
 
     def test_provider_is_normalized(monkeypatch, tmp_path):
-        config_path = _use_temp_config(monkeypatch, tmp_path)
+        _use_temp_config(monkeypatch, tmp_path)
         key, _ = gc.set_config_from_cli("model=gpt-4", "  OpenAI ")
         assert key == "openai.model"
 
@@ -148,14 +150,19 @@ if pytest is not None:
         key, value = gc.set_config_from_cli("endpoint=http://x/v1", "custom")
         assert key == "custom.endpoint"
         assert value == "http://x/v1"
-        assert _read_config(config_path) == {"providers": {"custom": {"endpoint": "http://x/v1"}}}
+        assert _read_config(config_path) == {
+            "providers": {"custom": {"endpoint": "http://x/v1"}}
+        }
 
     def test_set_endpoint_uses_configured_provider(monkeypatch, tmp_path):
         config_path = _use_temp_config(monkeypatch, tmp_path)
         gc.set_config_from_cli("provider=custom")
         key, _ = gc.set_config_from_cli("endpoint=http://x/v1")
         assert key == "custom.endpoint"
-        assert _read_config(config_path)["providers"]["custom"]["endpoint"] == "http://x/v1"
+        assert (
+            _read_config(config_path)["providers"]["custom"]["endpoint"]
+            == "http://x/v1"
+        )
 
     def test_get_endpoint_per_provider(monkeypatch, tmp_path):
         _use_temp_config(monkeypatch, tmp_path)
@@ -177,7 +184,7 @@ if pytest is not None:
         assert gc.load_endpoint_from_config("unknown") is None
 
     def test_load_endpoint_legacy_top_level_fallback(monkeypatch, tmp_path):
-        config_path = _use_temp_config(monkeypatch, tmp_path)
+        _use_temp_config(monkeypatch, tmp_path)
         # Write a legacy top-level 'endpoint' key directly.
         gc.set_config_value("endpoint", "http://legacy/v1")
         # No provider-scoped endpoint exists, so the legacy key is honored.

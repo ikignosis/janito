@@ -15,10 +15,9 @@ credentials that aren't provider-specific API keys.
 """
 
 import json
-import os
 import logging
+import os
 from pathlib import Path
-from typing import Dict, Optional
 
 from .config_dir import get_config_dir
 
@@ -38,20 +37,20 @@ def ensure_secrets_directory() -> Path:
     return secrets_file.parent
 
 
-def load_secrets_config() -> Dict[str, str]:
+def load_secrets_config() -> dict[str, str]:
     """Load the secrets configuration from file.
-    
+
     Returns:
         Dict[str, str]: Dictionary of key-value secrets
     """
     secrets_file = get_secrets_file_path()
-    
+
     if not secrets_file.exists():
         logger.debug(f"Secrets config file not found: {secrets_file}")
         return {}
-    
+
     try:
-        with open(secrets_file, 'r', encoding='utf-8') as f:
+        with open(secrets_file, "r", encoding="utf-8") as f:
             content = f.read()
         logger.debug(f"Loaded secrets config from {secrets_file}")
         return json.loads(content)
@@ -60,27 +59,27 @@ def load_secrets_config() -> Dict[str, str]:
         return {}
 
 
-def save_secrets_config(config: Dict[str, str]) -> bool:
+def save_secrets_config(config: dict[str, str]) -> bool:
     """Save the secrets configuration to file.
-    
+
     Args:
         config: Dictionary of secrets to save
-        
+
     Returns:
         bool: True if successful, False otherwise
     """
     try:
         ensure_secrets_directory()
         secrets_file = get_secrets_file_path()
-        
-        with open(secrets_file, 'w', encoding='utf-8') as f:
+
+        with open(secrets_file, "w", encoding="utf-8") as f:
             json.dump(config, f, indent=2)
-        
+
         # Set restrictive permissions (read/write for owner only)
         os.chmod(secrets_file, 0o600)
         logger.debug(f"Saved secrets config to {secrets_file}")
         return True
-    except (IOError, OSError) as e:
+    except OSError as e:
         logger.error(f"Failed to save secrets config: {e}")
         return False
 
@@ -88,11 +87,11 @@ def save_secrets_config(config: Dict[str, str]) -> bool:
 def set_secret(key: str, value: str) -> bool:
     """
     Set a secret value.
-    
+
     Args:
         key: The secret key name
         value: The secret value
-        
+
     Returns:
         bool: True if successful, False otherwise
     """
@@ -105,13 +104,13 @@ def set_secret(key: str, value: str) -> bool:
     return result
 
 
-def get_secret(key: str) -> Optional[str]:
+def get_secret(key: str) -> str | None:
     """
     Get a secret value.
-    
+
     Args:
         key: The secret key name
-        
+
     Returns:
         Optional[str]: The secret value if found, None otherwise
     """
@@ -127,26 +126,26 @@ def get_secret(key: str) -> Optional[str]:
 def delete_secret(key: str) -> bool:
     """
     Delete a secret.
-    
+
     Args:
         key: The secret key name
-        
+
     Returns:
         bool: True if deleted, False if not found
     """
     config = load_secrets_config()
-    
+
     if key in config:
         del config[key]
         return save_secrets_config(config)
-    
+
     return False
 
 
 def list_secrets() -> list:
     """
     List all configured secret keys.
-    
+
     Returns:
         list: List of secret key names
     """
@@ -157,10 +156,10 @@ def list_secrets() -> list:
 def secret_exists(key: str) -> bool:
     """
     Check if a secret exists.
-    
+
     Args:
         key: The secret key name
-        
+
     Returns:
         bool: True if the secret exists, False otherwise
     """

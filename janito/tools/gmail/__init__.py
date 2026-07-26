@@ -19,11 +19,19 @@ GMAIL_SYSTEM_PROMPT = """
 - When users ask about email content or want to read emails, use ReadEmails
 """
 
-from .read_emails import ReadEmails
 from .count_emails import CountEmails
 from .delete_emails import DeleteEmails
-from .trash_emails import TrashEmail
-from .move_emails import MoveEmails
 from .list_folders import ListFolders
+from .move_emails import MoveEmails
+from .read_emails import ReadEmails
+from .trash_emails import TrashEmail
 
-__all__ = ["GMAIL_SYSTEM_PROMPT", "ReadEmails", "CountEmails", "DeleteEmails", "TrashEmail", "MoveEmails", "ListFolders"]
+__all__ = [
+    "GMAIL_SYSTEM_PROMPT",
+    "CountEmails",
+    "DeleteEmails",
+    "ListFolders",
+    "MoveEmails",
+    "ReadEmails",
+    "TrashEmail",
+]

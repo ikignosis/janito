@@ -9,11 +9,11 @@ Supports two transport types:
 
 Usage:
     from janito.mcp_client import create_transport
-    
+
     # From config
     config = {"transport": "stdio", "command": "python -m mcp.server"}
     transport = create_transport(config)
-    
+
     if transport.connect():
         tools = transport.list_tools()
         result = transport.call_tool("tool_name", {"arg": "value"})
@@ -22,23 +22,23 @@ Usage:
 
 # Core exports
 from .base import MCPTransport
-from .stdio import StdioTransport
-from .http import HttpTransport
 from .factory import create_transport
+from .http import HttpTransport
 
 # Protocol exports for error handling and advanced usage
+from .protocols import ConnectionError as MCPConnectionError
 from .protocols import (
     MCPError,
-    RPCError,
     ProtocolVersionError,
-    ConnectionError as MCPConnectionError,
     RequestTimeoutError,
-    build_request,
+    RPCError,
     build_notification,
+    build_request,
+    extract_result,
     parse_message,
     serialize_message,
-    extract_result,
 )
+from .stdio import StdioTransport
 
 __all__ = [
     # Main classes

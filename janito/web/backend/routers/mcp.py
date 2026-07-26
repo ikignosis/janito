@@ -13,6 +13,7 @@ router = APIRouter()
 
 def _get_manager():
     from janito.mcp_manager import get_mcp_manager
+
     return get_mcp_manager()
 
 
@@ -27,12 +28,14 @@ async def list_services(request: Request):
     services = []
     for name, cfg in _list_services().items():
         transport_type = cfg.get("transport") or cfg.get("type") or "stdio"
-        services.append({
-            "name": name,
-            "connected": name in connected,
-            "transport": transport_type,
-            "config": {k: v for k, v in cfg.items() if k.lower() not in ("env",)},
-        })
+        services.append(
+            {
+                "name": name,
+                "connected": name in connected,
+                "transport": transport_type,
+                "config": {k: v for k, v in cfg.items() if k.lower() not in ("env",)},
+            }
+        )
 
     return {"services": services, "connected_count": len(connected)}
 

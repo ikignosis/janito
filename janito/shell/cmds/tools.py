@@ -8,39 +8,46 @@ from .registry import register_command
 
 class ToolsCmdHandler(CmdHandler):
     """Command handler for /tools command."""
-    
+
     @property
     def name(self) -> str:
         return "/tools"
-    
+
     def handle(self, shell, user_input: str) -> bool:
         """Handle the /tools command."""
         if user_input.lower() == self.name.lower():
             self._print_tools()
             return True
         return False
-    
+
     def _print_tools(self) -> None:
         """Print information about all available tools."""
         print()
         print("=" * 60)
         print("Available Tools")
         print("=" * 60)
-        
+
         # Get built-in tools from tools_registry
         try:
-            from janito.tooling.tools_registry import get_all_tools, get_all_tool_schemas
+            from janito.tooling.tools_registry import (
+                get_all_tool_schemas,
+                get_all_tools,
+            )
+
             builtin_tools = get_all_tools()
-            builtin_schemas = {s["function"]["name"]: s["function"] for s in get_all_tool_schemas()}
+            builtin_schemas = {
+                s["function"]["name"]: s["function"] for s in get_all_tool_schemas()
+            }
         except Exception as e:
             builtin_tools = {}
             builtin_schemas = {}
             print(f"Warning: Could not load built-in tools: {e}")
-        
+
         # Get MCP tools from MCP manager
         mcp_tools = []
         try:
             from janito.mcp_manager import get_mcp_manager
+
             mcp_manager = get_mcp_manager()
             if mcp_manager:
                 mcp_tool_schemas = mcp_manager.get_all_tools()
@@ -48,7 +55,7 @@ class ToolsCmdHandler(CmdHandler):
                     mcp_tools.append(schema["function"])
         except Exception as e:
             print(f"Warning: Could not load MCP tools: {e}")
-        
+
         # Print built-in tools section
         if builtin_tools:
             print("\n[Built-in Tools]")
@@ -63,10 +70,11 @@ class ToolsCmdHandler(CmdHandler):
         else:
             print("\n[Built-in Tools]")
             print("  (none loaded)")
-        
+
         # Print tools skipped during discovery (failed should_load() validation)
         try:
             from janito.tools import get_skipped_tools
+
             skipped_tools = get_skipped_tools()
         except Exception:
             skipped_tools = {}
@@ -93,11 +101,13 @@ class ToolsCmdHandler(CmdHandler):
         else:
             print("\n[MCP Tools]")
             print("  (no MCP services connected)")
-        
+
         # Summary
         total_tools = len(builtin_tools) + len(mcp_tools)
         print()
-        print(f"Total: {total_tools} tools ({len(builtin_tools)} built-in, {len(mcp_tools)} MCP)")
+        print(
+            f"Total: {total_tools} tools ({len(builtin_tools)} built-in, {len(mcp_tools)} MCP)"
+        )
         print("=" * 60)
         print()
 

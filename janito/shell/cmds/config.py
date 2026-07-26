@@ -2,8 +2,7 @@
 /config command handler - displays current configuration.
 """
 
-from .base import CmdHandler
-from .registry import register_command
+from janito.auth_config import get_api_key
 
 # Import general configuration handling
 from janito.general_config import (
@@ -12,7 +11,9 @@ from janito.general_config import (
     load_context_window_size,
     load_endpoint_from_config,
 )
-from janito.auth_config import get_api_key
+
+from .base import CmdHandler
+from .registry import register_command
 
 
 def _print_config_info() -> None:
@@ -28,6 +29,7 @@ def _print_config_info() -> None:
     if not base_url:
         try:
             from janito.provider_config import get_base_url_from_provider
+
             base_url = get_base_url_from_provider(provider)
         except ImportError:
             base_url = None
@@ -44,18 +46,20 @@ def _print_config_info() -> None:
     print(f"  Provider:           {provider}")
     print(f"  Base URL:           {base_url_display}")
     print(f"  API Key:            {masked_key}")
-    print(f"  Context Window:     {context_window_size if context_window_size else '(not set)'}")
+    print(
+        f"  Context Window:     {context_window_size if context_window_size else '(not set)'}"
+    )
     print("=" * 50)
     print()
 
 
 class ConfigCmdHandler(CmdHandler):
     """Command handler for /config command."""
-    
+
     @property
     def name(self) -> str:
         return "/config"
-    
+
     def handle(self, shell, user_input: str) -> bool:
         """Handle the /config command."""
         if user_input.lower() == self.name.lower():

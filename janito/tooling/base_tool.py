@@ -10,27 +10,25 @@ a context-variable-based report handler (set in web mode) can intercept output.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import Any
 
-from .reporter import (
-    report_start as _report_start,
-    report_progress as _report_progress,
-    report_output as _report_output,
-    report_result as _report_result,
-    report_error as _report_error,
-    report_warning as _report_warning,
-)
+from .reporter import report_error as _report_error
+from .reporter import report_output as _report_output
+from .reporter import report_progress as _report_progress
+from .reporter import report_result as _report_result
+from .reporter import report_start as _report_start
+from .reporter import report_warning as _report_warning
 
 
 class BaseTool(ABC):
     """
     Base class for AI tools with built-in progress reporting and permissions.
-    
+
     Tools should inherit from this class and implement the `run` method.
     The class automatically provides progress reporting methods that are
     aware of the tool's declared permissions.
     """
-    
+
     # Class-level permissions attribute (set by the @tool decorator)
     _tool_permissions: str = ""
 
@@ -40,7 +38,6 @@ class BaseTool(ABC):
 
     def __init__(self):
         """Initialize the base tool."""
-        pass
 
     @classmethod
     def should_load(cls) -> bool:
@@ -61,23 +58,22 @@ class BaseTool(ABC):
         return True
 
     @abstractmethod
-    def run(self, **kwargs) -> Dict[str, Any]:
+    def run(self, **kwargs) -> dict[str, Any]:
         """
         Execute the tool's main functionality.
-        
+
         This method must be implemented by subclasses.
-        
+
         Args:
             **kwargs: Tool-specific parameters
-            
+
         Returns:
             Dict[str, Any]: Tool result dictionary
         """
-        pass
 
     def _get_start_style(self) -> str:
         """Compute the rich style for start messages based on permissions."""
-        permissions = getattr(self, '_tool_permissions', "")
+        permissions = getattr(self, "_tool_permissions", "")
         if not permissions:
             return "cyan"  # Cyan for no permissions (default)
         elif "x" in permissions:
@@ -166,7 +162,7 @@ class BaseTool(ABC):
         Returns:
             str: Rich style name
         """
-        permissions = getattr(self, '_tool_permissions', "")
+        permissions = getattr(self, "_tool_permissions", "")
         if not permissions:
             return "cyan"  # Cyan for no permissions (default)
         elif "x" in permissions:

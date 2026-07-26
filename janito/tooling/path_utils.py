@@ -2,21 +2,20 @@
 Path utility functions for normalizing paths relative to the current working directory.
 """
 
-import os
 from pathlib import Path
 
 
 def norm_path(path):
     """
     Normalize a path relative to the current working directory.
-    
+
     - If the path matches exactly the current working directory, return the full path.
     - If the path is a subpath of the working directory, return './relative_path'.
     - Otherwise, return the original path unchanged.
-    
+
     Args:
         path (str or Path): The path to normalize.
-        
+
     Returns:
         str: The normalized path.
     """
@@ -25,15 +24,15 @@ def norm_path(path):
         path_obj = Path(path)
     else:
         path_obj = path
-    
+
     # Get absolute paths
     abs_path = path_obj.resolve()
     cwd = Path.cwd().resolve()
-    
+
     # If the path matches exactly the current working directory
     if abs_path == cwd:
         return str(abs_path)
-    
+
     # If the path is a subpath of the working directory
     try:
         # Try to get the relative path

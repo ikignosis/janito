@@ -15,11 +15,11 @@ from pathlib import Path
 # Add the repo root to sys.path to allow importing the package directly.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import janito.auth_config as ac
 import janito.config_dir as config_dir_mod
 import janito.general_config as gc
-import janito.auth_config as ac
-import janito.secrets_config as sc
 import janito.mcp_config as mc
+import janito.secrets_config as sc
 
 try:
     import pytest
@@ -92,7 +92,7 @@ if pytest is not None:
     def test_custom_dir_isolated_from_default(monkeypatch, tmp_path):
         # Write under a custom dir, then switch back to default and confirm the
         # value is NOT visible there (proving true isolation).
-        config_dir = _point_at(monkeypatch, tmp_path)
+        _point_at(monkeypatch, tmp_path)
         gc.set_config_value("provider", "openai")
         assert gc.load_config().get("provider") == "openai"
 

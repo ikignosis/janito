@@ -9,8 +9,8 @@ In web mode, a context-variable-based report handler intercepts all report
 calls and forwards them as structured events instead of printing to stderr.
 """
 
+from collections.abc import Callable
 from contextvars import ContextVar
-from typing import Callable, Optional
 
 from rich.console import Console
 
@@ -24,18 +24,18 @@ _console = Console(stderr=True, highlight=False, markup=False)
 # level is one of: "start", "progress", "output", "result", "error", "warning", "info"
 ReportHandler = Callable[[str, str, str], None]
 
-_report_handler: ContextVar[Optional[ReportHandler]] = ContextVar(
-    '_report_handler', default=None
+_report_handler: ContextVar[ReportHandler | None] = ContextVar(
+    "_report_handler", default=None
 )
 
 
-def set_report_handler(handler: Optional[ReportHandler]) -> None:
+def set_report_handler(handler: ReportHandler | None) -> None:
     """Set a custom report handler for the current async context.
     Pass None to restore default Rich console output."""
     _report_handler.set(handler)
 
 
-def get_report_handler() -> Optional[ReportHandler]:
+def get_report_handler() -> ReportHandler | None:
     """Get the current report handler (or None for default console output)."""
     return _report_handler.get()
 
@@ -50,8 +50,12 @@ class Colors:
     RESET = ""
 
 
-def report_start(message: str, end: str = "\n", color: str = Colors.CYAN,
-                 prefix: str = " \U0001f504 ") -> None:
+def report_start(
+    message: str,
+    end: str = "\n",
+    color: str = Colors.CYAN,
+    prefix: str = " \U0001f504 ",
+) -> None:
     """
     Report that an operation is starting.
 

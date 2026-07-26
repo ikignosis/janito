@@ -2,10 +2,9 @@
 
 import os
 from dataclasses import dataclass
-from typing import Optional
 
 
-def _resolve_model_from_config(provider: Optional[str]) -> Optional[str]:
+def _resolve_model_from_config(provider: str | None) -> str | None:
     """Resolve the model from the config file for the given/active provider.
 
     Mirrors the runtime resolution used by the CLI: the model is ``--model``
@@ -14,6 +13,7 @@ def _resolve_model_from_config(provider: Optional[str]) -> Optional[str]:
     """
     try:
         from janito.general_config import load_model_from_config
+
         return load_model_from_config(provider)
     except Exception:
         return None
@@ -33,28 +33,28 @@ class WebServerConfig:
     no_web_open: bool = False
 
     # --- AI / provider (resolved from auth store + config file) ---
-    provider: Optional[str] = None       # args.provider
-    model: Optional[str] = None          # args.model (or from provider config)
+    provider: str | None = None  # args.provider
+    model: str | None = None  # args.model (or from provider config)
 
     # --- Session defaults (from CLI flags) ---
-    thinking: bool = False               # -t / --thinking
-    verbose: bool = False                # -v / --verbose
-    no_history: bool = False             # --no-history
+    thinking: bool = False  # -t / --thinking
+    verbose: bool = False  # -v / --verbose
+    no_history: bool = False  # --no-history
 
     # --- Toolset enablement ---
-    gmail: bool = False                  # --gmail
-    onedrive: bool = False               # --onedrive
+    gmail: bool = False  # --gmail
+    onedrive: bool = False  # --onedrive
 
     # --- System prompt ---
-    system_prompt: Optional[str] = None  # -S "custom prompt"
-    no_system_prompt: bool = False       # -Z
-    no_tools: bool = False               # implied by -Z or -S
+    system_prompt: str | None = None  # -S "custom prompt"
+    no_system_prompt: bool = False  # -Z
+    no_tools: bool = False  # implied by -Z or -S
 
     # --- Security ---
-    auth_token: Optional[str] = None     # from JANITO_WEB_TOKEN env
+    auth_token: str | None = None  # from JANITO_WEB_TOKEN env
 
     # --- The original CLI args (for /api/config/cli display) ---
-    cli_args: Optional[dict] = None
+    cli_args: dict | None = None
 
     @classmethod
     def from_args(cls, args) -> "WebServerConfig":
@@ -64,7 +64,8 @@ class WebServerConfig:
             web_port=getattr(args, "web_port", 8080),
             no_web_open=getattr(args, "no_web_open", False),
             provider=getattr(args, "provider", None),
-            model=getattr(args, "model", None) or _resolve_model_from_config(getattr(args, "provider", None)),
+            model=getattr(args, "model", None)
+            or _resolve_model_from_config(getattr(args, "provider", None)),
             thinking=getattr(args, "thinking", False),
             verbose=getattr(args, "verbose", False),
             no_history=getattr(args, "no_history", False),
@@ -76,10 +77,25 @@ class WebServerConfig:
         # Capture a subset of CLI args for the /api/config/cli endpoint
         config.cli_args = {
             k: getattr(args, k, None)
-            for k in ("provider", "model", "thinking", "verbose",
-                      "no_history", "gmail", "onedrive", "read", "write", "exec",
-                      "system_prompt", "no_system_prompt", "log", "web_host",
-                      "web_port", "no_web_open", "web")
+            for k in (
+                "provider",
+                "model",
+                "thinking",
+                "verbose",
+                "no_history",
+                "gmail",
+                "onedrive",
+                "read",
+                "write",
+                "exec",
+                "system_prompt",
+                "no_system_prompt",
+                "log",
+                "web_host",
+                "web_port",
+                "no_web_open",
+                "web",
+            )
         }
 
         # System prompt resolution (mirrors cli/chat.py logic)
@@ -93,7 +109,7 @@ class WebServerConfig:
 
         return config
 
-    def get_effective_system_prompt(self) -> Optional[str]:
+    def get_effective_system_prompt(self) -> str | None:
         """Resolve the system prompt for new sessions.
 
         Mirrors the if/elif chain in ``cli/chat.py::run_interactive_chat()``.
@@ -104,11 +120,14 @@ class WebServerConfig:
             return None
         if self.onedrive:
             from janito.tools.onedrive import ONEDRIVE_SYSTEM_PROMPT
+
             return ONEDRIVE_SYSTEM_PROMPT
         if self.gmail:
             from janito.tools.gmail import GMAIL_SYSTEM_PROMPT
+
             return GMAIL_SYSTEM_PROMPT
         from janito.system_prompt import get_system_prompt_with_skills
+
         return get_system_prompt_with_skills()
 
     def apply_toolsets(self) -> None:
@@ -118,6 +137,7 @@ class WebServerConfig:
         Called once at server startup.
         """
         from janito.tooling.tools_registry import add_toolset
+
         if self.gmail:
             add_toolset("gmail")
         if self.onedrive:

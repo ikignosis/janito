@@ -71,11 +71,11 @@ async def patch_config(request: Request):
 @router.get("/providers")
 async def list_providers(request: Request):
     """List supported providers."""
-    from janito.provider_config import list_supported_providers, PROVIDER_BASE_URLS
+    from janito.provider_config import PROVIDER_BASE_URLS
+
     return {
         "providers": [
-            {"name": name, "base_url": url}
-            for name, url in PROVIDER_BASE_URLS.items()
+            {"name": name, "base_url": url} for name, url in PROVIDER_BASE_URLS.items()
         ]
     }
 
@@ -83,14 +83,17 @@ async def list_providers(request: Request):
 @router.get("/status")
 async def get_status(request: Request):
     """API key status (masked), active provider, privileges."""
+    from janito import privileges as _privileges_mod
+    from janito.auth_config import get_api_key
     from janito.general_config import (
-        get_masked_api_key,
         get_active_provider,
+        get_masked_api_key,
         load_endpoint_from_config,
     )
-    from janito.auth_config import get_api_key
-    from janito.provider_config import get_base_url_from_provider, CUSTOM_ENDPOINT_MARKER
-    from janito import privileges as _privileges_mod
+    from janito.provider_config import (
+        CUSTOM_ENDPOINT_MARKER,
+        get_base_url_from_provider,
+    )
 
     config = _get_config(request)
     provider = get_active_provider()

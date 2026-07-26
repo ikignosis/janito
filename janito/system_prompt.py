@@ -7,6 +7,9 @@ SYSTEM_PROMPT = """
 def get_system_prompt_with_skills() -> str:
     """Get the base system prompt with skills advertisement appended."""
     from .tooling.tools_registry import get_skills_section
+
     return SYSTEM_PROMPT + get_skills_section()
+
+
 # - Before answering, explore the content related to the question
 # - Use the namespace functions to deliver the code changes instead of showing the code.

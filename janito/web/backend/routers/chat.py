@@ -1,10 +1,9 @@
 """Chat endpoints: session CRUD + WebSocket streaming."""
 
-import asyncio
 import json
 import logging
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Request
+from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 
 from ..agent import stream_prompt
@@ -81,8 +80,9 @@ async def chat_websocket(websocket: WebSocket, session_id: str):
       Client -> Server:  {"type": "prompt", "content": "..."}
       Server -> Client:  {"type": "token"|"reasoning"|"tool_call"|...}
     """
-    logger.warning("[ws] handshake received session=%s client=%s",
-                   session_id, websocket.client)
+    logger.warning(
+        "[ws] handshake received session=%s client=%s", session_id, websocket.client
+    )
     await websocket.accept()
     logger.warning("[ws] accepted session=%s", session_id)
 
@@ -91,8 +91,11 @@ async def chat_websocket(websocket: WebSocket, session_id: str):
 
     session = sessions.get(session_id)
     if not session:
-        logger.warning("[ws] session NOT FOUND: %s (known=%s)",
-                       session_id, [s.session_id for s in sessions.list_sessions()])
+        logger.warning(
+            "[ws] session NOT FOUND: %s (known=%s)",
+            session_id,
+            [s.session_id for s in sessions.list_sessions()],
+        )
         await websocket.send_json({"type": "error", "message": "Session not found"})
         await websocket.close()
         return
@@ -104,12 +107,14 @@ async def chat_websocket(websocket: WebSocket, session_id: str):
 
     active_tools = get_all_tools()
     skipped_tools = get_skipped_tools()
-    await websocket.send_json({
-        "type": "session_start",
-        "active_tools": len(active_tools),
-        "skipped_tools": len(skipped_tools),
-        "skipped": skipped_tools,
-    })
+    await websocket.send_json(
+        {
+            "type": "session_start",
+            "active_tools": len(active_tools),
+            "skipped_tools": len(skipped_tools),
+            "skipped": skipped_tools,
+        }
+    )
 
     try:
         while True:
@@ -117,9 +122,7 @@ async def chat_websocket(websocket: WebSocket, session_id: str):
             try:
                 msg = json.loads(raw)
             except json.JSONDecodeError:
-                await websocket.send_json(
-                    {"type": "error", "message": "Invalid JSON"}
-                )
+                await websocket.send_json({"type": "error", "message": "Invalid JSON"})
                 continue
 
             if msg.get("type") != "prompt":
@@ -128,9 +131,7 @@ async def chat_websocket(websocket: WebSocket, session_id: str):
 
             content = (msg.get("content") or "").strip()
             if not content:
-                await websocket.send_json(
-                    {"type": "error", "message": "Empty prompt"}
-                )
+                await websocket.send_json({"type": "error", "message": "Empty prompt"})
                 continue
 
             # Auto-title the session from the first user prompt
@@ -150,7 +151,7 @@ async def chat_websocket(websocket: WebSocket, session_id: str):
             except Exception as e:
                 logger.exception("Error during stream_prompt")
                 await websocket.send_json(
-                    {"type": "error", "message": f"Server error: {str(e)}"}
+                    {"type": "error", "message": f"Server error: {e!s}"}
                 )
     except WebSocketDisconnect:
         logger.debug(f"WebSocket client disconnected: {session_id}")

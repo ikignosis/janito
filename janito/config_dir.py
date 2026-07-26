@@ -12,7 +12,6 @@ imports.
 """
 
 from pathlib import Path
-from typing import Optional
 
 # Default base configuration directory. This is the value used when -c/--config-dir
 # is not provided on the command line.
@@ -23,7 +22,7 @@ DEFAULT_CONFIG_DIR = Path.home() / ".janito"
 _config_dir: Path = DEFAULT_CONFIG_DIR
 
 
-def set_config_dir(path: Optional[str]) -> None:
+def set_config_dir(path: str | None) -> None:
     """Set the base configuration directory.
 
     Called early in ``main()`` when the ``-c`` / ``--config-dir`` flag is used.

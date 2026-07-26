@@ -2,9 +2,8 @@
 Interactive shell module using prompt_toolkit.
 """
 
-from .interactive import InteractiveShell
-
 # Import cmds subpackage
 from . import cmds
+from .interactive import InteractiveShell
 
 __all__ = ["InteractiveShell", "cmds"]

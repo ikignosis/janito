@@ -5,5 +5,3 @@
 | janito | Python |  |
 | opencode | NodeJS | 8800 |
 ```
-
-

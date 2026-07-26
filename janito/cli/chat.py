@@ -4,41 +4,48 @@ CLI chat execution modes: interactive and single prompt.
 
 from functools import partial
 
-from ..system_prompt import SYSTEM_PROMPT, get_system_prompt_with_skills
+from ..openai_client import resolve_runtime_config, send_prompt
+from ..shell import InteractiveShell
+from ..system_prompt import get_system_prompt_with_skills
 from ..tools.gmail import GMAIL_SYSTEM_PROMPT
 from ..tools.onedrive import ONEDRIVE_SYSTEM_PROMPT
-from ..openai_client import send_prompt, resolve_runtime_config
-from ..shell import InteractiveShell
 
 
 def run_interactive_chat(args):
     """Run the interactive chat session.
-    
+
     Args:
         args: Parsed command line arguments
     """
     if getattr(args, "full_privileges", False):
         from rich.console import Console
-        Console().print("WARNING: Running with full privileges, consider using -r, -w, -x", style="yellow")
+
+        Console().print(
+            "WARNING: Running with full privileges, consider using -r, -w, -x",
+            style="yellow",
+        )
 
     # Set up Gmail mode if requested
     if args.gmail:
         from ..tooling.tools_registry import add_toolset
+
         add_toolset("gmail")
         print("✓ Gmail tools enabled")
-    
+
     # Set up OneDrive mode if requested
     if args.onedrive:
         from ..tooling.tools_registry import add_toolset
+
         add_toolset("onedrive")
         print("✓ OneDrive tools enabled")
-    
+
     # Check if any skills are installed
     from ..tooling.skills_provider import get_skills_provider
+
     skills = get_skills_provider().list_skills()
     if skills:
         print(f"✓ {len(skills)} skill(s) available")
-    
+
     # Report the total number of active and skipped tools
     from ..tooling.tools_registry import get_all_tools
     from ..tools import get_skipped_tools
@@ -58,9 +65,13 @@ def run_interactive_chat(args):
         _, _, model = resolve_runtime_config(cli_model, cli_provider)
     except ValueError:
         model = cli_model or "(not configured)"
-    send_prompt_func = partial(send_prompt, cli_model=cli_model, cli_provider=cli_provider)
-    print("Starting interactive chat session. Type '/exit' or CTRL-D to end the session")
-    
+    send_prompt_func = partial(
+        send_prompt, cli_model=cli_model, cli_provider=cli_provider
+    )
+    print(
+        "Starting interactive chat session. Type '/exit' or CTRL-D to end the session"
+    )
+
     # Choose system prompt based on enabled modes
     if args.system_prompt:
         effective_system_prompt = args.system_prompt
@@ -78,47 +89,53 @@ def run_interactive_chat(args):
         # Use system prompt with skills advertisement
         effective_system_prompt = get_system_prompt_with_skills()
         no_tools = False
-    
+
     shell = InteractiveShell(model=model, no_history=args.no_history)
     shell.initialize_history(system_prompt=effective_system_prompt)
     shell.run(
         send_prompt_func=send_prompt_func,
         verbose=args.verbose,
         no_tools=no_tools,
-        thinking=args.thinking
+        thinking=args.thinking,
     )
 
 
 def run_single_prompt(args):
     """Run a single prompt.
-    
+
     Args:
         args: Parsed command line arguments
     """
     import sys
-    
+
     if getattr(args, "full_privileges", False):
         from rich.console import Console
-        Console().print("WARNING: Running with full privileges, consider using -r, -w, -x", style="yellow")
+
+        Console().print(
+            "WARNING: Running with full privileges, consider using -r, -w, -x",
+            style="yellow",
+        )
 
     # Set up Gmail mode if requested
     if args.gmail:
         from ..tooling.tools_registry import add_toolset
+
         add_toolset("gmail")
         print("✓ Gmail tools enabled")
-    
+
     # Set up OneDrive mode if requested
     if args.onedrive:
         from ..tooling.tools_registry import add_toolset
+
         add_toolset("onedrive")
         print("✓ OneDrive tools enabled")
-    
+
     prompt = args.prompt
-    
+
     if not prompt:
         print("Error: Empty prompt provided.", file=sys.stderr)
         sys.exit(1)
-    
+
     # Initialize messages history (with or without system prompt based on -Z or -S flag)
     if args.system_prompt:
         messages_history = [{"role": "system", "content": args.system_prompt}]

@@ -7,7 +7,7 @@ from .. import __version__
 
 def create_parser() -> argparse.ArgumentParser:
     """Create and configure the CLI argument parser.
-    
+
     Returns:
         argparse.ArgumentParser: Configured argument parser
     """
@@ -77,245 +77,232 @@ Note: --set and --set-api-key must be used in separate commands.
     janito --set provider=openai                              # Step 1: Set provider
     janito --set model=gpt-4                                  # Step 2: Set model (stored as openai.model)
     janito --set-api-key sk-xxx --provider openai             # Step 3: Store API key
-        """
+        """,
     )
-    
+
     parser.add_argument(
-        "prompt", 
-        nargs="?", 
-        help="The prompt to send to the AI (if not provided, starts interactive chat)"
+        "prompt",
+        nargs="?",
+        help="The prompt to send to the AI (if not provided, starts interactive chat)",
     )
-    
+
     parser.add_argument(
-        "-c", "--config-dir",
+        "-c",
+        "--config-dir",
         metavar="DIR",
         help="Directory for all janito config (config, auth, secrets, MCP, skills). "
-             "Defaults to ~/.janito"
+        "Defaults to ~/.janito",
     )
-    
+
     parser.add_argument(
-        "-v", "--verbose",
+        "-v",
+        "--verbose",
         action="store_true",
-        help="Enable verbose output (shows model and backend info)"
+        help="Enable verbose output (shows model and backend info)",
     )
-    
+
     parser.add_argument(
         "--log",
         metavar="LEVELS",
-        help="Enable logging (e.g., --log=info,debug or --log=warning,error)"
+        help="Enable logging (e.g., --log=info,debug or --log=warning,error)",
     )
-    
+
     parser.add_argument(
         "--info",
         action="store_true",
-        help="Print resolved configuration (provider, model, API key) and exit"
+        help="Print resolved configuration (provider, model, API key) and exit",
     )
-    
+
     parser.add_argument(
-        "-Z", "--no-system-prompt",
+        "-Z",
+        "--no-system-prompt",
         action="store_true",
-        help="Do not set a system prompt (send user prompt directly)"
+        help="Do not set a system prompt (send user prompt directly)",
     )
-    
+
     parser.add_argument(
-        "-S", "--system-prompt",
+        "-S",
+        "--system-prompt",
         metavar="PROMPT",
-        help="Override the system prompt (implies --no-system-prompt / no tools)"
+        help="Override the system prompt (implies --no-system-prompt / no tools)",
     )
-    
+
     parser.add_argument(
-        "-t", "--thinking",
+        "-t",
+        "--thinking",
         action="store_true",
-        help="Enable thinking mode (sends extra_body={'enable_thinking': True} to the API)"
+        help="Enable thinking mode (sends extra_body={'enable_thinking': True} to the API)",
     )
-    
+
     parser.add_argument(
-        "-r", "--read",
-        action="store_true",
-        help="Grant READ privilege"
+        "-r", "--read", action="store_true", help="Grant READ privilege"
     )
-    
+
     parser.add_argument(
-        "-w", "--write",
-        action="store_true",
-        help="Grant WRITE privilege"
+        "-w", "--write", action="store_true", help="Grant WRITE privilege"
     )
-    
+
     parser.add_argument(
-        "-x", "--exec",
-        action="store_true",
-        help="Grant EXEC privilege"
+        "-x", "--exec", action="store_true", help="Grant EXEC privilege"
     )
-    
+
     parser.add_argument(
         "--list-tools",
         action="store_true",
-        help="List all available built-in tools and exit"
+        help="List all available built-in tools and exit",
     )
-    
+
     parser.add_argument(
-        "--list-mcp",
-        action="store_true",
-        help="List all MCP services and their tools"
+        "--list-mcp", action="store_true", help="List all MCP services and their tools"
     )
-    
+
     parser.add_argument(
         "--set-api-key",
         metavar="KEY",
-        help="Set API key for the specified provider (requires --provider)"
+        help="Set API key for the specified provider (requires --provider)",
     )
-    
+
     parser.add_argument(
         "--model",
         metavar="NAME",
-        help="Model name to use for completions (overrides the provider's configured model)"
+        help="Model name to use for completions (overrides the provider's configured model)",
     )
-    
+
     parser.add_argument(
-        "--provider",
-        metavar="NAME",
-        help="Provider name (e.g., openai, custom)"
+        "--provider", metavar="NAME", help="Provider name (e.g., openai, custom)"
     )
-    
+
     parser.add_argument(
-        "--list-keys",
-        action="store_true",
-        help="List configured providers and keys"
+        "--list-keys", action="store_true", help="List configured providers and keys"
     )
-    
+
     parser.add_argument(
         "--set",
         nargs="*",
         action="append",
         metavar="KEY=VALUE",
         help="Set one or more config key-value pairs in ~/.janito/config.json\n"
-             "  The 'model' key is stored per-provider (e.g. openai.model); the\n"
-             "  provider is taken from --provider or the configured 'provider'.\n  Examples:\n    janito --set model=gpt-4 endpoint=https://api.example.com/v1\n    janito --provider openai --set model=gpt-4"
+        "  The 'model' key is stored per-provider (e.g. openai.model); the\n"
+        "  provider is taken from --provider or the configured 'provider'.\n  Examples:\n    janito --set model=gpt-4 endpoint=https://api.example.com/v1\n    janito --provider openai --set model=gpt-4",
     )
-    
+
     parser.add_argument(
         "--unset",
         nargs="*",
         action="append",
         metavar="KEY",
-        help="Remove one or more config keys from ~/.janito/config.json\n  Examples:\n    janito --unset model provider\n    janito --unset model --unset provider"
+        help="Remove one or more config keys from ~/.janito/config.json\n  Examples:\n    janito --unset model provider\n    janito --unset model --unset provider",
     )
-    
+
     parser.add_argument(
         "--get",
         nargs="*",
         action="append",
         metavar="KEY",
-        help="Get one or more config values from ~/.janito/config.json\n  Examples:\n    janito --get model provider\n    janito --get model --get provider"
+        help="Get one or more config values from ~/.janito/config.json\n  Examples:\n    janito --get model provider\n    janito --get model --get provider",
     )
-    
+
     parser.add_argument(
         "--set-secret",
         nargs="*",
         action="append",
         metavar="KEY=VALUE",
-        help="Set one or more secrets in ~/.janito/secrets.json\n  Examples:\n    janito --set-secret mykey=myvalue api_key=abc123\n    janito --set-secret mykey=myvalue --set-secret api_key=abc123"
+        help="Set one or more secrets in ~/.janito/secrets.json\n  Examples:\n    janito --set-secret mykey=myvalue api_key=abc123\n    janito --set-secret mykey=myvalue --set-secret api_key=abc123",
     )
-    
+
     parser.add_argument(
         "--get-secret",
         nargs="*",
         action="append",
         metavar="KEY",
-        help="Get one or more secret values from ~/.janito/secrets.json\n  Examples:\n    janito --get-secret mykey api_key\n    janito --get-secret mykey --get-secret api_key"
+        help="Get one or more secret values from ~/.janito/secrets.json\n  Examples:\n    janito --get-secret mykey api_key\n    janito --get-secret mykey --get-secret api_key",
     )
-    
+
     parser.add_argument(
         "--delete-secret",
         nargs="*",
         action="append",
         metavar="KEY",
-        help="Delete one or more secrets from ~/.janito/secrets.json\n  Examples:\n    janito --delete-secret mykey old_secret\n    janito --delete-secret mykey --delete-secret old_secret"
+        help="Delete one or more secrets from ~/.janito/secrets.json\n  Examples:\n    janito --delete-secret mykey old_secret\n    janito --delete-secret mykey --delete-secret old_secret",
     )
-    
+
     parser.add_argument(
-        "--list-secrets",
-        action="store_true",
-        help="List all configured secrets"
+        "--list-secrets", action="store_true", help="List all configured secrets"
     )
-    
+
     parser.add_argument(
         "--config",
         action="store_true",
-        help="Interactive configuration setup for provider, API key, and context window"
+        help="Interactive configuration setup for provider, API key, and context window",
     )
-    
+
     parser.add_argument(
         "--no-history",
         action="store_true",
-        help="Don't persist input history to file (store only in memory)"
+        help="Don't persist input history to file (store only in memory)",
     )
-    
+
     parser.add_argument(
         "--gmail",
         action="store_true",
-        help="Enable Gmail tools and use email-specific system prompt"
+        help="Enable Gmail tools and use email-specific system prompt",
     )
-    
+
     parser.add_argument(
         "--onedrive",
         action="store_true",
-        help="Enable OneDrive tools and use file-specific system prompt"
+        help="Enable OneDrive tools and use file-specific system prompt",
     )
-    
+
     parser.add_argument(
         "--onedrive-auth",
         action="store_true",
-        help="Authenticate with Microsoft OneDrive using device code flow"
+        help="Authenticate with Microsoft OneDrive using device code flow",
     )
-    
+
     parser.add_argument(
         "--onedrive-logout",
         action="store_true",
-        help="Clear OneDrive authentication tokens"
+        help="Clear OneDrive authentication tokens",
     )
-    
+
     parser.add_argument(
         "--onedrive-status",
         action="store_true",
-        help="Show OneDrive authentication status"
+        help="Show OneDrive authentication status",
     )
-    
+
     parser.add_argument(
         "--install-skill",
         metavar="URL",
-        help="Install a skill from a GitHub URL (e.g., https://github.com/user/awesome-copilot/tree/main/skills/git-commit)"
+        help="Install a skill from a GitHub URL (e.g., https://github.com/user/awesome-copilot/tree/main/skills/git-commit)",
     )
-    
+
     parser.add_argument(
-        "--list-skills",
-        action="store_true",
-        help="List all installed skills"
+        "--list-skills", action="store_true", help="List all installed skills"
     )
-    
+
     parser.add_argument(
-        "--uninstall-skill",
-        metavar="NAME",
-        help="Uninstall a skill by name"
+        "--uninstall-skill", metavar="NAME", help="Uninstall a skill by name"
     )
-    
+
     parser.add_argument(
         "--version",
         action="version",
         version=f"%(prog)s {__version__}",
-        help="Show program's version number and exit"
+        help="Show program's version number and exit",
     )
-    
+
     parser.add_argument(
         "--show-config",
         action="store_true",
-        help="Display the currently configured provider and model from config files"
+        help="Display the currently configured provider and model from config files",
     )
-    
+
     parser.add_argument(
         "--show-system-prompt",
         action="store_true",
-        help="Display the resolved system prompt and exit"
+        help="Display the resolved system prompt and exit",
     )
 
     # --- Web UI options ---
@@ -323,7 +310,7 @@ Note: --set and --set-api-key must be used in separate commands.
         "--web",
         action="store_true",
         help="Start the web UI server instead of the terminal chat "
-             "(alpha: interface and behavior may change)"
+        "(alpha: interface and behavior may change)",
     )
 
     parser.add_argument(
@@ -331,20 +318,20 @@ Note: --set and --set-api-key must be used in separate commands.
         type=int,
         default=8080,
         metavar="PORT",
-        help="Port for the web server (default: 8080, used with --web)"
+        help="Port for the web server (default: 8080, used with --web)",
     )
 
     parser.add_argument(
         "--web-host",
         default="127.0.0.1",
         metavar="HOST",
-        help="Bind address for the web server (default: 127.0.0.1, used with --web)"
+        help="Bind address for the web server (default: 127.0.0.1, used with --web)",
     )
 
     parser.add_argument(
         "--no-web-open",
         action="store_true",
-        help="Don't automatically open the browser (used with --web)"
+        help="Don't automatically open the browser (used with --web)",
     )
 
     return parser
@@ -352,7 +339,7 @@ Note: --set and --set-api-key must be used in separate commands.
 
 def parse_args():
     """Parse command line arguments.
-    
+
     Returns:
         argparse.Namespace: Parsed arguments
     """

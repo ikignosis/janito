@@ -56,11 +56,11 @@ We welcome contributions to janito! This guide explains how to get involved.
 def greet_user(name: str, greeting: str = "Hello") -> str:
     """
     Generate a greeting message for a user.
-    
+
     Args:
         name: The user's name
         greeting: The greeting word (default: "Hello")
-    
+
     Returns:
         A formatted greeting string
     """
@@ -77,7 +77,7 @@ def greet_user(name: str, greeting: str = "Hello") -> str:
 def test_greet_user():
     result = greet_user("Alice")
     assert result == "Hello, Alice!"
-    
+
 def test_greet_user_custom_greeting():
     result = greet_user("Bob", greeting="Hi")
     assert result == "Hi, Bob!"

@@ -6,28 +6,22 @@ with built-in function calling capabilities and MCP (Model Context Protocol) sup
 """
 
 from ._version import __version__, __version_tuple__
+from .mcp_client.base import MCPTransport
+from .mcp_client.factory import create_transport
+from .mcp_client.http import HttpTransport
+from .mcp_client.stdio import StdioTransport
 
 # MCP modules
 from .mcp_config import (
     MCP_CONFIG_PATH,
-    load_mcp_config,
-    save_mcp_config,
-    get_service,
     add_service,
-    remove_service,
+    get_service,
     list_services,
+    load_mcp_config,
+    remove_service,
+    save_mcp_config,
 )
-
-from .mcp_client.base import MCPTransport
-from .mcp_client.stdio import StdioTransport
-from .mcp_client.http import HttpTransport
-from .mcp_client.factory import create_transport
-
-from .mcp_manager import (
-    MCPManager,
-    get_mcp_manager,
-    shutdown_mcp_manager,
-)
+from .mcp_manager import MCPManager, get_mcp_manager, shutdown_mcp_manager
 
 __all__ = [
     # Version

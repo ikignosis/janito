@@ -11,10 +11,9 @@ Structure:
 """
 
 import json
-import os
 import logging
+import os
 from pathlib import Path
-from typing import Dict, Optional
 
 from .config_dir import get_config_dir
 
@@ -34,34 +33,34 @@ def ensure_auth_directory() -> Path:
     return auth_file.parent
 
 
-def load_auth_config() -> Dict[str, str]:
+def load_auth_config() -> dict[str, str]:
     """Load the authentication configuration from file."""
     auth_file = get_auth_file_path()
-    
+
     if not auth_file.exists():
         logger.debug(f"Auth config file not found: {auth_file}")
         return {}
-    
-    with open(auth_file, 'r', encoding='utf-8') as f:
+
+    with open(auth_file, "r", encoding="utf-8") as f:
         content = f.read()
     logger.debug(f"Loaded auth config from {auth_file}")
     return json.loads(content)
 
 
-def save_auth_config(config: Dict[str, str]) -> bool:
+def save_auth_config(config: dict[str, str]) -> bool:
     """Save the authentication configuration to file."""
     try:
         ensure_auth_directory()
         auth_file = get_auth_file_path()
-        
-        with open(auth_file, 'w', encoding='utf-8') as f:
+
+        with open(auth_file, "w", encoding="utf-8") as f:
             json.dump(config, f, indent=2)
-        
+
         # Set restrictive permissions (read/write for owner only)
         os.chmod(auth_file, 0o600)
         logger.debug(f"Saved auth config to {auth_file}")
         return True
-    except (IOError, OSError) as e:
+    except OSError as e:
         logger.error(f"Failed to save auth config: {e}")
         return False
 
@@ -69,11 +68,11 @@ def save_auth_config(config: Dict[str, str]) -> bool:
 def set_api_key(provider: str, api_key: str) -> bool:
     """
     Set an API key for a specific provider.
-    
+
     Args:
         provider: The provider name (e.g., 'openai')
         api_key: The actual API key value
-    
+
     Returns:
         True if successful, False otherwise
     """
@@ -86,13 +85,13 @@ def set_api_key(provider: str, api_key: str) -> bool:
     return result
 
 
-def get_api_key(provider: str) -> Optional[str]:
+def get_api_key(provider: str) -> str | None:
     """
     Get an API key for a specific provider.
-    
+
     Args:
         provider: The provider name
-    
+
     Returns:
         The API key if found, None otherwise
     """
@@ -108,68 +107,68 @@ def get_api_key(provider: str) -> Optional[str]:
 def list_providers() -> list:
     """
     List all configured providers (API keys).
-    
+
     Note: This excludes the 'provider' key which is metadata for the default provider.
-    
+
     Returns:
         List of provider names
     """
     config = load_auth_config()
-    return [key for key in config.keys() if key != 'provider']
+    return [key for key in config.keys() if key != "provider"]
 
 
 def delete_api_key(provider: str) -> bool:
     """
     Delete an API key for a specific provider.
-    
+
     Args:
         provider: The provider name
-    
+
     Returns:
         True if deleted, False if not found
     """
     config = load_auth_config()
-    
+
     if provider in config:
         del config[provider]
         return save_auth_config(config)
-    
+
     return False
 
 
 def set_default_provider(provider: str) -> bool:
     """
     Set the default provider to use.
-    
+
     Args:
         provider: The provider name (e.g., 'openai')
-    
+
     Returns:
         True if successful, False otherwise
     """
     config = load_auth_config()
-    config['provider'] = provider
+    config["provider"] = provider
     return save_auth_config(config)
 
 
-def get_default_provider() -> Optional[str]:
+def get_default_provider() -> str | None:
     """
     Get the default provider from configuration.
-    
+
     Returns:
         The default provider name if set, None otherwise
     """
     config = load_auth_config()
-    return config.get('provider')
+    return config.get("provider")
 
 
-def get_default_provider_api_key() -> Optional[str]:
+def get_default_provider_api_key() -> str | None:
     """
     Get the API key for the default provider.
-    
+
     This function reads the 'provider' key from the config to determine
     which provider to use, then retrieves the corresponding API key.
-    
+
     Returns:
         The API key for the default provider if found, None otherwise
     """

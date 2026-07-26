@@ -65,7 +65,7 @@ Successfully reorganized provider-specific configuration from flat keys to a nes
 
 All three keys are now provider-scoped:
 1. `model` - Different models per provider
-2. `endpoint` - Different endpoints per provider  
+2. `endpoint` - Different endpoints per provider
 3. `context-window-size` - Different max tokens per provider
 
 ### 4. CLI Usage

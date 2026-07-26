@@ -12,7 +12,8 @@ For AI function calling, use through the tool registry (tooling.tools_registry).
 
 import json
 import webbrowser
-from typing import Dict, Any
+from typing import Any
+
 from ...tooling import BaseTool
 from ..decorator import tool
 
@@ -26,7 +27,7 @@ class OpenBrowser(BaseTool):
         url (str): The URL to open in the browser.
     """
 
-    def run(self, url: str) -> Dict[str, Any]:
+    def run(self, url: str) -> dict[str, Any]:
         """
         Open the given URL in the system's default web browser.
 

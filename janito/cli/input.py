@@ -7,7 +7,7 @@ import sys
 
 def read_stdin_prompt():
     """Read prompt from stdin if available.
-    
+
     Returns:
         str or None: The prompt from stdin, or None if not available
     """

@@ -4,18 +4,13 @@ Main tools module for AI function calling.
 This module provides easy access to all available tools and their schemas.
 """
 
-from typing import Dict, Any, List, Callable, Optional, get_type_hints, Union
-from ..tools import discover_toolsets
-from .skills_provider import (
-    get_skills_provider,
-    load_skill,
-    read_skill_resource,
-    get_skills_advertisement,
-    get_skills_tools,
-)
 import inspect
 import re
+from collections.abc import Callable
+from typing import Any, Union, get_type_hints
 
+from ..tools import discover_toolsets
+from .skills_provider import get_skills_advertisement, get_skills_tools
 
 # Configuration for auto-loading toolsets
 AUTOLOAD_TOOLSETS = ["files", "system"]
@@ -27,112 +22,113 @@ _loaded_toolsets = set(AUTOLOAD_TOOLSETS.copy())
 _skills_enabled = True
 
 
-def get_function_schema(func: Callable) -> Dict[str, Any]:
+def get_function_schema(func: Callable) -> dict[str, Any]:
     """
     Generate a JSON schema for a function based on its signature and docstring.
-    
+
     Args:
         func (Callable): The function to generate a schema for
-        
+
     Returns:
         Dict[str, Any]: OpenAI function calling schema
     """
     # Get function name
     func_name = func.__name__
-    
+
     # Get function docstring
     docstring = inspect.getdoc(func) or ""
-    
+
     # Extract main description (first line or paragraph)
     description = docstring.split("\n")[0] if docstring else f"Function {func_name}"
-    
+
     # Parse docstring for parameter descriptions
     param_descriptions = {}
     if docstring:
         # Look for Args section in docstring
-        args_match = re.search(r'Args:\s*(.*?)(?:\n\s*\w+:|\Z)', docstring, re.DOTALL | re.IGNORECASE)
+        args_match = re.search(
+            r"Args:\s*(.*?)(?:\n\s*\w+:|\Z)", docstring, re.DOTALL | re.IGNORECASE
+        )
         if args_match:
             args_section = args_match.group(1)
             # Match parameter descriptions like "param_name (type): description"
-            param_pattern = r'(\w+)\s*(?:\([^)]*\))?:\s*(.*?)(?=\n\s*\w+\s*(?:\([^)]*\))?:|\Z)'
+            param_pattern = (
+                r"(\w+)\s*(?:\([^)]*\))?:\s*(.*?)(?=\n\s*\w+\s*(?:\([^)]*\))?:|\Z)"
+            )
             matches = re.findall(param_pattern, args_section, re.DOTALL)
             for param_name, desc in matches:
                 # Clean up the description
-                clean_desc = re.sub(r'\s+', ' ', desc.strip())
+                clean_desc = re.sub(r"\s+", " ", desc.strip())
                 param_descriptions[param_name] = clean_desc
-    
+
     # Get function signature
     sig = inspect.signature(func)
     type_hints = get_type_hints(func)
-    
+
     # Build parameters schema
     properties = {}
     required_params = []
-    
+
     for param_name, param in sig.parameters.items():
         # Determine parameter type
         param_type = "string"  # default
         items_type = "string"  # default for array items
         is_array = False
-        
+
         if param_name in type_hints:
             hint = type_hints[param_name]
-            
+
             # Handle Optional[T] by unwrapping
-            origin = getattr(hint, '__origin__', None)
-            args = getattr(hint, '__args__', ())
-            
+            origin = getattr(hint, "__origin__", None)
+            args = getattr(hint, "__args__", ())
+
             # Unwrap Optional (Union with None)
             if origin is Union and type(None) in args:
                 # Get the non-None type
                 non_none_args = [a for a in args if a is not type(None)]
                 if len(non_none_args) == 1:
                     hint = non_none_args[0]
-                    origin = getattr(hint, '__origin__', None)
-                    args = getattr(hint, '__args__', ())
-            
+                    origin = getattr(hint, "__origin__", None)
+                    args = getattr(hint, "__args__", ())
+
             # Handle List[T] or List
-            if hint == List or origin is list:
+            if hint is list or origin is list:
                 is_array = True
                 if args:
                     item_hint = args[0]
-                    if item_hint == int:
+                    if item_hint is int:
                         items_type = "integer"
-                    elif item_hint == float:
+                    elif item_hint is float:
                         items_type = "number"
-                    elif item_hint == bool:
+                    elif item_hint is bool:
                         items_type = "boolean"
                     else:
                         items_type = "string"
                 else:
                     items_type = "string"
-            elif hint == int:
+            elif hint is int:
                 param_type = "integer"
-            elif hint == float:
+            elif hint is float:
                 param_type = "number"
-            elif hint == bool:
+            elif hint is bool:
                 param_type = "boolean"
             # For other types, keep as string
-        
+
         # Build property schema
         if is_array:
-            prop_schema = {
-                "type": "array",
-                "items": {"type": items_type}
-            }
+            prop_schema = {"type": "array", "items": {"type": items_type}}
         else:
             prop_schema = {"type": param_type}
-        
+
         # Add description if available
         if param_name in param_descriptions:
             prop_schema["description"] = param_descriptions[param_name]
-        
+
         properties[param_name] = prop_schema
-        
+
         # Check if parameter is required
         if param.default == inspect.Parameter.empty:
             required_params.append(param_name)
-    
+
     return {
         "type": "function",
         "function": {
@@ -141,16 +137,16 @@ def get_function_schema(func: Callable) -> Dict[str, Any]:
             "parameters": {
                 "type": "object",
                 "properties": properties,
-                "required": required_params
-            }
-        }
+                "required": required_params,
+            },
+        },
     }
 
 
 # Lazily-initialized registry of available tools.
 # Discovery is deferred until first access so that CLI flags (e.g. -r, -w, -x)
 # can set running_privileges *before* tools are filtered.
-AVAILABLE_TOOLS: Dict[str, Callable] = {}
+AVAILABLE_TOOLS: dict[str, Callable] = {}
 _tools_initialized: bool = False
 
 
@@ -176,36 +172,36 @@ def _ensure_initialized() -> None:
 def add_toolset(toolset_name: str) -> bool:
     """
     Dynamically add a toolset to the available tools.
-    
+
     Args:
         toolset_name: Name of the toolset to add (e.g., "gmail", "files", "system")
-        
+
     Returns:
         bool: True if the toolset was added, False if already loaded or invalid
     """
     global AVAILABLE_TOOLS, _loaded_toolsets
 
     _ensure_initialized()
-    
+
     if toolset_name in _loaded_toolsets:
         return False
-    
+
     _loaded_toolsets.add(toolset_name)
-    
+
     # Discover and load tools from the new toolset
     new_tools = discover_toolsets([toolset_name])
-    
+
     if new_tools:
         AVAILABLE_TOOLS.update(new_tools)
         return True
-    
+
     return False
 
 
-def get_all_tools() -> Dict[str, Callable]:
+def get_all_tools() -> dict[str, Callable]:
     """
     Get all available tools as a dictionary mapping names to functions.
-    
+
     Returns:
         Dict[str, Callable]: Dictionary of tool names to functions
     """
@@ -213,10 +209,10 @@ def get_all_tools() -> Dict[str, Callable]:
     return AVAILABLE_TOOLS.copy()
 
 
-def get_all_tool_schemas() -> List[Dict[str, Any]]:
+def get_all_tool_schemas() -> list[dict[str, Any]]:
     """
     Get all tool schemas in the format expected by OpenAI function calling.
-    
+
     Returns:
         List[Dict[str, Any]]: List of tool schemas
     """
@@ -224,89 +220,98 @@ def get_all_tool_schemas() -> List[Dict[str, Any]]:
     return [get_function_schema(tool) for tool in AVAILABLE_TOOLS.values()]
 
 
-def get_all_tool_permissions() -> Dict[str, str]:
+def get_all_tool_permissions() -> dict[str, str]:
     """
     Get permissions for all available tools.
-    
+
     Returns:
         Dict[str, str]: Dictionary mapping tool names to their permission strings
     """
     _ensure_initialized()
-    return {name: getattr(tool, '_tool_permissions', "") for name, tool in AVAILABLE_TOOLS.items()}
+    return {
+        name: getattr(tool, "_tool_permissions", "")
+        for name, tool in AVAILABLE_TOOLS.items()
+    }
 
 
 def get_tool_by_name(name: str) -> Callable:
     """
     Get a specific tool by name.
-    
+
     Args:
         name (str): Name of the tool
-        
+
     Returns:
         Callable: The tool function
-        
+
     Raises:
         KeyError: If tool with given name doesn't exist
     """
     _ensure_initialized()
     if name not in AVAILABLE_TOOLS:
-        raise KeyError(f"Tool '{name}' not found. Available tools: {list(AVAILABLE_TOOLS.keys())}")
+        raise KeyError(
+            f"Tool '{name}' not found. Available tools: {list(AVAILABLE_TOOLS.keys())}"
+        )
     return AVAILABLE_TOOLS[name]
 
 
-def get_tool_schema_by_name(name: str) -> Dict[str, Any]:
+def get_tool_schema_by_name(name: str) -> dict[str, Any]:
     """
     Get a specific tool schema by name.
-    
+
     Args:
         name (str): Name of the tool
-        
+
     Returns:
         Dict[str, Any]: The tool schema
-        
+
     Raises:
         KeyError: If tool with given name doesn't exist
     """
     _ensure_initialized()
     if name not in AVAILABLE_TOOLS:
-        raise KeyError(f"Tool '{name}' not found. Available tools: {list(AVAILABLE_TOOLS.keys())}")
+        raise KeyError(
+            f"Tool '{name}' not found. Available tools: {list(AVAILABLE_TOOLS.keys())}"
+        )
     return get_function_schema(AVAILABLE_TOOLS[name])
 
 
 def get_tool_permissions(name: str) -> str:
     """
     Get the permissions required by a specific tool.
-    
+
     Args:
         name (str): Name of the tool
-        
+
     Returns:
         str: Permission string (e.g., "r", "rw", "rwx") or empty string if no permissions declared
-        
+
     Raises:
         KeyError: If tool with given name doesn't exist
     """
     _ensure_initialized()
     if name not in AVAILABLE_TOOLS:
-        raise KeyError(f"Tool '{name}' not found. Available tools: {list(AVAILABLE_TOOLS.keys())}")
-    return getattr(AVAILABLE_TOOLS[name], '_tool_permissions', "")
+        raise KeyError(
+            f"Tool '{name}' not found. Available tools: {list(AVAILABLE_TOOLS.keys())}"
+        )
+    return getattr(AVAILABLE_TOOLS[name], "_tool_permissions", "")
 
 
 def get_skills_section() -> str:
     """
     Get the skills advertisement section to append to system prompts.
-    
+
     Returns:
         String with skill names, descriptions, and tool instructions
     """
     if not _skills_enabled:
         return ""
-    
+
     advertisement = get_skills_advertisement()
-    
+
     if not advertisement:
         return ""
-    
+
     # Add tool usage instructions
     tools_section = """
 
@@ -316,7 +321,7 @@ Use these tools to load skill content when needed:
 - **read_skill_resource(skill_name, resource_name)**: Read a supplementary file from a skill
 
 You should load a skill when the user's request matches its description or you need specialized guidance."""
-    
+
     return advertisement + tools_section
 
 
@@ -342,7 +347,7 @@ if __name__ == "__main__":
     print("Available tools:")
     for name in AVAILABLE_TOOLS:
         print(f"  - {name}")
-    
+
     print("\nTool schemas:")
     for schema in get_all_tool_schemas():
         print(f"  - {schema['function']['name']}: {schema['function']['description']}")

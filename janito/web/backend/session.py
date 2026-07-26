@@ -1,10 +1,9 @@
 """Conversation session management for the web backend."""
 
+import threading
 import time
 import uuid
-import threading
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
 
 from .config import WebServerConfig
 
@@ -12,9 +11,10 @@ from .config import WebServerConfig
 @dataclass
 class ConversationSession:
     """A single conversation with its message history."""
+
     session_id: str
-    messages: List[dict] = field(default_factory=list)
-    system_prompt: Optional[str] = None
+    messages: list[dict] = field(default_factory=list)
+    system_prompt: str | None = None
     created_at: float = field(default_factory=time.time)
     last_active: float = field(default_factory=time.time)
     title: str = "New conversation"
@@ -45,7 +45,7 @@ class SessionManager:
     def __init__(self, config: WebServerConfig, ttl_seconds: int = 3600):
         self.config = config
         self.ttl_seconds = ttl_seconds
-        self._sessions: Dict[str, ConversationSession] = {}
+        self._sessions: dict[str, ConversationSession] = {}
         self._lock = threading.Lock()
 
     def create(self) -> ConversationSession:
@@ -53,7 +53,7 @@ class SessionManager:
         session_id = uuid.uuid4().hex[:12]
         system_prompt = self.config.get_effective_system_prompt()
 
-        messages: List[dict] = []
+        messages: list[dict] = []
         if system_prompt and not self.config.no_system_prompt:
             messages.append({"role": "system", "content": system_prompt})
 
@@ -66,7 +66,7 @@ class SessionManager:
             self._sessions[session_id] = session
         return session
 
-    def get(self, session_id: str) -> Optional[ConversationSession]:
+    def get(self, session_id: str) -> ConversationSession | None:
         with self._lock:
             session = self._sessions.get(session_id)
         if session:
@@ -80,7 +80,7 @@ class SessionManager:
                 return True
             return False
 
-    def list_sessions(self) -> List[ConversationSession]:
+    def list_sessions(self) -> list[ConversationSession]:
         with self._lock:
             return list(self._sessions.values())
 

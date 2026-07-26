@@ -12,7 +12,7 @@ Without arguments, janito starts an interactive shell:
 
 ```
 Welcome to janito! Type 'exit' to quit, 'restart' to clear history.
-You: 
+You:
 ```
 
 ## Available Commands

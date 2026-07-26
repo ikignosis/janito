@@ -4,18 +4,19 @@ Interactive shell implementation using prompt_toolkit.
 
 import os
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
-from typing import List, Dict, Any, Callable, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from rich.console import Console
 
 _rich_console = Console(markup=False)
 
 from prompt_toolkit import PromptSession
+from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.history import FileHistory, InMemoryHistory
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
-from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.styles import Style
 
 if TYPE_CHECKING:
@@ -28,11 +29,16 @@ HISTORY_FILE = Path.cwd() / ".janito" / "history.log"
 
 class InteractiveShell:
     """Interactive shell for chat sessions using prompt_toolkit."""
-    
-    def __init__(self, model: str, commands: Optional[List["CmdHandler"]] = None, no_history: bool = False):
+
+    def __init__(
+        self,
+        model: str,
+        commands: list["CmdHandler"] | None = None,
+        no_history: bool = False,
+    ):
         """
         Initialize the interactive shell.
-        
+
         Args:
             model: The model name to display in the prompt
             commands: List of command handlers (auto-loaded if not provided)
@@ -40,69 +46,73 @@ class InteractiveShell:
         """
         self.model = model
         self.no_history = no_history
-        self.messages_history: List[Dict[str, Any]] = []  # conversation messages (role/content dicts) passed to the AI as context
+        self.messages_history: list[
+            dict[str, Any]
+        ] = []  # conversation messages (role/content dicts) passed to the AI as context
         self.history_checkpoint: int = 0  # index into messages_history marking the last known-good state; /rollback and error recovery truncate back to here
         self.restart_requested = False  # set True by the F2 key binding; signals the run loop to clear history and start a fresh conversation
         self.do_it_requested = False  # set True by the F12 key binding; signals the run loop to auto-send a "Do It" prompt
         self.exit_requested = False  # set True by the /exit command handler; signals the run loop to break and end the session
         self.multiline_mode = False  # set by /multi for the next prompt only; automatically resets after a multiline input is submitted
-        
+
         # Auto-load registered commands if not provided
         if commands is None:
             from .cmds import get_registered_commands
+
             self.commands = get_registered_commands()
         else:
             self.commands = commands
-        
+
         # Create session after commands are loaded
         self.session = self._create_session()
-    
+
     def _get_bottom_toolbar(self) -> list:
         """Get the bottom toolbar content."""
         tokens = []
-        
+
         # Model info
         tokens.append(("class:model", f" model: {self.model} "))
-        
+
         # Provider info (if available)
         try:
             from janito.general_config import get_active_provider
+
             provider = get_active_provider()
             if provider:
                 tokens.append(("", " │ "))
                 tokens.append(("class:provider", f" provider: {provider} "))
         except Exception:
             pass
-        
+
         # Keyboard shortcuts
         tokens.append(("", " │ "))
         tokens.append(("class:key-label", "[F2] restart "))
         tokens.append(("class:key-label", "[F12] do-it "))
         tokens.append(("class:key-label", "[/exit] end "))
         tokens.append(("class:key-label", "[!cmd] shell "))
-        
+
         # Multiline mode indicator
-        if getattr(self, 'multiline_mode', False):
+        if getattr(self, "multiline_mode", False):
             tokens.append(("class:key-toggle-on", "[multi] "))
-        
+
         return tokens
-    
+
     def _create_session(self, multiline: bool = False) -> PromptSession:
         """Create and configure the prompt_toolkit session."""
         kb = KeyBindings()
-        
-        @kb.add('f2')
+
+        @kb.add("f2")
         def restart_chat(event: KeyPressEvent) -> None:
             """Handle F2 key to restart conversation."""
             self.restart_requested = True
             event.app.exit(result=None)
-        
-        @kb.add('f12')
+
+        @kb.add("f12")
         def do_it_action(event: KeyPressEvent) -> None:
             """Handle F12 key to trigger 'Do It' auto-execution."""
             self.do_it_requested = True
             event.app.exit(result="Do It")
-        
+
         # Style for the chat shell
         chat_shell_style = Style.from_dict(
             {
@@ -124,7 +134,7 @@ class InteractiveShell:
                 "cmd-label": "bg:#ff9500 fg:#232323 bold",
             }
         )
-        
+
         # Set up history based on no_history flag
         if self.no_history:
             # In-memory only - don't persist to file
@@ -133,7 +143,7 @@ class InteractiveShell:
             # Persist to file in current directory
             HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
             history = FileHistory(str(HISTORY_FILE))
-        
+
         return PromptSession(
             history=history,
             key_bindings=kb,
@@ -141,11 +151,11 @@ class InteractiveShell:
             bottom_toolbar=lambda: self._get_bottom_toolbar(),
             multiline=multiline,
         )
-    
-    def initialize_history(self, system_prompt: Optional[str] = None) -> None:
+
+    def initialize_history(self, system_prompt: str | None = None) -> None:
         """
         Initialize the messages history.
-        
+
         Args:
             system_prompt: Optional system prompt to prepend
         """
@@ -156,20 +166,20 @@ class InteractiveShell:
             self.messages_history = []
         # Checkpoint starts after the system prompt (if any)
         self.history_checkpoint = len(self.messages_history)
-    
-    def get_system_prompt(self) -> Optional[str]:
+
+    def get_system_prompt(self) -> str | None:
         """Get the current system prompt."""
         return self._system_prompt
-    
+
     @staticmethod
     def get_history_file_path() -> Path:
         """Get the path to the history log file.
-        
+
         Returns:
             Path: Path to ~/.janito/history.log
         """
         return HISTORY_FILE
-    
+
     @staticmethod
     def clear_input_history() -> None:
         """Clear the input history log file."""
@@ -178,17 +188,17 @@ class InteractiveShell:
             print(f"Input history cleared from: {HISTORY_FILE}")
         else:
             print("No input history file found.")
-    
+
     def run(
         self,
         send_prompt_func: Callable,
         verbose: bool = False,
         no_tools: bool = False,
-        thinking: bool = False
+        thinking: bool = False,
     ) -> None:
         """
         Run the interactive chat loop.
-        
+
         Args:
             send_prompt_func: Function to call to send prompts to the AI
             verbose: Enable verbose output
@@ -196,28 +206,32 @@ class InteractiveShell:
             thinking: If True, enable thinking mode
         """
         import sys
-        
+
         # Store references so command handlers (e.g. /ask) can use them
         self.send_prompt_func = send_prompt_func
         self.verbose = verbose
         self.no_tools = no_tools
         self.thinking = thinking
-        
+
         while True:
             self.restart_requested = False
             self.do_it_requested = False
             self.exit_requested = False
-            
+
             # Use HTML formatting for prompt
             prompt_text = HTML(f'<style bg="#00008b">{self.model} # </style>')
-            
+
             try:
-                user_input = self.session.prompt(prompt_text, multiline=self.multiline_mode)
+                user_input = self.session.prompt(
+                    prompt_text, multiline=self.multiline_mode
+                )
             except KeyboardInterrupt:
                 # User pressed Ctrl+C - ask to confirm quit
                 try:
-                    confirm = self.session.prompt("\nDo you want to quit the conversation? (y/n): ")
-                    if confirm and confirm.lower().strip() in ['y', 'yes']:
+                    confirm = self.session.prompt(
+                        "\nDo you want to quit the conversation? (y/n): "
+                    )
+                    if confirm and confirm.lower().strip() in ["y", "yes"]:
                         break  # User wants to quit
                     else:
                         continue  # User doesn't want to quit, continue to next iteration
@@ -227,17 +241,17 @@ class InteractiveShell:
             except EOFError:
                 # User pressed Ctrl+D at main prompt
                 break
-            
+
             # Reset multiline mode after input is received (single-use)
             if self.multiline_mode:
                 self.multiline_mode = False
                 self.session = self._create_session(multiline=False)
-            
+
             # Check if F12 was pressed (Do It requested)
             if self.do_it_requested:
                 print("\n[Keybinding F12] 'Do It' to continue existing plan...")
                 user_input = "Do It"
-            
+
             # Check if F2 was pressed (restart requested)
             if self.restart_requested:
                 # Reset to a fresh conversation while preserving the system
@@ -245,18 +259,24 @@ class InteractiveShell:
                 # drop the system prompt and leave an empty history.
                 self.initialize_history(system_prompt=self._system_prompt)
                 # Clear screen before printing the message
-                os.system('cls' if os.name == 'nt' else 'clear')
-                _rich_console.print("[Keybinding F2] Conversation history cleared. Starting fresh conversation.", style="bold white on green")
+                os.system("cls" if os.name == "nt" else "clear")
+                _rich_console.print(
+                    "[Keybinding F2] Conversation history cleared. Starting fresh conversation.",
+                    style="bold white on green",
+                )
                 continue
-            
-            if user_input.lower() == 'restart':
+
+            if user_input.lower() == "restart":
                 # Reset to a fresh conversation while preserving the system
                 # prompt (matches startup behaviour). A plain .clear() would
                 # drop the system prompt and leave an empty history.
                 self.initialize_history(system_prompt=self._system_prompt)
-                _rich_console.print("Conversation history cleared. Starting fresh conversation.", style="bold white on green")
+                _rich_console.print(
+                    "Conversation history cleared. Starting fresh conversation.",
+                    style="bold white on green",
+                )
                 continue
-            
+
             # Handle registered commands
             command_handled = False
             for cmd_handler in self.commands:
@@ -268,19 +288,15 @@ class InteractiveShell:
                 if self.exit_requested:
                     break
                 continue
-            
+
             # Handle !cmd for direct shell execution
-            if user_input.startswith('!'):
+            if user_input.startswith("!"):
                 cmd = user_input[1:].strip()
                 if cmd:
                     print(f"[Shell] Executing: {cmd}")
                     try:
                         result = subprocess.run(
-                            cmd,
-                            shell=True,
-                            capture_output=True,
-                            text=True,
-                            timeout=60
+                            cmd, shell=True, capture_output=True, text=True, timeout=60
                         )
                         if result.stdout:
                             print(result.stdout)
@@ -288,38 +304,41 @@ class InteractiveShell:
                             print(result.stderr, file=sys.stderr)
                         print(f"[Shell] Exit code: {result.returncode}")
                     except subprocess.TimeoutExpired:
-                        print("[Shell] Command timed out after 60 seconds", file=sys.stderr)
+                        print(
+                            "[Shell] Command timed out after 60 seconds",
+                            file=sys.stderr,
+                        )
                     except Exception as e:
                         print(f"[Shell] Error: {e}", file=sys.stderr)
                 continue
-            
+
             if user_input.strip():
                 tools_to_use = [] if no_tools else None
                 # Save checkpoint so we can rollback history on cancel/error
                 self.history_checkpoint = len(self.messages_history)
                 try:
-                    response = send_prompt_func(
+                    send_prompt_func(
                         user_input,
                         verbose=verbose,
                         previous_messages=self.messages_history,
                         tools=tools_to_use,
-                        thinking=thinking
+                        thinking=thinking,
                     )
                     # On success, keep the checkpoint where it is (before this turn)
                     # so /rollback can undo the last exchange. The next turn will
                     # update it before its own send_prompt call.
                 except KeyboardInterrupt:
                     # Rollback any messages appended during this prompt
-                    del self.messages_history[self.history_checkpoint:]
-                    print("Request interrupted. The interrupted request was removed from the conversation history.")
-                    response = None
+                    del self.messages_history[self.history_checkpoint :]
+                    print(
+                        "Request interrupted. The interrupted request was removed from the conversation history."
+                    )
                 except Exception as e:
                     # Rollback on any other unexpected error as well
-                    del self.messages_history[self.history_checkpoint:]
+                    del self.messages_history[self.history_checkpoint :]
                     print(f"Error: {e}")
-                    response = None
                 # Note: send_prompt_func already appends user and assistant messages
                 # to previous_messages (which is self.messages_history), so we don't
                 # need to append them here.
-        
+
         print("\nChat session ended.")

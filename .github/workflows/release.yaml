@@ -17,6 +17,18 @@ jobs:
         with:
           fetch-depth: 0  # Required for setuptools_scm to determine version from git tags
 
+      - name: Set up Python for changelog check
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Verify CHANGELOG.md documents this release
+        env:
+          # e.g. "v4.12.0" from the pushed tag; the check requires a matching
+          # "## [v4.12.0]" section (a bare "[Unreleased]" is not enough).
+          CHANGELOG_REQUIRE_VERSION: ${{ github.ref_name }}
+        run: python scripts/check_changelog_freshness.py
+
       - name: Install uv
         uses: astral-sh/setup-uv@v9.0.0
         with:

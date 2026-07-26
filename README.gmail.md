@@ -23,7 +23,7 @@ If your Gmail account has **2-Step Verification** enabled (which is recommended)
 1. Go to [Google Account Security](https://myaccount.google.com/security)
 2. Under "2-Step Verification", make sure it's turned on
 3. Go to "App passwords"
-4. Select "Mail" and "Other (Custom name)" 
+4. Select "Mail" and "Other (Custom name)"
 5. Enter a name like "janito" and click "Generate"
 6. Copy the 16-character password that appears
 7. Use this app password for `gmail_password`
@@ -155,7 +155,7 @@ janito --gmail "Find any unread emails about invoices"
 
 **Cause:** Wrong password or app password not set up correctly.
 
-**Solution:** 
+**Solution:**
 1. Make sure you created an App Password (not your regular password)
 2. Re-set the secret: `janito --set-secret gmail_password=your-new-app-password`
 
@@ -173,7 +173,7 @@ janito --gmail "Find any unread emails about invoices"
 
 **Cause:** Credentials not set up.
 
-**Solution:** 
+**Solution:**
 ```bash
 janito --set-secret gmail_username=your-email@gmail.com
 janito --set-secret gmail_password=your-app-password

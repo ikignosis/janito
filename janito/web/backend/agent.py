@@ -17,21 +17,29 @@ import asyncio
 import json
 import logging
 import time
-from typing import AsyncGenerator, Dict, List, Optional
+from collections.abc import AsyncGenerator
 
 from openai import AsyncOpenAI
 
-from janito.openai_client.client import resolve_runtime_config, format_tokens
 from janito.general_config import (
-    load_context_window_size,
-    get_config_value,
     get_active_provider,
+    get_config_value,
+    load_context_window_size,
 )
+from janito.openai_client.client import resolve_runtime_config
 
 from .config import WebServerConfig
 from .events import (
-    AgentEvent, TokenEvent, ReasoningEvent, ToolCallEvent, ToolResultEvent,
-    ToolProgressEvent, WaitingEvent, UsageEvent, DoneEvent, ErrorEvent,
+    AgentEvent,
+    DoneEvent,
+    ErrorEvent,
+    ReasoningEvent,
+    TokenEvent,
+    ToolCallEvent,
+    ToolProgressEvent,
+    ToolResultEvent,
+    UsageEvent,
+    WaitingEvent,
 )
 
 logger = logging.getLogger(__name__)
@@ -39,8 +47,11 @@ logger = logging.getLogger(__name__)
 # Import tools registry (lazy-safe — mirrors client.py behaviour)
 try:
     from janito.tooling.tools_registry import (
-        get_all_tool_schemas, get_tool_by_name, get_tool_permissions,
+        get_all_tool_schemas,
+        get_tool_by_name,
+        get_tool_permissions,
     )
+
     TOOLS_AVAILABLE = True
 except (ImportError, ValueError):
     TOOLS_AVAILABLE = False
@@ -54,15 +65,18 @@ except (ImportError, ValueError):
     def get_tool_permissions(name):
         return ""
 
+
 # Import MCP manager
 try:
     from janito.mcp_manager import get_mcp_manager
+
     MCP_MANAGER_AVAILABLE = True
 except ImportError:
     MCP_MANAGER_AVAILABLE = False
 
     def get_mcp_manager():
         return None
+
 
 # Reporter handler for capturing tool output in web mode
 from janito.tooling.reporter import set_report_handler
@@ -76,26 +90,29 @@ def _is_mcp_tool(tool_name: str) -> bool:
     return False
 
 
-async def _execute_tool(tool_call_id: str, tool_name: str, tool_args: dict,
-                        use_mcp: bool):
+async def _execute_tool(
+    tool_call_id: str, tool_name: str, tool_args: dict, use_mcp: bool
+):
     """Execute a single tool call, capturing report_* output as progress events.
 
     Returns a tuple ``(result_dict, progress_events, error, exec_time_ms)``.
     The tool runs in a thread (tools are synchronous); ``contextvars`` ensure
     the report handler is visible inside the thread and isolated per-task.
     """
-    progress_events: List[ToolProgressEvent] = []
+    progress_events: list[ToolProgressEvent] = []
 
     def handler(level: str, message: str, end: str):
-        progress_events.append(ToolProgressEvent(
-            tool_call_id=tool_call_id,
-            level=level,
-            message=message,
-        ))
+        progress_events.append(
+            ToolProgressEvent(
+                tool_call_id=tool_call_id,
+                level=level,
+                message=message,
+            )
+        )
 
     start = time.time()
     set_report_handler(handler)
-    error: Optional[str] = None
+    error: str | None = None
     result = None
     try:
         if use_mcp and _is_mcp_tool(tool_name):
@@ -111,7 +128,7 @@ async def _execute_tool(tool_call_id: str, tool_name: str, tool_args: dict,
         error = str(e)
         result = {
             "success": False,
-            "error": f"Tool execution failed: {str(e)}",
+            "error": f"Tool execution failed: {e!s}",
         }
     finally:
         set_report_handler(None)  # restore default (Rich console)
@@ -122,9 +139,9 @@ async def _execute_tool(tool_call_id: str, tool_name: str, tool_args: dict,
 
 async def stream_prompt(
     prompt: str,
-    messages: List[dict],
+    messages: list[dict],
     config: WebServerConfig,
-    tools: Optional[List[dict]] = None,
+    tools: list[dict] | None = None,
     use_mcp: bool = True,
 ) -> AsyncGenerator[AgentEvent, None]:
     """Yield structured events instead of printing to terminal.
@@ -204,7 +221,9 @@ async def stream_prompt(
                 call_kwargs["max_tokens"] = context_window_size
 
         if preserve_thinking is not None:
-            call_kwargs.setdefault("extra_body", {})["preserve_thinking"] = preserve_thinking
+            call_kwargs.setdefault("extra_body", {})[
+                "preserve_thinking"
+            ] = preserve_thinking
 
         if config.thinking:
             call_kwargs.setdefault("extra_body", {})["enable_thinking"] = True
@@ -217,15 +236,17 @@ async def stream_prompt(
         first_turn = False
 
         # --- Stream the completion, yielding tokens as they arrive ---
-        collected_content: List[str] = []
-        collected_reasoning: List[str] = []
-        tool_calls_map: Dict[int, Dict[str, str]] = {}
+        collected_content: list[str] = []
+        collected_reasoning: list[str] = []
+        tool_calls_map: dict[int, dict[str, str]] = {}
         usage_info = None
 
         try:
             if tools_schemas:
                 stream = await client.chat.completions.create(
-                    **call_kwargs, tools=tools_schemas, tool_choice="auto",
+                    **call_kwargs,
+                    tools=tools_schemas,
+                    tool_choice="auto",
                 )
             else:
                 stream = await client.chat.completions.create(**call_kwargs)
@@ -260,36 +281,46 @@ async def stream_prompt(
                     for tc_delta in delta.tool_calls:
                         idx = tc_delta.index
                         if idx not in tool_calls_map:
-                            tool_calls_map[idx] = {"id": "", "name": "", "arguments": ""}
+                            tool_calls_map[idx] = {
+                                "id": "",
+                                "name": "",
+                                "arguments": "",
+                            }
                         if tc_delta.id:
                             tool_calls_map[idx]["id"] = tc_delta.id
                         if tc_delta.function:
                             if tc_delta.function.name:
                                 tool_calls_map[idx]["name"] = tc_delta.function.name
                             if tc_delta.function.arguments:
-                                tool_calls_map[idx]["arguments"] += tc_delta.function.arguments
+                                tool_calls_map[idx][
+                                    "arguments"
+                                ] += tc_delta.function.arguments
         except Exception as e:
             logger.error(f"API streaming error: {e}")
-            yield ErrorEvent(message=f"API error: {str(e)}")
+            yield ErrorEvent(message=f"API error: {e!s}")
             return
 
         full_content = "".join(collected_content)
-        reasoning_content = "".join(collected_reasoning) if collected_reasoning else None
+        reasoning_content = (
+            "".join(collected_reasoning) if collected_reasoning else None
+        )
 
         # --- Handle tool calls ---
         if tool_calls_map:
             tool_calls_list = []
             for idx in sorted(tool_calls_map):
                 tc = tool_calls_map[idx]
-                tool_calls_list.append({
-                    "id": tc["id"],
-                    "type": "function",
-                    "function": {
-                        "name": tc["name"],
-                        "arguments": tc["arguments"],
-                    },
-                })
-            assistant_msg: Dict = {
+                tool_calls_list.append(
+                    {
+                        "id": tc["id"],
+                        "type": "function",
+                        "function": {
+                            "name": tc["name"],
+                            "arguments": tc["arguments"],
+                        },
+                    }
+                )
+            assistant_msg: dict = {
                 "role": "assistant",
                 "content": full_content or None,
                 "tool_calls": tool_calls_list,
@@ -321,7 +352,10 @@ async def stream_prompt(
                 )
 
                 result, progress_events, error, exec_ms = await _execute_tool(
-                    tool_call_id, tool_name, tool_args, use_mcp and MCP_MANAGER_AVAILABLE
+                    tool_call_id,
+                    tool_name,
+                    tool_args,
+                    use_mcp and MCP_MANAGER_AVAILABLE,
                 )
 
                 # Yield captured progress events (report_* output)
@@ -336,12 +370,16 @@ async def stream_prompt(
                     execution_time_ms=exec_ms,
                 )
 
-                messages.append({
-                    "tool_call_id": tool_call_id,
-                    "role": "tool",
-                    "name": tool_name,
-                    "content": json.dumps(result) if not isinstance(result, str) else result,
-                })
+                messages.append(
+                    {
+                        "tool_call_id": tool_call_id,
+                        "role": "tool",
+                        "name": tool_name,
+                        "content": json.dumps(result)
+                        if not isinstance(result, str)
+                        else result,
+                    }
+                )
 
             # Continue the loop to get the final response after tool calls
             continue
@@ -358,8 +396,12 @@ async def stream_prompt(
                 input=getattr(usage_info, "prompt_tokens", 0) or 0,
                 output=getattr(usage_info, "completion_tokens", 0) or 0,
                 cached=(
-                    getattr(getattr(usage_info, "prompt_tokens_details", None),
-                            "cached_tokens", 0) or 0
+                    getattr(
+                        getattr(usage_info, "prompt_tokens_details", None),
+                        "cached_tokens",
+                        0,
+                    )
+                    or 0
                 ),
             )
 

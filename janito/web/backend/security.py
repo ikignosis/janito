@@ -6,10 +6,9 @@
 """
 
 import logging
-from typing import Optional
 from urllib.parse import parse_qs
 
-from fastapi import FastAPI, Request, WebSocket
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -38,7 +37,7 @@ class TokenAuthMiddleware:
     can load; API routes under ``/api`` are protected.
     """
 
-    def __init__(self, app, auth_token: Optional[str]):
+    def __init__(self, app, auth_token: str | None):
         self.app = app
         self.auth_token = auth_token
 
@@ -54,15 +53,13 @@ class TokenAuthMiddleware:
             if not path.startswith("/api"):
                 await self.app(scope, receive, send)
                 return
-            if self._authorized(request.headers.get("authorization"),
-                                request.query_params.get("token")):
+            if self._authorized(
+                request.headers.get("authorization"), request.query_params.get("token")
+            ):
                 await self.app(scope, receive, send)
                 return
-            logger.warning("[auth] HTTP 401 Unauthorized: %s %s",
-                           request.method, path)
-            response = JSONResponse(
-                {"detail": "Unauthorized"}, status_code=401
-            )
+            logger.warning("[auth] HTTP 401 Unauthorized: %s %s", request.method, path)
+            response = JSONResponse({"detail": "Unauthorized"}, status_code=401)
             await response(scope, receive, send)
 
         elif scope["type"] == "websocket":
@@ -77,7 +74,9 @@ class TokenAuthMiddleware:
                 token = params["token"][0]
             logger.warning(
                 "[auth] WS handshake path=%s token_present=%s token_match=%s",
-                path, token is not None, token == self.auth_token,
+                path,
+                token is not None,
+                token == self.auth_token,
             )
             if token == self.auth_token:
                 await self.app(scope, receive, send)
@@ -89,10 +88,9 @@ class TokenAuthMiddleware:
         else:
             await self.app(scope, receive, send)
 
-    def _authorized(self, auth_header: Optional[str],
-                    query_token: Optional[str]) -> bool:
+    def _authorized(self, auth_header: str | None, query_token: str | None) -> bool:
         if query_token and query_token == self.auth_token:
             return True
         if auth_header and auth_header.startswith("Bearer "):
-            return auth_header[len("Bearer "):] == self.auth_token
+            return auth_header[len("Bearer ") :] == self.auth_token
         return False

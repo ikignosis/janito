@@ -27,6 +27,55 @@ The project uses [setuptools-scm](https://github.com/pypa/setuptools_scm) for au
   git push origin v1.0.0
   ```
 
+### Release Checklist
+
+The changelog is enforced at two points: a local pre-commit hook (see below) and
+the release GitHub workflow. Follow this checklist so the release workflow does
+not fail:
+
+1. **Update `CHANGELOG.md`** – promote the `[Unreleased]` section to the version
+   you are about to tag. The fastest way is the helper script, which rewrites the
+   heading and opens a fresh empty `[Unreleased]` on top:
+
+   ```bash
+   # auto-bump from the last tag (minor by default)
+   uv run python scripts/promote_changelog.py            # v4.11.0 -> v4.12.0
+   uv run python scripts/promote_changelog.py --bump major   # -> v5.0.0
+   uv run python scripts/promote_changelog.py --dry-run      # preview, no write
+
+   # or pin an exact version
+   uv run python scripts/promote_changelog.py v5.0.0
+   ```
+
+   It turns this:
+
+   ```markdown
+   ## [Unreleased](https://github.com/joaopinto/janito/compare/v4.11.0...HEAD)
+   ```
+
+   into this (a concrete release heading plus a new empty `[Unreleased]`):
+
+   ```markdown
+   ## [Unreleased](https://github.com/joaopinto/janito/compare/v4.12.0...HEAD)
+
+   ## [v4.12.0](https://github.com/joaopinto/janito/compare/v4.11.0...v4.12.0) - 2026-07-26
+   ```
+
+   (You can also edit the heading by hand — just make sure it reads
+   `## [vX.Y.Z]` and matches the tag exactly.)
+
+2. **Commit the changelog change** – the `changelog-freshness` pre-commit hook
+   passes because `CHANGELOG.md` is staged (or was modified within the last hour).
+3. **Tag and push** – create the annotated tag and push it. The release workflow
+   runs `scripts/check_changelog_freshness.py` in *version mode* and fails fast
+   (before building or publishing) unless `CHANGELOG.md` contains a heading for
+   the exact tag, e.g. `## [v4.12.0]`. A bare `[Unreleased]` section is not enough.
+
+> **Tip:** if you need to cut a release without a changelog entry (e.g. an
+> emergency hotfix), the workflow check can be bypassed by re-running it without
+> `CHANGELOG_REQUIRE_VERSION` set — but you should add the changelog entry
+> immediately afterwards.
+
 ## Install Dependencies (Editable Install)
 
 janito uses [uv](https://docs.astral.sh/uv/) to manage the virtual environment, dependencies, and the lock file (`uv.lock`).
@@ -52,6 +101,47 @@ If you ever want a regular (non-editable) install instead, pass `--no-editable`:
 ```bash
 uv sync --no-editable
 ```
+
+## Pre-commit Hooks
+
+The project uses [pre-commit](https://pre-commit.com/) to run linting and
+formatting checks (isort, black, ruff, and a set of standard hooks) before each
+commit. `pre-commit` is part of the `dev` dependency group, so it is already
+installed after `uv sync`.
+
+Install the git hooks once, after cloning:
+
+```bash
+uv run pre-commit install
+```
+
+The hooks then run automatically on every `git commit`. You can also run them
+manually against all files at any time:
+
+```bash
+uv run pre-commit run --all-files
+```
+
+### Changelog Freshness Hook
+
+In addition to linting/formatting, a local hook (`changelog-freshness`) guards
+the changelog. On every commit it **fails unless `CHANGELOG.md` was updated**,
+which is true if *either*:
+
+- `CHANGELOG.md` is staged for the commit (you're editing it now), **or**
+- its modification time is within the last hour (tunable via
+  `CHANGELOG_MAX_AGE_SECONDS`).
+
+To bypass it for a one-off commit (use sparingly):
+
+```bash
+SKIP=changelog-freshness git commit -m "..."
+# or
+git commit --no-verify
+```
+
+The matching release-time guard lives in the GitHub release workflow — see the
+[Release Checklist](#release-checklist) above.
 
 ## Common Commands
 

@@ -5,11 +5,9 @@ This module provides a centralized interface for all config.json-related operati
 """
 
 import json
-import os
-import sys
 import logging
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Any
 
 from .config_dir import get_config_dir
 
@@ -30,22 +28,22 @@ INT_VALUED_KEYS = {"context-window-size"}
 
 def get_config_path() -> Path:
     """Get the path to the config.json file.
-    
+
     Returns:
         Path: Path to <config-dir>/config.json (defaults to ~/.janito/config.json)
     """
     return get_config_dir() / "config.json"
 
 
-def load_config() -> Dict[str, Any]:
+def load_config() -> dict[str, Any]:
     """Load the entire config.json file.
-    
+
     Returns:
         Dict containing the config, or empty dict if file doesn't exist or is invalid
     """
     config_path = get_config_path()
     try:
-        with open(config_path, 'r') as f:
+        with open(config_path, "r") as f:
             config = json.load(f)
             logger.debug(f"Loaded config from {config_path}: {list(config.keys())}")
             return config
@@ -57,40 +55,40 @@ def load_config() -> Dict[str, Any]:
         return {}
 
 
-def save_config(config: Dict[str, Any]) -> None:
+def save_config(config: dict[str, Any]) -> None:
     """Save the config dictionary to config.json.
-    
+
     Args:
         config: Dictionary to save to config.json
-        
+
     Raises:
         IOError: If unable to write to the config file
     """
     config_path = get_config_path()
     config_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(config_path, 'w') as f:
+    with open(config_path, "w") as f:
         json.dump(config, f, indent=2)
     logger.debug(f"Saved config to {config_path}")
 
 
-def get_config_value(key: str) -> Optional[Any]:
+def get_config_value(key: str) -> Any | None:
     """Get a config value by key.
-    
+
     Supports both flat keys and provider-scoped keys in the nested structure.
     For provider-scoped keys (e.g., "openai.model"), it reads from the nested
     providers structure.
-    
+
     Args:
         key: The config key to retrieve
-        
+
     Returns:
         The config value, or None if not found or config file doesn't exist
     """
     config = load_config()
-    
+
     # Check if this is a provider-scoped key (e.g., "openai.model")
-    if '.' in key:
-        parts = key.split('.', 1)
+    if "." in key:
+        parts = key.split(".", 1)
         if len(parts) == 2:
             provider, subkey = parts
             providers = config.get("providers", {})
@@ -98,9 +96,11 @@ def get_config_value(key: str) -> Optional[Any]:
                 provider_config = providers[provider]
                 if isinstance(provider_config, dict):
                     value = provider_config.get(subkey)
-                    logger.debug(f"Getting config '{key}': {value if value is None else '(set)'}")
+                    logger.debug(
+                        f"Getting config '{key}': {value if value is None else '(set)'}"
+                    )
                     return value
-    
+
     # Fall back to flat key lookup
     value = config.get(key)
     logger.debug(f"Getting config '{key}': {value if value is None else '(set)'}")
@@ -109,21 +109,21 @@ def get_config_value(key: str) -> Optional[Any]:
 
 def set_config_value(key: str, value: Any) -> None:
     """Set a config value.
-    
+
     Supports both flat keys and provider-scoped keys in the nested structure.
     For provider-scoped keys (e.g., "openai.model"), it writes to the nested
     providers structure.
-    
+
     Args:
         key: The config key to set
         value: The value to set
     """
     logger.debug(f"Setting config '{key}' = {value}")
     config = load_config()
-    
+
     # Check if this is a provider-scoped key (e.g., "openai.model")
-    if '.' in key:
-        parts = key.split('.', 1)
+    if "." in key:
+        parts = key.split(".", 1)
         if len(parts) == 2:
             provider, subkey = parts
             if subkey in PROVIDER_SCOPED_KEYS:
@@ -139,7 +139,7 @@ def set_config_value(key: str, value: Any) -> None:
                 provider_config[subkey] = value
                 save_config(config)
                 return
-    
+
     # Fall back to flat key storage
     config[key] = value
     save_config(config)
@@ -147,23 +147,23 @@ def set_config_value(key: str, value: Any) -> None:
 
 def unset_config_value(key: str) -> bool:
     """Remove a config value by key.
-    
+
     Supports both flat keys and provider-scoped keys in the nested structure.
     For provider-scoped keys (e.g., "openai.model"), it removes from the nested
     providers structure.  If the provider dict becomes empty after removal, the
     provider entry itself is also removed.
-    
+
     Args:
         key: The config key to remove
-        
+
     Returns:
         bool: True if the key was removed, False if it didn't exist
     """
     config = load_config()
 
     # Check if this is a provider-scoped key (e.g., "openai.model")
-    if '.' in key:
-        parts = key.split('.', 1)
+    if "." in key:
+        parts = key.split(".", 1)
         if len(parts) == 2:
             provider, subkey = parts
             if subkey in PROVIDER_SCOPED_KEYS:
@@ -197,16 +197,16 @@ def unset_config_value(key: str) -> bool:
     return False
 
 
-def load_provider_from_config() -> Optional[str]:
+def load_provider_from_config() -> str | None:
     """Load provider name from ~/.janito/config.json if it exists.
-    
+
     Returns:
         str: Provider name from config, or None if not found
     """
     return get_config_value("provider")
 
 
-def normalize_provider(provider: Optional[str]) -> Optional[str]:
+def normalize_provider(provider: str | None) -> str | None:
     """Normalize a provider name for use as a config key prefix.
 
     Args:
@@ -221,7 +221,7 @@ def normalize_provider(provider: Optional[str]) -> Optional[str]:
     return normalized or None
 
 
-def determine_provider(cli_provider: Optional[str] = None) -> Optional[str]:
+def determine_provider(cli_provider: str | None = None) -> str | None:
     """Determine the provider used for provider-scoped config (e.g. model).
 
     Unlike :func:`get_active_provider`, this does *not* fall back to a default
@@ -274,7 +274,7 @@ def endpoint_config_key(provider: str) -> str:
     return f"{normalize_provider(provider)}.endpoint"
 
 
-def load_model_from_config(cli_provider: Optional[str] = None) -> Optional[str]:
+def load_model_from_config(cli_provider: str | None = None) -> str | None:
     """Load the model name for the active provider from ~/.janito/config.json.
 
     The model is stored under a provider-scoped key (``<provider>.model``) so
@@ -293,17 +293,17 @@ def load_model_from_config(cli_provider: Optional[str] = None) -> Optional[str]:
     return get_config_value(model_config_key(provider))
 
 
-def load_context_window_size(cli_provider: Optional[str] = None) -> Optional[int]:
+def load_context_window_size(cli_provider: str | None = None) -> int | None:
     """Load context window size from ~/.janito/config.json if it exists.
-    
+
     This value can be used to limit the context window size for API calls.
     The context window size is stored per-provider under the nested providers
     structure (e.g. providers.openai.context-window-size).
-    
+
     Args:
         cli_provider: Provider passed via ``--provider`` (may be None). If not
             provided, the provider is read from config.json.
-    
+
     Returns:
         int: Context window size from config, or None if not found
     """
@@ -322,7 +322,7 @@ def load_context_window_size(cli_provider: Optional[str] = None) -> Optional[int
     return None
 
 
-def load_endpoint_from_config(cli_provider: Optional[str] = None) -> Optional[str]:
+def load_endpoint_from_config(cli_provider: str | None = None) -> str | None:
     """Load custom endpoint URL from ~/.janito/config.json if it exists.
 
     This is used for the 'custom' provider or to override provider base URLs.
@@ -379,12 +379,12 @@ def get_masked_api_key(api_key: str) -> str:
 
 def get_active_provider() -> str:
     """Determine the active provider based on config.
-    
+
     Priority:
     1. Provider from config.json
     2. Default provider from auth.json
     3. Fallback to 'openai'
-    
+
     Returns:
         str: The active provider name
     """
@@ -393,7 +393,7 @@ def get_active_provider() -> str:
     if config_provider:
         logger.debug(f"Active provider from config: {config_provider}")
         return config_provider
-    
+
     # 3. Check auth.json for default provider
     try:
         from .auth_config import get_default_provider
@@ -403,12 +403,12 @@ def get_active_provider() -> str:
         except ImportError:
             logger.debug("No provider config, using fallback: openai")
             return "openai"
-    
+
     default_provider = get_default_provider()
     if default_provider:
         logger.debug(f"Active provider from auth defaults: {default_provider}")
         return default_provider
-    
+
     # 4. Fall back to 'openai'
     logger.debug("No provider found, using fallback: openai")
     return "openai"
@@ -423,7 +423,7 @@ class ProviderRequiredError(ValueError):
     """
 
 
-def _resolve_provider_scoped_key(key: str, cli_provider: Optional[str] = None) -> str:
+def _resolve_provider_scoped_key(key: str, cli_provider: str | None = None) -> str:
     """Resolve a provider-scoped config key (e.g. ``model``) to its full key.
 
     Args:
@@ -447,7 +447,9 @@ def _resolve_provider_scoped_key(key: str, cli_provider: Optional[str] = None) -
     return f"{provider}.{key}"
 
 
-def set_config_from_cli(key_value: str, cli_provider: Optional[str] = None) -> tuple[str, str]:
+def set_config_from_cli(
+    key_value: str, cli_provider: str | None = None
+) -> tuple[str, str]:
     """Set a config key-value pair from CLI input.
 
     Provider-scoped keys (such as ``model``) are stored under a
@@ -467,10 +469,10 @@ def set_config_from_cli(key_value: str, cli_provider: Optional[str] = None) -> t
         ProviderRequiredError: If a provider-scoped key is used but the
             provider cannot be determined
     """
-    if '=' not in key_value:
+    if "=" not in key_value:
         raise ValueError("--set requires KEY=VALUE format")
 
-    key, value = key_value.split('=', 1)
+    key, value = key_value.split("=", 1)
     key = key.strip()
     value = value.strip()
 
@@ -478,19 +480,21 @@ def set_config_from_cli(key_value: str, cli_provider: Optional[str] = None) -> t
         key = _resolve_provider_scoped_key(key, cli_provider)
 
     # Coerce values for keys that should be stored as integers.
-    base_key = key.rsplit('.', 1)[-1]
+    base_key = key.rsplit(".", 1)[-1]
     if base_key in INT_VALUED_KEYS:
         try:
             value = int(value)
         except ValueError:
-            raise ValueError(f"Config key '{key}' requires an integer value, got: {value!r}")
+            raise ValueError(
+                f"Config key '{key}' requires an integer value, got: {value!r}"
+            )
 
     set_config_value(key, value)
 
     return key, value
 
 
-def get_config_from_cli(key: str, cli_provider: Optional[str] = None) -> Optional[str]:
+def get_config_from_cli(key: str, cli_provider: str | None = None) -> str | None:
     """Get a config value from CLI.
 
     Provider-scoped keys (such as ``model``) are read from the
@@ -527,7 +531,7 @@ def get_config_from_cli(key: str, cli_provider: Optional[str] = None) -> Optiona
     return value
 
 
-def unset_config_key_from_cli(key: str, cli_provider: Optional[str] = None) -> bool:
+def unset_config_key_from_cli(key: str, cli_provider: str | None = None) -> bool:
     """Remove a config value by key from CLI.
 
     Provider-scoped keys (such as ``model``) are removed from the

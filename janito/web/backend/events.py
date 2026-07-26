@@ -5,57 +5,64 @@ serializes them via :func:`event_to_dict`.
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Union
+from typing import Any, Union
 
 
 @dataclass
 class TokenEvent:
     """Streamed text delta."""
+
     content: str
 
 
 @dataclass
 class ReasoningEvent:
     """Thinking / reasoning delta."""
+
     content: str
 
 
 @dataclass
 class ToolCallEvent:
     """The model wants to call a tool."""
+
     tool_call_id: str
     tool_name: str
     arguments: dict
-    permissions: str = ""          # e.g. "r", "w", "x", "rwx"
+    permissions: str = ""  # e.g. "r", "w", "x", "rwx"
 
 
 @dataclass
 class ToolResultEvent:
     """A tool finished executing."""
+
     tool_call_id: str
     tool_name: str
     result: Any
-    error: Optional[str] = None
-    execution_time_ms: Optional[int] = None
+    error: str | None = None
+    execution_time_ms: int | None = None
 
 
 @dataclass
 class ToolProgressEvent:
     """Intermediate tool output (report_* calls inside tool execution)."""
+
     tool_call_id: str
-    level: str                     # "start"|"progress"|"output"|"result"|"error"|"warning"|"info"
-    message: str                   # "output" = raw subprocess stdout/stderr (monospace in UI)
+    level: str  # "start"|"progress"|"output"|"result"|"error"|"warning"|"info"
+    message: str  # "output" = raw subprocess stdout/stderr (monospace in UI)
 
 
 @dataclass
 class WaitingEvent:
     """The API is processing, no tokens yet."""
-    phase: str                     # "initial" | "after_tools"
+
+    phase: str  # "initial" | "after_tools"
 
 
 @dataclass
 class UsageEvent:
     """Token usage (final chunk)."""
+
     total: int = 0
     input: int = 0
     output: int = 0
@@ -65,6 +72,7 @@ class UsageEvent:
 @dataclass
 class DoneEvent:
     """Conversation turn complete."""
+
     full_content: str
     message_count: int
 
@@ -72,16 +80,24 @@ class DoneEvent:
 @dataclass
 class ErrorEvent:
     """An error occurred during the turn."""
+
     message: str
 
 
 AgentEvent = Union[
-    TokenEvent, ReasoningEvent, ToolCallEvent, ToolResultEvent,
-    WaitingEvent, ToolProgressEvent, UsageEvent, DoneEvent, ErrorEvent,
+    TokenEvent,
+    ReasoningEvent,
+    ToolCallEvent,
+    ToolResultEvent,
+    WaitingEvent,
+    ToolProgressEvent,
+    UsageEvent,
+    DoneEvent,
+    ErrorEvent,
 ]
 
 
-def event_to_dict(event: AgentEvent) -> Dict[str, Any]:
+def event_to_dict(event: AgentEvent) -> dict[str, Any]:
     """Convert an agent event to a JSON-serializable dict for WebSocket send."""
     if isinstance(event, TokenEvent):
         return {"type": "token", "content": event.content}
@@ -143,6 +159,7 @@ def _safe_result(result: Any) -> Any:
     if isinstance(result, dict):
         try:
             import json
+
             json.dumps(result)
             return result
         except (TypeError, ValueError):

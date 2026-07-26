@@ -58,14 +58,28 @@ include = ["janito*"]
 [tool.setuptools_scm]
 version_scheme = "post-release"
 
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = ["E501", "E402"]
+
+[tool.isort]
+profile = "black"
+
 [tool.uv]
 # Install the dev dependency group by default when running `uv sync`.
 default-groups = ["dev"]
 
 [dependency-groups]
 dev = [
+    "pre-commit>=4.6.1",
     "pytest>=8.0",
     "pytest-cov>=5.0",
+    "ruff>=0.16.0",
+    "tox>=4.0",
 ]
 docs = [
     "mkdocs>=1.5.0",
