@@ -88,7 +88,7 @@ if pytest is not None:
     def test_get_model_without_provider_errors(monkeypatch, tmp_path):
         config_path = _use_temp_config(monkeypatch, tmp_path)
         # A config file must exist for --get; write an unrelated (non-scoped) key.
-        gc.set_config_from_cli("provider=openai")
+        gc.set_config_value("theme", "dark")
         with pytest.raises(ProviderRequiredError):
             gc.get_config_from_cli("model")
         assert config_path.exists()

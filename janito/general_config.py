@@ -24,6 +24,9 @@ CONFIG_PATH = get_config_dir() / "config.json"
 # Config keys that are stored per-provider (as ``<provider>.<key>``)
 PROVIDER_SCOPED_KEYS = {"model", "endpoint", "context-window-size"}
 
+# Config keys whose values should be coerced to int when set via CLI.
+INT_VALUED_KEYS = {"context-window-size"}
+
 
 def get_config_path() -> Path:
     """Get the path to the config.json file.
@@ -473,6 +476,14 @@ def set_config_from_cli(key_value: str, cli_provider: Optional[str] = None) -> t
 
     if key in PROVIDER_SCOPED_KEYS:
         key = _resolve_provider_scoped_key(key, cli_provider)
+
+    # Coerce values for keys that should be stored as integers.
+    base_key = key.rsplit('.', 1)[-1]
+    if base_key in INT_VALUED_KEYS:
+        try:
+            value = int(value)
+        except ValueError:
+            raise ValueError(f"Config key '{key}' requires an integer value, got: {value!r}")
 
     set_config_value(key, value)
 
