@@ -177,20 +177,3 @@ def get_default_provider_api_key() -> Optional[str]:
     if provider:
         return get_api_key(provider)
     return None
-
-
-def get_environment_api_key() -> Optional[str]:
-    """
-    Get API key from environment variable, trying multiple common variable names.
-    
-    Returns:
-        The API key if found in environment, None otherwise
-    """
-    env_vars = ['OPENAI_API_KEY']
-    
-    for var in env_vars:
-        key = os.getenv(var)
-        if key:
-            return key
-    
-    return None

@@ -2,12 +2,13 @@
 """
 OpenAI CLI - A simple command-line interface to interact with OpenAI-compatible endpoints.
 
-This CLI uses environment variables for configuration:
-- OPENAI_BASE_URL: The base URL of the OpenAI-compatible API endpoint (optional for standard OpenAI)
-- OPENAI_API_KEY: The API key for authentication
-- OPENAI_MODEL: The model name to use for completions
+This CLI resolves its configuration from local files (no environment variables):
+- API key:  from ~/.janito/auth.json for the active provider (--set-api-key)
+- Endpoint: the provider's built-in default, or an endpoint override in
+            ~/.janito/config.json (--set endpoint=...)
+- Model:    --model, or the provider's configured model (--set model=...)
 
-API keys can also be stored securely in ~/.janito/auth.json using the --set-api-key option.
+API keys are stored securely in ~/.janito/auth.json using the --set-api-key option.
 
 The CLI includes function calling tools that can be used by the AI model.
 
@@ -24,12 +25,7 @@ from .cli import create_parser
 from . import privileges as _privileges_mod
 from .privileges import Privileges
 from .config_dir import set_config_dir
-from .cli.setup import (
-    setup_api_key_from_config,
-    setup_endpoint_env,
-    setup_model_env,
-    validate_required_config,
-)
+from .cli.setup import validate_runtime_config
 from .cli.input import read_stdin_prompt
 from .cli.chat import run_interactive_chat, run_single_prompt
 from .cli.handlers import (
@@ -154,9 +150,6 @@ def main():
     if args.show_system_prompt:
         return handle_show_system_prompt(args)
     
-    # Set up endpoint from CLI args or config (for custom provider)
-    setup_endpoint_env(args)
-    
     # Handle --get for a single key (legacy: no --set/--unset provided)
     # Note: --get without --set/--unset was handled above, but if only --get was passed
     # alone with nargs="*", it would be caught by the batch block. This path handles edge cases.
@@ -199,12 +192,6 @@ def main():
     if args.uninstall_skill:
         return handle_uninstall_skill(args.uninstall_skill)
     
-    # Try to load API key from config if not set in environment
-    setup_api_key_from_config(args)
-    
-    # Set up model environment variable
-    setup_model_env(args)
-    
     # Handle info/list commands (these return early)
     if args.list_tools:
         return handle_list_tools(args)
@@ -212,8 +199,10 @@ def main():
     if args.list_mcp:
         return handle_list_mcp(args)
     
-    # Validate required configuration
-    validate_required_config()
+    # Validate that the runtime configuration (API key from auth store,
+    # endpoint from provider default/config, model from --model or config)
+    # can be resolved before starting a session.
+    validate_runtime_config(args)
 
     # Web mode: skip stdin check — the server doesn't consume stdin.
     # Must come BEFORE read_stdin_prompt() to avoid blocking on non-tty

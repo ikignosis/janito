@@ -3,14 +3,11 @@
 At the point ``run_web`` is called, ``__main__.py`` has already:
   - configured logging
   - set ``running_privileges`` from -r -w -x
-  - resolved provider/endpoint/model into env vars
-  - loaded the API key from auth.json
-  - validated required config
+  - validated the runtime config (API key / endpoint / model)
 """
 
 import json
 import logging
-import os
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -142,7 +139,7 @@ def run_web(args) -> None:
 
     # Banner (mirrors CLI aesthetics, plain print — no Rich dependency here)
     print(f"Janito Web UI running at {url}")
-    print(f"  Model: {config.model or os.getenv('OPENAI_MODEL', '?')}")
+    print(f"  Model: {config.model or '?'}")
     if config.auth_token:
         print("  Auth: bearer token required (JANITO_WEB_TOKEN is set)")
     print("  Press Ctrl+C to stop.")
@@ -155,7 +152,3 @@ def run_web(args) -> None:
             shutdown_mcp_manager()
         except Exception:
             pass
-
-
-# Imported lazily at call time to keep the module importable without uvicorn
-import os

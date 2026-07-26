@@ -29,7 +29,7 @@ If no prompt is given, janito starts an interactive chat shell.
 | `--get <key>` | Get one or more config values from `~/.janito/config.json` |
 | `--set-api-key <key>` | Set the API key for a provider (requires `--provider`) |
 | `--provider <name>` | Provider name (e.g., `openai`, `custom`) |
-| `--model <name>` | Model name (overrides `OPENAI_MODEL` and config) |
+| `--model <name>` | Model name (overrides the provider's configured model) |
 | `--list-keys` | List configured providers and keys |
 
 > **Note:** `--set` and `--set-api-key` must be used in **separate commands**, not together on the same line.

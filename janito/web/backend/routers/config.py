@@ -1,6 +1,5 @@
 """Configuration endpoints: read/patch runtime config, providers, status."""
 
-import os
 import logging
 
 from fastapi import APIRouter, Request
@@ -51,7 +50,7 @@ async def patch_config(request: Request):
     """Update mutable config values (model, thinking, etc.).
 
     Only a safe subset of fields is mutable at runtime. Changing the
-    provider requires a restart (it's baked into env vars).
+    provider requires a restart.
     """
     config = _get_config(request)
     try:
@@ -65,10 +64,6 @@ async def patch_config(request: Request):
         if key in body:
             setattr(config, key, typ(body[key]))
             updated[key] = getattr(config, key)
-
-    # If the model was changed, also update the env so new API calls use it
-    if "model" in updated and updated["model"]:
-        os.environ["OPENAI_MODEL"] = updated["model"]
 
     return {"updated": updated}
 
@@ -88,18 +83,36 @@ async def list_providers(request: Request):
 @router.get("/status")
 async def get_status(request: Request):
     """API key status (masked), active provider, privileges."""
-    from janito.general_config import get_masked_api_key, get_active_provider
+    from janito.general_config import (
+        get_masked_api_key,
+        get_active_provider,
+        load_endpoint_from_config,
+    )
+    from janito.auth_config import get_api_key
+    from janito.provider_config import get_base_url_from_provider, CUSTOM_ENDPOINT_MARKER
     from janito import privileges as _privileges_mod
 
-    api_key = os.getenv("OPENAI_API_KEY")
+    config = _get_config(request)
+    provider = get_active_provider()
+
+    api_key = get_api_key(provider)
+
+    # Endpoint resolution mirrors the runtime: a configured endpoint override
+    # first, otherwise the provider's built-in default (None => standard OpenAI).
+    base_url = load_endpoint_from_config(provider)
+    if not base_url:
+        provider_default = get_base_url_from_provider(provider)
+        if provider_default and provider_default != CUSTOM_ENDPOINT_MARKER:
+            base_url = provider_default
+
     priv = _privileges_mod.running_privileges
 
     return {
         "api_key": get_masked_api_key(api_key) if api_key else "(not set)",
         "api_key_set": bool(api_key),
-        "active_provider": get_active_provider(),
-        "model": os.getenv("OPENAI_MODEL"),
-        "base_url": os.getenv("OPENAI_BASE_URL"),
+        "active_provider": provider,
+        "model": config.model,
+        "base_url": base_url,
         "privileges": {
             "read": bool(getattr(priv, "READ", False)) if priv else True,
             "write": bool(getattr(priv, "WRITE", False)) if priv else True,

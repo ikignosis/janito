@@ -3,7 +3,6 @@ OpenAI client module for sending prompts to OpenAI-compatible endpoints.
 Uses streaming (SSE) to display tokens as they arrive.
 """
 
-import os
 import sys
 import json
 import logging
@@ -92,7 +91,7 @@ except ImportError:
 
 # Import general configuration handling
 from janito.general_config import (
-    load_provider_from_config, 
+    load_model_from_config,
     load_context_window_size, 
     load_endpoint_from_config,
     get_config_value,
@@ -100,69 +99,82 @@ from janito.general_config import (
     get_masked_api_key
 )
 
+# Import auth handling (API keys come from the auth store, not the environment)
+from janito.auth_config import get_api_key
+
+
+def resolve_runtime_config(cli_model: Optional[str] = None, cli_provider: Optional[str] = None) -> Tuple[Optional[str], str, str]:
+    """
+    Resolve the runtime configuration (base_url, api_key, model) without
+    relying on OPENAI_* environment variables.
+
+    Resolution rules:
+      - api_key:  taken from the auth store (~/.janito/auth.json) for the
+                  active provider (see ``auth_config.get_api_key``).
+      - base_url: the endpoint configured for the provider (``--set endpoint``)
+                  or, when none is set, the provider's built-in default base
+                  URL. ``None`` means the standard OpenAI endpoint.
+      - model:    ``--model`` (``cli_model``) when given, otherwise the model
+                  configured for the active provider (``<provider>.model``).
+
+    Args:
+        cli_model: Model passed via ``--model`` (highest priority). May be None.
+        cli_provider: Provider passed via ``--provider``. May be None.
+
+    Returns:
+        Tuple of (base_url, api_key, model). ``base_url`` may be None for the
+        standard OpenAI API.
+
+    Raises:
+        ValueError: If the API key or model cannot be resolved, or if a custom
+            provider has no endpoint configured.
+    """
+    # Provider: --provider CLI arg, then config.json, then auth.json default.
+    provider = cli_provider or get_active_provider()
+    logger.debug(f"Resolving runtime config for provider: {provider}")
+
+    # API key from the auth store (no environment variables).
+    api_key = get_api_key(provider)
+    if not api_key:
+        logger.error(f"No API key configured for provider '{provider}'")
+        raise ValueError(
+            f"No API key configured for provider '{provider}'. "
+            f"Set one with: janito --set-api-key <key> --provider {provider}"
+        )
+
+    # Model: --model, otherwise the provider's configured model.
+    model = cli_model or load_model_from_config(provider)
+    if not model:
+        logger.error(f"No model configured for provider '{provider}'")
+        raise ValueError(
+            f"No model configured for provider '{provider}'. "
+            f"Pass --model <name> or set it with: "
+            f"janito --provider {provider} --set model=<name>"
+        )
+
+    # Base URL: configured endpoint for the provider, otherwise the provider's
+    # built-in default (None for standard OpenAI).
+    base_url = load_endpoint_from_config(provider)
+    if not base_url:
+        if is_custom_provider(provider):
+            logger.warning(f"Custom provider '{provider}' has no endpoint configured")
+            raise ValueError(
+                f"Provider '{provider}' requires an endpoint. "
+                f"Set it with: janito --provider {provider} --set endpoint=<url>"
+            )
+        base_url = get_base_url_from_provider(provider)
+
+    logger.debug(f"Runtime config resolved: base_url={base_url}, model={model}")
+    return base_url, api_key, model
+
 
 def get_env_config() -> Tuple[Optional[str], str, str]:
+    """Backward-compatible alias for :func:`resolve_runtime_config`.
+
+    Retained for external callers; resolves configuration from auth/config
+    without using environment variables.
     """
-    Retrieve required environment variables.
-    
-    When OPENAI_BASE_URL is not defined, attempts to determine it based on
-    the OPENAI_PROVIDER environment variable (if set) or provider from config.
-    
-    For 'custom' provider, the endpoint must be provided via the
-    OPENAI_BASE_URL environment variable or the 'endpoint' key in config.json
-    (set with ``--set endpoint=...``).
-    
-    Returns:
-        Tuple of (base_url, api_key, model)
-        base_url may be None for standard OpenAI API
-    """
-    base_url = os.getenv("OPENAI_BASE_URL")
-    api_key = os.getenv("OPENAI_API_KEY")
-    model = os.getenv("OPENAI_MODEL")
-    
-    logger.debug(f"Environment config loaded: base_url={base_url}, model={model}")
-    
-    if not api_key:
-        logger.error("OPENAI_API_KEY environment variable is required")
-        raise ValueError("OPENAI_API_KEY environment variable is required")
-    if not model:
-        logger.error("OPENAI_MODEL environment variable is required or --set model")
-        raise ValueError("OPENAI_MODEL environment variable is required or --set model")
-    
-    # If base_url is not set, try to determine it from the provider
-    if not base_url:
-        # Check provider from config, then auth.json
-        provider = load_provider_from_config()
-        logger.debug(f"Provider from config: {provider}")
-        
-        # If not in config.json, check auth.json for default provider
-        if not provider:
-            try:
-                from ..auth_config import get_default_provider
-                provider = get_default_provider()
-            except ImportError:
-                try:
-                    from auth_config import get_default_provider
-                    provider = get_default_provider()
-                except ImportError:
-                    pass
-        
-        if provider:
-            # Check for a user-configured endpoint override first (any provider)
-            config_endpoint = load_endpoint_from_config(provider)
-            if config_endpoint:
-                base_url = config_endpoint
-                logger.debug(f"Using endpoint from config for provider '{provider}': {base_url}")
-            elif is_custom_provider(provider):
-                # Custom provider *requires* an explicit endpoint
-                logger.warning("Custom provider selected but no endpoint configured")
-                base_url = None
-            else:
-                # Fall back to the built-in default for this provider
-                base_url = get_base_url_from_provider(provider)
-                logger.debug(f"Base URL from provider '{provider}': {base_url}")
-    
-    return base_url, api_key, model
+    return resolve_runtime_config()
 
 
 def _run_with_progress_bar(func, *args, **kwargs):
@@ -276,7 +288,7 @@ def _is_mcp_tool(tool_name: str) -> bool:
     return False
 
 
-def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict[str, Any]] = None, tools: Optional[List[Dict[str, Any]]] = None, use_mcp: bool = True, thinking: bool = False) -> str:
+def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict[str, Any]] = None, tools: Optional[List[Dict[str, Any]]] = None, use_mcp: bool = True, thinking: bool = False, cli_model: Optional[str] = None, cli_provider: Optional[str] = None) -> str:
     """Send prompt to OpenAI endpoint and return response using streaming.
     
     Args:
@@ -287,9 +299,11 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
                If an empty list, no tools are passed.
         use_mcp: If True, load and use MCP tools (default True)
         thinking: If True, enable thinking mode (extra_body={'enable_thinking': True})
+        cli_model: Model passed via ``--model`` (overrides the provider's config).
+        cli_provider: Provider passed via ``--provider`` (overrides config/auth).
     """
     logger.info(f"Sending prompt to API")
-    base_url, api_key, model = get_env_config()
+    base_url, api_key, model = resolve_runtime_config(cli_model, cli_provider)
     
     # Create OpenAI client - base_url can be None for standard OpenAI
     client = OpenAI(
@@ -326,7 +340,7 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
     logger.debug(f"Using {len(tools_schemas)} tools total")
     
     # Load max tokens from general config if set
-    provider = get_active_provider()
+    provider = cli_provider or get_active_provider()
     context_window_size = load_context_window_size(provider)
     
     # Check for preserve_thinking in config
@@ -415,7 +429,7 @@ def send_prompt(prompt: str, verbose: bool = False, previous_messages: List[Dict
                 logger.error(f"Model '{model}' not found at API URL '{api_url}': {e}")
             raise
         except AuthenticationError as e:
-            provider = get_active_provider()
+            provider = cli_provider or get_active_provider()
             masked_key = get_masked_api_key(api_key)
             api_url = base_url if base_url else "https://api.openai.com"
             console.print(

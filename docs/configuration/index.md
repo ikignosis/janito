@@ -5,7 +5,6 @@ Learn how to configure janito for your needs.
 ## Topics
 
 - [Providers](providers.md) - Configure OpenAI, local servers, or custom providers
-- [Environment Variables](environment-variables.md) - Use environment variables for configuration
 - [Secrets](secrets.md) - Manage API keys and sensitive credentials
 
 ## Configuration File
@@ -33,23 +32,25 @@ These keys are stored in `~/.janito/config.json` (set them with `--set`):
 | `context-window-size` | Maximum context window size (tokens) | `65536` |
 | `endpoint` | API endpoint URL (required for `custom` providers) | - |
 
-> Provider base URLs are built in for known providers, so you normally only need `endpoint` for the `custom` provider. At runtime the endpoint is exported as the `OPENAI_BASE_URL` environment variable.
+> Provider base URLs are built in for known providers, so you normally only need `endpoint` for the `custom` provider. At runtime the endpoint is used directly as the API base URL.
 
 ## Configuration Priority
 
-For `model` and `endpoint`, values are resolved in this order (later overrides earlier):
+Configuration is resolved from local files — janito does **not** read any
+`OPENAI_*` environment variables. Values are resolved in this order (later
+overrides earlier):
 
-1. Default values
+1. Provider's built-in default (endpoint) / no default (model)
 2. Configuration file (`~/.janito/config.json`)
-3. Environment variables (`OPENAI_MODEL`, `OPENAI_BASE_URL`)
-4. Command-line arguments (`--model`, `--set endpoint=...`)
+3. Command-line arguments (`--model`, `--provider`, `--set endpoint=...`)
 
-API keys are resolved from the `OPENAI_API_KEY` environment variable first, then from the per-provider key stored in `~/.janito/auth.json` (set with `--set-api-key`).
+API keys are read from the per-provider key stored in `~/.janito/auth.json`
+(set with `--set-api-key <key> --provider <name>`). There is no environment
+variable fallback.
 
 > **Note:** When using CLI arguments, `--set` and `--set-api-key` must be run as **separate commands**. They cannot be combined in a single invocation.
 
 ## Next Steps
 
 - [Configure providers](providers.md) for different AI services
-- [Set up environment variables](environment-variables.md) for automation
 - [Manage secrets](secrets.md) securely

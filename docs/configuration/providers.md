@@ -32,12 +32,9 @@ Or interactively:
 janito --config
 ```
 
-### Environment Variables
-
-```bash
-export OPENAI_API_KEY="sk-your-key"
-export OPENAI_MODEL="gpt-4"
-```
+> API keys are stored in `~/.janito/auth.json`; the model is stored in
+> `~/.janito/config.json`. janito does not read `OPENAI_*` environment
+> variables. See [Configuration Priority](index.md#configuration-priority).
 
 ## Custom Providers (OpenAI-Compatible)
 

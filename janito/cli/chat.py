@@ -2,12 +2,12 @@
 CLI chat execution modes: interactive and single prompt.
 """
 
-import os
+from functools import partial
 
 from ..system_prompt import SYSTEM_PROMPT, get_system_prompt_with_skills
 from ..tools.gmail import GMAIL_SYSTEM_PROMPT
 from ..tools.onedrive import ONEDRIVE_SYSTEM_PROMPT
-from ..openai_client import send_prompt
+from ..openai_client import send_prompt, resolve_runtime_config
 from ..shell import InteractiveShell
 
 
@@ -50,7 +50,15 @@ def run_interactive_chat(args):
         for tool_name, reason in skipped_tools.items():
             print(f"    - {tool_name}: {reason}")
 
-    model = os.getenv("OPENAI_MODEL")
+    # Resolve the model for display (and bind CLI model/provider so every
+    # prompt uses the same configuration without environment variables).
+    cli_model = getattr(args, "model", None)
+    cli_provider = getattr(args, "provider", None)
+    try:
+        _, _, model = resolve_runtime_config(cli_model, cli_provider)
+    except ValueError:
+        model = cli_model or "(not configured)"
+    send_prompt_func = partial(send_prompt, cli_model=cli_model, cli_provider=cli_provider)
     print("Starting interactive chat session. Type '/exit' or CTRL-D to end the session")
     
     # Choose system prompt based on enabled modes
@@ -74,7 +82,7 @@ def run_interactive_chat(args):
     shell = InteractiveShell(model=model, no_history=args.no_history)
     shell.initialize_history(system_prompt=effective_system_prompt)
     shell.run(
-        send_prompt_func=send_prompt,
+        send_prompt_func=send_prompt_func,
         verbose=args.verbose,
         no_tools=no_tools,
         thinking=args.thinking
@@ -131,7 +139,15 @@ def run_single_prompt(args):
         tools_to_use = None
 
     try:
-        send_prompt(prompt, verbose=args.verbose, previous_messages=messages_history, tools=tools_to_use, thinking=args.thinking)
+        send_prompt(
+            prompt,
+            verbose=args.verbose,
+            previous_messages=messages_history,
+            tools=tools_to_use,
+            thinking=args.thinking,
+            cli_model=getattr(args, "model", None),
+            cli_provider=getattr(args, "provider", None),
+        )
     except KeyboardInterrupt:
         print("\nOperation cancelled by user.", file=sys.stderr)
         sys.exit(130)

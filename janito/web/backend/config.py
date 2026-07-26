@@ -5,6 +5,20 @@ from dataclasses import dataclass
 from typing import Optional
 
 
+def _resolve_model_from_config(provider: Optional[str]) -> Optional[str]:
+    """Resolve the model from the config file for the given/active provider.
+
+    Mirrors the runtime resolution used by the CLI: the model is ``--model``
+    or, failing that, the provider's configured model (``<provider>.model``) in
+    ``~/.janito/config.json``. No ``OPENAI_*`` environment variables are used.
+    """
+    try:
+        from janito.general_config import load_model_from_config
+        return load_model_from_config(provider)
+    except Exception:
+        return None
+
+
 @dataclass
 class WebServerConfig:
     """Runtime configuration for the web server, built from CLI args.
@@ -18,10 +32,9 @@ class WebServerConfig:
     web_port: int = 8080
     no_web_open: bool = False
 
-    # --- AI / provider (already resolved into env vars by cli/setup.py) ---
-    # These are read from env for display/status, but kept for /api/config.
+    # --- AI / provider (resolved from auth store + config file) ---
     provider: Optional[str] = None       # args.provider
-    model: Optional[str] = None          # args.model (or from env)
+    model: Optional[str] = None          # args.model (or from provider config)
 
     # --- Session defaults (from CLI flags) ---
     thinking: bool = False               # -t / --thinking
@@ -51,7 +64,7 @@ class WebServerConfig:
             web_port=getattr(args, "web_port", 8080),
             no_web_open=getattr(args, "no_web_open", False),
             provider=getattr(args, "provider", None),
-            model=getattr(args, "model", None) or os.getenv("OPENAI_MODEL"),
+            model=getattr(args, "model", None) or _resolve_model_from_config(getattr(args, "provider", None)),
             thinking=getattr(args, "thinking", False),
             verbose=getattr(args, "verbose", False),
             no_history=getattr(args, "no_history", False),

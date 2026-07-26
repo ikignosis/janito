@@ -115,4 +115,3 @@ We use standard Python conventions. Key points:
 - [README.md](README.md) - Main documentation
 - [README_LOCAL.md](README_LOCAL.md) - Custom endpoints configuration
 - [README_MCP.md](README_MCP.md) - MCP server configuration
-- [README_ENVIRONMENT.md](README_ENVIRONMENT.md) - Environment variables

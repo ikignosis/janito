@@ -16,19 +16,19 @@ def create_parser() -> argparse.ArgumentParser:
         description="OpenAI CLI - Send prompts to OpenAI-compatible endpoints",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Environment Variables:
-  OPENAI_BASE_URL    - Base URL of the OpenAI-compatible API endpoint (optional for standard OpenAI)
-  OPENAI_API_KEY     - API key for authentication  
-  OPENAI_MODEL       - Model name to use for completions
-
 Configuration:
-  API keys can be stored in ~/.janito/auth.json using --set-api-key
-  If OPENAI_API_KEY is not set, the CLI will try to load from the auth config
+  Configuration is resolved from local files (no OPENAI_* environment variables):
+    - API key:  ~/.janito/auth.json for the active provider (--set-api-key)
+    - Endpoint: the provider's built-in default, or an override in
+                ~/.janito/config.json (--set endpoint=...)
+    - Model:    --model, or the provider's configured model (--set model=...)
+
+  API keys are stored securely in ~/.janito/auth.json using --set-api-key
 
 Options:
   --set-api-key KEY  Set API key for the specified provider
   --provider NAME    Provider name (e.g., openai)
-  --model NAME       Model name to use (overrides OPENAI_MODEL env var and config)
+  --model NAME       Model name to use (overrides the provider's configured model)
   --log LEVELS       Enable logging (e.g., --log=info,debug or --log=warning)
   --list-keys        List configured providers and keys
   --list-tools       List all available built-in tools
@@ -168,7 +168,7 @@ Note: --set and --set-api-key must be used in separate commands.
     parser.add_argument(
         "--model",
         metavar="NAME",
-        help="Model name to use for completions (overrides OPENAI_MODEL env var and config)"
+        help="Model name to use for completions (overrides the provider's configured model)"
     )
     
     parser.add_argument(

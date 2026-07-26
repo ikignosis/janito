@@ -5,7 +5,7 @@ This module lifts the agentic while-loop from
 that yields structured events instead of printing to a terminal.
 
 Reuses (unchanged) existing janito modules:
-  - ``janito.openai_client.client.get_env_config()``  -> config resolution
+  - ``janito.openai_client.client.resolve_runtime_config()``  -> config resolution
   - ``janito.tooling.tools_registry.*``                -> schemas + lookup
   - ``janito.mcp_manager.get_mcp_manager()``           -> MCP tools
   - ``janito.general_config.*``                        -> context window, etc.
@@ -21,7 +21,7 @@ from typing import AsyncGenerator, Dict, List, Optional
 
 from openai import AsyncOpenAI
 
-from janito.openai_client.client import get_env_config, format_tokens
+from janito.openai_client.client import resolve_runtime_config, format_tokens
 from janito.general_config import (
     load_context_window_size,
     get_config_value,
@@ -143,7 +143,9 @@ async def stream_prompt(
         use_mcp: If True, load and use MCP tools.
     """
     try:
-        base_url, api_key, model = get_env_config()
+        base_url, api_key, model = resolve_runtime_config(
+            cli_model=config.model, cli_provider=config.provider
+        )
     except Exception as e:
         yield ErrorEvent(message=str(e))
         return

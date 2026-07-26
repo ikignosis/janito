@@ -1,6 +1,5 @@
 """Authentication-related CLI handlers."""
 
-import os
 import sys
 
 try:
@@ -29,12 +28,6 @@ def handle_set_api_key(args) -> int:
         auth_file = get_auth_file_path()
         print(f"✓ API key stored successfully for provider '{args.provider}'")
         print(f"  Config file: {auth_file}")
-        
-        # If this is the openai provider, also set it for current session
-        if args.provider == "openai":
-            os.environ["OPENAI_API_KEY"] = args.set_api_key
-            print(f"  API key also set for current session")
-        
         return 0
     else:
         print("Error: Failed to store API key", file=sys.stderr)
