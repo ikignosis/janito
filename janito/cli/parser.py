@@ -169,7 +169,10 @@ Note: --set and --set-api-key must be used in separate commands.
     )
 
     parser.add_argument(
-        "--provider", metavar="NAME", help="Provider name (e.g., openai, custom)"
+        "-p",
+        "--provider",
+        metavar="NAME",
+        help="Provider name (e.g., openai, custom)",
     )
 
     parser.add_argument(
