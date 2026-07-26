@@ -81,6 +81,14 @@ except ImportError:
 # Reporter handler for capturing tool output in web mode
 from janito.tooling.reporter import set_report_handler
 
+# Tool usage tracking (best-effort, never fails)
+try:
+    from janito.tooling.tools_usage import record_tool_use
+except ImportError:  # pragma: no cover - fallback keeps agent working
+
+    def record_tool_use(name):
+        pass
+
 
 def _is_mcp_tool(tool_name: str) -> bool:
     """Check if a tool name is an MCP tool (has service_ prefix)."""
@@ -99,6 +107,9 @@ async def _execute_tool(
     The tool runs in a thread (tools are synchronous); ``contextvars`` ensure
     the report handler is visible inside the thread and isolated per-task.
     """
+    # Track the tool usage (best-effort, never raises)
+    record_tool_use(tool_name)
+
     progress_events: list[ToolProgressEvent] = []
 
     def handler(level: str, message: str, end: str):

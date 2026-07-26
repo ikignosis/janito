@@ -189,7 +189,7 @@ class ReadEmails(BaseTool):
 
             # Search for emails
             self.report_progress(
-                f" Searching for emails with criteria: {search_criteria}..."
+                f"🔍 Searching for emails with criteria: {search_criteria}..."
             )
             status, message_ids = mail.search(None, search_criteria)
 

@@ -83,6 +83,15 @@ except ImportError:
         pass
 
 
+# Import tool usage tracking (best-effort, never fails)
+try:
+    from ..tooling.tools_usage import record_tool_use
+except ImportError:  # pragma: no cover - direct-run fallback
+
+    def record_tool_use(name):
+        pass
+
+
 # Import provider configuration for base URLs
 try:
     from ..provider_config import (
@@ -554,6 +563,9 @@ def send_prompt(
                 tool_call_id = tc["id"]
 
                 logger.info(f"Tool call: {tool_name}({tool_args})")
+
+                # Track the tool usage (best-effort, never raises)
+                record_tool_use(tool_name)
 
                 # Check if this is an MCP tool
                 is_mcp = _is_mcp_tool(tool_name)

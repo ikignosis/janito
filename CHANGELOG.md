@@ -14,12 +14,14 @@ Changes since `v4.12.0` (2026-07-26).
 - `GetCurrentTime` tool: returns the current date and time in ISO 8601 format with local/UTC representations and timezone info ([068625d](https://github.com/joaopinto/janito/commit/068625d)).
 - Project-specific instructions: automatically load an `AGENTS.md` file from the current working directory and append its content to the system prompt under a "Project-Specific Instructions" section.
 - Repository: add an `AGENTS.md` instructing agents to read `docs/TOOL.md` before creating a new tool.
+- Tool usage tracking: record every tool invocation in a SQLite database (`tools_use.db` in the config directory) with per-tool counters, from both the CLI agent loop and the web backend; includes the `janito.tooling.tools_usage` module (with a small CLI to inspect counts) and tests.
 
 ### Changed
 
 - Release workflow: upload only `dist/*.whl` and `dist/*.tar.gz` as release assets, excluding stray build artifacts (e.g. `default.gitignore`).
 - Interactive shell: print an "Unknown command" message for unrecognized `/` commands instead of sending them to the LLM.
 - Test tooling: consolidate all test modules under `tests/` (move `janito/tooling/test_path_utils.py`, `janito/test_config_dir.py` and `janito/test_general_config.py` into `tests/`, and add `tests/test_system_prompt.py`) and point `tox` (invoked by the pre-commit `run-tests` hook) at `pytest tests/`, so the full suite is executed on every commit.
+- Show a 🔍 emoji in the search progress messages of the `SearchText`, `MoveEmails` and `ReadEmails` tools.
 
 ## [v4.12.0](https://github.com/joaopinto/janito/compare/v4.11.0...v4.12.0) - 2026-07-26
 

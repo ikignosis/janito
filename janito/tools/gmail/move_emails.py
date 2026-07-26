@@ -142,7 +142,7 @@ class MoveEmails(BaseTool):
                     "target_folder": target_folder,
                 }
 
-            self.report_progress(" Searching for emails to move...")
+            self.report_progress("🔍 Searching for emails to move...")
 
             # Search for emails
             status, message_ids_list = mail.search(None, search_criteria)
