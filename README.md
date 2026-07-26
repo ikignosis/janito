@@ -85,13 +85,15 @@ You can also use `--get`, `--unset`, and `--set-secret` with multiple values.
 janito --show-config
 ```
 
-### Available Options
+### Costs per provider
 
-| Option | Description | Example |
-|--------|-------------|---------|
-| `provider` | Provider name | `openai`, `custom` |
-| `model` | Model name | `gpt-4`, `claude-3-opus` |
-| `context-window-size` | Context window size | `65536` |
+| Provider | Last Model | Price |
+|----------|-------------|---------|
+| Alibaba  | qwen3.8-max-preview | 6$/month (Lite) |
+| Moonshot | kimi-k3 | $15/month (Moderato)|
+| z.ai     | glm-5.2 | $12.6/month (Lite)|
+| openai   | gpt-5.6 | Pay as you go |
+
 
 For custom endpoints (base-url), see [README_custom.md](README_custom.md).
 
