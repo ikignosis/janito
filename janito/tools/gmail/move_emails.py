@@ -81,7 +81,7 @@ class MoveEmails(BaseTool):
 
             action = "Counting (dry run)" if dry_run else "Moving"
             self.report_start(
-                f"{action} emails from {source_folder} to {target_folder}"
+                f"📦 {action} emails from {source_folder} to {target_folder}"
             )
 
             username = get_secret("gmail_username")

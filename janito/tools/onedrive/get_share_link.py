@@ -51,7 +51,7 @@ class GetOneDriveShareLink(BaseTool):
         try:
             from .base_client import OneDriveBaseClient
 
-            self.report_start(f"Creating share link for: {path}")
+            self.report_start(f"🔗 Creating share link for: {path}")
 
             # Validate link_type
             if link_type not in ("view", "edit"):

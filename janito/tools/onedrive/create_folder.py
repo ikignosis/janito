@@ -47,7 +47,7 @@ class CreateOneDriveFolder(BaseTool):
         try:
             from .base_client import OneDriveBaseClient
 
-            self.report_start(f"Creating folder: {path}")
+            self.report_start(f"📂 Creating folder: {path}")
 
             # Parse the path to get parent and folder name
             path_parts = path.rstrip("/").split("/")

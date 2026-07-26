@@ -141,7 +141,7 @@ class ReadEmails(BaseTool):
             from janito.secrets_config import get_secret
 
             # Fetch credentials from secrets
-            self.report_start(f"Connecting to Gmail to read {folder}")
+            self.report_start(f"📬 Connecting to Gmail to read {folder}")
 
             username = get_secret("gmail_username")
             password = get_secret("gmail_password")

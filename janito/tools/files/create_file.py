@@ -47,7 +47,7 @@ class CreateFile(BaseTool):
             norm_path_str = norm_path(abs_filepath)
 
             # Report start
-            self.report_start(f"Creating file {norm_path_str}", end="")
+            self.report_start(f"📝 Creating file {norm_path_str}", end="")
 
             # Check if file exists and overwrite is not allowed
             if os.path.exists(abs_filepath) and not overwrite:

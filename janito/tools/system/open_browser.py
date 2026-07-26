@@ -51,7 +51,7 @@ class OpenBrowser(BaseTool):
 
             url = url.strip()
 
-            self.report_start(f"Opening browser: {url}", end="")
+            self.report_start(f"🌍 Opening browser: {url}", end="")
 
             opened = webbrowser.open(url)
 

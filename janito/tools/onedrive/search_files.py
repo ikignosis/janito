@@ -55,7 +55,7 @@ class SearchOneDriveFiles(BaseTool):
         try:
             from .base_client import OneDriveBaseClient
 
-            self.report_start(f"Searching OneDrive for: {query}")
+            self.report_start(f"🔍 Searching OneDrive for: {query}")
 
             client = OneDriveBaseClient()
 

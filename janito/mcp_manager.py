@@ -200,7 +200,7 @@ class MCPManager:
             raise ValueError(f"Invalid MCP tool name format: {prefixed_name}")
 
         # Report start of MCP tool call
-        report_start(f"MCP tool: {prefixed_name}", end="")
+        report_start(f"🔌 MCP tool: {prefixed_name}", end="")
 
         # Find the service (last underscore-separated part is the tool name)
         # We need to find the service name by checking which clients have this tool

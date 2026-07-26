@@ -50,7 +50,7 @@ class GetCurrentTime(BaseTool):
                 - 'error': error message (only present if success is False)
         """
         try:
-            self.report_start("Retrieving current time", end="")
+            self.report_start("🕐 Retrieving current time", end="")
 
             now_local = datetime.now().astimezone()
             now_utc = datetime.now(timezone.utc)

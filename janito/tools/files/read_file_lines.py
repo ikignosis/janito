@@ -61,7 +61,7 @@ class ReadFileLines(BaseTool):
             elif to_line is not None:
                 range_info = f" (up to line {to_line})"
 
-            self.report_start(f"Reading file {norm_path_str}{range_info}", end="")
+            self.report_start(f"📖 Reading file {norm_path_str}{range_info}", end="")
 
             if not os.path.exists(abs_filepath):
                 self.report_error(f"File does not exist: {norm_path_str}")

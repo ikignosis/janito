@@ -69,7 +69,7 @@ class TrashEmail(BaseTool):
             from janito.secrets_config import get_secret
 
             action = "Counting (dry run)" if dry_run else "Moving to trash"
-            self.report_start(f"{action} emails from {folder}")
+            self.report_start(f"🗑️ {action} emails from {folder}")
 
             username = get_secret("gmail_username")
             password = get_secret("gmail_password")

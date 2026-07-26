@@ -104,7 +104,7 @@ class RunPythonCode(BaseTool):
             if len(code) > 200:
                 code_preview = code[:200] + "..."
             self.report_start(
-                f"Executing Python code in {norm_working_dir}:\n{code_preview}"
+                f"🐍 Executing Python code in {norm_working_dir}:\n{code_preview}"
             )
 
             # Build Python command

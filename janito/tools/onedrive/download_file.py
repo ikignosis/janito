@@ -54,7 +54,7 @@ class DownloadOneDriveFile(BaseTool):
         try:
             from .base_client import OneDriveBaseClient
 
-            self.report_start(f"Downloading file: {path}")
+            self.report_start(f"⬇️ Downloading file: {path}")
 
             client = OneDriveBaseClient()
 

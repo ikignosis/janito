@@ -89,7 +89,7 @@ class DeleteEmails(BaseTool):
 
             # Fetch credentials from secrets
             action = "Counting (dry run)" if dry_run else "Deleting"
-            self.report_start(f"{action} emails in {folder}")
+            self.report_start(f"🗑️ {action} emails in {folder}")
 
             username = get_secret("gmail_username")
             password = get_secret("gmail_password")

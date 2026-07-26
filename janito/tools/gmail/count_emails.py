@@ -70,7 +70,7 @@ class CountEmails(BaseTool):
                 }
 
             # Fetch credentials from secrets
-            self.report_start(f"Connecting to Gmail to count emails in {folder}")
+            self.report_start(f"📊 Connecting to Gmail to count emails in {folder}")
 
             username = get_secret("gmail_username")
             password = get_secret("gmail_password")

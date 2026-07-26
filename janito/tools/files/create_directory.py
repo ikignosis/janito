@@ -48,7 +48,7 @@ class CreateDirectory(BaseTool):
             norm_path_str = norm_path(abs_directory)
 
             # Report start
-            self.report_start(f"Creating directory {norm_path_str}", end="")
+            self.report_start(f"📂 Creating directory {norm_path_str}", end="")
 
             # Check if directory already exists
             if os.path.exists(abs_directory):

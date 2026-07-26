@@ -81,7 +81,7 @@ class SearchRegex(BaseTool):
             paths_str = ", ".join([norm_path(p) for p in valid_paths[:3]])
             if len(valid_paths) > 3:
                 paths_str += f" (+{len(valid_paths) - 3} more)"
-            self.report_start(f"Searching regex pattern '{pattern}' in {paths_str}")
+            self.report_start(f"🔍 Searching regex pattern '{pattern}' in {paths_str}")
 
             # Perform search
             if count_only:

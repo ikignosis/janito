@@ -65,7 +65,7 @@ class GetUrl(BaseTool):
                     "url": url,
                 }
 
-            self.report_start(f"Fetching URL: {url}")
+            self.report_start(f"🌐 Fetching URL: {url}")
 
             # Build the fetch command using Python's urllib or requests equivalent
             # Since we need to use subprocess to match the existing pattern, we'll create a Python script

@@ -45,7 +45,7 @@ class DeleteOneDriveFile(BaseTool):
         try:
             from .base_client import OneDriveBaseClient
 
-            self.report_start(f"Deleting: {path}")
+            self.report_start(f"🗑️ Deleting: {path}")
 
             client = OneDriveBaseClient()
 

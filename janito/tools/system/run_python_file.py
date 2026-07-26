@@ -126,7 +126,7 @@ class RunPythonFile(BaseTool):
 
             # Report the file to be executed
             self.report_start(
-                f"Executing Python file in {norm_working_dir}:\n{command_preview}"
+                f"🐍 Executing Python file in {norm_working_dir}:\n{command_preview}"
             )
 
             # Build Python command

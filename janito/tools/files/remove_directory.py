@@ -52,7 +52,7 @@ class RemoveDirectory(BaseTool):
             # Report start
             recursive_str = "recursively" if recursive else ""
             self.report_start(
-                f"Removing directory {norm_path_str} {recursive_str}", end=""
+                f"🗑️ Removing directory {norm_path_str} {recursive_str}", end=""
             )
 
             if not os.path.exists(abs_directory):

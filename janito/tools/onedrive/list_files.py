@@ -67,7 +67,7 @@ class ListOneDriveFiles(BaseTool):
         try:
             from .base_client import OneDriveBaseClient
 
-            self.report_start(f"Listing files in OneDrive path: {path or 'root'}")
+            self.report_start(f"📁 Listing files in OneDrive path: {path or 'root'}")
 
             client = OneDriveBaseClient()
 

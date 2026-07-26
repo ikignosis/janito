@@ -44,7 +44,7 @@ class DeleteFile(BaseTool):
             norm_path_str = norm_path(abs_filepath)
 
             # Report start
-            self.report_start(f"Deleting file {norm_path_str}", end="")
+            self.report_start(f"🗑️ Deleting file {norm_path_str}", end="")
 
             if not os.path.exists(abs_filepath):
                 self.report_error(f"File does not exist: {norm_path_str}")

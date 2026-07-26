@@ -223,7 +223,7 @@ class RunPowerShellCode(BaseTool):
             if len(code) > 200:
                 code_preview = code[:200] + "..."
             self.report_start(
-                f"Executing PowerShell code in {norm_working_dir}:\n{code_preview}"
+                f"⚙️ Executing PowerShell code in {norm_working_dir}:\n{code_preview}"
             )
 
             # Wrapped in try/catch: setting console encodings can fail when

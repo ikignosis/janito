@@ -63,7 +63,7 @@ class UploadOneDriveFile(BaseTool):
         try:
             from .base_client import OneDriveBaseClient
 
-            self.report_start(f"Uploading file to: {path}")
+            self.report_start(f"⬆️ Uploading file to: {path}")
 
             # Validate input
             if not content and not local_path:

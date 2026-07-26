@@ -68,7 +68,7 @@ class ReadOneDriveFile(BaseTool):
         try:
             from .base_client import OneDriveBaseClient
 
-            self.report_start(f"Reading file: {path}")
+            self.report_start(f"📖 Reading file: {path}")
 
             client = OneDriveBaseClient()
 

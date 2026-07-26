@@ -74,7 +74,7 @@ class ListFolders(BaseTool):
                 }
 
             # Fetch credentials from secrets
-            self.report_start("Connecting to Gmail to list folders")
+            self.report_start("📂 Connecting to Gmail to list folders")
 
             username = get_secret("gmail_username")
             password = get_secret("gmail_password")

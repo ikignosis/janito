@@ -280,7 +280,7 @@ def load_skill(skill_name: str) -> str:
     Returns:
         The full SKILL.md content, or error message if not found
     """
-    report_start(f"Loading skill '{skill_name}'...", end="")
+    report_start(f"🎓 Loading skill '{skill_name}'...", end="")
 
     provider = get_skills_provider()
     skill = provider.get_skill(skill_name)
@@ -323,7 +323,7 @@ def read_skill_resource(skill_name: str, resource_name: str) -> str:
         The resource content, or error message if not found
     """
     report_start(
-        f"Reading resource '{resource_name}' from skill '{skill_name}'...", end=""
+        f"📄 Reading resource '{resource_name}' from skill '{skill_name}'...", end=""
     )
 
     provider = get_skills_provider()

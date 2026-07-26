@@ -63,7 +63,7 @@ class MoveFile(BaseTool):
             norm_dest = norm_path(abs_destination)
 
             # Report start
-            self.report_start(f"Moving {norm_source} to {norm_dest}...", end="")
+            self.report_start(f"📦 Moving {norm_source} to {norm_dest}...", end="")
 
             # Validate source exists
             if not os.path.exists(abs_source):

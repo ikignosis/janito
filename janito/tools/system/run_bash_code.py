@@ -257,7 +257,7 @@ class RunBashCode(BaseTool):
             if len(code) > 200:
                 code_preview = code[:200] + "..."
             self.report_start(
-                f"Executing Bash code in {norm_working_dir}:\n{code_preview}"
+                f"⚙️ Executing Bash code in {norm_working_dir}:\n{code_preview}"
             )
 
             # Build shell command
