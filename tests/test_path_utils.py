@@ -5,10 +5,10 @@ Test script for the path_utils module.
 import sys
 from pathlib import Path
 
-# Add the parent directory to sys.path to allow importing from tooling
+# Add the repo root to sys.path to allow importing the package directly.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from tooling.path_utils import norm_path
+from janito.tooling.path_utils import norm_path
 
 
 def test_norm_path():
