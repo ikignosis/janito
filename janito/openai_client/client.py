@@ -94,13 +94,14 @@ from janito.general_config import (
     load_model_from_config,
     load_context_window_size, 
     load_endpoint_from_config,
+    load_provider_from_config,
     get_config_value,
     get_active_provider,
     get_masked_api_key
 )
 
 # Import auth handling (API keys come from the auth store, not the environment)
-from janito.auth_config import get_api_key
+from janito.auth_config import get_api_key, get_default_provider
 
 
 def resolve_runtime_config(cli_model: Optional[str] = None, cli_provider: Optional[str] = None) -> Tuple[Optional[str], str, str]:
@@ -130,7 +131,16 @@ def resolve_runtime_config(cli_model: Optional[str] = None, cli_provider: Option
             provider has no endpoint configured.
     """
     # Provider: --provider CLI arg, then config.json, then auth.json default.
-    provider = cli_provider or get_active_provider()
+    # If none of these is set, report that no provider is configured rather
+    # than silently assuming "openai".
+    provider = cli_provider or load_provider_from_config() or get_default_provider()
+    if not provider:
+        logger.error("No provider configured")
+        raise ValueError(
+            "No provider is configured. "
+            "Set one with: janito --set provider=<name> (e.g. janito --set provider=alibaba) "
+            "or pass --provider <name>."
+        )
     logger.debug(f"Resolving runtime config for provider: {provider}")
 
     # API key from the auth store (no environment variables).
