@@ -15,10 +15,13 @@ Changes since `v4.12.0` (2026-07-26).
 - `GetCurrentTime` tool: returns the current date and time in ISO 8601 format with local/UTC representations and timezone info ([068625d](https://github.com/joaopinto/janito/commit/068625d)).
 - Project-specific instructions: automatically load an `AGENTS.md` file from the current working directory and append its content to the system prompt under a "Project-Specific Instructions" section.
 - Repository: add an `AGENTS.md` instructing agents to read `docs/TOOL.md` before creating a new tool.
+- `RunGitHubCLI` tool: new system tool that executes the GitHub CLI (`gh`) to interact with GitHub artifacts, streaming command output in real time (like `RunBashCode`) and returning the captured stdout/stderr and exit code. The `gh` executable is located on PATH or in well-known install locations, and the tool is only loaded when it is available.
+- Tests: add `tests/test_get_url.py` covering the `GetUrl` oversized-content temp-file handling (local HTTP server, no external network access).
 - Tool usage tracking: record every tool invocation in a SQLite database (`tools_use.db` in the config directory) with per-tool counters, from both the CLI agent loop and the web backend; includes the `janito.tooling.tools_usage` module (with a small CLI to inspect counts) and tests.
 
 ### Changed
 
+- `GetUrl` tool: fetched content larger than a configurable threshold (default 10,000 characters) is now written to a temporary file and returned as a pointer (`tmp_filename`) instead of inline, preventing oversized payloads from bloating the model context; created temp files are tracked and automatically removed when the janito process exits. Adds a new `threshold` parameter (pass `None`, or `-1` on the CLI, to disable the behaviour).
 - Release workflow: upload only `dist/*.whl` and `dist/*.tar.gz` as release assets, excluding stray build artifacts (e.g. `default.gitignore`).
 - Interactive shell: print an "Unknown command" message for unrecognized `/` commands instead of sending them to the LLM.
 - Test tooling: consolidate all test modules under `tests/` (move `janito/tooling/test_path_utils.py`, `janito/test_config_dir.py` and `janito/test_general_config.py` into `tests/`, and add `tests/test_system_prompt.py`) and point `tox` (invoked by the pre-commit `run-tests` hook) at `pytest tests/`, so the full suite is executed on every commit.
