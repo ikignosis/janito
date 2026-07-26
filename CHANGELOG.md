@@ -23,6 +23,7 @@ Changes since `v4.12.0` (2026-07-26).
 - Test tooling: consolidate all test modules under `tests/` (move `janito/tooling/test_path_utils.py`, `janito/test_config_dir.py` and `janito/test_general_config.py` into `tests/`, and add `tests/test_system_prompt.py`) and point `tox` (invoked by the pre-commit `run-tests` hook) at `pytest tests/`, so the full suite is executed on every commit.
 - Show a 🔍 emoji in the search progress messages of the `SearchText`, `MoveEmails` and `ReadEmails` tools.
 - Add contextual emojis to the progress messages of tools across file operations, Gmail, OneDrive, system commands, skills and MCP tooling (e.g. 📝 create, 🗑️ delete, 📦 move, 📖 read, 🔍 search, 🐍 Python, ⚙️ Bash/PowerShell, 🌐 fetch URL, 🔌 MCP tool, 🎓 load skill).
+- Config: validate the `provider` value against the supported providers list, raising a clear error that enumerates them for unknown providers and normalizing the stored value to its canonical casing; the CLI `set` command now prints the underlying error message directly.
 - **Breaking:** remove the `dry_run` parameter from the `DeleteOneDriveFile` tool; the tool now always performs the deletion.
 
 ## [v4.12.0](https://github.com/joaopinto/janito/compare/v4.11.0...v4.12.0) - 2026-07-26

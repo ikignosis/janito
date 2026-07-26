@@ -479,6 +479,22 @@ def set_config_from_cli(
     if key in PROVIDER_SCOPED_KEYS:
         key = _resolve_provider_scoped_key(key, cli_provider)
 
+    # Validate provider name against supported providers.
+    if key == "provider":
+        from .provider_config import PROVIDER_BASE_URLS
+
+        supported = list(PROVIDER_BASE_URLS)
+        if value.lower() not in [p.lower() for p in supported]:
+            raise ValueError(
+                f"Unknown provider '{value}'. "
+                f"Supported providers: {', '.join(sorted(supported))}"
+            )
+        # Normalize to the canonical casing used in PROVIDER_BASE_URLS
+        for canonical in supported:
+            if canonical.lower() == value.lower():
+                value = canonical
+                break
+
     # Coerce values for keys that should be stored as integers.
     base_key = key.rsplit(".", 1)[-1]
     if base_key in INT_VALUED_KEYS:

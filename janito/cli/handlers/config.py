@@ -106,7 +106,7 @@ def handle_set_config(values: list[str], cli_provider: str = None) -> int:
             print(f"[ERROR] {e}", file=sys.stderr)
             errors = True
         except ValueError as e:
-            print(f"[ERROR] Invalid format '{value_str}': {e}", file=sys.stderr)
+            print(f"[ERROR] {e}", file=sys.stderr)
             errors = True
 
     return 1 if errors else 0
