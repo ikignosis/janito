@@ -28,7 +28,7 @@ If no prompt is given, janito starts an interactive chat shell.
 | `--unset <key>` | Remove one or more config keys from `~/.janito/config.json` |
 | `--get <key>` | Get one or more config values from `~/.janito/config.json` |
 | `--set-api-key <key>` | Set the API key for a provider (requires `--provider`) |
-| `--provider <name>` | Provider name (e.g., `openai`, `custom`) |
+| `--provider <name>` | Provider name (e.g., `openai`, `custom`). Always validated against the supported providers; unknown names are rejected. |
 | `--model <name>` | Model name (overrides the provider's configured model) |
 | `--list-keys` | List configured providers and keys |
 

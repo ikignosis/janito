@@ -55,6 +55,44 @@ def get_base_url_from_provider(provider: str) -> str | None:
     return None
 
 
+def canonical_provider_name(provider: str) -> str | None:
+    """
+    Return the canonical (correctly cased) name for a supported provider.
+
+    Args:
+        provider: The provider name (case-insensitive)
+
+    Returns:
+        The canonical provider name as used in ``PROVIDER_BASE_URLS`` if the
+        provider is supported, otherwise ``None``.
+    """
+    if not provider:
+        return None
+
+    provider_lower = provider.strip().lower()
+    if not provider_lower:
+        return None
+
+    for key in PROVIDER_BASE_URLS:
+        if key.lower() == provider_lower:
+            return key
+    return None
+
+
+def is_supported_provider(provider: str) -> bool:
+    """
+    Check if a provider name is a supported provider (i.e. it maps to an entry
+    in the provider -> base URL mapping).
+
+    Args:
+        provider: The provider name (case-insensitive)
+
+    Returns:
+        True if the provider is supported, False otherwise
+    """
+    return canonical_provider_name(provider) is not None
+
+
 def is_custom_provider(provider: str) -> bool:
     """
     Check if a provider is the special "custom" provider.
@@ -68,6 +106,33 @@ def is_custom_provider(provider: str) -> bool:
     if not provider:
         return False
     return provider.lower() == "custom"
+
+
+def validate_provider_name(provider: str) -> str:
+    """
+    Validate a provider name against the supported providers and return its
+    canonical form.
+
+    A provider is considered valid only if it maps to an entry in the
+    provider -> base URL mapping (:data:`PROVIDER_BASE_URLS`).
+
+    Args:
+        provider: The provider name to validate (case-insensitive)
+
+    Returns:
+        The canonical (correctly cased) provider name.
+
+    Raises:
+        ValueError: If the provider is not supported. The message enumerates
+            the supported providers.
+    """
+    canonical = canonical_provider_name(provider)
+    if canonical is None:
+        supported = ", ".join(sorted(PROVIDER_BASE_URLS.keys()))
+        raise ValueError(
+            f"Unknown provider '{provider}'. Supported providers: {supported}"
+        )
+    return canonical
 
 
 CUSTOM_ENDPOINT_MARKER = "CUSTOM_ENDPOINT"

@@ -20,6 +20,8 @@ Usage:
 """
 
 
+import sys
+
 from . import privileges as _privileges_mod
 from .cli import create_parser
 from .cli.chat import run_interactive_chat, run_single_prompt
@@ -53,6 +55,7 @@ from .cli.logging_config import setup_logging
 from .cli.setup import validate_runtime_config
 from .config_dir import set_config_dir
 from .privileges import Privileges
+from .provider_config import validate_provider_name
 
 
 def _flatten(values):
@@ -80,6 +83,17 @@ def main():
 
     # Configure logging based on --log argument
     setup_logging(args.log)
+
+    # Whenever --provider <name> is used, verify it is a supported provider
+    # (i.e. one that maps to a base URL in PROVIDER_BASE_URLS). Normalize it to
+    # its canonical casing so every downstream consumer (config scoping,
+    # runtime resolution, auth store) uses a consistent provider name.
+    if getattr(args, "provider", None):
+        try:
+            args.provider = validate_provider_name(args.provider)
+        except ValueError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            return 1
 
     # Set up privileges from -r, -w, -x flags
     if args.read or args.write or args.exec:

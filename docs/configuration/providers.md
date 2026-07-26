@@ -15,6 +15,12 @@ janito supports multiple AI providers. This guide covers configuration for each.
 | `zai` | Third-party | Z.AI (GLM models) |
 | `xai` | Third-party | xAI (Grok models) |
 
+!!! note
+    The provider name is always validated against this list. Whenever you pass
+    `--provider <name>` (or set `provider=<name>` in the config), janito checks
+    that it is a supported provider — one that maps to an API base URL — and
+    rejects unknown names with an error enumerating the supported providers.
+
 ## OpenAI
 
 ### Configuration
