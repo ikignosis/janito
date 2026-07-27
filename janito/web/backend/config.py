@@ -138,6 +138,10 @@ class WebServerConfig:
         """
         from janito.tooling.tools_registry import add_toolset
 
+        # The janitoweb toolset (CreateSVG, …) is web-only and always
+        # loaded when the server runs in --web mode.  See issue #11.
+        add_toolset("janitoweb")
+
         if self.gmail:
             add_toolset("gmail")
         if self.onedrive:

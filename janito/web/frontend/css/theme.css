@@ -503,6 +503,21 @@ html[data-theme="dark"] .theme-icon.moon  { color: var(--accent); opacity: 1; }
 }
 
 /* Tool call cards */
+/* SVG content card (CreateSVG tool result) */
+.svg-card {
+    margin: 8px 0;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-secondary);
+    overflow-x: auto;
+    text-align: center;
+}
+.svg-card svg {
+    max-width: 100%;
+    height: auto;
+}
+
 .tool-card {
     border: 1px solid var(--border);
     border-radius: var(--radius);

@@ -16,27 +16,28 @@
     </script>
 
     <!-- Theme (?v=N busts the browser cache on upgrades) -->
-    <link rel="stylesheet" href="/css/theme.css?v=5">
+    <link rel="stylesheet" href="/css/theme.css?v=6">
     <!-- highlight.js theme -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/styles/tokyo-night-dark.min.css">
 
     <!-- Libraries (CDN) -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
 
     <!-- Alpine.js (must be deferred so components are defined first) -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
 
     <!-- App scripts (order matters: helpers first). ?v=N busts the browser cache. -->
-    <script src="/js/api.js?v=5"></script>
-    <script src="/js/markdown.js?v=5"></script>
-    <script src="/js/websocket.js?v=5"></script>
-    <script src="/js/chat.js?v=5"></script>
-    <script src="/js/sessions.js?v=5"></script>
-    <script src="/js/settings.js?v=5"></script>
-    <script src="/js/mcp.js?v=5"></script>
-    <script src="/js/statusBar.js?v=5"></script>
-    <script src="/js/app.js?v=5"></script>
+    <script src="/js/api.js?v=6"></script>
+    <script src="/js/markdown.js?v=6"></script>
+    <script src="/js/websocket.js?v=6"></script>
+    <script src="/js/chat.js?v=6"></script>
+    <script src="/js/sessions.js?v=6"></script>
+    <script src="/js/settings.js?v=6"></script>
+    <script src="/js/mcp.js?v=6"></script>
+    <script src="/js/statusBar.js?v=6"></script>
+    <script src="/js/app.js?v=6"></script>
 
     <style>
         .inline-icon { cursor: pointer; }
@@ -246,6 +247,11 @@
                                                 </template>
                                             </div>
                                         </div>
+                                    </template>
+
+                                    <!-- SVG content card (CreateSVG tool result) -->
+                                    <template x-if="part.kind === 'svg'">
+                                        <div class="svg-card" x-html="sanitizeSvg(part.svg)"></div>
                                     </template>
                                 </div>
                             </template>

@@ -347,6 +347,13 @@ function chatComponent() {
                         tc.result = event.result;
                         tc.error = event.error;
                         tc.execution_time_ms = event.execution_time_ms;
+
+                        // CreateSVG tool: render the SVG inline as a content card.
+                        if (!event.error && event.result
+                            && event.result.content_type === 'svg'
+                            && event.result.svg_text) {
+                            m.parts.push({ kind: 'svg', svg: event.result.svg_text });
+                        }
                     }
                     if (isActive) this._scrollToBottom();
                     break;
@@ -502,6 +509,13 @@ function chatComponent() {
                                 tc.error = result.error;
                             }
                             tc.result = result;
+
+                            // Reconstruct SVG part from CreateSVG tool result.
+                            if (result && typeof result === 'object'
+                                && result.content_type === 'svg'
+                                && result.svg_text) {
+                                current.parts.push({ kind: 'svg', svg: result.svg_text });
+                            }
                         }
                     }
                 }
@@ -661,6 +675,23 @@ function chatComponent() {
 
         renderMarkdown(text) {
             return window.JanitoMarkdown ? window.JanitoMarkdown.render(text || '') : (text || '');
+        },
+
+        // Sanitise SVG markup for safe inline rendering.  Uses DOMPurify
+        // with the SVG profile when available; falls back to a regex-based
+        // strip of <script> and event-handler attributes.
+        sanitizeSvg(svgText) {
+            if (!svgText) return '';
+            if (typeof DOMPurify !== 'undefined') {
+                return DOMPurify.sanitize(svgText, {
+                    USE_PROFILES: { svg: true, svgFilters: true },
+                });
+            }
+            // Fallback: remove <script> tags and on* event attributes
+            return svgText
+                .replace(/<script[\s\S]*?<\/script>/gi, '')
+                .replace(/\son\w+\s*=\s*"[^"]*"/gi, '')
+                .replace(/\son\w+\s*=\s*'[^']*'/gi, '');
         },
     };
 }
