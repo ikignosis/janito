@@ -1,0 +1,152 @@
+/* Janito Web — tool-call cards, SVG card, tool progress/output, waiting spinner. */
+
+/* Tool call cards */
+/* SVG content card (CreateSVG tool result) */
+.svg-card {
+    margin: 8px 0;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-secondary);
+    overflow-x: auto;
+    text-align: center;
+}
+.svg-card svg {
+    max-width: 100%;
+    height: auto;
+}
+
+.tool-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin: 8px 0;
+    overflow: hidden;
+    background: var(--bg-secondary);
+}
+
+.tool-card-header {
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 13px;
+}
+.tool-card-header:hover { background: var(--bg-hover); }
+
+.tool-name { font-weight: 600; font-family: var(--font-mono); }
+
+.perm-badge {
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-weight: 700;
+}
+.perm-badge.read { background: rgba(158, 206, 106, 0.15); color: var(--tool-read); }
+.perm-badge.write { background: rgba(224, 175, 104, 0.15); color: var(--tool-write); }
+.perm-badge.exec { background: rgba(247, 118, 142, 0.15); color: var(--tool-exec); }
+
+.tool-status { margin-left: auto; font-size: 12px; }
+.tool-exec-time { margin-left: 6px; }
+.tool-status.running { color: var(--cyan); }
+.tool-status.done { color: var(--green); }
+.tool-status.error { color: var(--red); }
+
+.tool-card-body { padding: 0 12px 12px 12px; }
+
+.tool-progress {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 2px 0;
+    display: flex;
+    gap: 6px;
+}
+.tool-progress .level-tag { color: var(--text-muted); flex-shrink: 0; }
+.tool-progress .level-tag:not(:empty) { margin-right: 0.5ch; }
+.tool-progress.output {
+    font-family: var(--font-mono);
+    background: var(--code-bg);
+    color: var(--code-text);
+    border-radius: 4px;
+    padding: 6px 8px;
+    white-space: pre-wrap;
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.tool-args, .tool-result {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--code-bg);
+    color: var(--code-text);
+    border-radius: 4px;
+    padding: 8px;
+    margin-top: 6px;
+    white-space: pre-wrap;
+    overflow-x: auto;
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.section-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-top: 8px;
+    margin-bottom: 2px;
+}
+
+/* Spinner / waiting indicator */
+.waiting {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+    padding: 8px 0;
+    font-size: 13px;
+}
+.dot-pulse { display: inline-flex; gap: 3px; }
+.dot-pulse span {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 1.2s infinite ease-in-out;
+}
+.dot-pulse span:nth-child(2) { animation-delay: 0.2s; }
+.dot-pulse span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes pulse {
+    0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1); }
+}
+
+/* Cancelled notice — shown when the user aborts a generation (Ctrl+C) */
+.cancelled-notice {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-style: italic;
+    padding: 6px 0;
+    opacity: 0.8;
+}
+
+.spinner {
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--cyan);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Collapsible "Arguments" / "Result" toggles inside a tool card */
+.inline-icon { cursor: pointer; }
+.tool-args-toggle, .tool-result-toggle {
+    font-size: 11px; color: var(--text-muted); cursor: pointer;
+    text-transform: uppercase; margin-top: 8px; user-select: none;
+}
+.tool-args-toggle:hover, .tool-result-toggle:hover { color: var(--accent); }

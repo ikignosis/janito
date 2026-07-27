@@ -229,7 +229,7 @@ class SearchRegex(BaseTool):
                 # Count matches in single file
                 file_count = self._count_file_matches(path, pattern, case_sensitive)
                 if file_count > 0:
-                    counts[path] = file_count
+                    counts[norm_path(path)] = file_count
                     total_matches += file_count
                 files_searched += 1
             else:
@@ -266,10 +266,11 @@ class SearchRegex(BaseTool):
             compiled_pattern = re.compile(pattern, flags)
             with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
                 matches = []
+                display_path = norm_path(filepath)
                 for lineno, line in enumerate(f, 1):
                     line_content = line.rstrip("\n")
                     if compiled_pattern.search(line_content):
-                        matches.append(f"{filepath}:{lineno}: {line_content}")
+                        matches.append(f"{display_path}:{lineno}: {line_content}")
 
                     if max_results and len(matches) >= max_results:
                         break
@@ -426,7 +427,7 @@ class SearchRegex(BaseTool):
                         filepath, pattern, case_sensitive
                     )
                     if file_count > 0:
-                        counts[filepath] = file_count
+                        counts[norm_path(filepath)] = file_count
                         total_matches += file_count
                     files_searched += 1
 

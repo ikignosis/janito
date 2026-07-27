@@ -15,8 +15,8 @@
         } catch (e) { /* storage unavailable — fall back to light */ }
     </script>
 
-    <!-- Theme (?v=N busts the browser cache on upgrades) -->
-    <link rel="stylesheet" href="/css/theme.css?v=10">
+    <!-- Theme -->
+    <link rel="stylesheet" href="/css/theme.css">
     <!-- highlight.js theme -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/styles/tokyo-night-dark.min.css">
 
@@ -28,25 +28,23 @@
     <!-- Alpine.js (must be deferred so components are defined first) -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
 
-    <!-- App scripts (order matters: helpers first). ?v=N busts the browser cache. -->
-    <script src="/js/api.js?v=8"></script>
-    <script src="/js/markdown.js?v=8"></script>
-    <script src="/js/websocket.js?v=8"></script>
-    <script src="/js/chat.js?v=9"></script>
-    <script src="/js/sessions.js?v=8"></script>
-    <script src="/js/settings.js?v=8"></script>
-    <script src="/js/mcp.js?v=8"></script>
-    <script src="/js/statusBar.js?v=8"></script>
-    <script src="/js/app.js?v=8"></script>
-
-    <style>
-        .inline-icon { cursor: pointer; }
-        .tool-args-toggle, .tool-result-toggle {
-            font-size: 11px; color: var(--text-muted); cursor: pointer;
-            text-transform: uppercase; margin-top: 8px; user-select: none;
-        }
-        .tool-args-toggle:hover, .tool-result-toggle:hover { color: var(--accent); }
-    </style>
+    <!-- App scripts (order matters: helpers first). -->
+    <script src="/js/api.js"></script>
+    <script src="/js/markdown.js"></script>
+    <script src="/js/websocket.js"></script>
+    <!-- chat.js mixins (loaded before chat.js, which Object.assigns them) -->
+    <script src="/js/chatFormat.js"></script>
+    <script src="/js/chatMessages.js"></script>
+    <script src="/js/chatStore.js"></script>
+    <script src="/js/chatEvents.js"></script>
+    <script src="/js/chatHistory.js"></script>
+    <script src="/js/chatScroll.js"></script>
+    <script src="/js/chat.js"></script>
+    <script src="/js/sessions.js"></script>
+    <script src="/js/settings.js"></script>
+    <script src="/js/mcp.js"></script>
+    <script src="/js/statusBar.js"></script>
+    <script src="/js/app.js"></script>
 </head>
 <body>
 
@@ -62,7 +60,7 @@
 
         <div class="session-list">
             <template x-if="loading">
-                <div class="empty-state" style="padding:20px">Loading…</div>
+                <div class="empty-state padded">Loading…</div>
             </template>
             <template x-for="s in sessions" :key="s.session_id">
                 <div class="session-item"
@@ -77,12 +75,12 @@
                 </div>
             </template>
             <template x-if="!loading && sessions.length === 0">
-                <div class="empty-state" style="padding:20px;font-size:12px">No conversations yet</div>
+                <div class="empty-state padded-sm">No conversations yet</div>
             </template>
         </div>
 
         <div class="sidebar-footer">
-            <button class="btn" style="flex:1" @click="create()">New Chat</button>
+            <button class="btn flex-1" @click="create()">New Chat</button>
         </div>
     </aside>
 
@@ -192,7 +190,7 @@
                                     <template x-if="part.kind === 'tool'">
                                         <div class="tool-card">
                                             <div class="tool-card-header" @click="part.tool.open = !part.tool.open">
-                                                <span x-text="part.tool.open ? '▼' : '▶'" style="color:var(--text-muted)"></span>
+                                                <span x-text="part.tool.open ? '▼' : '▶'" class="muted"></span>
                                                 <span class="tool-name" x-text="part.tool.name"></span>
                                                 <template x-if="permLabel(part.tool.permissions)">
                                                     <span class="perm-badge" :class="permClass(part.tool.permissions)"
@@ -227,7 +225,7 @@
                                                             <span><span class="level-tag" x-text="levelIcon(p.level)"></span><span x-text="p.message"></span></span>
                                                         </template>
                                                         <template x-if="p.level === 'output'">
-                                                            <span x-text="p.message" style="white-space:pre-wrap"></span>
+                                                            <span x-text="p.message" class="pre-wrap"></span>
                                                         </template>
                                                     </div>
                                                 </template>
@@ -240,7 +238,7 @@
                                                         </div>
                                                         <template x-if="part.tool.resultOpen">
                                                             <div class="tool-result"
-                                                                 :style="part.tool.error ? 'color:var(--red)' : ''"
+                                                                 :class="{ 'has-error': part.tool.error }"
                                                                  x-text="part.tool.error ? part.tool.error : toolResultStr(part.tool.result)"></div>
                                                         </template>
                                                     </div>
@@ -258,7 +256,7 @@
 
                             <!-- User text (plain, escaped via textContent) -->
                             <template x-if="msg.role === 'user'">
-                                <div x-text="msg.content" style="white-space:pre-wrap"></div>
+                                <div x-text="msg.content" class="pre-wrap"></div>
                             </template>
 
                             <!-- Waiting indicator (no content yet) -->
@@ -305,7 +303,7 @@
                 <!-- Global error banner -->
                 <template x-if="error">
                     <div class="message">
-                        <div class="message-body" style="border:1px solid var(--red);color:var(--red)">
+                        <div class="message-body message-error">
                             ⚠ <span x-text="error"></span>
                         </div>
                     </div>
@@ -360,7 +358,7 @@
             <div class="status-item"><strong>Model:</strong> <span x-text="model"></span></div>
             <div class="status-item"><strong>Provider:</strong> <span x-text="provider"></span></div>
 
-            <div class="status-item" style="gap:4px">
+            <div class="status-item gap-sm">
                 <span class="flag-badge" :class="{ active: config.thinking }">thinking</span>
                 <span class="flag-badge" :class="{ active: config.gmail }">gmail</span>
                 <span class="flag-badge" :class="{ active: config.onedrive }">onedrive</span>
@@ -370,7 +368,7 @@
             </div>
 
             <template x-if="lastUsage">
-                <div class="status-item" style="margin-left:auto">
+                <div class="status-item push-end">
                     <strong>Tokens:</strong>
                     <span x-text="formatTokens(lastUsage.total)"></span>
                     (in <span x-text="formatTokens(lastUsage.input)"></span> /
@@ -388,17 +386,49 @@
                 <h2>⚙ Settings</h2>
 
                 <template x-if="message">
-                    <div style="color:var(--yellow);margin-bottom:12px" x-text="message"></div>
+                    <div class="warning-text" x-text="message"></div>
                 </template>
 
+                <!-- Provider combobox (top) -->
+                <div class="form-group">
+                    <label>Provider</label>
+                    <select x-model="selectedProvider">
+                        <template x-for="p in providers" :key="p.name">
+                            <option :value="p.name" x-text="p.name"></option>
+                        </template>
+                    </select>
+                    <div class="provider-hint">
+                        <span x-show="selectedProviderDetail && selectedProviderDetail.active"
+                              class="provider-active-badge">default</span>
+                        <span x-show="selectedProviderDetail && !selectedProviderDetail.active"
+                              class="hint-muted">not the default provider</span>
+                    </div>
+                </div>
+
+                <!-- Selected provider details -->
+                <template x-if="selectedProviderDetail">
+                    <div class="provider-detail-box" :class="{ active: selectedProviderDetail.active }">
+                        <div class="provider-detail-row">
+                            <span class="provider-detail-label">Model</span>
+                            <span class="provider-detail-value" x-text="selectedProviderDetail.model || '—'"></span>
+                        </div>
+                        <div class="provider-detail-row">
+                            <span class="provider-detail-label">API Key</span>
+                            <span class="provider-detail-value" x-text="selectedProviderDetail.api_key_set ? 'set' : 'not set'"></span>
+                        </div>
+                        <template x-if="selectedProviderDetail.base_url">
+                            <div class="provider-detail-row">
+                                <span class="provider-detail-label">Endpoint</span>
+                                <span class="provider-detail-value provider-endpoint" x-text="selectedProviderDetail.base_url"></span>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <!-- Model override -->
                 <div class="form-group">
                     <label>Model</label>
                     <input type="text" x-model="model" placeholder="e.g. gpt-4o">
-                </div>
-
-                <div class="form-group">
-                    <label>Provider (read-only — set via CLI)</label>
-                    <input type="text" :value="config.provider || status.active_provider || ''" disabled>
                 </div>
 
                 <div class="form-group">
@@ -406,12 +436,12 @@
                     <input type="text" :value="status.api_key || ''" disabled>
                 </div>
 
-                <div style="display:flex;gap:8px;margin-top:16px">
+                <div class="drawer-actions">
                     <button class="btn btn-primary" @click="save()" :disabled="saving">Save</button>
                     <button class="btn" @click="closeDrawers()">Close</button>
                 </div>
 
-                <div style="margin-top:24px;font-size:12px;color:var(--text-muted)">
+                <div class="fine-print">
                     <div><strong>Privileges:</strong>
                         read <span x-text="config.privileges?.read"></span> ·
                         write <span x-text="config.privileges?.write"></span> ·
@@ -430,15 +460,15 @@
                 <h2>🔌 MCP Services</h2>
 
                 <template x-if="message">
-                    <div style="color:var(--yellow);margin-bottom:12px" x-text="message"></div>
+                    <div class="warning-text" x-text="message"></div>
                 </template>
 
                 <template x-if="loading">
-                    <div class="empty-state" style="padding:20px">Loading…</div>
+                    <div class="empty-state padded">Loading…</div>
                 </template>
 
                 <template x-if="!loading && services.length === 0">
-                    <div class="empty-state" style="padding:20px">
+                    <div class="empty-state padded">
                         No MCP services configured.<br>
                         <small>Add services to <code>~/.janito/mcp_services.json</code></small>
                     </div>
@@ -449,10 +479,10 @@
                         <div class="mcp-service-header">
                             <span class="conn-dot" :class="svc.connected ? 'connected' : 'disconnected'"></span>
                             <span class="mcp-service-name" x-text="svc.name"></span>
-                            <span style="margin-left:auto;font-size:11px;color:var(--text-muted)"
+                            <span class="muted-tiny"
                                   x-text="svc.transport"></span>
                         </div>
-                        <div style="display:flex;gap:8px">
+                        <div class="row">
                             <template x-if="!svc.connected">
                                 <button class="btn" @click="connect(svc.name)" :disabled="busy === svc.name">
                                     Connect
@@ -463,13 +493,13 @@
                                     Disconnect
                                 </button>
                             </template>
-                            <span style="font-size:12px;color:var(--text-muted);align-self:center"
+                            <span class="muted-inline"
                                   x-text="svc.connected ? 'Connected' : 'Disconnected'"></span>
                         </div>
                     </div>
                 </template>
 
-                <div style="margin-top:16px">
+                <div class="margin-top">
                     <button class="btn" @click="closeDrawers()">Close</button>
                 </div>
             </div>

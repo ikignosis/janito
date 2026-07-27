@@ -11,6 +11,9 @@ Changes since `v4.12.0` (2026-07-26).
 
 ### Added
 
+- Web settings: the drawer now features a **provider combobox** that lists every supported provider with its effective configuration — resolved base URL (endpoint override or built-in default), configured model, API-key status (set/not set, never the key itself) and an `active` marker. Selecting a provider shows a detail card; the old read-only provider text field is gone. Backed by an enriched `GET /config/providers` endpoint that aggregates data from `provider_config`, `general_config` and `auth_config`.
+- Web UI: add semantic CSS utility classes (`.pre-wrap`, `.muted`, `.flex-1`, `.padded`, `.gap-sm`, `.push-end`, `.warning-text`, `.message-error`, `.drawer-actions`, `.fine-print`, provider-detail styles, …) so the markup no longer relies on inline `style` attributes.
+- Tests: add `tests/test_search_path_normalization.py` pinning down that `SearchText`/`SearchRegex` report cwd-relative paths in their results.
 - `FindFiles` tool: new file-search tool that finds files and directories by name pattern and attributes (type, size, modification time, recursion depth, result limits, sorting), matching patterns against the full relative path — the equivalent of the Unix `find` command.
 - CLI: add `-p` as a short alias for the `--provider` option.
 - `GetCurrentTime` tool: returns the current date and time in ISO 8601 format with local/UTC representations and timezone info ([068625d](https://github.com/joaopinto/janito/commit/068625d)).
@@ -27,6 +30,11 @@ Changes since `v4.12.0` (2026-07-26).
 
 ### Changed
 
+- `SearchText` and `SearchRegex` tools: match lines and count-only result keys are now normalized with `norm_path()`, so results report cwd-relative paths (e.g. `./subdir/file.py:3: …`) consistent with `ReadFile`, `ListFiles` and `FindFiles` instead of leaking absolute paths.
+- Web backend: split the monolithic `web/backend/agent.py` (420 lines) into an `agent` package with focused modules — `tooling.py` (tool discovery + execution), `call.py` (OpenAI call parameters + stream accumulation), `turn.py` (the tool-call leg of a turn) and `loop.py` (the `stream_prompt()` orchestration skeleton).
+- Web backend: refactor `events.py` so every event dataclass carries its own `to_dict()` serializer (with a `type` ClassVar) and `event_to_dict()` becomes a thin dispatcher; `routers/chat.py` is decomposed into small helpers (`_send_session_greeting`, `_read_client_message`, `_rollback`, `_run_turn`, `_accept_session`) so the WebSocket loop reads top to bottom; `routers/config.py` shares privileges serialization via `_privileges_dict()`.
+- Web frontend: split the 840-line `theme.css` into modular stylesheets (`tokens.css`, `layout.css`, `chat.css`, `messages.css`, `tools.css`, `ui-controls.css`, `drawers.css`, `utilities.css`) re-imported by an aggregator `theme.css`, and split `chat.js` into focused mixins (`chatFormat.js`, `chatMessages.js`, `chatStore.js`, `chatEvents.js`, `chatHistory.js`, `chatScroll.js`) folded into the component via `Object.assign`; replace inline styles in `index.html` with utility classes and drop the `?v=N` cache-buster query strings.
+- Dev dependencies: add `detect-secrets>=1.5.0` (secrets detection used by the pre-commit hooks) and sync `uv.lock`.
 - `GetUrl` tool: fetched content larger than a configurable threshold (default 10,000 characters) is now written to a temporary file and returned as a pointer (`tmp_filename`) instead of inline, preventing oversized payloads from bloating the model context; created temp files are tracked and automatically removed when the janito process exits. Adds a new `threshold` parameter (pass `None`, or `-1` on the CLI, to disable the behaviour).
 - `ListFiles` and `SearchText` tools: `.gitignore` patterns are now loaded from the current working directory (instead of each searched directory) and matched against paths relative to the working directory, so ignore rules apply consistently regardless of which directory is being listed or searched. Directory-only gitignore patterns (those ending with `/`) now correctly match only directories.
 - `SearchText` and `SearchRegex` tools: suppress the trailing newline in search progress messages by passing `end=""` to `report_start`, so the progress line stays on a single line while results stream below it.

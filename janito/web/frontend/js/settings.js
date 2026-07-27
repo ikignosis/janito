@@ -7,6 +7,7 @@ function settingsComponent() {
         status: {},
         providers: [],
         model: '',
+        selectedProvider: '',
         saving: false,
         message: null,
 
@@ -19,11 +20,22 @@ function settingsComponent() {
             try {
                 this.config = await Api.getConfig();
                 this.status = await Api.getStatus();
-                this.providers = (await Api.getProviders()).providers || [];
+                const data = await Api.getProviders();
+                this.providers = data.providers || [];
                 this.model = this.config.model || '';
+                this.selectedProvider =
+                    this.config.provider || this.status.active_provider || '';
             } catch (e) {
                 this.message = 'Failed to load settings: ' + e.message;
             }
+        },
+
+        // The provider object currently selected in the combobox (or null).
+        get selectedProviderDetail() {
+            return (
+                this.providers.find((p) => p.name === this.selectedProvider) ||
+                null
+            );
         },
 
         async save() {

@@ -1,0 +1,35 @@
+/* Janito Web — small utility classes.
+ *
+ * These replace one-off inline style="" attributes that used to live in
+ * index.html, keeping markup declarative and the styling in one place.
+ */
+
+/* Spacing / sizing */
+.padded        { padding: 20px; }
+.padded-sm     { padding: 20px; font-size: 12px; }
+.flex-1        { flex: 1; }
+.margin-top    { margin-top: 16px; }
+
+/* Status-bar tweaks */
+.status-item.gap-sm   { gap: 4px; }
+.status-item.push-end { margin-left: auto; }
+
+/* Text helpers */
+.muted          { color: var(--text-muted); }
+.muted-small    { color: var(--text-muted); font-size: 12px; }
+.muted-tiny     { margin-left: auto; font-size: 11px; color: var(--text-muted); }
+.muted-inline   { font-size: 12px; color: var(--text-muted); align-self: center; }
+.hint-muted     { color: var(--text-muted); font-size: 12px; }
+.fine-print     { margin-top: 24px; font-size: 12px; color: var(--text-muted); }
+.warning-text   { color: var(--yellow); margin-bottom: 12px; }
+.pre-wrap       { white-space: pre-wrap; }
+
+/* Error message bubble (inline styling for the chat error banner) */
+.message-error  { border: 1px solid var(--red); color: var(--red); }
+
+/* Drawer layout helpers */
+.drawer-actions { display: flex; gap: 8px; margin-top: 16px; }
+.row            { display: flex; gap: 8px; }
+
+/* Conditional error tint (bound via :class instead of :style) */
+.has-error      { color: var(--red); }

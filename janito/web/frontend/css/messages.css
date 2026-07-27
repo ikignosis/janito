@@ -1,0 +1,146 @@
+/* Janito Web — message bubbles, avatars, markdown body, usage strip, reasoning panel. */
+
+/* Messages */
+.message { display: flex; gap: 12px; }
+.message.user { flex-direction: row-reverse; }
+
+.avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-weight: 700;
+    font-size: 13px;
+}
+.avatar.user { background: var(--accent); color: var(--bg-primary); }
+.avatar.assistant { background: var(--bg-tertiary); color: var(--accent); border: 1px solid var(--border); }
+
+.message-body {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    max-width: 78%;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    box-shadow: var(--shadow);
+}
+.message.user .message-body { background: var(--bg-hover); }
+
+/* Code blocks stay dark in both themes — embedded-terminal look that keeps
+   the highlight.js "tokyo-night-dark" palette readable. */
+.message-body pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    border-radius: 6px;
+    padding: 12px;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 13px;
+}
+
+.message-body code {
+    font-family: var(--font-mono);
+    font-size: 13px;
+}
+.message-body :not(pre) > code {
+    background: var(--code-inline-bg);
+    color: var(--code-inline-text);
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+
+.message-body p:first-child { margin-top: 0; }
+.message-body p:last-child { margin-bottom: 0; }
+
+.message-body table { border-collapse: collapse; margin: 8px 0; }
+.message-body th, .message-body td {
+    border: 1px solid var(--border);
+    padding: 6px 10px;
+}
+.message-body th { background: var(--bg-secondary); }
+
+/* Token usage strip */
+.usage-strip {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+}
+
+.usage-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    transition: border-color 0.15s, transform 0.15s;
+}
+.usage-chip:hover {
+    border-color: var(--text-muted);
+    transform: translateY(-1px);
+}
+
+.usage-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.usage-value {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.usage-total .usage-label { color: var(--accent); }
+.usage-total .usage-value { color: var(--accent); font-size: 14px; }
+.usage-total { border-color: rgba(122, 162, 247, 0.35); background: rgba(122, 162, 247, 0.08); }
+
+.usage-cached .usage-label { color: var(--green); }
+.usage-cached .usage-value { color: var(--green); }
+.usage-cached { border-color: rgba(158, 206, 106, 0.35); background: rgba(158, 206, 106, 0.08); }
+
+/* Reasoning panel */
+.reasoning-panel {
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--magenta);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    background: var(--bg-secondary);
+    overflow: hidden;
+}
+
+.reasoning-header {
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--magenta);
+    font-size: 13px;
+    font-weight: 600;
+    user-select: none;
+}
+.reasoning-header:hover { background: var(--bg-hover); }
+
+.reasoning-body {
+    padding: 0 12px 12px 12px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    white-space: pre-wrap;
+    max-height: 300px;
+    overflow-y: auto;
+}

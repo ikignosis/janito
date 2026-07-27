@@ -1,0 +1,127 @@
+/* Janito Web — design tokens
+ *
+ * Light mode is the DEFAULT (:root), a cool "daylight" companion to the
+ * dark palette (matches the janito CLI / Tokyo Night). Dark mode activates
+ * via <html data-theme="dark"> (toggle in the topbar). The choice is
+ * persisted in localStorage and re-applied before first paint by an inline
+ * script in index.html.
+ *
+ * Also holds the base element resets and the theme cross-fade transition.
+ */
+
+/* Janito Web — dual theme
+ *
+ * Light mode is the DEFAULT (`:root`), a cool "daylight" companion to the
+ * dark palette, which matches the janito CLI (Tokyo Night). Dark mode is
+ * activated by setting <html data-theme="dark"> (toggle in the topbar).
+ *
+ * The chosen theme is persisted in localStorage and re-applied before first
+ * paint by the inline script in index.html.
+ *
+ * Code blocks and terminal-style output intentionally keep a dark surface
+ * in BOTH themes — they read as embedded terminals, and the loaded
+ * highlight.js "tokyo-night-dark" stylesheet stays legible everywhere.
+ */
+
+:root {
+    color-scheme: light;
+
+    /* Light palette */
+    --bg-primary: #e9edf6;
+    --bg-secondary: #dee4f0;
+    --bg-tertiary: #f5f8fd;
+    --bg-hover: #d2daec;
+    --text-primary: #232a41;
+    --text-secondary: #454e6f;
+    --text-muted: #6b7594;
+    --border: #c3cbe0;
+    --accent: #2f5fdd;
+    --accent-hover: #2450c8;
+    --green: #4b8116;
+    --yellow: #8f6400;
+    --red: #c93a55;
+    --cyan: #0f7ab0;
+    --magenta: #7a52e0;
+    --tool-read: #4b8116;
+    --tool-write: #8f6400;
+    --tool-exec: #c93a55;
+
+    /* Terminal surfaces — dark in both themes */
+    --code-bg: #1a1b26;
+    --code-text: #c0caf5;
+    --code-inline-bg: #d8dff0;
+    --code-inline-text: #6a3fd0;
+
+    --overlay: rgba(24, 32, 58, 0.45);
+    --ring: rgba(47, 95, 221, 0.16);
+    --shadow: 0 1px 2px rgba(24, 32, 58, 0.06), 0 4px 14px rgba(24, 32, 58, 0.08);
+    --bg-ambient:
+        radial-gradient(1000px 420px at 72% -120px, rgba(47, 95, 221, 0.07), transparent 70%),
+        radial-gradient(800px 380px at -5% -140px, rgba(122, 82, 224, 0.05), transparent 70%);
+
+    --radius: 8px;
+    --font-mono: "SF Mono", "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+html[data-theme="dark"] {
+    color-scheme: dark;
+
+    /* Dark palette (matches janito CLI aesthetics) */
+    --bg-primary: #1a1b26;
+    --bg-secondary: #16161e;
+    --bg-tertiary: #1f2335;
+    --bg-hover: #292e42;
+    --text-primary: #c0caf5;
+    --text-secondary: #a9b1d6;
+    --text-muted: #565f89;
+    --border: #2f3349;
+    --accent: #7aa2f7;
+    --accent-hover: #89b4fa;
+    --green: #9ece6a;
+    --yellow: #e0af68;
+    --red: #f7768e;
+    --cyan: #7dcfff;
+    --magenta: #bb9af7;
+    --tool-read: #9ece6a;
+    --tool-write: #e0af68;
+    --tool-exec: #f7768e;
+
+    --code-inline-bg: #24283b;
+    --code-inline-text: #bb9af7;
+
+    --overlay: rgba(0, 0, 0, 0.5);
+    --ring: rgba(122, 162, 247, 0.22);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 18px rgba(0, 0, 0, 0.35);
+    --bg-ambient:
+        radial-gradient(1000px 420px at 72% -120px, rgba(122, 162, 247, 0.06), transparent 70%),
+        radial-gradient(800px 380px at -5% -140px, rgba(187, 154, 247, 0.045), transparent 70%);
+}
+
+* { box-sizing: border-box; }
+
+::selection { background: var(--accent); color: var(--bg-primary); }
+
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background-color: var(--bg-primary);
+    background-image: var(--bg-ambient);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+[x-cloak] { display: none !important; }
+
+/* Smooth cross-fade when switching themes. Only color-ish properties are
+   transitioned here so transform/opacity animations are never disturbed. */
+body, .sidebar, .topbar, .input-area, .status-bar, .message-body, .avatar,
+.tool-card, .tool-card-header, .reasoning-panel, .reasoning-header,
+.drawer, .btn, textarea, .usage-chip, .flag-badge, .session-item,
+.mcp-service, .form-group input, .form-group select, .theme-toggle,
+.message-body pre, .tool-args, .tool-result, .tool-progress.output {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}

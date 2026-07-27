@@ -1,0 +1,81 @@
+/* Janito Web — input area, buttons, status bar. */
+
+/* Input area */
+.input-area {
+    border-top: 1px solid var(--border);
+    background: var(--bg-secondary);
+    padding: 16px 20px;
+}
+
+.input-inner { max-width: 860px; margin: 0 auto; display: flex; gap: 10px; align-items: flex-end; }
+
+.input-area textarea {
+    flex: 1;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-primary);
+    padding: 10px 14px;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    resize: vertical;
+    max-height: 200px;
+    min-height: 44px;
+    line-height: 1.5;
+}
+.input-area textarea:focus { outline: none; border-color: var(--accent); }
+
+/* Buttons */
+.btn {
+    border: 1px solid var(--border);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    padding: 8px 14px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 13px;
+    font-family: var(--font-sans);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background-color 0.15s, border-color 0.15s, color 0.3s;
+}
+.btn:hover { background: var(--bg-hover); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.btn-primary { background: var(--accent); color: #f5f8ff; border-color: var(--accent); font-weight: 600; }
+.btn-primary:hover { background: var(--accent-hover); }
+
+.btn-icon { padding: 6px 8px; }
+
+/* Status bar */
+.status-bar {
+    border-top: 1px solid var(--border);
+    background: var(--bg-secondary);
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 13.5px;
+    color: var(--text-secondary);
+    flex-wrap: wrap;
+}
+
+.status-item { display: flex; align-items: center; gap: 6px; }
+.status-item strong { color: var(--text-primary); font-weight: 600; }
+
+.flag-badge {
+    font-size: 12.5px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+.flag-badge.active { background: rgba(122, 162, 247, 0.2); color: var(--accent-hover); border-color: var(--accent); font-weight: 600; }
+
+.conn-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.conn-dot.connected { background: var(--green); }
+.conn-dot.disconnected { background: var(--red); }
+.conn-dot.connecting { background: var(--yellow); }

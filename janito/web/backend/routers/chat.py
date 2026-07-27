@@ -1,4 +1,9 @@
-"""Chat endpoints: session CRUD + WebSocket streaming."""
+"""Chat endpoints: session CRUD + WebSocket streaming.
+
+The WebSocket handler is intentionally a thin dispatcher: connection setup,
+greeting, and the per-turn cancel/rollback machinery live in small helpers
+so the main loop reads top to bottom.
+"""
 
 import asyncio
 import json
@@ -9,7 +14,7 @@ from fastapi.responses import JSONResponse
 
 from ..agent import stream_prompt
 from ..events import event_to_dict
-from ..session import SessionManager
+from ..session import ConversationSession, SessionManager
 
 logger = logging.getLogger(__name__)
 
@@ -24,17 +29,41 @@ def _get_config(request: Request):
     return request.app.state.config
 
 
-async def _stream_to_websocket(
-    websocket: WebSocket, content: str, messages: list[dict], config
-):
-    """Run ``stream_prompt`` and forward every event to the client."""
-    async for event in stream_prompt(
-        prompt=content,
-        messages=messages,
-        config=config,
-        use_mcp=True,
-    ):
-        await websocket.send_json(event_to_dict(event))
+# ---------------------------------------------------------------------------
+# WebSocket helpers
+# ---------------------------------------------------------------------------
+
+
+async def _send_session_greeting(websocket: WebSocket) -> None:
+    """Greet the client with a tools summary (web counterpart of the CLI's
+    startup "N tools active, M skipped" line — #10)."""
+    from janito.tooling.tools_registry import get_all_tools
+    from janito.tools import get_skipped_tools
+
+    active_tools = get_all_tools()
+    skipped_tools = get_skipped_tools()
+    await websocket.send_json(
+        {
+            "type": "session_start",
+            "active_tools": len(active_tools),
+            "skipped_tools": len(skipped_tools),
+            "skipped": skipped_tools,
+        }
+    )
+
+
+async def _read_client_message(websocket: WebSocket) -> dict | None:
+    """Read and parse one client frame.
+
+    Returns ``None`` on disconnect, ``{}`` on invalid JSON (already
+    reported to the client), or the parsed message dict.
+    """
+    raw = await websocket.receive_text()
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        await websocket.send_json({"type": "error", "message": "Invalid JSON"})
+        return {}
 
 
 async def _await_cancel(websocket: WebSocket) -> bool:
@@ -55,6 +84,78 @@ async def _await_cancel(websocket: WebSocket) -> bool:
             continue
         if msg.get("type") == "cancel":
             return True
+
+
+def _rollback(session: ConversationSession) -> None:
+    """Truncate history back to the pre-turn checkpoint.
+
+    Removes the user message and any partial assistant/tool messages
+    appended during the aborted turn, mirroring the shell's Ctrl+C /
+    error behaviour.
+    """
+    del session.messages[session.history_checkpoint :]
+
+
+async def _stream_to_websocket(
+    websocket: WebSocket, content: str, messages: list[dict], config
+):
+    """Run ``stream_prompt`` and forward every event to the client."""
+    async for event in stream_prompt(
+        prompt=content,
+        messages=messages,
+        config=config,
+        use_mcp=True,
+    ):
+        await websocket.send_json(event_to_dict(event))
+
+
+async def _run_turn(
+    session: ConversationSession, websocket: WebSocket, content: str, config
+) -> None:
+    """Stream one prompt, racing the client's cancel request.
+
+    A checkpoint is taken before the turn so that both a client cancel and
+    an unexpected error can roll the conversation back to a known-good
+    state (see :func:`_rollback`).
+    """
+    # Checkpoint before the turn begins (before this turn's user message).
+    session.history_checkpoint = len(session.messages)
+
+    stream_task = asyncio.ensure_future(
+        _stream_to_websocket(websocket, content, session.messages, config)
+    )
+    cancel_task = asyncio.ensure_future(_await_cancel(websocket))
+    done, pending = await asyncio.wait(
+        {stream_task, cancel_task},
+        return_when=asyncio.FIRST_COMPLETED,
+    )
+
+    # Always clean up the task that didn't finish first.
+    for task in pending:
+        task.cancel()
+        try:
+            await task
+        except (asyncio.CancelledError, Exception):
+            pass
+
+    # Client requested an abort -> roll back and confirm.
+    if cancel_task in done and not cancel_task.cancelled() and cancel_task.result():
+        logger.info("[ws] client cancelled stream for session=%s", session.session_id)
+        _rollback(session)
+        await websocket.send_json({"type": "cancelled"})
+        return
+
+    # The stream finished (normally or with an error). Re-raise any stream
+    # exception so the caller logs it and rolls back.
+    if stream_task in done and not stream_task.cancelled():
+        exc = stream_task.exception()
+        if exc:
+            raise exc
+
+
+# ---------------------------------------------------------------------------
+# Session CRUD
+# ---------------------------------------------------------------------------
 
 
 @router.post("/sessions")
@@ -106,14 +207,15 @@ async def rename_session(session_id: str, request: Request):
     return JSONResponse({"detail": "Session not found"}, status_code=404)
 
 
-@router.websocket("/ws/{session_id}")
-async def chat_websocket(websocket: WebSocket, session_id: str):
-    """Bidirectional streaming chat over WebSocket.
+# ---------------------------------------------------------------------------
+# WebSocket streaming
+# ---------------------------------------------------------------------------
 
-    Protocol (JSON messages):
-      Client -> Server:  {"type": "prompt", "content": "..."}
-      Server -> Client:  {"type": "token"|"reasoning"|"tool_call"|...}
-    """
+
+async def _accept_session(
+    websocket: WebSocket, session_id: str
+) -> ConversationSession | None:
+    """Accept the socket and resolve its session, or close with an error."""
     logger.warning(
         "[ws] handshake received session=%s client=%s", session_id, websocket.client
     )
@@ -121,8 +223,6 @@ async def chat_websocket(websocket: WebSocket, session_id: str):
     logger.warning("[ws] accepted session=%s", session_id)
 
     sessions: SessionManager = websocket.app.state.sessions
-    config = websocket.app.state.config
-
     session = sessions.get(session_id)
     if not session:
         logger.warning(
@@ -132,43 +232,39 @@ async def chat_websocket(websocket: WebSocket, session_id: str):
         )
         await websocket.send_json({"type": "error", "message": "Session not found"})
         await websocket.close()
+        return None
+    return session
+
+
+@router.websocket("/ws/{session_id}")
+async def chat_websocket(websocket: WebSocket, session_id: str):
+    """Bidirectional streaming chat over WebSocket.
+
+    Protocol (JSON messages):
+      Client -> Server:  {"type": "prompt"|"restart"|"cancel", ...}
+      Server -> Client:  {"type": "token"|"reasoning"|"tool_call"|...}
+    """
+    session = await _accept_session(websocket, session_id)
+    if session is None:
         return
 
-    # Greet the client with a tools summary so the UI can render it at the
-    # start of the session (web counterpart of the CLI startup line — #10).
-    from janito.tooling.tools_registry import get_all_tools
-    from janito.tools import get_skipped_tools
+    await _send_session_greeting(websocket)
 
-    active_tools = get_all_tools()
-    skipped_tools = get_skipped_tools()
-    await websocket.send_json(
-        {
-            "type": "session_start",
-            "active_tools": len(active_tools),
-            "skipped_tools": len(skipped_tools),
-            "skipped": skipped_tools,
-        }
-    )
+    sessions: SessionManager = websocket.app.state.sessions
+    config = websocket.app.state.config
 
     try:
         while True:
-            raw = await websocket.receive_text()
-            try:
-                msg = json.loads(raw)
-            except json.JSONDecodeError:
-                await websocket.send_json({"type": "error", "message": "Invalid JSON"})
-                continue
-
-            if msg.get("type") != "prompt" and msg.get("type") != "restart":
-                # Ignore unknown message types (could be pings)
-                continue
-
-            # F2 / restart: clear conversation history but keep the system
-            # prompt, then notify the client so it can reset its UI.
-            if msg.get("type") == "restart":
+            msg = await _read_client_message(websocket)
+            if msg is None:  # disconnect
+                break
+            msg_type = msg.get("type")
+            if msg_type == "restart":
                 session.restart()
                 await websocket.send_json({"type": "restarted"})
                 continue
+            if msg_type != "prompt":
+                continue  # ignore unknown message types (could be pings)
 
             content = (msg.get("content") or "").strip()
             if not content:
@@ -180,67 +276,14 @@ async def chat_websocket(websocket: WebSocket, session_id: str):
                 sessions.set_title(session_id, content[:60])
 
             try:
-                # Stream the agentic loop, but listen for an incoming
-                # "cancel" message concurrently. If the client sends
-                # {"type": "cancel"} (e.g. Ctrl+C in the input box) the
-                # streaming task is cancelled and the turn is aborted.
-                #
-                # Checkpoint: before the turn begins we record the current
-                # length of the message history.  If the user cancels (Ctrl+C)
-                # or an error occurs, we truncate the history back to that
-                # checkpoint, mirroring the shell's behaviour where a
-                # cancelled turn removes the user message and any partial
-                # assistant response from the conversation context.
-                session.history_checkpoint = len(session.messages)
-
-                stream_task = asyncio.ensure_future(
-                    _stream_to_websocket(websocket, content, session.messages, config)
-                )
-                cancel_task = asyncio.ensure_future(_await_cancel(websocket))
-                done, pending = await asyncio.wait(
-                    {stream_task, cancel_task},
-                    return_when=asyncio.FIRST_COMPLETED,
-                )
-
-                # Always clean up the task that didn't finish first.
-                for task in pending:
-                    task.cancel()
-                    try:
-                        await task
-                    except (asyncio.CancelledError, Exception):
-                        pass
-
-                # If the cancel task completed, the client requested an abort.
-                if cancel_task in done and not cancel_task.cancelled():
-                    if cancel_task.result():  # True = cancel was received
-                        logger.info(
-                            "[ws] client cancelled stream for session=%s",
-                            session_id,
-                        )
-                        # Rollback the history to the checkpoint: remove the
-                        # user message and any partial assistant/tool messages
-                        # appended during this turn.  This keeps the
-                        # conversation context clean for the next prompt
-                        # (mirrors the shell's Ctrl+C behaviour).
-                        del session.messages[session.history_checkpoint :]
-                        await websocket.send_json({"type": "cancelled"})
-                else:
-                    # The stream finished (normally or with an error). Re-raise
-                    # the stream exception (if any) so it is logged below.
-                    if stream_task in done and not stream_task.cancelled():
-                        exc = stream_task.exception()
-                        if isinstance(exc, WebSocketDisconnect):
-                            raise exc
-                        if exc:
-                            raise exc
+                await _run_turn(session, websocket, content, config)
             except WebSocketDisconnect:
                 raise
             except Exception as e:
                 logger.exception("Error during stream_prompt")
-                # Rollback the history to the checkpoint on error, mirroring
-                # the shell's behaviour where an unexpected error removes the
-                # in-flight user/assistant messages from the conversation.
-                del session.messages[session.history_checkpoint :]
+                # Roll back to the checkpoint so a failed turn leaves the
+                # conversation context clean for the next prompt.
+                _rollback(session)
                 await websocket.send_json(
                     {"type": "error", "message": f"Server error: {e!s}"}
                 )
@@ -252,6 +295,11 @@ async def chat_websocket(websocket: WebSocket, session_id: str):
             await websocket.close()
         except Exception:
             pass
+
+
+# ---------------------------------------------------------------------------
+# One-shot SSE endpoint (alternative to the WebSocket)
+# ---------------------------------------------------------------------------
 
 
 @router.post("/prompt")

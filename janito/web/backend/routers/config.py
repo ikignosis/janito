@@ -14,20 +14,27 @@ def _get_config(request: Request):
     return request.app.state.config
 
 
-@router.get("")
-async def get_config(request: Request):
-    """Current runtime config (provider, model, flags from CLI)."""
-    config = _get_config(request)
+def _privileges_dict() -> dict:
+    """Effective runtime privileges (from -r/-w/-x CLI flags).
+
+    Shared by the ``/`` and ``/status`` endpoints so the wire format
+    stays identical everywhere.
+    """
     from janito import privileges as _privileges_mod
 
     priv = _privileges_mod.running_privileges
-    privileges = {
+    return {
         "read": bool(getattr(priv, "READ", False)) if priv else True,
         "write": bool(getattr(priv, "WRITE", False)) if priv else True,
         "exec": bool(getattr(priv, "EXEC", False)) if priv else True,
         "restricted": priv is not None,
     }
 
+
+@router.get("")
+async def get_config(request: Request):
+    """Current runtime config (provider, model, flags from CLI)."""
+    config = _get_config(request)
     return {
         "provider": config.provider,
         "model": config.model,
@@ -38,7 +45,7 @@ async def get_config(request: Request):
         "no_system_prompt": config.no_system_prompt,
         "verbose": config.verbose,
         "no_history": config.no_history,
-        "privileges": privileges,
+        "privileges": _privileges_dict(),
         "web_host": config.web_host,
         "web_port": config.web_port,
         "auth_required": config.auth_token is not None,
@@ -74,20 +81,62 @@ async def patch_config(request: Request):
 
 @router.get("/providers")
 async def list_providers(request: Request):
-    """List supported providers."""
-    from janito.provider_config import PROVIDER_BASE_URLS
+    """List all supported providers with their per-provider configuration.
 
-    return {
-        "providers": [
-            {"name": name, "base_url": url} for name, url in PROVIDER_BASE_URLS.items()
-        ]
-    }
+    Each entry aggregates data from the existing janito modules:
+
+    * ``provider_config.PROVIDER_BASE_URLS`` — the built-in base URL (or
+      ``None`` for standard OpenAI, ``CUSTOM_ENDPOINT`` marker for "custom").
+    * ``general_config`` — the per-provider ``model`` and ``endpoint``
+      overrides stored in ``~/.janito/config.json`` under
+      ``providers.<name>.{model,endpoint}``.
+    * ``auth_config.get_api_key()`` — whether an API key exists for the
+      provider in ``~/.janito/auth.json`` (the key itself is never sent;
+      only ``api_key_set: bool``).
+    * ``general_config.get_active_provider()`` — the currently active
+      provider (``active: true`` on that entry).
+    """
+    from janito.auth_config import get_api_key
+    from janito.general_config import (
+        get_active_provider,
+        load_endpoint_from_config,
+        load_model_from_config,
+    )
+    from janito.provider_config import CUSTOM_ENDPOINT_MARKER, PROVIDER_BASE_URLS
+
+    active_provider = get_active_provider()
+
+    providers = []
+    for name, built_in_url in PROVIDER_BASE_URLS.items():
+        # Resolve the effective base URL: a configured endpoint override
+        # takes priority, otherwise the provider's built-in default.
+        endpoint_override = load_endpoint_from_config(name)
+        if endpoint_override:
+            base_url = endpoint_override
+        elif built_in_url and built_in_url != CUSTOM_ENDPOINT_MARKER:
+            base_url = built_in_url
+        else:
+            base_url = None
+
+        api_key = get_api_key(name)
+
+        providers.append(
+            {
+                "name": name,
+                "base_url": base_url,
+                "model": load_model_from_config(name),
+                "endpoint": endpoint_override,
+                "api_key_set": bool(api_key),
+                "active": name == active_provider,
+            }
+        )
+
+    return {"providers": providers}
 
 
 @router.get("/status")
 async def get_status(request: Request):
     """API key status (masked), active provider, privileges."""
-    from janito import privileges as _privileges_mod
     from janito.auth_config import get_api_key
     from janito.general_config import (
         get_active_provider,
@@ -112,20 +161,13 @@ async def get_status(request: Request):
         if provider_default and provider_default != CUSTOM_ENDPOINT_MARKER:
             base_url = provider_default
 
-    priv = _privileges_mod.running_privileges
-
     return {
         "api_key": get_masked_api_key(api_key) if api_key else "(not set)",
         "api_key_set": bool(api_key),
         "active_provider": provider,
         "model": config.model,
         "base_url": base_url,
-        "privileges": {
-            "read": bool(getattr(priv, "READ", False)) if priv else True,
-            "write": bool(getattr(priv, "WRITE", False)) if priv else True,
-            "exec": bool(getattr(priv, "EXEC", False)) if priv else True,
-            "restricted": priv is not None,
-        },
+        "privileges": _privileges_dict(),
     }
 
 
