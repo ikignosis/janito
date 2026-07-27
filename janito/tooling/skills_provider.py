@@ -5,6 +5,16 @@ Based on Agent Skills progressive disclosure pattern:
 1. Advertise (~100 tokens per skill) - names and descriptions in system prompt
 2. Load (< 5000 tokens) - full SKILL.md content when skill is activated
 3. Read resources - supplementary files when needed
+
+Skills are discovered from multiple search paths:
+- **Home skills** – ``<config_dir>/skills`` (default ``~/.janito/skills``)
+- **Local skills** – ``.janito/skills`` in the current working directory
+
+Each ``Skill`` tracks its own filesystem ``path``, so resources are always
+loaded from the correct directory regardless of whether the skill lives in the
+home or local ``.janito`` directory.  When a skill name exists in both
+locations the **local** copy takes precedence, making it easy to override a
+globally installed skill with a project-specific variant.
 """
 
 from pathlib import Path
@@ -15,8 +25,13 @@ from janito.tooling.reporter import report_error, report_result, report_start
 
 
 def get_default_skills_dir() -> Path:
-    """Get the default skills directory (honors -c/--config-dir)."""
+    """Get the default (home) skills directory (honors -c/--config-dir)."""
     return get_config_dir() / "skills"
+
+
+def get_local_skills_dir() -> Path:
+    """Get the local skills directory (``.janito/skills`` in the CWD)."""
+    return Path.cwd() / ".janito" / "skills"
 
 
 # Default skills directory (at import time). Retained for backward compatibility;
@@ -25,11 +40,28 @@ DEFAULT_SKILLS_DIR = get_default_skills_dir()
 
 
 class Skill:
-    """Represents a discovered skill."""
+    """Represents a discovered skill.
 
-    def __init__(self, name: str, path: Path, description: str = "", content: str = ""):
+    Attributes:
+        name: Skill name (directory name).
+        path: Filesystem path to the skill directory.
+        source: Where the skill was found – ``"home"`` or ``"local"``.
+        description: Short description extracted from SKILL.md.
+        content: Cached SKILL.md content (populated by :meth:`load_content`).
+        resources: Mapping of resource file name → path.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        path: Path,
+        description: str = "",
+        content: str = "",
+        source: str = "home",
+    ):
         self.name = name
         self.path = path
+        self.source = source
         self.description = description
         self.content = content
         self.resources: dict[str, Path] = {}
@@ -79,26 +111,56 @@ class SkillsProvider:
 
     Searches configured paths recursively (up to two levels deep)
     for SKILL.md files.
+
+    By default two search roots are used:
+
+    1. **Home** – ``<config_dir>/skills`` (global, user-installed skills).
+    2. **Local** – ``.janito/skills`` in the current working directory
+       (project-specific skills).
+
+    Local skills take precedence over home skills with the same name.
     """
 
-    def __init__(self, skill_paths: list[Path] = None):
+    def __init__(self, skill_paths: list[Path] | list[tuple[Path, str]] = None):
         """
         Initialize the skills provider.
 
         Args:
-            skill_paths: List of paths to search for skills.
-                        Defaults to ~/.janito/skills
+            skill_paths: Search paths for skills.  Each entry may be either a
+                bare :class:`~pathlib.Path` (defaults to source ``"home"``)
+                or a ``(path, source)`` tuple where *source* is a short label
+                such as ``"home"`` or ``"local"``.
+
+                When ``None`` the default search paths are used::
+
+                    [(get_default_skills_dir(), "home"),
+                     (get_local_skills_dir(),   "local")]
         """
         if skill_paths is None:
-            skill_paths = [get_default_skills_dir()]
+            skill_paths = [
+                (get_default_skills_dir(), "home"),
+                (get_local_skills_dir(), "local"),
+            ]
 
-        self.skill_paths = skill_paths
+        # Normalise to a list of (Path, source) tuples
+        self.skill_paths: list[tuple[Path, str]] = []
+        for entry in skill_paths:
+            if isinstance(entry, tuple):
+                self.skill_paths.append((Path(entry[0]), entry[1]))
+            else:
+                self.skill_paths.append((Path(entry), "home"))
+
         self._skills: dict[str, Skill] = {}
         self._discover_skills()
 
     def _discover_skills(self):
-        """Scan all skill paths for SKILL.md files."""
-        for base_path in self.skill_paths:
+        """Scan all skill paths for SKILL.md files.
+
+        Paths are searched in order.  When a skill name appears in more than
+        one path the *last* one processed wins.  ``skill_paths`` is ordered
+        ``[home, local]`` so that **local skills override home skills**.
+        """
+        for base_path, source in self.skill_paths:
             if not base_path.exists():
                 continue
 
@@ -110,7 +172,7 @@ class SkillsProvider:
                 skill_md = level1 / "SKILL.md"
                 if skill_md.exists():
                     # It's a skill directory
-                    self._add_skill(level1.name, level1)
+                    self._add_skill(level1.name, level1, source)
                     continue
 
                 # Check one more level deep
@@ -119,10 +181,16 @@ class SkillsProvider:
                         continue
                     skill_md = level2 / "SKILL.md"
                     if skill_md.exists():
-                        self._add_skill(level2.name, level2)
+                        self._add_skill(level2.name, level2, source)
 
-    def _add_skill(self, name: str, path: Path):
-        """Add a skill to the provider."""
+    def _add_skill(self, name: str, path: Path, source: str = "home"):
+        """Add a skill to the provider.
+
+        Args:
+            name: Skill name (directory name).
+            path: Path to the skill directory.
+            source: ``"home"`` or ``"local"`` – where the skill was found.
+        """
         # Extract description from SKILL.md if available
         description = ""
         skill_md = path / "SKILL.md"
@@ -135,7 +203,7 @@ class SkillsProvider:
             except Exception:
                 pass
 
-        self._skills[name] = Skill(name, path, description)
+        self._skills[name] = Skill(name, path, description, source=source)
 
     def _extract_description(self, content: str) -> str:
         """Extract a short description from SKILL.md content."""
@@ -177,12 +245,18 @@ class SkillsProvider:
         """List all discovered skills.
 
         Returns:
-            List of dicts with 'name' and 'description' for each skill
+            List of dicts with ``name``, ``description``, ``path`` and
+            ``source`` for each skill.
         """
         result = []
         for name, skill in sorted(self._skills.items()):
             result.append(
-                {"name": name, "description": skill.description or "No description"}
+                {
+                    "name": name,
+                    "description": skill.description or "No description",
+                    "path": str(skill.path),
+                    "source": skill.source,
+                }
             )
         return result
 

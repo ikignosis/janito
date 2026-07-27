@@ -10,6 +10,19 @@ Skills follow a progressive disclosure pattern:
 2. **Load** - When needed, the full SKILL.md content is loaded (< 5000 tokens)
 3. **Resources** - Supplementary files (templates, examples) are available when needed
 
+## Skill Discovery Locations
+
+Skills are discovered from two locations:
+
+| Location | Path | Purpose |
+|----------|------|---------|
+| **Home** | `~/.janito/skills/` (or `<config_dir>/skills/`) | Global, user-installed skills |
+| **Local** | `.janito/skills/` (in the current working directory) | Project-specific skills |
+
+When a skill name exists in both locations, the **local** copy takes precedence, allowing project-specific skills to override globally installed ones.
+
+Each skill tracks its own filesystem path, so resources are always loaded from the correct directory regardless of where the skill was discovered.
+
 ## Install a Skill
 
 Install skills from GitHub repositories:
@@ -48,10 +61,12 @@ The AI automatically uses these tools when your request matches a skill's descri
 Skills are stored as directories containing:
 
 ```
-~/.janito/skills/<skill-name>/
+<skills-dir>/<skill-name>/
 ├── SKILL.md          # Main skill documentation
 └── resource-file.md  # Optional supplementary files
 ```
+
+Where `<skills-dir>` is either `~/.janito/skills/` (home) or `.janito/skills/` (local).
 
 ### SKILL.md Format
 
@@ -74,3 +89,4 @@ janito --install-skill https://github.com/ikignosis/janito/tree/main/skills/git-
 - Skills are automatically advertised based on your request
 - The AI decides when to load a skill's full content
 - Keep skill descriptions concise for efficient system prompts
+- Use local skills (`.janito/skills/`) for project-specific overrides

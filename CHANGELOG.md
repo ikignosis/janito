@@ -20,6 +20,7 @@ Changes since `v4.12.0` (2026-07-26).
 - Tests: add `tests/test_get_url.py` covering the `GetUrl` oversized-content temp-file handling (local HTTP server, no external network access).
 - Tool usage tracking: record every tool invocation in a SQLite database (`tools_use.db` in the config directory) with per-tool counters, from both the CLI agent loop and the web backend; includes the `janito.tooling.tools_usage` module (with a small CLI to inspect counts) and tests.
 - `SearchRegex` tool: new `respect_gitignore` parameter (default `True`) with a `--no-gitignore` CLI flag; search results now report `gitignore_applied` and `files_ignored_by_gitignore` counts.
+- Skills: discover skills from a **local** directory (`.janito/skills/` in the current working directory) in addition to the **home** directory (`<config_dir>/skills/`); local skills take precedence over home skills with the same name, allowing project-specific overrides. Each `Skill` now tracks its `path` and `source` (`"home"` or `"local"`), and `list_skills()` exposes both. Backward-compatible: bare `Path` entries in `skill_paths` default to source `"home"`.
 
 ### Changed
 
