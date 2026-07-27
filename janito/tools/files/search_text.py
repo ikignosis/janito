@@ -53,13 +53,18 @@ def _load_gitignore_spec(directory: str):
     return PathSpec.from_lines(GitWildMatchPattern, patterns)
 
 
-def _is_ignored_by_gitignore(rel_path: str, gitignore_spec) -> bool:
+def _is_ignored_by_gitignore(
+    rel_path: str, gitignore_spec, is_dir: bool = False
+) -> bool:
     """
     Check if a path is ignored by gitignore patterns.
 
     Args:
         rel_path (str): Relative path to check
         gitignore_spec: The PathSpec object
+        is_dir (bool): Whether the path is a directory. Directory-only
+            gitignore patterns (those ending with '/') only match when this
+            is True.
 
     Returns:
         bool: True if the path should be ignored
@@ -69,6 +74,8 @@ def _is_ignored_by_gitignore(rel_path: str, gitignore_spec) -> bool:
 
     # Normalize path separators for matching
     normalized_path = rel_path.replace(os.sep, "/")
+    if is_dir and not normalized_path.endswith("/"):
+        normalized_path += "/"
 
     return gitignore_spec.match_file(normalized_path)
 
@@ -143,20 +150,19 @@ class SearchText(BaseTool):
                     "respect_gitignore": respect_gitignore,
                 }
 
-            # Load .gitignore for each directory path
-            gitignore_specs = {}
+            # Load .gitignore from the current working directory
+            cwd = os.getcwd()
+            gitignore_spec = None
             if respect_gitignore:
-                for path in valid_paths:
-                    if os.path.isdir(path):
-                        spec = _load_gitignore_spec(path)
-                        if spec:
-                            gitignore_specs[path] = spec
+                gitignore_spec = _load_gitignore_spec(cwd)
 
             # Report start
             paths_str = ", ".join([norm_path(p) for p in valid_paths[:3]])
             if len(valid_paths) > 3:
                 paths_str += f" (+{len(valid_paths) - 3} more)"
-            self.report_start(f"🔍 Searching for exact text '{query}' in {paths_str}")
+            self.report_start(
+                f"🔍 Searching for exact text '{query}' in {paths_str}", end=""
+            )
 
             # Perform search
             if count_only:
@@ -166,7 +172,8 @@ class SearchText(BaseTool):
                     case_sensitive,
                     max_depth,
                     max_results,
-                    gitignore_specs,
+                    gitignore_spec,
+                    cwd,
                 )
             else:
                 result = self._search_with_content(
@@ -175,7 +182,8 @@ class SearchText(BaseTool):
                     case_sensitive,
                     max_depth,
                     max_results,
-                    gitignore_specs,
+                    gitignore_spec,
+                    cwd,
                 )
 
             if result["success"]:
@@ -208,7 +216,8 @@ class SearchText(BaseTool):
         case_sensitive: bool,
         max_depth: int | None,
         max_results: int | None,
-        gitignore_specs: dict[str, Any] = None,
+        gitignore_spec=None,
+        cwd: str | None = None,
     ) -> dict[str, Any]:
         """Search and return matching lines with content."""
         matches = []
@@ -216,7 +225,6 @@ class SearchText(BaseTool):
         files_ignored = 0
 
         for path in paths:
-            gitignore_spec = gitignore_specs.get(path) if gitignore_specs else None
             if os.path.isfile(path):
                 # Search single file
                 file_matches = self._search_file(
@@ -235,7 +243,13 @@ class SearchText(BaseTool):
                     dir_files_searched,
                     dir_files_ignored,
                 ) = self._search_directory(
-                    path, query, case_sensitive, max_depth, max_results, gitignore_spec
+                    path,
+                    query,
+                    case_sensitive,
+                    max_depth,
+                    max_results,
+                    gitignore_spec,
+                    cwd,
                 )
                 matches.extend(dir_matches)
                 files_searched += dir_files_searched
@@ -249,10 +263,8 @@ class SearchText(BaseTool):
             "matches": matches,
             "total_matches": len(matches),
             "files_searched": files_searched,
-            "respect_gitignore": bool(gitignore_specs),
-            "gitignore_applied": any(gitignore_specs.values())
-            if gitignore_specs
-            else False,
+            "respect_gitignore": gitignore_spec is not None,
+            "gitignore_applied": gitignore_spec is not None,
             "files_ignored_by_gitignore": files_ignored,
         }
 
@@ -263,7 +275,8 @@ class SearchText(BaseTool):
         case_sensitive: bool,
         max_depth: int | None,
         max_results: int | None,
-        gitignore_specs: dict[str, Any] = None,
+        gitignore_spec=None,
+        cwd: str | None = None,
     ) -> dict[str, Any]:
         """Search and return only match counts."""
         counts = {}
@@ -272,7 +285,6 @@ class SearchText(BaseTool):
         files_ignored = 0
 
         for path in paths:
-            gitignore_spec = gitignore_specs.get(path) if gitignore_specs else None
             if os.path.isfile(path):
                 # Count matches in single file
                 file_count = self._count_file_matches(path, query, case_sensitive)
@@ -288,7 +300,7 @@ class SearchText(BaseTool):
                     dir_files,
                     dir_ignored,
                 ) = self._count_directory_matches(
-                    path, query, case_sensitive, max_depth, gitignore_spec
+                    path, query, case_sensitive, max_depth, gitignore_spec, cwd
                 )
                 counts.update(dir_counts)
                 total_matches += dir_total
@@ -300,10 +312,8 @@ class SearchText(BaseTool):
             "counts": counts,
             "total_matches": total_matches,
             "files_searched": files_searched,
-            "respect_gitignore": bool(gitignore_specs),
-            "gitignore_applied": any(gitignore_specs.values())
-            if gitignore_specs
-            else False,
+            "respect_gitignore": gitignore_spec is not None,
+            "gitignore_applied": gitignore_spec is not None,
             "files_ignored_by_gitignore": files_ignored,
         }
 
@@ -363,6 +373,7 @@ class SearchText(BaseTool):
         max_depth: int | None,
         max_results: int | None,
         gitignore_spec=None,
+        cwd: str | None = None,
     ) -> tuple:
         """Search a directory recursively and return matches."""
         matches = []
@@ -379,24 +390,27 @@ class SearchText(BaseTool):
                         continue
 
                 # Filter out ignored directories (modify in-place to prevent walking into them)
-                if gitignore_spec:
-                    rel_root = os.path.relpath(root, dirpath)
+                if gitignore_spec and cwd:
                     dirs[:] = [
                         d
                         for d in dirs
                         if not _is_ignored_by_gitignore(
-                            os.path.join(rel_root, d) if rel_root != "." else d,
+                            os.path.relpath(os.path.join(root, d), cwd),
                             gitignore_spec,
+                            is_dir=True,
                         )
                     ]
 
                 for filename in files:
                     filepath = os.path.join(root, filename)
-                    rel_path = os.path.relpath(filepath, dirpath)
 
-                    # Skip if ignored by .gitignore
-                    if gitignore_spec and _is_ignored_by_gitignore(
-                        rel_path, gitignore_spec
+                    # Skip if ignored by .gitignore (match relative to cwd)
+                    if (
+                        gitignore_spec
+                        and cwd
+                        and _is_ignored_by_gitignore(
+                            os.path.relpath(filepath, cwd), gitignore_spec
+                        )
                     ):
                         files_ignored += 1
                         continue
@@ -427,6 +441,7 @@ class SearchText(BaseTool):
         case_sensitive: bool,
         max_depth: int | None,
         gitignore_spec=None,
+        cwd: str | None = None,
     ) -> tuple:
         """Count matches in a directory recursively."""
         counts = {}
@@ -444,24 +459,27 @@ class SearchText(BaseTool):
                         continue
 
                 # Filter out ignored directories (modify in-place to prevent walking into them)
-                if gitignore_spec:
-                    rel_root = os.path.relpath(root, dirpath)
+                if gitignore_spec and cwd:
                     dirs[:] = [
                         d
                         for d in dirs
                         if not _is_ignored_by_gitignore(
-                            os.path.join(rel_root, d) if rel_root != "." else d,
+                            os.path.relpath(os.path.join(root, d), cwd),
                             gitignore_spec,
+                            is_dir=True,
                         )
                     ]
 
                 for filename in files:
                     filepath = os.path.join(root, filename)
-                    rel_path = os.path.relpath(filepath, dirpath)
 
-                    # Skip if ignored by .gitignore
-                    if gitignore_spec and _is_ignored_by_gitignore(
-                        rel_path, gitignore_spec
+                    # Skip if ignored by .gitignore (match relative to cwd)
+                    if (
+                        gitignore_spec
+                        and cwd
+                        and _is_ignored_by_gitignore(
+                            os.path.relpath(filepath, cwd), gitignore_spec
+                        )
                     ):
                         files_ignored += 1
                         continue

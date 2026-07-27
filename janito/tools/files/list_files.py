@@ -70,13 +70,18 @@ def _load_gitignore_spec(directory: str):
     return PathSpec.from_lines(GitWildMatchPattern, patterns)
 
 
-def _is_ignored_by_gitignore(rel_path: str, gitignore_spec) -> bool:
+def _is_ignored_by_gitignore(
+    rel_path: str, gitignore_spec, is_dir: bool = False
+) -> bool:
     """
     Check if a path is ignored by gitignore patterns.
 
     Args:
         rel_path (str): Relative path to check
         gitignore_spec: The PathSpec object
+        is_dir (bool): Whether the path is a directory. Directory-only
+            gitignore patterns (those ending with '/') only match when this
+            is True.
 
     Returns:
         bool: True if the path should be ignored
@@ -86,6 +91,8 @@ def _is_ignored_by_gitignore(rel_path: str, gitignore_spec) -> bool:
 
     # Normalize path separators for matching
     normalized_path = rel_path.replace(os.sep, "/")
+    if is_dir and not normalized_path.endswith("/"):
+        normalized_path += "/"
 
     return gitignore_spec.match_file(normalized_path)
 
@@ -152,10 +159,11 @@ class ListFiles(BaseTool):
                     "respect_gitignore": respect_gitignore,
                 }
 
-            # Load .gitignore if enabled
+            # Load .gitignore from the current working directory
+            cwd = os.getcwd()
             gitignore_spec = None
             if respect_gitignore:
-                gitignore_spec = _load_gitignore_spec(abs_directory)
+                gitignore_spec = _load_gitignore_spec(cwd)
 
             # Report start of operation
             recursive_str = "recursively" if recursive else ""
@@ -171,13 +179,13 @@ class ListFiles(BaseTool):
                     for root, dirs, filenames in os.walk(abs_directory):
                         # Filter out ignored directories (modify in-place to prevent walking into them)
                         if gitignore_spec:
-                            rel_root = os.path.relpath(root, abs_directory)
                             dirs[:] = [
                                 d
                                 for d in dirs
                                 if not _is_ignored_by_gitignore(
-                                    os.path.join(rel_root, d) if rel_root != "." else d,
+                                    os.path.relpath(os.path.join(root, d), cwd),
                                     gitignore_spec,
+                                    is_dir=True,
                                 )
                             ]
 
@@ -187,11 +195,13 @@ class ListFiles(BaseTool):
                         for name in dirs + filenames:
                             full_path = os.path.join(root, name)
                             rel_path = os.path.relpath(full_path, abs_directory)
-                            is_dir = os.path.isdir(full_path)
+                            name_is_dir = name in dirs
 
                             # Skip if ignored by .gitignore
                             if gitignore_spec and _is_ignored_by_gitignore(
-                                rel_path, gitignore_spec
+                                os.path.relpath(full_path, cwd),
+                                gitignore_spec,
+                                is_dir=name_is_dir,
                             ):
                                 gitignore_ignored += 1
                                 continue
@@ -205,15 +215,13 @@ class ListFiles(BaseTool):
                         if depth <= max_depth:
                             # Filter out ignored directories
                             if gitignore_spec:
-                                rel_root = os.path.relpath(root, abs_directory)
                                 dirs[:] = [
                                     d
                                     for d in dirs
                                     if not _is_ignored_by_gitignore(
-                                        os.path.join(rel_root, d)
-                                        if rel_root != "."
-                                        else d,
+                                        os.path.relpath(os.path.join(root, d), cwd),
                                         gitignore_spec,
+                                        is_dir=True,
                                     )
                                 ]
 
@@ -223,11 +231,13 @@ class ListFiles(BaseTool):
                             for name in dirs + filenames:
                                 full_path = os.path.join(root, name)
                                 rel_path = os.path.relpath(full_path, abs_directory)
-                                is_dir = os.path.isdir(full_path)
+                                name_is_dir = name in dirs
 
                                 # Skip if ignored by .gitignore
                                 if gitignore_spec and _is_ignored_by_gitignore(
-                                    rel_path, gitignore_spec
+                                    os.path.relpath(full_path, cwd),
+                                    gitignore_spec,
+                                    is_dir=name_is_dir,
                                 ):
                                     gitignore_ignored += 1
                                     continue
@@ -243,9 +253,11 @@ class ListFiles(BaseTool):
                     item_path = os.path.join(abs_directory, item)
                     is_dir = os.path.isdir(item_path)
 
-                    # Skip if ignored by .gitignore
+                    # Skip if ignored by .gitignore (match relative to cwd)
                     if gitignore_spec and _is_ignored_by_gitignore(
-                        item, gitignore_spec
+                        os.path.relpath(item_path, cwd),
+                        gitignore_spec,
+                        is_dir=is_dir,
                     ):
                         gitignore_ignored += 1
                         continue

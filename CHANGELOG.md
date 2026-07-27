@@ -11,6 +11,7 @@ Changes since `v4.12.0` (2026-07-26).
 
 ### Added
 
+- `FindFiles` tool: new file-search tool that finds files and directories by name pattern and attributes (type, size, modification time, recursion depth, result limits, sorting), matching patterns against the full relative path — the equivalent of the Unix `find` command.
 - CLI: add `-p` as a short alias for the `--provider` option.
 - `GetCurrentTime` tool: returns the current date and time in ISO 8601 format with local/UTC representations and timezone info ([068625d](https://github.com/joaopinto/janito/commit/068625d)).
 - Project-specific instructions: automatically load an `AGENTS.md` file from the current working directory and append its content to the system prompt under a "Project-Specific Instructions" section.
@@ -22,6 +23,8 @@ Changes since `v4.12.0` (2026-07-26).
 ### Changed
 
 - `GetUrl` tool: fetched content larger than a configurable threshold (default 10,000 characters) is now written to a temporary file and returned as a pointer (`tmp_filename`) instead of inline, preventing oversized payloads from bloating the model context; created temp files are tracked and automatically removed when the janito process exits. Adds a new `threshold` parameter (pass `None`, or `-1` on the CLI, to disable the behaviour).
+- `ListFiles` and `SearchText` tools: `.gitignore` patterns are now loaded from the current working directory (instead of each searched directory) and matched against paths relative to the working directory, so ignore rules apply consistently regardless of which directory is being listed or searched. Directory-only gitignore patterns (those ending with `/`) now correctly match only directories.
+- `SearchText` and `SearchRegex` tools: suppress the trailing newline in search progress messages by passing `end=""` to `report_start`, so the progress line stays on a single line while results stream below it.
 - Release workflow: upload only `dist/*.whl` and `dist/*.tar.gz` as release assets, excluding stray build artifacts (e.g. `default.gitignore`).
 - Interactive shell: print an "Unknown command" message for unrecognized `/` commands instead of sending them to the LLM.
 - Test tooling: consolidate all test modules under `tests/` (move `janito/tooling/test_path_utils.py`, `janito/test_config_dir.py` and `janito/test_general_config.py` into `tests/`, and add `tests/test_system_prompt.py`) and point `tox` (invoked by the pre-commit `run-tests` hook) at `pytest tests/`, so the full suite is executed on every commit.
