@@ -47,10 +47,11 @@ async def get_config(request: Request):
 
 @router.patch("")
 async def patch_config(request: Request):
-    """Update mutable config values (model, thinking, etc.).
+    """Update mutable config values (model, etc.).
 
-    Only a safe subset of fields is mutable at runtime. Changing the
-    provider requires a restart.
+    Only a safe subset of fields is mutable at runtime. Thinking mode and
+    verbose logging are CLI-level flags and cannot be changed here; changing
+    the provider requires a restart.
     """
     config = _get_config(request)
     try:
@@ -58,7 +59,10 @@ async def patch_config(request: Request):
     except Exception:
         return JSONResponse({"detail": "Invalid JSON"}, status_code=400)
 
-    mutable = {"model": str, "thinking": bool, "verbose": bool}
+    # ``thinking`` and ``verbose`` are CLI-level flags that cannot be
+    # meaningfully toggled at runtime, so they are intentionally excluded
+    # from the mutable set.
+    mutable = {"model": str}
     updated = {}
     for key, typ in mutable.items():
         if key in body:

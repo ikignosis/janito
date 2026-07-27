@@ -7,8 +7,6 @@ function settingsComponent() {
         status: {},
         providers: [],
         model: '',
-        thinking: false,
-        verbose: false,
         saving: false,
         message: null,
 
@@ -23,8 +21,6 @@ function settingsComponent() {
                 this.status = await Api.getStatus();
                 this.providers = (await Api.getProviders()).providers || [];
                 this.model = this.config.model || '';
-                this.thinking = !!this.config.thinking;
-                this.verbose = !!this.config.verbose;
             } catch (e) {
                 this.message = 'Failed to load settings: ' + e.message;
             }
@@ -36,8 +32,6 @@ function settingsComponent() {
             try {
                 const updated = await Api.patchConfig({
                     model: this.model,
-                    thinking: this.thinking,
-                    verbose: this.verbose,
                 });
                 this.message = 'Saved: ' + Object.keys(updated.updated).join(', ');
                 // Reflect into the status bar / root config

@@ -401,15 +401,6 @@
                     <input type="text" :value="config.provider || status.active_provider || ''" disabled>
                 </div>
 
-                <div class="checkbox-row">
-                    <input type="checkbox" id="thinking" x-model="thinking">
-                    <label for="thinking" style="margin:0">Thinking mode (-t)</label>
-                </div>
-                <div class="checkbox-row">
-                    <input type="checkbox" id="verbose" x-model="verbose">
-                    <label for="verbose" style="margin:0">Verbose logging (-v)</label>
-                </div>
-
                 <div class="form-group">
                     <label>API Key</label>
                     <input type="text" :value="status.api_key || ''" disabled>
