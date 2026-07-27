@@ -338,7 +338,7 @@ class InteractiveShell:
                     # Rollback any messages appended during this prompt
                     del self.messages_history[self.history_checkpoint :]
                     print(
-                        "Request interrupted. The interrupted request was removed from the conversation history."
+                        "Request interrupted, previous prompt/answer removed from the conversation history."
                     )
                 except Exception as e:
                     # Rollback on any other unexpected error as well
