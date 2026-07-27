@@ -1,2 +1,2 @@
-# Creating tools
-Read docs/TOOL.md before creating the tool
+- Read docs/TOOL.md before creating the tool
+- When working with github issues, during git commit add the "closes #n ".

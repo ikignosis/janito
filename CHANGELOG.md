@@ -15,7 +15,7 @@ Changes since `v4.12.0` (2026-07-26).
 - CLI: add `-p` as a short alias for the `--provider` option.
 - `GetCurrentTime` tool: returns the current date and time in ISO 8601 format with local/UTC representations and timezone info ([068625d](https://github.com/joaopinto/janito/commit/068625d)).
 - Project-specific instructions: automatically load an `AGENTS.md` file from the current working directory and append its content to the system prompt under a "Project-Specific Instructions" section.
-- Repository: add an `AGENTS.md` instructing agents to read `docs/TOOL.md` before creating a new tool.
+- Repository: add an `AGENTS.md` instructing agents to read `docs/TOOL.md` before creating a new tool, and to add `closes #n` to commit messages when working on GitHub issues.
 - `RunGitHubCLI` tool: new system tool that executes the GitHub CLI (`gh`) to interact with GitHub artifacts, streaming command output in real time (like `RunBashCode`) and returning the captured stdout/stderr and exit code. The `gh` executable is located on PATH or in well-known install locations, and the tool is only loaded when it is available.
 - Tests: add `tests/test_get_url.py` covering the `GetUrl` oversized-content temp-file handling (local HTTP server, no external network access).
 - Tool usage tracking: record every tool invocation in a SQLite database (`tools_use.db` in the config directory) with per-tool counters, from both the CLI agent loop and the web backend; includes the `janito.tooling.tools_usage` module (with a small CLI to inspect counts) and tests.
