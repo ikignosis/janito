@@ -16,7 +16,7 @@
     </script>
 
     <!-- Theme (?v=N busts the browser cache on upgrades) -->
-    <link rel="stylesheet" href="/css/theme.css?v=4">
+    <link rel="stylesheet" href="/css/theme.css?v=5">
     <!-- highlight.js theme -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/styles/tokyo-night-dark.min.css">
 
@@ -28,15 +28,15 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
 
     <!-- App scripts (order matters: helpers first). ?v=N busts the browser cache. -->
-    <script src="/js/api.js?v=4"></script>
-    <script src="/js/markdown.js?v=4"></script>
-    <script src="/js/websocket.js?v=4"></script>
-    <script src="/js/chat.js?v=4"></script>
-    <script src="/js/sessions.js?v=4"></script>
-    <script src="/js/settings.js?v=4"></script>
-    <script src="/js/mcp.js?v=4"></script>
-    <script src="/js/statusBar.js?v=4"></script>
-    <script src="/js/app.js?v=4"></script>
+    <script src="/js/api.js?v=5"></script>
+    <script src="/js/markdown.js?v=5"></script>
+    <script src="/js/websocket.js?v=5"></script>
+    <script src="/js/chat.js?v=5"></script>
+    <script src="/js/sessions.js?v=5"></script>
+    <script src="/js/settings.js?v=5"></script>
+    <script src="/js/mcp.js?v=5"></script>
+    <script src="/js/statusBar.js?v=5"></script>
+    <script src="/js/app.js?v=5"></script>
 
     <style>
         .inline-icon { cursor: pointer; }
@@ -67,6 +67,10 @@
                 <div class="session-item"
                      :class="{ active: s.session_id === activeId }"
                      @click="select(s.session_id)">
+                    <span class="session-indicator is-spinning"
+                          x-show="indicatorState(s.session_id) === 'spinner'"></span>
+                    <span class="session-indicator is-dot"
+                          x-show="indicatorState(s.session_id) === 'dot'"></span>
                     <span class="title" x-text="s.title || 'New conversation'"></span>
                     <button class="delete" @click="remove(s.session_id, $event)" title="Delete">✕</button>
                 </div>

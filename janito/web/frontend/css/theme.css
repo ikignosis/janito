@@ -187,6 +187,32 @@ body, .sidebar, .topbar, .input-area, .status-bar, .message-body, .avatar,
 .session-item:hover .delete { opacity: 1; }
 .session-item .delete:hover { color: var(--red); background: var(--bg-hover); }
 
+/* Session status indicators (spinner = processing, dot = finished) */
+.session-indicator {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+}
+.session-indicator.is-spinning {
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--border);
+    border-top-color: var(--cyan);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+.session-indicator.is-dot::before {
+    content: '';
+    display: block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--text-primary);
+}
+
 .sidebar-footer {
     padding: 12px;
     border-top: 1px solid var(--border);

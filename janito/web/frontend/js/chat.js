@@ -120,6 +120,11 @@ function chatComponent() {
             this._broadcastConn();
             this._forceScrollToBottom();
 
+            // Broadcast all session statuses so background sessions get their
+            // indicators updated in the sidebar (e.g. a session that was already
+            // streaming when the user switched away from it).
+            this._broadcastAllStatuses();
+
             // Ensure this session has a live socket (created once, reused).
             if (!this._socket(id)) {
                 this._createSocket(id);
@@ -185,6 +190,32 @@ function chatComponent() {
         },
 
         // ---------------------------------------------------------------
+        // Status broadcasting (for sidebar indicators)
+        // ---------------------------------------------------------------
+
+        // Update a session's status and notify the sidebar so it can show
+        // a spinner (processing) or dot (finished) on inactive sessions.
+        _setStatus(store, status) {
+            if (store.status === status) return;
+            store.status = status;
+            window.dispatchEvent(new CustomEvent('janito-session-status', {
+                detail: { id: store.id, status },
+            }));
+        },
+
+        // Broadcast the current status of ALL sessions. Called on tab switch
+        // so that a session already processing in the background gets its
+        // indicator without waiting for the next status change.
+        _broadcastAllStatuses() {
+            for (const id in this._sessions) {
+                const store = this._sessions[id];
+                window.dispatchEvent(new CustomEvent('janito-session-status', {
+                    detail: { id, status: store.status },
+                }));
+            }
+        },
+
+        // ---------------------------------------------------------------
         // Sending
         // ---------------------------------------------------------------
 
@@ -212,7 +243,7 @@ function chatComponent() {
             assistant.streaming = true;
             store.messages.push(assistant);
             store.current = assistant;
-            store.status = 'waiting';
+            this._setStatus(store, 'waiting');
             this._current = store.current;   // proxied reference
             this.status = 'waiting';
 
@@ -221,7 +252,7 @@ function chatComponent() {
                 console.error('[chat] sendPrompt FAILED -> "Not connected to server."');
                 store.error = 'Not connected to server.';
                 this.error = store.error;
-                store.status = 'idle';
+                this._setStatus(store, 'idle');
                 this.status = 'idle';
                 assistant.streaming = false;
                 store.current = null;
@@ -256,12 +287,12 @@ function chatComponent() {
 
             switch (event.type) {
                 case 'waiting':
-                    store.status = 'waiting';
+                    this._setStatus(store, 'waiting');
                     if (isActive) this.status = 'waiting';
                     break;
 
                 case 'token':
-                    store.status = 'streaming';
+                    this._setStatus(store, 'streaming');
                     if (isActive) this.status = 'streaming';
                     this._appendTextPart(m, event.content);
                     if (isActive) this._scrollToBottom();
@@ -275,7 +306,7 @@ function chatComponent() {
                     break;
 
                 case 'tool_call': {
-                    store.status = 'tool_running';
+                    this._setStatus(store, 'tool_running');
                     if (isActive) this.status = 'tool_running';
                     const tool = {
                         id: event.id,
@@ -337,7 +368,7 @@ function chatComponent() {
                     m.streaming = false;
                     m.done = true;
                     store.current = null;
-                    store.status = 'idle';
+                    this._setStatus(store, 'idle');
                     if (isActive) {
                         this._current = null;
                         this.status = 'idle';
@@ -349,7 +380,7 @@ function chatComponent() {
                     store.error = event.message;
                     if (m) m.streaming = false;
                     store.current = null;
-                    store.status = 'idle';
+                    this._setStatus(store, 'idle');
                     if (isActive) {
                         this.error = event.message;
                         this._current = null;

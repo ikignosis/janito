@@ -10,6 +10,7 @@ function sessionsComponent() {
         activeId: null,
         loading: false,
         _bootstrapped: false,
+        _indicators: {},
 
         init() {
             // Reload when chat.js signals a change (e.g. auto-title, new session)
@@ -18,6 +19,10 @@ function sessionsComponent() {
             // A session vanished on the server (e.g. server restarted) —
             // re-bootstrap: reload the live session list and pick/create one.
             window.addEventListener('janito-session-lost', (e) => this._recover(e.detail));
+
+            // Per-session status updates from chat.js (for sidebar indicators:
+            // spinner while a background tab is processing, dot when finished).
+            window.addEventListener('janito-session-status', (e) => this._onStatusChange(e.detail.id, e.detail.status));
 
             // Self-bootstrap: load sessions and open the most recent (or create new)
             this.$nextTick(() => this.bootstrap());
@@ -72,14 +77,35 @@ function sessionsComponent() {
 
         select(id) {
             this.activeId = id;
+            delete this._indicators[id];
             // Tell chat.js to connect to this session
             window.dispatchEvent(new CustomEvent('janito-open-session', { detail: id }));
+        },
+
+        _onStatusChange(id, status) {
+            // Active tab needs no indicator - the user is already viewing it.
+            if (id === this.activeId) return;
+
+            const processing = ['waiting', 'streaming', 'tool_running'];
+            if (processing.includes(status)) {
+                this._indicators[id] = 'spinner';
+            } else if (status === 'idle') {
+                // Only show a dot if the session was previously processing.
+                if (this._indicators[id] === 'spinner') {
+                    this._indicators[id] = 'dot';
+                }
+            }
+        },
+
+        indicatorState(id) {
+            return this._indicators[id] || null;
         },
 
         async remove(id, event) {
             event.stopPropagation();
             try {
                 await Api.deleteSession(id);
+                delete this._indicators[id];
                 await this.load();
                 // Tell chat.js to release this session's socket/store, whether
                 // or not it is the currently active tab.
