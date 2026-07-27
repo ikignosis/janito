@@ -18,6 +18,10 @@ class ConversationSession:
     created_at: float = field(default_factory=time.time)
     last_active: float = field(default_factory=time.time)
     title: str = "New conversation"
+    # Index into ``messages`` marking the last known-good state; cancel
+    # (Ctrl+C) and error recovery truncate back to here.  Mirrors the
+    # shell's ``history_checkpoint`` attribute.
+    history_checkpoint: int = 0
 
     def touch(self) -> None:
         self.last_active = time.time()
@@ -33,6 +37,8 @@ class ConversationSession:
             self.messages = [{"role": "system", "content": self.system_prompt}]
         else:
             self.messages = []
+        # Checkpoint starts after the system prompt (if any)
+        self.history_checkpoint = len(self.messages)
         self.touch()
 
     def to_summary(self) -> dict:
@@ -75,6 +81,8 @@ class SessionManager:
             messages=messages,
             system_prompt=system_prompt,
         )
+        # Checkpoint starts after the system prompt (if any)
+        session.history_checkpoint = len(messages)
         with self._lock:
             self._sessions[session_id] = session
         return session

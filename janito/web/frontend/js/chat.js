@@ -267,7 +267,10 @@ function chatComponent() {
 
         // Abort the in-flight request for the active session.  Sends a
         // ``{"type": "cancel"}`` message to the server which stops the
-        // agentic loop, then locally resets the UI to idle.
+        // agentic loop and rolls back the conversation history to the
+        // pre-turn checkpoint (removing the user message and any partial
+        // assistant response), then locally removes those messages from
+        // the UI to stay in sync with the server.
         cancelRequest() {
             const id = this.sessionId;
             if (!id) return;
@@ -280,17 +283,26 @@ function chatComponent() {
                 return;
             }
 
-            // Tell the server to abort the current turn.
+            // Tell the server to abort the current turn and roll back the
+            // history to the checkpoint (before this turn's user message).
             const socket = this._socket(id);
             if (socket) socket.sendCancel();
 
-            // Finalize the in-flight assistant message locally.
-            const m = store.current;
-            if (m) {
-                m.streaming = false;
-                m.cancelled = true;
+            // Remove the in-flight assistant message and the user message
+            // that started this turn, mirroring the server-side rollback.
+            if (store.current) {
+                const idx = store.messages.indexOf(store.current);
+                if (idx !== -1) store.messages.splice(idx, 1);
                 store.current = null;
             }
+            // Remove the last user message (the one that triggered this turn).
+            for (let i = store.messages.length - 1; i >= 0; i--) {
+                if (store.messages[i].role === 'user') {
+                    store.messages.splice(i, 1);
+                    break;
+                }
+            }
+
             store.error = null;
             this._setStatus(store, 'idle');
             if (store.id === this.sessionId) {
@@ -486,13 +498,21 @@ function chatComponent() {
                     break;
 
                 case 'cancelled':
-                    // Server confirmed the abort. The UI was already reset
-                    // in cancelRequest(); this just ensures the assistant
-                    // message is finalized even if events arrived in the
-                    // meantime.
+                    // Server confirmed the abort and rolled back the history
+                    // to the checkpoint.  Remove the in-flight assistant
+                    // message and the user message that started this turn
+                    // from the local UI so it stays in sync with the server.
                     if (m) {
-                        m.streaming = false;
-                        m.cancelled = true;
+                        const idx = store.messages.indexOf(m);
+                        if (idx !== -1) store.messages.splice(idx, 1);
+                    }
+                    // Remove the last user message (the one that triggered
+                    // this turn).
+                    for (let i = store.messages.length - 1; i >= 0; i--) {
+                        if (store.messages[i].role === 'user') {
+                            store.messages.splice(i, 1);
+                            break;
+                        }
                     }
                     store.current = null;
                     this._setStatus(store, 'idle');
@@ -505,7 +525,19 @@ function chatComponent() {
 
                 case 'error':
                     store.error = event.message;
-                    if (m) m.streaming = false;
+                    // Server rolled back the history to the checkpoint on
+                    // error.  Remove the in-flight assistant message and the
+                    // user message that started this turn from the local UI.
+                    if (m) {
+                        const idx = store.messages.indexOf(m);
+                        if (idx !== -1) store.messages.splice(idx, 1);
+                    }
+                    for (let i = store.messages.length - 1; i >= 0; i--) {
+                        if (store.messages[i].role === 'user') {
+                            store.messages.splice(i, 1);
+                            break;
+                        }
+                    }
                     store.current = null;
                     this._setStatus(store, 'idle');
                     if (isActive) {
