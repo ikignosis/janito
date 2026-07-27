@@ -13,7 +13,10 @@ For AI function calling, use through the tool registry (tooling.tools_registry).
 import atexit
 import json
 import os
-import sys
+import tempfile
+import time
+import urllib.error
+import urllib.request
 from typing import Any
 
 from ...tooling import BaseTool
@@ -50,6 +53,13 @@ def _track_temp_file(path: str) -> None:
     if not _atexit_registered:
         atexit.register(_cleanup_temp_files)
         _atexit_registered = True
+
+
+class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """A redirect handler that disables automatic redirect following."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
 
 
 @tool(permissions="r")
@@ -108,199 +118,102 @@ class GetUrl(BaseTool):
 
             self.report_start(f"🌐 Fetching URL: {url}")
 
-            # Build the fetch command using Python's urllib or requests equivalent
-            # Since we need to use subprocess to match the existing pattern, we'll create a Python script
-            fetch_script = f"""
-import urllib.request
-import urllib.error
-import sys
-import json
-import tempfile
-
-url = "{url}"
-max_length = {max_length if max_length is not None else "None"}
-max_lines = {max_lines if max_lines is not None else "None"}
-timeout_val = {timeout if timeout is not None else "None"}
-follow_redirects = {follow_redirects!r}
-threshold = {threshold if threshold is not None else "None"}
-
-try:
-    # Create request with custom headers
-    req = urllib.request.Request(url)
-    req.add_header('User-Agent', 'Mozilla/5.0 (compatible; AI-Tool/1.0)')
-
-    # Handle redirects
-    if not follow_redirects:
-        # Create custom opener that doesn't handle redirects
-        opener = urllib.request.build_opener(urllib.request.HTTPRedirectHandler())
-        response = opener.open(req, timeout=timeout_val)
-    else:
-        response = urllib.request.urlopen(req, timeout=timeout_val)
-
-    # Read content
-    content = response.read().decode('utf-8')
-    status_code = response.getcode()
-    content_length = len(content.encode('utf-8'))
-
-    # If the full content is too big, store it in a temporary file instead of
-    # returning it inline (which would blow up the model context). The temp
-    # file is created with delete=False so it survives this subprocess; the
-    # parent process registers it for cleanup on exit.
-    if threshold is not None and len(content) > threshold:
-        tmp = tempfile.NamedTemporaryFile(
-            mode='w',
-            suffix='.txt',
-            prefix='janito_geturl_',
-            encoding='utf-8',
-            delete=False,
-        )
-        tmp.write(content)
-        tmp.close()
-
-        result = {{
-            "success": True,
-            "too_big": True,
-            "tmp_filename": tmp.name,
-            "content_length": content_length,
-            "lines_returned": content.count('\\n') + (1 if content and not content.endswith('\\n') else 0),
-            "url": url,
-            "status_code": status_code,
-        }}
-        print(json.dumps(result))
-        sys.exit(0)
-
-    # Apply limits
-    if max_length is not None and len(content) > max_length:
-        content = content[:max_length] + "... [truncated]"
-
-    if max_lines is not None:
-        lines = content.split('\\n')
-        if len(lines) > max_lines:
-            content = '\\n'.join(lines[:max_lines]) + "\\n... [truncated]"
-
-    result = {{
-        "success": True,
-        "content": content,
-        "url": url,
-        "status_code": status_code,
-        "content_length": content_length,
-        "lines_returned": len(content.split('\\n'))
-    }}
-
-    print(json.dumps(result))
-
-except urllib.error.HTTPError as e:
-    result = {{
-        "success": False,
-        "error": f"HTTP Error {{e.code}}: {{e.reason}}",
-        "url": url,
-        "status_code": e.code
-    }}
-    print(json.dumps(result))
-
-except urllib.error.URLError as e:
-    result = {{
-        "success": False,
-        "error": f"URL Error: {{e.reason}}",
-        "url": url
-    }}
-    print(json.dumps(result))
-
-except Exception as e:
-    result = {{
-        "success": False,
-        "error": f"Unexpected error: {{str(e)}}",
-        "url": url
-    }}
-    print(json.dumps(result))
-"""
-
-            # Execute the fetch script using Python
-            import subprocess
-            import time
-
             start_time = time.time()
 
-            process = subprocess.run(
-                [sys.executable, "-c", fetch_script],
-                capture_output=True,
-                text=True,
-                timeout=timeout + 5
-                if timeout
-                else 65,  # Add buffer for script overhead
+            # Build the request
+            req = urllib.request.Request(url)
+            req.add_header("User-Agent", "Mozilla/5.0 (compatible; AI-Tool/1.0)")
+
+            # Build an opener that respects follow_redirects
+            if follow_redirects:
+                opener = urllib.request.build_opener()
+            else:
+                opener = urllib.request.build_opener(_NoRedirectHandler)
+
+            try:
+                response = opener.open(req, timeout=timeout)
+            except urllib.error.HTTPError as e:
+                execution_time_ms = int((time.time() - start_time) * 1000)
+                self.report_error(f"HTTP Error {e.code}: {e.reason}")
+                return {
+                    "success": False,
+                    "error": f"HTTP Error {e.code}: {e.reason}",
+                    "url": url,
+                    "status_code": e.code,
+                    "execution_time_ms": execution_time_ms,
+                }
+
+            # Read content
+            content = response.read().decode("utf-8", errors="replace")
+            status_code = response.getcode()
+            content_length = len(content.encode("utf-8"))
+            total_lines = content.count("\n") + (
+                1 if content and not content.endswith("\n") else 0
             )
 
             execution_time_ms = int((time.time() - start_time) * 1000)
 
-            if process.returncode == 0:
-                try:
-                    result = json.loads(process.stdout)
-                    if result["success"]:
-                        # If the content was too big, it has been stored to a
-                        # temporary file. Register the file for cleanup on exit,
-                        # warn the user, and return a pointer message instead of
-                        # the (huge) content.
-                        if result.get("too_big") and result.get("tmp_filename"):
-                            tmp_filename = result["tmp_filename"]
-                            _track_temp_file(tmp_filename)
-
-                            message = f"Content was too big, stored at {tmp_filename}"
-                            self.report_warning(message)
-
-                            return {
-                                "success": True,
-                                "message": message,
-                                "too_big": True,
-                                "tmp_filename": tmp_filename,
-                                "url": url,
-                                "status_code": result.get("status_code"),
-                                "content_length": result.get("content_length"),
-                                "lines_returned": result.get("lines_returned"),
-                                "execution_time_ms": execution_time_ms,
-                            }
-
-                        # Report success
-                        self.report_result(
-                            f"Fetched {result['content_length']} bytes ({result['lines_returned']} lines)"
-                        )
-
-                        # Add execution time to result
-                        result["execution_time_ms"] = execution_time_ms
-
-                        return result
-                    else:
-                        self.report_error(result["error"])
-                        result["execution_time_ms"] = execution_time_ms
-                        return result
-                except json.JSONDecodeError:
-                    self.report_error("Failed to parse response")
-                    return {
-                        "success": False,
-                        "error": "Failed to parse response from fetch script",
-                        "url": url,
-                        "execution_time_ms": execution_time_ms,
-                        "raw_output": process.stdout[:200]
-                        if process.stdout
-                        else "No output",
-                    }
-            else:
-                # Process failed
-                error_msg = (
-                    process.stderr.strip() if process.stderr else "Unknown error"
+            # If the full content is too big, store it in a temporary file
+            # instead of returning it inline (which would blow up the model
+            # context).
+            if threshold is not None and len(content) > threshold:
+                tmp = tempfile.NamedTemporaryFile(
+                    mode="w",
+                    suffix=".txt",
+                    prefix="janito_geturl_",
+                    encoding="utf-8",
+                    delete=False,
                 )
-                self.report_error(f"Fetch failed: {error_msg[:100]}")
+                tmp.write(content)
+                tmp.close()
+
+                _track_temp_file(tmp.name)
+
+                message = f"Content was too big, stored at {tmp.name}, use search methods to explore it."
+                self.report_warning(message)
+
                 return {
-                    "success": False,
-                    "error": f"Fetch script failed: {error_msg}",
+                    "success": True,
+                    "message": message,
+                    "too_big": True,
+                    "tmp_filename": tmp.name,
                     "url": url,
+                    "status_code": status_code,
+                    "content_length": content_length,
+                    "lines_returned": total_lines,
                     "execution_time_ms": execution_time_ms,
                 }
 
-        except subprocess.TimeoutExpired:
-            self.report_error("Request timeout")
+            # Apply limits
+            if max_length is not None and len(content) > max_length:
+                content = content[:max_length] + "... [truncated]"
+
+            if max_lines is not None:
+                lines = content.split("\n")
+                if len(lines) > max_lines:
+                    content = "\n".join(lines[:max_lines]) + "\n... [truncated]"
+
+            lines_returned = len(content.split("\n"))
+
+            self.report_result(
+                f"Fetched {content_length} bytes ({lines_returned} lines)"
+            )
+
+            return {
+                "success": True,
+                "content": content,
+                "url": url,
+                "status_code": status_code,
+                "content_length": content_length,
+                "lines_returned": lines_returned,
+                "execution_time_ms": execution_time_ms,
+            }
+
+        except urllib.error.URLError as e:
+            self.report_error(f"URL Error: {e.reason}")
             return {
                 "success": False,
-                "error": f"URL fetch timed out after {timeout} seconds",
+                "error": f"URL Error: {e.reason}",
                 "url": url,
             }
         except Exception as e:
