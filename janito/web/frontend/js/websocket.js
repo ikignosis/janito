@@ -116,6 +116,10 @@ class ChatSocket {
         return this.send({ type: 'prompt', content });
     }
 
+    sendRestart() {
+        return this.send({ type: 'restart' });
+    }
+
     get isConnected() {
         return this.ws && this.ws.readyState === WebSocket.OPEN;
     }

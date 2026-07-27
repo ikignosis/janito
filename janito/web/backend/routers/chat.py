@@ -125,8 +125,15 @@ async def chat_websocket(websocket: WebSocket, session_id: str):
                 await websocket.send_json({"type": "error", "message": "Invalid JSON"})
                 continue
 
-            if msg.get("type") != "prompt":
+            if msg.get("type") != "prompt" and msg.get("type") != "restart":
                 # Ignore unknown message types (could be pings)
+                continue
+
+            # F2 / restart: clear conversation history but keep the system
+            # prompt, then notify the client so it can reset its UI.
+            if msg.get("type") == "restart":
+                session.restart()
+                await websocket.send_json({"type": "restarted"})
                 continue
 
             content = (msg.get("content") or "").strip()

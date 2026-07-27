@@ -262,6 +262,40 @@ function chatComponent() {
         },
 
         // ---------------------------------------------------------------
+        // Restart (F2)
+        // ---------------------------------------------------------------
+
+        // Clear the conversation on both server and client, preserving the
+        // system prompt.  Mirrors the shell's F2 key binding.
+        restartSession() {
+            const id = this.sessionId;
+            if (!id) return;
+
+            // Don't restart if a response is in flight.
+            if (this.status === 'waiting' || this.status === 'streaming') return;
+
+            const store = this._store(id);
+
+            // Ask the server to clear history (keeps system prompt).
+            const socket = this._socket(id);
+            if (socket) socket.sendRestart();
+
+            // Reset local UI immediately.
+            store.messages.splice(0, store.messages.length);
+            store.current = null;
+            store.dirty = false;
+            store.loaded = true;   // no need to re-fetch empty history
+            this._current = null;
+            this.error = null;
+            store.error = null;
+            this._setStatus(store, 'idle');
+            this.status = 'idle';
+            this.input = '';
+            this._autoResize();
+            this._forceScrollToBottom();
+        },
+
+        // ---------------------------------------------------------------
         // Event routing
         // ---------------------------------------------------------------
 
@@ -279,6 +313,22 @@ function chatComponent() {
                     skippedList: event.skipped || {},
                 };
                 if (isActive) this.toolsSummary = store.toolsSummary;
+                return;
+            }
+
+            // Server confirmed the restart — history cleared, system prompt
+            // preserved.  Local UI was already reset in restartSession(); this
+            // just serves as an acknowledgement.
+            if (event.type === 'restarted') {
+                store.current = null;
+                store.dirty = false;
+                store.loaded = true;
+                this._setStatus(store, 'idle');
+                if (isActive) {
+                    this._current = null;
+                    this.status = 'idle';
+                    this._forceScrollToBottom();
+                }
                 return;
             }
 
@@ -574,8 +624,13 @@ function chatComponent() {
         // Input + UI helpers
         // ---------------------------------------------------------------
 
-        // Keyboard: Enter to send, Shift+Enter for newline
+        // Keyboard: Enter to send, Shift+Enter for newline, F2 to restart
         onKeydown(e) {
+            if (e.key === 'F2') {
+                e.preventDefault();
+                this.restartSession();
+                return;
+            }
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 this.sendPrompt();

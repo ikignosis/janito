@@ -22,6 +22,19 @@ class ConversationSession:
     def touch(self) -> None:
         self.last_active = time.time()
 
+    def restart(self) -> None:
+        """Clear conversation history, preserving the system prompt.
+
+        Mirrors the shell's F2 / ``restart`` behaviour: the system prompt
+        is kept (so the AI retains its instructions) while all user/assistant
+        messages are discarded.
+        """
+        if self.system_prompt:
+            self.messages = [{"role": "system", "content": self.system_prompt}]
+        else:
+            self.messages = []
+        self.touch()
+
     def to_summary(self) -> dict:
         return {
             "session_id": self.session_id,

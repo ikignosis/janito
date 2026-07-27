@@ -16,7 +16,7 @@
     </script>
 
     <!-- Theme (?v=N busts the browser cache on upgrades) -->
-    <link rel="stylesheet" href="/css/theme.css?v=6">
+    <link rel="stylesheet" href="/css/theme.css?v=7">
     <!-- highlight.js theme -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/styles/tokyo-night-dark.min.css">
 
@@ -29,15 +29,15 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
 
     <!-- App scripts (order matters: helpers first). ?v=N busts the browser cache. -->
-    <script src="/js/api.js?v=6"></script>
-    <script src="/js/markdown.js?v=6"></script>
-    <script src="/js/websocket.js?v=6"></script>
-    <script src="/js/chat.js?v=6"></script>
-    <script src="/js/sessions.js?v=6"></script>
-    <script src="/js/settings.js?v=6"></script>
-    <script src="/js/mcp.js?v=6"></script>
-    <script src="/js/statusBar.js?v=6"></script>
-    <script src="/js/app.js?v=6"></script>
+    <script src="/js/api.js?v=7"></script>
+    <script src="/js/markdown.js?v=7"></script>
+    <script src="/js/websocket.js?v=7"></script>
+    <script src="/js/chat.js?v=7"></script>
+    <script src="/js/sessions.js?v=7"></script>
+    <script src="/js/settings.js?v=7"></script>
+    <script src="/js/mcp.js?v=7"></script>
+    <script src="/js/statusBar.js?v=7"></script>
+    <script src="/js/app.js?v=7"></script>
 
     <style>
         .inline-icon { cursor: pointer; }
@@ -329,7 +329,7 @@
                           @keydown="onKeydown($event)"
                           @input="_autoResize()"
                           rows="1"
-                          placeholder="Send a message… (Enter to send, Shift+Enter for newline)"></textarea>
+                          placeholder="Send a message… (Enter to send, Shift+Enter for newline, F2 to restart)"></textarea>
                 <button class="btn btn-primary"
                         @click="sendPrompt()"
                         :disabled="!input.trim() || status === 'waiting' || status === 'streaming'">
