@@ -1,5 +1,6 @@
 """Chat endpoints: session CRUD + WebSocket streaming."""
 
+import asyncio
 import json
 import logging
 
@@ -21,6 +22,68 @@ def _get_sessions(request: Request) -> SessionManager:
 
 def _get_config(request: Request):
     return request.app.state.config
+
+
+async def _stream_to_websocket(
+    websocket: WebSocket, content: str, messages: list[dict], config
+):
+    """Run ``stream_prompt`` and forward every event to the client."""
+    async for event in stream_prompt(
+        prompt=content,
+        messages=messages,
+        config=config,
+        use_mcp=True,
+    ):
+        await websocket.send_json(event_to_dict(event))
+
+
+async def _await_cancel(websocket: WebSocket) -> bool:
+    """Wait for a ``{"type": "cancel"}`` message from the client.
+
+    Returns ``True`` when a cancel message is received, ``False`` when the
+    socket disconnects or a non-cancel message arrives (which is ignored so
+    the main loop can re-read it).
+    """
+    while True:
+        try:
+            raw = await websocket.receive_text()
+        except WebSocketDisconnect:
+            return False
+        try:
+            msg = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        if msg.get("type") == "cancel":
+            return True
+
+
+def _fixup_dangling_tool_calls(messages: list[dict]) -> None:
+    """Add placeholder tool results for any tool calls without responses.
+
+    When a stream is cancelled mid-tool-execution, the assistant message
+    with ``tool_calls`` is already in the history but the corresponding
+    tool-result messages may be missing.  The OpenAI API requires every
+    tool call to have a matching tool result, so we inject error
+    placeholders to keep the conversation valid for the next turn.
+    """
+    answered_ids = {
+        msg.get("tool_call_id") for msg in messages if msg.get("role") == "tool"
+    }
+    for msg in messages:
+        if msg.get("role") == "assistant" and msg.get("tool_calls"):
+            for tc in msg["tool_calls"]:
+                if tc["id"] not in answered_ids:
+                    messages.append(
+                        {
+                            "tool_call_id": tc["id"],
+                            "role": "tool",
+                            "name": tc["function"]["name"],
+                            "content": json.dumps(
+                                {"success": False, "error": "Cancelled by user"}
+                            ),
+                        }
+                    )
+                    answered_ids.add(tc["id"])
 
 
 @router.post("/sessions")
@@ -146,13 +209,47 @@ async def chat_websocket(websocket: WebSocket, session_id: str):
                 sessions.set_title(session_id, content[:60])
 
             try:
-                async for event in stream_prompt(
-                    prompt=content,
-                    messages=session.messages,
-                    config=config,
-                    use_mcp=True,
-                ):
-                    await websocket.send_json(event_to_dict(event))
+                # Stream the agentic loop, but listen for an incoming
+                # "cancel" message concurrently. If the client sends
+                # {"type": "cancel"} (e.g. Ctrl+C in the input box) the
+                # streaming task is cancelled and the turn is aborted.
+                stream_task = asyncio.ensure_future(
+                    _stream_to_websocket(websocket, content, session.messages, config)
+                )
+                cancel_task = asyncio.ensure_future(_await_cancel(websocket))
+                done, pending = await asyncio.wait(
+                    {stream_task, cancel_task},
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+
+                # Always clean up the task that didn't finish first.
+                for task in pending:
+                    task.cancel()
+                    try:
+                        await task
+                    except (asyncio.CancelledError, Exception):
+                        pass
+
+                # If the cancel task completed, the client requested an abort.
+                if cancel_task in done and not cancel_task.cancelled():
+                    if cancel_task.result():  # True = cancel was received
+                        logger.info(
+                            "[ws] client cancelled stream for session=%s",
+                            session_id,
+                        )
+                        # Ensure the conversation history stays valid even if
+                        # we were interrupted mid-tool-execution.
+                        _fixup_dangling_tool_calls(session.messages)
+                        await websocket.send_json({"type": "cancelled"})
+                else:
+                    # The stream finished (normally or with an error). Re-raise
+                    # the stream exception (if any) so it is logged below.
+                    if stream_task in done and not stream_task.cancelled():
+                        exc = stream_task.exception()
+                        if isinstance(exc, WebSocketDisconnect):
+                            raise exc
+                        if exc:
+                            raise exc
             except WebSocketDisconnect:
                 raise
             except Exception as e:

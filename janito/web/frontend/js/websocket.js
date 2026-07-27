@@ -116,6 +116,10 @@ class ChatSocket {
         return this.send({ type: 'prompt', content });
     }
 
+    sendCancel() {
+        return this.send({ type: 'cancel' });
+    }
+
     sendRestart() {
         return this.send({ type: 'restart' });
     }

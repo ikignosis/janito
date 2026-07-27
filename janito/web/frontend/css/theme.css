@@ -357,6 +357,25 @@ html[data-theme="dark"] .theme-icon.moon  { color: var(--accent); opacity: 1; }
 
 .chat-inner { max-width: 860px; width: 100%; margin: 0 auto; }
 
+/* Processing spinner — bottom-right of the chat area while a request
+   is in flight. Uses the same spin animation as the session-tab
+   indicator (.session-indicator.is-spinning / .spinner). */
+.chat-spinner {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--cyan);
+    border-radius: 50%;
+    animation: chat-spin 0.8s linear infinite;
+    z-index: 20;
+    pointer-events: none;
+}
+@keyframes chat-spin { to { transform: translateX(-50%) rotate(360deg); } }
+
 /* Messages */
 .message { display: flex; gap: 12px; }
 .message.user { flex-direction: row-reverse; }
@@ -621,6 +640,18 @@ html[data-theme="dark"] .theme-icon.moon  { color: var(--accent); opacity: 1; }
 @keyframes pulse {
     0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
     40% { opacity: 1; transform: scale(1); }
+}
+
+/* Cancelled notice — shown when the user aborts a generation (Ctrl+C) */
+.cancelled-notice {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-style: italic;
+    padding: 6px 0;
+    opacity: 0.8;
 }
 
 .spinner {

@@ -16,7 +16,7 @@
     </script>
 
     <!-- Theme (?v=N busts the browser cache on upgrades) -->
-    <link rel="stylesheet" href="/css/theme.css?v=7">
+    <link rel="stylesheet" href="/css/theme.css?v=10">
     <!-- highlight.js theme -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/styles/tokyo-night-dark.min.css">
 
@@ -29,15 +29,15 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
 
     <!-- App scripts (order matters: helpers first). ?v=N busts the browser cache. -->
-    <script src="/js/api.js?v=7"></script>
-    <script src="/js/markdown.js?v=7"></script>
-    <script src="/js/websocket.js?v=7"></script>
-    <script src="/js/chat.js?v=7"></script>
-    <script src="/js/sessions.js?v=7"></script>
-    <script src="/js/settings.js?v=7"></script>
-    <script src="/js/mcp.js?v=7"></script>
-    <script src="/js/statusBar.js?v=7"></script>
-    <script src="/js/app.js?v=7"></script>
+    <script src="/js/api.js?v=8"></script>
+    <script src="/js/markdown.js?v=8"></script>
+    <script src="/js/websocket.js?v=8"></script>
+    <script src="/js/chat.js?v=8"></script>
+    <script src="/js/sessions.js?v=8"></script>
+    <script src="/js/settings.js?v=8"></script>
+    <script src="/js/mcp.js?v=8"></script>
+    <script src="/js/statusBar.js?v=8"></script>
+    <script src="/js/app.js?v=8"></script>
 
     <style>
         .inline-icon { cursor: pointer; }
@@ -269,6 +269,11 @@
                                 </div>
                             </template>
 
+                            <!-- Cancelled indicator -->
+                            <template x-if="msg.cancelled">
+                                <div class="cancelled-notice">⏹ Generation stopped by the user</div>
+                            </template>
+
                             <!-- Usage -->
                             <template x-if="msg.usage">
                                 <div class="usage-strip" role="note"
@@ -308,6 +313,14 @@
             </div>
         </div>
 
+        <!-- Processing spinner — bottom-right of the chat area while a
+             request is in flight (waiting / streaming / tool running).
+             Uses the same spin effect as the session-tab indicators. -->
+        <span class="chat-spinner"
+              x-show="status === 'waiting' || status === 'streaming' || status === 'tool_running'"
+              x-transition.opacity.duration.200ms
+              aria-hidden="true"></span>
+
         <!-- "Jump to latest" — appears when the user scrolls up mid-stream.
              Pinned over the chat area; hidden again once at the bottom. -->
         <button class="jump-to-latest"
@@ -329,7 +342,7 @@
                           @keydown="onKeydown($event)"
                           @input="_autoResize()"
                           rows="1"
-                          placeholder="Send a message… (Enter to send, Shift+Enter for newline, F2 to restart)"></textarea>
+                          placeholder="Send a message… (Enter to send, Shift+Enter for newline, Ctrl+C to stop, F2 to restart)"></textarea>
                 <button class="btn btn-primary"
                         @click="sendPrompt()"
                         :disabled="!input.trim() || status === 'waiting' || status === 'streaming'">

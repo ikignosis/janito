@@ -262,6 +262,46 @@ function chatComponent() {
         },
 
         // ---------------------------------------------------------------
+        // Cancel (Ctrl+C)
+        // ---------------------------------------------------------------
+
+        // Abort the in-flight request for the active session.  Sends a
+        // ``{"type": "cancel"}`` message to the server which stops the
+        // agentic loop, then locally resets the UI to idle.
+        cancelRequest() {
+            const id = this.sessionId;
+            if (!id) return;
+            const store = this._store(id);
+
+            // Don't cancel if nothing is running.
+            if (store.status !== 'waiting' &&
+                store.status !== 'streaming' &&
+                store.status !== 'tool_running') {
+                return;
+            }
+
+            // Tell the server to abort the current turn.
+            const socket = this._socket(id);
+            if (socket) socket.sendCancel();
+
+            // Finalize the in-flight assistant message locally.
+            const m = store.current;
+            if (m) {
+                m.streaming = false;
+                m.cancelled = true;
+                store.current = null;
+            }
+            store.error = null;
+            this._setStatus(store, 'idle');
+            if (store.id === this.sessionId) {
+                this._current = null;
+                this.status = 'idle';
+                this.error = null;
+                this._scrollToBottom();
+            }
+        },
+
+        // ---------------------------------------------------------------
         // Restart (F2)
         // ---------------------------------------------------------------
 
@@ -271,10 +311,22 @@ function chatComponent() {
             const id = this.sessionId;
             if (!id) return;
 
-            // Don't restart if a response is in flight.
-            if (this.status === 'waiting' || this.status === 'streaming') return;
-
             const store = this._store(id);
+
+            // If a response is in flight, cancel it first (like Ctrl+C) so
+            // the server stops the agentic loop before we clear the history.
+            if (store.status === 'waiting' ||
+                store.status === 'streaming' ||
+                store.status === 'tool_running') {
+                const cancelSocket = this._socket(id);
+                if (cancelSocket) cancelSocket.sendCancel();
+                // Finalize the in-flight assistant message locally.
+                if (store.current) {
+                    store.current.streaming = false;
+                    store.current.cancelled = true;
+                    store.current = null;
+                }
+            }
 
             // Ask the server to clear history (keeps system prompt).
             const socket = this._socket(id);
@@ -424,6 +476,24 @@ function chatComponent() {
                 case 'done':
                     m.streaming = false;
                     m.done = true;
+                    store.current = null;
+                    this._setStatus(store, 'idle');
+                    if (isActive) {
+                        this._current = null;
+                        this.status = 'idle';
+                        this._scrollToBottom();
+                    }
+                    break;
+
+                case 'cancelled':
+                    // Server confirmed the abort. The UI was already reset
+                    // in cancelRequest(); this just ensures the assistant
+                    // message is finalized even if events arrived in the
+                    // meantime.
+                    if (m) {
+                        m.streaming = false;
+                        m.cancelled = true;
+                    }
                     store.current = null;
                     this._setStatus(store, 'idle');
                     if (isActive) {
@@ -624,11 +694,23 @@ function chatComponent() {
         // Input + UI helpers
         // ---------------------------------------------------------------
 
-        // Keyboard: Enter to send, Shift+Enter for newline, F2 to restart
+        // Keyboard: Enter to send, Shift+Enter for newline, F2 to restart,
+        // Ctrl+C to cancel the current request.
         onKeydown(e) {
             if (e.key === 'F2') {
                 e.preventDefault();
                 this.restartSession();
+                return;
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+                // Only cancel if a request is in flight; otherwise let the
+                // browser do its default (copy selected text / clear input).
+                if (this.status === 'waiting' ||
+                    this.status === 'streaming' ||
+                    this.status === 'tool_running') {
+                    e.preventDefault();
+                    this.cancelRequest();
+                }
                 return;
             }
             if (e.key === 'Enter' && !e.shiftKey) {
