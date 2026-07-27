@@ -16,68 +16,7 @@ from typing import Any
 
 from ...tooling import BaseTool, norm_path
 from ..decorator import tool
-
-
-def _load_gitignore_spec(directory: str):
-    """
-    Load .gitignore patterns from the specified directory.
-
-    Uses the 'pathspec' library for proper gitignore parsing.
-
-    Args:
-        directory (str): The directory to look for .gitignore
-
-    Returns:
-        A PathSpec object, or None if no .gitignore file exists.
-
-    Raises:
-        ImportError: If pathspec is not installed.
-    """
-    gitignore_path = os.path.join(directory, ".gitignore")
-
-    if not os.path.exists(gitignore_path):
-        return None
-
-    try:
-        from pathspec import PathSpec
-        from pathspec.patterns import GitWildMatchPattern
-    except ImportError:
-        raise ImportError(
-            "The 'pathspec' package is required for .gitignore support. "
-            "Install it with: pip install pathspec"
-        )
-
-    with open(gitignore_path, "r") as f:
-        patterns = f.readlines()
-
-    return PathSpec.from_lines(GitWildMatchPattern, patterns)
-
-
-def _is_ignored_by_gitignore(
-    rel_path: str, gitignore_spec, is_dir: bool = False
-) -> bool:
-    """
-    Check if a path is ignored by gitignore patterns.
-
-    Args:
-        rel_path (str): Relative path to check
-        gitignore_spec: The PathSpec object
-        is_dir (bool): Whether the path is a directory. Directory-only
-            gitignore patterns (those ending with '/') only match when this
-            is True.
-
-    Returns:
-        bool: True if the path should be ignored
-    """
-    if gitignore_spec is None:
-        return False
-
-    # Normalize path separators for matching
-    normalized_path = rel_path.replace(os.sep, "/")
-    if is_dir and not normalized_path.endswith("/"):
-        normalized_path += "/"
-
-    return gitignore_spec.match_file(normalized_path)
+from .gitignore_utils import is_ignored_by_gitignore, load_gitignore_spec
 
 
 @tool(permissions="r")
@@ -154,7 +93,7 @@ class SearchText(BaseTool):
             cwd = os.getcwd()
             gitignore_spec = None
             if respect_gitignore:
-                gitignore_spec = _load_gitignore_spec(cwd)
+                gitignore_spec = load_gitignore_spec(cwd)
 
             # Report start
             paths_str = ", ".join([norm_path(p) for p in valid_paths[:3]])
@@ -394,7 +333,7 @@ class SearchText(BaseTool):
                     dirs[:] = [
                         d
                         for d in dirs
-                        if not _is_ignored_by_gitignore(
+                        if not is_ignored_by_gitignore(
                             os.path.relpath(os.path.join(root, d), cwd),
                             gitignore_spec,
                             is_dir=True,
@@ -408,7 +347,7 @@ class SearchText(BaseTool):
                     if (
                         gitignore_spec
                         and cwd
-                        and _is_ignored_by_gitignore(
+                        and is_ignored_by_gitignore(
                             os.path.relpath(filepath, cwd), gitignore_spec
                         )
                     ):
@@ -463,7 +402,7 @@ class SearchText(BaseTool):
                     dirs[:] = [
                         d
                         for d in dirs
-                        if not _is_ignored_by_gitignore(
+                        if not is_ignored_by_gitignore(
                             os.path.relpath(os.path.join(root, d), cwd),
                             gitignore_spec,
                             is_dir=True,
@@ -477,7 +416,7 @@ class SearchText(BaseTool):
                     if (
                         gitignore_spec
                         and cwd
-                        and _is_ignored_by_gitignore(
+                        and is_ignored_by_gitignore(
                             os.path.relpath(filepath, cwd), gitignore_spec
                         )
                     ):

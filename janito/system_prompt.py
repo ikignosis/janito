@@ -2,7 +2,6 @@ import os
 
 SYSTEM_PROMPT = """
 - Explore the current directory for potential content related to the question
-- In case of ambiguity or multiple options, ask for clarification before answering
 """
 
 

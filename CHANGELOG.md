@@ -19,6 +19,7 @@ Changes since `v4.12.0` (2026-07-26).
 - `RunGitHubCLI` tool: new system tool that executes the GitHub CLI (`gh`) to interact with GitHub artifacts, streaming command output in real time (like `RunBashCode`) and returning the captured stdout/stderr and exit code. The `gh` executable is located on PATH or in well-known install locations, and the tool is only loaded when it is available.
 - Tests: add `tests/test_get_url.py` covering the `GetUrl` oversized-content temp-file handling (local HTTP server, no external network access).
 - Tool usage tracking: record every tool invocation in a SQLite database (`tools_use.db` in the config directory) with per-tool counters, from both the CLI agent loop and the web backend; includes the `janito.tooling.tools_usage` module (with a small CLI to inspect counts) and tests.
+- `SearchRegex` tool: new `respect_gitignore` parameter (default `True`) with a `--no-gitignore` CLI flag; search results now report `gitignore_applied` and `files_ignored_by_gitignore` counts.
 
 ### Changed
 
@@ -33,6 +34,8 @@ Changes since `v4.12.0` (2026-07-26).
 - Config: validate the `provider` value against the supported providers list, raising a clear error that enumerates them for unknown providers and normalizing the stored value to its canonical casing; the CLI `set` command now prints the underlying error message directly.
 - CLI: whenever `--provider <name>` is used it is now validated against the supported providers (those that map to a base URL) before any command runs; unknown providers are rejected with an error enumerating the supported providers, and the value is normalized to its canonical casing.
 - **Breaking:** remove the `dry_run` parameter from the `DeleteOneDriveFile` tool; the tool now always performs the deletion.
+- File-search tools: extract shared `.gitignore` loading and matching helpers into a new `janito/tools/files/gitignore_utils.py` module, removing duplicated code from `find_files.py`, `list_files.py` and `search_text.py`.
+- System prompt: remove the "In case of ambiguity or multiple options, ask for clarification before answering" instruction.
 
 ## [v4.12.0](https://github.com/joaopinto/janito/compare/v4.11.0...v4.12.0) - 2026-07-26
 

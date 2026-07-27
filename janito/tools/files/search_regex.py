@@ -4,6 +4,7 @@ Search Regex Tool - A class-based tool for searching regular expression patterns
 
 This tool demonstrates how to use the base tool class with progress reporting.
 It searches for regex patterns in files and returns matches with positions and content.
+Optionally respects .gitignore patterns when enabled.
 
 Note: This tool requires the progress reporting system from the tooling package.
 For direct execution, use: python -m janito.tools.files.search_regex [args]
@@ -16,6 +17,7 @@ from typing import Any
 
 from ...tooling import BaseTool, norm_path
 from ..decorator import tool
+from .gitignore_utils import is_ignored_by_gitignore, load_gitignore_spec
 
 
 @tool(permissions="r")
@@ -32,6 +34,7 @@ class SearchRegex(BaseTool):
         max_depth: int | None = None,
         max_results: int | None = 100,
         count_only: bool = False,
+        respect_gitignore: bool = True,
     ) -> dict[str, Any]:
         """
         Search for regular expression patterns in files and directories.
@@ -43,6 +46,7 @@ class SearchRegex(BaseTool):
             max_depth (int, optional): Maximum directory depth to search (None = unlimited)
             max_results (int, optional): Maximum number of results to return (None = unlimited)
             count_only (bool): If True, return only match counts instead of matching lines
+            respect_gitignore (bool): Whether to respect .gitignore patterns. Default is True.
 
         Returns:
             Dict[str, Any]: A dictionary containing:
@@ -51,6 +55,9 @@ class SearchRegex(BaseTool):
                 - 'counts': dict with per-file and total match counts (if count_only=True)
                 - 'total_matches': total number of matches found
                 - 'files_searched': number of files searched
+                - 'respect_gitignore': whether .gitignore was respected
+                - 'gitignore_applied': whether .gitignore was actually applied
+                - 'files_ignored_by_gitignore': number of files skipped due to .gitignore
                 - 'error': error message if operation failed (only present if success=False)
         """
         try:
@@ -58,7 +65,12 @@ class SearchRegex(BaseTool):
             path_list = paths.strip().split()
             if not path_list:
                 self.report_error("No paths provided")
-                return {"success": False, "error": "No paths provided", "paths": paths}
+                return {
+                    "success": False,
+                    "error": "No paths provided",
+                    "paths": paths,
+                    "respect_gitignore": respect_gitignore,
+                }
 
             # Validate paths exist
             valid_paths = []
@@ -75,7 +87,14 @@ class SearchRegex(BaseTool):
                     "success": False,
                     "error": "No valid paths to search",
                     "paths": paths,
+                    "respect_gitignore": respect_gitignore,
                 }
+
+            # Load .gitignore from the current working directory
+            cwd = os.getcwd()
+            gitignore_spec = None
+            if respect_gitignore:
+                gitignore_spec = load_gitignore_spec(cwd)
 
             # Report start
             paths_str = ", ".join([norm_path(p) for p in valid_paths[:3]])
@@ -88,11 +107,23 @@ class SearchRegex(BaseTool):
             # Perform search
             if count_only:
                 result = self._search_count_only(
-                    valid_paths, pattern, case_sensitive, max_depth, max_results
+                    valid_paths,
+                    pattern,
+                    case_sensitive,
+                    max_depth,
+                    max_results,
+                    gitignore_spec,
+                    cwd,
                 )
             else:
                 result = self._search_with_content(
-                    valid_paths, pattern, case_sensitive, max_depth, max_results
+                    valid_paths,
+                    pattern,
+                    case_sensitive,
+                    max_depth,
+                    max_results,
+                    gitignore_spec,
+                    cwd,
                 )
 
             if result["success"]:
@@ -115,6 +146,7 @@ class SearchRegex(BaseTool):
                 "error": str(e),
                 "paths": paths,
                 "pattern": pattern,
+                "respect_gitignore": respect_gitignore,
             }
 
     def _search_with_content(
@@ -124,16 +156,20 @@ class SearchRegex(BaseTool):
         case_sensitive: bool,
         max_depth: int | None,
         max_results: int | None,
+        gitignore_spec=None,
+        cwd: str | None = None,
     ) -> dict[str, Any]:
         """Search and return matching lines with content."""
         matches = []
         files_searched = 0
-        flags = 0 if case_sensitive else re.IGNORECASE
+        files_ignored = 0
 
         for path in paths:
             if os.path.isfile(path):
                 # Search single file
-                file_matches = self._search_file(path, pattern, flags, max_results)
+                file_matches = self._search_file(
+                    path, pattern, case_sensitive, max_results
+                )
                 if file_matches:
                     matches.extend(file_matches)
                     if max_results and len(matches) >= max_results:
@@ -142,11 +178,22 @@ class SearchRegex(BaseTool):
                 files_searched += 1
             else:
                 # Search directory recursively
-                dir_matches, dir_files_searched = self._search_directory(
-                    path, pattern, flags, max_depth, max_results
+                (
+                    dir_matches,
+                    dir_files_searched,
+                    dir_files_ignored,
+                ) = self._search_directory(
+                    path,
+                    pattern,
+                    case_sensitive,
+                    max_depth,
+                    max_results,
+                    gitignore_spec,
+                    cwd,
                 )
                 matches.extend(dir_matches)
                 files_searched += dir_files_searched
+                files_ignored += dir_files_ignored
                 if max_results and len(matches) >= max_results:
                     matches = matches[:max_results]
                     break
@@ -156,6 +203,9 @@ class SearchRegex(BaseTool):
             "matches": matches,
             "total_matches": len(matches),
             "files_searched": files_searched,
+            "respect_gitignore": gitignore_spec is not None,
+            "gitignore_applied": gitignore_spec is not None,
+            "files_ignored_by_gitignore": files_ignored,
         }
 
     def _search_count_only(
@@ -165,42 +215,54 @@ class SearchRegex(BaseTool):
         case_sensitive: bool,
         max_depth: int | None,
         max_results: int | None,
+        gitignore_spec=None,
+        cwd: str | None = None,
     ) -> dict[str, Any]:
         """Search and return only match counts."""
         counts = {}
         total_matches = 0
         files_searched = 0
-        flags = 0 if case_sensitive else re.IGNORECASE
+        files_ignored = 0
 
         for path in paths:
             if os.path.isfile(path):
                 # Count matches in single file
-                file_count = self._count_file_matches(path, pattern, flags)
+                file_count = self._count_file_matches(path, pattern, case_sensitive)
                 if file_count > 0:
                     counts[path] = file_count
                     total_matches += file_count
                 files_searched += 1
             else:
                 # Count matches in directory
-                dir_counts, dir_total, dir_files = self._count_directory_matches(
-                    path, pattern, flags, max_depth
+                (
+                    dir_counts,
+                    dir_total,
+                    dir_files,
+                    dir_ignored,
+                ) = self._count_directory_matches(
+                    path, pattern, case_sensitive, max_depth, gitignore_spec, cwd
                 )
                 counts.update(dir_counts)
                 total_matches += dir_total
                 files_searched += dir_files
+                files_ignored += dir_ignored
 
         return {
             "success": True,
             "counts": counts,
             "total_matches": total_matches,
             "files_searched": files_searched,
+            "respect_gitignore": gitignore_spec is not None,
+            "gitignore_applied": gitignore_spec is not None,
+            "files_ignored_by_gitignore": files_ignored,
         }
 
     def _search_file(
-        self, filepath: str, pattern: str, flags: int, max_results: int | None
+        self, filepath: str, pattern: str, case_sensitive: bool, max_results: int | None
     ) -> list[str]:
         """Search a single file and return matching lines."""
         try:
+            flags = 0 if case_sensitive else re.IGNORECASE
             compiled_pattern = re.compile(pattern, flags)
             with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
                 matches = []
@@ -220,9 +282,12 @@ class SearchRegex(BaseTool):
             # Skip files that can't be read (binary files, permission issues, etc.)
             return []
 
-    def _count_file_matches(self, filepath: str, pattern: str, flags: int) -> int:
+    def _count_file_matches(
+        self, filepath: str, pattern: str, case_sensitive: bool
+    ) -> int:
         """Count matches in a single file."""
         try:
+            flags = 0 if case_sensitive else re.IGNORECASE
             compiled_pattern = re.compile(pattern, flags)
             with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
                 count = 0
@@ -242,13 +307,16 @@ class SearchRegex(BaseTool):
         self,
         dirpath: str,
         pattern: str,
-        flags: int,
+        case_sensitive: bool,
         max_depth: int | None,
         max_results: int | None,
+        gitignore_spec=None,
+        cwd: str | None = None,
     ) -> tuple:
         """Search a directory recursively and return matches."""
         matches = []
         files_searched = 0
+        files_ignored = 0
 
         try:
             for root, dirs, files in os.walk(dirpath):
@@ -259,34 +327,65 @@ class SearchRegex(BaseTool):
                         dirs.clear()  # Don't recurse deeper
                         continue
 
+                # Filter out ignored directories (modify in-place to prevent walking into them)
+                if gitignore_spec and cwd:
+                    dirs[:] = [
+                        d
+                        for d in dirs
+                        if not is_ignored_by_gitignore(
+                            os.path.relpath(os.path.join(root, d), cwd),
+                            gitignore_spec,
+                            is_dir=True,
+                        )
+                    ]
+
                 for filename in files:
                     filepath = os.path.join(root, filename)
+
+                    # Skip if ignored by .gitignore (match relative to cwd)
+                    if (
+                        gitignore_spec
+                        and cwd
+                        and is_ignored_by_gitignore(
+                            os.path.relpath(filepath, cwd), gitignore_spec
+                        )
+                    ):
+                        files_ignored += 1
+                        continue
+
                     file_matches = self._search_file(
                         filepath,
                         pattern,
-                        flags,
+                        case_sensitive,
                         max_results - len(matches) if max_results else None,
                     )
                     if file_matches:
                         matches.extend(file_matches)
                         if max_results and len(matches) >= max_results:
                             files_searched += 1
-                            return matches[:max_results], files_searched
+                            return matches[:max_results], files_searched, files_ignored
 
                     files_searched += 1
 
         except Exception:
             pass  # Skip directories that can't be accessed
 
-        return matches, files_searched
+        return matches, files_searched, files_ignored
 
     def _count_directory_matches(
-        self, dirpath: str, pattern: str, flags: int, max_depth: int | None
+        self,
+        dirpath: str,
+        pattern: str,
+        case_sensitive: bool,
+        max_depth: int | None,
+        gitignore_spec=None,
+        cwd: str | None = None,
     ) -> tuple:
         """Count matches in a directory recursively."""
         counts = {}
         total_matches = 0
         files_searched = 0
+        files_ignored = 0
 
         try:
             for root, dirs, files in os.walk(dirpath):
@@ -297,9 +396,35 @@ class SearchRegex(BaseTool):
                         dirs.clear()  # Don't recurse deeper
                         continue
 
+                # Filter out ignored directories (modify in-place to prevent walking into them)
+                if gitignore_spec and cwd:
+                    dirs[:] = [
+                        d
+                        for d in dirs
+                        if not is_ignored_by_gitignore(
+                            os.path.relpath(os.path.join(root, d), cwd),
+                            gitignore_spec,
+                            is_dir=True,
+                        )
+                    ]
+
                 for filename in files:
                     filepath = os.path.join(root, filename)
-                    file_count = self._count_file_matches(filepath, pattern, flags)
+
+                    # Skip if ignored by .gitignore (match relative to cwd)
+                    if (
+                        gitignore_spec
+                        and cwd
+                        and is_ignored_by_gitignore(
+                            os.path.relpath(filepath, cwd), gitignore_spec
+                        )
+                    ):
+                        files_ignored += 1
+                        continue
+
+                    file_count = self._count_file_matches(
+                        filepath, pattern, case_sensitive
+                    )
                     if file_count > 0:
                         counts[filepath] = file_count
                         total_matches += file_count
@@ -308,7 +433,7 @@ class SearchRegex(BaseTool):
         except Exception:
             pass  # Skip directories that can't be accessed
 
-        return counts, total_matches, files_searched
+        return counts, total_matches, files_searched, files_ignored
 
 
 # CLI interface for testing
@@ -333,6 +458,9 @@ def main():
         "--count-only", "-c", action="store_true", help="Return only counts"
     )
     parser.add_argument(
+        "--no-gitignore", action="store_true", help="Disable .gitignore filtering"
+    )
+    parser.add_argument(
         "--json", "-j", action="store_true", help="Output in JSON format"
     )
 
@@ -346,6 +474,7 @@ def main():
         max_depth=args.max_depth,
         max_results=args.max_results,
         count_only=args.count_only,
+        respect_gitignore=not args.no_gitignore,
     )
 
     if args.json:
@@ -355,6 +484,11 @@ def main():
             if args.count_only:
                 print(f"Total matches: {result['total_matches']}")
                 print(f"Files searched: {result['files_searched']}")
+                if result.get("gitignore_applied"):
+                    print("Respecting .gitignore")
+                ignored = result.get("files_ignored_by_gitignore", 0)
+                if ignored > 0:
+                    print(f"Files ignored by .gitignore: {ignored}")
                 if result["counts"]:
                     print("\nPer-file counts:")
                     for filepath, count in result["counts"].items():
@@ -363,6 +497,11 @@ def main():
                 print(
                     f"Found {len(result['matches'])} matches in {result['files_searched']} files:"
                 )
+                if result.get("gitignore_applied"):
+                    print("Respecting .gitignore")
+                ignored = result.get("files_ignored_by_gitignore", 0)
+                if ignored > 0:
+                    print(f"Files ignored by .gitignore: {ignored}")
                 for match in result["matches"]:
                     print(f"  {match}")
         else:
