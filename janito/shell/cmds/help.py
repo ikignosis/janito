@@ -37,6 +37,7 @@ class HelpCmdHandler(CmdHandler):
         print("  !<command>  - Execute a shell command directly")
         print("  /prompt      - Show the system prompt")
         print("  /tools       - List all available tools")
+        print("  /show_tools_stats - Show tool usage statistics")
         print(
             "  /multi       - Enable multiline input for next prompt (ESC ENTER to submit)"
         )

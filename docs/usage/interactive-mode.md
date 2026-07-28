@@ -34,6 +34,8 @@ Additional commands available in chat:
 | Command | Description |
 |---------|-------------|
 | `/help` | Show help information |
+| `/tools` | List all available tools |
+| `/show_tools_stats` | Show tool usage statistics (from the SQLite `tools_use.db`) |
 | `/mcp add <name> stdio <cmd>` | Add MCP stdio service |
 | `/mcp add <name> http <url>` | Add MCP HTTP service |
 | `/mcp list` | List MCP services |
