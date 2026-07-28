@@ -16,6 +16,22 @@
     height: auto;
 }
 
+/* Image content card (CreateImage tool result) */
+.image-card {
+    margin: 8px 0;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-secondary);
+    overflow: hidden;
+    text-align: center;
+}
+.image-card img {
+    max-width: 100%;
+    height: auto;
+    border-radius: calc(var(--radius) - 4px);
+}
+
 .tool-card {
     border: 1px solid var(--border);
     border-radius: var(--radius);

@@ -25,6 +25,7 @@ def create_app(config: WebServerConfig) -> FastAPI:
     """Build the FastAPI application."""
     from .routers import chat as chat_router
     from .routers import config as config_router
+    from .routers import images as images_router
     from .routers import mcp as mcp_router
     from .routers import tools as tools_router
 
@@ -48,6 +49,7 @@ def create_app(config: WebServerConfig) -> FastAPI:
     app.include_router(config_router.router, prefix="/api/config", tags=["config"])
     app.include_router(tools_router.router, prefix="/api/tools", tags=["tools"])
     app.include_router(mcp_router.router, prefix="/api/mcp", tags=["mcp"])
+    app.include_router(images_router.router, prefix="/api/images", tags=["images"])
 
     @app.get("/api/health")
     async def health():

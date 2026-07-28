@@ -77,6 +77,13 @@ const CHAT_EVENT_HANDLERS = {
                 && c.event.result.svg_text) {
                 c.msg.parts.push({ kind: 'svg', svg: c.event.result.svg_text });
             }
+
+            // CreateImage tool: render the generated image inline as a card.
+            if (!c.event.error && c.event.result
+                && c.event.result.content_type === 'image'
+                && c.event.result.image_path) {
+                c.msg.parts.push({ kind: 'image', path: c.event.result.image_path });
+            }
         }
         if (c.isActive) c.comp._scrollToBottom();
     },

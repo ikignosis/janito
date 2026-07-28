@@ -7,8 +7,10 @@ rendered inline on the web frontend's content cards.
 
 Currently provides:
     - CreateSVG: render an SVG graphic inline in the chat UI.
+    - CreateImage: generate an image (Wan 2.7 Image Pro) and render it inline.
 """
 
+from .create_image import CreateImage
 from .create_svg import CreateSVG
 
-__all__ = ["CreateSVG"]
+__all__ = ["CreateSVG", "CreateImage"]

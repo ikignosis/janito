@@ -76,6 +76,13 @@ window.ChatHistoryMixin = {
                             && result.svg_text) {
                             current.parts.push({ kind: 'svg', svg: result.svg_text });
                         }
+
+                        // Reconstruct image part from CreateImage tool result.
+                        if (result && typeof result === 'object'
+                            && result.content_type === 'image'
+                            && result.image_path) {
+                            current.parts.push({ kind: 'image', path: result.image_path });
+                        }
                     }
                 }
             }

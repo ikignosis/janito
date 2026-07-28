@@ -1,5 +1,7 @@
 # janito - a development agent with function calling, MCP and skills
 
+![Console vs Web](docs/imgs/console_vs_web.png)
+
 > 📖 **Full documentation available at [https://ikignosis.github.io/janito/](https://ikignosis.github.io/janito/)**
 
 > ⚠️ **Disclaimer:** The code on this repo has been developed mostly using AI, more specifically the Qwen models.

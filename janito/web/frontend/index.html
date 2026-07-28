@@ -251,6 +251,13 @@
                                     <template x-if="part.kind === 'svg'">
                                         <div class="svg-card" x-html="sanitizeSvg(part.svg)"></div>
                                     </template>
+
+                                    <!-- Image content card (CreateImage tool result) -->
+                                    <template x-if="part.kind === 'image'">
+                                        <div class="image-card">
+                                            <img :src="imageUrl(part.path)" alt="Generated image" loading="lazy">
+                                        </div>
+                                    </template>
                                 </div>
                             </template>
 
