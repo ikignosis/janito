@@ -1,6 +1,6 @@
 # janito - a development agent with function calling, MCP and skills
 
-![Console vs Web](docs/imgs/console_vs_web.png)
+![Console vs Web](https://raw.githubusercontent.com/ikignosis/janito/main/docs/imgs/console_vs_web.png)
 
 > 📖 **Full documentation available at [https://ikignosis.github.io/janito/](https://ikignosis.github.io/janito/)**
 
