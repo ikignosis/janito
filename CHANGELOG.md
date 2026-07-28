@@ -25,6 +25,10 @@ Changes since `v4.13.0` (2026-07-28).
 - MCP-aware tools registry (`janito/tooling/mcp_registry.py`): every function previously imported from a non-existent `janito.mcp.integration` module, so MCP tools were silently never surfaced and `is_mcp_tool()` always returned `False`. The module now gathers tools from the real `janito.mcp_manager` (connected services): `is_mcp_tool()` checks the service prefix, `get_all_tool_schemas_with_mcp()`/`get_all_tools_with_mcp()`/`get_tool_by_name_with_mcp()` merge built-in and connected MCP tools (MCP tools are wrapped as callables with proper `__name__`/`__doc__`/`__signature__` so they round-trip through `get_function_schema()`), and `get_tool_source()` now correctly reports `"mcp"` for connected MCP tools.
 - CLI skills handler: `janito/cli/handlers/skills.py` no longer duplicates the skills-directory logic of `tooling/skills_provider.py`; `get_skills_dir` is now an alias of the canonical `get_default_skills_dir` (both honor the `-c`/`--config-dir` override), with the `get_skills_dir`/`SKILLS_DIR` names retained for backward compatibility.
 
+### Documentation
+
+- Web tools: added a dedicated **Web Tools** docs page (`docs/tools/web-search.md`) covering `WebSearch` (Brave Search API) and `GetUrl` — setup, full parameter tables, usage examples, and troubleshooting. Updated `docs/tools/index.md` so the "fetch URLs / search the web (Brave)" capabilities are listed under a new **Net** row instead of the (now inaccurate) **System** row, matching the `net` toolset move, and registered the new page in `mkdocs.yml` and in the `docs/configuration/secrets.md` cross-links.
+
 ## [v4.13.0](https://github.com/joaopinto/janito/compare/v4.12.0...v4.13.0) - 2026-07-28
 
 Changes since `v4.12.0` (2026-07-26).

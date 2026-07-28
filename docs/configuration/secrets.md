@@ -95,5 +95,6 @@ The secrets file is a simple JSON dictionary:
 
 ## Related
 
+- [Web Tools](../tools/web-search.md) - Full WebSearch / GetUrl guide
 - [Gmail Tools](../tools/gmail.md) - Full Gmail setup guide
 - [OneDrive Tools](../tools/onedrive.md) - Full OneDrive setup guide

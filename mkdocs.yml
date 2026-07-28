@@ -54,6 +54,7 @@ nav:
   - Tools:
       - tools/index.md
       - tools/files.md
+      - tools/web-search.md
       - tools/gmail.md
       - tools/onedrive.md
       - tools/skills.md

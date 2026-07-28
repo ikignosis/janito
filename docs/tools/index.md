@@ -9,7 +9,8 @@ janito includes built-in tools for common tasks.
 | **Files** | File operations | List, read, write, search files and directories |
 | **Gmail** | Email management | Read, count, delete, move, and search emails |
 | **OneDrive** | Cloud storage | Browse, upload, download, search files |
-| **System** | Execution | Run Python code, execute PowerShell commands, fetch URLs, search the web (Brave) |
+| **System** | Execution | Run Python code, execute PowerShell commands |
+| **Net** | Web access | Fetch URLs, search the web (Brave) |
 | **Skills** | Extensions | Install and use task-specific skills |
 | **MCP** | Extensions | Connect to MCP servers for custom tools |
 
@@ -43,6 +44,7 @@ Progress messages go to stderr so they don't interfere with tool output.
 ## Related Topics
 
 - [File Tools](files.md)
+- [Web Tools](web-search.md) - Fetch URLs and search the web (Brave)
 - [Gmail Tools](gmail.md)
 - [OneDrive Tools](onedrive.md)
 - [Skills](skills.md)
