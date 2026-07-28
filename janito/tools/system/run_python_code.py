@@ -21,7 +21,7 @@ import sys
 import threading
 from typing import Any
 
-from ...tooling import BaseTool, norm_path
+from ...tooling import BaseTool, format_duration_ms, norm_path
 from ..decorator import tool
 
 
@@ -247,7 +247,7 @@ class RunPythonCode(BaseTool):
 
             # Report result
             if success:
-                output_summary = f"Completed in {execution_time_ms}ms"
+                output_summary = f"Completed in {format_duration_ms(execution_time_ms)}"
                 if capture_output and result.stdout:
                     lines = result.stdout.strip().split("\n")
                     if len(lines) > 0:
@@ -383,7 +383,9 @@ Examples:
         if result["success"]:
             print(f"? Python execution successful (exit code {result['exit_code']})")
             print(f"  Working directory: {norm_path(result['working_directory'])}")
-            print(f"  Execution time: {result['execution_time_ms']}ms")
+            print(
+                f"  Execution time: {format_duration_ms(result['execution_time_ms'])}"
+            )
 
             if args.verbose:
                 print("\nCommand:")

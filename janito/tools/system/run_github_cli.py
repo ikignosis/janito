@@ -23,7 +23,7 @@ import sys
 import time
 from typing import Any
 
-from ...tooling import BaseTool
+from ...tooling import BaseTool, format_duration_ms
 from ..decorator import tool
 
 # Candidate executable names for the GitHub CLI.
@@ -325,7 +325,7 @@ class RunGitHubCLI(BaseTool):
             }
 
             if success:
-                summary = f"Completed in {execution_time_ms}ms"
+                summary = f"Completed in {format_duration_ms(execution_time_ms)}"
                 if stdout_str:
                     n_lines = len(stdout_str.strip().split("\n"))
                     summary += f" ({n_lines} lines output)"
@@ -400,7 +400,9 @@ Examples:
     else:
         if result["success"]:
             print(f"✓ gh execution successful (exit code {result['exit_code']})")
-            print(f"  Execution time: {result['execution_time_ms']}ms")
+            print(
+                f"  Execution time: {format_duration_ms(result['execution_time_ms'])}"
+            )
             if args.verbose:
                 print(f"  Executable: {result.get('gh_executable', 'unknown')}")
                 print(f"  Command: {result['command']}")

@@ -10,6 +10,17 @@ window.ChatFormatMixin = {
         return String(n);
     },
 
+    // Format a tool execution duration (in milliseconds) for display.
+    // Values below 1000ms are shown as milliseconds; 1000ms and above are
+    // converted to seconds (e.g. 1000 -> "1s", 1500 -> "1.5s").
+    formatDuration(ms) {
+        if (ms === null || ms === undefined) return '';
+        if (ms < 1000) return ms + 'ms';
+        const seconds = ms / 1000;
+        const rounded = Math.round(seconds * 10) / 10;
+        return (Number.isInteger(rounded) ? rounded : rounded.toFixed(1)) + 's';
+    },
+
     permLabel(perms) {
         if (!perms) return '';
         if (perms.includes('x')) return 'exec';

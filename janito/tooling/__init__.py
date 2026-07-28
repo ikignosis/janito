@@ -21,12 +21,14 @@ from .reporter import (
     report_warning,
     set_report_handler,
 )
+from .time_utils import format_duration_ms
 
 # Note: tools_registry is not imported here to avoid circular imports
 # with tools that depend on progress reporting utilities.
 
 __all__ = [
     "BaseTool",
+    "format_duration_ms",
     "get_report_handler",
     "norm_path",
     "report_error",

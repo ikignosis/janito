@@ -19,7 +19,7 @@ import urllib.error
 import urllib.request
 from typing import Any
 
-from ...tooling import BaseTool
+from ...tooling import BaseTool, format_duration_ms
 from ..decorator import tool
 
 # Threshold (in characters) above which fetched content is written to a
@@ -311,7 +311,9 @@ Examples:
                 print(f"  Content length: {result.get('content_length', 'N/A')} bytes")
                 print(f"  Lines: {result.get('lines_returned', 'N/A')}")
                 print(f"  Temp file: {result.get('tmp_filename', 'N/A')}")
-                print(f"  Execution time: {result.get('execution_time_ms', 'N/A')}ms")
+                print(
+                    f"  Execution time: {format_duration_ms(result.get('execution_time_ms', 'N/A'))}"
+                )
                 print(f"\n  {result.get('message', '')}")
                 return 0
 
@@ -320,7 +322,9 @@ Examples:
             print(f"  Status: {result.get('status_code', 'N/A')}")
             print(f"  Content length: {result.get('content_length', 'N/A')} bytes")
             print(f"  Lines returned: {result.get('lines_returned', 'N/A')}")
-            print(f"  Execution time: {result.get('execution_time_ms', 'N/A')}ms")
+            print(
+                f"  Execution time: {format_duration_ms(result.get('execution_time_ms', 'N/A'))}"
+            )
 
             if args.verbose:
                 print("\nContent:")
