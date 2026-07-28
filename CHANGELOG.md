@@ -5,7 +5,11 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/joaopinto/janito/compare/v4.12.0...HEAD)
+## [Unreleased](https://github.com/joaopinto/janito/compare/v4.13.0...HEAD)
+
+Changes since `v4.13.0` (2026-07-28).
+
+## [v4.13.0](https://github.com/joaopinto/janito/compare/v4.12.0...v4.13.0) - 2026-07-28
 
 Changes since `v4.12.0` (2026-07-26).
 
@@ -59,6 +63,7 @@ Changes since `v4.12.0` (2026-07-26).
 - `GetUrl` tool: refactor the fetch implementation to use `urllib` directly within the tool instead of spawning a subprocess that runs an inline Python script, eliminating subprocess overhead, JSON marshalling, and timeout buffering; redirect suppression is now handled by a dedicated `_NoRedirectHandler` class, and content decoding uses `errors="replace"` for resilience.
 - Web settings: remove the `thinking` and `verbose` toggles from the web settings UI and the backend PATCH `/config` endpoint's mutable fields, since these are CLI-level flags that cannot be meaningfully toggled at runtime.
 - Interactive shell and `/ask`: reword the request-interrupted message to "Request interrupted, previous prompt/answer removed from the conversation history." for clarity.
+
 
 ## [v4.12.0](https://github.com/joaopinto/janito/compare/v4.11.0...v4.12.0) - 2026-07-26
 
