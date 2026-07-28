@@ -6,7 +6,7 @@ This tool demonstrates how to use the base tool class with progress reporting
 for web requests.
 
 Note: This tool requires the progress reporting system from the tooling package.
-For direct execution, use: python -m janito.tools.system.get_url [args]
+For direct execution, use: python -m janito.tools.net.get_url [args]
 For AI function calling, use through the tool registry (tooling.tools_registry).
 """
 

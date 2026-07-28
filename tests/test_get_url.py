@@ -23,12 +23,8 @@ import os
 
 import pytest
 
-from janito.tools.system import get_url as get_url_module
-from janito.tools.system.get_url import (
-    BIG_CONTENT_THRESHOLD,
-    GetUrl,
-    _cleanup_temp_files,
-)
+from janito.tools.net import get_url as get_url_module
+from janito.tools.net.get_url import BIG_CONTENT_THRESHOLD, GetUrl, _cleanup_temp_files
 
 SMALL_PAYLOAD = "hello small world"
 BIG_PAYLOAD = "x" * (BIG_CONTENT_THRESHOLD + 5000)  # clearly over the threshold

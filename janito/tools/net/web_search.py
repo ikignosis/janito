@@ -16,7 +16,7 @@ configured.
 Setup:
     janito --set-secret brave_api_key=YOUR_BRAVE_SUBSCRIPTION_TOKEN
 
-For direct execution, use: python -m janito.tools.system.web_search [args]
+For direct execution, use: python -m janito.tools.net.web_search [args]
 For AI function calling, use through the tool registry (tooling.tools_registry).
 """
 

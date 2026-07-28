@@ -19,8 +19,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pytest
 
-from janito.tools.system import web_search as web_search_module
-from janito.tools.system.web_search import WebSearch
+from janito.tools.net import web_search as web_search_module
+from janito.tools.net.web_search import WebSearch
 
 # Captured request details (per server instance) for assertions.
 _CAPTURED: dict = {}

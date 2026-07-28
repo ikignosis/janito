@@ -15,6 +15,7 @@ Changes since `v4.13.0` (2026-07-28).
 
 ### Changed
 
+- Moved the `GetUrl` and `WebSearch` tools out of the `system` toolset into a new dedicated **`net`** toolset (`janito/tools/net/`), and added `net` to the `AUTOLOAD_TOOLSETS` list in `janito/tooling/tools_registry.py` so the toolset continues to load automatically. Closes #24.
 - Tool execution time display: durations of 1000ms or more are now shown in seconds instead of milliseconds (e.g. `1000ms` → `1s`, `1500ms` → `1.5s`) across the CLI reports and the web UI tool cards; values below 1000ms are still shown in milliseconds. Backed by a shared `format_duration_ms` helper in `janito/tooling/time_utils.py`.
 - CI: bump `actions/setup-python` from `v5` to `v7` in the release workflow to fix the GitHub Actions "Node.js 20 is deprecated" warning (v5 targets Node.js 20 and is being forced onto Node.js 24; v7 runs natively on Node.js 24).
 
