@@ -50,6 +50,8 @@ variable fallback.
 
 > **Note:** When using CLI arguments, `--set` and `--set-api-key` must be run as **separate commands**. They cannot be combined in a single invocation.
 
+> **Note:** If an API key is already stored for a provider, `--set-api-key` warns you and asks for confirmation before overwriting it. Pass `-f`/`--force` to overwrite without prompting (useful for scripts and non-interactive use).
+
 ## Next Steps
 
 - [Configure providers](providers.md) for different AI services

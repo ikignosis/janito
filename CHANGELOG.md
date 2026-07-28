@@ -11,6 +11,7 @@ Changes since `v4.12.0` (2026-07-26).
 
 ### Added
 
+- CLI: add `-f`/`--force` to `--set-api-key` to overwrite an already-stored API key without the confirmation prompt (intended for scripts and other non-interactive use).
 - Web settings: the drawer now features a **provider combobox** that lists every supported provider with its effective configuration — resolved base URL (endpoint override or built-in default), configured model, API-key status (set/not set, never the key itself) and an `active` marker. Selecting a provider shows a detail card; the old read-only provider text field is gone. Backed by an enriched `GET /config/providers` endpoint that aggregates data from `provider_config`, `general_config` and `auth_config`.
 - Web UI: add semantic CSS utility classes (`.pre-wrap`, `.muted`, `.flex-1`, `.padded`, `.gap-sm`, `.push-end`, `.warning-text`, `.message-error`, `.drawer-actions`, `.fine-print`, provider-detail styles, …) so the markup no longer relies on inline `style` attributes.
 - Tests: add `tests/test_search_path_normalization.py` pinning down that `SearchText`/`SearchRegex` report cwd-relative paths in their results.
@@ -30,6 +31,7 @@ Changes since `v4.12.0` (2026-07-26).
 
 ### Changed
 
+- CLI: `--set-api-key` now warns and prompts for confirmation before overwriting an already-stored API key for a provider. The prompt defaults to *no* (Enter keeps the existing key); decline to leave the key untouched. When stdin is not interactive and `--force` is not supplied, the overwrite is refused with a hint. Adds `tests/test_set_api_key_overwrite.py`.
 - OpenAI client: the "💭 Reasoning" panel now renders reasoning content as Markdown (via `rich.Markdown`) instead of plain text, so structured reasoning output is displayed with formatting.
 - `SearchText` and `SearchRegex` tools: match lines and count-only result keys are now normalized with `norm_path()`, so results report cwd-relative paths (e.g. `./subdir/file.py:3: …`) consistent with `ReadFile`, `ListFiles` and `FindFiles` instead of leaking absolute paths.
 - Web backend: split the monolithic `web/backend/agent.py` (420 lines) into an `agent` package with focused modules — `tooling.py` (tool discovery + execution), `call.py` (OpenAI call parameters + stream accumulation), `turn.py` (the tool-call leg of a turn) and `loop.py` (the `stream_prompt()` orchestration skeleton).

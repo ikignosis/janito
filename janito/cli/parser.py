@@ -27,6 +27,8 @@ Configuration:
 
 Options:
   --set-api-key KEY  Set API key for the specified provider
+                     (prompts before overwriting an existing key; use -f/--force
+                     to overwrite without prompting)
   --provider NAME    Provider name (e.g., openai)
   --model NAME       Model name to use (overrides the provider's configured model)
   --log LEVELS       Enable logging (e.g., --log=info,debug or --log=warning)
@@ -160,6 +162,13 @@ Note: --set and --set-api-key must be used in separate commands.
         "--set-api-key",
         metavar="KEY",
         help="Set API key for the specified provider (requires --provider)",
+    )
+
+    parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="Overwrite an existing API key without prompting (used with --set-api-key)",
     )
 
     parser.add_argument(
