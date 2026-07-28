@@ -30,6 +30,7 @@ Changes since `v4.12.0` (2026-07-26).
 
 ### Changed
 
+- OpenAI client: the "💭 Reasoning" panel now renders reasoning content as Markdown (via `rich.Markdown`) instead of plain text, so structured reasoning output is displayed with formatting.
 - `SearchText` and `SearchRegex` tools: match lines and count-only result keys are now normalized with `norm_path()`, so results report cwd-relative paths (e.g. `./subdir/file.py:3: …`) consistent with `ReadFile`, `ListFiles` and `FindFiles` instead of leaking absolute paths.
 - Web backend: split the monolithic `web/backend/agent.py` (420 lines) into an `agent` package with focused modules — `tooling.py` (tool discovery + execution), `call.py` (OpenAI call parameters + stream accumulation), `turn.py` (the tool-call leg of a turn) and `loop.py` (the `stream_prompt()` orchestration skeleton).
 - Web backend: refactor `events.py` so every event dataclass carries its own `to_dict()` serializer (with a `type` ClassVar) and `event_to_dict()` becomes a thin dispatcher; `routers/chat.py` is decomposed into small helpers (`_send_session_greeting`, `_read_client_message`, `_rollback`, `_run_turn`, `_accept_session`) so the WebSocket loop reads top to bottom; `routers/config.py` shares privileges serialization via `_privileges_dict()`.

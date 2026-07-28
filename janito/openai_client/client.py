@@ -516,12 +516,10 @@ def send_prompt(
         logger.debug("API streaming response completed")
         if reasoning_content:
             from rich.panel import Panel
-            from rich.text import Text
 
-            reasoning_text = Text(reasoning_content)
             console.print(
                 Panel(
-                    reasoning_text,
+                    Markdown(reasoning_content),
                     title="[bold cyan]\U0001f4ad Reasoning[/bold cyan]",
                     border_style="cyan",
                     padding=(1, 2),
