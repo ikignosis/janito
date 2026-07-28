@@ -9,7 +9,7 @@ janito includes built-in tools for common tasks.
 | **Files** | File operations | List, read, write, search files and directories |
 | **Gmail** | Email management | Read, count, delete, move, and search emails |
 | **OneDrive** | Cloud storage | Browse, upload, download, search files |
-| **System** | Execution | Run Python code, execute PowerShell commands |
+| **System** | Execution | Run Python code, execute PowerShell commands, fetch URLs, search the web (Brave) |
 | **Skills** | Extensions | Install and use task-specific skills |
 | **MCP** | Extensions | Connect to MCP servers for custom tools |
 

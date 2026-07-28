@@ -27,6 +27,16 @@ janito --set-secret gmail_password=your-app-password
 janito --set-secret azure_client_id=your-client-id
 ```
 
+### Brave Search Credentials
+
+The `WebSearch` tool searches the web via the [Brave Search API](https://brave.com/search/api/)
+and is only loaded when this secret is set:
+
+```bash
+# Set your Brave Search subscription token
+janito --set-secret brave_api_key=your-brave-subscription-token
+```
+
 ### Custom Secrets
 
 ```bash

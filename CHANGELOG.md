@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Changes since `v4.13.0` (2026-07-28).
 
+### Added
+
+- `WebSearch` system tool: search the web from Brave's independent index via the [Brave Search API](https://brave.com/search/api/) (`GET /res/v1/web/search`). Returns a clean, model-friendly list of web results (title, URL, truncated description, age, language) plus any news hits. Supports `query` (required), `count` (1–20), `country`, `search_lang`, `safesearch`, and `freshness` parameters. The subscription token is read from the `brave_api_key` secret and the tool is only loaded when that secret is set (via `should_load()`), so it is never advertised to the model unless configured (`janito --set-secret brave_api_key=...`). Added `tests/test_web_search.py` (local HTTP server, no external network access). Closes #23.
+
 ### Changed
 
 - Tool execution time display: durations of 1000ms or more are now shown in seconds instead of milliseconds (e.g. `1000ms` → `1s`, `1500ms` → `1.5s`) across the CLI reports and the web UI tool cards; values below 1000ms are still shown in milliseconds. Backed by a shared `format_duration_ms` helper in `janito/tooling/time_utils.py`.

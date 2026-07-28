@@ -1,3 +1,3 @@
-- Read docs/TOOL.md before creating the tool
-- When working with github issues, during git commit add the "closes #n ".
+- When creating tools read docs/TOOL.md
 - After performing significant changes update the CHANGELOG.md
+- Before "git commit" list the open issues to locate one that matches with the changes, add "closes #issue" to the commit comments
