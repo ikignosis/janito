@@ -11,13 +11,7 @@ from typing import Any
 
 from ...tooling import BaseTool
 from ..decorator import tool
-
-
-def _safe_decode(data: bytes | str) -> str:
-    """Safely decode bytes to string, or return string as-is."""
-    if isinstance(data, bytes):
-        return data.decode("utf-8", errors="replace")
-    return str(data)
+from .imap_utils import build_search_criteria, safe_decode
 
 
 @tool(permissions="r")
@@ -94,7 +88,7 @@ class TrashEmail(BaseTool):
                 }
 
             # Build search criteria
-            search_criteria = self._build_search_criteria(
+            search_criteria = build_search_criteria(
                 message_ids=message_ids,
                 search_query=search_query,
                 from_address=from_address,
@@ -136,7 +130,7 @@ class TrashEmail(BaseTool):
                     "dry_run": dry_run,
                 }
 
-            id_strings = [_safe_decode(mid) for mid in ids_to_trash]
+            id_strings = [safe_decode(mid) for mid in ids_to_trash]
 
             if dry_run:
                 mail.logout()
@@ -175,7 +169,7 @@ class TrashEmail(BaseTool):
             }
 
         except imaplib.IMAP4.error as e:
-            error_msg = _safe_decode(e.args[0]) if e.args else str(e)
+            error_msg = safe_decode(e.args[0]) if e.args else str(e)
             self.report_error(f"IMAP error: {error_msg}")
             return {
                 "success": False,
@@ -190,43 +184,3 @@ class TrashEmail(BaseTool):
                 "error": f"Failed to trash emails: {e!s}",
                 "folder": folder,
             }
-
-    def _build_search_criteria(
-        self,
-        message_ids: list[str] | None = None,
-        search_query: str | None = None,
-        from_address: str | None = None,
-        subject_contains: str | None = None,
-        older_than_days: int | None = None,
-    ) -> str | None:
-        """
-        Build IMAP search criteria for trash operation.
-        """
-        import datetime
-
-        if search_query:
-            return search_query
-
-        criteria_parts = []
-
-        if message_ids:
-            for mid in message_ids:
-                criteria_parts.append(f"UID {mid}")
-
-        if older_than_days is not None:
-            cutoff_date = datetime.datetime.now() - datetime.timedelta(
-                days=older_than_days
-            )
-            date_str = cutoff_date.strftime("%d-%b-%Y")
-            criteria_parts.append(f"BEFORE {date_str}")
-
-        if from_address:
-            criteria_parts.append(f"FROM {from_address}")
-
-        if subject_contains:
-            criteria_parts.append(f"SUBJECT {subject_contains}")
-
-        if not criteria_parts:
-            return None
-
-        return " ".join(criteria_parts)

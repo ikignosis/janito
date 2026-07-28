@@ -14,22 +14,17 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from ...config_dir import get_config_dir
+    from ...tooling.skills_provider import get_default_skills_dir
 except ImportError:
-    from janito.config_dir import get_config_dir
+    from janito.tooling.skills_provider import get_default_skills_dir
 
-
-def get_skills_dir() -> Path:
-    """Get the path to the installed skills directory.
-
-    Honors the -c/--config-dir override. Defaults to ~/.janito/skills.
-    """
-    return get_config_dir() / "skills"
-
+# Alias of :func:`janito.tooling.skills_provider.get_default_skills_dir`.
+# Retained for backward compatibility; prefer the canonical name in new code.
+get_skills_dir = get_default_skills_dir
 
 # Path to store installed skills (default). Retained for backward compatibility;
-# prefer :func:`get_skills_dir` which honors the -c/--config-dir override.
-SKILLS_DIR = get_skills_dir()
+# prefer :func:`get_default_skills_dir` which honors the -c/--config-dir override.
+SKILLS_DIR = get_default_skills_dir()
 
 
 def _ensure_skills_dir() -> Path:

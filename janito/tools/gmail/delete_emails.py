@@ -14,13 +14,7 @@ from typing import Any
 
 from ...tooling import BaseTool
 from ..decorator import tool
-
-
-def _safe_decode(data: bytes | str) -> str:
-    """Safely decode bytes to string, or return string as-is."""
-    if isinstance(data, bytes):
-        return data.decode("utf-8", errors="replace")
-    return str(data)
+from .imap_utils import build_search_criteria, safe_decode
 
 
 @tool(permissions="rw")
@@ -123,12 +117,12 @@ class DeleteEmails(BaseTool):
                 self.report_error(f"Failed to select folder: {folder}")
                 return {
                     "success": False,
-                    "error": f"Failed to select folder '{folder}': {_safe_decode(messages[0]) if messages else 'Unknown error'}",
+                    "error": f"Failed to select folder '{folder}': {safe_decode(messages[0]) if messages else 'Unknown error'}",
                     "folder": folder,
                 }
 
             # Build search criteria
-            search_criteria = self._build_search_criteria(
+            search_criteria = build_search_criteria(
                 message_ids=message_ids,
                 search_query=search_query,
                 older_than_days=older_than_days,
@@ -177,7 +171,7 @@ class DeleteEmails(BaseTool):
                 }
 
             # Convert bytes to strings for display
-            id_strings = [_safe_decode(mid) for mid in ids_to_delete]
+            id_strings = [safe_decode(mid) for mid in ids_to_delete]
 
             if dry_run:
                 self.report_progress(
@@ -240,7 +234,7 @@ class DeleteEmails(BaseTool):
                 }
 
         except imaplib.IMAP4.error as e:
-            error_msg = _safe_decode(e.args[0]) if e.args else str(e)
+            error_msg = safe_decode(e.args[0]) if e.args else str(e)
             self.report_error(f"IMAP error: {error_msg}")
             return {
                 "success": False,
@@ -255,56 +249,3 @@ class DeleteEmails(BaseTool):
                 "error": f"Failed to delete emails: {e!s}",
                 "folder": folder,
             }
-
-    def _build_search_criteria(
-        self,
-        message_ids: list[str] | None = None,
-        search_query: str | None = None,
-        older_than_days: int | None = None,
-        older_than_date: str | None = None,
-        from_address: str | None = None,
-        subject_contains: str | None = None,
-    ) -> str | None:
-        """
-        Build IMAP search criteria from provided parameters.
-
-        Args:
-            Various filter parameters
-
-        Returns:
-            IMAP search criteria string, or None if no criteria provided
-        """
-        import datetime
-
-        if search_query:
-            return search_query
-
-        criteria_parts = []
-
-        # Handle specific message IDs
-        if message_ids:
-            id_criteria = " OR ".join([f"UID {mid}" for mid in message_ids])
-            criteria_parts.append(id_criteria)
-
-        # Handle date-based deletion
-        if older_than_days is not None:
-            cutoff_date = datetime.datetime.now() - datetime.timedelta(
-                days=older_than_days
-            )
-            date_str = cutoff_date.strftime("%d-%b-%Y")
-            criteria_parts.append(f"BEFORE {date_str}")
-        elif older_than_date:
-            criteria_parts.append(f"BEFORE {older_than_date}")
-
-        # Handle sender filter
-        if from_address:
-            criteria_parts.append(f"FROM {from_address}")
-
-        # Handle subject filter
-        if subject_contains:
-            criteria_parts.append(f"SUBJECT {subject_contains}")
-
-        if not criteria_parts:
-            return None
-
-        return " ".join(criteria_parts)

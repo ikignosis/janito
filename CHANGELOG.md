@@ -14,6 +14,12 @@ Changes since `v4.13.0` (2026-07-28).
 - Tool execution time display: durations of 1000ms or more are now shown in seconds instead of milliseconds (e.g. `1000ms` → `1s`, `1500ms` → `1.5s`) across the CLI reports and the web UI tool cards; values below 1000ms are still shown in milliseconds. Backed by a shared `format_duration_ms` helper in `janito/tooling/time_utils.py`.
 - CI: bump `actions/setup-python` from `v5` to `v7` in the release workflow to fix the GitHub Actions "Node.js 20 is deprecated" warning (v5 targets Node.js 20 and is being forced onto Node.js 24; v7 runs natively on Node.js 24).
 
+### Fixed
+
+- Gmail tools: extract the `_safe_decode` helper (duplicated verbatim in `delete_emails.py`, `move_emails.py` and `trash_emails.py`) and the near-identical `_build_search_criteria` method (97% similar between move/trash, a divergent superset in delete) into a new shared `janito/tools/gmail/imap_utils.py` module (`safe_decode`, `build_search_criteria`). This also fixes `DeleteEmails` multi-ID searches, which previously built an invalid IMAP `OR` chain (`UID 1 OR UID 2 OR UID 3`); multiple UIDs are now emitted space-separated so IMAP combines them with an implicit OR, matching `MoveEmails`/`TrashEmail` behaviour. The shared helper keeps `DeleteEmails`' extra `older_than_date` parameter.
+- MCP-aware tools registry (`janito/tooling/mcp_registry.py`): every function previously imported from a non-existent `janito.mcp.integration` module, so MCP tools were silently never surfaced and `is_mcp_tool()` always returned `False`. The module now gathers tools from the real `janito.mcp_manager` (connected services): `is_mcp_tool()` checks the service prefix, `get_all_tool_schemas_with_mcp()`/`get_all_tools_with_mcp()`/`get_tool_by_name_with_mcp()` merge built-in and connected MCP tools (MCP tools are wrapped as callables with proper `__name__`/`__doc__`/`__signature__` so they round-trip through `get_function_schema()`), and `get_tool_source()` now correctly reports `"mcp"` for connected MCP tools.
+- CLI skills handler: `janito/cli/handlers/skills.py` no longer duplicates the skills-directory logic of `tooling/skills_provider.py`; `get_skills_dir` is now an alias of the canonical `get_default_skills_dir` (both honor the `-c`/`--config-dir` override), with the `get_skills_dir`/`SKILLS_DIR` names retained for backward compatibility.
+
 ## [v4.13.0](https://github.com/joaopinto/janito/compare/v4.12.0...v4.13.0) - 2026-07-28
 
 Changes since `v4.12.0` (2026-07-26).
