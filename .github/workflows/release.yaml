@@ -18,7 +18,7 @@ jobs:
           fetch-depth: 0  # Required for setuptools_scm to determine version from git tags
 
       - name: Set up Python for changelog check
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.10"
 

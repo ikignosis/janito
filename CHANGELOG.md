@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Changes since `v4.13.0` (2026-07-28).
 
+### Changed
+
+- CI: bump `actions/setup-python` from `v5` to `v7` in the release workflow to fix the GitHub Actions "Node.js 20 is deprecated" warning (v5 targets Node.js 20 and is being forced onto Node.js 24; v7 runs natively on Node.js 24).
+
 ## [v4.13.0](https://github.com/joaopinto/janito/compare/v4.12.0...v4.13.0) - 2026-07-28
 
 Changes since `v4.12.0` (2026-07-26).
