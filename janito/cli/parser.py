@@ -26,8 +26,9 @@ Configuration:
   API keys are stored securely in ~/.janito/auth.json using --set-api-key
 
 Options:
-  --set-api-key KEY  Set API key for the specified provider
-                     (prompts before overwriting an existing key; use -f/--force
+  --set-api-key KEY  Set API key for a provider (uses --provider, or the
+                     configured default provider when --provider is omitted;
+                     prompts before overwriting an existing key, use -f/--force
                      to overwrite without prompting)
   --provider NAME    Provider name (e.g., openai)
   --model NAME       Model name to use (overrides the provider's configured model)
@@ -42,6 +43,7 @@ Examples:
   echo "Tell me a joke" | janito                             # Pipe input mode
   janito                                                     # Interactive chat mode
   janito --set-api-key sk-xxx --provider openai             # Store OpenAI API key
+  janito --set-api-key sk-xxx                               # Store key for the configured provider
   janito --list-keys                                        # Show configured providers
   janito --list-tools                                       # List available built-in tools
   janito --list-mcp                                         # List MCP services and tools
@@ -161,7 +163,8 @@ Note: --set and --set-api-key must be used in separate commands.
     parser.add_argument(
         "--set-api-key",
         metavar="KEY",
-        help="Set API key for the specified provider (requires --provider)",
+        help="Set API key for a provider (uses --provider, or the configured "
+        "default provider when omitted)",
     )
 
     parser.add_argument(

@@ -31,6 +31,7 @@ Changes since `v4.12.0` (2026-07-26).
 
 ### Changed
 
+- CLI: `--set-api-key` no longer strictly requires `--provider`. When `--provider` is omitted, the configured default provider is used (the `provider` value from `config.json`, then the auth-store default); the command errors out only when no default provider is configured at all. Existing behaviour with an explicit `--provider` is unchanged. Adds fallback tests to `tests/test_set_api_key_overwrite.py`.
 - CLI: `--set-api-key` now warns and prompts for confirmation before overwriting an already-stored API key for a provider. The prompt defaults to *no* (Enter keeps the existing key); decline to leave the key untouched. When stdin is not interactive and `--force` is not supplied, the overwrite is refused with a hint. Adds `tests/test_set_api_key_overwrite.py`.
 - OpenAI client: the "💭 Reasoning" panel now renders reasoning content as Markdown (via `rich.Markdown`) instead of plain text, so structured reasoning output is displayed with formatting.
 - `SearchText` and `SearchRegex` tools: match lines and count-only result keys are now normalized with `norm_path()`, so results report cwd-relative paths (e.g. `./subdir/file.py:3: …`) consistent with `ReadFile`, `ListFiles` and `FindFiles` instead of leaking absolute paths.

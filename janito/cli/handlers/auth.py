@@ -6,18 +6,20 @@ try:
     from ...auth_config import (
         get_api_key,
         get_auth_file_path,
+        get_default_provider,
         list_providers,
         set_api_key,
     )
-    from ...general_config import get_masked_api_key
+    from ...general_config import get_masked_api_key, load_provider_from_config
 except ImportError:
     from janito.auth_config import (
         get_api_key,
         get_auth_file_path,
+        get_default_provider,
         list_providers,
         set_api_key,
     )
-    from janito.general_config import get_masked_api_key
+    from janito.general_config import get_masked_api_key, load_provider_from_config
 
 
 def _confirm_overwrite(provider: str, existing_key: str) -> bool:
@@ -54,6 +56,11 @@ def _confirm_overwrite(provider: str, existing_key: str) -> bool:
 def handle_set_api_key(args) -> int:
     """Handle --set-api-key command.
 
+    The target provider is taken from ``--provider``; when it is not given,
+    the configured default provider is used (the ``provider`` value from
+    config.json, or the default provider stored in auth.json). If no default
+    provider is configured either, the command fails with an error.
+
     If an API key is already stored for the provider, the user is warned and
     prompted to approve the overwrite unless ``--force`` was given. When stdin
     is not interactive and ``--force`` was not given, the overwrite is refused
@@ -65,32 +72,43 @@ def handle_set_api_key(args) -> int:
     Returns:
         int: Exit code (0 for success, non-zero for error)
     """
-    if not args.provider:
-        print("Error: --provider is required when using --set-api-key", file=sys.stderr)
-        print("Usage: janito --set-api-key <key> --provider <name>", file=sys.stderr)
-        return 1
+    provider = args.provider
+    if not provider:
+        provider = load_provider_from_config() or get_default_provider()
+        if not provider:
+            print(
+                "Error: no provider given and no default provider is configured",
+                file=sys.stderr,
+            )
+            print(
+                "Pass --provider <name>, or set a default provider first "
+                "(janito --set provider=<name>).",
+                file=sys.stderr,
+            )
+            return 1
+        print(f"Using configured provider '{provider}'")
 
     force = getattr(args, "force", False)
-    existing_key = get_api_key(args.provider)
+    existing_key = get_api_key(provider)
 
     if existing_key and not force:
         if not sys.stdin.isatty():
             print(
                 f"Error: an API key is already configured for provider "
-                f"'{args.provider}'. Re-run with --force to overwrite it "
+                f"'{provider}'. Re-run with --force to overwrite it "
                 f"non-interactively.",
                 file=sys.stderr,
             )
             return 1
-        if not _confirm_overwrite(args.provider, existing_key):
+        if not _confirm_overwrite(provider, existing_key):
             print("Aborted: the existing API key was kept unchanged.")
             return 1
 
-    success = set_api_key(args.provider, args.set_api_key)
+    success = set_api_key(provider, args.set_api_key)
 
     if success:
         auth_file = get_auth_file_path()
-        print(f"✓ API key stored successfully for provider '{args.provider}'")
+        print(f"✓ API key stored successfully for provider '{provider}'")
         print(f"  Config file: {auth_file}")
         return 0
     else:

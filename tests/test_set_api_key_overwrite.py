@@ -140,7 +140,33 @@ if pytest is not None:
         _use_temp_config(monkeypatch, tmp_path)
         rc = handle_set_api_key(_args(provider=None))
         assert rc == 1
-        assert "--provider is required" in capsys.readouterr().err
+        assert "no default provider" in capsys.readouterr().err
+
+    def test_falls_back_to_config_provider(monkeypatch, tmp_path, capsys):
+        _use_temp_config(monkeypatch, tmp_path)
+        # A default provider configured via --set provider=<name> (config.json).
+        import janito.general_config as gc
+
+        gc.set_config_value("provider", "alibaba")
+        monkeypatch.setattr(sys, "stdin", _FakeStdin(tty=True))
+
+        rc = handle_set_api_key(_args(provider=None, key="sk-cfg"))
+        assert rc == 0
+        # The key must be stored for the configured provider.
+        assert ac.get_api_key("alibaba") == "sk-cfg"
+        assert ac.get_api_key("openai") is None
+        assert "Using configured provider 'alibaba'" in capsys.readouterr().out
+
+    def test_falls_back_to_auth_default_provider(monkeypatch, tmp_path, capsys):
+        _use_temp_config(monkeypatch, tmp_path)
+        # A default provider stored in auth.json (the "provider" key).
+        ac.set_default_provider("moonshot")
+        monkeypatch.setattr(sys, "stdin", _FakeStdin(tty=True))
+
+        rc = handle_set_api_key(_args(provider=None, key="sk-auth"))
+        assert rc == 0
+        assert ac.get_api_key("moonshot") == "sk-auth"
+        assert "Using configured provider 'moonshot'" in capsys.readouterr().out
 
 else:  # pragma: no cover - fallback runner without pytest
 

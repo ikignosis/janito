@@ -27,7 +27,7 @@ If no prompt is given, janito starts an interactive chat shell.
 | `--set <key=value>` | Set one or more config values in `~/.janito/config.json` |
 | `--unset <key>` | Remove one or more config keys from `~/.janito/config.json` |
 | `--get <key>` | Get one or more config values from `~/.janito/config.json` |
-| `--set-api-key <key>` | Set the API key for a provider (requires `--provider`). If a key is already stored, janito warns and prompts for confirmation before overwriting; use `-f`/`--force` to overwrite without prompting. |
+| `--set-api-key <key>` | Set the API key for a provider. Uses `--provider`, or falls back to the configured default provider (`--set provider=<name>` or the auth default) when `--provider` is omitted; errors if neither is available. If a key is already stored, janito warns and prompts for confirmation before overwriting; use `-f`/`--force` to overwrite without prompting. |
 | `-f`, `--force` | Overwrite an existing API key without prompting (used with `--set-api-key`) |
 | `--provider <name>` | Provider name (e.g., `openai`, `custom`). Always validated against the supported providers; unknown names are rejected. |
 | `--model <name>` | Model name (overrides the provider's configured model) |
@@ -108,6 +108,7 @@ janito --show-config
 janito --info
 janito --set provider=openai --set model=gpt-4
 janito --set-api-key sk-your-key --provider openai
+janito --set-api-key sk-your-key   # uses the configured default provider
 ```
 
 ### Secrets
