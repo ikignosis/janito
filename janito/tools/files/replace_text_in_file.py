@@ -14,7 +14,7 @@ import os
 from typing import Any
 
 from ...tooling import BaseTool, norm_path
-from ..decorator import tool
+from ...tooling.decorator import tool
 
 
 @tool(permissions="rw")

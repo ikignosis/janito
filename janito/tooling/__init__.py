@@ -9,6 +9,7 @@ This package provides infrastructure for AI tools including:
 """
 
 from .base_tool import BaseTool
+from .decorator import is_tool, tool
 from .path_utils import norm_path
 from .reporter import (
     get_report_handler,
@@ -30,6 +31,7 @@ __all__ = [
     "BaseTool",
     "format_duration_ms",
     "get_report_handler",
+    "is_tool",
     "norm_path",
     "report_error",
     "report_info",
@@ -39,4 +41,5 @@ __all__ = [
     "report_start",
     "report_warning",
     "set_report_handler",
+    "tool",
 ]

@@ -8,7 +8,7 @@ This tool uses Microsoft Graph API to create share links for files and folders i
 from typing import Any
 
 from ...tooling import BaseTool
-from ..decorator import tool
+from ...tooling.decorator import tool
 
 
 @tool(permissions="r")

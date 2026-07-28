@@ -20,7 +20,7 @@ import urllib.request
 from typing import Any
 
 from ...tooling import BaseTool, format_duration_ms
-from ..decorator import tool
+from ...tooling.decorator import tool
 
 # Threshold (in characters) above which fetched content is written to a
 # temporary file instead of being returned inline to the model. Returning very

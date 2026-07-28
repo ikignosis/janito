@@ -14,7 +14,7 @@ For AI function calling, use through the tool registry (tooling.tools_registry).
 from typing import Any
 
 from ...tooling import BaseTool
-from ..decorator import tool
+from ...tooling.decorator import tool
 
 
 @tool()

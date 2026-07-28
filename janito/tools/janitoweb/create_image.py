@@ -26,7 +26,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from ...tooling import BaseTool
-from ..decorator import tool
+from ...tooling.decorator import tool
 
 # Fixed DashScope multimodal-generation path appended to the provider host.
 _GENERATION_PATH = "/api/v1/services/aigc/multimodal-generation/generation"

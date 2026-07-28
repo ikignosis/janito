@@ -16,6 +16,12 @@ Changes since `v4.13.0` (2026-07-28).
 
 ### Changed
 
+- Moved `janito/tools/decorator.py` to `janito/tooling/decorator.py` and re-exported `tool` / `is_tool` from the `tooling` package. All internal imports and documentation updated accordingly.
+- **`ReadFile` signature aligned with `ReadFileLines`**: replaced the `max_lines` parameter with `from_line` (int, default `1`) and `to_line` (int, default `None`). When `to_line` is omitted the tool reads to the end of the file, making `ReadFile` a strict superset of its previous behaviour while sharing the same line-range API as `ReadFileLines`. The return dict now includes `from_line`, `to_line`, and `total_lines` fields (matching `ReadFileLines`) instead of the old `max_lines` field. CLI flags updated accordingly (`--max-lines` → `--from-line`/`--to-line`). Documentation updated in `docs/tools/files.md` and `docs/TOOL.md`.
+
+### Removed
+
+- **`ReadFileLines` tool removed**: its line-range functionality is now fully provided by `ReadFile` (which gained `from_line`/`to_line` parameters). The `janito/tools/files/read_file_lines.py` module was deleted and all documentation references updated.
 - Moved the `GetUrl` and `WebSearch` tools out of the `system` toolset into a new dedicated **`net`** toolset (`janito/tools/net/`), and added `net` to the `AUTOLOAD_TOOLSETS` list in `janito/tooling/tools_registry.py` so the toolset continues to load automatically. Closes #24.
 - Tool execution time display: durations of 1000ms or more are now shown in seconds instead of milliseconds (e.g. `1000ms` → `1s`, `1500ms` → `1.5s`) across the CLI reports and the web UI tool cards; values below 1000ms are still shown in milliseconds. Backed by a shared `format_duration_ms` helper in `janito/tooling/time_utils.py`.
 - CI: bump `actions/setup-python` from `v5` to `v7` in the release workflow to fix the GitHub Actions "Node.js 20 is deprecated" warning (v5 targets Node.js 20 and is being forced onto Node.js 24; v7 runs natively on Node.js 24).

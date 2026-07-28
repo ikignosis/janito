@@ -30,12 +30,12 @@ step-by-step walkthrough with a working example.
 janito/
 ├── tooling/                    # Framework / infrastructure
 │   ├── base_tool.py            # BaseTool ABC — every tool inherits this
+│   ├── decorator.py            # @tool(permissions="…") decorator
 │   ├── tools_registry.py       # Registry: discovery, schema gen, lookup
 │   ├── reporter.py             # Standalone progress-report helpers
 │   └── path_utils.py           # norm_path() helper
 │
 ├── tools/                      # Actual tool implementations
-│   ├── decorator.py            # @tool(permissions="…") decorator
 │   ├── files/                  # "files" toolset  (autoloaded)
 │   │   ├── create_file.py
 │   │   ├── read_file.py
@@ -71,7 +71,7 @@ janito/
 | File | Purpose |
 |---|---|
 | `janito/tooling/base_tool.py` | `BaseTool` abstract base class with `run()` and progress-reporting methods |
-| `janito/tools/decorator.py` | `@tool(permissions="…")` decorator — marks a class as a discoverable tool |
+| `janito/tooling/decorator.py` | `@tool(permissions="…")` decorator — marks a class as a discoverable tool |
 | `janito/tools/__init__.py` | `discover_toolsets()` — auto-discovery engine |
 | `janito/tooling/tools_registry.py` | Registry, `get_function_schema()`, lazy init, toolset management |
 | `janito/tooling/reporter.py` | Standalone `report_start / report_result / report_error` functions |
@@ -93,7 +93,7 @@ from janito.tooling import BaseTool
 ### 2. Decorated with `@tool`
 
 ```python
-from janito.tools.decorator import tool
+from janito.tooling.decorator import tool
 
 @tool(permissions="r")          # "r", "w", "x", or combinations like "rw", "rwx"
 class MyTool(BaseTool):
@@ -159,7 +159,7 @@ import os
 import json
 from typing import Dict, Any
 from ...tooling import BaseTool, norm_path
-from ..decorator import tool
+from ...tooling.decorator import tool
 
 
 @tool(permissions="r")                       # read-only → "r"
@@ -553,7 +553,7 @@ return {
 - Echo back input parameters so the LLM can correlate the result with the
   call.
 - Keep values JSON-serialisable (strings, numbers, bools, lists, dicts).
-- For large outputs consider truncation parameters (see `ReadFile.max_lines`,
+- For large outputs consider truncation parameters (see `ReadFile.to_line`,
   `GetUrl.max_length`).
 
 ---
@@ -621,7 +621,7 @@ import os
 import json
 from typing import Dict, Any
 from ...tooling import BaseTool, norm_path
-from ..decorator import tool
+from ...tooling.decorator import tool
 
 
 @tool(permissions="r")

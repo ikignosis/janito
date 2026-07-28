@@ -21,7 +21,7 @@ import sys
 from typing import Any
 
 from ...tooling import BaseTool, format_duration_ms, norm_path
-from ..decorator import tool
+from ...tooling.decorator import tool
 
 # Candidate executable names, in order of preference.
 # 'pwsh' is PowerShell Core 6+/7+ (modern, cross-platform) and is preferred;

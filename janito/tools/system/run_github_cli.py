@@ -24,7 +24,7 @@ import time
 from typing import Any
 
 from ...tooling import BaseTool, format_duration_ms
-from ..decorator import tool
+from ...tooling.decorator import tool
 
 # Candidate executable names for the GitHub CLI.
 _GH_CANDIDATES = ("gh", "gh.exe")

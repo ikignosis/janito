@@ -16,7 +16,7 @@ from email.header import decode_header
 from typing import Any
 
 from ...tooling import BaseTool
-from ..decorator import tool
+from ...tooling.decorator import tool
 
 
 def decode_email_header(header_str: str) -> str:

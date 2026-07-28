@@ -11,7 +11,7 @@ import os
 from collections.abc import Callable
 from typing import get_type_hints
 
-from .decorator import is_tool
+from ..tooling.decorator import is_tool
 
 # Tools that were skipped during discovery because their should_load()
 # validation failed, mapped to a human-readable reason.

@@ -10,7 +10,7 @@ import imaplib
 from typing import Any
 
 from ...tooling import BaseTool
-from ..decorator import tool
+from ...tooling.decorator import tool
 from .imap_utils import build_search_criteria, safe_decode
 
 

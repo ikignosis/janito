@@ -22,7 +22,7 @@ import threading
 from typing import Any
 
 from ...tooling import BaseTool, format_duration_ms, norm_path
-from ..decorator import tool
+from ...tooling.decorator import tool
 
 
 @tool(permissions="x")

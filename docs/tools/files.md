@@ -21,8 +21,7 @@ janito "List all Python files in this project"
 | Tool | Description | Permissions |
 |------|-------------|-------------|
 | `ListFiles` | List files and directories, with pattern filtering | `r` |
-| `ReadFile` | Read the full contents of a file | `r` |
-| `ReadFileLines` | Read a specific line range from a file | `r` |
+| `ReadFile` | Read the contents of a file (full or line range) | `r` |
 | `ReadMultipleFiles` | Read several files in a single call | `r` |
 | `SearchText` | Search for exact text across files | `r` |
 | `SearchRegex` | Search for regex patterns across files | `r` |
@@ -82,19 +81,12 @@ List files and directories in a path.
 
 ### ReadFile
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `filepath` | str | — | File to read |
-| `max_lines` | int | `None` | Cap on lines read (for large files) |
-
-### ReadFileLines
-
-Read a specific line range (1-based indexing).
+Read the contents of a file (1-based indexing).
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `filepath` | str | — | File to read |
-| `from_line` | int | `None` | Start line (defaults to beginning) |
+| `from_line` | int | `1` | Start line (1-based) |
 | `to_line` | int | `None` | End line (defaults to end of file) |
 
 ### ReadMultipleFiles
@@ -184,7 +176,7 @@ Move or rename a file or directory.
 
 1. **Use `respect_gitignore=True`** (the default) when listing or searching to skip
    build artifacts and dependencies.
-2. **Use `ReadFileLines`** instead of `ReadFile` for large files to limit output.
+2. **Use `ReadFile`** with `from_line`/`to_line` for large files to limit output.
 3. **Use `count_only=True`** with the search tools to gauge how many matches exist
    before pulling full results.
 4. **Provide enough context in `old_str`** for `ReplaceTextInFile` so it matches
@@ -196,7 +188,7 @@ Every file tool can be run directly for testing, outside of chat:
 
 ```bash
 python -m janito.tools.files.list_files . --pattern "*.py" --recursive
-python -m janito.tools.files.read_file README.md --max-lines 20
+python -m janito.tools.files.read_file README.md --from-line 1 --to-line 20
 python -m janito.tools.files.search_text . "TODO"
 ```
 

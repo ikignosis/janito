@@ -30,7 +30,7 @@ import urllib.request
 from typing import Any
 
 from ...tooling import BaseTool
-from ..decorator import tool
+from ...tooling.decorator import tool
 
 # Brave Search API base URL and web-search path.
 _BRAVE_BASE_URL = "https://api.search.brave.com/res"

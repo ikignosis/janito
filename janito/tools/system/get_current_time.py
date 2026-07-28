@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from ...tooling import BaseTool
-from ..decorator import tool
+from ...tooling.decorator import tool
 
 
 @tool(permissions="r")
