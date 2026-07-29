@@ -510,7 +510,23 @@
 
                 <div class="form-group">
                     <label>API Key</label>
-                    <input type="text" :value="status.api_key || ''" disabled>
+                    <div class="api-key-row">
+                        <input type="text" class="flex-1"
+                               :value="status.api_key || ''" disabled
+                               :class="{ 'key-unset': !status.api_key_set }">
+                        <button class="btn set-key-btn"
+                                @click="openKeyModal()"
+                                :disabled="!selectedProvider"
+                                title="Change the API key for the selected provider">
+                            🔑 Set API Key
+                        </button>
+                    </div>
+                    <div class="api-key-hint">
+                        <span x-show="selectedProviderDetail && selectedProviderDetail.api_key_set"
+                              class="key-status set">key configured</span>
+                        <span x-show="selectedProviderDetail && !selectedProviderDetail.api_key_set"
+                              class="key-status unset">no key stored for this provider</span>
+                    </div>
                 </div>
 
                 <div class="drawer-actions">
@@ -526,6 +542,60 @@
                     </div>
                 </div>
             </div>
+
+            <!-- ===== "Set API Key" modal ===== -->
+            <template x-if="keyModalOpen">
+                <div class="modal-overlay" @click.self="closeKeyModal()"
+                     @keydown.escape.window="closeKeyModal()">
+                    <div class="modal-card" role="dialog" aria-modal="true"
+                         aria-labelledby="key-modal-title">
+                        <div class="modal-head">
+                            <h3 id="key-modal-title">🔑 Set API Key</h3>
+                            <span class="modal-provider-chip" x-text="selectedProvider"></span>
+                            <button class="btn btn-icon modal-close" @click="closeKeyModal()"
+                                    :disabled="keySaving" aria-label="Close">✕</button>
+                        </div>
+
+                        <p class="modal-desc">
+                            The key is stored in <code>~/.janito/auth.json</code> for
+                            <strong x-text="selectedProvider"></strong> and is used by the
+                            very next prompt — no restart needed.
+                        </p>
+
+                        <div class="form-group">
+                            <label for="api-key-input">API key</label>
+                            <div class="key-input-wrap">
+                                <input id="api-key-input" x-ref="keyInput"
+                                       :type="keyReveal ? 'text' : 'password'"
+                                       x-model="keyInput"
+                                       class="mono"
+                                       placeholder="sk-…"
+                                       autocomplete="off" spellcheck="false"
+                                       @keydown.enter="saveApiKey()">
+                                <button class="btn btn-icon key-reveal" type="button"
+                                        @click="keyReveal = !keyReveal"
+                                        :title="keyReveal ? 'Hide key' : 'Show key'"
+                                        :aria-pressed="keyReveal ? 'true' : 'false'"
+                                        x-text="keyReveal ? '🙈' : '👁'"></button>
+                            </div>
+                        </div>
+
+                        <template x-if="keyError">
+                            <div class="modal-error" x-text="keyError"></div>
+                        </template>
+
+                        <div class="modal-actions">
+                            <button class="btn" @click="closeKeyModal()"
+                                    :disabled="keySaving">Cancel</button>
+                            <button class="btn btn-primary" @click="saveApiKey()"
+                                    :disabled="keySaving || !keyInput.trim()">
+                                <span class="spinner" x-show="keySaving"></span>
+                                <span x-text="keySaving ? 'Saving…' : 'Save key'"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
         </div>
     </template>
 

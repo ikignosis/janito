@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 
 # Add the repo root to sys.path to allow importing the package directly.
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import pytest
 
@@ -119,7 +119,13 @@ def test_mcp_tools_endpoint_shape(client):
 @requires_fastapi
 def test_frontend_loads_tools_command_script():
     """index.html references the chatCommands.js slash-command mixin."""
-    index = Path(__file__).parent.parent / "janito" / "web" / "frontend" / "index.html"
+    index = (
+        Path(__file__).parent.parent.parent
+        / "janito"
+        / "web"
+        / "frontend"
+        / "index.html"
+    )
     html = index.read_text(encoding="utf-8")
     assert "/js/chatCommands.js" in html
     # The panel template block must be present.
@@ -130,7 +136,7 @@ def test_frontend_loads_tools_command_script():
 def test_chat_commands_mixin_intercepts_tools():
     """The chatCommands.js mixin defines the /tools dispatch + panel builder."""
     js = (
-        Path(__file__).parent.parent
+        Path(__file__).parent.parent.parent
         / "janito"
         / "web"
         / "frontend"

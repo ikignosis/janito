@@ -1,4 +1,5 @@
 - When creating tools read docs/TOOL.md
 - After performing significant changes update the CHANGELOG.md
-- Before "git commit" list the open issues to locate one that matches with the changes, add "closes #issue" to the commit comments
+- Before "git commit" list the open issues and locate one that matches with the changes, add "closes #issue" to the commit comments
 - After modifying code check tests/ and execute/update the tests as required
+- The web app/web mode is stored at janito/web

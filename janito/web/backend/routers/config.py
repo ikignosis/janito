@@ -180,6 +180,49 @@ async def set_default_provider(request: Request):
     return {"provider": provider, "model": config.model}
 
 
+@router.post("/api-key")
+async def set_provider_api_key(request: Request):
+    """Store an API key for a provider (persisted in ``~/.janito/auth.json``).
+
+    Web counterpart of ``janito --set-api-key <key> --provider <name>``:
+    the key is written to the auth file (mode ``0600``) so both CLI and web
+    runs pick it up.  The OpenAI client resolves the key per call, so the
+    next prompt already uses it — no restart needed.  The raw key is never
+    echoed back; only the masked form (same as ``/status``) is returned.
+    """
+    from janito.auth_config import set_api_key
+    from janito.general_config import get_masked_api_key
+    from janito.provider_config import validate_provider_name
+
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"detail": "Invalid JSON"}, status_code=400)
+
+    raw_provider = str(body.get("provider") or "").strip()
+    if not raw_provider:
+        return JSONResponse({"detail": "Missing 'provider'"}, status_code=400)
+
+    try:
+        provider = validate_provider_name(raw_provider)
+    except ValueError as e:
+        return JSONResponse({"detail": str(e)}, status_code=400)
+
+    api_key = str(body.get("api_key") or "").strip()
+    if not api_key:
+        return JSONResponse({"detail": "Missing 'api_key'"}, status_code=400)
+
+    if not set_api_key(provider, api_key):
+        return JSONResponse(
+            {"detail": "Failed to write the API key to the auth file"},
+            status_code=500,
+        )
+
+    masked = get_masked_api_key(api_key)
+    logger.info(f"API key updated for provider '{provider}' ({masked})")
+    return {"provider": provider, "api_key_set": True, "masked": masked}
+
+
 @router.get("/status")
 async def get_status(request: Request):
     """API key status (masked), active provider, privileges."""

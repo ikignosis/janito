@@ -44,6 +44,9 @@ const Api = {
     setDefaultProvider(name) {
         return this.post('/api/config/default-provider', { provider: name });
     },
+    setApiKey(provider, apiKey) {
+        return this.post('/api/config/api-key', { provider, api_key: apiKey });
+    },
     getTools() { return this.get('/api/tools'); },
     getSkippedTools() { return this.get('/api/tools/skipped'); },
     getMcpTools() { return this.get('/api/mcp/tools'); },

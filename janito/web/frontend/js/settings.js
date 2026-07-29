@@ -12,6 +12,13 @@ function settingsComponent() {
         settingDefault: false,
         message: null,
 
+        // "Set API Key" modal state
+        keyModalOpen: false,
+        keyInput: '',
+        keyReveal: false,
+        keySaving: false,
+        keyError: null,
+
         async toggle() {
             this.open = !this.open;
             if (this.open) await this.load();
@@ -54,11 +61,13 @@ function settingsComponent() {
             );
         },
 
-        // Transient "X is the default" confirmation shown after Set Default.
-        // (Note the trailing colon — "Set default failed:" errors must NOT
+        // Transient confirmation shown after Set Default / Set API Key
+        // succeed.  (Note the trailing colon — "…failed:" errors must NOT
         // render in the green confirmation style.)
         get hintMessage() {
-            return this.message && this.message.startsWith('Set default:')
+            const confirmPrefixes = ['Set default:', 'API key updated:'];
+            return this.message &&
+                confirmPrefixes.some((p) => this.message.startsWith(p))
                 ? this.message
                 : null;
         },
@@ -91,6 +100,55 @@ function settingsComponent() {
                 this.message = 'Set default failed: ' + e.message;
             } finally {
                 this.settingDefault = false;
+            }
+        },
+
+        // ---- "Set API Key" modal ----------------------------------------
+
+        // Open the modal pre-targeted at the provider selected in the combo
+        // (falling back to the default provider while nothing is picked).
+        openKeyModal() {
+            if (!this.selectedProvider) return;
+            this.keyInput = '';
+            this.keyReveal = false;
+            this.keyError = null;
+            this.keyModalOpen = true;
+            this.$nextTick(() => {
+                if (this.$refs.keyInput) this.$refs.keyInput.focus();
+            });
+        },
+
+        closeKeyModal() {
+            if (this.keySaving) return;
+            this.keyModalOpen = false;
+            this.keyError = null;
+            this.keyInput = '';
+        },
+
+        // Persist the typed key for the selected provider.  The backend
+        // writes it to ~/.janito/auth.json; the OpenAI client resolves the
+        // key per call, so it applies to the very next prompt — no restart.
+        async saveApiKey() {
+            if (this.keySaving) return;
+            const key = this.keyInput.trim();
+            if (!key) {
+                this.keyError = 'Please paste an API key first.';
+                return;
+            }
+            this.keySaving = true;
+            this.keyError = null;
+            try {
+                const data = await Api.setApiKey(this.selectedProvider, key);
+                // Refresh the masked value + per-provider "key set" flags.
+                this.status = await Api.getStatus();
+                await this.load();
+                this.keyModalOpen = false;
+                this.keyInput = '';
+                this._announce(`API key updated: ${data.provider}`);
+            } catch (e) {
+                this.keyError = 'Failed to save the key: ' + e.message;
+            } finally {
+                this.keySaving = false;
             }
         },
 
