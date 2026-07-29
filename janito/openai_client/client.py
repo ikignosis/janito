@@ -95,7 +95,11 @@ except ImportError:  # pragma: no cover - direct-run fallback
 
 # Import used-files tracking (best-effort, never fails)
 try:
-    from ..tooling.used_files import format_used_files, record_used_file
+    from ..tooling.used_files import (
+        format_used_files,
+        record_used_file,
+        reset_used_files,
+    )
 except ImportError:  # pragma: no cover - direct-run fallback
 
     def record_used_file(name, args):
@@ -103,6 +107,9 @@ except ImportError:  # pragma: no cover - direct-run fallback
 
     def format_used_files() -> Text:
         return Text()
+
+    def reset_used_files() -> None:
+        return None
 
 
 # Import changes tracking (best-effort, never fails). Successful tool calls
@@ -388,6 +395,10 @@ def send_prompt(
     # Remove any changes log from a previous prompt so ./janito/changes.jsonl
     # only describes the changes made while handling the current prompt.
     clear_changes()
+    # Clear the in-process used-files tracker so the end-of-prompt
+    # "Used Files" report only describes files touched while handling the
+    # *current* prompt instead of accumulating across the whole session.
+    reset_used_files()
     base_url, api_key, model = resolve_runtime_config(cli_model, cli_provider)
 
     # Create OpenAI client - base_url can be None for standard OpenAI

@@ -61,11 +61,14 @@ except ImportError:  # pragma: no cover - fallback keeps agent working
 
 # Used-files tracking (best-effort, never fails)
 try:
-    from janito.tooling.used_files import record_used_file
+    from janito.tooling.used_files import record_used_file, reset_used_files
 except ImportError:  # pragma: no cover - fallback keeps agent working
 
     def record_used_file(name, args):
         pass
+
+    def reset_used_files() -> None:
+        return None
 
 
 # Changes tracking (best-effort, never fails). Successful tool calls whose

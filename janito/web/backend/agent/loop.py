@@ -27,7 +27,7 @@ from ..events import (
     WaitingEvent,
 )
 from .call import StreamAccumulator, build_call_kwargs
-from .tooling import MCP_MANAGER_AVAILABLE, resolve_tools
+from .tooling import MCP_MANAGER_AVAILABLE, reset_used_files, resolve_tools
 from .turn import run_tool_turn
 
 logger = logging.getLogger(__name__)
@@ -50,6 +50,10 @@ async def stream_prompt(
                (unless ``config.no_tools``).
         use_mcp: If True, load and use MCP tools.
     """
+    # Clear the in-process used-files tracker so per-prompt tracking only
+    # reflects the files touched while handling the *current* prompt (best
+    # effort, never raises), mirroring the CLI's ``send_prompt`` behaviour.
+    reset_used_files()
     try:
         base_url, api_key, model = resolve_runtime_config(
             cli_model=config.model, cli_provider=config.provider

@@ -155,6 +155,57 @@ if pytest is not None:
         text = str(used_files.format_used_files())
         assert "/etc/hosts ReadFile" in text
 
+    def test_cli_send_prompt_clears_used_files_at_start(monkeypatch):
+        """``send_prompt`` must reset the tracker before processing a prompt.
+
+        ``resolve_runtime_config`` is patched to fail immediately so the test
+        never reaches the network; the reset happens before that call, so any
+        state left over from a previous prompt must already be gone.
+        """
+        import janito.openai_client.client as client_mod
+
+        used_files.record_used_file("ReadFile", {"filepath": "/prev.py"})
+        assert used_files.get_used_files()
+
+        def boom(*args, **kwargs):
+            raise RuntimeError("stop before network")
+
+        monkeypatch.setattr(client_mod, "resolve_runtime_config", boom)
+        try:
+            client_mod.send_prompt("hello", use_mcp=False)
+        except RuntimeError:
+            pass
+        assert used_files.get_used_files() == {}
+
+    def test_web_stream_prompt_clears_used_files_at_start(monkeypatch):
+        """The web agent loop must also reset the tracker per prompt."""
+        import asyncio
+
+        import janito.web.backend.agent.loop as loop_mod
+        from janito.web.backend.events import ErrorEvent
+
+        used_files.record_used_file("ReadFile", {"filepath": "/prev.py"})
+        assert used_files.get_used_files()
+
+        def boom(*args, **kwargs):
+            raise RuntimeError("stop before network")
+
+        monkeypatch.setattr(loop_mod, "resolve_runtime_config", boom)
+
+        class _Cfg:
+            model = None
+            provider = None
+
+        async def _drain():
+            events = []
+            async for ev in loop_mod.stream_prompt("hi", [], _Cfg(), use_mcp=False):
+                events.append(ev)
+            return events
+
+        events = asyncio.run(_drain())
+        assert used_files.get_used_files() == {}
+        assert any(isinstance(ev, ErrorEvent) for ev in events)
+
 else:  # pragma: no cover - fallback runner without pytest
 
     def _main():
