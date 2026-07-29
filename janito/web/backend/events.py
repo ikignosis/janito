@@ -135,17 +135,21 @@ class UsageEvent:
     input: int = 0
     output: int = 0
     cached: int = 0
+    max_tokens: int | None = None
 
     type: ClassVar[str] = "usage"
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        d = {
             "type": self.type,
             "total": self.total,
             "input": self.input,
             "output": self.output,
             "cached": self.cached,
         }
+        if self.max_tokens is not None:
+            d["max_tokens"] = self.max_tokens
+        return d
 
 
 @dataclass

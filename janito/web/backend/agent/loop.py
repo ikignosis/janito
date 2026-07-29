@@ -122,7 +122,7 @@ async def stream_prompt(
             assistant_message["reasoning_content"] = reasoning_content
         messages.append(assistant_message)
 
-        usage_event = acc.usage_event()
+        usage_event = acc.usage_event(max_tokens=context_window_size)
         if usage_event:
             yield usage_event
 

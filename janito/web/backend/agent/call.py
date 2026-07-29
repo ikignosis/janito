@@ -126,8 +126,13 @@ class StreamAccumulator:
             for tc in (self.tool_calls[i] for i in sorted(self.tool_calls))
         ]
 
-    def usage_event(self):
-        """Build a UsageEvent from the streamed usage info (or ``None``)."""
+    def usage_event(self, max_tokens: int | None = None):
+        """Build a UsageEvent from the streamed usage info (or ``None``).
+
+        Args:
+            max_tokens: The configured context-window / max-tokens limit
+                (from ``build_call_kwargs``), surfaced as ``input/max``.
+        """
         if not self.usage:
             return None
         from ..events import UsageEvent
@@ -145,4 +150,5 @@ class StreamAccumulator:
                 )
                 or 0
             ),
+            max_tokens=max_tokens,
         )

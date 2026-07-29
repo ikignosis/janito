@@ -1,0 +1,191 @@
+"""
+Tests for the input-tokens/max-tokens display (issue #31).
+
+The token-usage summary shown at the end of each prompt should display the
+input token count alongside the configured max-tokens (context window size)
+using the ``input/max`` format, e.g. ``In: 1.2k/65.5k``.
+
+These tests verify:
+  - ``format_tokens()`` human-readable formatting.
+  - The CLI usage summary string construction with and without a max-tokens
+    value.
+  - The web ``UsageEvent`` serialization includes ``max_tokens`` only when
+    it is set.
+  - The web ``StreamAccumulator.usage_event()`` passes ``max_tokens`` through.
+  - The frontend usage strip renders the ``input/max`` pattern.
+"""
+
+import sys
+from pathlib import Path
+
+# Add the repo root to sys.path to allow importing the package directly.
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+try:
+    import pytest
+except ImportError:  # pragma: no cover - pytest is a dev dependency
+    pytest = None
+
+
+if pytest is not None:
+    from janito.openai_client.client import format_tokens
+
+    # ---- format_tokens unit tests ------------------------------------
+
+    def test_format_tokens_plain_integer():
+        assert format_tokens(150) == "150"
+
+    def test_format_tokens_thousands():
+        assert format_tokens(2000) == "2k"
+
+    def test_format_tokens_thousands_fractional():
+        assert format_tokens(12345) == "12.3k"
+
+    def test_format_tokens_millions():
+        assert format_tokens(4_000_000) == "4m"
+
+    def test_format_tokens_none():
+        assert format_tokens(None) is None
+
+    # ---- CLI usage-line construction ---------------------------------
+
+    def _build_parts(
+        input_tokens,
+        context_window_size,
+        output_tokens=50,
+        total_tokens=200,
+        cached_tokens=None,
+    ):
+        """Replicate the parts-building logic from send_prompt."""
+        parts = []
+        if total_tokens is not None:
+            parts.append(f"Total: {format_tokens(total_tokens)}")
+        if input_tokens is not None:
+            if context_window_size is not None:
+                parts.append(
+                    f"In: {format_tokens(input_tokens)}/{format_tokens(context_window_size)}"
+                )
+            else:
+                parts.append(f"In: {format_tokens(input_tokens)}")
+        if output_tokens is not None:
+            parts.append(f"Out: {format_tokens(output_tokens)}")
+        if cached_tokens is not None:
+            parts.append(f"Cached: {format_tokens(cached_tokens)}")
+        return parts
+
+    def test_input_with_max_tokens():
+        parts = _build_parts(1200, 65536)
+        assert "In: 1.2k/65.5k" in parts
+
+    def test_input_without_max_tokens():
+        parts = _build_parts(1200, None)
+        assert "In: 1.2k" in parts
+        # No slash when max is not configured
+        assert not any("/" in p for p in parts if p.startswith("In:"))
+
+    def test_input_with_max_exact_values():
+        parts = _build_parts(500, 1000)
+        assert "In: 500/1k" in parts
+
+    def test_input_zero_with_max():
+        parts = _build_parts(0, 65536)
+        assert "In: 0/65.5k" in parts
+
+    # ---- Web UsageEvent serialization --------------------------------
+
+    def test_usage_event_to_dict_without_max():
+        from janito.web.backend.events import UsageEvent
+
+        ev = UsageEvent(total=100, input=80, output=20, cached=10)
+        d = ev.to_dict()
+        assert d == {
+            "type": "usage",
+            "total": 100,
+            "input": 80,
+            "output": 20,
+            "cached": 10,
+        }
+        assert "max_tokens" not in d
+
+    def test_usage_event_to_dict_with_max():
+        from janito.web.backend.events import UsageEvent
+
+        ev = UsageEvent(total=100, input=80, output=20, cached=0, max_tokens=65536)
+        d = ev.to_dict()
+        assert d["max_tokens"] == 65536
+
+    # ---- StreamAccumulator.usage_event with max_tokens ---------------
+
+    def test_stream_accumulator_usage_event_passes_max_tokens():
+        from janito.web.backend.agent.call import StreamAccumulator
+
+        class FakeUsage:
+            total_tokens = 200
+            prompt_tokens = 150
+            completion_tokens = 50
+            prompt_tokens_details = None
+
+        acc = StreamAccumulator(usage=FakeUsage())
+        ev = acc.usage_event(max_tokens=32768)
+        assert ev is not None
+        assert ev.max_tokens == 32768
+        assert ev.to_dict()["max_tokens"] == 32768
+
+    def test_stream_accumulator_usage_event_no_max():
+        from janito.web.backend.agent.call import StreamAccumulator
+
+        class FakeUsage:
+            total_tokens = 200
+            prompt_tokens = 150
+            completion_tokens = 50
+            prompt_tokens_details = None
+
+        acc = StreamAccumulator(usage=FakeUsage())
+        ev = acc.usage_event()
+        assert ev is not None
+        assert ev.max_tokens is None
+        assert "max_tokens" not in ev.to_dict()
+
+    # ---- Frontend wiring (static checks) -----------------------------
+
+    def test_frontend_usage_strip_shows_input_max():
+        """The usage-strip template must render ``input/max`` in the in chip."""
+        index = (
+            Path(__file__).parent.parent / "janito" / "web" / "frontend" / "index.html"
+        )
+        html = index.read_text(encoding="utf-8")
+        # The in-chip must append max_tokens when available
+        assert "msg.usage.max_tokens" in html
+        assert "formatTokens(msg.usage.input) + (msg.usage.max_tokens" in html
+
+    def test_frontend_status_bar_shows_input_max():
+        """The status bar must render ``input/max`` in the tokens area."""
+        index = (
+            Path(__file__).parent.parent / "janito" / "web" / "frontend" / "index.html"
+        )
+        html = index.read_text(encoding="utf-8")
+        assert "lastUsage.max_tokens" in html
+
+    def test_frontend_event_handler_captures_max_tokens():
+        """chatEvents.js must store max_tokens from the usage event."""
+        js = (
+            Path(__file__).parent.parent
+            / "janito"
+            / "web"
+            / "frontend"
+            / "js"
+            / "chatEvents.js"
+        )
+        src = js.read_text(encoding="utf-8")
+        assert "max_tokens: c.event.max_tokens" in src
+
+else:  # pragma: no cover - fallback runner without pytest
+
+    def _main():
+        for name, fn in sorted(globals().items()):
+            if name.startswith("test_") and callable(fn):
+                fn()
+                print(f"OK {name}")
+
+    if __name__ == "__main__":
+        _main()

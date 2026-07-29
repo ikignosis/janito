@@ -700,7 +700,12 @@ def send_prompt(
                 if total_tokens is not None:
                     parts.append(f"Total: {format_tokens(total_tokens)}")
                 if input_tokens is not None:
-                    parts.append(f"In: {format_tokens(input_tokens)}")
+                    if context_window_size is not None:
+                        parts.append(
+                            f"In: {format_tokens(input_tokens)}/{format_tokens(context_window_size)}"
+                        )
+                    else:
+                        parts.append(f"In: {format_tokens(input_tokens)}")
                 if output_tokens is not None:
                     parts.append(f"Out: {format_tokens(output_tokens)}")
                 if cached_tokens is not None:
@@ -711,6 +716,6 @@ def send_prompt(
                 token_text.stylize("white on magenta")
                 console.print(token_text, highlight=False)
                 logger.info(
-                    f"Request completed: total={total_tokens} tokens (in={input_tokens}, out={output_tokens}, cached={cached_tokens}), {len(messages)} messages"
+                    f"Request completed: total={total_tokens} tokens (in={input_tokens}, out={output_tokens}, cached={cached_tokens}, max={context_window_size}), {len(messages)} messages"
                 )
             return full_content
