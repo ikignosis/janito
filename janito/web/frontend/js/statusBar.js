@@ -34,8 +34,11 @@ function statusBarComponent() {
             return this.status.active_provider || this.config.provider || '?';
         },
 
+        // Effective model name, or null when nothing is configured yet
+        // (CLI --model, runtime config, or server status).  The template
+        // renders a muted "(not set)" placeholder in that case.
         get model() {
-            return this.config.model || this.status.model || '?';
+            return this.config.model || this.status.model || null;
         },
 
         get privileges() {

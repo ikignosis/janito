@@ -441,7 +441,10 @@
                 <span class="conn-dot" :class="connection"></span>
                 <span x-text="connection"></span>
             </div>
-            <div class="status-item"><strong>Model:</strong> <span x-text="model"></span></div>
+            <div class="status-item"><strong>Model:</strong>
+                <span x-show="model" x-text="model"></span>
+                <span x-show="!model" class="muted">(not set)</span>
+            </div>
             <div class="status-item"><strong>Provider:</strong> <span x-text="provider"></span></div>
 
             <div class="status-item gap-sm">
@@ -478,7 +481,7 @@
                 <!-- Provider combobox (top) -->
                 <div class="form-group">
                     <label>Provider</label>
-                    <select x-model="selectedProvider">
+                    <select x-model="selectedProvider" @change="onProviderChange()">
                         <template x-for="p in providers" :key="p.name">
                             <option :value="p.name" x-text="p.name"></option>
                         </template>
@@ -505,7 +508,7 @@
                 <!-- Model override -->
                 <div class="form-group">
                     <label>Model</label>
-                    <input type="text" x-model="model" placeholder="e.g. gpt-4o">
+                    <input type="text" x-model="model" placeholder="(not set)">
                 </div>
 
                 <div class="form-group">

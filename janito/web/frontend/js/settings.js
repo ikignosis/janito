@@ -56,6 +56,15 @@ function settingsComponent() {
             }
         },
 
+        // Called from the provider <select>'s @change: adopt the newly
+        // picked provider's configured model so the Model field always
+        // describes the provider being edited (keeping a model name from
+        // the previous provider would make the next API call fail).
+        onProviderChange() {
+            const p = this.providers.find((x) => x.name === this.selectedProvider);
+            this.model = (p && p.model) || '';
+        },
+
         // The provider object currently selected in the combobox (or null).
         get selectedProviderDetail() {
             return (
