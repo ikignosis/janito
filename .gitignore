@@ -3,6 +3,10 @@ moonshot_env.txt
 # Agent workspace
 .agents/
 
+# Janito per-project workspace (runtime state)
+.janito/history.log
+.janito/changes.jsonl
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

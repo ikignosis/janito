@@ -68,6 +68,17 @@ except ImportError:  # pragma: no cover - fallback keeps agent working
         pass
 
 
+# Changes tracking (best-effort, never fails). Successful tool calls whose
+# first argument is "filepath" are logged to ./.janito/changes.jsonl so the
+# /changes command can replay them.
+try:
+    from janito.tooling.changes import record_change
+except ImportError:  # pragma: no cover - fallback keeps agent working
+
+    def record_change(name, args):
+        pass
+
+
 def is_mcp_tool(tool_name: str) -> bool:
     """Check if a tool name is an MCP tool (has service_ prefix)."""
     mcp_manager = get_mcp_manager()
@@ -159,6 +170,9 @@ async def execute_tool(
         isinstance(result, dict) and result.get("success") is False
     ):
         record_used_file(tool_name, tool_args)
+        # Log the execution to ./.janito/changes.jsonl so the /changes command
+        # can replay it (best-effort, never raises).
+        record_change(tool_name, tool_args)
 
     exec_time_ms = int((time.time() - start) * 1000)
     return result, progress_events, error, exec_time_ms

@@ -36,6 +36,7 @@ Additional commands available in chat:
 | `/help` | Show help information |
 | `/tools` | List all available tools |
 | `/show_tools_stats` | Show tool usage statistics (from the SQLite `tools_use.db`) |
+| `/changes` | Show the file-changing tool executions recorded for the current prompt |
 | `/mcp add <name> stdio <cmd>` | Add MCP stdio service |
 | `/mcp add <name> http <url>` | Add MCP HTTP service |
 | `/mcp list` | List MCP services |
@@ -81,6 +82,26 @@ Assistant: [File uploaded]
 - **Conversation History**: Messages are kept in context during the session
 - **Use `restart`**: Clear history if you want a fresh start
 - **Exit gracefully**: Use `exit` or `quit` for clean exit
+
+## Tracking Changes (`/changes`)
+
+Every successful tool call whose first argument is a `filepath` (for example
+`CreateFile`, `ReplaceTextInFile`, `MoveFile`, ...) is logged to
+`./.janito/changes.jsonl` while a prompt is being processed. Only the tool name
+and its parameters are recorded — never the tool's result. The file is removed
+before each new prompt, so it always describes the changes made while handling
+the *current* prompt.
+
+Run `/changes` to replay those executions in a friendly, readable format:
+
+- **`CreateFile`** — the written `content` is shown with syntax highlighting
+  (the language is guessed from the file path).
+- **`ReplaceTextInFile`** — a unified diff between `old_str` and `new_str` is
+  generated and shown, syntax-highlighted.
+- **Any other tool** — its parameters are shown as pretty-printed JSON.
+
+When no changes have been recorded for the current prompt, `/changes` prints a
+friendly message instead.
 
 ## Exiting
 

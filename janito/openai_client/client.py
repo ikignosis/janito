@@ -105,6 +105,20 @@ except ImportError:  # pragma: no cover - direct-run fallback
         return Text()
 
 
+# Import changes tracking (best-effort, never fails). Successful tool calls
+# whose first argument is "filepath" are logged to ./.janito/changes.jsonl so
+# the /changes command can replay them.
+try:
+    from ..tooling.changes import clear_changes, record_change
+except ImportError:  # pragma: no cover - direct-run fallback
+
+    def record_change(name, args):
+        pass
+
+    def clear_changes() -> bool:
+        return False
+
+
 # Import provider configuration for base URLs
 try:
     from ..provider_config import (
@@ -371,6 +385,9 @@ def send_prompt(
         cli_provider: Provider passed via ``--provider`` (overrides config/auth).
     """
     logger.info("Sending prompt to API")
+    # Remove any changes log from a previous prompt so ./janito/changes.jsonl
+    # only describes the changes made while handling the current prompt.
+    clear_changes()
     base_url, api_key, model = resolve_runtime_config(cli_model, cli_provider)
 
     # Create OpenAI client - base_url can be None for standard OpenAI
@@ -603,6 +620,9 @@ def send_prompt(
                         and tool_result.get("success") is False
                     ):
                         record_used_file(tool_name, tool_args)
+                        # Log the execution to ./janito/changes.jsonl so the
+                        # /changes command can replay it (best-effort).
+                        record_change(tool_name, tool_args)
 
                     # Add the tool response to messages
                     messages.append(

@@ -38,6 +38,7 @@ class HelpCmdHandler(CmdHandler):
         print("  /prompt      - Show the system prompt")
         print("  /tools       - List all available tools")
         print("  /show_tools_stats - Show tool usage statistics")
+        print("  /changes     - Show the file-changing tool executions for this prompt")
         print(
             "  /multi       - Enable multiline input for next prompt (ESC ENTER to submit)"
         )
