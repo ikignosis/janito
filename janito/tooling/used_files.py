@@ -23,6 +23,8 @@ import threading
 
 from rich.text import Text
 
+from .path_utils import norm_path
+
 logger = logging.getLogger(__name__)
 
 # Name of the argument that, when it is the *first* argument of a tool call,
@@ -95,6 +97,11 @@ def format_used_files() -> Text:
         file1 ReadFile,WriteFile
         file2 ReadFile
 
+    Each path is displayed through :func:`~janito.tooling.path_utils.norm_path`,
+    so paths located under the current working directory are shown relative to
+    it (e.g. ``./subdir/file.py``) rather than as absolute paths. Paths outside
+    the working directory are left unchanged.
+
     When nothing has been tracked, an empty :class:`~rich.text.Text` is
     returned so that no header (or ``(none)`` line) is printed at all.
 
@@ -110,7 +117,14 @@ def format_used_files() -> Text:
     # Only the header line is styled (cyan); the file paths stay default.
     text.append("\n===== Used Files =====", style="cyan")
     for path, tools in used.items():
-        text.append(f"\n{path} {','.join(tools)}")
+        # Display paths relative to the current working directory when
+        # possible (via ``norm_path``), falling back to the raw recorded
+        # path if normalization fails for any reason.
+        try:
+            display_path = norm_path(path)
+        except Exception:  # noqa: BLE001 - display must never break the report
+            display_path = path
+        text.append(f"\n{display_path} {','.join(tools)}")
     return text
 
 

@@ -120,6 +120,26 @@ if pytest is not None:
         result = used_files.format_used_files()
         assert any(str(span.style) == "cyan" for span in result.spans)
 
+    def test_format_shows_paths_relative_to_cwd(tmp_path, monkeypatch):
+        """Paths under the CWD are printed relative to it (``./file``)."""
+        monkeypatch.chdir(tmp_path)
+        sub = tmp_path / "subdir"
+        sub.mkdir()
+        target = sub / "file.py"
+
+        used_files.record_used_file("ReadFile", {"filepath": str(target)})
+        text = str(used_files.format_used_files())
+
+        assert "./subdir/file.py ReadFile" in text
+        assert str(tmp_path) not in text
+
+    def test_format_keeps_paths_outside_cwd_unchanged(tmp_path, monkeypatch):
+        """Paths outside the CWD are left as recorded."""
+        monkeypatch.chdir(tmp_path)
+        used_files.record_used_file("ReadFile", {"filepath": "/etc/hosts"})
+        text = str(used_files.format_used_files())
+        assert "/etc/hosts ReadFile" in text
+
 else:  # pragma: no cover - fallback runner without pytest
 
     def _main():
