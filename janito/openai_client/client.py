@@ -13,6 +13,7 @@ from openai import AuthenticationError, NotFoundError, OpenAI
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.text import Text
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
@@ -90,6 +91,18 @@ except ImportError:  # pragma: no cover - direct-run fallback
 
     def record_tool_use(name):
         pass
+
+
+# Import used-files tracking (best-effort, never fails)
+try:
+    from ..tooling.used_files import format_used_files, record_used_file
+except ImportError:  # pragma: no cover - direct-run fallback
+
+    def record_used_file(name, args):
+        pass
+
+    def format_used_files() -> Text:
+        return Text()
 
 
 # Import provider configuration for base URLs
@@ -581,6 +594,16 @@ def send_prompt(
                         tool_result = tool_function(**tool_args)
                         logger.info(f"Tool {tool_name} completed successfully")
 
+                    # Track which files this successful call touched (only when
+                    # the first argument is "filepath"; best-effort, never raises).
+                    # A tool signals logical failure via a falsy "success" key in
+                    # its result dict; such calls are not tracked.
+                    if not (
+                        isinstance(tool_result, dict)
+                        and tool_result.get("success") is False
+                    ):
+                        record_used_file(tool_name, tool_args)
+
                     # Add the tool response to messages
                     messages.append(
                         {
@@ -619,6 +642,12 @@ def send_prompt(
 
             # Add assistant message to conversation history
             messages.append(assistant_message)
+
+            # Display the tracked used files before the token usage summary.
+            # Nothing is printed when no files were tracked (empty Text).
+            used_files_report = format_used_files()
+            if used_files_report:
+                console.print(used_files_report, highlight=False)
 
             # Display token usage with magenta background
             if usage_info:

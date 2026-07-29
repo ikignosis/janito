@@ -59,6 +59,15 @@ except ImportError:  # pragma: no cover - fallback keeps agent working
         pass
 
 
+# Used-files tracking (best-effort, never fails)
+try:
+    from janito.tooling.used_files import record_used_file
+except ImportError:  # pragma: no cover - fallback keeps agent working
+
+    def record_used_file(name, args):
+        pass
+
+
 def is_mcp_tool(tool_name: str) -> bool:
     """Check if a tool name is an MCP tool (has service_ prefix)."""
     mcp_manager = get_mcp_manager()
@@ -142,6 +151,14 @@ async def execute_tool(
         }
     finally:
         set_report_handler(None)  # restore default (Rich console)
+
+    # Track which files this successful call touched (only when the first
+    # argument is "filepath"; best-effort, never raises). Skip calls that
+    # raised or that returned a logical failure ({"success": False}).
+    if error is None and not (
+        isinstance(result, dict) and result.get("success") is False
+    ):
+        record_used_file(tool_name, tool_args)
 
     exec_time_ms = int((time.time() - start) * 1000)
     return result, progress_events, error, exec_time_ms
