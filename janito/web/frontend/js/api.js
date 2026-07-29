@@ -41,6 +41,9 @@ const Api = {
     patchConfig(body) { return this.patch('/api/config', body); },
     getStatus() { return this.get('/api/config/status'); },
     getProviders() { return this.get('/api/config/providers'); },
+    setDefaultProvider(name) {
+        return this.post('/api/config/default-provider', { provider: name });
+    },
     getTools() { return this.get('/api/tools'); },
     getSkippedTools() { return this.get('/api/tools/skipped'); },
     getMcpServices() { return this.get('/api/mcp/services'); },

@@ -49,22 +49,8 @@
 .mcp-service-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .mcp-service-name { font-weight: 600; font-family: var(--font-mono); }
 
-/* Provider combobox + detail box (settings drawer) */
+/* Provider combobox (settings drawer) */
 .provider-hint { margin-top: 6px; display: flex; align-items: center; gap: 6px; }
-.provider-detail-box {
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 10px 12px;
-    margin-bottom: 16px;
-    background: var(--bg-tertiary);
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-.provider-detail-box.active {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 1px var(--accent) inset;
-}
 .provider-active-badge {
     font-size: 11px;
     padding: 2px 8px;
@@ -74,11 +60,37 @@
     border: 1px solid var(--accent);
     font-weight: 600;
 }
-.provider-details { display: flex; flex-direction: column; gap: 4px; }
-.provider-detail-row { display: flex; gap: 8px; font-size: 13px; }
-.provider-detail-label { color: var(--text-muted); min-width: 64px; }
-.provider-detail-value { color: var(--text-secondary); word-break: break-all; }
-.provider-detail-value.provider-endpoint { font-family: var(--font-mono); font-size: 12px; }
+.provider-hint .hint-muted { flex: 1; }
+
+/* "Set Default" — small inline action shown under the provider combo
+   while a non-default provider is selected. */
+.set-default-btn {
+    margin-left: auto;
+    padding: 3px 10px;
+    font-size: 12px;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    transition: background-color 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.set-default-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent-hover);
+    box-shadow: 0 1px 6px rgba(122, 162, 247, 0.15);
+}
+.set-default-btn .spinner { width: 11px; height: 11px; border-width: 2px; }
+
+/* Transient confirmation after promoting a provider to default. */
+.provider-confirm {
+    margin-top: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--green);
+    animation: provider-confirm-in 0.2s ease-out;
+}
+@keyframes provider-confirm-in {
+    from { opacity: 0; transform: translateY(-2px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
 
 .empty-state {
     text-align: center;

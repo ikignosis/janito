@@ -57,8 +57,8 @@ async def patch_config(request: Request):
     """Update mutable config values (model, etc.).
 
     Only a safe subset of fields is mutable at runtime. Thinking mode and
-    verbose logging are CLI-level flags and cannot be changed here; changing
-    the provider requires a restart.
+    verbose logging are CLI-level flags and cannot be changed here; the
+    default provider is changed via ``POST /api/config/default-provider``.
     """
     config = _get_config(request)
     try:
@@ -132,6 +132,52 @@ async def list_providers(request: Request):
         )
 
     return {"providers": providers}
+
+
+@router.post("/default-provider")
+async def set_default_provider(request: Request):
+    """Promote a provider to the default (persisted in ``~/.janito/config.json``).
+
+    Web counterpart of ``janito --set provider=<name>``: the value is written
+    to the config file so future CLI *and* web runs pick it up, and it is
+    also mirrored into this running server's config so the next prompt
+    resolves the new provider without a restart.
+    """
+    from janito.general_config import load_model_from_config, set_config_value
+    from janito.provider_config import validate_provider_name
+
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"detail": "Invalid JSON"}, status_code=400)
+
+    raw = str(body.get("provider") or "").strip()
+    if not raw:
+        return JSONResponse({"detail": "Missing 'provider'"}, status_code=400)
+
+    try:
+        provider = validate_provider_name(raw)
+    except ValueError as e:
+        return JSONResponse({"detail": str(e)}, status_code=400)
+
+    # Persist as the default for all future runs.
+    set_config_value("provider", provider)
+
+    # Mirror into this running server: provider resolution now picks up the
+    # new default.  Also adopt the new provider's configured model — keeping
+    # a model that belongs to the previous provider would make the next API
+    # call fail.  (An explicitly pinned --model was already baked into
+    # config.model at startup; runtime overrides via PATCH /api/config are
+    # intentionally replaced here.)
+    config = _get_config(request)
+    config.provider = provider
+    try:
+        config.model = load_model_from_config(provider)
+    except Exception:
+        config.model = None
+
+    logger.info(f"Default provider set to '{provider}' (model: {config.model})")
+    return {"provider": provider, "model": config.model}
 
 
 @router.get("/status")

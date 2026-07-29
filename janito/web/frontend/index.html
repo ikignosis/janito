@@ -409,28 +409,19 @@
                               class="provider-active-badge">default</span>
                         <span x-show="selectedProviderDetail && !selectedProviderDetail.active"
                               class="hint-muted">not the default provider</span>
+                        <button class="btn set-default-btn"
+                                x-show="showSetDefault"
+                                @click="setDefaultProvider()"
+                                :disabled="settingDefault"
+                                title="Make this the default provider">
+                            <span class="spinner" x-show="settingDefault"></span>
+                            <span x-text="settingDefault ? 'Setting…' : 'Set Default'"></span>
+                        </button>
                     </div>
+                    <template x-if="hintMessage">
+                        <div class="provider-confirm" x-text="hintMessage"></div>
+                    </template>
                 </div>
-
-                <!-- Selected provider details -->
-                <template x-if="selectedProviderDetail">
-                    <div class="provider-detail-box" :class="{ active: selectedProviderDetail.active }">
-                        <div class="provider-detail-row">
-                            <span class="provider-detail-label">Model</span>
-                            <span class="provider-detail-value" x-text="selectedProviderDetail.model || '—'"></span>
-                        </div>
-                        <div class="provider-detail-row">
-                            <span class="provider-detail-label">API Key</span>
-                            <span class="provider-detail-value" x-text="selectedProviderDetail.api_key_set ? 'set' : 'not set'"></span>
-                        </div>
-                        <template x-if="selectedProviderDetail.base_url">
-                            <div class="provider-detail-row">
-                                <span class="provider-detail-label">Endpoint</span>
-                                <span class="provider-detail-value provider-endpoint" x-text="selectedProviderDetail.base_url"></span>
-                            </div>
-                        </template>
-                    </div>
-                </template>
 
                 <!-- Model override -->
                 <div class="form-group">
