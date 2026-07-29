@@ -8,6 +8,7 @@ At the point ``run_web`` is called, ``__main__.py`` has already:
 
 import json
 import logging
+import re
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -19,6 +20,32 @@ from .security import TokenAuthMiddleware, add_cors
 from .session import SessionManager
 
 logger = logging.getLogger(__name__)
+
+
+def _cache_bust_assets(html: str, frontend_dir: Path) -> str:
+    """Append an mtime-based query string to local ``/js/`` and ``/css/``
+    asset URLs so browsers fetch a new copy whenever the file changes.
+
+    Only same-origin paths starting with ``/js/`` or ``/css/`` are touched —
+    CDN scripts/styles and the inline theme bootstrap are left alone.
+    """
+
+    def _stamp(match: re.Match) -> str:
+        attr, path = match.group(1), match.group(2)
+        rel = path.lstrip("/")
+        target = frontend_dir / rel
+        try:
+            mtime = int(target.stat().st_mtime)
+        except OSError:
+            return match.group(0)  # file missing — leave the URL untouched
+        return f'{attr}="{path}?v={mtime}"'
+
+    # Match src="/js/..." or href="/css/..." (no existing query string).
+    return re.sub(
+        r'(src|href)="(/(?:js|css)/[^"?]+)"',
+        _stamp,
+        html,
+    )
 
 
 def create_app(config: WebServerConfig) -> FastAPI:
@@ -75,9 +102,14 @@ def create_app(config: WebServerConfig) -> FastAPI:
             async def serve_index():
                 # Read the file per request so frontend edits apply without
                 # restarting the server, and send ``no-store`` so browsers
-                # never serve a stale shell. (JS/CSS assets remain cacheable
-                # and are invalidated with ?v=N query strings instead.)
+                # never serve a stale shell.
                 html = index_file.read_text(encoding="utf-8")
+                # Cache-bust local /js/ + /css/ assets by fingerprinting each
+                # reference with its file mtime. Browsers aggressively cache
+                # these scripts, so without this a frontend edit (e.g. a new
+                # Alpine method in settings.js) keeps serving the stale copy
+                # and raises "X is not defined" against the fresh index.html.
+                html = _cache_bust_assets(html, frontend_dir)
                 return HTMLResponse(
                     html.replace("</head>", _token_script + "\n</head>", 1),
                     headers={"Cache-Control": "no-store"},

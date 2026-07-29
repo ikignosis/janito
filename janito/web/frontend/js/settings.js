@@ -24,17 +24,35 @@ function settingsComponent() {
             if (this.open) await this.load();
         },
 
+        init() {
+            // The API-key field describes the provider picked in the
+            // combobox, so reload it whenever the selection changes.
+            this.$watch('selectedProvider', () => this.refreshStatus());
+        },
+
         async load() {
             try {
                 this.config = await Api.getConfig();
-                this.status = await Api.getStatus();
                 const data = await Api.getProviders();
                 this.providers = data.providers || [];
                 this.model = this.config.model || '';
                 this.selectedProvider =
-                    this.config.provider || this.status.active_provider || '';
+                    this.config.provider ||
+                    (this.providers.find((p) => p.active) || {}).name ||
+                    '';
+                this.status = await Api.getStatus(this.selectedProvider);
             } catch (e) {
                 this.message = 'Failed to load settings: ' + e.message;
+            }
+        },
+
+        // Refresh the API-key status for the currently selected provider
+        // (falls back to the active/default provider when nothing is picked).
+        async refreshStatus() {
+            try {
+                this.status = await Api.getStatus(this.selectedProvider);
+            } catch (e) {
+                // Keep the stale status visible on failure.
             }
         },
 
@@ -140,7 +158,6 @@ function settingsComponent() {
             try {
                 const data = await Api.setApiKey(this.selectedProvider, key);
                 // Refresh the masked value + per-provider "key set" flags.
-                this.status = await Api.getStatus();
                 await this.load();
                 this.keyModalOpen = false;
                 this.keyInput = '';

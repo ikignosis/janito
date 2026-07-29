@@ -39,7 +39,10 @@ const Api = {
     // Convenience wrappers
     getConfig() { return this.get('/api/config'); },
     patchConfig(body) { return this.patch('/api/config', body); },
-    getStatus() { return this.get('/api/config/status'); },
+    getStatus(provider) {
+        const qs = provider ? `?provider=${encodeURIComponent(provider)}` : '';
+        return this.get('/api/config/status' + qs);
+    },
     getProviders() { return this.get('/api/config/providers'); },
     setDefaultProvider(name) {
         return this.post('/api/config/default-provider', { provider: name });

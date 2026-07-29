@@ -88,11 +88,16 @@ window.ChatCommandsMixin = {
 
         // Build the assistant message that will host the tools panel.
         const assistant = this._newMessage('assistant', '');
-        const part = { kind: 'tools', tools: null, loading: true, error: null };
-        assistant.parts.push(part);
+        assistant.parts.push({ kind: 'tools', tools: null, loading: true, error: null });
         assistant.done = true;
         store.messages.push(assistant);
         if (isActive) this._forceScrollToBottom();
+
+        // Re-acquire the part through the reactive store. The local object
+        // created above is now wrapped in an Alpine Proxy once it lives
+        // inside `store.messages`; mutating the raw reference would bypass
+        // reactivity and the template would never leave the loading state.
+        const part = store.messages[store.messages.length - 1].parts[0];
 
         try {
             part.tools = await _fetchToolsListing();

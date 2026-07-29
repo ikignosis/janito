@@ -16,8 +16,14 @@ Changes since `v4.14.0` (2026-07-29).
 
 ### Changed
 
+- Web UI asset cache-busting (`janito/web/backend/app.py`): the index route now fingerprints every local `/js/` and `/css/` reference with the file's mtime (`?v=<mtime>`) before serving, so browsers automatically fetch a fresh copy whenever a frontend file changes — no more stale scripts after an edit.
+- `GET /api/config/status` now accepts an optional `?provider=<name>` query parameter (`janito/web/backend/routers/config.py`) to inspect the API-key status of a non-default provider; `active_provider` in the response still reports the true default. The settings drawer (`janito/web/frontend/js/settings.js`) uses this to reload the masked key / endpoint info whenever the provider combobox selection changes.
 - Moved the web-app test module to a dedicated `tests/web/` subdirectory (`tests/test_web_tools_panel.py` → `tests/web/test_web_tools_panel.py`) so the FastAPI/frontend tests live under their own namespace; the module's repo-root path resolution was updated accordingly. The full suite still runs via `pytest tests/`.
 - `ReadFile` no longer treats a `to_line` past the end of the file as an error (`janito/tools/files/read_file.py`): such values are now clamped to the last available line, so the tool returns all the lines it could read instead of failing. An out-of-range `from_line`, and a `to_line` below `1`, are still errors. Added `tests/test_read_file.py`.
+
+### Fixed
+
+- Web UI `/tools` panel reactivity (`janito/web/frontend/js/chatCommands.js`): the tools part is now re-acquired through the Alpine reactive proxy after being pushed into the store, so mutations (`tools`, `loading`, `error`) propagate correctly and the loading spinner resolves instead of hanging indefinitely.
 
 ## [v4.14.0](https://github.com/joaopinto/janito/compare/v4.13.0...v4.14.0) - 2026-07-29
 

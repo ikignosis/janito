@@ -224,8 +224,14 @@ async def set_provider_api_key(request: Request):
 
 
 @router.get("/status")
-async def get_status(request: Request):
-    """API key status (masked), active provider, privileges."""
+async def get_status(request: Request, provider: str | None = None):
+    """API key status (masked), active provider, privileges.
+
+    By default the status describes the *active* (default) provider.  Pass
+    ``?provider=<name>`` to inspect another provider instead (used by the
+    settings drawer when a non-default provider is picked in the combobox);
+    ``active_provider`` keeps reporting the true default either way.
+    """
     from janito.auth_config import get_api_key
     from janito.general_config import (
         get_active_provider,
@@ -235,25 +241,34 @@ async def get_status(request: Request):
     from janito.provider_config import (
         CUSTOM_ENDPOINT_MARKER,
         get_base_url_from_provider,
+        validate_provider_name,
     )
 
     config = _get_config(request)
-    provider = get_active_provider()
+    active = get_active_provider()
 
-    api_key = get_api_key(provider)
+    target = active
+    if provider:
+        try:
+            target = validate_provider_name(provider)
+        except ValueError as e:
+            return JSONResponse({"detail": str(e)}, status_code=400)
+
+    api_key = get_api_key(target)
 
     # Endpoint resolution mirrors the runtime: a configured endpoint override
     # first, otherwise the provider's built-in default (None => standard OpenAI).
-    base_url = load_endpoint_from_config(provider)
+    base_url = load_endpoint_from_config(target)
     if not base_url:
-        provider_default = get_base_url_from_provider(provider)
+        provider_default = get_base_url_from_provider(target)
         if provider_default and provider_default != CUSTOM_ENDPOINT_MARKER:
             base_url = provider_default
 
     return {
         "api_key": get_masked_api_key(api_key) if api_key else "(not set)",
         "api_key_set": bool(api_key),
-        "active_provider": provider,
+        "active_provider": active,
+        "provider": target,
         "model": config.model,
         "base_url": base_url,
         "privileges": _privileges_dict(),
