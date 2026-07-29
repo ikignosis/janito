@@ -1,11 +1,14 @@
 """Track the tool executions that changed files during a session.
 
-Whenever a *successful* tool call has ``filepath`` as its first argument, the
-tool name and its invocation parameters are appended to a JSON-lines file
-(``./.janito/changes.jsonl``, relative to the current working directory). Only
-the parameters are recorded — never the tool's result. The file is meant to be
-removed before a new user prompt is requested for processing, so it always
-describes the changes made while handling the *current* prompt.
+Whenever a *successful* tool call has ``filepath`` as its first argument and
+declares write permission (its permission string contains ``"w"``), the tool
+name and its invocation parameters are appended to a JSON-lines file
+(``./.janito/changes.jsonl``, relative to the current working directory).
+Read-only tools that happen to take a ``filepath`` first argument (e.g.
+``ReadFile``) are excluded, so the log only ever describes genuine changes.
+Only the parameters are recorded — never the tool's result. The file is
+meant to be removed before a new user prompt is requested for processing, so
+it always describes the changes made while handling the *current* prompt.
 
 The :func:`/changes` interactive command reads this file back and renders each
 recorded execution in a friendly, human-readable format:
@@ -67,13 +70,57 @@ def get_changes_file_path() -> Path:
     return Path.cwd() / CHANGES_DIR / CHANGES_FILENAME
 
 
+def _has_write_permission(tool_name: str) -> bool:
+    """Return whether ``tool_name`` declares write (``w``) permission.
+
+    The changes log is meant to record *changes*, so only tools whose
+    permission string contains ``"w"`` (e.g. ``CreateFile`` -> ``"w"``,
+    ``ReplaceTextInFile`` -> ``"rw"``, ``MoveFile`` -> ``"rw"``) should be
+    tracked. Read-only tools such as ``ReadFile`` (``"r"``) also carry a
+    ``filepath`` first argument but make no changes and must be excluded.
+
+    Permissions are looked up lazily from the tools registry so that the
+    tracking side feature never creates an import-time dependency on it. When
+    a tool's permissions cannot be determined (e.g. an MCP tool, which the
+    manager does not tag with permission flags, or a registry that is
+    unavailable) this function fails *open* and returns ``True`` so genuine
+    changes are not silently dropped — mirroring the defensive, best-effort
+    nature of the rest of this module.
+
+    Args:
+        tool_name: The name of the tool that was invoked.
+
+    Returns:
+        bool: ``True`` when the tool declares write permission (or its
+            permissions cannot be determined), ``False`` otherwise.
+    """
+    try:
+        from .tools_registry import get_tool_permissions
+    except Exception:  # noqa: BLE001 - tracking must never break execution
+        return True
+
+    try:
+        permissions = get_tool_permissions(tool_name)
+    except KeyError:
+        # Unknown to the registry (e.g. an MCP tool): assume it may change
+        # files rather than risk dropping a genuine change.
+        return True
+    except Exception:  # noqa: BLE001 - tracking must never break execution
+        return True
+
+    return "w" in (permissions or "")
+
+
 def record_change(tool_name: str, tool_args: dict) -> None:
     """Record a file-changing tool execution to ``./.janito/changes.jsonl``.
 
     The execution is only recorded when ``tool_args`` is a non-empty mapping
-    whose first key is :data:`TRACKED_ARG_NAME` (``"filepath"``). Only the
-    parameters are stored (never the result). This function never raises; any
-    I/O error is logged and ignored.
+    whose first key is :data:`TRACKED_ARG_NAME` (``"filepath"``) *and* the
+    tool declares write permission (its permission string contains ``"w"``;
+    see :func:`_has_write_permission`). Read-only tools that happen to take a
+    ``filepath`` first argument (e.g. ``ReadFile``) are therefore skipped.
+    Only the parameters are stored (never the result). This function never
+    raises; any I/O error is logged and ignored.
 
     Args:
         tool_name: The name of the tool that was invoked.
@@ -90,6 +137,11 @@ def record_change(tool_name: str, tool_args: dict) -> None:
 
         path = tool_args[first_arg]
         if not isinstance(path, str) or not path:
+            return
+
+        # Only track tools that actually change something: those whose
+        # declared permissions include write ("w").
+        if not _has_write_permission(tool_name):
             return
 
         record = {"tool": tool_name, "params": tool_args}

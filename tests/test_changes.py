@@ -65,6 +65,48 @@ if pytest is not None:
         changes.record_change("SearchText", {"query": "x", "filepath": "a.py"})
         assert changes.load_changes() == []
 
+    def test_read_only_tool_with_filepath_is_ignored():
+        # Read-only tools (permissions "r") also take a "filepath" first arg
+        # but make no changes, so they must not be tracked. These use real
+        # built-in tool names resolved against the live tools registry.
+        changes.record_change("ReadFile", {"filepath": "a.py"})
+        changes.record_change("ListFiles", {"filepath": "a.py"})
+        changes.record_change("SearchText", {"filepath": "a.py"})
+        assert changes.load_changes() == []
+
+    def test_write_permission_tools_are_recorded():
+        # Only tools whose permissions include "w" are tracked (real built-in
+        # tool names resolved against the live tools registry).
+        changes.record_change("CreateFile", {"filepath": "a.py", "content": "x"})
+        changes.record_change(
+            "ReplaceTextInFile",
+            {"filepath": "b.py", "old_str": "x", "new_str": "y"},
+        )
+        changes.record_change("MoveFile", {"filepath": "c.py", "destination": "d.py"})
+        assert [r["tool"] for r in changes.load_changes()] == [
+            "CreateFile",
+            "ReplaceTextInFile",
+            "MoveFile",
+        ]
+
+    def test_has_write_permission_matches_registry():
+        # Sanity-check the permission helper against real built-in tools.
+        assert changes._has_write_permission("CreateFile") is True
+        assert changes._has_write_permission("ReplaceTextInFile") is True
+        assert changes._has_write_permission("MoveFile") is True
+        assert changes._has_write_permission("ReadFile") is False
+        assert changes._has_write_permission("ListFiles") is False
+
+    def test_unknown_tool_fails_open_and_is_recorded():
+        # Tools the registry does not know about (e.g. MCP tools, which are
+        # not tagged with permission flags) fail open so genuine changes are
+        # never silently dropped.
+        assert changes._has_write_permission("SomeUnknownMcpTool") is True
+        changes.record_change(
+            "SomeUnknownMcpTool", {"filepath": "a.py", "content": "x"}
+        )
+        assert [r["tool"] for r in changes.load_changes()] == ["SomeUnknownMcpTool"]
+
     def test_empty_tool_name_is_ignored():
         changes.record_change("", {"filepath": "a.py"})
         assert changes.load_changes() == []

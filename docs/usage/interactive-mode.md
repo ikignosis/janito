@@ -85,12 +85,14 @@ Assistant: [File uploaded]
 
 ## Tracking Changes (`/changes`)
 
-Every successful tool call whose first argument is a `filepath` (for example
-`CreateFile`, `ReplaceTextInFile`, `MoveFile`, ...) is logged to
-`./.janito/changes.jsonl` while a prompt is being processed. Only the tool name
-and its parameters are recorded — never the tool's result. The file is removed
-before each new prompt, so it always describes the changes made while handling
-the *current* prompt.
+Every successful tool call whose first argument is a `filepath` and that has
+write permission (for example `CreateFile`, `ReplaceTextInFile`, `MoveFile`,
+...) is logged to `./.janito/changes.jsonl` while a prompt is being processed.
+Read-only tools that also take a `filepath` first argument (such as
+`ReadFile`) are not tracked, so the log only ever describes genuine changes.
+Only the tool name and its parameters are recorded — never the tool's result.
+The file is removed before each new prompt, so it always describes the changes
+made while handling the *current* prompt.
 
 Run `/changes` to replay those executions in a friendly, readable format:
 

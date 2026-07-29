@@ -27,6 +27,7 @@ Changes since `v4.13.0` (2026-07-28).
 
 ### Fixed
 
+- Changes tracking now only records tools that actually modify the filesystem: `record_change` (`janito/tooling/changes.py`) checks the tool's declared permissions and skips any tool whose permission string does not include `"w"`, so read-only tools such as `ReadFile`, `ListFiles`, and `SearchText` (which also take a `filepath` first argument) are no longer written to `./.janito/changes.jsonl`. Tools whose permissions cannot be determined (e.g. MCP tools) are still tracked to avoid silently dropping genuine changes.
 - Used-files tracking no longer records duplicate tool names per file: `record_used_file` (`janito/tooling/used_files.py`) now stores each tool name at most once per path (insertion order preserved), so repeatedly using the same tool on a file no longer produces output such as `/etc/hosts ReadFile,ReadFile,ReplaceTextInFile,ReadFile` — it now reports `/etc/hosts ReadFile,ReplaceTextInFile`.
 
 ### Removed
