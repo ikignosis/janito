@@ -6,9 +6,12 @@ used it. The mapping is kept in memory for the lifetime of the process and can
 be rendered as a ``Used Files`` report that is printed before the token-usage
 summary.
 
+Each tool name is recorded at most once per path: repeated uses of the same
+tool on the same file do not add duplicate entries.
+
 Example of the tracked structure::
 
-    {"/etc/hosts": ["ReadFile"]}
+    {"/etc/hosts": ["ReadFile", "ReplaceTextInFile"]}
 
 Like :mod:`janito.tooling.tools_usage`, the functions here are deliberately
 defensive: tracking is a best-effort side feature and must never be able to
@@ -35,7 +38,7 @@ TRACKED_ARG_NAME = "filepath"
 # tools concurrently.
 _lock = threading.Lock()
 
-# path -> ordered list of tool names that used it (one entry per use).
+# path -> ordered list of unique tool names that used it (insertion order).
 _used_files: dict[str, list[str]] = {}
 
 
@@ -45,6 +48,9 @@ def record_used_file(tool_name: str, tool_args: dict) -> None:
     The call is only tracked when ``tool_args`` is a non-empty mapping whose
     first key is :data:`TRACKED_ARG_NAME` (``"filepath"``) and whose value is a
     non-empty string. This function never raises.
+
+    Each tool name is recorded at most once per path: if ``tool_name`` is
+    already in the list for the given path, no duplicate entry is added.
 
     Args:
         tool_name: The name of the tool that was invoked.
@@ -64,7 +70,9 @@ def record_used_file(tool_name: str, tool_args: dict) -> None:
             return
 
         with _lock:
-            _used_files.setdefault(path, []).append(tool_name)
+            tools = _used_files.setdefault(path, [])
+            if tool_name not in tools:
+                tools.append(tool_name)
     except Exception as e:  # noqa: BLE001 - tracking must never break execution
         logger.debug(f"Failed to record used file for '{tool_name}': {e}")
 

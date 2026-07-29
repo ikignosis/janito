@@ -66,12 +66,27 @@ if pytest is not None:
         used_files.record_used_file("ReadFile", {"filepath": ""})
         assert used_files.get_used_files() == {}
 
-    def test_multiple_tools_on_same_path_accumulate():
+    def test_multiple_tools_on_same_path_accumulate_unique():
         used_files.record_used_file("ReadFile", {"filepath": "/a.py"})
         used_files.record_used_file("WriteFile", {"filepath": "/a.py"})
         used_files.record_used_file("ReadFile", {"filepath": "/a.py"})
+        assert used_files.get_used_files() == {"/a.py": ["ReadFile", "WriteFile"]}
+
+    def test_duplicate_tool_name_is_not_recorded_twice():
+        used_files.record_used_file("ReadFile", {"filepath": "/etc/hosts"})
+        used_files.record_used_file("ReadFile", {"filepath": "/etc/hosts"})
+        used_files.record_used_file("ReplaceTextInFile", {"filepath": "/etc/hosts"})
+        used_files.record_used_file("ReadFile", {"filepath": "/etc/hosts"})
         assert used_files.get_used_files() == {
-            "/a.py": ["ReadFile", "WriteFile", "ReadFile"]
+            "/etc/hosts": ["ReadFile", "ReplaceTextInFile"]
+        }
+
+    def test_same_tool_on_different_paths_recorded_per_path():
+        used_files.record_used_file("ReadFile", {"filepath": "/a.py"})
+        used_files.record_used_file("ReadFile", {"filepath": "/b.py"})
+        assert used_files.get_used_files() == {
+            "/a.py": ["ReadFile"],
+            "/b.py": ["ReadFile"],
         }
 
     def test_multiple_paths_keep_insertion_order():
