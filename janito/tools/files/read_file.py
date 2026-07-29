@@ -36,6 +36,8 @@ class ReadFile(BaseTool):
             filepath (str): The path to the file to read
             from_line (int): Starting line number (1-based). Defaults to 1.
             to_line (int, optional): Ending line number (1-based). If None, reads to end of file.
+                Values beyond the end of the file are clamped to the last line,
+                so the tool returns all the lines it could read.
 
         Returns:
             Dict[str, Any]: A dictionary containing:
@@ -88,7 +90,7 @@ class ReadFile(BaseTool):
 
             total_lines = len(all_lines)
 
-            # Validate line numbers
+            # Validate the starting line number
             if from_line < 1 or from_line > total_lines:
                 error_msg = f"from_line ({from_line}) is out of range. File has {total_lines} lines."
                 self.report_error(error_msg)
@@ -99,19 +101,13 @@ class ReadFile(BaseTool):
                     "total_lines": total_lines,
                 }
 
-            if to_line is not None and (to_line < 1 or to_line > total_lines):
-                error_msg = f"to_line ({to_line}) is out of range. File has {total_lines} lines."
-                self.report_error(error_msg)
-                return {
-                    "success": False,
-                    "error": error_msg,
-                    "filepath": filepath,
-                    "total_lines": total_lines,
-                }
-
-            # Handle case where from_line > to_line
-            if to_line is not None and from_line > to_line:
-                error_msg = f"from_line ({from_line}) cannot be greater than to_line ({to_line})"
+            # A to_line beyond the end of the file is not an error: clamp it
+            # to the last available line so the caller gets all the lines the
+            # tool could read instead of a failure.
+            if to_line is not None and to_line < 1:
+                error_msg = (
+                    f"to_line ({to_line}) is out of range. Line numbers start at 1."
+                )
                 self.report_error(error_msg)
                 return {
                     "success": False,
@@ -122,7 +118,9 @@ class ReadFile(BaseTool):
 
             # Convert to 0-based indexing for slicing
             actual_from = from_line - 1
-            actual_to = to_line if to_line is not None else total_lines
+            actual_to = (
+                min(to_line, total_lines) if to_line is not None else total_lines
+            )
 
             # Extract the requested lines
             selected_lines = all_lines[actual_from:actual_to]
