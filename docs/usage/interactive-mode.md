@@ -42,6 +42,15 @@ Additional commands available in chat:
 | `/mcp list` | List MCP services |
 | `/mcp remove <name>` | Remove MCP service |
 
+## Command Autocomplete
+
+As you type a slash command, the shell suggests matching commands in a
+dropdown menu. Start typing `/` and every registered command is offered;
+narrow the list by typing more characters (for example `/t` suggests
+`/tools`). Matching is case-insensitive. Use `Tab` to accept a suggestion, or
+the arrow keys to browse the list. Regular chat input (anything not starting
+with `/`) is never autocompleted.
+
 ## Examples
 
 ### Basic Chat

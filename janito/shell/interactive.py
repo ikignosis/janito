@@ -19,6 +19,8 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.styles import Style
 
+from .completer import CommandCompleter
+
 if TYPE_CHECKING:
     from .cmds import CmdHandler
 
@@ -150,6 +152,8 @@ class InteractiveShell:
             style=chat_shell_style,
             bottom_toolbar=lambda: self._get_bottom_toolbar(),
             multiline=multiline,
+            completer=CommandCompleter(lambda: self.commands),
+            complete_while_typing=True,
         )
 
     def initialize_history(self, system_prompt: str | None = None) -> None:
