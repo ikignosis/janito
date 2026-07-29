@@ -155,6 +155,27 @@ class BaseTool(ABC):
         """
         _report_warning(message, end=end)
 
+    def prompt_user(self, question: str) -> str:
+        """
+        Prompt the user with a question in the console and return their answer.
+
+        This method displays the question to the user and waits for input.
+        It is intended to be called by tools that need interactive input
+        from the user (e.g. the AskUser tool).
+
+        Args:
+            question (str): The question to display to the user.
+
+        Returns:
+            str: The user's answer (stripped of leading/trailing whitespace).
+        """
+        self.report_start(f"❓ {question}")
+        try:
+            answer = input("Your answer: ").strip()
+        except (EOFError, KeyboardInterrupt):
+            answer = ""
+        return answer
+
     def _get_permission_color(self) -> str:
         """
         Get rich style name based on tool permissions.
