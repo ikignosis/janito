@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Changes since `v4.14.0` (2026-07-29).
 
+### Added
+
+- `/tools` command in the web chat: typing `/tools` in the web input box now renders a formatted, card-based listing of every loaded tool, mirroring the CLI's `/tools` command but styled for the browser (HTML/CSS). The panel groups **Built-in Tools** (each with its colour-coded permission badge), a collapsible **Skipped Tools** section (with skip reasons), and **MCP Tools** from connected services, plus a totals footer (`N tools (X built-in, Y MCP)`). The command is intercepted entirely on the client by a new `ChatCommandsMixin` (`janito/web/frontend/js/chatCommands.js`) — it never reaches the model, so no tokens are spent and the conversation history on the server is untouched. It reuses the existing `GET /api/tools`, `GET /api/tools/skipped` and `GET /api/mcp/tools` endpoints (a new `Api.getMcpTools()` helper was added to `janito/web/frontend/js/api.js`), so no backend changes were required. Added `tests/test_web_tools_panel.py` (endpoint contract + frontend wiring). Documented under `docs/usage/web-ui.md`. Closes #29.
+
 ## [v4.14.0](https://github.com/joaopinto/janito/compare/v4.13.0...v4.14.0) - 2026-07-29
 
 Changes since `v4.13.0` (2026-07-28).

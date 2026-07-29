@@ -98,6 +98,10 @@ The server prints the URL it's listening on, then opens your default browser
 - **Settings drawer** — change model / thinking / verbose at runtime (PATCH)
 - **MCP dashboard** — see connected services, connect/disconnect
 - **Status bar** — model, provider, active CLI flags, connection state, tokens
+- **`/tools` command** — typing `/tools` in the chat input renders a formatted,
+  card-based listing of every loaded tool (built-in tools with their permission
+  badges, collapsible skipped tools with reasons, and connected MCP tools),
+  plus a totals footer. Handled entirely on the client — no tokens spent.
 - **Keyboard shortcuts** — Enter to send, Shift+Enter for newline
 
 ---
@@ -148,7 +152,7 @@ janito/web/backend/
 openai_client • tooling/* • tools/* • mcp_manager • general_config • …
 
 janito/web/frontend/   (Alpine.js — no build step)
-   index.html • css/theme.css • js/{app,chat,websocket,sessions,
+   index.html • css/theme.css • js/{app,chat,chatCommands,websocket,sessions,
    settings,mcp,statusBar,markdown,api}.js
 ```
 

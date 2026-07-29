@@ -46,6 +46,7 @@ const Api = {
     },
     getTools() { return this.get('/api/tools'); },
     getSkippedTools() { return this.get('/api/tools/skipped'); },
+    getMcpTools() { return this.get('/api/mcp/tools'); },
     getMcpServices() { return this.get('/api/mcp/services'); },
     connectMcp(name) { return this.post(`/api/mcp/services/${encodeURIComponent(name)}/connect`); },
     disconnectMcp(name) { return this.post(`/api/mcp/services/${encodeURIComponent(name)}/disconnect`); },

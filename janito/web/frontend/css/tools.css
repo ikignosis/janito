@@ -166,3 +166,111 @@
     text-transform: uppercase; margin-top: 8px; user-select: none;
 }
 .tool-args-toggle:hover, .tool-result-toggle:hover { color: var(--accent); }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   /tools listing panel
+   A distinct, card-based panel rendered when the user types "/tools" in the
+   web chat input. Shows built-in tools (with permission badges), skipped
+   tools (collapsible) and connected MCP tools, plus a summary footer.
+   ───────────────────────────────────────────────────────────────────────── */
+.tools-panel {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-secondary);
+    padding: 14px 16px;
+    margin: 4px 0;
+    min-width: 420px;
+    max-width: 100%;
+}
+
+.tools-panel-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+}
+.tools-panel-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+.tools-panel-count {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+}
+
+.tools-section {
+    margin-bottom: 12px;
+}
+.tools-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    cursor: default;
+}
+.tools-skipped summary.tools-section-title { cursor: pointer; user-select: none; }
+.tools-skipped summary.tools-section-title:hover { color: var(--accent); }
+.tools-skipped-count { color: var(--text-muted); font-weight: 400; }
+
+.tools-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 3px 0;
+    font-size: 13px;
+}
+.tools-row-name {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--text-primary);
+    flex: 0 0 auto;
+    min-width: 180px;
+}
+.tools-row-desc {
+    color: var(--text-secondary);
+    flex: 1 1 auto;
+    overflow-wrap: anywhere;
+}
+.tools-row-reason {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.tools-empty {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-style: italic;
+    padding: 2px 0;
+}
+
+.tools-panel-footer {
+    margin-top: 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.tools-panel-loading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+    font-size: 13px;
+    padding: 6px 0;
+}
+.tools-panel-error {
+    color: var(--red);
+    font-size: 13px;
+    padding: 6px 0;
+}

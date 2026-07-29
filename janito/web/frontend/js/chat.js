@@ -205,6 +205,13 @@ function chatComponent() {
             if (!id) return;
             const store = this._store(id);
 
+            // Intercept slash commands handled entirely on the client.
+            if (content.startsWith('/') && this._handleSlashCommand(content, store)) {
+                this.input = '';
+                this._autoResize();
+                return;
+            }
+
             store.error = null;
             this.error = null;
             store.dirty = true;   // protect the pending _loadHistory from clobbering
@@ -330,5 +337,6 @@ function chatComponent() {
     window.ChatHistoryMixin,
     window.ChatMessagesMixin,
     window.ChatScrollMixin,
+    window.ChatCommandsMixin,
     window.ChatFormatMixin);
 }
