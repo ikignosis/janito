@@ -13,7 +13,6 @@ from openai import AuthenticationError, NotFoundError, OpenAI
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.progress import Progress, SpinnerColumn, TextColumn
-from rich.text import Text
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
@@ -84,77 +83,6 @@ except ImportError:
         pass
 
 
-# Import tool usage tracking (best-effort, never fails)
-try:
-    from ..tooling.tools_usage import record_tool_use
-except ImportError:  # pragma: no cover - direct-run fallback
-
-    def record_tool_use(name):
-        pass
-
-
-# Import used-files tracking (best-effort, never fails)
-try:
-    from ..tooling.used_files import (
-        format_used_files,
-        record_used_file,
-        reset_used_files,
-    )
-except ImportError:  # pragma: no cover - direct-run fallback
-
-    def record_used_file(name, args):
-        pass
-
-    def format_used_files() -> Text:
-        return Text()
-
-    def reset_used_files() -> None:
-        return None
-
-
-# Import changes tracking (best-effort, never fails). Successful tool calls
-# whose first argument is "filepath" are logged to ./.janito/changes.jsonl so
-# the /changes command can replay them.
-try:
-    from ..tooling.changes import clear_changes, record_change
-except ImportError:  # pragma: no cover - direct-run fallback
-
-    def record_change(name, args):
-        pass
-
-    def clear_changes() -> bool:
-        return False
-
-
-# Import provider configuration for base URLs
-try:
-    from ..provider_config import (
-        CUSTOM_ENDPOINT_MARKER,
-        get_base_url_from_provider,
-        is_custom_provider,
-    )
-
-    PROVIDER_CONFIG_AVAILABLE = True
-except ImportError:
-    try:
-        from provider_config import (
-            CUSTOM_ENDPOINT_MARKER,
-            get_base_url_from_provider,
-            is_custom_provider,
-        )
-
-        PROVIDER_CONFIG_AVAILABLE = True
-    except ImportError:
-        PROVIDER_CONFIG_AVAILABLE = False
-
-        def get_base_url_from_provider(provider: str) -> str | None:
-            return None
-
-        def is_custom_provider(provider: str) -> bool:
-            return False
-
-        CUSTOM_ENDPOINT_MARKER = "CUSTOM_ENDPOINT"
-
 # Import auth handling (API keys come from the auth store, not the environment)
 from janito.auth_config import get_api_key, get_default_provider
 
@@ -168,6 +96,16 @@ from janito.general_config import (
     load_model_from_config,
     load_provider_from_config,
 )
+
+# Import provider configuration for base URLs
+from ..provider_config import get_base_url_from_provider, is_custom_provider
+from ..tooling.changes import clear_changes, record_change
+
+# Import tool usage tracking (best-effort, never fails)
+from ..tooling.tools_usage import record_tool_use
+
+# Import used-files tracking (best-effort, never fails)
+from ..tooling.used_files import format_used_files, record_used_file, reset_used_files
 
 
 def resolve_runtime_config(
@@ -439,6 +377,8 @@ def send_prompt(
     # Load max tokens from general config if set
     provider = cli_provider or get_active_provider()
     context_window_size = load_context_window_size(provider)
+    if context_window_size is None:
+        context_window_size = 100000  # default to 100k tokens if not set in config
 
     # Check for preserve_thinking in config
     preserve_thinking = get_config_value("preserve_thinking")

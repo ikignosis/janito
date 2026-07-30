@@ -5,3 +5,4 @@
     - Run git diff to check the changes and generate the commit message
 - After modifying code check tests/ and execute/update the tests as required
 - The web app/web mode is stored at janito/web
+- Avoid defensive try/except import fallbacks
