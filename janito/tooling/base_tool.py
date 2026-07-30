@@ -169,7 +169,7 @@ class BaseTool(ABC):
         Returns:
             str: The user's answer (stripped of leading/trailing whitespace).
         """
-        self.report_start(f"❓ {question}")
+        self.report_start(f" {question}")
         try:
             answer = input("Your answer: ").strip()
         except (EOFError, KeyboardInterrupt):
