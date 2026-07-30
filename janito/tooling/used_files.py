@@ -138,6 +138,8 @@ def format_used_files() -> Text:
     ``./subdir/file.py``) rather than as absolute paths. Paths outside the
     working directory are left unchanged.
 
+    A ``read``/``write`` line is omitted entirely when its list is empty, so a
+    prompt that only read files shows just the ``read`` line (and vice-versa).
     When nothing has been tracked (both lists empty), an empty
     :class:`~rich.text.Text` is returned so that no header is printed at all.
 
@@ -164,12 +166,15 @@ def format_used_files() -> Text:
     text = Text()
     text.append("\nUsed files", style="cyan")
     text.append("\n----------")
-    text.append(
-        f"\n{len(read_paths)} read : {', '.join(_display(p) for p in read_paths)}"
-    )
-    text.append(
-        f"\n{len(write_paths)} write : {', '.join(_display(p) for p in write_paths)}"
-    )
+    if read_paths:
+        text.append(
+            f"\n{len(read_paths)} read : {', '.join(_display(p) for p in read_paths)}"
+        )
+    if write_paths:
+        text.append(
+            f"\n{len(write_paths)} write : "
+            f"{', '.join(_display(p) for p in write_paths)}"
+        )
     return text
 
 

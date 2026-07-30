@@ -201,6 +201,22 @@ if pytest is not None:
         text = str(used_files.format_used_files())
         assert "1 read : /etc/hosts" in text
 
+    def test_format_omits_write_line_when_no_writes(monkeypatch):
+        """Only reads were tracked: the write line must not appear."""
+        _register(monkeypatch, "ReadFile", "r")
+        used_files.record_used_file("ReadFile", {"filepath": "/a.py"})
+        text = str(used_files.format_used_files())
+        assert "1 read : /a.py" in text
+        assert "write :" not in text
+
+    def test_format_omits_read_line_when_no_reads(monkeypatch):
+        """Only writes were tracked: the read line must not appear."""
+        _register(monkeypatch, "CreateFile", "w")
+        used_files.record_used_file("CreateFile", {"filepath": "/a.py"})
+        text = str(used_files.format_used_files())
+        assert "1 write : /a.py" in text
+        assert "read :" not in text
+
     def test_cli_send_prompt_clears_used_files_at_start(monkeypatch):
         """``send_prompt`` must reset the tracker before processing a prompt.
 
