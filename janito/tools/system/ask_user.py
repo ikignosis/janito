@@ -41,8 +41,6 @@ class AskUser(BaseTool):
                 - 'error': error message (only present if success is False)
         """
         try:
-            self.report_start(f"❓ Asking: {question}")
-
             answer = self.prompt_user(question)
 
             self.report_result(
