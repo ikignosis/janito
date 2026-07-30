@@ -1,17 +1,22 @@
-"""Track which files were touched by tool calls during a session.
+"""Track which files were READ and WRITE by tool calls during a prompt.
 
 Whenever a tool is invoked whose *first* argument is named ``filepath``, the
-value of that argument is recorded together with the name of the tool that
-used it. The mapping is kept in memory for the lifetime of the process and can
-be rendered as a ``Used Files`` report that is printed before the token-usage
-summary.
+value of that argument is recorded in one (or both) of two lists — ``READ``
+and ``WRITE`` — depending on the tool's declared permissions. The permissions
+string is the one set by the ``@tool(permissions="…")`` decorator (e.g.
+``"r"``, ``"w"``, ``"rw"``):
 
-Each tool name is recorded at most once per path: repeated uses of the same
-tool on the same file do not add duplicate entries.
+* if it contains ``'r'`` the path is appended to the ``READ`` list;
+* if it contains ``'w'`` the path is appended to the ``WRITE`` list.
+
+Filenames are unique within each list: a path already present is not added
+again. The lists are kept in memory for the lifetime of the process and can be
+rendered as a ``Used files`` report that is printed (via ``rich``) before the
+token-usage summary.
 
 Example of the tracked structure::
 
-    {"/etc/hosts": ["ReadFile", "ReplaceTextInFile"]}
+    {"READ": ["/etc/hosts", "./a.py"], "WRITE": ["./a.py"]}
 
 Like :mod:`janito.tooling.tools_usage`, the functions here are deliberately
 defensive: tracking is a best-effort side feature and must never be able to
@@ -38,8 +43,26 @@ TRACKED_ARG_NAME = "filepath"
 # tools concurrently.
 _lock = threading.Lock()
 
-# path -> ordered list of unique tool names that used it (insertion order).
-_used_files: dict[str, list[str]] = {}
+# The two tracked lists. A path is appended to READ when the tool's
+# permissions contain 'r' and to WRITE when they contain 'w'.
+_used_files: dict[str, list[str]] = {"READ": [], "WRITE": []}
+
+
+def _get_permissions(tool_name: str) -> str:
+    """Return the permission string declared for ``tool_name``.
+
+    Delegates to :func:`~janito.tooling.tools_registry.get_tool_permissions`,
+    which reads the ``_tool_permissions`` attribute the ``@tool`` decorator sets
+    on the registered callable. Returns an empty string when the tool is not in
+    the registry or declares no permissions. Never raises.
+    """
+    try:
+        from .tools_registry import get_tool_permissions
+
+        return get_tool_permissions(tool_name) or ""
+    except Exception as e:  # noqa: BLE001 - tracking must never break execution
+        logger.debug(f"Failed to read permissions for '{tool_name}': {e}")
+        return ""
 
 
 def record_used_file(tool_name: str, tool_args: dict) -> None:
@@ -47,10 +70,10 @@ def record_used_file(tool_name: str, tool_args: dict) -> None:
 
     The call is only tracked when ``tool_args`` is a non-empty mapping whose
     first key is :data:`TRACKED_ARG_NAME` (``"filepath"``) and whose value is a
-    non-empty string. This function never raises.
-
-    Each tool name is recorded at most once per path: if ``tool_name`` is
-    already in the list for the given path, no duplicate entry is added.
+    non-empty string. The path is appended to the ``READ`` list when the tool's
+    permissions contain ``'r'`` and to the ``WRITE`` list when they contain
+    ``'w'``. Filenames are unique per list: a path already present is not added
+    again. This function never raises.
 
     Args:
         tool_name: The name of the tool that was invoked.
@@ -69,70 +92,84 @@ def record_used_file(tool_name: str, tool_args: dict) -> None:
         if not isinstance(path, str) or not path:
             return
 
+        permissions = _get_permissions(tool_name)
+
         with _lock:
-            tools = _used_files.setdefault(path, [])
-            if tool_name not in tools:
-                tools.append(tool_name)
+            if "r" in permissions and path not in _used_files["READ"]:
+                _used_files["READ"].append(path)
+            if "w" in permissions and path not in _used_files["WRITE"]:
+                _used_files["WRITE"].append(path)
     except Exception as e:  # noqa: BLE001 - tracking must never break execution
         logger.debug(f"Failed to record used file for '{tool_name}': {e}")
 
 
 def get_used_files() -> dict[str, list[str]]:
-    """Return a copy of the tracked ``path -> [tool names]`` mapping.
+    """Return a copy of the tracked ``{"READ": [...], "WRITE": [...]}`` mapping.
 
     Returns:
         dict[str, list[str]]: A snapshot of the used files, in insertion order.
     """
     with _lock:
-        return {path: list(tools) for path, tools in _used_files.items()}
+        return {key: list(paths) for key, paths in _used_files.items()}
 
 
 def reset_used_files() -> None:
-    """Clear all tracked used files (e.g. on conversation restart)."""
+    """Clear all tracked used files (e.g. at the start of a new prompt)."""
     with _lock:
-        _used_files.clear()
+        for paths in _used_files.values():
+            paths.clear()
 
 
 def format_used_files() -> Text:
-    """Render the tracked used files as a printable ``Used Files`` report.
+    """Render the tracked used files as a printable ``Used files`` report.
 
     The report is preceded by a blank line (to visually separate it from the
-    answer) and a ``====`` header. The header line is rendered in cyan via
-    :class:`rich.text.Text`. The format is::
+    answer) and uses the following layout, rendered via :class:`rich.text.Text`::
 
         <blank line>
-        ==== Used Files ====
-        file1 ReadFile,WriteFile
-        file2 ReadFile
+        Used files
+        ----------
+        <n> read : file1, file2
+        <n> write : file1, file2
 
-    Each path is displayed through :func:`~janito.tooling.path_utils.norm_path`,
-    so paths located under the current working directory are shown relative to
-    it (e.g. ``./subdir/file.py``) rather than as absolute paths. Paths outside
-    the working directory are left unchanged.
+    where ``<n>`` is the number of entries in the respective list. Each path is
+    displayed through :func:`~janito.tooling.path_utils.norm_path`, so paths
+    located under the current working directory are shown relative to it (e.g.
+    ``./subdir/file.py``) rather than as absolute paths. Paths outside the
+    working directory are left unchanged.
 
-    When nothing has been tracked, an empty :class:`~rich.text.Text` is
-    returned so that no header (or ``(none)`` line) is printed at all.
+    When nothing has been tracked (both lists empty), an empty
+    :class:`~rich.text.Text` is returned so that no header is printed at all.
 
     Returns:
-        rich.text.Text: The multi-line report with the header styled cyan, or
-        an empty ``Text`` when no files were tracked.
+        rich.text.Text: The multi-line report, or an empty ``Text`` when no
+        files were tracked.
     """
     used = get_used_files()
-    if not used:
+    read_paths = used.get("READ", [])
+    write_paths = used.get("WRITE", [])
+
+    if not read_paths and not write_paths:
         return Text()
 
-    text = Text()
-    # Only the header line is styled (cyan); the file paths stay default.
-    text.append("\n===== Used Files =====", style="cyan")
-    for path, tools in used.items():
+    def _display(path: str) -> str:
         # Display paths relative to the current working directory when
         # possible (via ``norm_path``), falling back to the raw recorded
         # path if normalization fails for any reason.
         try:
-            display_path = norm_path(path)
+            return norm_path(path)
         except Exception:  # noqa: BLE001 - display must never break the report
-            display_path = path
-        text.append(f"\n{display_path} {','.join(tools)}")
+            return path
+
+    text = Text()
+    text.append("\nUsed files", style="cyan")
+    text.append("\n----------")
+    text.append(
+        f"\n{len(read_paths)} read : {', '.join(_display(p) for p in read_paths)}"
+    )
+    text.append(
+        f"\n{len(write_paths)} write : {', '.join(_display(p) for p in write_paths)}"
+    )
     return text
 
 

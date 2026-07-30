@@ -396,7 +396,7 @@ def send_prompt(
     # only describes the changes made while handling the current prompt.
     clear_changes()
     # Clear the in-process used-files tracker so the end-of-prompt
-    # "Used Files" report only describes files touched while handling the
+    # "Used files" report only describes files touched while handling the
     # *current* prompt instead of accumulating across the whole session.
     reset_used_files()
     base_url, api_key, model = resolve_runtime_config(cli_model, cli_provider)

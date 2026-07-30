@@ -2,10 +2,13 @@
 Tests for the in-process used-files tracking.
 
 ``janito.tooling.used_files`` records, in memory, every file path touched by a
-tool call whose *first* argument is named ``filepath``, together with the names
-of the tools that used it. Tracking is deliberately defensive (best-effort and
-never raises), so these tests verify both the happy path and that invalid
-inputs are silently ignored.
+tool call whose *first* argument is named ``filepath``. Depending on the tool's
+declared permissions (``@tool(permissions="…")``), the path is appended to the
+``READ`` list (permission contains ``'r'``) and/or the ``WRITE`` list
+(permission contains ``'w'``). Filenames are unique per list.
+
+Tracking is deliberately defensive (best-effort and never raises), so these
+tests verify both the happy path and that invalid inputs are silently ignored.
 
 Unlike ``tools_usage`` (SQLite-backed) the state here is a process-global dict,
 so every test resets it via ``reset_used_files()``.
@@ -19,12 +22,26 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from rich.text import Text
 
+import janito.tooling.tools_registry as tools_registry
 import janito.tooling.used_files as used_files
 
 try:
     import pytest
 except ImportError:  # pragma: no cover - pytest is a dev dependency
     pytest = None
+
+
+def _register(monkeypatch, name, permissions):
+    """Register a fake tool with the given permission string.
+
+    Sets ``_tools_initialized`` so the registry never triggers the (slow,
+    filesystem-scanning) real discovery, and injects a stub callable carrying
+    the ``_tool_permissions`` attribute the tracker reads.
+    """
+    monkeypatch.setattr(tools_registry, "_tools_initialized", True)
+    fake = lambda **kwargs: {"success": True}  # noqa: E731
+    fake._tool_permissions = permissions
+    monkeypatch.setitem(tools_registry.AVAILABLE_TOOLS, name, fake)
 
 
 if pytest is not None:
@@ -36,78 +53,101 @@ if pytest is not None:
         yield
         used_files.reset_used_files()
 
-    def test_records_path_when_first_arg_is_filepath():
+    def test_records_read_path_for_read_tool(monkeypatch):
+        _register(monkeypatch, "ReadFile", "r")
         used_files.record_used_file("ReadFile", {"filepath": "/etc/hosts"})
-        assert used_files.get_used_files() == {"/etc/hosts": ["ReadFile"]}
+        assert used_files.get_used_files() == {"READ": ["/etc/hosts"], "WRITE": []}
 
-    def test_first_arg_not_filepath_is_ignored():
+    def test_records_write_path_for_write_tool(monkeypatch):
+        _register(monkeypatch, "CreateFile", "w")
+        used_files.record_used_file("CreateFile", {"filepath": "/a.py"})
+        assert used_files.get_used_files() == {"READ": [], "WRITE": ["/a.py"]}
+
+    def test_records_both_for_rw_tool(monkeypatch):
+        _register(monkeypatch, "ReplaceTextInFile", "rw")
+        used_files.record_used_file("ReplaceTextInFile", {"filepath": "/a.py"})
+        assert used_files.get_used_files() == {"READ": ["/a.py"], "WRITE": ["/a.py"]}
+
+    def test_execute_only_permission_is_not_tracked(monkeypatch):
+        _register(monkeypatch, "RunBashCode", "x")
+        used_files.record_used_file("RunBashCode", {"filepath": "/a.sh"})
+        assert used_files.get_used_files() == {"READ": [], "WRITE": []}
+
+    def test_first_arg_not_filepath_is_ignored(monkeypatch):
+        _register(monkeypatch, "SearchText", "r")
         used_files.record_used_file("SearchText", {"query": "x", "filepath": "/a"})
-        assert used_files.get_used_files() == {}
+        assert used_files.get_used_files() == {"READ": [], "WRITE": []}
 
-    def test_empty_tool_name_is_ignored():
+    def test_empty_tool_name_is_ignored(monkeypatch):
+        _register(monkeypatch, "ReadFile", "r")
         used_files.record_used_file("", {"filepath": "/etc/hosts"})
-        assert used_files.get_used_files() == {}
+        assert used_files.get_used_files() == {"READ": [], "WRITE": []}
 
-    def test_non_dict_args_is_ignored():
+    def test_non_dict_args_is_ignored(monkeypatch):
+        _register(monkeypatch, "ReadFile", "r")
         used_files.record_used_file("ReadFile", ["/etc/hosts"])
         used_files.record_used_file("ReadFile", None)
-        assert used_files.get_used_files() == {}
+        assert used_files.get_used_files() == {"READ": [], "WRITE": []}
 
-    def test_empty_args_is_ignored():
+    def test_empty_args_is_ignored(monkeypatch):
+        _register(monkeypatch, "ReadFile", "r")
         used_files.record_used_file("ReadFile", {})
-        assert used_files.get_used_files() == {}
+        assert used_files.get_used_files() == {"READ": [], "WRITE": []}
 
-    def test_non_string_path_is_ignored():
+    def test_non_string_path_is_ignored(monkeypatch):
+        _register(monkeypatch, "ReadFile", "r")
         used_files.record_used_file("ReadFile", {"filepath": 123})
         used_files.record_used_file("ReadFile", {"filepath": None})
-        assert used_files.get_used_files() == {}
+        assert used_files.get_used_files() == {"READ": [], "WRITE": []}
 
-    def test_empty_string_path_is_ignored():
+    def test_empty_string_path_is_ignored(monkeypatch):
+        _register(monkeypatch, "ReadFile", "r")
         used_files.record_used_file("ReadFile", {"filepath": ""})
-        assert used_files.get_used_files() == {}
+        assert used_files.get_used_files() == {"READ": [], "WRITE": []}
 
-    def test_multiple_tools_on_same_path_accumulate_unique():
+    def test_unknown_tool_is_ignored(monkeypatch):
+        """A tool with no declared permissions adds nothing."""
+        monkeypatch.setattr(tools_registry, "_tools_initialized", True)
+        used_files.record_used_file("NoSuchTool", {"filepath": "/a.py"})
+        assert used_files.get_used_files() == {"READ": [], "WRITE": []}
+
+    def test_read_path_is_unique(monkeypatch):
+        _register(monkeypatch, "ReadFile", "r")
         used_files.record_used_file("ReadFile", {"filepath": "/a.py"})
-        used_files.record_used_file("WriteFile", {"filepath": "/a.py"})
-        used_files.record_used_file("ReadFile", {"filepath": "/a.py"})
-        assert used_files.get_used_files() == {"/a.py": ["ReadFile", "WriteFile"]}
-
-    def test_duplicate_tool_name_is_not_recorded_twice():
-        used_files.record_used_file("ReadFile", {"filepath": "/etc/hosts"})
-        used_files.record_used_file("ReadFile", {"filepath": "/etc/hosts"})
-        used_files.record_used_file("ReplaceTextInFile", {"filepath": "/etc/hosts"})
-        used_files.record_used_file("ReadFile", {"filepath": "/etc/hosts"})
-        assert used_files.get_used_files() == {
-            "/etc/hosts": ["ReadFile", "ReplaceTextInFile"]
-        }
-
-    def test_same_tool_on_different_paths_recorded_per_path():
         used_files.record_used_file("ReadFile", {"filepath": "/a.py"})
         used_files.record_used_file("ReadFile", {"filepath": "/b.py"})
         assert used_files.get_used_files() == {
-            "/a.py": ["ReadFile"],
-            "/b.py": ["ReadFile"],
+            "READ": ["/a.py", "/b.py"],
+            "WRITE": [],
         }
 
-    def test_multiple_paths_keep_insertion_order():
-        used_files.record_used_file("ReadFile", {"filepath": "/first.py"})
-        used_files.record_used_file("WriteFile", {"filepath": "/second.py"})
-        used = used_files.get_used_files()
-        assert list(used.keys()) == ["/first.py", "/second.py"]
+    def test_write_path_is_unique(monkeypatch):
+        _register(monkeypatch, "CreateFile", "w")
+        used_files.record_used_file("CreateFile", {"filepath": "/a.py"})
+        used_files.record_used_file("CreateFile", {"filepath": "/a.py"})
+        assert used_files.get_used_files() == {"READ": [], "WRITE": ["/a.py"]}
 
-    def test_get_used_files_returns_a_copy():
+    def test_lists_keep_insertion_order(monkeypatch):
+        _register(monkeypatch, "ReadFile", "r")
+        used_files.record_used_file("ReadFile", {"filepath": "/first.py"})
+        used_files.record_used_file("ReadFile", {"filepath": "/second.py"})
+        assert used_files.get_used_files()["READ"] == ["/first.py", "/second.py"]
+
+    def test_get_used_files_returns_a_copy(monkeypatch):
+        _register(monkeypatch, "ReadFile", "r")
         used_files.record_used_file("ReadFile", {"filepath": "/a.py"})
         snapshot = used_files.get_used_files()
         # Mutating the snapshot (or its inner list) must not affect the store.
-        snapshot["/a.py"].append("Hacked")
-        snapshot["/new.py"] = ["Hacked"]
-        assert used_files.get_used_files() == {"/a.py": ["ReadFile"]}
+        snapshot["READ"].append("/hacked.py")
+        snapshot["WRITE"].append("/hacked.py")
+        assert used_files.get_used_files() == {"READ": ["/a.py"], "WRITE": []}
 
-    def test_reset_clears_state():
+    def test_reset_clears_state(monkeypatch):
+        _register(monkeypatch, "ReadFile", "r")
         used_files.record_used_file("ReadFile", {"filepath": "/a.py"})
-        assert used_files.get_used_files()
+        assert used_files.get_used_files()["READ"]
         used_files.reset_used_files()
-        assert used_files.get_used_files() == {}
+        assert used_files.get_used_files() == {"READ": [], "WRITE": []}
 
     def test_format_returns_empty_text_when_nothing_tracked():
         result = used_files.format_used_files()
@@ -116,27 +156,32 @@ if pytest is not None:
         # An empty Text is falsy, so the CLI skips printing the header.
         assert not result
 
-    def test_format_includes_header_and_paths():
+    def test_format_includes_header_and_counts(monkeypatch):
+        _register(monkeypatch, "ReadFile", "r")
+        _register(monkeypatch, "CreateFile", "w")
         used_files.record_used_file("ReadFile", {"filepath": "/a.py"})
-        used_files.record_used_file("WriteFile", {"filepath": "/a.py"})
         used_files.record_used_file("ReadFile", {"filepath": "/b.py"})
+        used_files.record_used_file("CreateFile", {"filepath": "/a.py"})
 
         result = used_files.format_used_files()
         text = str(result)
 
-        assert "===== Used Files =====" in text
-        assert "/a.py ReadFile,WriteFile" in text
-        assert "/b.py ReadFile" in text
+        assert "Used files" in text
+        assert "----------" in text
+        assert "2 read : /a.py, /b.py" in text
+        assert "1 write : /a.py" in text
         # A non-empty report is truthy so the CLI prints it.
         assert result
 
-    def test_format_header_is_styled_cyan():
+    def test_format_header_is_styled_cyan(monkeypatch):
+        _register(monkeypatch, "ReadFile", "r")
         used_files.record_used_file("ReadFile", {"filepath": "/a.py"})
         result = used_files.format_used_files()
         assert any(str(span.style) == "cyan" for span in result.spans)
 
     def test_format_shows_paths_relative_to_cwd(tmp_path, monkeypatch):
         """Paths under the CWD are printed relative to it (``./file``)."""
+        _register(monkeypatch, "ReadFile", "r")
         monkeypatch.chdir(tmp_path)
         sub = tmp_path / "subdir"
         sub.mkdir()
@@ -145,15 +190,16 @@ if pytest is not None:
         used_files.record_used_file("ReadFile", {"filepath": str(target)})
         text = str(used_files.format_used_files())
 
-        assert "./subdir/file.py ReadFile" in text
+        assert "1 read : ./subdir/file.py" in text
         assert str(tmp_path) not in text
 
     def test_format_keeps_paths_outside_cwd_unchanged(tmp_path, monkeypatch):
         """Paths outside the CWD are left as recorded."""
+        _register(monkeypatch, "ReadFile", "r")
         monkeypatch.chdir(tmp_path)
         used_files.record_used_file("ReadFile", {"filepath": "/etc/hosts"})
         text = str(used_files.format_used_files())
-        assert "/etc/hosts ReadFile" in text
+        assert "1 read : /etc/hosts" in text
 
     def test_cli_send_prompt_clears_used_files_at_start(monkeypatch):
         """``send_prompt`` must reset the tracker before processing a prompt.
@@ -164,8 +210,9 @@ if pytest is not None:
         """
         import janito.openai_client.client as client_mod
 
+        _register(monkeypatch, "ReadFile", "r")
         used_files.record_used_file("ReadFile", {"filepath": "/prev.py"})
-        assert used_files.get_used_files()
+        assert used_files.get_used_files()["READ"]
 
         def boom(*args, **kwargs):
             raise RuntimeError("stop before network")
@@ -175,7 +222,7 @@ if pytest is not None:
             client_mod.send_prompt("hello", use_mcp=False)
         except RuntimeError:
             pass
-        assert used_files.get_used_files() == {}
+        assert used_files.get_used_files() == {"READ": [], "WRITE": []}
 
     def test_web_stream_prompt_clears_used_files_at_start(monkeypatch):
         """The web agent loop must also reset the tracker per prompt."""
@@ -184,8 +231,9 @@ if pytest is not None:
         import janito.web.backend.agent.loop as loop_mod
         from janito.web.backend.events import ErrorEvent
 
+        _register(monkeypatch, "ReadFile", "r")
         used_files.record_used_file("ReadFile", {"filepath": "/prev.py"})
-        assert used_files.get_used_files()
+        assert used_files.get_used_files()["READ"]
 
         def boom(*args, **kwargs):
             raise RuntimeError("stop before network")
@@ -203,7 +251,7 @@ if pytest is not None:
             return events
 
         events = asyncio.run(_drain())
-        assert used_files.get_used_files() == {}
+        assert used_files.get_used_files() == {"READ": [], "WRITE": []}
         assert any(isinstance(ev, ErrorEvent) for ev in events)
 
 else:  # pragma: no cover - fallback runner without pytest
