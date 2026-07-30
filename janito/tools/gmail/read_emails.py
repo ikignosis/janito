@@ -150,7 +150,11 @@ class ReadEmails(BaseTool):
                 self.report_error("Gmail username not found in secrets")
                 return {
                     "success": False,
-                    "error": "Secret 'gmail_username' not configured. Use: janito --set-secret gmail_username=your-email@gmail.com",
+                    "error": (
+                        "Secret 'gmail_username' not configured."
+                        " Use: janito --set-secret"
+                        " gmail_username=your-email@gmail.com"
+                    ),
                     "folder": folder,
                 }
 
@@ -158,7 +162,11 @@ class ReadEmails(BaseTool):
                 self.report_error("Gmail password not found in secrets")
                 return {
                     "success": False,
-                    "error": "Secret 'gmail_password' not configured. Use: janito --set-secret gmail_password=your-app-password",
+                    "error": (
+                        "Secret 'gmail_password' not configured."
+                        " Use: janito --set-secret"
+                        " gmail_password=your-app-password"
+                    ),
                     "folder": folder,
                 }
 
@@ -175,7 +183,10 @@ class ReadEmails(BaseTool):
                 self.report_error(f"Failed to select folder: {folder}")
                 return {
                     "success": False,
-                    "error": f"Failed to select folder '{folder}': {messages[0].decode() if messages else 'Unknown error'}",
+                    "error": (
+                        f"Failed to select folder '{folder}':"
+                        f" {messages[0].decode() if messages else 'Unknown error'}"
+                    ),
                     "folder": folder,
                 }
 

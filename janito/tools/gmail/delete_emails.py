@@ -92,7 +92,11 @@ class DeleteEmails(BaseTool):
                 self.report_error("Gmail username not found in secrets")
                 return {
                     "success": False,
-                    "error": "Secret 'gmail_username' not configured. Use: janito --set-secret gmail_username=your-email@gmail.com",
+                    "error": (
+                        "Secret 'gmail_username' not configured."
+                        " Use: janito --set-secret"
+                        " gmail_username=your-email@gmail.com"
+                    ),
                     "folder": folder,
                 }
 
@@ -100,7 +104,11 @@ class DeleteEmails(BaseTool):
                 self.report_error("Gmail password not found in secrets")
                 return {
                     "success": False,
-                    "error": "Secret 'gmail_password' not configured. Use: janito --set-secret gmail_password=your-app-password",
+                    "error": (
+                        "Secret 'gmail_password' not configured."
+                        " Use: janito --set-secret"
+                        " gmail_password=your-app-password"
+                    ),
                     "folder": folder,
                 }
 
@@ -117,7 +125,10 @@ class DeleteEmails(BaseTool):
                 self.report_error(f"Failed to select folder: {folder}")
                 return {
                     "success": False,
-                    "error": f"Failed to select folder '{folder}': {safe_decode(messages[0]) if messages else 'Unknown error'}",
+                    "error": (
+                        f"Failed to select folder '{folder}':"
+                        f" {safe_decode(messages[0]) if messages else 'Unknown error'}"
+                    ),
                     "folder": folder,
                 }
 
@@ -136,7 +147,12 @@ class DeleteEmails(BaseTool):
                 self.report_error("No deletion criteria specified")
                 return {
                     "success": False,
-                    "error": "Must specify at least one deletion criteria: message_ids, search_query, older_than_days, older_than_date, from_address, or subject_contains",
+                    "error": (
+                        "Must specify at least one deletion criteria:"
+                        " message_ids, search_query, older_than_days,"
+                        " older_than_date, from_address, or"
+                        " subject_contains"
+                    ),
                     "folder": folder,
                 }
 

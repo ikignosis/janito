@@ -144,14 +144,24 @@ class RemoveDirectory(BaseTool):
                             size_str = f"({items_removed} items)"
                             self.report_progress(f" {size_str}", end="")
                             shutil.rmtree(abs_directory)
-                            message = f"Successfully removed directory recursively {norm_path_str} (force mode)"
+                            message = (
+                                f"Successfully removed directory"
+                                f" recursively {norm_path_str}"
+                                f" (force mode)"
+                            )
                         else:
                             self.report_error(
-                                f"Directory not empty: {norm_path_str} (use recursive=True to remove non-empty directories)"
+                                f"Directory not empty: {norm_path_str}"
+                                f" (use recursive=True to remove"
+                                f" non-empty directories)"
                             )
                             return {
                                 "success": False,
-                                "error": f"Directory not empty: {norm_path_str} (use recursive=True to remove non-empty directories)",
+                                "error": (
+                                    f"Directory not empty: {norm_path_str}"
+                                    f" (use recursive=True to remove"
+                                    f" non-empty directories)"
+                                ),
                                 "directory": directory,
                                 "recursive": recursive,
                                 "force": force,

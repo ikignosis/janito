@@ -84,7 +84,11 @@ class MoveEmails(BaseTool):
                 self.report_error("Gmail username not found in secrets")
                 return {
                     "success": False,
-                    "error": "Secret 'gmail_username' not configured. Use: janito --set-secret gmail_username=your-email@gmail.com",
+                    "error": (
+                        "Secret 'gmail_username' not configured."
+                        " Use: janito --set-secret"
+                        " gmail_username=your-email@gmail.com"
+                    ),
                     "source_folder": source_folder,
                     "target_folder": target_folder,
                 }
@@ -93,7 +97,11 @@ class MoveEmails(BaseTool):
                 self.report_error("Gmail password not found in secrets")
                 return {
                     "success": False,
-                    "error": "Secret 'gmail_password' not configured. Use: janito --set-secret gmail_password=your-app-password",
+                    "error": (
+                        "Secret 'gmail_password' not configured."
+                        " Use: janito --set-secret"
+                        " gmail_password=your-app-password"
+                    ),
                     "source_folder": source_folder,
                     "target_folder": target_folder,
                 }
@@ -130,7 +138,11 @@ class MoveEmails(BaseTool):
                 self.report_error("No search criteria specified")
                 return {
                     "success": False,
-                    "error": "Must specify at least one criteria: message_ids, search_query, from_address, subject_contains, or older_than_days",
+                    "error": (
+                        "Must specify at least one criteria:"
+                        " message_ids, search_query, from_address,"
+                        " subject_contains, or older_than_days"
+                    ),
                     "source_folder": source_folder,
                     "target_folder": target_folder,
                 }

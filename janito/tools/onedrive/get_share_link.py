@@ -34,9 +34,13 @@ class GetOneDriveShareLink(BaseTool):
         Create a sharing link for a file or folder.
 
         Args:
-            path (str): Full path to the file or folder (e.g., "Documents/report.pdf")
-            link_type (str): Type of link - "view" (read-only) or "edit" (read-write) (default: "view")
-            scope (str): Who can access - "anonymous" (anyone with link) or "organization" (same tenant) (default: "anonymous")
+            path (str): Full path to the file or folder (e.g.,
+                "Documents/report.pdf")
+            link_type (str): Type of link - "view" (read-only) or
+                "edit" (read-write) (default: "view")
+            scope (str): Who can access - "anonymous" (anyone with
+                link) or "organization" (same tenant)
+                (default: "anonymous")
 
         Returns:
             Dict[str, Any]: A dictionary containing:

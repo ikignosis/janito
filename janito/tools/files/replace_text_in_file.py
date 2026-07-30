@@ -24,8 +24,10 @@ class ReplaceTextInFile(BaseTool):
 
     Requirements:
     - If old_str is not found, returns an error with warning
-    - If old_str is found multiple times and replace_all=False, returns an error explaining that multiple occurrences were found
-    - If old_str is found multiple times and replace_all=True, replaces all occurrences
+    - If old_str is found multiple times and replace_all=False, returns
+      an error explaining that multiple occurrences were found
+    - If old_str is found multiple times and replace_all=True, replaces
+      all occurrences
     """
 
     def run(
@@ -38,7 +40,9 @@ class ReplaceTextInFile(BaseTool):
             filepath (str): The path to the file to modify
             old_str (str): The exact text to search for and replace
             new_str (str): The text to replace with
-            replace_all (bool): If True, replace all occurrences. If False (default), only replace if exactly one occurrence is found
+            replace_all (bool): If True, replace all occurrences. If
+                False (default), only replace if exactly one occurrence
+                is found
 
         Returns:
             Dict[str, Any]: A dictionary containing:
@@ -102,7 +106,12 @@ class ReplaceTextInFile(BaseTool):
                 }
 
             if occurrences > 1 and not replace_all:
-                error_msg = f"Error: Multiple occurrences ({occurrences}) of '{old_str}' found. The search text needs to be unique in the file. Set replace_all=True to replace all occurrences."
+                error_msg = (
+                    f"Error: Multiple occurrences ({occurrences})"
+                    f" of '{old_str}' found. The search text needs"
+                    f" to be unique in the file. Set replace_all=True"
+                    f" to replace all occurrences."
+                )
                 self.report_error(error_msg)
                 return {
                     "success": False,
@@ -119,7 +128,12 @@ class ReplaceTextInFile(BaseTool):
                     old_str, new_str
                 )  # Replace all occurrences
                 replacements = occurrences
-                success_msg = f"Text replaced successfully ({replacements} replacement{'s' if replacements > 1 else ''})"
+                success_msg = (
+                    f"Text replaced successfully"
+                    f" ({replacements}"
+                    f" replacement"
+                    f"{'s' if replacements > 1 else ''})"
+                )
                 result_dict = {
                     "success": True,
                     "filepath": filepath,
@@ -195,8 +209,11 @@ def main():
     else:
         if result["success"]:
             if "replacements" in result:
+                plural = "s" if result["replacements"] > 1 else ""
                 print(
-                    f"Text replaced successfully in '{result['filepath']}' ({result['replacements']} replacement{'s' if result['replacements'] > 1 else ''})"
+                    f"Text replaced successfully in"
+                    f" '{result['filepath']}'"
+                    f" ({result['replacements']} replacement{plural})"
                 )
             else:
                 print(f"Text replaced successfully in '{result['filepath']}'")

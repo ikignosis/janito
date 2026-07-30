@@ -9,35 +9,22 @@ import asyncio
 import logging
 import time
 
-from ..events import ToolProgressEvent
-
-logger = logging.getLogger(__name__)
-
-# --- MCP manager ---
 from janito.mcp_manager import get_mcp_manager
-
-# Changes tracking (best-effort, never fails). Successful tool calls whose
-# first argument is "filepath" are logged to ./.janito/changes.jsonl so the
-# /changes command can replay them.
 from janito.tooling.changes import record_change
-
-# Reporter handler for capturing tool output in web mode
 from janito.tooling.reporter import set_report_handler
-
-# --- Tools registry ---
 from janito.tooling.tools_registry import get_all_tool_schemas, get_tool_by_name
 from janito.tooling.tools_registry import (
     get_tool_permissions as get_tool_permissions,  # re-exported for turn.py
 )
-
-# Tool usage tracking (best-effort, never fails)
 from janito.tooling.tools_usage import record_tool_use
-
-# Used-files tracking (best-effort, never fails)
 from janito.tooling.used_files import record_used_file
 from janito.tooling.used_files import (
     reset_used_files as reset_used_files,  # re-exported for loop.py
 )
+
+from ..events import ToolProgressEvent
+
+logger = logging.getLogger(__name__)
 
 
 def is_mcp_tool(tool_name: str) -> bool:

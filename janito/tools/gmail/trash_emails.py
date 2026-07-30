@@ -71,7 +71,11 @@ class TrashEmail(BaseTool):
             if not username or not password:
                 return {
                     "success": False,
-                    "error": "Gmail credentials not configured. Use: janito --set-secret gmail_username=... gmail_password=...",
+                    "error": (
+                        "Gmail credentials not configured."
+                        " Use: janito --set-secret"
+                        " gmail_username=... gmail_password=..."
+                    ),
                     "folder": folder,
                 }
 
@@ -100,7 +104,11 @@ class TrashEmail(BaseTool):
                 mail.logout()
                 return {
                     "success": False,
-                    "error": "Must specify at least one criteria: message_ids, search_query, from_address, subject_contains, or older_than_days",
+                    "error": (
+                        "Must specify at least one criteria:"
+                        " message_ids, search_query, from_address,"
+                        " subject_contains, or older_than_days"
+                    ),
                     "folder": folder,
                 }
 

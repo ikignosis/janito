@@ -14,6 +14,36 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
+# Import auth handling (API keys come from the auth store, not the environment)
+from janito.auth_config import get_api_key, get_default_provider
+
+# Import general configuration handling
+from janito.general_config import (
+    get_active_provider,
+    get_config_value,
+    get_masked_api_key,
+    load_context_window_size,
+    load_endpoint_from_config,
+    load_model_from_config,
+    load_provider_from_config,
+)
+
+# Import MCP manager
+from ..mcp_manager import get_mcp_manager
+
+# Import provider configuration for base URLs
+from ..provider_config import get_base_url_from_provider, is_custom_provider
+from ..tooling.changes import clear_changes, record_change
+
+# Import tools
+from ..tooling.tools_registry import get_all_tool_schemas, get_tool_by_name
+
+# Import tool usage tracking (best-effort, never fails)
+from ..tooling.tools_usage import record_tool_use
+
+# Import used-files tracking (best-effort, never fails)
+from ..tooling.used_files import format_used_files, record_used_file, reset_used_files
+
 # Configure logger for this module
 logger = logging.getLogger(__name__)
 
@@ -45,37 +75,6 @@ def format_tokens(count):
     if value >= 1_000:
         return f"{_format(value / 1_000)}k"
     return str(int(value))
-
-
-# Import auth handling (API keys come from the auth store, not the environment)
-from janito.auth_config import get_api_key, get_default_provider
-
-# Import general configuration handling
-from janito.general_config import (
-    get_active_provider,
-    get_config_value,
-    get_masked_api_key,
-    load_context_window_size,
-    load_endpoint_from_config,
-    load_model_from_config,
-    load_provider_from_config,
-)
-
-# Import MCP manager
-from ..mcp_manager import get_mcp_manager
-
-# Import provider configuration for base URLs
-from ..provider_config import get_base_url_from_provider, is_custom_provider
-from ..tooling.changes import clear_changes, record_change
-
-# Import tools
-from ..tooling.tools_registry import get_all_tool_schemas, get_tool_by_name
-
-# Import tool usage tracking (best-effort, never fails)
-from ..tooling.tools_usage import record_tool_use
-
-# Import used-files tracking (best-effort, never fails)
-from ..tooling.used_files import format_used_files, record_used_file, reset_used_files
 
 
 def resolve_runtime_config(
@@ -626,6 +625,9 @@ def send_prompt(
                 token_text.stylize("white on magenta")
                 console.print(token_text, highlight=False)
                 logger.info(
-                    f"Request completed: total={total_tokens} tokens (in={input_tokens}, out={output_tokens}, cached={cached_tokens}, max={context_window_size}), {len(messages)} messages"
+                    f"Request completed: total={total_tokens} tokens "
+                    f"(in={input_tokens}, out={output_tokens}, "
+                    f"cached={cached_tokens}, max={context_window_size}), "
+                    f"{len(messages)} messages"
                 )
             return full_content

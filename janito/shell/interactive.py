@@ -8,18 +8,17 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from rich.console import Console
-
-_rich_console = Console(markup=False)
-
 from prompt_toolkit import PromptSession
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.history import FileHistory, InMemoryHistory
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.styles import Style
+from rich.console import Console
 
 from .completer import CommandCompleter
+
+_rich_console = Console(markup=False)
 
 if TYPE_CHECKING:
     from .cmds import CmdHandler
@@ -48,14 +47,24 @@ class InteractiveShell:
         """
         self.model = model
         self.no_history = no_history
-        self.messages_history: list[
-            dict[str, Any]
-        ] = []  # conversation messages (role/content dicts) passed to the AI as context
-        self.history_checkpoint: int = 0  # index into messages_history marking the last known-good state; /rollback and error recovery truncate back to here
-        self.restart_requested = False  # set True by the F2 key binding; signals the run loop to clear history and start a fresh conversation
-        self.do_it_requested = False  # set True by the F12 key binding; signals the run loop to auto-send a "Do It" prompt
-        self.exit_requested = False  # set True by the /exit command handler; signals the run loop to break and end the session
-        self.multiline_mode = False  # set by /multi for the next prompt only; automatically resets after a multiline input is submitted
+        # Conversation messages (role/content dicts) passed to the AI as
+        # context
+        self.messages_history: list[dict[str, Any]] = []
+        # Index into messages_history marking the last known-good state;
+        # /rollback and error recovery truncate back to here
+        self.history_checkpoint: int = 0
+        # Set True by the F2 key binding; signals the run loop to clear
+        # history and start a fresh conversation
+        self.restart_requested = False
+        # Set True by the F12 key binding; signals the run loop to
+        # auto-send a "Do It" prompt
+        self.do_it_requested = False
+        # Set True by the /exit command handler; signals the run loop to
+        # break and end the session
+        self.exit_requested = False
+        # Set by /multi for the next prompt only; automatically resets
+        # after a multiline input is submitted
+        self.multiline_mode = False
 
         # Auto-load registered commands if not provided
         if commands is None:

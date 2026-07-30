@@ -69,7 +69,11 @@ class CountEmails(BaseTool):
                 self.report_error("Gmail username not found in secrets")
                 return {
                     "success": False,
-                    "error": "Secret 'gmail_username' not configured. Use: janito --set-secret gmail_username=your-email@gmail.com",
+                    "error": (
+                        "Secret 'gmail_username' not configured."
+                        " Use: janito --set-secret"
+                        " gmail_username=your-email@gmail.com"
+                    ),
                     "folder": folder,
                 }
 
@@ -77,7 +81,11 @@ class CountEmails(BaseTool):
                 self.report_error("Gmail password not found in secrets")
                 return {
                     "success": False,
-                    "error": "Secret 'gmail_password' not configured. Use: janito --set-secret gmail_password=your-app-password",
+                    "error": (
+                        "Secret 'gmail_password' not configured."
+                        " Use: janito --set-secret"
+                        " gmail_password=your-app-password"
+                    ),
                     "folder": folder,
                 }
 
@@ -95,9 +103,17 @@ class CountEmails(BaseTool):
             if status != "OK":
                 mail.logout()
                 self.report_error(f"Failed to select folder: {folder}")
+                raw = messages[0] if messages else None
+                decoded = (
+                    raw.decode()
+                    if isinstance(raw, bytes)
+                    else raw
+                    if raw
+                    else "Unknown error"
+                )
                 return {
                     "success": False,
-                    "error": f"Failed to select folder '{folder}': {messages[0].decode() if isinstance(messages[0], bytes) else messages[0] if messages else 'Unknown error'}",
+                    "error": (f"Failed to select folder '{folder}':" f" {decoded}"),
                     "folder": folder,
                 }
 

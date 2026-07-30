@@ -74,14 +74,22 @@ class ListFolders(BaseTool):
                 self.report_error("Gmail username not found in secrets")
                 return {
                     "success": False,
-                    "error": "Secret 'gmail_username' not configured. Use: janito --set-secret gmail_username=your-email@gmail.com",
+                    "error": (
+                        "Secret 'gmail_username' not configured."
+                        " Use: janito --set-secret"
+                        " gmail_username=your-email@gmail.com"
+                    ),
                 }
 
             if not password:
                 self.report_error("Gmail password not found in secrets")
                 return {
                     "success": False,
-                    "error": "Secret 'gmail_password' not configured. Use: janito --set-secret gmail_password=your-app-password",
+                    "error": (
+                        "Secret 'gmail_password' not configured."
+                        " Use: janito --set-secret"
+                        " gmail_password=your-app-password"
+                    ),
                 }
 
             # Connect to Gmail IMAP server

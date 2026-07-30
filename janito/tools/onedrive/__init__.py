@@ -37,6 +37,15 @@ Usage:
     janito --onedrive-auth
 """
 
+from .create_folder import CreateOneDriveFolder
+from .delete_file import DeleteOneDriveFile
+from .download_file import DownloadOneDriveFile
+from .get_share_link import GetOneDriveShareLink
+from .list_files import ListOneDriveFiles
+from .read_file import ReadOneDriveFile
+from .search_files import SearchOneDriveFiles
+from .upload_file import UploadOneDriveFile
+
 ONEDRIVE_SYSTEM_PROMPT = """
 - You are an AI assistant with access to Microsoft OneDrive tools for file management
 - Use the ListOneDriveFiles tool to browse folders and list files
@@ -52,15 +61,6 @@ ONEDRIVE_SYSTEM_PROMPT = """
 - When users ask about searching for files, use SearchOneDriveFiles
 - When users want to find specific documents, use SearchOneDriveFiles with appropriate query
 """
-
-from .create_folder import CreateOneDriveFolder
-from .delete_file import DeleteOneDriveFile
-from .download_file import DownloadOneDriveFile
-from .get_share_link import GetOneDriveShareLink
-from .list_files import ListOneDriveFiles
-from .read_file import ReadOneDriveFile
-from .search_files import SearchOneDriveFiles
-from .upload_file import UploadOneDriveFile
 
 __all__ = [
     "ONEDRIVE_SYSTEM_PROMPT",

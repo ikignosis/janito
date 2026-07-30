@@ -295,13 +295,20 @@ class SkillsProvider:
                 "type": "function",
                 "function": {
                     "name": "load_skill",
-                    "description": "Load the full content of a skill's SKILL.md file. Call this when you need detailed instructions or guidance from a specific skill.",
+                    "description": (
+                        "Load the full content of a skill's SKILL.md file."
+                        " Call this when you need detailed instructions or"
+                        " guidance from a specific skill."
+                    ),
                     "parameters": {
                         "type": "object",
                         "properties": {
                             "skill_name": {
                                 "type": "string",
-                                "description": "The name of the skill to load (e.g., 'git-commit', 'code-review')",
+                                "description": (
+                                    "The name of the skill to load"
+                                    " (e.g., 'git-commit', 'code-review')"
+                                ),
                             }
                         },
                         "required": ["skill_name"],
@@ -312,7 +319,11 @@ class SkillsProvider:
                 "type": "function",
                 "function": {
                     "name": "read_skill_resource",
-                    "description": "Read a supplementary resource file from a skill directory (e.g., templates, reference docs, examples).",
+                    "description": (
+                        "Read a supplementary resource file from a"
+                        " skill directory (e.g., templates, reference"
+                        " docs, examples)."
+                    ),
                     "parameters": {
                         "type": "object",
                         "properties": {
@@ -322,7 +333,11 @@ class SkillsProvider:
                             },
                             "resource_name": {
                                 "type": "string",
-                                "description": "The filename of the resource to read (e.g., 'template.md', 'README.md', 'rules.txt')",
+                                "description": (
+                                    "The filename of the resource to read"
+                                    " (e.g., 'template.md', 'README.md',"
+                                    " 'rules.txt')"
+                                ),
                             },
                         },
                         "required": ["skill_name", "resource_name"],
@@ -420,10 +435,17 @@ def read_skill_resource(skill_name: str, resource_name: str) -> str:
     if content is None:
         available = list(skill.resources.keys())
         if available:
-            error_msg = f"Resource '{resource_name}' not found in skill '{skill_name}'. Available resources: {', '.join(available)}"
+            error_msg = (
+                f"Resource '{resource_name}' not found in skill"
+                f" '{skill_name}'. Available resources:"
+                f" {', '.join(available)}"
+            )
             report_error(error_msg)
             return error_msg
-        error_msg = f"Resource '{resource_name}' not found in skill '{skill_name}'. This skill has no additional resources."
+        error_msg = (
+            f"Resource '{resource_name}' not found in skill"
+            f" '{skill_name}'. This skill has no additional resources."
+        )
         report_error(error_msg)
         return error_msg
 

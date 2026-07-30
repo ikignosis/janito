@@ -27,6 +27,7 @@ Changes since `v4.14.0` (2026-07-29).
 
 ### Fixed
 
+- Cleaned up all remaining Ruff violations left after removing the rule exceptions: reordered module-level imports to the top of the file in `janito/openai_client/client.py`, `janito/shell/interactive.py`, `janito/web/backend/agent/tooling.py`, and the `gmail`/`onedrive` tool packages (`__init__.py`) to satisfy `E402`, and split long lines across `janito/cli/parser.py`, `janito/tooling/skills_provider.py`, the `files`/`gmail`/`onedrive` tools and others to satisfy `E501`. `ruff check .` now passes clean.
 - Web UI `/tools` panel reactivity (`janito/web/frontend/js/chatCommands.js`): the tools part is now re-acquired through the Alpine reactive proxy after being pushed into the store, so mutations (`tools`, `loading`, `error`) propagate correctly and the loading spinner resolves instead of hanging indefinitely.
 
 ## [v4.14.0](https://github.com/joaopinto/janito/compare/v4.13.0...v4.14.0) - 2026-07-29

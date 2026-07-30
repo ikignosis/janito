@@ -198,7 +198,10 @@ Note: --set and --set-api-key must be used in separate commands.
         metavar="KEY=VALUE",
         help="Set one or more config key-value pairs in ~/.janito/config.json\n"
         "  The 'model' key is stored per-provider (e.g. openai.model); the\n"
-        "  provider is taken from --provider or the configured 'provider'.\n  Examples:\n    janito --set model=gpt-4 endpoint=https://api.example.com/v1\n    janito --provider openai --set model=gpt-4",
+        "  provider is taken from --provider or the configured 'provider'.\n"
+        "  Examples:\n"
+        "    janito --set model=gpt-4 endpoint=https://api.example.com/v1\n"
+        "    janito --provider openai --set model=gpt-4",
     )
 
     parser.add_argument(
@@ -206,7 +209,10 @@ Note: --set and --set-api-key must be used in separate commands.
         nargs="*",
         action="append",
         metavar="KEY",
-        help="Remove one or more config keys from ~/.janito/config.json\n  Examples:\n    janito --unset model provider\n    janito --unset model --unset provider",
+        help="Remove one or more config keys from ~/.janito/config.json\n"
+        "  Examples:\n"
+        "    janito --unset model provider\n"
+        "    janito --unset model --unset provider",
     )
 
     parser.add_argument(
@@ -214,7 +220,10 @@ Note: --set and --set-api-key must be used in separate commands.
         nargs="*",
         action="append",
         metavar="KEY",
-        help="Get one or more config values from ~/.janito/config.json\n  Examples:\n    janito --get model provider\n    janito --get model --get provider",
+        help="Get one or more config values from ~/.janito/config.json\n"
+        "  Examples:\n"
+        "    janito --get model provider\n"
+        "    janito --get model --get provider",
     )
 
     parser.add_argument(
@@ -222,7 +231,10 @@ Note: --set and --set-api-key must be used in separate commands.
         nargs="*",
         action="append",
         metavar="KEY=VALUE",
-        help="Set one or more secrets in ~/.janito/secrets.json\n  Examples:\n    janito --set-secret mykey=myvalue api_key=abc123\n    janito --set-secret mykey=myvalue --set-secret api_key=abc123",
+        help="Set one or more secrets in ~/.janito/secrets.json\n"
+        "  Examples:\n"
+        "    janito --set-secret mykey=myvalue api_key=abc123\n"
+        "    janito --set-secret mykey=myvalue --set-secret api_key=abc123",
     )
 
     parser.add_argument(
@@ -230,7 +242,10 @@ Note: --set and --set-api-key must be used in separate commands.
         nargs="*",
         action="append",
         metavar="KEY",
-        help="Get one or more secret values from ~/.janito/secrets.json\n  Examples:\n    janito --get-secret mykey api_key\n    janito --get-secret mykey --get-secret api_key",
+        help="Get one or more secret values from ~/.janito/secrets.json\n"
+        "  Examples:\n"
+        "    janito --get-secret mykey api_key\n"
+        "    janito --get-secret mykey --get-secret api_key",
     )
 
     parser.add_argument(
@@ -238,7 +253,10 @@ Note: --set and --set-api-key must be used in separate commands.
         nargs="*",
         action="append",
         metavar="KEY",
-        help="Delete one or more secrets from ~/.janito/secrets.json\n  Examples:\n    janito --delete-secret mykey old_secret\n    janito --delete-secret mykey --delete-secret old_secret",
+        help="Delete one or more secrets from ~/.janito/secrets.json\n"
+        "  Examples:\n"
+        "    janito --delete-secret mykey old_secret\n"
+        "    janito --delete-secret mykey --delete-secret old_secret",
     )
 
     parser.add_argument(

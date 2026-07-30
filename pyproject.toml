@@ -64,7 +64,6 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "W"]
-ignore = ["E501", "E402"]
 
 [tool.isort]
 profile = "black"

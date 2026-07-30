@@ -82,7 +82,11 @@ class ReadOneDriveFile(BaseTool):
                 method="GET",
                 endpoint=endpoint,
                 params={
-                    "$select": "id,name,file,folder,size,createdDateTime,lastModifiedDateTime,webUrl,parentReference,content"
+                    "$select": (
+                        "id,name,file,folder,size,createdDateTime,"
+                        "lastModifiedDateTime,webUrl,parentReference,"
+                        "content"
+                    )
                 },
                 timeout=30,
             )

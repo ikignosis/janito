@@ -10,6 +10,13 @@ CLI Usage:
 For AI function calling, use through the tool registry.
 """
 
+from .count_emails import CountEmails
+from .delete_emails import DeleteEmails
+from .list_folders import ListFolders
+from .move_emails import MoveEmails
+from .read_emails import ReadEmails
+from .trash_emails import TrashEmail
+
 GMAIL_SYSTEM_PROMPT = """
 - You are an AI assistant with access to Gmail tools for reading emails
 - Use the CountEmails tool to quickly check email counts without fetching content
@@ -18,13 +25,6 @@ GMAIL_SYSTEM_PROMPT = """
 - When users ask about email counts or how many emails they have, use CountEmails first
 - When users ask about email content or want to read emails, use ReadEmails
 """
-
-from .count_emails import CountEmails
-from .delete_emails import DeleteEmails
-from .list_folders import ListFolders
-from .move_emails import MoveEmails
-from .read_emails import ReadEmails
-from .trash_emails import TrashEmail
 
 __all__ = [
     "GMAIL_SYSTEM_PROMPT",
