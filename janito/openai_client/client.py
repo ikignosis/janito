@@ -47,42 +47,6 @@ def format_tokens(count):
     return str(int(value))
 
 
-# Import tools
-try:
-    from ..tooling.tools_registry import get_all_tool_schemas, get_tool_by_name
-
-    TOOLS_AVAILABLE = True
-except (ImportError, ValueError):
-    try:
-        # When running directly, not as a module
-        from tooling.tools_registry import get_all_tool_schemas, get_tool_by_name
-
-        TOOLS_AVAILABLE = True
-    except ImportError:
-        TOOLS_AVAILABLE = False
-
-        def get_all_tool_schemas():
-            return []
-
-        def get_tool_by_name(name):
-            raise NotImplementedError("Tools not available")
-
-
-# Import MCP manager
-try:
-    from ..mcp_manager import get_mcp_manager, shutdown_mcp_manager
-
-    MCP_MANAGER_AVAILABLE = True
-except ImportError:
-    MCP_MANAGER_AVAILABLE = False
-
-    def get_mcp_manager():
-        return None
-
-    def shutdown_mcp_manager():
-        pass
-
-
 # Import auth handling (API keys come from the auth store, not the environment)
 from janito.auth_config import get_api_key, get_default_provider
 
@@ -97,9 +61,15 @@ from janito.general_config import (
     load_provider_from_config,
 )
 
+# Import MCP manager
+from ..mcp_manager import get_mcp_manager
+
 # Import provider configuration for base URLs
 from ..provider_config import get_base_url_from_provider, is_custom_provider
 from ..tooling.changes import clear_changes, record_change
+
+# Import tools
+from ..tooling.tools_registry import get_all_tool_schemas, get_tool_by_name
 
 # Import tool usage tracking (best-effort, never fails)
 from ..tooling.tools_usage import record_tool_use
@@ -346,7 +316,7 @@ def send_prompt(
 
     # Initialize MCP manager and load services if enabled
     mcp_manager = None
-    if use_mcp and MCP_MANAGER_AVAILABLE:
+    if use_mcp:
         mcp_manager = get_mcp_manager()
         try:
             mcp_manager.load_services()
@@ -363,7 +333,7 @@ def send_prompt(
     # Get available tools if not explicitly provided
     if tools is None:
         # Merge built-in tools with MCP tools
-        built_in_tools = get_all_tool_schemas() if TOOLS_AVAILABLE else []
+        built_in_tools = get_all_tool_schemas()
         tools_schemas = built_in_tools + mcp_tools
         logger.debug(
             f"Using {len(built_in_tools)} built-in tools + {len(mcp_tools)} MCP tools"

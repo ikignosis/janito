@@ -14,13 +14,10 @@ from pathlib import Path
 # Add the repo root to sys.path to allow importing the package directly.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import pytest
+
 import janito.config_dir as config_dir_mod
 import janito.tooling.tools_usage as tools_usage
-
-try:
-    import pytest
-except ImportError:  # pragma: no cover - pytest is a dev dependency
-    pytest = None
 
 
 def _point_at(monkeypatch, tmp_path):

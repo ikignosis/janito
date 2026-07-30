@@ -8,6 +8,9 @@ Used by search tools (SearchText, SearchRegex, etc.) to optionally respect
 
 import os
 
+from pathspec import PathSpec
+from pathspec.patterns import GitWildMatchPattern
+
 
 def load_gitignore_spec(directory: str):
     """
@@ -20,23 +23,11 @@ def load_gitignore_spec(directory: str):
 
     Returns:
         A PathSpec object, or None if no .gitignore file exists.
-
-    Raises:
-        ImportError: If pathspec is not installed.
     """
     gitignore_path = os.path.join(directory, ".gitignore")
 
     if not os.path.exists(gitignore_path):
         return None
-
-    try:
-        from pathspec import PathSpec
-        from pathspec.patterns import GitWildMatchPattern
-    except ImportError:
-        raise ImportError(
-            "The 'pathspec' package is required for .gitignore support. "
-            "Install it with: pip install pathspec"
-        )
 
     with open(gitignore_path, "r") as f:
         patterns = f.readlines()

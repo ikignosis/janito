@@ -25,7 +25,6 @@ def create_transport(config: dict[str, Any]) -> MCPTransport:
 
     Raises:
         ValueError: If transport type is unknown or config is invalid
-        ImportError: If required dependencies are missing
     """
     # Handle config being a string (direct type specification)
     if isinstance(config, str):

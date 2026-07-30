@@ -12,14 +12,10 @@ from pathlib import Path
 # Add the repo root to sys.path to allow importing the package directly.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import pytest
+
 import janito.tooling.tools_registry as tools_registry_mod
 from janito.system_prompt import SYSTEM_PROMPT, get_system_prompt_with_skills
-
-try:
-    import pytest
-except ImportError:  # pragma: no cover - pytest is a dev dependency
-    pytest = None
-
 
 SKILLS_SECTION = "## Available Skills\n(fake skills section)"
 

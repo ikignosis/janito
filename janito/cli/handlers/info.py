@@ -1,33 +1,18 @@
 """Info and configuration display CLI handlers."""
 
-try:
-    from ...auth_config import get_api_key, get_auth_file_path, get_default_provider
-    from ...general_config import (
-        get_config_path,
-        get_masked_api_key,
-        load_endpoint_from_config,
-        load_model_from_config,
-        load_provider_from_config,
-    )
-    from ...provider_config import (
-        CUSTOM_ENDPOINT_MARKER,
-        get_base_url_from_provider,
-        is_custom_provider,
-    )
-except ImportError:
-    from janito.auth_config import get_api_key, get_auth_file_path, get_default_provider
-    from janito.general_config import (
-        get_config_path,
-        get_masked_api_key,
-        load_endpoint_from_config,
-        load_model_from_config,
-        load_provider_from_config,
-    )
-    from janito.provider_config import (
-        CUSTOM_ENDPOINT_MARKER,
-        get_base_url_from_provider,
-        is_custom_provider,
-    )
+from ...auth_config import get_api_key, get_auth_file_path, get_default_provider
+from ...general_config import (
+    get_config_path,
+    get_masked_api_key,
+    load_endpoint_from_config,
+    load_model_from_config,
+    load_provider_from_config,
+)
+from ...provider_config import (
+    CUSTOM_ENDPOINT_MARKER,
+    get_base_url_from_provider,
+    is_custom_provider,
+)
 
 
 def handle_info(args) -> int:

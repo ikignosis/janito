@@ -7,6 +7,8 @@ import logging
 import threading
 from typing import Any
 
+import requests
+
 from .base import MCPTransport
 from .protocols import (
     MCPError,
@@ -18,12 +20,6 @@ from .protocols import (
 )
 
 logger = logging.getLogger(__name__)
-
-# Lazy import for requests - it's an optional dependency
-try:
-    import requests
-except ImportError:
-    requests = None
 
 
 class HttpTransport(MCPTransport):
@@ -41,16 +37,7 @@ class HttpTransport(MCPTransport):
         Args:
             url: The MCP server URL
             headers: Optional headers to include in requests
-
-        Raises:
-            ImportError: If requests library is not installed
         """
-        if requests is None:
-            raise ImportError(
-                "requests library is required for HTTP transport. "
-                "Install with: pip install requests"
-            )
-
         self.url = url
         self.headers = headers or {}
         self._connected = False

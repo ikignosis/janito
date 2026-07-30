@@ -15,15 +15,11 @@ from pathlib import Path
 # Add the repo root to sys.path to allow importing the package directly.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import pytest
 from prompt_toolkit.completion import CompleteEvent
 from prompt_toolkit.document import Document
 
 from janito.shell.completer import CommandCompleter
-
-try:
-    import pytest
-except ImportError:  # pragma: no cover - pytest is a dev dependency
-    pytest = None
 
 
 class _FakeCmd:

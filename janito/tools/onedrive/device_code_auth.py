@@ -11,15 +11,9 @@ import time
 
 import requests
 
-try:
-    from ...secrets_config import delete_secret as _delete_secret
-    from ...secrets_config import get_secret as _get_secret
-    from ...secrets_config import set_secret as _set_secret
-except ImportError:
-    from janito.secrets_config import delete_secret as _delete_secret
-    from janito.secrets_config import get_secret as _get_secret
-    from janito.secrets_config import set_secret as _set_secret
-
+from ...secrets_config import delete_secret as _delete_secret
+from ...secrets_config import get_secret as _get_secret
+from ...secrets_config import set_secret as _set_secret
 
 # Microsoft identity platform endpoints for personal Microsoft accounts
 AUTH_URL = "https://login.microsoftonline.com/consumers/oauth2/v2.0/devicecode"

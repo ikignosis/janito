@@ -27,12 +27,9 @@ def _print_config_info() -> None:
     # override first, otherwise the provider's built-in default.
     base_url = load_endpoint_from_config(provider)
     if not base_url:
-        try:
-            from janito.provider_config import get_base_url_from_provider
+        from janito.provider_config import get_base_url_from_provider
 
-            base_url = get_base_url_from_provider(provider)
-        except ImportError:
-            base_url = None
+        base_url = get_base_url_from_provider(provider)
 
     if base_url:
         base_url_display = base_url

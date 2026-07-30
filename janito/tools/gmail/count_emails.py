@@ -10,6 +10,7 @@ from the secrets module.
 import imaplib
 from typing import Any
 
+from ...secrets_config import get_secret
 from ...tooling import BaseTool
 from ...tooling.decorator import tool
 
@@ -58,17 +59,6 @@ class CountEmails(BaseTool):
                 - 'error': error message if operation failed (only present if success=False)
         """
         try:
-            # Import secrets here to allow module to load without secrets dependency
-            try:
-                from janito.secrets_config import get_secret
-            except ImportError:
-                self.report_error("Secrets module not available")
-                return {
-                    "success": False,
-                    "error": "Could not import secrets module. Ensure janito is properly installed.",
-                    "folder": folder,
-                }
-
             # Fetch credentials from secrets
             self.report_start(f"📊 Connecting to Gmail to count emails in {folder}")
 

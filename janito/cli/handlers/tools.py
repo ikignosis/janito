@@ -1,16 +1,12 @@
 """Tool and MCP listing CLI handlers."""
 
-try:
-    from ...mcp_config import MCP_CONFIG_PATH, list_services
-    from ...mcp_manager import get_mcp_manager
-    from ...tooling.tools_registry import get_all_tool_permissions, get_all_tool_schemas
-except ImportError:
-    from janito.mcp_config import MCP_CONFIG_PATH, list_services
-    from janito.mcp_manager import get_mcp_manager
-    from janito.tooling.tools_registry import (
-        get_all_tool_permissions,
-        get_all_tool_schemas,
-    )
+from ...mcp_config import MCP_CONFIG_PATH, list_services
+from ...mcp_manager import get_mcp_manager
+from ...tooling.tools_registry import (
+    add_toolset,
+    get_all_tool_permissions,
+    get_all_tool_schemas,
+)
 
 
 def handle_list_tools(args) -> int:
@@ -24,18 +20,10 @@ def handle_list_tools(args) -> int:
     """
     # Add gmail toolset if --gmail flag is set
     if getattr(args, "gmail", False):
-        try:
-            from ...tooling.tools_registry import add_toolset
-        except ImportError:
-            from janito.tooling.tools_registry import add_toolset
         add_toolset("gmail")
 
     # Add onedrive toolset if --onedrive flag is set
     if getattr(args, "onedrive", False):
-        try:
-            from ...tooling.tools_registry import add_toolset
-        except ImportError:
-            from janito.tooling.tools_registry import add_toolset
         add_toolset("onedrive")
 
     schemas = get_all_tool_schemas()

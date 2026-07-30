@@ -9,6 +9,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
+from .auth_config import get_default_provider
 from .config_dir import get_config_dir
 
 # Configure logger for this module
@@ -395,15 +396,6 @@ def get_active_provider() -> str:
         return config_provider
 
     # 3. Check auth.json for default provider
-    try:
-        from .auth_config import get_default_provider
-    except ImportError:
-        try:
-            from auth_config import get_default_provider
-        except ImportError:
-            logger.debug("No provider config, using fallback: openai")
-            return "openai"
-
     default_provider = get_default_provider()
     if default_provider:
         logger.debug(f"Active provider from auth defaults: {default_provider}")

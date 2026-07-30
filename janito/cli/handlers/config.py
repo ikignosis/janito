@@ -2,36 +2,20 @@
 
 import sys
 
-try:
-    from ...auth_config import get_api_key, set_api_key
-    from ...general_config import (
-        ProviderRequiredError,
-        get_config_from_cli,
-        get_config_path,
-        get_masked_api_key,
-        load_context_window_size,
-        load_endpoint_from_config,
-        load_model_from_config,
-        load_provider_from_config,
-        set_config_from_cli,
-        unset_config_key_from_cli,
-    )
-    from ...provider_config import is_custom_provider, list_supported_providers
-except ImportError:
-    from janito.auth_config import get_api_key, set_api_key
-    from janito.general_config import (
-        ProviderRequiredError,
-        get_config_from_cli,
-        get_config_path,
-        get_masked_api_key,
-        load_context_window_size,
-        load_endpoint_from_config,
-        load_model_from_config,
-        load_provider_from_config,
-        set_config_from_cli,
-        unset_config_key_from_cli,
-    )
-    from janito.provider_config import is_custom_provider, list_supported_providers
+from ...auth_config import get_api_key, set_api_key
+from ...general_config import (
+    ProviderRequiredError,
+    get_config_from_cli,
+    get_config_path,
+    get_masked_api_key,
+    load_context_window_size,
+    load_endpoint_from_config,
+    load_model_from_config,
+    load_provider_from_config,
+    set_config_from_cli,
+    unset_config_key_from_cli,
+)
+from ...provider_config import is_custom_provider, list_supported_providers
 
 
 def handle_get_config(keys: list[str], cli_provider: str = None) -> int:

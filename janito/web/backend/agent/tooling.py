@@ -1,8 +1,8 @@
 """Tool discovery (built-in + MCP) and execution for the web agent.
 
-All imports of optional janito subsystems (tools registry, MCP manager,
-usage tracking) are guarded so the agent keeps working when they are
-unavailable — mirroring ``janito/openai_client/client.py`` behaviour.
+The tools registry, MCP manager and usage-tracking helpers are always
+present within the package, so they are imported directly (no defensive
+fallbacks).
 """
 
 import asyncio
@@ -13,73 +13,31 @@ from ..events import ToolProgressEvent
 
 logger = logging.getLogger(__name__)
 
-# --- Tools registry (lazy-safe — mirrors client.py behaviour) ---
-try:
-    from janito.tooling.tools_registry import (
-        get_all_tool_schemas,
-        get_tool_by_name,
-        get_tool_permissions,
-    )
-
-    TOOLS_AVAILABLE = True
-except (ImportError, ValueError):
-    TOOLS_AVAILABLE = False
-
-    def get_all_tool_schemas():
-        return []
-
-    def get_tool_by_name(name):
-        raise NotImplementedError("Tools not available")
-
-    def get_tool_permissions(name):
-        return ""
-
-
 # --- MCP manager ---
-try:
-    from janito.mcp_manager import get_mcp_manager
-
-    MCP_MANAGER_AVAILABLE = True
-except ImportError:
-    MCP_MANAGER_AVAILABLE = False
-
-    def get_mcp_manager():
-        return None
-
-
-# Reporter handler for capturing tool output in web mode
-from janito.tooling.reporter import set_report_handler
-
-# Tool usage tracking (best-effort, never fails)
-try:
-    from janito.tooling.tools_usage import record_tool_use
-except ImportError:  # pragma: no cover - fallback keeps agent working
-
-    def record_tool_use(name):
-        pass
-
-
-# Used-files tracking (best-effort, never fails)
-try:
-    from janito.tooling.used_files import record_used_file, reset_used_files
-except ImportError:  # pragma: no cover - fallback keeps agent working
-
-    def record_used_file(name, args):
-        pass
-
-    def reset_used_files() -> None:
-        return None
-
+from janito.mcp_manager import get_mcp_manager
 
 # Changes tracking (best-effort, never fails). Successful tool calls whose
 # first argument is "filepath" are logged to ./.janito/changes.jsonl so the
 # /changes command can replay them.
-try:
-    from janito.tooling.changes import record_change
-except ImportError:  # pragma: no cover - fallback keeps agent working
+from janito.tooling.changes import record_change
 
-    def record_change(name, args):
-        pass
+# Reporter handler for capturing tool output in web mode
+from janito.tooling.reporter import set_report_handler
+
+# --- Tools registry ---
+from janito.tooling.tools_registry import get_all_tool_schemas, get_tool_by_name
+from janito.tooling.tools_registry import (
+    get_tool_permissions as get_tool_permissions,  # re-exported for turn.py
+)
+
+# Tool usage tracking (best-effort, never fails)
+from janito.tooling.tools_usage import record_tool_use
+
+# Used-files tracking (best-effort, never fails)
+from janito.tooling.used_files import record_used_file
+from janito.tooling.used_files import (
+    reset_used_files as reset_used_files,  # re-exported for loop.py
+)
 
 
 def is_mcp_tool(tool_name: str) -> bool:
@@ -104,7 +62,7 @@ async def resolve_tools(config, tools: list[dict] | None, use_mcp: bool) -> list
         return tools
 
     mcp_tools: list[dict] = []
-    if use_mcp and MCP_MANAGER_AVAILABLE:
+    if use_mcp:
         mcp_manager = get_mcp_manager()
         try:
             await asyncio.to_thread(mcp_manager.load_services)
@@ -116,7 +74,7 @@ async def resolve_tools(config, tools: list[dict] | None, use_mcp: bool) -> list
         except Exception as e:
             logger.warning(f"Failed to load MCP tools: {e}")
 
-    built_in_tools = get_all_tool_schemas() if TOOLS_AVAILABLE else []
+    built_in_tools = get_all_tool_schemas()
     return built_in_tools + mcp_tools
 
 

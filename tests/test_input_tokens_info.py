@@ -21,11 +21,7 @@ from pathlib import Path
 # Add the repo root to sys.path to allow importing the package directly.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-try:
-    import pytest
-except ImportError:  # pragma: no cover - pytest is a dev dependency
-    pytest = None
-
+import pytest
 
 if pytest is not None:
     from janito.openai_client.client import format_tokens

@@ -2,24 +2,14 @@
 
 import sys
 
-try:
-    from ...auth_config import (
-        get_api_key,
-        get_auth_file_path,
-        get_default_provider,
-        list_providers,
-        set_api_key,
-    )
-    from ...general_config import get_masked_api_key, load_provider_from_config
-except ImportError:
-    from janito.auth_config import (
-        get_api_key,
-        get_auth_file_path,
-        get_default_provider,
-        list_providers,
-        set_api_key,
-    )
-    from janito.general_config import get_masked_api_key, load_provider_from_config
+from ...auth_config import (
+    get_api_key,
+    get_auth_file_path,
+    get_default_provider,
+    list_providers,
+    set_api_key,
+)
+from ...general_config import get_masked_api_key, load_provider_from_config
 
 
 def _confirm_overwrite(provider: str, existing_key: str) -> bool:

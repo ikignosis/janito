@@ -2,22 +2,13 @@
 
 import sys
 
-try:
-    from ...secrets_config import (
-        delete_secret,
-        get_secret,
-        get_secrets_file_path,
-        list_secrets,
-        set_secret,
-    )
-except ImportError:
-    from janito.secrets_config import (
-        delete_secret,
-        get_secret,
-        get_secrets_file_path,
-        list_secrets,
-        set_secret,
-    )
+from ...secrets_config import (
+    delete_secret,
+    get_secret,
+    get_secrets_file_path,
+    list_secrets,
+    set_secret,
+)
 
 
 def handle_set_secret(args) -> int:

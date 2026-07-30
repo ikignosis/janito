@@ -20,15 +20,11 @@ from pathlib import Path
 # Add the repo root to sys.path to allow importing the package directly.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import pytest
 from rich.text import Text
 
 import janito.tooling.tools_registry as tools_registry
 import janito.tooling.used_files as used_files
-
-try:
-    import pytest
-except ImportError:  # pragma: no cover - pytest is a dev dependency
-    pytest = None
 
 
 def _register(monkeypatch, name, permissions):

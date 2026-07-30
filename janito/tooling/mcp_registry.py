@@ -14,6 +14,7 @@ import logging
 from collections.abc import Callable
 from typing import Any
 
+from ..mcp_manager import get_mcp_manager
 from .tools_registry import get_all_tool_permissions as get_builtin_permissions
 from .tools_registry import get_all_tool_schemas as get_builtin_schemas
 from .tools_registry import get_all_tools as get_builtin_tools
@@ -27,14 +28,8 @@ def get_mcp_tool_schemas() -> list[dict[str, Any]]:
     Get OpenAI function-calling schemas for all connected MCP tools.
 
     Returns:
-        List of tool schemas; empty when the MCP manager is unavailable
-        or no MCP services are connected.
+        List of tool schemas; empty when no MCP services are connected.
     """
-    try:
-        from ..mcp_manager import get_mcp_manager
-    except ImportError:
-        return []
-
     manager = get_mcp_manager()
     if manager is None or not manager.connected_services:
         return []
@@ -54,8 +49,6 @@ def _make_mcp_tool_callable(func_spec: dict[str, Any]) -> Callable:
     ``__signature__`` so it can be used interchangeably with built-in
     tool wrappers (e.g. by ``get_function_schema``).
     """
-    from ..mcp_manager import get_mcp_manager
-
     name = func_spec["name"]
     parameters = func_spec.get("parameters", {})
     if not isinstance(parameters, dict):
@@ -88,14 +81,8 @@ def get_all_mcp_tools() -> dict[str, Callable]:
 
     Returns:
         Mapping of prefixed tool name (e.g. ``service_tool``) to callable;
-        empty when the MCP manager is unavailable or no services are
-        connected.
+        empty when no MCP services are connected.
     """
-    try:
-        from ..mcp_manager import get_mcp_manager
-    except ImportError:
-        return {}
-
     manager = get_mcp_manager()
     if manager is None or not manager.connected_services:
         return {}
@@ -230,11 +217,6 @@ def is_mcp_tool(name: str) -> bool:
     Returns:
         True if the tool comes from a connected MCP service
     """
-    try:
-        from ..mcp_manager import get_mcp_manager
-    except ImportError:
-        return False
-
     manager = get_mcp_manager()
     if manager is None:
         return False

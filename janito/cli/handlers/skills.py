@@ -13,10 +13,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-try:
-    from ...tooling.skills_provider import get_default_skills_dir
-except ImportError:
-    from janito.tooling.skills_provider import get_default_skills_dir
+from ...tooling.skills_provider import get_default_skills_dir
 
 # Alias of :func:`janito.tooling.skills_provider.get_default_skills_dir`.
 # Retained for backward compatibility; prefer the canonical name in new code.

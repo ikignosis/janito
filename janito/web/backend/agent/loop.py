@@ -27,7 +27,7 @@ from ..events import (
     WaitingEvent,
 )
 from .call import StreamAccumulator, build_call_kwargs
-from .tooling import MCP_MANAGER_AVAILABLE, reset_used_files, resolve_tools
+from .tooling import reset_used_files, resolve_tools
 from .turn import run_tool_turn
 
 logger = logging.getLogger(__name__)
@@ -68,7 +68,7 @@ async def stream_prompt(
         backend = base_url if base_url else "api.openai.com"
         logger.info(f"Web agent: model={model} backend={backend}")
 
-    mcp_enabled = use_mcp and MCP_MANAGER_AVAILABLE
+    mcp_enabled = use_mcp
     tools_schemas = await resolve_tools(config, tools, use_mcp)
 
     context_window_size = load_context_window_size(get_active_provider())

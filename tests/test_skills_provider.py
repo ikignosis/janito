@@ -17,14 +17,10 @@ from pathlib import Path
 # Add the repo root to sys.path to allow importing the package directly.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import pytest
+
 import janito.config_dir as config_dir_mod
 from janito.tooling.skills_provider import SkillsProvider, get_local_skills_dir
-
-try:
-    import pytest
-except ImportError:  # pragma: no cover - pytest is a dev dependency
-    pytest = None
-
 
 # ---------------------------------------------------------------------------
 # Helpers
