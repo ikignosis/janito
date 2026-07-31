@@ -20,6 +20,7 @@ Usage:
 """
 
 
+import importlib.util
 import sys
 
 from . import privileges as _privileges_mod
@@ -232,23 +233,25 @@ def main():
     # Must come BEFORE read_stdin_prompt() to avoid blocking on non-tty
     # stdin in headless / service contexts.
     if args.web:
-        try:
-            from .web.backend.app import run_web
-        except ImportError as e:
-            # The [web] extra (fastapi / uvicorn) is not installed.
-            # Fail with an actionable message instead of a raw traceback.
-            import sys as _sys
-
+        # The [web] extra (fastapi / uvicorn) is optional, so check its
+        # availability explicitly instead of a defensive try/except
+        # ImportError fallback, and fail with an actionable message.
+        if (
+            importlib.util.find_spec("fastapi") is None
+            or importlib.util.find_spec("uvicorn") is None
+        ):
             print(
                 "Error: the web UI requires optional dependencies that "
                 "are not installed.",
-                file=_sys.stderr,
+                file=sys.stderr,
             )
             print(
-                "Install them with:\n\n    pip install janito[web]\n", file=_sys.stderr
+                "Install them with:\n\n    pip install janito[web]\n", file=sys.stderr
             )
-            print(f"(missing module: {getattr(e, 'name', e)})", file=_sys.stderr)
-            _sys.exit(1)
+            return 1
+
+        from .web.backend.app import run_web
+
         run_web(args)
         return
 

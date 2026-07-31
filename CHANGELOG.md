@@ -28,6 +28,7 @@ Changes since `v4.15.0` (2026-07-30).
 ### Fixed
 
 - The interactive shell status bar and the `/config` command now report the provider in effect for the current session instead of only the configured default (`janito/shell/interactive.py`, `janito/shell/cmds/config.py`). The session provider (from `--provider`, passed to `InteractiveShell` by `janito/cli/chat.py`) takes precedence, so running `janito --provider deepseek` shows `provider: deepseek` in the status bar even when `~/.janito/config.json` still names another provider (e.g. `alibaba`); without `--provider` the configured default is shown as before. Added `tests/test_shell_toolbar.py` and extended `tests/test_shell_config_cmd.py`.
+- Removed the last defensive `try/except ImportError` fallback import (`janito/__main__.py`): the `--web` mode now checks the optional `[web]` extra explicitly with `importlib.util.find_spec()` (fastapi / uvicorn) before importing the web backend, so a missing extra is reported with the same actionable install hint but without relying on a caught `ImportError`. The error path returns exit code `1` (instead of `sys.exit(1)`), matching every other CLI validation failure. Added `tests/test_provider_config.py::test_web_mode_without_extra_prints_actionable_error`.
 
 ## [v4.15.0](https://github.com/joaopinto/janito/compare/v4.14.0...v4.15.0) - 2026-07-30
 

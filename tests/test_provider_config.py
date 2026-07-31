@@ -151,6 +151,27 @@ if pytest is not None:
         # The provider was normalized to its canonical casing ("openai").
         assert config == {"providers": {"openai": {"model": "gpt-4"}}}
 
+    def test_web_mode_without_extra_prints_actionable_error(
+        monkeypatch, tmp_path, capsys
+    ):
+        """`--web` without the optional [web] extra fails with the documented
+        install hint instead of a defensive try/except ImportError fallback."""
+        import importlib.util
+
+        import janito.__main__ as main_mod
+
+        # Skip runtime-config validation so we reach the web-mode branch
+        # without needing an API key in the temp config dir.
+        monkeypatch.setattr(main_mod, "validate_runtime_config", lambda args=None: None)
+        # Simulate the optional [web] extra not being installed.
+        monkeypatch.setattr(importlib.util, "find_spec", lambda name: None)
+
+        rc = _run_main(monkeypatch, tmp_path, ["--web"])
+        assert rc == 1
+        err = capsys.readouterr().err
+        assert "the web UI requires optional dependencies" in err
+        assert "pip install janito[web]" in err
+
 else:  # pragma: no cover - fallback runner without pytest
 
     def _main():
