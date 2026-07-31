@@ -76,7 +76,12 @@ window.ChatHistoryMixin = {
                         if (result && typeof result === 'object'
                             && result.content_type === 'svg'
                             && result.svg_text) {
-                            current.parts.push({ kind: 'svg', svg: result.svg_text });
+                            current.parts.push({
+                                kind: 'svg',
+                                svg: result.svg_text,
+                                view_width: result.view_width,
+                                view_height: result.view_height,
+                            });
                         }
 
                         // Reconstruct image part from CreateImage tool result.

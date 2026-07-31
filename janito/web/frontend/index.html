@@ -275,7 +275,7 @@
 
                                     <!-- SVG content card (CreateSVG tool result) -->
                                     <template x-if="part.kind === 'svg'">
-                                        <div class="svg-card" x-html="sanitizeSvg(part.svg)"></div>
+                                        <div class="svg-card" x-html="sanitizeSvg(part.svg, part.view_width, part.view_height)"></div>
                                     </template>
 
                                     <!-- Image content card (CreateImage tool result) -->

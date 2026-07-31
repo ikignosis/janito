@@ -78,17 +78,35 @@ window.ChatFormatMixin = {
     // Sanitise SVG markup for safe inline rendering.  Uses DOMPurify
     // with the SVG profile when available; falls back to a regex-based
     // strip of <script> and event-handler attributes.
-    sanitizeSvg(svgText) {
+    //
+    // When `viewWidth`/`viewHeight` are provided (the CreateSVG tool's
+    // view_width/view_height parameters, default 500x500), the requested
+    // size is stamped onto the root <svg> element as an inline style so
+    // the card renders the graphic at exactly that size (the inline style
+    // wins over the .svg-card svg stylesheet rule).
+    sanitizeSvg(svgText, viewWidth, viewHeight) {
         if (!svgText) return '';
+        let svg;
         if (typeof DOMPurify !== 'undefined') {
-            return DOMPurify.sanitize(svgText, {
+            svg = DOMPurify.sanitize(svgText, {
                 USE_PROFILES: { svg: true, svgFilters: true },
             });
+        } else {
+            // Fallback: remove <script> tags and on* event attributes
+            svg = svgText
+                .replace(/<script[\s\S]*?<\/script>/gi, '')
+                .replace(/\son\w+\s*=\s*"[^"]*"/gi, '')
+                .replace(/\son\w+\s*=\s*'[^']*'/gi, '');
         }
-        // Fallback: remove <script> tags and on* event attributes
-        return svgText
-            .replace(/<script[\s\S]*?<\/script>/gi, '')
-            .replace(/\son\w+\s*=\s*"[^"]*"/gi, '')
-            .replace(/\son\w+\s*=\s*'[^']*'/gi, '');
+        if ((viewWidth || viewHeight) && /<svg/i.test(svg)) {
+            const w = viewWidth ? `width:${viewWidth}px` : '';
+            const h = viewHeight ? `height:${viewHeight}px` : '';
+            const style = [w, h].filter(Boolean).join(';');
+            svg = svg.replace(/<svg([^>]*)>/i, (m, attrs) => {
+                const cleaned = attrs.replace(/\sstyle\s*=\s*"[^"]*"/gi, '');
+                return `<svg${cleaned} style="${style}">`;
+            });
+        }
+        return svg;
     },
 };

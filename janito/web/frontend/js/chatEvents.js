@@ -75,7 +75,12 @@ const CHAT_EVENT_HANDLERS = {
             if (!c.event.error && c.event.result
                 && c.event.result.content_type === 'svg'
                 && c.event.result.svg_text) {
-                c.msg.parts.push({ kind: 'svg', svg: c.event.result.svg_text });
+                c.msg.parts.push({
+                    kind: 'svg',
+                    svg: c.event.result.svg_text,
+                    view_width: c.event.result.view_width,
+                    view_height: c.event.result.view_height,
+                });
             }
 
             // CreateImage tool: render the generated image inline as a card.
