@@ -110,6 +110,7 @@ function chatComponent() {
                     loaded: false,     // history fetched from the server yet?
                     loading: false,    // a history fetch is in flight
                     dirty: false,      // user already sent a message locally
+                    titled: false,     // already named from its first message?
                 };
             }
             return this._sessions[id];
@@ -198,6 +199,10 @@ function chatComponent() {
                     // Mutate in place so any `this.messages` already pointing
                     // at this array picks up the loaded content.
                     store.messages.splice(0, store.messages.length, ...loaded);
+                    // An existing conversation keeps its stored title; only a
+                    // fresh "New conversation" session gets auto-named from
+                    // its first message (see sendPrompt/_autoTitle).
+                    store.titled = session.title !== 'New conversation';
                 }
                 store.loaded = true;
                 if (this.sessionId === id) this._forceScrollToBottom();
@@ -232,6 +237,16 @@ function chatComponent() {
             this.error = null;
             store.dirty = true;   // protect the pending _loadHistory from clobbering
 
+            // A new empty conversation gets named from the start of its first
+            // message: rename the session and refresh the sidebar so the tab
+            // label replaces the default "New conversation" right away (the
+            // backend auto-titles too; doing it here makes the UI update
+            // immediately instead of on the next sidebar reload).
+            if (!store.titled && store.messages.length === 0) {
+                store.titled = true;
+                this._autoTitle(id, content);
+            }
+
             // User message
             store.messages.push(this._newMessage('user', content));
             this.input = '';
@@ -259,6 +274,23 @@ function chatComponent() {
                 this._current = null;
             }
             this._forceScrollToBottom();
+        },
+
+        // Name a new conversation from the start of its first message (the
+        // first 60 chars, mirroring the backend's auto-title in
+        // routers/chat.py), then tell the sidebar to swap just this session's
+        // label in place (janito-session-title) instead of reloading the whole
+        // list - a full reload re-sorts and rebuilds every tab, which looks
+        // like a flicker. Best-effort: a failed rename just logs.
+        _autoTitle(id, content) {
+            const title = content.slice(0, 60);
+            Api.renameSession(id, title)
+                .then(() => {
+                    window.dispatchEvent(new CustomEvent('janito-session-title', {
+                        detail: { id, title },
+                    }));
+                })
+                .catch((e) => console.error('[chat] failed to auto-title session:', e));
         },
 
         // ---------------------------------------------------------------
@@ -337,6 +369,7 @@ function chatComponent() {
             store.current = null;
             store.dirty = false;
             store.loaded = true;   // no need to re-fetch empty history
+            store.titled = false;  // a restarted conversation gets re-named from its next message
             this._current = null;
             this.error = null;
             store.error = null;

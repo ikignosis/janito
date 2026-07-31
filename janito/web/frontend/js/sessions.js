@@ -1,8 +1,9 @@
 // SessionSidebar Alpine component — list/create/delete conversations.
 //
 // Communicates with chat.js via window CustomEvents:
-//   'janito-open-session'    -> chat.js connects WebSocket
-//   'janito-sessions-refresh' -> this component reloads (sent by chat.js)
+//   'janito-open-session'     -> chat.js connects WebSocket
+//   'janito-sessions-refresh' -> this component reloads (full list)
+//   'janito-session-title'    -> patch ONE session's title in place (no reload)
 
 function sessionsComponent() {
     return {
@@ -13,8 +14,14 @@ function sessionsComponent() {
         _indicators: {},
 
         init() {
-            // Reload when chat.js signals a change (e.g. auto-title, new session)
+            // Reload when chat.js signals a structural change (new session,
+            // deleted session, etc.).
             window.addEventListener('janito-sessions-refresh', () => this.load());
+
+            // A session was auto-titled (or renamed) — update just its label
+            // in place instead of reloading the whole list. Reloading re-sorts
+            // (last_active changed) and rebuilds every tab, which flickers.
+            window.addEventListener('janito-session-title', (e) => this._applyTitle(e.detail));
 
             // A session vanished on the server (e.g. server restarted) —
             // re-bootstrap: reload the live session list and pick/create one.
@@ -26,6 +33,17 @@ function sessionsComponent() {
 
             // Self-bootstrap: load sessions and open the most recent (or create new)
             this.$nextTick(() => this.bootstrap());
+        },
+
+        // Update one session's title reactively (only its <span> re-renders).
+        // Falls back to a full reload if the session isn't in the list yet.
+        _applyTitle({ id, title }) {
+            const session = this.sessions.find(s => s.session_id === id);
+            if (session) {
+                session.title = title;
+            } else {
+                this.load();
+            }
         },
 
         async _recover(lostId) {
@@ -134,7 +152,8 @@ function sessionsComponent() {
             if (title !== null && title.trim()) {
                 try {
                     await Api.renameSession(id, title.trim());
-                    await this.load();
+                    // Patch the label in place (no full-list reload / flicker).
+                    this._applyTitle({ id, title: title.trim() });
                 } catch (e) {
                     console.error('Failed to rename session:', e);
                 }

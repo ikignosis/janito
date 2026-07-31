@@ -407,10 +407,7 @@ def send_prompt(
 
         # Add max_tokens if context window size is set in config
         if context_window_size is not None:
-            if model.startswith("gpt-5"):
-                call_kwargs["max_completion_tokens"] = context_window_size
-            else:
-                call_kwargs["max_tokens"] = context_window_size
+            call_kwargs["max_completion_tokens"] = context_window_size
 
         # Pass preserve_thinking in extra_body if defined in config
         if preserve_thinking is not None:

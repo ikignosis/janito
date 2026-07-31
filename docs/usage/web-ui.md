@@ -95,7 +95,9 @@ The server prints the URL it's listening on, then opens your default browser
   into the tool card in real time (rendered in a monospace block)
 - **Token usage bar** — total / in / out / cached after each turn
 - **Markdown rendering** — with syntax-highlighted code blocks
-- **Session management** — sidebar with conversation list, new chat, delete, rename
+- **Session management** — sidebar with conversation list, new chat, delete, rename.
+  New empty conversations are auto-named from the start of the first message you
+  send (first 60 characters, replacing the default "New conversation" label).
 - **Session persistence** — every conversation is stored to
   `./.janito/sessions/<session_id>.jsonl` (JSON-lines: a metadata line followed
   by one message per line, relative to the working directory) and restored when

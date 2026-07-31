@@ -286,6 +286,44 @@ def test_chat_js_handles_prefetch_event():
     assert "Api.getSession" in js
 
 
+def test_chat_js_auto_titles_new_empty_tab():
+    """chat.js names a new empty conversation from the start of its first message.
+
+    On sendPrompt, a session store that has never been titled and holds no
+    messages yet is renamed to the start of the message via the REST API
+    (Api.renameSession), and the sidebar is told to swap just that session's
+    label in place (janito-session-title) so the tab replaces the default
+    "New conversation" immediately, without a full-list reload. Existing
+    sessions keep their stored title (store.titled is set from the fetched
+    title).
+    """
+    js = (FRONTEND / "js" / "chat.js").read_text(encoding="utf-8")
+    assert "Api.renameSession" in js
+    assert "_autoTitle" in js
+    assert "janito-session-title" in js
+    assert "store.titled" in js
+    # Fires only for a fresh, still-empty conversation...
+    assert "!store.titled && store.messages.length === 0" in js
+    # ...and an already-named session loaded from the server is never re-named.
+    assert "store.titled = session.title !== 'New conversation'" in js
+
+
+def test_sessions_js_patches_title_in_place():
+    """sessions.js updates a renamed session's label without reloading the list.
+
+    A 'janito-session-title' event is applied by _applyTitle, which mutates
+    only that session's title reactively (the <span> alone re-renders) rather
+    than calling load() and rebuilding/re-sorting every tab - that full reload
+    is what made the sidebar flicker on auto-title.
+    """
+    js = (FRONTEND / "js" / "sessions.js").read_text(encoding="utf-8")
+    assert "janito-session-title" in js
+    assert "_applyTitle" in js
+    # In-place reactive update, with a full reload only as a fallback.
+    assert "session.title = title" in js
+    assert "this.load()" in js
+
+
 def test_history_reasoning_cards_start_expanded():
     """Reasoning cards loaded from a stored session auto-expand (open=true).
 

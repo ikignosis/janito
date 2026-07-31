@@ -8,6 +8,7 @@
 //
 //   sessions.js  -> 'janito-open-session'   (chat.js listens, connects WS)
 //   chat.js      -> 'janito-sessions-refresh' (sessions.js listens, reloads)
+//   chat.js      -> 'janito-session-title'  (sessions.js listens, patches label)
 //   chat.js      -> 'janito-connection', 'janito-usage' (statusBar listens)
 //
 // $root is NOT used for cross-component access. In Alpine 3 $root resolves to
