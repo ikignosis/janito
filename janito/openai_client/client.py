@@ -31,8 +31,13 @@ from janito.general_config import (
 # Import MCP manager
 from ..mcp_manager import get_mcp_manager
 
-# Import provider configuration for base URLs
-from ..provider_config import get_base_url_from_provider, is_custom_provider
+# Import provider configuration for base URLs and built-in defaults
+from ..provider_config import (
+    get_base_url_from_provider,
+    get_default_context_window_size_from_provider,
+    get_default_model_from_provider,
+    is_custom_provider,
+)
 from ..tooling.changes import clear_changes, record_change
 
 # Import tools
@@ -91,7 +96,8 @@ def resolve_runtime_config(
                   or, when none is set, the provider's built-in default base
                   URL. ``None`` means the standard OpenAI endpoint.
       - model:    ``--model`` (``cli_model``) when given, otherwise the model
-                  configured for the active provider (``<provider>.model``).
+                  configured for the active provider (``<provider>.model``),
+                  and finally the provider's built-in default model.
 
     Args:
         cli_model: Model passed via ``--model`` (highest priority). May be None.
@@ -127,8 +133,11 @@ def resolve_runtime_config(
             f"Set one with: janito --set-api-key <key> --provider {provider}"
         )
 
-    # Model: --model, otherwise the provider's configured model.
+    # Model: --model, then the provider's configured model, and finally the
+    # provider's built-in default model (from PROVIDER_INFO).
     model = cli_model or load_model_from_config(provider)
+    if not model:
+        model = get_default_model_from_provider(provider)
     if not model:
         logger.error(f"No model configured for provider '{provider}'")
         raise ValueError(
@@ -346,6 +355,10 @@ def send_prompt(
     # Load max tokens from general config if set
     provider = cli_provider or get_active_provider()
     context_window_size = load_context_window_size(provider)
+    if context_window_size is None:
+        # Fall back to the provider's built-in default (from PROVIDER_INFO),
+        # then to a global default of 100k tokens.
+        context_window_size = get_default_context_window_size_from_provider(provider)
     if context_window_size is None:
         context_window_size = 100000  # default to 100k tokens if not set in config
 

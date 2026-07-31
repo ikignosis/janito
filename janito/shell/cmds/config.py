@@ -11,6 +11,7 @@ from janito.general_config import (
     load_context_window_size,
     load_endpoint_from_config,
 )
+from janito.provider_config import get_default_context_window_size_from_provider
 
 from .base import CmdHandler
 from .registry import register_command
@@ -36,6 +37,16 @@ def _print_config_info() -> None:
     else:
         base_url_display = "(default OpenAI URL)"
 
+    # Resolve the effective context window: an explicit configuration value
+    # first, otherwise the provider's built-in default from PROVIDER_INFO.
+    if context_window_size:
+        context_window_display = str(context_window_size)
+    else:
+        default_cw = get_default_context_window_size_from_provider(provider)
+        context_window_display = (
+            f"{default_cw} (default)" if default_cw else "(not set)"
+        )
+
     print()
     print("=" * 50)
     print("Configuration Info")
@@ -43,9 +54,7 @@ def _print_config_info() -> None:
     print(f"  Provider:           {provider}")
     print(f"  Base URL:           {base_url_display}")
     print(f"  API Key:            {masked_key}")
-    print(
-        f"  Context Window:     {context_window_size if context_window_size else '(not set)'}"
-    )
+    print(f"  Context Window:     {context_window_display}")
     print("=" * 50)
     print()
 

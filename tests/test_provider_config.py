@@ -16,8 +16,12 @@ import pytest
 
 import janito.config_dir as config_dir_mod
 from janito.provider_config import (
-    PROVIDER_BASE_URLS,
+    PROVIDER_INFO,
     canonical_provider_name,
+    get_base_url_from_provider,
+    get_default_context_window_size_from_provider,
+    get_default_model_from_provider,
+    get_provider_info,
     is_supported_provider,
     list_supported_providers,
     validate_provider_name,
@@ -25,13 +29,44 @@ from janito.provider_config import (
 
 if pytest is not None:
 
-    def test_supported_providers_map_to_urls():
-        # Every supported provider has an entry in the URL mapping.
+    def test_supported_providers_map_to_info():
+        # Every supported provider has a full info entry.
         providers = list_supported_providers()
         assert "openai" in providers
         assert "custom" in providers
         for name in providers:
-            assert name in PROVIDER_BASE_URLS
+            assert name in PROVIDER_INFO
+            info = PROVIDER_INFO[name]
+            # Every entry carries the full set of keys.
+            assert "default_model" in info
+            assert "default_context_window_size" in info
+            assert "endpoint" in info
+
+    def test_get_provider_info_and_base_url():
+        info = get_provider_info("minimax")
+        assert info is not None
+        assert info["endpoint"] == "https://api.minimax.io/v1"
+        # get_base_url_from_provider returns just the endpoint.
+        assert get_base_url_from_provider("minimax") == "https://api.minimax.io/v1"
+        # Standard OpenAI has no custom endpoint (None).
+        assert get_base_url_from_provider("openai") is None
+        # Case-insensitive lookups work.
+        assert get_provider_info("MiniMax")["endpoint"] == "https://api.minimax.io/v1"
+        # Unknown provider returns None everywhere.
+        assert get_provider_info("bogus") is None
+        assert get_base_url_from_provider("bogus") is None
+
+    def test_default_model_and_context_window():
+        # Providers expose built-in default models / context windows.
+        assert get_default_model_from_provider("openai") == "gpt-4"
+        assert get_default_model_from_provider("alibaba") == "qwen3.8-max-preview"
+        assert get_default_context_window_size_from_provider("openai") == 128000
+        # The "custom" provider has no built-in defaults.
+        assert get_default_model_from_provider("custom") is None
+        assert get_default_context_window_size_from_provider("custom") is None
+        # Unknown provider returns None.
+        assert get_default_model_from_provider("bogus") is None
+        assert get_default_context_window_size_from_provider("bogus") is None
 
     def test_canonical_provider_name_exact_and_case_insensitive():
         assert canonical_provider_name("openai") == "openai"

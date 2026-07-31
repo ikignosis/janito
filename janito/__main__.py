@@ -85,7 +85,7 @@ def main():
     setup_logging(args.log)
 
     # Whenever --provider <name> is used, verify it is a supported provider
-    # (i.e. one that maps to a base URL in PROVIDER_BASE_URLS). Normalize it to
+    # (i.e. one that maps to an entry in PROVIDER_INFO). Normalize it to
     # its canonical casing so every downstream consumer (config scoping,
     # runtime resolution, auth store) uses a consistent provider name.
     if getattr(args, "provider", None):

@@ -85,8 +85,10 @@ async def list_providers(request: Request):
 
     Each entry aggregates data from the existing janito modules:
 
-    * ``provider_config.PROVIDER_BASE_URLS`` — the built-in base URL (or
-      ``None`` for standard OpenAI, ``CUSTOM_ENDPOINT`` marker for "custom").
+    * ``provider_config.PROVIDER_INFO`` — the built-in per-provider defaults
+      (``endpoint``, ``default_model`` and ``default_context_window_size``).
+      ``endpoint`` is ``None`` for standard OpenAI and the ``CUSTOM_ENDPOINT``
+      marker for "custom".
     * ``general_config`` — the per-provider ``model`` and ``endpoint``
       overrides stored in ``~/.janito/config.json`` under
       ``providers.<name>.{model,endpoint}``.
@@ -102,12 +104,13 @@ async def list_providers(request: Request):
         load_endpoint_from_config,
         load_model_from_config,
     )
-    from janito.provider_config import CUSTOM_ENDPOINT_MARKER, PROVIDER_BASE_URLS
+    from janito.provider_config import CUSTOM_ENDPOINT_MARKER, PROVIDER_INFO
 
     active_provider = get_active_provider()
 
     providers = []
-    for name, built_in_url in PROVIDER_BASE_URLS.items():
+    for name, info in PROVIDER_INFO.items():
+        built_in_url = info.get("endpoint")
         # Resolve the effective base URL: a configured endpoint override
         # takes priority, otherwise the provider's built-in default.
         endpoint_override = load_endpoint_from_config(name)
@@ -125,6 +128,8 @@ async def list_providers(request: Request):
                 "name": name,
                 "base_url": base_url,
                 "model": load_model_from_config(name),
+                "default_model": info.get("default_model"),
+                "default_context_window_size": info.get("default_context_window_size"),
                 "endpoint": endpoint_override,
                 "api_key_set": bool(api_key),
                 "active": name == active_provider,

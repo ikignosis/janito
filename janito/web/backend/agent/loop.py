@@ -16,6 +16,7 @@ from janito.general_config import (
     load_context_window_size,
 )
 from janito.openai_client.client import resolve_runtime_config
+from janito.provider_config import get_default_context_window_size_from_provider
 
 from ..config import WebServerConfig
 from ..events import (
@@ -72,6 +73,11 @@ async def stream_prompt(
     tools_schemas = await resolve_tools(config, tools, use_mcp)
 
     context_window_size = load_context_window_size(get_active_provider())
+    if context_window_size is None:
+        # Fall back to the active provider's built-in default (PROVIDER_INFO).
+        context_window_size = get_default_context_window_size_from_provider(
+            get_active_provider()
+        )
     preserve_thinking = get_config_value("preserve_thinking")
 
     messages.append({"role": "user", "content": prompt})

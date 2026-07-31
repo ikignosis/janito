@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Changes since `v4.15.0` (2026-07-30).
 
+### Changed
+
+- The shell `/config` command (`janito/shell/cmds/config.py`) now displays the provider's built-in default context window (from `PROVIDER_INFO`, via `get_default_context_window_size_from_provider()`) annotated with `(default)` when the user has not configured an explicit value, instead of printing `(not set)`. It only shows `(not set)` when neither a configured value nor a provider default exists.
+- Replaced the `PROVIDER_BASE_URLS` mapping (provider → endpoint) in `janito/provider_config.py` with a richer `PROVIDER_INFO` structure. Each provider now carries `default_model`, `default_context_window_size`, and `endpoint`. Added `get_provider_info()`, `get_default_model_from_provider()`, and `get_default_context_window_size_from_provider()` helpers; `get_base_url_from_provider()` now reads the endpoint from `PROVIDER_INFO`.
+- Model and context-window resolution now fall back to the provider's built-in defaults (from `PROVIDER_INFO`) when the user has not configured a value: `resolve_runtime_config()` (CLI) and the web agent loop (`janito/web/backend/agent/loop.py`) use these defaults before applying their own hard-coded fallbacks. The `GET /api/config/providers` web endpoint (`janito/web/backend/routers/config.py`) now also returns each provider's `default_model` and `default_context_window_size`.
+
 ## [v4.15.0](https://github.com/joaopinto/janito/compare/v4.14.0...v4.15.0) - 2026-07-30
 
 Changes since `v4.14.0` (2026-07-29).
