@@ -141,6 +141,6 @@
     color: var(--text-secondary);
     font-size: 13px;
     white-space: pre-wrap;
-    max-height: 300px;
-    overflow-y: auto;
+    /* No max-height cap (issue #33): the card grows vertically to fit the
+       entire thinking content instead of clipping it behind a scrollbar. */
 }

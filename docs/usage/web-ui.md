@@ -87,7 +87,8 @@ The server prints the URL it's listening on, then opens your default browser
 ## Features
 
 - **Streaming text** — tokens appear in real time over WebSocket
-- **Reasoning / thinking panel** — collapsible `💭 Reasoning` section
+- **Reasoning / thinking panel** — collapsible `💭 Reasoning` section that grows
+  vertically to fit the entire thinking content (no height cap)
 - **Tool call cards** — tool name, arguments, permission badge
   (🟢 read / 🟡 write / 🔴 exec), live spinner, result preview, execution time
 - **Live tool output** — `report_*()` calls and subprocess stdout/stderr stream

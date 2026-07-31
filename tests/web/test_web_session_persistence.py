@@ -297,3 +297,16 @@ def test_history_reasoning_cards_start_expanded():
     # The history replay appends reasoning with `open=true`.
     assert "this._appendReasoningPart(current, msg.reasoning_content, true)" in js
     assert "msg.reasoning_content, false" not in js
+
+
+def test_reasoning_card_grows_with_content():
+    """The reasoning card has no height cap (issue #33): it expands vertically.
+
+    .reasoning-body must not constrain the thinking text with a max-height or
+    internal scrollbar, so the card grows to accommodate the entire content
+    instead of clipping it.
+    """
+    css = (FRONTEND / "css" / "messages.css").read_text(encoding="utf-8")
+    body = css.split(".reasoning-body", 1)[1].split("}", 1)[0]
+    assert "max-height:" not in body
+    assert "overflow-y:" not in body
