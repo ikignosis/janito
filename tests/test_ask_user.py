@@ -9,6 +9,8 @@ Verifies that:
 - The tool handles exceptions gracefully (success=False).
 """
 
+from contextlib import redirect_stderr
+from io import StringIO
 from unittest.mock import patch
 
 from janito.tools.system.ask_user import AskUser
@@ -64,6 +66,32 @@ class TestAskUser:
             result = AskUser().run(question="Meaning of life?")
 
         assert result["question"] == "Meaning of life?"
+
+    def test_question_printed_inside_rich_table(self):
+        """The question is rendered by rich inside a table on stderr."""
+        question = "What is the capital of France?"
+        buffer = StringIO()
+
+        with patch("builtins.input", return_value="Paris"), redirect_stderr(buffer):
+            AskUser().run(question=question)
+
+        output = buffer.getvalue()
+        assert question in output
+        # rich table frame characters (header row + question row + borders)
+        assert "Question" in output
+        assert "│" in output  # vertical border
+        assert "─" in output  # horizontal border
+
+    def test_question_inside_table_does_not_interpret_markup(self):
+        """Markup-like text in the question is shown literally, not styled."""
+        question = "Pick [bold]one[/bold] option"
+        buffer = StringIO()
+
+        with patch("builtins.input", return_value="A"), redirect_stderr(buffer):
+            AskUser().run(question=question)
+
+        output = buffer.getvalue()
+        assert "[bold]one[/bold]" in output
 
     def test_success_key_always_present(self):
         """The 'success' key is always present in the returned dict."""
