@@ -44,6 +44,13 @@ function sessionsComponent() {
             this._bootstrapped = true;
 
             await this.load();
+            // Page-load state restore (issue #36): trigger the load of ALL
+            // sessions so chat.js fetches each one's stored history from the
+            // backend and replays it into the UI. Switching tabs afterwards
+            // is instant, and conversations survive a server restart.
+            for (const s of this.sessions) {
+                window.dispatchEvent(new CustomEvent('janito-prefetch-session', { detail: s.session_id }));
+            }
             if (this.sessions.length > 0) {
                 this.select(this.sessions[0].session_id);
             } else {

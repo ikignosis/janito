@@ -15,10 +15,11 @@ window.ChatMessagesMixin = {
         m.content = m.rawContent;
     },
 
-    // Append reasoning. `open=true` for live streaming (card starts expanded),
-    // `open=false` for history (collapsed). Reasoning that arrives right
-    // after reasoning continues the same card; any other part kind in
-    // between starts a NEW reasoning card -> multiple interleaved cards.
+    // Append reasoning. `open=true` so cards start expanded both for live
+    // streaming and for history loaded from a session (loaded cards are
+    // auto-expanded too). Reasoning that arrives right after reasoning
+    // continues the same card; any other part kind in between starts a NEW
+    // reasoning card -> multiple interleaved cards.
     _appendReasoningPart(m, text, open) {
         const last = m.parts[m.parts.length - 1];
         if (last && last.kind === 'reasoning') {

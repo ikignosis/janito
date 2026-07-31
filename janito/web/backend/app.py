@@ -61,6 +61,9 @@ def create_app(config: WebServerConfig) -> FastAPI:
     # Store config + session manager on app state
     app.state.config = config
     app.state.sessions = SessionManager(config)
+    # Restore conversations persisted to .janito/sessions/ (issue #36) so
+    # they survive a server restart. No-op with --no-history.
+    app.state.sessions.load_from_disk()
 
     # Enable toolsets from CLI flags (gmail, onedrive)
     config.apply_toolsets()

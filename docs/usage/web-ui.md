@@ -80,7 +80,7 @@ The server prints the URL it's listening on, then opens your default browser
 | `-S "prompt"` | Override system prompt (implies no tools) |
 | `-Z, --no-system-prompt` | No system prompt, no tools |
 | `-v, --verbose` | Verbose backend logging |
-| `--no-history` | Don't persist session history to disk |
+| `--no-history` | Don't persist session history to disk (`./.janito/sessions/` is neither written nor read) |
 
 ---
 
@@ -95,6 +95,13 @@ The server prints the URL it's listening on, then opens your default browser
 - **Token usage bar** — total / in / out / cached after each turn
 - **Markdown rendering** — with syntax-highlighted code blocks
 - **Session management** — sidebar with conversation list, new chat, delete, rename
+- **Session persistence** — every conversation is stored to
+  `./.janito/sessions/<session_id>.jsonl` (JSON-lines: a metadata line followed
+  by one message per line, relative to the working directory) and restored when
+  the server starts, so conversations **survive a restart**. When the page
+  loads, the frontend triggers the load of *all* sessions and replays their
+  stored history into the UI, so switching tabs is instant. Pass `--no-history`
+  to disable disk persistence entirely (sessions stay in memory only).
 - **Provider switcher** — combo in the topbar lists the providers that have an
   API key set; picking one switches the provider for the **current browser /
   server session only** — it is applied to the running server (the very next
@@ -147,7 +154,8 @@ janito/web/backend/
    app.py        create_app(config) + run_web(args)  [FastAPI + uvicorn]
    agent.py      stream_prompt() — async event generator (headless agentic loop)
    events.py     TokenEvent, ToolCallEvent, ToolProgressEvent, …
-   session.py    ConversationSession + SessionManager
+   session.py    ConversationSession + SessionManager (TTL + persistence hooks)
+   session_store.py  .janito/sessions/<id>.jsonl read/write (issue #36)
    security.py   Token auth middleware + CORS
    routers/
      chat.py     WS /api/chat/ws/{session} + REST session CRUD + SSE

@@ -29,9 +29,11 @@ window.ChatHistoryMixin = {
                 // Order of parts within one assistant turn mirrors the model's
                 // actual output: reasoning -> content -> tool calls. Because a
                 // different part kind always intervenes between turns, each
-                // reasoning burst ends up as its own card.
+                // reasoning burst ends up as its own card. Cards start
+                // expanded (`open=true`) so loaded thinking is visible, just
+                // like live streaming.
                 if (msg.reasoning_content) {
-                    this._appendReasoningPart(current, msg.reasoning_content, false);
+                    this._appendReasoningPart(current, msg.reasoning_content, true);
                 }
                 if (msg.content) {
                     this._appendTextPart(current, msg.content, '\n\n');

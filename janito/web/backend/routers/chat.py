@@ -261,6 +261,7 @@ async def chat_websocket(websocket: WebSocket, session_id: str):
             msg_type = msg.get("type")
             if msg_type == "restart":
                 session.restart()
+                sessions.persist(session)  # mirror the cleared history to disk
                 await websocket.send_json({"type": "restarted"})
                 continue
             if msg_type != "prompt":
@@ -277,6 +278,9 @@ async def chat_websocket(websocket: WebSocket, session_id: str):
 
             try:
                 await _run_turn(session, websocket, content, config)
+                # Persist the finished turn (normal completion or client
+                # cancel — the latter already rolled back to the checkpoint).
+                sessions.persist(session)
             except WebSocketDisconnect:
                 raise
             except Exception as e:
@@ -284,6 +288,7 @@ async def chat_websocket(websocket: WebSocket, session_id: str):
                 # Roll back to the checkpoint so a failed turn leaves the
                 # conversation context clean for the next prompt.
                 _rollback(session)
+                sessions.persist(session)  # mirror the rolled-back history
                 await websocket.send_json(
                     {"type": "error", "message": f"Server error: {e!s}"}
                 )
@@ -337,5 +342,9 @@ async def one_shot_prompt(request: Request):
                 yield f"data: {payload}\n\n"
         except Exception as e:
             yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+        finally:
+            # Persist whatever the turn left in the conversation (success or
+            # error) so the one-shot path keeps sessions on disk too.
+            sessions.persist(session)
 
     return StreamingResponse(sse(), media_type="text/event-stream")

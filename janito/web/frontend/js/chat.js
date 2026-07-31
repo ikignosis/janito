@@ -77,6 +77,11 @@ function chatComponent() {
             window.addEventListener('janito-open-session', (e) => {
                 this.openSession(e.detail);
             });
+            // Page-load state restore: the sidebar prefetches every session's
+            // stored history (issue #36) without switching tabs.
+            window.addEventListener('janito-prefetch-session', (e) => {
+                this._prefetchSession(e.detail);
+            });
             // A session was deleted (release its socket/store unconditionally).
             window.addEventListener('janito-session-deleted', (e) => {
                 this._releaseSession(e.detail);
@@ -167,6 +172,17 @@ function chatComponent() {
             });
             window.__janitoSessionSockets.set(id, socket);
             socket.connect();
+        },
+
+        // Prefetch a session's stored history into its store (once). Used on
+        // page load to restore the state of every session (issue #36): the
+        // store is created and its messages are replayed, but the visible tab
+        // is NOT switched. Guarded by store.loaded/loading, so a later
+        // openSession() reuses the already-fetched history.
+        _prefetchSession(id) {
+            const store = this._store(id);
+            if (store.loaded || store.loading) return;
+            this._loadHistory(id);
         },
 
         // Load a session's stored history into its store (once).
