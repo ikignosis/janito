@@ -55,9 +55,16 @@ async def stream_prompt(
     # reflects the files touched while handling the *current* prompt (best
     # effort, never raises), mirroring the CLI's ``send_prompt`` behaviour.
     reset_used_files()
+    # Effective provider for this turn: a session-only override picked from
+    # the chat-page combo wins over the CLI --provider, which wins over the
+    # persisted default (config.json / auth.json).  The session override is
+    # never written to disk — see WebServerConfig.session_provider.
+    effective_provider = (
+        config.session_provider or config.provider or get_active_provider()
+    )
     try:
         base_url, api_key, model = resolve_runtime_config(
-            cli_model=config.model, cli_provider=config.provider
+            cli_model=config.model, cli_provider=effective_provider
         )
     except Exception as e:
         yield ErrorEvent(message=str(e))
@@ -72,11 +79,11 @@ async def stream_prompt(
     mcp_enabled = use_mcp
     tools_schemas = await resolve_tools(config, tools, use_mcp)
 
-    context_window_size = load_context_window_size(get_active_provider())
+    context_window_size = load_context_window_size(effective_provider)
     if context_window_size is None:
-        # Fall back to the active provider's built-in default (PROVIDER_INFO).
+        # Fall back to the provider's built-in default (PROVIDER_INFO).
         context_window_size = get_default_context_window_size_from_provider(
-            get_active_provider()
+            effective_provider
         )
     preserve_thinking = get_config_value("preserve_thinking")
 

@@ -30,12 +30,30 @@ function appComponent() {
         settingsOpen: false,
         mcpOpen: false,
         theme: 'light',          // 'light' | 'dark' — synced to <html data-theme>
+        toast: null,             // { kind: 'ok'|'error', text } while shown
+        _toastTimer: null,
 
         init() {
             // Pick up whatever the pre-paint script (or the absence of it) set.
             this.theme = document.documentElement.getAttribute('data-theme') === 'dark'
                 ? 'dark'
                 : 'light';
+
+            // Transient notifications broadcast by nested components
+            // (e.g. the provider switcher).  The toast element lives at the
+            // root of this component (bottom of index.html).
+            window.addEventListener('janito-toast', (e) => this.showToast(e.detail));
+        },
+
+        showToast(detail) {
+            const kind = (detail && detail.kind) || 'ok';
+            const text = (detail && detail.text) || '';
+            if (this._toastTimer) clearTimeout(this._toastTimer);
+            this.toast = { kind, text };
+            this._toastTimer = setTimeout(() => {
+                this.toast = null;
+                this._toastTimer = null;
+            }, 3000);
         },
 
         setTheme(theme) {

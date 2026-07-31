@@ -95,6 +95,13 @@ The server prints the URL it's listening on, then opens your default browser
 - **Token usage bar** — total / in / out / cached after each turn
 - **Markdown rendering** — with syntax-highlighted code blocks
 - **Session management** — sidebar with conversation list, new chat, delete, rename
+- **Provider switcher** — combo in the topbar lists the providers that have an
+  API key set; picking one switches the provider for the **current browser /
+  server session only** — it is applied to the running server (the very next
+  prompt uses it, no restart needed) but is **not** persisted to
+  `~/.janito/config.json`, so it does not leak into future CLI/web runs and is
+  lost when the server restarts. To make a provider the permanent default, use
+  the Settings drawer's "Set Default" button instead.
 - **Settings drawer** — change model / thinking / verbose at runtime (PATCH)
 - **MCP dashboard** — see connected services, connect/disconnect
 - **Status bar** — model, provider, active CLI flags, connection state, tokens
@@ -153,7 +160,7 @@ openai_client • tooling/* • tools/* • mcp_manager • general_config • �
 
 janito/web/frontend/   (Alpine.js — no build step)
    index.html • css/theme.css • js/{app,chat,chatCommands,websocket,sessions,
-   settings,mcp,statusBar,markdown,api}.js
+   settings,mcp,statusBar,providerSwitcher,markdown,api}.js
 ```
 
 ### API Endpoints
@@ -170,8 +177,11 @@ janito/web/frontend/   (Alpine.js — no build step)
 | `POST` | `/api/chat/prompt` | One-shot SSE streaming |
 | `GET` | `/api/config` | Runtime config |
 | `PATCH` | `/api/config` | Update mutable config |
-| `GET` | `/api/config/providers` | Supported providers |
+| `GET` | `/api/config/providers` | Supported providers (incl. `api_key_set`, `active`, `effective`) |
 | `GET` | `/api/config/status` | API key status, provider, privileges |
+| `POST` | `/api/config/session-provider` | Switch provider for this session only (in memory; not persisted) |
+| `POST` | `/api/config/default-provider` | Promote a provider to the persisted default (requires an API key) |
+| `POST` | `/api/config/api-key` | Store an API key for a provider |
 | `GET` | `/api/config/cli` | CLI args the server started with |
 | `GET` | `/api/tools` | Loaded tools + schemas + permissions |
 | `GET` | `/api/tools/skipped` | Skipped tools + reasons |

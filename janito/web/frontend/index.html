@@ -45,6 +45,7 @@
     <script src="/js/settings.js"></script>
     <script src="/js/mcp.js"></script>
     <script src="/js/statusBar.js"></script>
+    <script src="/js/providerSwitcher.js"></script>
     <script src="/js/app.js"></script>
 </head>
 <body>
@@ -96,6 +97,30 @@
                 <span class="topbar-title">Janito Web</span>
             </div>
             <div class="topbar-actions">
+
+                <!-- Provider combo (issue #34): lists the providers that
+                     have an API key set; picking one switches the provider
+                     for this browser/server session only (in memory) — it
+                     applies to the very next prompt but is NOT persisted to
+                     ~/.janito/config.json. -->
+                <div class="provider-switcher" x-data="providerSwitcherComponent()">
+                    <span class="ps-bolt" aria-hidden="true" :class="{ swapping: busy }">⚡</span>
+                    <select class="provider-combo"
+                            x-model="selected"
+                            @change="applyProvider()"
+                            :disabled="busy"
+                            :class="{ swapping: busy }"
+                            :title="'Active provider: ' + selected + (selectedModel ? ' · ' + selectedModel : '')">
+                        <template x-for="p in available" :key="p.name">
+                            <option :value="p.name"
+                                    :disabled="!p.api_key_set"
+                                    x-text="p.name + (p.api_key_set ? '' : ' · no key')"></option>
+                        </template>
+                    </select>
+                    <span class="ps-caret" aria-hidden="true">▾</span>
+                    <span class="ps-spinner" x-show="busy" aria-hidden="true"></span>
+                </div>
+
                 <button class="theme-toggle" @click="toggleTheme()"
                         :title="theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
                         :aria-label="theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'">
@@ -655,6 +680,17 @@
             </div>
         </div>
     </template>
+
+    <!-- ============ Toast (transient notifications) ============
+         Kept mounted (x-show, not x-if) so the fade-out transition can
+         complete before the message is cleared. -->
+    <div class="toast"
+         :class="toast ? toast.kind : ''"
+         x-show="!!toast"
+         x-transition.opacity.duration.200ms
+         role="status"
+         x-text="toast ? toast.text : ''"
+         aria-live="polite"></div>
 
 </div>
 

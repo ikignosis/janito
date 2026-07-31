@@ -11,6 +11,8 @@ function statusBarComponent() {
             this.load();
             // Refresh when config changes from the settings panel
             window.addEventListener('config-updated', () => this.load());
+            // Refresh when the provider is switched from the chat-page combo
+            window.addEventListener('janito-provider-changed', () => this.load());
             // Connection state broadcast from the chat component
             window.addEventListener('janito-connection', (e) => {
                 this.connection = e.detail;
@@ -31,7 +33,15 @@ function statusBarComponent() {
         },
 
         get provider() {
-            return this.status.active_provider || this.config.provider || '?';
+            // ``status.provider`` is the *effective* provider — the one the
+            // next prompt uses (a session-only combo override wins over the
+            // persisted default, which lives in ``active_provider``).
+            return (
+                this.status.provider ||
+                this.status.active_provider ||
+                this.config.provider ||
+                '?'
+            );
         },
 
         // Effective model name, or null when nothing is configured yet

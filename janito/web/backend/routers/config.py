@@ -95,8 +95,11 @@ async def list_providers(request: Request):
     * ``auth_config.get_api_key()`` — whether an API key exists for the
       provider in ``~/.janito/auth.json`` (the key itself is never sent;
       only ``api_key_set: bool``).
-    * ``general_config.get_active_provider()`` — the currently active
+    * ``general_config.get_active_provider()`` — the persisted default
       provider (``active: true`` on that entry).
+    * ``config.session_provider`` — a session-only override picked from the
+      chat-page combo (never written to disk); the provider that the next
+      prompt actually uses is flagged ``effective: true``.
     """
     from janito.auth_config import get_api_key
     from janito.general_config import (
@@ -106,7 +109,12 @@ async def list_providers(request: Request):
     )
     from janito.provider_config import CUSTOM_ENDPOINT_MARKER, PROVIDER_INFO
 
+    config = _get_config(request)
     active_provider = get_active_provider()
+    session_provider = config.session_provider
+    # The provider the next prompt resolves to: the session override wins
+    # over the persisted default.
+    effective_provider = session_provider or active_provider
 
     providers = []
     for name, info in PROVIDER_INFO.items():
@@ -133,10 +141,73 @@ async def list_providers(request: Request):
                 "endpoint": endpoint_override,
                 "api_key_set": bool(api_key),
                 "active": name == active_provider,
+                "effective": name == effective_provider,
             }
         )
 
-    return {"providers": providers}
+    return {"providers": providers, "session_provider": session_provider}
+
+
+@router.post("/session-provider")
+async def set_session_provider(request: Request):
+    """Switch the provider for this browser/server session only.
+
+    Triggered by the chat-page topbar combo: the chosen provider becomes the
+    one used by the next prompt, but the change is kept **in memory only** —
+    ``~/.janito/config.json`` is left untouched, so it does not leak into
+    future CLI or web runs and is lost when the server restarts.  (The
+    Settings drawer's explicit "Set Default" button is the persisting
+    counterpart and still uses ``POST /api/config/default-provider``.)
+
+    A provider without an API key stored in ``~/.janito/auth.json`` is
+    rejected with ``400`` — switching to it would only make the next prompt
+    fail with an authentication error.  The combo relies on this guard (it
+    lists exactly the providers with a key set).
+    """
+    from janito.auth_config import get_api_key
+    from janito.general_config import load_model_from_config
+    from janito.provider_config import validate_provider_name
+
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"detail": "Invalid JSON"}, status_code=400)
+
+    raw = str(body.get("provider") or "").strip()
+    if not raw:
+        return JSONResponse({"detail": "Missing 'provider'"}, status_code=400)
+
+    try:
+        provider = validate_provider_name(raw)
+    except ValueError as e:
+        return JSONResponse({"detail": str(e)}, status_code=400)
+
+    if not get_api_key(provider):
+        return JSONResponse(
+            {
+                "detail": (
+                    f"No API key is set for provider '{provider}'. "
+                    "Set one first (Settings → Set API Key, or the CLI's "
+                    "--set-api-key) before switching to it."
+                )
+            },
+            status_code=400,
+        )
+
+    # In-memory only: nothing is written to ~/.janito/config.json here.
+    # Adopt the new provider's configured model too — keeping a model that
+    # belongs to the previous provider would make the next API call fail.
+    config = _get_config(request)
+    config.session_provider = provider
+    try:
+        config.model = load_model_from_config(provider)
+    except Exception:
+        config.model = None
+
+    logger.info(
+        f"Session provider set to '{provider}' (model: {config.model}, not persisted)"
+    )
+    return {"provider": provider, "model": config.model, "persisted": False}
 
 
 @router.post("/default-provider")
@@ -147,7 +218,13 @@ async def set_default_provider(request: Request):
     to the config file so future CLI *and* web runs pick it up, and it is
     also mirrored into this running server's config so the next prompt
     resolves the new provider without a restart.
+
+    A provider without an API key stored in ``~/.janito/auth.json`` is
+    rejected with ``400``: promoting it would only make the next prompt fail
+    with an authentication error.  The web UI's provider lists rely on this
+    guard (they list exactly the providers with a key set).
     """
+    from janito.auth_config import get_api_key
     from janito.general_config import load_model_from_config, set_config_value
     from janito.provider_config import validate_provider_name
 
@@ -165,6 +242,18 @@ async def set_default_provider(request: Request):
     except ValueError as e:
         return JSONResponse({"detail": str(e)}, status_code=400)
 
+    if not get_api_key(provider):
+        return JSONResponse(
+            {
+                "detail": (
+                    f"No API key is set for provider '{provider}'. "
+                    "Set one first (Settings → Set API Key, or the CLI's "
+                    "--set-api-key) before making it the default."
+                )
+            },
+            status_code=400,
+        )
+
     # Persist as the default for all future runs.
     set_config_value("provider", provider)
 
@@ -173,8 +262,10 @@ async def set_default_provider(request: Request):
     # a model that belongs to the previous provider would make the next API
     # call fail.  (An explicitly pinned --model was already baked into
     # config.model at startup; runtime overrides via PATCH /api/config are
-    # intentionally replaced here.)
+    # intentionally replaced here.)  Clear any transient session override so
+    # the freshly persisted default is what's actually in use.
     config = _get_config(request)
+    config.session_provider = None
     config.provider = provider
     try:
         config.model = load_model_from_config(provider)
@@ -252,7 +343,10 @@ async def get_status(request: Request, provider: str | None = None):
     config = _get_config(request)
     active = get_active_provider()
 
-    target = active
+    # By default describe the *effective* provider — a session override from
+    # the chat-page combo wins over the persisted default.  ``active_provider``
+    # keeps reporting the true persisted default either way.
+    target = config.session_provider or active
     if provider:
         try:
             target = validate_provider_name(provider)

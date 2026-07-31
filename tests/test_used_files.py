@@ -255,6 +255,7 @@ if pytest is not None:
         class _Cfg:
             model = None
             provider = None
+            session_provider = None
 
         async def _drain():
             events = []

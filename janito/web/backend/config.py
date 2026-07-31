@@ -36,6 +36,13 @@ class WebServerConfig:
     provider: str | None = None  # args.provider
     model: str | None = None  # args.model (or from provider config)
 
+    # Session-only provider override set from the chat-page topbar combo.
+    # Unlike ``provider`` (which mirrors the persisted default), this is
+    # never written to ``~/.janito/config.json``: it only affects this
+    # running server and is lost on restart.  ``None`` means "no override"
+    # (fall back to the persisted/default provider).
+    session_provider: str | None = None
+
     # --- Session defaults (from CLI flags) ---
     thinking: bool = False  # -t / --thinking
     verbose: bool = False  # -v / --verbose

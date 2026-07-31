@@ -36,7 +36,10 @@ function settingsComponent() {
                 const data = await Api.getProviders();
                 this.providers = data.providers || [];
                 this.model = this.config.model || '';
+                // Default the combo to the provider actually in use (a
+                // session-only override wins over the persisted default).
                 this.selectedProvider =
+                    (this.providers.find((p) => p.effective) || {}).name ||
                     this.config.provider ||
                     (this.providers.find((p) => p.active) || {}).name ||
                     '';
@@ -118,12 +121,21 @@ function settingsComponent() {
                 const p = this.providers.find((x) => x.name === data.provider);
                 this.providers.forEach((x) => { x.active = x === p; });
                 if (p) p.model = data.model || p.model;
-                // Reflect the new default into the status bar.
+                // Reflect the new default into the status bar and the
+                // chat-page provider combo.
                 if (this.$dispatch) {
                     this.$dispatch('config-updated', { provider: data.provider });
+                    this.$dispatch('janito-provider-changed', {
+                        provider: data.provider,
+                        model: data.model,
+                    });
                 }
                 this._announce(`Set default: ${data.provider}`);
             } catch (e) {
+                // The server may have rejected the switch (e.g. the provider
+                // has no API key): re-read the providers so the combo and the
+                // drawer agree on the true default again.
+                window.dispatchEvent(new CustomEvent('config-updated'));
                 this.message = 'Set default failed: ' + e.message;
             } finally {
                 this.settingDefault = false;

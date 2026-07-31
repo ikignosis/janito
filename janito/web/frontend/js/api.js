@@ -47,6 +47,11 @@ const Api = {
     setDefaultProvider(name) {
         return this.post('/api/config/default-provider', { provider: name });
     },
+    // Session-only switch used by the topbar combo: in-memory on the server,
+    // never written to ~/.janito/config.json (unlike setDefaultProvider).
+    setSessionProvider(name) {
+        return this.post('/api/config/session-provider', { provider: name });
+    },
     setApiKey(provider, apiKey) {
         return this.post('/api/config/api-key', { provider, api_key: apiKey });
     },

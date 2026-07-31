@@ -175,3 +175,58 @@ html[data-theme="dark"] .theme-icon.moon  { color: var(--accent); opacity: 1; }
 }
 .theme-knob.dark { transform: translateX(28px); }
 .theme-toggle:active .theme-knob { scale: 0.85; }
+
+/* Provider switcher combo — pick the provider right from the chat page
+   (issue #34).  Lists the providers with an API key set; the selection is
+   promoted to the default via POST /api/config/default-provider. */
+.provider-switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius);
+    padding: 5px 8px 5px 10px;
+    margin-right: 4px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.provider-switcher:hover { border-color: var(--accent); }
+.provider-switcher:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--ring);
+}
+
+.ps-bolt { font-size: 13px; line-height: 1; }
+.ps-bolt.swapping { opacity: 0.4; }
+
+.provider-combo {
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    max-width: 180px;
+    padding-right: 2px;
+}
+.provider-combo:disabled { cursor: not-allowed; opacity: 0.6; }
+.provider-combo option { background: var(--bg-secondary); color: var(--text-primary); }
+
+.ps-caret {
+    font-size: 10px;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+.ps-spinner {
+    width: 11px;
+    height: 11px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;  /* keyframes defined in tools.css */
+}

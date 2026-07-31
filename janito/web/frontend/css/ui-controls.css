@@ -79,3 +79,23 @@
 .conn-dot.connected { background: var(--green); }
 .conn-dot.disconnected { background: var(--red); }
 .conn-dot.connecting { background: var(--yellow); }
+
+/* Toast — transient notification (provider switched, errors, …).
+   Rendered at the root of the app component; visibility is driven by
+   x-show + a 3s auto-clear in app.js. */
+.toast {
+    position: fixed;
+    right: 22px;
+    bottom: 64px;  /* clear the status bar */
+    z-index: 300;
+    max-width: min(420px, 80vw);
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--green);
+    color: var(--text-primary);
+    font-size: 13.5px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+    pointer-events: none;
+}
+.toast.error { border-color: var(--red); }
