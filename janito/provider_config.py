@@ -67,6 +67,11 @@ PROVIDER_INFO: dict[str, dict] = {
         "default_context_window_size": 1000000,  # 1M
         "endpoint": "https://api.z.ai/api/paas/v4/",
     },
+    "deepseek": {
+        "default_model": "deepseek-v4-flash",
+        "default_context_window_size": 393216,  # 384k
+        "endpoint": "https://api.deepseek.com",
+    },
     "xai": {
         "default_model": "grok-4",
         "default_context_window_size": 131072,

@@ -56,6 +56,18 @@ if pytest is not None:
         assert get_provider_info("bogus") is None
         assert get_base_url_from_provider("bogus") is None
 
+    def test_deepseek_provider():
+        info = get_provider_info("deepseek")
+        assert info is not None
+        assert info["default_model"] == "deepseek-v4-flash"
+        assert info["default_context_window_size"] == 393216
+        assert info["endpoint"] == "https://api.deepseek.com"
+        # Case-insensitive lookup.
+        assert get_provider_info("DeepSeek")["endpoint"] == "https://api.deepseek.com"
+        assert get_base_url_from_provider("deepseek") == "https://api.deepseek.com"
+        assert get_default_model_from_provider("deepseek") == "deepseek-v4-flash"
+        assert get_default_context_window_size_from_provider("deepseek") == 393216
+
     def test_default_model_and_context_window():
         # Providers expose built-in default models / context windows.
         assert get_default_model_from_provider("openai") == "gpt-4"

@@ -36,6 +36,7 @@ class InteractiveShell:
         model: str,
         commands: list["CmdHandler"] | None = None,
         no_history: bool = False,
+        provider: str | None = None,
     ):
         """
         Initialize the interactive shell.
@@ -44,8 +45,12 @@ class InteractiveShell:
             model: The model name to display in the prompt
             commands: List of command handlers (auto-loaded if not provided)
             no_history: If True, use in-memory history only (no file persistence)
+            provider: The provider name in effect for this session (e.g. from
+                ``--provider``). When set, the status bar reports it; otherwise
+                it falls back to the configured default provider.
         """
         self.model = model
+        self.provider = provider
         self.no_history = no_history
         # Conversation messages (role/content dicts) passed to the AI as
         # context
@@ -88,7 +93,7 @@ class InteractiveShell:
         try:
             from janito.general_config import get_active_provider
 
-            provider = get_active_provider()
+            provider = self.provider or get_active_provider()
             if provider:
                 tokens.append(("", " │ "))
                 tokens.append(("class:provider", f" provider: {provider} "))

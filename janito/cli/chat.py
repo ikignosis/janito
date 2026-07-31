@@ -90,7 +90,11 @@ def run_interactive_chat(args):
         effective_system_prompt = get_system_prompt_with_skills()
         no_tools = False
 
-    shell = InteractiveShell(model=model, no_history=args.no_history)
+    shell = InteractiveShell(
+        model=model,
+        no_history=args.no_history,
+        provider=cli_provider,
+    )
     shell.initialize_history(system_prompt=effective_system_prompt)
     shell.run(
         send_prompt_func=send_prompt_func,

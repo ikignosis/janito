@@ -8,12 +8,17 @@ from janito.shell.cmds.config import _print_config_info
 class TestPrintConfigInfo:
     """Tests for _print_config_info context-window display logic."""
 
-    def _run(self, capsys, provider="openai", configured_cw=None, default_cw=128000):
-        """Helper: patch config lookups and capture printed output."""
+    def _run(self, capsys, provider=None, configured_cw=None, default_cw=128000):
+        """Helper: patch config lookups and capture printed output.
+
+        Args:
+            provider: The session provider to pass to ``_print_config_info``.
+                When None, the (patched) configured default is used.
+        """
         with (
             patch(
                 "janito.shell.cmds.config.get_active_provider",
-                return_value=provider,
+                return_value="openai",
             ),
             patch(
                 "janito.shell.cmds.config.get_api_key",
@@ -36,7 +41,7 @@ class TestPrintConfigInfo:
                 return_value=default_cw,
             ),
         ):
-            _print_config_info()
+            _print_config_info(provider)
         return capsys.readouterr().out
 
     def test_explicit_context_window_shown_as_is(self, capsys):
@@ -54,3 +59,10 @@ class TestPrintConfigInfo:
         """When neither configured nor a provider default exists, show '(not set)'."""
         out = self._run(capsys, configured_cw=None, default_cw=None)
         assert "Context Window:     (not set)" in out
+
+    def test_session_provider_wins_over_configured_default(self, capsys):
+        """An explicit session provider (e.g. --provider deepseek) is reported."""
+        out = self._run(capsys, provider="deepseek")
+        assert "Provider:           deepseek" in out
+        # The configured default ('openai') must not be shown instead.
+        assert "Provider:           openai" not in out

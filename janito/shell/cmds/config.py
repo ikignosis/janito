@@ -17,9 +17,16 @@ from .base import CmdHandler
 from .registry import register_command
 
 
-def _print_config_info() -> None:
-    """Print current configuration info (provider, base_url, masked API key, context window size)."""
-    provider = get_active_provider()
+def _print_config_info(provider: str | None = None) -> None:
+    """Print current configuration info (provider, base_url, masked API key, context window size).
+
+    Args:
+        provider: The provider in effect for the current shell session (e.g.
+            from ``--provider``). When None, falls back to the configured
+            default provider.
+    """
+    if provider is None:
+        provider = get_active_provider()
     api_key = get_api_key(provider) or ""
     masked_key = get_masked_api_key(api_key)
     context_window_size = load_context_window_size(provider)
@@ -69,7 +76,7 @@ class ConfigCmdHandler(CmdHandler):
     def handle(self, shell, user_input: str) -> bool:
         """Handle the /config command."""
         if user_input.lower() == self.name.lower():
-            _print_config_info()
+            _print_config_info(getattr(shell, "provider", None))
             return True
         return False
 
