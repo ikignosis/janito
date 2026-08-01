@@ -111,8 +111,14 @@ The server prints the URL it's listening on, then opens your default browser
   prompt uses it, no restart needed) but is **not** persisted to
   `~/.janito/config.json`, so it does not leak into future CLI/web runs and is
   lost when the server restarts. To make a provider the permanent default, use
-  the Settings drawer's "Set Default" button instead.
-- **Settings drawer** — change model / thinking / verbose at runtime (PATCH)
+  the Settings drawer's "Set Default" button and then Save.
+- **Settings drawer** — edit the model at runtime and manage providers/API
+  keys. Nothing is written until the **Save** button is clicked: the Model
+  field, a provider promoted via "Set Default", and a key entered via
+  "Set API Key" are all *staged* (dirty) changes that arm the Save button
+  (shown with yellow "pending" badges/notes); a single Save click persists
+  them together and disables Save again. Closing the drawer discards staged
+  changes.
 - **MCP dashboard** — see connected services, connect/disconnect
 - **Status bar** — model, provider, active CLI flags, connection state, tokens
 - **`/tools` command** — typing `/tools` in the chat input renders a formatted,

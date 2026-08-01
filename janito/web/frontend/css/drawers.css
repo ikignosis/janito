@@ -131,6 +131,31 @@ input.key-unset { color: var(--text-muted); font-style: italic; }
     border-color: color-mix(in srgb, var(--yellow) 45%, transparent);
 }
 
+/* Staged (unsaved) change notes — "Set Default" and "Set API Key" mark the
+   drawer dirty and are only persisted when the drawer's Save button is
+   clicked, so the pending state is surfaced until then. */
+.provider-pending-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    color: var(--yellow);
+    background: color-mix(in srgb, var(--yellow) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--yellow) 45%, transparent);
+    font-weight: 600;
+    animation: provider-confirm-in 0.2s ease-out;
+}
+.pending-note {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--yellow);
+    background: color-mix(in srgb, var(--yellow) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--yellow) 30%, transparent);
+    border-radius: var(--radius);
+    padding: 6px 10px;
+    animation: provider-confirm-in 0.2s ease-out;
+}
+.pending-note strong { font-family: var(--font-mono); font-weight: 600; }
+
 /* ---- Centered modal ("Set API Key") ---- */
 .modal-overlay {
     position: fixed;

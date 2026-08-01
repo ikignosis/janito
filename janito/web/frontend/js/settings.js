@@ -7,16 +7,24 @@ function settingsComponent() {
         status: {},
         providers: [],
         model: '',
+        // Pristine baseline the drawer loaded with: the Save button stays
+        // disabled until the drawer holds unsaved changes (issue #38).
+        originalModel: '',
+        // Staged (unsaved) changes. "Set Default" and "Set API Key" no
+        // longer write to disk the moment they are clicked — they arm the
+        // Save button, and the changes are persisted only when it is
+        // clicked (POST /api/config/default-provider, /api/config/api-key).
+        defaultChanged: false,
+        pendingDefaultProvider: null,   // provider staged to become the default
+        pendingApiKey: null,            // { provider, key } staged API key
         selectedProvider: '',
         saving: false,
-        settingDefault: false,
         message: null,
 
         // "Set API Key" modal state
         keyModalOpen: false,
         keyInput: '',
         keyReveal: false,
-        keySaving: false,
         keyError: null,
 
         async toggle() {
@@ -43,6 +51,13 @@ function settingsComponent() {
                     this.config.provider ||
                     (this.providers.find((p) => p.active) || {}).name ||
                     '';
+                // Record the pristine baseline: nothing to save yet, so the
+                // Save button starts (and stays) disabled until the model
+                // changes, a default is staged, or an API key is staged.
+                this.originalModel = this.model;
+                this.defaultChanged = false;
+                this.pendingDefaultProvider = null;
+                this.pendingApiKey = null;
                 this.status = await Api.getStatus(this.selectedProvider);
             } catch (e) {
                 this.message = 'Failed to load settings: ' + e.message;
@@ -91,55 +106,77 @@ function settingsComponent() {
             );
         },
 
-        // Transient confirmation shown after Set Default / Set API Key
-        // succeed.  (Note the trailing colon — "…failed:" errors must NOT
-        // render in the green confirmation style.)
+        // True while the combo shows the provider staged to become the
+        // default (drives the "default pending" badge + Cancel button).
+        get isStagedProviderSelected() {
+            return (
+                !!this.pendingDefaultProvider &&
+                this.pendingDefaultProvider === this.selectedProvider
+            );
+        },
+
+        // True while the selected provider has an API key stored, so it can
+        // actually be promoted to the default (mirrors the backend guard:
+        // saving without a key would be rejected with 400).
+        get selectedProviderHasKey() {
+            return !!(
+                this.selectedProviderDetail && this.selectedProviderDetail.api_key_set
+            );
+        },
+
+        // True while an API key is staged but not yet written to auth.json.
+        get apiKeyChanged() {
+            return !!this.pendingApiKey;
+        },
+
+        // True while the drawer holds unsaved changes: the model field
+        // differs from the value it loaded with, a different provider was
+        // staged as the default, or an API key was staged.  The Save button
+        // is disabled until one of these happens (issue #38).
+        get canSave() {
+            return (
+                this.model !== this.originalModel ||
+                this.defaultChanged ||
+                this.apiKeyChanged
+            );
+        },
+
+        // Transient confirmation shown after a successful save.  (Note the
+        // trailing colon — "…failed:" errors must NOT render in the green
+        // confirmation style.)
         get hintMessage() {
-            const confirmPrefixes = ['Set default:', 'API key updated:'];
+            const confirmPrefixes = ['Saved:'];
             return this.message &&
                 confirmPrefixes.some((p) => this.message.startsWith(p))
                 ? this.message
                 : null;
         },
 
-        // Auto-expiring inline feedback (same behaviour as save()).
-        _announce(text) {
-            this.message = text;
-            setTimeout(() => {
-                if (this.message === text) this.message = null;
-            }, 2500);
+        // Stage the selected provider as the new default.  Nothing is
+        // written to ~/.janito/config.json here — the Save button persists
+        // it (POST /api/config/default-provider) and re-baselines the
+        // drawer, so the next prompt uses it — no restart needed.
+        setDefaultProvider() {
+            const p = this.selectedProviderDetail;
+            if (!p) return;
+            if (!p.api_key_set) {
+                this.message = 'Set default failed: no API key is set for this provider.';
+                return;
+            }
+            // A different provider is now staged as the default: the drawer
+            // holds unsaved changes, so arm the Save button.  Also adopt the
+            // provider's configured model into the field so it stays in sync
+            // with what the next prompt would use once saved.
+            this.pendingDefaultProvider = p.name;
+            this.defaultChanged = true;
+            this.model = p.model || this.model;
         },
 
-        // Promote the selected provider to the default: persisted to
-        // ~/.janito/config.json and applied to this running server, so the
-        // next prompt already uses it — no restart needed.
-        async setDefaultProvider() {
-            if (this.settingDefault) return;
-            this.settingDefault = true;
-            try {
-                const data = await Api.setDefaultProvider(this.selectedProvider);
-                const p = this.providers.find((x) => x.name === data.provider);
-                this.providers.forEach((x) => { x.active = x === p; });
-                if (p) p.model = data.model || p.model;
-                // Reflect the new default into the status bar and the
-                // chat-page provider combo.
-                if (this.$dispatch) {
-                    this.$dispatch('config-updated', { provider: data.provider });
-                    this.$dispatch('janito-provider-changed', {
-                        provider: data.provider,
-                        model: data.model,
-                    });
-                }
-                this._announce(`Set default: ${data.provider}`);
-            } catch (e) {
-                // The server may have rejected the switch (e.g. the provider
-                // has no API key): re-read the providers so the combo and the
-                // drawer agree on the true default again.
-                window.dispatchEvent(new CustomEvent('config-updated'));
-                this.message = 'Set default failed: ' + e.message;
-            } finally {
-                this.settingDefault = false;
-            }
+        // Discard a staged default-provider change (the drawer stays open;
+        // nothing was written to disk yet).
+        unstageDefault() {
+            this.pendingDefaultProvider = null;
+            this.defaultChanged = false;
         },
 
         // ---- "Set API Key" modal ----------------------------------------
@@ -158,52 +195,86 @@ function settingsComponent() {
         },
 
         closeKeyModal() {
-            if (this.keySaving) return;
             this.keyModalOpen = false;
             this.keyError = null;
             this.keyInput = '';
         },
 
-        // Persist the typed key for the selected provider.  The backend
-        // writes it to ~/.janito/auth.json; the OpenAI client resolves the
-        // key per call, so it applies to the very next prompt — no restart.
-        async saveApiKey() {
-            if (this.keySaving) return;
+        // Stage the typed key for the selected provider.  Nothing is written
+        // to ~/.janito/auth.json here — the Save button persists it
+        // (POST /api/config/api-key) and re-baselines the drawer.
+        saveApiKey() {
             const key = this.keyInput.trim();
             if (!key) {
                 this.keyError = 'Please paste an API key first.';
                 return;
             }
-            this.keySaving = true;
-            this.keyError = null;
-            try {
-                const data = await Api.setApiKey(this.selectedProvider, key);
-                // Refresh the masked value + per-provider "key set" flags.
-                await this.load();
-                this.keyModalOpen = false;
-                this.keyInput = '';
-                this._announce(`API key updated: ${data.provider}`);
-            } catch (e) {
-                this.keyError = 'Failed to save the key: ' + e.message;
-            } finally {
-                this.keySaving = false;
-            }
+            this.pendingApiKey = { provider: this.selectedProvider, key };
+            this.keyModalOpen = false;
+            this.keyInput = '';
         },
 
+        // Persist every staged/edited change with one Save click: the model
+        // override, the staged default provider, and the staged API key.
         async save() {
             this.saving = true;
             this.message = null;
             try {
-                const updated = await Api.patchConfig({
-                    model: this.model,
-                });
-                this.message = 'Saved: ' + Object.keys(updated.updated).join(', ');
-                // Reflect into the status bar / root config
-                if (this.$dispatch) {
-                    this.$dispatch('config-updated', updated.updated);
+                const saved = [];
+
+                // 1. Promote the staged provider to the persisted default
+                //    first, so the model override below lands on the
+                //    provider being defaulted.
+                if (this.defaultChanged && this.pendingDefaultProvider) {
+                    const data = await Api.setDefaultProvider(this.pendingDefaultProvider);
+                    saved.push(`default: ${data.provider}`);
                 }
+
+                // 2. Persist the model override (if the field changed).
+                if (this.model !== this.originalModel) {
+                    const updated = await Api.patchConfig({ model: this.model });
+                    saved.push(...Object.keys(updated.updated));
+                }
+
+                // 3. Store the staged API key (per-provider; independent of
+                //    the default-provider change above).
+                if (this.pendingApiKey) {
+                    await Api.setApiKey(this.pendingApiKey.provider, this.pendingApiKey.key);
+                    saved.push(`api key: ${this.pendingApiKey.provider}`);
+                }
+
+                // Reflect into the status bar / root config.
+                if (this.$dispatch) {
+                    this.$dispatch('config-updated', {
+                        provider: this.pendingDefaultProvider,
+                    });
+                    this.$dispatch('janito-provider-changed', {
+                        provider: this.pendingDefaultProvider,
+                        model: this.model,
+                    });
+                }
+
+                // Re-read the server state (new default, key status) so the
+                // drawer, combo and status bar all agree again.
+                try {
+                    await this.load();
+                } catch (e) {
+                    // Non-fatal: keep the saved confirmation.
+                }
+
+                // The drawer is pristine again: disable the Save button until
+                // the next edit, default stage, or key stage.
+                this.originalModel = this.model;
+                this.defaultChanged = false;
+                this.pendingDefaultProvider = null;
+                this.pendingApiKey = null;
+                this.message = 'Saved: ' + saved.join(', ');
                 setTimeout(() => { this.message = null; }, 2500);
             } catch (e) {
+                // The server may have rejected (or partially applied) the
+                // changes: re-read the providers so the drawer and the
+                // server agree on the true state again.
+                window.dispatchEvent(new CustomEvent('config-updated'));
                 this.message = 'Save failed: ' + e.message;
             } finally {
                 this.saving = false;

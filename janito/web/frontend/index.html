@@ -499,7 +499,7 @@
             <div class="drawer">
                 <h2>⚙ Settings</h2>
 
-                <template x-if="message">
+                <template x-if="message && !hintMessage">
                     <div class="warning-text" x-text="message"></div>
                 </template>
 
@@ -512,21 +512,33 @@
                         </template>
                     </select>
                     <div class="provider-hint">
-                        <span x-show="selectedProviderDetail && selectedProviderDetail.active"
+                        <span x-show="selectedProviderDetail && selectedProviderDetail.active && !isStagedProviderSelected"
                               class="provider-active-badge">default</span>
-                        <span x-show="selectedProviderDetail && !selectedProviderDetail.active"
+                        <span x-show="selectedProviderDetail && !selectedProviderDetail.active && !isStagedProviderSelected"
                               class="hint-muted">not the default provider</span>
+                        <span x-show="isStagedProviderSelected"
+                              class="provider-pending-badge">default pending</span>
                         <button class="btn set-default-btn"
-                                x-show="showSetDefault"
+                                x-show="showSetDefault && !isStagedProviderSelected"
                                 @click="setDefaultProvider()"
-                                :disabled="settingDefault"
-                                title="Make this the default provider">
-                            <span class="spinner" x-show="settingDefault"></span>
-                            <span x-text="settingDefault ? 'Setting…' : 'Set Default'"></span>
+                                :disabled="!selectedProviderHasKey"
+                                title="Stage this provider as the default — saved with Save">
+                            Set Default
+                        </button>
+                        <button class="btn set-default-btn"
+                                x-show="isStagedProviderSelected"
+                                @click="unstageDefault()"
+                                title="Discard the pending default change">
+                            Cancel
                         </button>
                     </div>
                     <template x-if="hintMessage">
                         <div class="provider-confirm" x-text="hintMessage"></div>
+                    </template>
+                    <template x-if="defaultChanged && !isStagedProviderSelected">
+                        <div class="pending-note">
+                            Default change pending: <strong x-text="pendingDefaultProvider"></strong> — will be saved with Save.
+                        </div>
                     </template>
                 </div>
 
@@ -555,10 +567,17 @@
                         <span x-show="selectedProviderDetail && !selectedProviderDetail.api_key_set"
                               class="key-status unset">no key stored for this provider</span>
                     </div>
+                    <template x-if="pendingApiKey">
+                        <div class="pending-note">
+                            API key change pending for <strong x-text="pendingApiKey.provider"></strong> — will be saved with Save.
+                        </div>
+                    </template>
                 </div>
 
                 <div class="drawer-actions">
-                    <button class="btn btn-primary" @click="save()" :disabled="saving">Save</button>
+                    <button class="btn btn-primary" @click="save()"
+                            :disabled="saving || !canSave"
+                            title="Save pending changes">Save</button>
                     <button class="btn" @click="closeDrawers()">Close</button>
                 </div>
 
@@ -581,13 +600,14 @@
                             <h3 id="key-modal-title">🔑 Set API Key</h3>
                             <span class="modal-provider-chip" x-text="selectedProvider"></span>
                             <button class="btn btn-icon modal-close" @click="closeKeyModal()"
-                                    :disabled="keySaving" aria-label="Close">✕</button>
+                                    aria-label="Close">✕</button>
                         </div>
 
                         <p class="modal-desc">
-                            The key is stored in <code>~/.janito/auth.json</code> for
+                            The key is written to <code>~/.janito/auth.json</code> for
                             <strong x-text="selectedProvider"></strong> and is used by the
-                            very next prompt — no restart needed.
+                            very next prompt — once you click <strong>Save</strong> in
+                            the drawer. Closing the drawer discards it.
                         </p>
 
                         <div class="form-group">
@@ -613,13 +633,9 @@
                         </template>
 
                         <div class="modal-actions">
-                            <button class="btn" @click="closeKeyModal()"
-                                    :disabled="keySaving">Cancel</button>
+                            <button class="btn" @click="closeKeyModal()">Cancel</button>
                             <button class="btn btn-primary" @click="saveApiKey()"
-                                    :disabled="keySaving || !keyInput.trim()">
-                                <span class="spinner" x-show="keySaving"></span>
-                                <span x-text="keySaving ? 'Saving…' : 'Save key'"></span>
-                            </button>
+                                    :disabled="!keyInput.trim()">Set Key</button>
                         </div>
                     </div>
                 </div>
