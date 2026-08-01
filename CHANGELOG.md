@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Changes since `v4.16.0` (2026-08-01).
 
+### Fixed
+
+- The web chat input box no longer swallows submissions: previously, at random times, typing a message and pressing Enter (or clicking Send) did nothing — the text stayed in the box with no observable action. `sendPrompt()` (`janito/web/frontend/js/chat.js`) silently returned early when a response was in flight (waiting/streaming — the Send button was disabled but the Enter key was not) or when there was no active session yet (page still bootstrapping, or the active conversation just deleted). It now surfaces a transient toast explaining why the submission was blocked and keeps the typed text so nothing is lost. The Send button (`janito/web/frontend/index.html`) is now disabled for **every** non-idle status — including `tool_running`, which previously left it enabled even though the server dropped mid-turn prompts. The socket handoff is also attempted **before** the UI commits (pushing the user message / clearing the input), so a failed send ("Not connected to the server") keeps the typed text and shows an error instead of losing it. Finally, the backend (`janito/web/backend/routers/chat.py`) no longer silently discards `prompt` messages that arrive while a turn is streaming: `_await_cancel` queues them into a `pending_prompts` list (shared via `_run_turn`/`_run_prompt_turn`) and the WebSocket main loop processes them after the current turn finishes, so a submission is never lost mid-stream. Added `tests/web/test_web_send_reliability.py` (backend `_await_cancel` queueing contract + frontend wiring: busy/no-session feedback, socket-before-clear ordering, button disabled for all busy states).
+
 ## [v4.16.0](https://github.com/joaopinto/janito/compare/v4.15.0...v4.16.0) - 2026-08-01
 
 Changes since `v4.15.0` (2026-07-30).

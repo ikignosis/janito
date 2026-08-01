@@ -66,12 +66,17 @@ async def _read_client_message(websocket: WebSocket) -> dict | None:
         return {}
 
 
-async def _await_cancel(websocket: WebSocket) -> bool:
+async def _await_cancel(websocket: WebSocket, pending_prompts: list[str]) -> bool:
     """Wait for a ``{"type": "cancel"}`` message from the client.
 
+    Any ``{"type": "prompt"}`` message that arrives while a turn is in
+    flight is appended to ``pending_prompts`` instead of being silently
+    discarded, so the main loop can process it once the current turn ends.
+    This prevents a submission from being lost when the client sends a new
+    message while a response is still streaming or a tool is running.
+
     Returns ``True`` when a cancel message is received, ``False`` when the
-    socket disconnects or a non-cancel message arrives (which is ignored so
-    the main loop can re-read it).
+    socket disconnects.
     """
     while True:
         try:
@@ -84,6 +89,10 @@ async def _await_cancel(websocket: WebSocket) -> bool:
             continue
         if msg.get("type") == "cancel":
             return True
+        if msg.get("type") == "prompt":
+            content = (msg.get("content") or "").strip()
+            if content:
+                pending_prompts.append(content)
 
 
 def _rollback(session: ConversationSession) -> None:
@@ -110,13 +119,19 @@ async def _stream_to_websocket(
 
 
 async def _run_turn(
-    session: ConversationSession, websocket: WebSocket, content: str, config
+    session: ConversationSession,
+    websocket: WebSocket,
+    content: str,
+    config,
+    pending_prompts: list[str],
 ) -> None:
     """Stream one prompt, racing the client's cancel request.
 
     A checkpoint is taken before the turn so that both a client cancel and
     an unexpected error can roll the conversation back to a known-good
-    state (see :func:`_rollback`).
+    state (see :func:`_rollback`).  Prompts that arrive while this turn is
+    running are collected into ``pending_prompts`` (see
+    :func:`_await_cancel`).
     """
     # Checkpoint before the turn begins (before this turn's user message).
     session.history_checkpoint = len(session.messages)
@@ -124,7 +139,7 @@ async def _run_turn(
     stream_task = asyncio.ensure_future(
         _stream_to_websocket(websocket, content, session.messages, config)
     )
-    cancel_task = asyncio.ensure_future(_await_cancel(websocket))
+    cancel_task = asyncio.ensure_future(_await_cancel(websocket, pending_prompts))
     done, pending = await asyncio.wait(
         {stream_task, cancel_task},
         return_when=asyncio.FIRST_COMPLETED,
@@ -151,6 +166,37 @@ async def _run_turn(
         exc = stream_task.exception()
         if exc:
             raise exc
+
+
+async def _run_prompt_turn(
+    session: ConversationSession,
+    websocket: WebSocket,
+    content: str,
+    config,
+    pending_prompts: list[str],
+    sessions: SessionManager,
+) -> None:
+    """Run one prompt turn with the shared error handling.
+
+    Persists the finished turn on success (normal completion or client
+    cancel — the latter already rolled back to the checkpoint); on an
+    unexpected error it rolls the history back to the checkpoint and reports
+    the failure to the client, mirroring the shell's behaviour.  Any prompts
+    queued while this turn was running stay in ``pending_prompts`` for the
+    caller to drain.
+    """
+    try:
+        await _run_turn(session, websocket, content, config, pending_prompts)
+        sessions.persist(session)
+    except WebSocketDisconnect:
+        raise
+    except Exception as e:
+        logger.exception("Error during stream_prompt")
+        # Roll back to the checkpoint so a failed turn leaves the
+        # conversation context clean for the next prompt.
+        _rollback(session)
+        sessions.persist(session)  # mirror the rolled-back history
+        await websocket.send_json({"type": "error", "message": f"Server error: {e!s}"})
 
 
 # ---------------------------------------------------------------------------
@@ -276,21 +322,19 @@ async def chat_websocket(websocket: WebSocket, session_id: str):
             if session.title == "New conversation":
                 sessions.set_title(session_id, content[:60])
 
-            try:
-                await _run_turn(session, websocket, content, config)
-                # Persist the finished turn (normal completion or client
-                # cancel — the latter already rolled back to the checkpoint).
-                sessions.persist(session)
-            except WebSocketDisconnect:
-                raise
-            except Exception as e:
-                logger.exception("Error during stream_prompt")
-                # Roll back to the checkpoint so a failed turn leaves the
-                # conversation context clean for the next prompt.
-                _rollback(session)
-                sessions.persist(session)  # mirror the rolled-back history
-                await websocket.send_json(
-                    {"type": "error", "message": f"Server error: {e!s}"}
+            # Prompts that arrive while a turn is running are queued by
+            # _await_cancel (instead of being silently discarded) and are
+            # processed once the current turn finishes, so a submission is
+            # never lost mid-stream.
+            pending_prompts: list[str] = []
+            await _run_prompt_turn(
+                session, websocket, content, config, pending_prompts, sessions
+            )
+            for extra in pending_prompts:
+                if session.title == "New conversation":
+                    sessions.set_title(session_id, extra[:60])
+                await _run_prompt_turn(
+                    session, websocket, extra, config, pending_prompts, sessions
                 )
     except WebSocketDisconnect:
         logger.debug(f"WebSocket client disconnected: {session_id}")

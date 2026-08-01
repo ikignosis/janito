@@ -220,16 +220,52 @@ function chatComponent() {
         sendPrompt() {
             const content = this.input.trim();
             if (!content) return;
-            if (this.status === 'waiting' || this.status === 'streaming') return;
+
+            // A request is already in flight (waiting for the first token,
+            // streaming, or running a tool). The in-flight turn owns the
+            // socket, so submitting now would be silently dropped by the
+            // server. Instead of swallowing the submission (which left the
+            // typed text in the box with no feedback), tell the user why and
+            // keep the text so it can be sent once the turn finishes.
+            if (this.status !== 'idle') {
+                this._notifySendBlocked(
+                    'A response is still in progress. Wait for it to finish, or press Ctrl+C to stop it.'
+                );
+                return;
+            }
 
             const id = this.sessionId;
-            if (!id) return;
+            if (!id) {
+                // No active conversation yet (e.g. the page is still
+                // bootstrapping, or the active session was just deleted).
+                // The input box is still usable, so don't silently drop the
+                // submission — tell the user what to do instead.
+                this._notifySendBlocked(
+                    'No active conversation. Select or create one in the sidebar first.'
+                );
+                return;
+            }
             const store = this._store(id);
 
             // Intercept slash commands handled entirely on the client.
             if (content.startsWith('/') && this._handleSlashCommand(content, store)) {
                 this.input = '';
                 this._autoResize();
+                return;
+            }
+
+            // Make sure the message can actually reach the server BEFORE
+            // committing the UI (pushing the user message / clearing the
+            // input). If the socket is missing or closed, keep the typed text
+            // so nothing is lost, and surface the failure.
+            const socket = this._socket(id);
+            if (!socket || !socket.sendPrompt(content)) {
+                console.error('[chat] sendPrompt FAILED -> "Not connected to server."');
+                store.error = 'Not connected to server.';
+                this.error = store.error;
+                this._notifySendBlocked(
+                    'Not connected to the server — your message was kept.'
+                );
                 return;
             }
 
@@ -262,18 +298,16 @@ function chatComponent() {
             this._current = store.current;   // proxied reference
             this.status = 'waiting';
 
-            const socket = this._socket(id);
-            if (!socket || !socket.sendPrompt(content)) {
-                console.error('[chat] sendPrompt FAILED -> "Not connected to server."');
-                store.error = 'Not connected to server.';
-                this.error = store.error;
-                this._setStatus(store, 'idle');
-                this.status = 'idle';
-                assistant.streaming = false;
-                store.current = null;
-                this._current = null;
-            }
             this._forceScrollToBottom();
+        },
+
+        // Surface a blocked submission (busy, no session, not connected) so
+        // the user never sees a silent no-op with the text stuck in the box.
+        // Rendered as a transient toast by the root app component.
+        _notifySendBlocked(text) {
+            window.dispatchEvent(
+                new CustomEvent('janito-toast', { detail: { kind: 'error', text } })
+            );
         },
 
         // Name a new conversation from the start of its first message (the
