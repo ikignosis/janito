@@ -16,6 +16,7 @@ from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.styles import Style
 from rich.console import Console
 
+from ..openai_client import RequestCancelled
 from .completer import CommandCompleter
 
 _rich_console = Console(markup=False)
@@ -357,6 +358,13 @@ class InteractiveShell:
                     del self.messages_history[self.history_checkpoint :]
                     print(
                         "Request interrupted, previous prompt/answer removed from the conversation history."
+                    )
+                except RequestCancelled:
+                    # Enter was pressed while waiting for the API: interrupt
+                    # the request but keep the user's message in the
+                    # conversation history (no rollback, unlike Ctrl+C above).
+                    print(
+                        "Request cancelled (Enter). The prompt stays in the conversation history."
                     )
                 except Exception as e:
                     # Rollback on any other unexpected error as well

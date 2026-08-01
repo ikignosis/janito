@@ -4,7 +4,7 @@ CLI chat execution modes: interactive and single prompt.
 
 from functools import partial
 
-from ..openai_client import resolve_runtime_config, send_prompt
+from ..openai_client import RequestCancelled, resolve_runtime_config, send_prompt
 from ..shell import InteractiveShell
 from ..system_prompt import get_system_prompt_with_skills
 from ..tools.gmail import GMAIL_SYSTEM_PROMPT
@@ -170,5 +170,9 @@ def run_single_prompt(args):
             cli_provider=getattr(args, "provider", None),
         )
     except KeyboardInterrupt:
+        print("\nOperation cancelled by user.", file=sys.stderr)
+        sys.exit(130)
+    except RequestCancelled:
+        # Enter was pressed while waiting for the API response.
         print("\nOperation cancelled by user.", file=sys.stderr)
         sys.exit(130)

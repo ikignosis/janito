@@ -24,7 +24,8 @@ In interactive mode, these commands are available:
 | `exit` / `quit` | End the session |
 | `restart` | Clear conversation history and start fresh |
 | `Ctrl+D` / `Ctrl+Z` | Exit (EOF) |
-| `Ctrl+C` | Cancel current input |
+| `Ctrl+C` | Cancel current input (rolls the last prompt/answer back out of the history) |
+| `Enter` | While a prompt is pending ("Waiting for response from the API server..."), cancels the request and keeps the prompt in the conversation history |
 | `help` | Show available commands |
 
 ## Chat Commands
