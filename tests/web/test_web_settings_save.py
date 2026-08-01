@@ -97,6 +97,29 @@ def test_index_html_disables_save_until_dirty():
     assert ':disabled="saving || !canSave"' in html
 
 
+def test_model_field_placeholder_shows_default_model():
+    """The Model field placeholder names the default model with a
+    \"(default)\" marker instead of the old \"(not set)\"."""
+    html = (FRONTEND / "index.html").read_text(encoding="utf-8")
+    assert 'x-model="model" :placeholder="modelPlaceholder"' in html
+    assert 'placeholder="(not set)"' not in html
+
+
+def test_settings_js_exposes_default_model_placeholder():
+    """The drawer computes the default model (per-provider override, then
+    built-in default) and renders \"(default)\" when no override is set."""
+    js = _settings_js()
+    # Resolution mirrors the provider switcher: configured model first,
+    # falling back to the provider's built-in default.
+    assert "get defaultModel()" in js
+    assert "p.model || p.default_model" in js
+    # The placeholder keeps the \"(default)\" wording (never \"(not set)\").
+    assert "get modelPlaceholder()" in js
+    assert "`${this.defaultModel} (default)`" in js
+    assert "'(default)'" in js
+    assert "'(not set)'" not in js
+
+
 def test_index_html_wires_pending_change_ui():
     """The drawer surfaces staged changes (pending badges/notes + a Cancel
     action for the staged default) until Save persists them."""
@@ -104,3 +127,22 @@ def test_index_html_wires_pending_change_ui():
     assert "provider-pending-badge" in html
     assert "pending-note" in html
     assert "unstageDefault()" in html
+
+
+def test_api_key_status_line_only_claims_pending_change_when_staged():
+    """The API-key status line shows "Key Changed (pending on save)" only
+    while a key change is actually staged for the selected provider — a key
+    that is merely configured (no staged change) reports the neutral
+    "key configured" status instead, and no key reports the unset state.
+    Guards against the status line claiming a pending change that was
+    never made."""
+    html = (FRONTEND / "index.html").read_text(encoding="utf-8")
+    # The pending claim is gated on a staged key for the selected provider,
+    # not merely on the provider having a key configured.
+    assert "Key Changed (pending on save)" in html
+    assert "pendingApiKey && pendingApiKey.provider === selectedProvider" in html
+    # A configured key with no staged change shows the neutral status...
+    assert ">key configured</span>" in html
+    # ...and the unset state is suppressed while a key is staged for the
+    # selected provider (so the two hints never contradict each other).
+    assert "!selectedProviderDetail.api_key_set" in html

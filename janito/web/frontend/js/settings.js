@@ -91,6 +91,21 @@ function settingsComponent() {
             );
         },
 
+        // The model the selected provider falls back to when the override
+        // field is empty: the provider's configured model first, then its
+        // built-in default (mirrors the provider switcher's resolution).
+        get defaultModel() {
+            const p = this.selectedProviderDetail;
+            return (p && (p.model || p.default_model)) || null;
+        },
+
+        // Placeholder for the Model field: names the default model (with a
+        // "(default)" marker) when no override is set, so the drawer shows
+        // what the next prompt would actually use instead of "(not set)".
+        get modelPlaceholder() {
+            return this.defaultModel ? `${this.defaultModel} (default)` : '(default)';
+        },
+
         // The provider currently flagged as the default (or null if the list
         // hasn't loaded yet / the default isn't in the known list).
         get defaultProviderDetail() {

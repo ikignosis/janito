@@ -548,7 +548,7 @@
                 <!-- Model override -->
                 <div class="form-group">
                     <label>Model</label>
-                    <input type="text" x-model="model" placeholder="(not set)">
+                    <input type="text" x-model="model" :placeholder="modelPlaceholder">
                 </div>
 
                 <div class="form-group">
@@ -565,9 +565,13 @@
                         </button>
                     </div>
                     <div class="api-key-hint">
-                        <span x-show="selectedProviderDetail && selectedProviderDetail.api_key_set"
+                        <!-- An API key change is staged for the selected provider (unsaved). -->
+                        <span x-show="pendingApiKey && pendingApiKey.provider === selectedProvider"
+                              class="key-status set">Key Changed (pending on save)</span>
+                        <!-- No staged change: neutral status for the selected provider. -->
+                        <span x-show="!(pendingApiKey && pendingApiKey.provider === selectedProvider) && selectedProviderDetail && selectedProviderDetail.api_key_set"
                               class="key-status set">key configured</span>
-                        <span x-show="selectedProviderDetail && !selectedProviderDetail.api_key_set"
+                        <span x-show="!(pendingApiKey && pendingApiKey.provider === selectedProvider) && selectedProviderDetail && !selectedProviderDetail.api_key_set"
                               class="key-status unset">no key stored for this provider</span>
                     </div>
                     <template x-if="pendingApiKey">
