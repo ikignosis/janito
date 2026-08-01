@@ -43,14 +43,24 @@ function settingsComponent() {
                 this.config = await Api.getConfig();
                 const data = await Api.getProviders();
                 this.providers = data.providers || [];
-                this.model = this.config.model || '';
-                // Default the combo to the provider actually in use (a
-                // session-only override wins over the persisted default).
+                // Keep the combo where the user left it (e.g. a non-default
+                // provider they are configuring) across a save's re-baseline;
+                // only default to the provider actually in use (a session-only
+                // override wins over the persisted default) when nothing is
+                // selected yet or the current pick left the list.
+                const current = this.selectedProvider;
                 this.selectedProvider =
-                    (this.providers.find((p) => p.effective) || {}).name ||
-                    this.config.provider ||
-                    (this.providers.find((p) => p.active) || {}).name ||
-                    '';
+                    this.providers.some((p) => p.name === current)
+                        ? current
+                        : (this.providers.find((p) => p.effective) || {}).name ||
+                          this.config.provider ||
+                          (this.providers.find((p) => p.active) || {}).name ||
+                          '';
+                // The Model field always carries the model the next prompt
+                // would actually use as its VALUE: an explicit override
+                // first, otherwise the selected provider's configured /
+                // built-in default (no longer hidden in a placeholder).
+                this.model = this.config.model || this.defaultModel || '';
                 // Record the pristine baseline: nothing to save yet, so the
                 // Save button starts (and stays) disabled until the model
                 // changes, a default is staged, or an API key is staged.
@@ -75,12 +85,13 @@ function settingsComponent() {
         },
 
         // Called from the provider <select>'s @change: adopt the newly
-        // picked provider's configured model so the Model field always
-        // describes the provider being edited (keeping a model name from
-        // the previous provider would make the next API call fail).
+        // picked provider's configured model (or its built-in default) so
+        // the Model field always shows a value and describes the provider
+        // being edited (keeping a model name from the previous provider
+        // would make the next API call fail).
         onProviderChange() {
             const p = this.providers.find((x) => x.name === this.selectedProvider);
-            this.model = (p && p.model) || '';
+            this.model = (p && (p.model || p.default_model)) || '';
         },
 
         // The provider object currently selected in the combobox (or null).
@@ -99,11 +110,12 @@ function settingsComponent() {
             return (p && (p.model || p.default_model)) || null;
         },
 
-        // Placeholder for the Model field: names the default model (with a
-        // "(default)" marker) when no override is set, so the drawer shows
-        // what the next prompt would actually use instead of "(not set)".
+        // Fallback hint for the Model field, shown only while the field is
+        // empty (e.g. the user cleared it, or the provider has no default):
+        // names the model the next prompt would fall back to, with a
+        // "(default)" marker, instead of "(not set)".
         get modelPlaceholder() {
-            return this.defaultModel ? `${this.defaultModel} (default)` : '(default)';
+            return this.defaultModel ? `${this.defaultModel} (default)` : '(not set)';
         },
 
         // The provider currently flagged as the default (or null if the list
@@ -180,11 +192,12 @@ function settingsComponent() {
             }
             // A different provider is now staged as the default: the drawer
             // holds unsaved changes, so arm the Save button.  Also adopt the
-            // provider's configured model into the field so it stays in sync
-            // with what the next prompt would use once saved.
+            // provider's configured model (or its built-in default) into the
+            // field so it stays in sync with what the next prompt would use
+            // once saved.
             this.pendingDefaultProvider = p.name;
             this.defaultChanged = true;
-            this.model = p.model || this.model;
+            this.model = (p.model || p.default_model) || this.model;
         },
 
         // Discard a staged default-provider change (the drawer stays open;

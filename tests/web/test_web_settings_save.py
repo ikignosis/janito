@@ -9,7 +9,9 @@ the default via "Set Default", or an API key was staged via "Set API Key".
 clicked — they only arm the Save button (the changes are staged in the
 component).  A successful save applies every staged change (default
 provider, model, API key) and re-baselines the drawer, disabling Save
-again.
+again.  The re-baseline keeps the provider combo where the user left it —
+it only snaps back to the default/effective provider when nothing is
+selected yet or the pick left the providers list.
 
 These are static contract checks on the frontend sources (same pattern as
 the other ``tests/web/test_web_*.py`` modules): they pin the Alpine
@@ -56,7 +58,7 @@ def test_set_default_stages_instead_of_persisting():
     js = _settings_js()
     # The staged provider's model is mirrored into the field (keeps the
     # drawer in sync with what the next prompt would use once saved)...
-    assert "this.model = p.model || this.model;" in js
+    assert "this.model = (p.model || p.default_model) || this.model;" in js
     # ...and the drawer is flagged as holding unsaved changes.
     assert "this.defaultChanged = true;" in js
     # No immediate persistence: the endpoint is only reached from save().
@@ -91,33 +93,59 @@ def test_save_restores_pristine_state():
     assert "this.pendingApiKey = null;" in js
 
 
+def test_load_keeps_selected_provider_across_rebaseline():
+    """Re-loading the drawer (e.g. the re-baseline after a save) keeps the
+    provider combo where the user left it instead of snapping back to the
+    default/effective provider; the effective provider is only the fallback
+    when nothing is selected yet or the current pick left the list.
+    """
+    js = _settings_js()
+    # The current selection is captured before the combo is re-assigned...
+    assert "const current = this.selectedProvider;" in js
+    # ...and kept when it is still in the freshly loaded providers list...
+    assert "this.providers.some((p) => p.name === current)" in js
+    # ...with the effective provider as the fallback only.
+    assert "this.providers.find((p) => p.effective)" in js
+
+
 def test_index_html_disables_save_until_dirty():
     """The Save button is bound to the canSave computed property."""
     html = (FRONTEND / "index.html").read_text(encoding="utf-8")
     assert ':disabled="saving || !canSave"' in html
 
 
-def test_model_field_placeholder_shows_default_model():
-    """The Model field placeholder names the default model with a
-    \"(default)\" marker instead of the old \"(not set)\"."""
+def test_model_field_shows_default_model_as_value():
+    """The Model field carries the default model as its VALUE (pre-filled
+    when no override is set) instead of hiding it in a placeholder."""
     html = (FRONTEND / "index.html").read_text(encoding="utf-8")
-    assert 'x-model="model" :placeholder="modelPlaceholder"' in html
+    assert 'x-model="model"' in html
+    # The default model lives in the field value now; the placeholder is
+    # only a fallback hint for an emptied field.
+    assert ":placeholder=" in html
     assert 'placeholder="(not set)"' not in html
 
 
-def test_settings_js_exposes_default_model_placeholder():
-    """The drawer computes the default model (per-provider override, then
-    built-in default) and renders \"(default)\" when no override is set."""
+def test_settings_js_prefills_model_with_default():
+    """The drawer resolves the effective model (configured override first,
+    then the provider's built-in default — the same resolution the topbar
+    provider switcher uses) and puts it in the field VALUE so the drawer
+    always shows which model the next prompt would actually use."""
     js = _settings_js()
     # Resolution mirrors the provider switcher: configured model first,
     # falling back to the provider's built-in default.
     assert "get defaultModel()" in js
     assert "p.model || p.default_model" in js
-    # The placeholder keeps the \"(default)\" wording (never \"(not set)\").
+    # The field value is pre-filled from the resolved default...
+    assert "this.model = this.config.model || this.defaultModel || '';" in js
+    # ...adopting another provider keeps showing a value (configured or
+    # built-in default), never an empty field...
+    assert "this.model = (p && (p.model || p.default_model)) || '';" in js
+    # ...and staging a default adopts the same resolved model.
+    assert "this.model = (p.model || p.default_model) || this.model;" in js
+    # The placeholder remains only as a fallback hint for an emptied field
+    # (it names the default with a "(default)" marker).
     assert "get modelPlaceholder()" in js
     assert "`${this.defaultModel} (default)`" in js
-    assert "'(default)'" in js
-    assert "'(not set)'" not in js
 
 
 def test_index_html_wires_pending_change_ui():
