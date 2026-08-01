@@ -77,7 +77,11 @@ def test_save_applies_all_staged_changes():
     """A successful save persists the default, the model and the key."""
     js = _settings_js()
     assert "await Api.setDefaultProvider(this.pendingDefaultProvider);" in js
-    assert "await Api.patchConfig({ model: this.model });" in js
+    # The model is persisted scoped to the provider the field describes
+    # (the combo's selection) so it lands under the right provider key.
+    assert "await Api.patchConfig({" in js
+    assert "model: this.model" in js
+    assert "provider: this.selectedProvider" in js
     assert (
         "await Api.setApiKey(this.pendingApiKey.provider, this.pendingApiKey.key);"
         in js
@@ -135,8 +139,10 @@ def test_settings_js_prefills_model_with_default():
     # falling back to the provider's built-in default.
     assert "get defaultModel()" in js
     assert "p.model || p.default_model" in js
-    # The field value is pre-filled from the resolved default...
-    assert "this.model = this.config.model || this.defaultModel || '';" in js
+    # The field value is pre-filled from the selected provider's own model
+    # (configured override or built-in default); the running server's model
+    # is only a last-resort fallback (it may belong to a different provider).
+    assert "this.model = this.defaultModel || this.config.model || '';" in js
     # ...adopting another provider keeps showing a value (configured or
     # built-in default), never an empty field...
     assert "this.model = (p && (p.model || p.default_model)) || '';" in js

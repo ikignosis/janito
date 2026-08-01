@@ -54,12 +54,32 @@ async def get_config(request: Request):
 
 @router.patch("")
 async def patch_config(request: Request):
-    """Update mutable config values (model, etc.).
+    """Update mutable config values and persist them to ``~/.janito/config.json``.
 
     Only a safe subset of fields is mutable at runtime. Thinking mode and
     verbose logging are CLI-level flags and cannot be changed here; the
     default provider is changed via ``POST /api/config/default-provider``.
+
+    The ``model`` is a *provider-scoped* value: it is stored per provider
+    under ``providers.<name>.model`` in ``config.json`` (mirroring the CLI's
+    ``--set model=<name>``), so each provider keeps its own default model.
+    Pass ``provider`` in the body to target a specific provider (the one
+    selected in the Settings drawer); when omitted, the model is applied to
+    the provider the next prompt resolves to (a session override, else the
+    persisted default).  The value is written to disk so future CLI *and*
+    web runs pick it up, and is mirrored into the running server when it
+    affects the provider currently in use — so the very next prompt already
+    uses it, no restart needed.  An empty ``model`` clears the per-provider
+    override (the provider falls back to its built-in default).
     """
+    from janito.general_config import (
+        get_active_provider,
+        model_config_key,
+        set_config_value,
+        unset_config_value,
+    )
+    from janito.provider_config import validate_provider_name
+
     config = _get_config(request)
     try:
         body = await request.json()
@@ -69,12 +89,42 @@ async def patch_config(request: Request):
     # ``thinking`` and ``verbose`` are CLI-level flags that cannot be
     # meaningfully toggled at runtime, so they are intentionally excluded
     # from the mutable set.
-    mutable = {"model": str}
     updated = {}
-    for key, typ in mutable.items():
-        if key in body:
-            setattr(config, key, typ(body[key]))
-            updated[key] = getattr(config, key)
+
+    if "model" in body:
+        model = str(body["model"]).strip()
+
+        # Resolve the provider the model belongs to: an explicit ``provider``
+        # from the body (the Settings drawer's selection) wins, otherwise the
+        # provider the next prompt resolves to.
+        raw_provider = str(body.get("provider") or "").strip()
+        if raw_provider:
+            try:
+                provider = validate_provider_name(raw_provider)
+            except ValueError as e:
+                return JSONResponse({"detail": str(e)}, status_code=400)
+        else:
+            provider = (
+                config.session_provider or config.provider or get_active_provider()
+            )
+
+        # Persist per-provider so each provider keeps its own default model
+        # (this is the step that was previously missing — the change only
+        # lived in memory and was lost on restart).
+        key = model_config_key(provider)
+        if model:
+            set_config_value(key, model)
+        else:
+            unset_config_value(key)
+        updated["model"] = model
+
+        # Mirror into the running server only when the change affects the
+        # provider the next prompt actually uses; otherwise the server keeps
+        # its current model and the new value still lands on disk for the
+        # targeted provider.
+        effective = config.session_provider or config.provider or get_active_provider()
+        if provider == effective:
+            config.model = model or None
 
     return {"updated": updated}
 

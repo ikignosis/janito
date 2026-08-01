@@ -56,11 +56,14 @@ function settingsComponent() {
                           this.config.provider ||
                           (this.providers.find((p) => p.active) || {}).name ||
                           '';
-                // The Model field always carries the model the next prompt
-                // would actually use as its VALUE: an explicit override
-                // first, otherwise the selected provider's configured /
-                // built-in default (no longer hidden in a placeholder).
-                this.model = this.config.model || this.defaultModel || '';
+                // The Model field describes the SELECTED provider (the combo),
+                // and saving persists it per provider — so it carries that
+                // provider's own model as its VALUE: its configured model
+                // first, then its built-in default.  The running server's
+                // model is only a last-resort fallback (it belongs to the
+                // provider in use, which may differ from the selection when a
+                // non-default provider is being configured).
+                this.model = this.defaultModel || this.config.model || '';
                 // Record the pristine baseline: nothing to save yet, so the
                 // Save button starts (and stays) disabled until the model
                 // changes, a default is staged, or an API key is staged.
@@ -258,9 +261,17 @@ function settingsComponent() {
                     saved.push(`default: ${data.provider}`);
                 }
 
-                // 2. Persist the model override (if the field changed).
+                // 2. Persist the model override (if the field changed).  The
+                //    model is stored per provider in config.json, so send the
+                //    provider the field describes — the one selected in the
+                //    combo — and the backend writes it under
+                //    providers.<name>.model (mirrored into the running server
+                //    when it is the provider in use).
                 if (this.model !== this.originalModel) {
-                    const updated = await Api.patchConfig({ model: this.model });
+                    const updated = await Api.patchConfig({
+                        model: this.model,
+                        provider: this.selectedProvider,
+                    });
                     saved.push(...Object.keys(updated.updated));
                 }
 
