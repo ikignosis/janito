@@ -218,6 +218,9 @@
                                             <div class="tool-card-header" @click="part.tool.open = !part.tool.open">
                                                 <span x-text="part.tool.open ? '▼' : '▶'" class="muted"></span>
                                                 <span class="tool-name" x-text="part.tool.name"></span>
+                                                <template x-if="toolSummary(part.tool.name, part.tool.args)">
+                                                    <span class="tool-path" x-text="toolSummary(part.tool.name, part.tool.args)"></span>
+                                                </template>
                                                 <template x-if="permLabel(part.tool.permissions)">
                                                     <span class="perm-badge" :class="permClass(part.tool.permissions)"
                                                           x-text="permLabel(part.tool.permissions)"></span>

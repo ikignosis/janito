@@ -51,6 +51,131 @@ window.ChatFormatMixin = {
         catch (e) { return String(args); }
     },
 
+    // Extract the filepath for display in a tool card header. Mirrors the
+    // backend convention (janito/tooling/used_files.py): the path is shown
+    // only when the *first* argument is "filepath" and its value is a
+    // non-empty string.
+    toolPath(args) {
+        if (!args || typeof args !== 'object' || Array.isArray(args)) return '';
+        const keys = Object.keys(args);
+        if (!keys.length || keys[0] !== 'filepath') return '';
+        const path = args.filepath;
+        return (typeof path === 'string' && path) ? path : '';
+    },
+
+    // Short human-readable summary of a tool call's arguments, rendered in
+    // the tool-card header after the tool name. Mirrors the parameters each
+    // tool prints via report_start (the operation target shown in the CLI):
+    // the header shows the same information the tool announces when it
+    // starts. Tools without an entry fall back to the first-argument
+    // "filepath" chip (toolPath).
+    toolSummary(name, args) {
+        if (!name || !args || typeof args !== 'object' || Array.isArray(args)) {
+            return this.toolPath(args);
+        }
+        const s = (v) => (v === null || v === undefined ? '' : String(v));
+        const pathList = (v) => {
+            if (!Array.isArray(v) || !v.length) return '';
+            const shown = v.slice(0, 3).join(', ');
+            return v.length > 3 ? `${shown} (+${v.length - 3} more)` : shown;
+        };
+
+        switch (name) {
+            case 'ReadFile': {
+                let sum = s(args.filepath);
+                if (args.to_line !== undefined && args.to_line !== null) {
+                    sum += ` (lines ${args.from_line || 1}-${args.to_line})`;
+                } else if (args.from_line > 1) {
+                    sum += ` (from line ${args.from_line})`;
+                }
+                return sum;
+            }
+            case 'CreateFile':
+            case 'DeleteFile':
+            case 'ReplaceTextInFile':
+                return s(args.filepath);
+            case 'CreateDirectory':
+                return s(args.directory);
+            case 'RemoveDirectory':
+            case 'ListFiles':
+                return s(args.directory) + (args.recursive ? ' (recursive)' : '');
+            case 'MoveFile': {
+                const pair = [s(args.source), s(args.destination)].filter(Boolean);
+                return pair.join(' \u2192 ');
+            }
+            case 'ReadMultipleFiles':
+                return Array.isArray(args.filepath_list)
+                    ? `${args.filepath_list.length} files` : '';
+            case 'FindFiles': {
+                const criteria = [];
+                if (args.pattern) criteria.push(`pattern='${args.pattern}'`);
+                if (args.file_type) criteria.push(`type=${args.file_type}`);
+                const size = [];
+                if (args.min_bytes != null) size.push(`>=${args.min_bytes}B`);
+                if (args.max_bytes != null) size.push(`<=${args.max_bytes}B`);
+                if (size.length) criteria.push(`size ${size.join(',')}`);
+                if (args.modified_within_days != null) criteria.push(`modified <${args.modified_within_days}d`);
+                if (args.older_than_days != null) criteria.push(`older >${args.older_than_days}d`);
+                const crit = criteria.length ? ` [${criteria.join(', ')}]` : '';
+                return pathList(args.paths) + crit;
+            }
+            case 'SearchText':
+                return `'${s(args.query)}' in ${pathList(args.paths)}`.trim();
+            case 'SearchRegex':
+                return `'${s(args.pattern)}' in ${pathList(args.paths)}`.trim();
+            case 'ReadEmails':
+            case 'CountEmails':
+                return s(args.folder);
+            case 'DeleteEmails':
+            case 'TrashEmail':
+                return s(args.folder);
+            case 'MoveEmails': {
+                const pair = [s(args.source_folder), s(args.target_folder)].filter(Boolean);
+                return pair.join(' \u2192 ');
+            }
+            case 'ListFolders':
+                return '';
+            // OneDrive tools
+            case 'CreateOneDriveFolder':
+            case 'DeleteOneDriveFile':
+            case 'DownloadOneDriveFile':
+            case 'GetOneDriveShareLink':
+            case 'UploadOneDriveFile':
+                return s(args.path);
+            case 'ListOneDriveFiles':
+                return s(args.path) || 'root';
+            case 'ReadOneDriveFile':
+                return s(args.path);
+            case 'SearchOneDriveFiles':
+                return s(args.query);
+            // System / net tools
+            case 'OpenBrowser':
+            case 'GetUrl':
+                return s(args.url);
+            case 'WebSearch':
+                return s(args.query);
+            case 'RunBashCode':
+            case 'RunPythonCode':
+            case 'RunPowerShellCode':
+                return s(args.working_directory);
+            case 'RunPythonFile':
+                return s(args.file_path);
+            case 'RunGitHubCLI':
+                return s(args.cmdline).slice(0, 120);
+            case 'CreateImage':
+                return s(args.size);
+            // Skills
+            case 'load_skill':
+                return s(args.skill_name);
+            case 'read_skill_resource': {
+                const pair = [s(args.skill_name), s(args.resource_name)].filter(Boolean);
+                return pair.join(' / ');
+            }
+            default:
+                return this.toolPath(args);
+        }
+    },
+
     toolResultStr(result) {
         if (result === null || result === undefined) return '';
         if (typeof result === 'string') return result;
