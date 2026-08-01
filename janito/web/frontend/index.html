@@ -565,12 +565,9 @@
                         </button>
                     </div>
                     <div class="api-key-hint">
-                        <!-- An API key change is staged for the selected provider (unsaved). -->
-                        <span x-show="pendingApiKey && pendingApiKey.provider === selectedProvider"
-                              class="key-status set">Key Changed (pending on save)</span>
-                        <!-- No staged change: neutral status for the selected provider. -->
-                        <span x-show="!(pendingApiKey && pendingApiKey.provider === selectedProvider) && selectedProviderDetail && selectedProviderDetail.api_key_set"
-                              class="key-status set">key configured</span>
+                        <!-- Neutral status for the selected provider; suppressed
+                             while a key change is staged (the pending note above
+                             is the only signal then). -->
                         <span x-show="!(pendingApiKey && pendingApiKey.provider === selectedProvider) && selectedProviderDetail && !selectedProviderDetail.api_key_set"
                               class="key-status unset">no key stored for this provider</span>
                     </div>

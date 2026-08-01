@@ -19,7 +19,7 @@ Changes since `v4.16.0` (2026-08-01).
 
 ### Changed
 
-- The Settings drawer's API-key status line (`janito/web/frontend/index.html`) now reads "Key Changed (pending on save)" only while an API key change is actually staged for the selected provider (via the "Set API Key" modal, before Save); otherwise it reports the stored state neutrally — "key configured" when the provider has a key set, "no key stored for this provider" when it does not — so the drawer no longer claims a pending change that was never made.
+- The Settings drawer's API-key status line (`janito/web/frontend/index.html`) no longer shows the "Key Changed (pending on save)" badge — a staged API key change is surfaced only by the "API key change pending for …" note while it is unsaved. The status line itself just reports the stored state neutrally ("no key stored for this provider" when the provider has no key set, suppressed while a key is staged so it never contradicts the pending note). Removed the now-unused `.key-status.set` style (`janito/web/frontend/css/drawers.css`).
 
 - The Settings drawer's Model field (`janito/web/frontend/js/settings.js`, `index.html`) now shows the default model when no override is set: the placeholder names the selected provider's fallback model (per-provider configured model first, then the built-in `default_model` — the same resolution the topbar provider switcher uses) with a "(default)" marker instead of the old "(not set)", so the drawer always communicates which model the next prompt would actually use. Added `tests/web/test_web_settings_save.py` frontend wiring contract checks for the new placeholder.
 

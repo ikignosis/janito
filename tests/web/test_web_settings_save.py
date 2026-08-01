@@ -129,20 +129,19 @@ def test_index_html_wires_pending_change_ui():
     assert "unstageDefault()" in html
 
 
-def test_api_key_status_line_only_claims_pending_change_when_staged():
-    """The API-key status line shows "Key Changed (pending on save)" only
-    while a key change is actually staged for the selected provider — a key
-    that is merely configured (no staged change) reports the neutral
-    "key configured" status instead, and no key reports the unset state.
-    Guards against the status line claiming a pending change that was
-    never made."""
+def test_api_key_status_line_has_no_pending_change_badge():
+    """The API-key status line no longer carries a "Key Changed (pending on
+    save)" badge — the staged change is surfaced only by the pending note.
+    The line itself reports the stored state neutrally: "no key stored for
+    this provider" when the provider has no key set (suppressed while a key
+    is staged so it cannot contradict the pending note)."""
     html = (FRONTEND / "index.html").read_text(encoding="utf-8")
-    # The pending claim is gated on a staged key for the selected provider,
-    # not merely on the provider having a key configured.
-    assert "Key Changed (pending on save)" in html
-    assert "pendingApiKey && pendingApiKey.provider === selectedProvider" in html
-    # A configured key with no staged change shows the neutral status...
-    assert ">key configured</span>" in html
-    # ...and the unset state is suppressed while a key is staged for the
-    # selected provider (so the two hints never contradict each other).
+    # The pending-change claim badge is gone entirely...
+    assert "Key Changed (pending on save)" not in html
+    # The neutral "key configured" status was removed too...
+    assert "key configured" not in html
+    # ...and the unset state is still reported for key-less providers,
+    # suppressed while a key is staged for the selected provider (so it
+    # never contradicts the pending note).
     assert "!selectedProviderDetail.api_key_set" in html
+    assert "pendingApiKey && pendingApiKey.provider === selectedProvider" in html

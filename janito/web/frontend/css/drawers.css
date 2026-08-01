@@ -120,11 +120,6 @@ input.key-unset { color: var(--text-muted); font-style: italic; }
     font-weight: 600;
     animation: provider-confirm-in 0.2s ease-out;
 }
-.key-status.set {
-    color: var(--green);
-    background: color-mix(in srgb, var(--green) 12%, transparent);
-    border-color: color-mix(in srgb, var(--green) 45%, transparent);
-}
 .key-status.unset {
     color: var(--yellow);
     background: color-mix(in srgb, var(--yellow) 12%, transparent);
