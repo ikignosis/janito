@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Changes since `v4.17.0` (2026-08-01).
 
+### Changed
+
+- The Alibaba provider's built-in default model is now `qwen3.8-max` instead of `qwen3.8-max-preview` (`janito/provider_config.py`); updated the providers table in `README.md` and the expectation in `tests/test_provider_config.py` accordingly.
+
 ## [v4.17.0](https://github.com/joaopinto/janito/compare/v4.16.0...v4.17.0) - 2026-08-01
 
 Changes since `v4.16.0` (2026-08-01).

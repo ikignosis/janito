@@ -91,7 +91,7 @@ janito --show-config
 
 | Provider | Last Model | Price |
 |----------|-------------|---------|
-| Alibaba  | qwen3.8-max-preview | 6$/month (Lite) |
+| Alibaba  | qwen3.8-max | 6$/month (Lite) |
 | Moonshot | kimi-k3 | $15/month (Moderato)|
 | z.ai     | glm-5.2 | $12.6/month (Lite)|
 | openai   | gpt-5.6 | Pay as you go |

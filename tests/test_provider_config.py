@@ -71,7 +71,7 @@ if pytest is not None:
     def test_default_model_and_context_window():
         # Providers expose built-in default models / context windows.
         assert get_default_model_from_provider("openai") == "gpt-4"
-        assert get_default_model_from_provider("alibaba") == "qwen3.8-max-preview"
+        assert get_default_model_from_provider("alibaba") == "qwen3.8-max"
         assert get_default_context_window_size_from_provider("openai") == 128000
         # The "custom" provider has no built-in defaults.
         assert get_default_model_from_provider("custom") is None

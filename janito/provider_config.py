@@ -58,7 +58,7 @@ PROVIDER_INFO: dict[str, dict] = {
         "endpoint": "https://api.moonshot.ai/v1",
     },
     "alibaba": {
-        "default_model": "qwen3.8-max-preview",
+        "default_model": "qwen3.8-max",
         "default_context_window_size": 131072,
         "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
     },
