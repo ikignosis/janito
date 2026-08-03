@@ -8,3 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased](https://github.com/joaopinto/janito/compare/v4.18.0...HEAD)
 
 Changes since `v4.18.0` (2026-08-03).
+
+### Changed
+
+- `BaseTool.prompt_user` now renders the question as rich markdown (like LLM
+  replies) instead of inside a rich table.

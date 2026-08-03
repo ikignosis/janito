@@ -67,8 +67,8 @@ class TestAskUser:
 
         assert result["question"] == "Meaning of life?"
 
-    def test_question_printed_inside_rich_table(self):
-        """The question is rendered by rich inside a table on stderr."""
+    def test_question_printed_as_markdown(self):
+        """The question is rendered by rich as markdown on stderr."""
         question = "What is the capital of France?"
         buffer = StringIO()
 
@@ -77,13 +77,21 @@ class TestAskUser:
 
         output = buffer.getvalue()
         assert question in output
-        # rich table frame characters (header row + question row + borders)
-        assert "Question" in output
-        assert "│" in output  # vertical border
-        assert "─" in output  # horizontal border
 
-    def test_question_inside_table_does_not_interpret_markup(self):
-        """Markup-like text in the question is shown literally, not styled."""
+    def test_question_markdown_is_rendered(self):
+        """Markdown syntax in the question is rendered, not shown literally."""
+        question = "Pick **one** option"
+        buffer = StringIO()
+
+        with patch("builtins.input", return_value="A"), redirect_stderr(buffer):
+            AskUser().run(question=question)
+
+        output = buffer.getvalue()
+        assert "**one**" not in output  # bold markers are consumed by the renderer
+        assert "one" in output
+
+    def test_question_does_not_interpret_console_markup(self):
+        """Console markup-like text in the question is shown literally, not styled."""
         question = "Pick [bold]one[/bold] option"
         buffer = StringIO()
 
