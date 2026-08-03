@@ -13,10 +13,10 @@ from openai import AsyncOpenAI
 from janito.general_config import (
     get_active_provider,
     get_config_value,
-    load_context_window_size,
+    load_max_output_tokens,
 )
 from janito.openai_client.client import resolve_runtime_config
-from janito.provider_config import get_default_context_window_size_from_provider
+from janito.provider_config import get_default_max_output_tokens_from_provider
 
 from ..config import WebServerConfig
 from ..events import (
@@ -79,10 +79,10 @@ async def stream_prompt(
     mcp_enabled = use_mcp
     tools_schemas = await resolve_tools(config, tools, use_mcp)
 
-    context_window_size = load_context_window_size(effective_provider)
-    if context_window_size is None:
+    max_output_tokens = load_max_output_tokens(effective_provider)
+    if max_output_tokens is None:
         # Fall back to the provider's built-in default (PROVIDER_INFO).
-        context_window_size = get_default_context_window_size_from_provider(
+        max_output_tokens = get_default_max_output_tokens_from_provider(
             effective_provider
         )
     preserve_thinking = get_config_value("preserve_thinking")
@@ -92,7 +92,7 @@ async def stream_prompt(
     first_turn = True
     while True:
         call_kwargs = build_call_kwargs(
-            model, config, context_window_size, preserve_thinking
+            model, config, max_output_tokens, preserve_thinking
         )
         call_kwargs["messages"] = messages
         if tools_schemas:
@@ -135,7 +135,7 @@ async def stream_prompt(
             assistant_message["reasoning_content"] = reasoning_content
         messages.append(assistant_message)
 
-        usage_event = acc.usage_event(max_tokens=context_window_size)
+        usage_event = acc.usage_event(max_tokens=max_output_tokens)
         if usage_event:
             yield usage_event
 

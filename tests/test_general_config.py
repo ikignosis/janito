@@ -206,29 +206,46 @@ if pytest is not None:
         assert gc.model_config_key("openai") == "openai.model"
         assert gc.model_config_key("  MiniMax ") == "minimax.model"
 
-    def test_set_context_window_size_per_provider(monkeypatch, tmp_path):
+    def test_set_max_output_tokens_per_provider(monkeypatch, tmp_path):
         config_path = _use_temp_config(monkeypatch, tmp_path)
         gc.set_config_from_cli("provider=openai")
-        gc.set_config_from_cli("context-window-size=8192")
-        gc.set_config_from_cli("context-window-size=4096", "minimax")
-        # Each provider has its own context-window-size
-        assert gc.load_context_window_size("openai") == 8192
-        assert gc.load_context_window_size("minimax") == 4096
+        gc.set_config_from_cli("max-output-tokens=8192")
+        gc.set_config_from_cli("max-output-tokens=4096", "minimax")
+        # Each provider has its own max-output-tokens
+        assert gc.load_max_output_tokens("openai") == 8192
+        assert gc.load_max_output_tokens("minimax") == 4096
         # Verify storage structure
         config = _read_config(config_path)
-        assert config["providers"]["openai"]["context-window-size"] == 8192
-        assert config["providers"]["minimax"]["context-window-size"] == 4096
+        assert config["providers"]["openai"]["max-output-tokens"] == 8192
+        assert config["providers"]["minimax"]["max-output-tokens"] == 4096
 
-    def test_unset_context_window_size_per_provider(monkeypatch, tmp_path):
+    def test_unset_max_output_tokens_per_provider(monkeypatch, tmp_path):
         config_path = _use_temp_config(monkeypatch, tmp_path)
-        gc.set_config_from_cli("context-window-size=8192", "openai")
-        gc.set_config_from_cli("context-window-size=4096", "minimax")
-        assert gc.unset_config_key_from_cli("context-window-size", "openai") is True
+        gc.set_config_from_cli("max-output-tokens=8192", "openai")
+        gc.set_config_from_cli("max-output-tokens=4096", "minimax")
+        assert gc.unset_config_key_from_cli("max-output-tokens", "openai") is True
         config = _read_config(config_path)
         assert "openai" not in config.get("providers", {})
-        assert config["providers"]["minimax"]["context-window-size"] == 4096
+        assert config["providers"]["minimax"]["max-output-tokens"] == 4096
         # Removing again returns False (already gone)
-        assert gc.unset_config_key_from_cli("context-window-size", "openai") is False
+        assert gc.unset_config_key_from_cli("max-output-tokens", "openai") is False
+
+    def test_load_max_output_tokens_legacy_key_fallback(monkeypatch, tmp_path):
+        """Legacy context-window-size / context_window_size keys are still read."""
+        config_path = _use_temp_config(monkeypatch, tmp_path)
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        config_path.write_text(
+            json.dumps(
+                {
+                    "providers": {
+                        "openai": {"context-window-size": 65536},
+                        "minimax": {"context_window_size": 4096},
+                    }
+                }
+            )
+        )
+        assert gc.load_max_output_tokens("openai") == 65536
+        assert gc.load_max_output_tokens("minimax") == 4096
 
     def test_determine_provider_priority(monkeypatch, tmp_path):
         _use_temp_config(monkeypatch, tmp_path)

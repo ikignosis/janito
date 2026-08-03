@@ -22,8 +22,8 @@ from janito.general_config import (
     get_active_provider,
     get_config_value,
     get_masked_api_key,
-    load_context_window_size,
     load_endpoint_from_config,
+    load_max_output_tokens,
     load_model_from_config,
     load_provider_from_config,
 )
@@ -34,7 +34,7 @@ from ..mcp_manager import get_mcp_manager
 # Import provider configuration for base URLs and built-in defaults
 from ..provider_config import (
     get_base_url_from_provider,
-    get_default_context_window_size_from_provider,
+    get_default_max_output_tokens_from_provider,
     get_default_model_from_provider,
     is_custom_provider,
 )
@@ -441,15 +441,15 @@ def send_prompt(
 
     logger.debug(f"Using {len(tools_schemas)} tools total")
 
-    # Load max tokens from general config if set
+    # Load max output tokens from general config if set
     provider = cli_provider or get_active_provider()
-    context_window_size = load_context_window_size(provider)
-    if context_window_size is None:
+    max_output_tokens = load_max_output_tokens(provider)
+    if max_output_tokens is None:
         # Fall back to the provider's built-in default (from PROVIDER_INFO),
         # then to a global default of 100k tokens.
-        context_window_size = get_default_context_window_size_from_provider(provider)
-    if context_window_size is None:
-        context_window_size = 100000  # default to 100k tokens if not set in config
+        max_output_tokens = get_default_max_output_tokens_from_provider(provider)
+    if max_output_tokens is None:
+        max_output_tokens = 100000  # default to 100k tokens if not set in config
 
     # Check for preserve_thinking in config
     preserve_thinking = get_config_value("preserve_thinking")
@@ -494,9 +494,9 @@ def send_prompt(
             "temperature": 1.0,
         }
 
-        # Add max_tokens if context window size is set in config
-        if context_window_size is not None:
-            call_kwargs["max_completion_tokens"] = context_window_size
+        # Add max_tokens if max output tokens is set in config
+        if max_output_tokens is not None:
+            call_kwargs["max_completion_tokens"] = max_output_tokens
 
         # Pass preserve_thinking in extra_body if defined in config
         if preserve_thinking is not None:
@@ -708,14 +708,14 @@ def send_prompt(
                 if total_tokens is not None:
                     parts.append(f"Total: {format_tokens(total_tokens)}")
                 if input_tokens is not None:
-                    if context_window_size is not None:
+                    parts.append(f"In: {format_tokens(input_tokens)}")
+                if output_tokens is not None:
+                    if max_output_tokens is not None:
                         parts.append(
-                            f"In: {format_tokens(input_tokens)}/{format_tokens(context_window_size)}"
+                            f"Out: {format_tokens(output_tokens)}/{format_tokens(max_output_tokens)}"
                         )
                     else:
-                        parts.append(f"In: {format_tokens(input_tokens)}")
-                if output_tokens is not None:
-                    parts.append(f"Out: {format_tokens(output_tokens)}")
+                        parts.append(f"Out: {format_tokens(output_tokens)}")
                 if cached_tokens is not None:
                     parts.append(f"Cached: {format_tokens(cached_tokens)}")
                 parts.append(f"Messages: {len(messages)}")
@@ -726,7 +726,7 @@ def send_prompt(
                 logger.info(
                     f"Request completed: total={total_tokens} tokens "
                     f"(in={input_tokens}, out={output_tokens}, "
-                    f"cached={cached_tokens}, max={context_window_size}), "
+                    f"cached={cached_tokens}, max={max_output_tokens}), "
                     f"{len(messages)} messages"
                 )
             return full_content

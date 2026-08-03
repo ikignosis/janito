@@ -8,8 +8,8 @@ from ...general_config import (
     get_config_from_cli,
     get_config_path,
     get_masked_api_key,
-    load_context_window_size,
     load_endpoint_from_config,
+    load_max_output_tokens,
     load_model_from_config,
     load_provider_from_config,
     set_config_from_cli,
@@ -135,7 +135,7 @@ def handle_config_interactive() -> int:
     Prompts the user for:
     - Provider name (with existing config value as default)
     - API key (with existing auth value for that provider as default, masked)
-    - Max context window size (with existing config value as default, default 65536)
+    - Max output tokens (with existing config value as default, default 65536)
     - Endpoint (required only for 'custom' provider)
 
     Returns:
@@ -144,7 +144,7 @@ def handle_config_interactive() -> int:
     # Load existing values
     existing_provider = load_provider_from_config()
     existing_model = load_model_from_config(existing_provider)
-    existing_context_window = load_context_window_size(existing_provider)
+    existing_max_output_tokens = load_max_output_tokens(existing_provider)
     existing_endpoint = load_endpoint_from_config()
 
     # Mask existing API key for display
@@ -241,22 +241,24 @@ def handle_config_interactive() -> int:
     print(f"  Using model: {model}")
     print()
 
-    # Context window size
-    print("Context Window")
+    # Max output tokens
+    print("Max Output Tokens")
     print("-" * 30)
-    default_context = existing_context_window if existing_context_window else 65536
-    context_str = prompt_with_default(
-        "Enter max context window size", default=str(default_context)
+    default_max_tokens = (
+        existing_max_output_tokens if existing_max_output_tokens else 65536
     )
-    if not context_str:
-        context_window = 65536
+    max_tokens_str = prompt_with_default(
+        "Enter max output tokens", default=str(default_max_tokens)
+    )
+    if not max_tokens_str:
+        max_output_tokens = 65536
     else:
         try:
-            context_window = int(context_str.strip())
+            max_output_tokens = int(max_tokens_str.strip())
         except ValueError:
-            print("Error: Context window size must be a number.", file=sys.stderr)
+            print("Error: Max output tokens must be a number.", file=sys.stderr)
             return 1
-    print(f"  Using context window: {context_window}")
+    print(f"  Using max output tokens: {max_output_tokens}")
     print()
 
     # Endpoint (only required for 'custom' provider)
@@ -283,7 +285,7 @@ def handle_config_interactive() -> int:
     print(f"  Provider:          {provider}")
     print(f"  Model:             {model}")
     print(f"  API Key:           {mask_api_key(api_key)}")
-    print(f"  Context Window:    {context_window}")
+    print(f"  Max Output Tokens:    {max_output_tokens}")
     if endpoint:
         print(f"  Endpoint:          {endpoint}")
     print("=" * 50)
@@ -305,11 +307,11 @@ def handle_config_interactive() -> int:
         set_config_from_cli(f"model={model}", provider)
         print(f"[OK] Saved model '{model}' to config ({provider}.model)")
 
-        # Save context window to config.json under the provider-scoped key
-        # (e.g. "openai.context-window-size") so each provider has its own context window.
-        set_config_from_cli(f"context-window-size={context_window}", provider)
+        # Save max output tokens to config.json under the provider-scoped key
+        # (e.g. "openai.max-output-tokens") so each provider has its own limit.
+        set_config_from_cli(f"max-output-tokens={max_output_tokens}", provider)
         print(
-            f"[OK] Saved context window {context_window} to config ({provider}.context-window-size)"
+            f"[OK] Saved max output tokens {max_output_tokens} to config ({provider}.max-output-tokens)"
         )
 
         # Save endpoint to config.json under the provider-scoped key

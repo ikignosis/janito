@@ -153,5 +153,5 @@ Values stored in `~/.janito/config.json` via `--set`:
 |-----|-------------|---------|
 | `provider` | Provider name (`openai`, `custom`, `alibaba`, `minimax`, `xiaomi`, `moonshot`, `zai`, `xai`) | `openai` |
 | `model` | Model name | - |
-| `context-window-size` | Maximum context window size (tokens) | `65536` |
+| `max-output-tokens` | Maximum output tokens | `65536` |
 | `endpoint` | API endpoint URL (required for `custom` provider) | - |

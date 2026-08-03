@@ -11,6 +11,10 @@ Changes since `v4.17.0` (2026-08-01).
 
 ### Changed
 
+- Renamed the `context_window_size` concept to `max_output_tokens` everywhere, since the value is actually the maximum output-token limit (`max_tokens` / `max_completion_tokens`) sent with each completion, not a context-window size. The per-provider config key is now `max-output-tokens` (was `context-window-size`; `janito/general_config.py` still reads the legacy `context-window-size` / `context_window_size` keys as a fallback so existing configs keep working). `load_context_window_size()` became `load_max_output_tokens()` and `get_default_context_window_size_from_provider()` became `get_default_max_output_tokens_from_provider()`; the `PROVIDER_INFO` field is now `default_max_output_tokens` (was `default_context_window_size`), mirrored in the `GET /api/config/providers` web response. Local variables, the interactive `--config` prompt labels, the `/config` shell output ("Max Output Tokens:"), the `--config` CLI help, and the docs (`docs/configuration/index.md`, `docs/reference/cli-options.md`, `docs/getting-started/quick-start.md`, `README.md`) were updated accordingly. Tests updated and extended with a legacy-key fallback test.
+
+- The token-usage summary now shows the configured maximum output-token limit next to the **output** count instead of the input count, e.g. `Total: 3.2k | In: 3.1k | Out: 123/131.1k | Cached: 0 | Messages: 3` (was `In: 3.1k/131.1k`). The `max` value is the `max_output_tokens` limit, so it belongs with `Out:`. Applied consistently in the CLI (`janito/openai_client/client.py`) and the web UI (`janito/web/frontend/index.html` per-message usage strip, status bar and aria-label), with `tests/test_input_tokens_info.py` updated accordingly.
+
 - The Alibaba provider's built-in default model is now `qwen3.8-max` instead of `qwen3.8-max-preview` (`janito/provider_config.py`); updated the providers table in `README.md` and the expectation in `tests/test_provider_config.py` accordingly.
 
 ## [v4.17.0](https://github.com/joaopinto/janito/compare/v4.16.0...v4.17.0) - 2026-08-01

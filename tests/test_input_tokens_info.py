@@ -2,8 +2,8 @@
 Tests for the input-tokens/max-tokens display (issue #31).
 
 The token-usage summary shown at the end of each prompt should display the
-input token count alongside the configured max-tokens (context window size)
-using the ``input/max`` format, e.g. ``In: 1.2k/65.5k``.
+output token count alongside the configured max output tokens using the
+``output/max`` format, e.g. ``Out: 123/65.5k``.
 
 These tests verify:
   - ``format_tokens()`` human-readable formatting.
@@ -12,7 +12,7 @@ These tests verify:
   - The web ``UsageEvent`` serialization includes ``max_tokens`` only when
     it is set.
   - The web ``StreamAccumulator.usage_event()`` passes ``max_tokens`` through.
-  - The frontend usage strip renders the ``input/max`` pattern.
+  - The frontend usage strip renders the ``output/max`` pattern.
 """
 
 import sys
@@ -47,7 +47,7 @@ if pytest is not None:
 
     def _build_parts(
         input_tokens,
-        context_window_size,
+        max_output_tokens,
         output_tokens=50,
         total_tokens=200,
         cached_tokens=None,
@@ -57,35 +57,39 @@ if pytest is not None:
         if total_tokens is not None:
             parts.append(f"Total: {format_tokens(total_tokens)}")
         if input_tokens is not None:
-            if context_window_size is not None:
+            parts.append(f"In: {format_tokens(input_tokens)}")
+        if output_tokens is not None:
+            if max_output_tokens is not None:
                 parts.append(
-                    f"In: {format_tokens(input_tokens)}/{format_tokens(context_window_size)}"
+                    f"Out: {format_tokens(output_tokens)}/{format_tokens(max_output_tokens)}"
                 )
             else:
-                parts.append(f"In: {format_tokens(input_tokens)}")
-        if output_tokens is not None:
-            parts.append(f"Out: {format_tokens(output_tokens)}")
+                parts.append(f"Out: {format_tokens(output_tokens)}")
         if cached_tokens is not None:
             parts.append(f"Cached: {format_tokens(cached_tokens)}")
         return parts
 
     def test_input_with_max_tokens():
         parts = _build_parts(1200, 65536)
-        assert "In: 1.2k/65.5k" in parts
+        assert "In: 1.2k" in parts
+        assert "Out: 50/65.5k" in parts
 
     def test_input_without_max_tokens():
         parts = _build_parts(1200, None)
         assert "In: 1.2k" in parts
+        assert "Out: 50" in parts
         # No slash when max is not configured
-        assert not any("/" in p for p in parts if p.startswith("In:"))
+        assert not any("/" in p for p in parts)
 
     def test_input_with_max_exact_values():
         parts = _build_parts(500, 1000)
-        assert "In: 500/1k" in parts
+        assert "In: 500" in parts
+        assert "Out: 50/1k" in parts
 
     def test_input_zero_with_max():
         parts = _build_parts(0, 65536)
-        assert "In: 0/65.5k" in parts
+        assert "In: 0" in parts
+        assert "Out: 50/65.5k" in parts
 
     # ---- Web UsageEvent serialization --------------------------------
 
@@ -144,23 +148,24 @@ if pytest is not None:
 
     # ---- Frontend wiring (static checks) -----------------------------
 
-    def test_frontend_usage_strip_shows_input_max():
-        """The usage-strip template must render ``input/max`` in the in chip."""
+    def test_frontend_usage_strip_shows_output_max():
+        """The usage-strip template must render ``output/max`` in the out chip."""
         index = (
             Path(__file__).parent.parent / "janito" / "web" / "frontend" / "index.html"
         )
         html = index.read_text(encoding="utf-8")
-        # The in-chip must append max_tokens when available
+        # The out-chip must append max_tokens when available
         assert "msg.usage.max_tokens" in html
-        assert "formatTokens(msg.usage.input) + (msg.usage.max_tokens" in html
+        assert "formatTokens(msg.usage.output) + (msg.usage.max_tokens" in html
 
-    def test_frontend_status_bar_shows_input_max():
-        """The status bar must render ``input/max`` in the tokens area."""
+    def test_frontend_status_bar_shows_output_max():
+        """The status bar must render ``output/max`` in the tokens area."""
         index = (
             Path(__file__).parent.parent / "janito" / "web" / "frontend" / "index.html"
         )
         html = index.read_text(encoding="utf-8")
         assert "lastUsage.max_tokens" in html
+        assert "formatTokens(lastUsage.output) + (lastUsage.max_tokens" in html
 
     def test_frontend_event_handler_captures_max_tokens():
         """chatEvents.js must store max_tokens from the usage event."""

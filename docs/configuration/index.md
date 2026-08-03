@@ -29,7 +29,7 @@ These keys are stored in `~/.janito/config.json` (set them with `--set`):
 |--------|-------------|---------|
 | `provider` | Provider name (`openai`, `custom`, `alibaba`, `minimax`, `xiaomi`, `moonshot`, `zai`, `xai`) | `openai` |
 | `model` | Model name | - |
-| `context-window-size` | Maximum context window size (tokens) | `65536` |
+| `max-output-tokens` | Maximum output tokens | `65536` |
 | `endpoint` | API endpoint URL (required for `custom` providers) | - |
 
 > Provider base URLs are built in for known providers, so you normally only need `endpoint` for the `custom` provider. At runtime the endpoint is used directly as the API base URL.

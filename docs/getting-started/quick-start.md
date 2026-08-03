@@ -21,7 +21,7 @@ You'll be prompted for:
 | **Provider** | Your API provider | `openai`, `custom` |
 | **API Key** | Your API key (masked for security) | `sk-xxxxxxxxxxxxxxxx` |
 | **Model** | Model name to use | `gpt-4`, `claude-3-opus` |
-| **Context Window** | Maximum tokens (default: 65536) | `65536` |
+| **Max Output Tokens** | Maximum output tokens (default: 65536) | `65536` |
 
 ### Quick Configuration with Flags
 

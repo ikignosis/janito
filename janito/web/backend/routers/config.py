@@ -136,7 +136,7 @@ async def list_providers(request: Request):
     Each entry aggregates data from the existing janito modules:
 
     * ``provider_config.PROVIDER_INFO`` — the built-in per-provider defaults
-      (``endpoint``, ``default_model`` and ``default_context_window_size``).
+      (``endpoint``, ``default_model`` and ``default_max_output_tokens``).
       ``endpoint`` is ``None`` for standard OpenAI and the ``CUSTOM_ENDPOINT``
       marker for "custom".
     * ``general_config`` — the per-provider ``model`` and ``endpoint``
@@ -187,7 +187,7 @@ async def list_providers(request: Request):
                 "base_url": base_url,
                 "model": load_model_from_config(name),
                 "default_model": info.get("default_model"),
-                "default_context_window_size": info.get("default_context_window_size"),
+                "default_max_output_tokens": info.get("default_max_output_tokens"),
                 "endpoint": endpoint_override,
                 "api_key_set": bool(api_key),
                 "active": name == active_provider,

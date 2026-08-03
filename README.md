@@ -68,7 +68,7 @@ You'll be prompted for:
 - **Provider** - `openai` or `custom`
 - **API Key** - Masked for security
 - **Model** - e.g., `gpt-4`, `gpt-3.5-turbo`
-- **Context Window** - Max tokens (default: 65536)
+- **Max Output Tokens** - Maximum output tokens (default: 65536)
 
 ### Quick Configuration with `--set`
 

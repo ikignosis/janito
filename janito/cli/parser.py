@@ -266,7 +266,7 @@ Note: --set and --set-api-key must be used in separate commands.
     parser.add_argument(
         "--config",
         action="store_true",
-        help="Interactive configuration setup for provider, API key, and context window",
+        help="Interactive configuration setup for provider, API key, and max output tokens",
     )
 
     parser.add_argument(

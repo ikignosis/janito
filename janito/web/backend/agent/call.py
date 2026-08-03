@@ -14,14 +14,14 @@ from dataclasses import dataclass, field
 def build_call_kwargs(
     model: str,
     config,
-    context_window_size: int | None,
+    max_output_tokens: int | None,
     preserve_thinking,
 ) -> dict:
     """Build the base ``chat.completions.create`` parameters for one turn.
 
     Config-driven behaviour (from CLI args):
       - ``config.thinking`` -> add extra_body enable_thinking
-      - context window from ``janito.general_config`` -> max_tokens
+      - max output tokens from ``janito.general_config`` -> max_tokens
         (``max_completion_tokens`` for gpt-5 models)
       - ``preserve_thinking`` config value -> extra_body
     """
@@ -30,11 +30,11 @@ def build_call_kwargs(
         "temperature": 1.0,
     }
 
-    if context_window_size is not None:
+    if max_output_tokens is not None:
         if model.startswith("gpt-5"):
-            call_kwargs["max_completion_tokens"] = context_window_size
+            call_kwargs["max_completion_tokens"] = max_output_tokens
         else:
-            call_kwargs["max_tokens"] = context_window_size
+            call_kwargs["max_tokens"] = max_output_tokens
 
     if preserve_thinking is not None:
         call_kwargs.setdefault("extra_body", {})[
@@ -130,8 +130,8 @@ class StreamAccumulator:
         """Build a UsageEvent from the streamed usage info (or ``None``).
 
         Args:
-            max_tokens: The configured context-window / max-tokens limit
-                (from ``build_call_kwargs``), surfaced as ``input/max``.
+            max_tokens: The configured max-output-tokens limit (from
+                ``build_call_kwargs``), surfaced as ``input/max``.
         """
         if not self.usage:
             return None

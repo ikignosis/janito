@@ -1,14 +1,14 @@
 """
 Provider configuration management for Janito CLI.
 
-Handles provider-specific settings including default models, default context
-window sizes, and base URLs (endpoints) for the API.
+Handles provider-specific settings including default models, default max
+output tokens, and base URLs (endpoints) for the API.
 
 Provider Info:
 {
     "openai": {
         "default_model": "gpt-4",
-        "default_context_window_size": 128000,
+        "default_max_output_tokens": 128000,
         "endpoint": None,  # Standard OpenAI - no base_url needed
     },
     # ... more providers
@@ -29,9 +29,10 @@ CUSTOM_ENDPOINT_MARKER = "CUSTOM_ENDPOINT"
 #   - "default_model": the model used when the user has not configured one.
 #     ``None`` means the provider has no sensible default and the user must
 #     set a model explicitly (e.g. the "custom" provider).
-#   - "default_context_window_size": the context-window / max-tokens limit
-#     used when the user has not configured one. ``None`` means there is no
-#     built-in limit (the caller falls back to its own default).
+#   - "default_max_output_tokens": the maximum output-token limit (max_tokens
+#     / max_completion_tokens) used when the user has not configured one.
+#     ``None`` means there is no built-in limit (the caller falls back to its
+#     own default).
 #   - "endpoint": the OpenAI-compatible base URL. ``None`` means the standard
 #     OpenAI API endpoint (no custom base URL needed); the special
 #     ``CUSTOM_ENDPOINT`` marker means the endpoint must come from config.
@@ -39,49 +40,49 @@ PROVIDER_INFO: dict[str, dict] = {
     # AI Providers with OpenAI-compatible APIs
     "openai": {
         "default_model": "gpt-4",
-        "default_context_window_size": 128000,
+        "default_max_output_tokens": 128000,
         "endpoint": None,  # Standard OpenAI - no base_url needed
     },
     "minimax": {
         "default_model": "MiniMax-M3",
-        "default_context_window_size": 511000,  # 512k
+        "default_max_output_tokens": 511000,  # 512k
         "endpoint": "https://api.minimax.io/v1",
     },
     "xiaomi": {
         "default_model": "mimo-v2.5",
-        "default_context_window_size": 120000,  # 128k
+        "default_max_output_tokens": 120000,  # 128k
         "endpoint": "https://api.xiaomimimo.com/v1",
     },
     "moonshot": {
         "default_model": "kimi-k3-256k",
-        "default_context_window_size": 250000,  # 256k
+        "default_max_output_tokens": 250000,  # 256k
         "endpoint": "https://api.moonshot.ai/v1",
     },
     "alibaba": {
         "default_model": "qwen3.8-max",
-        "default_context_window_size": 131072,
+        "default_max_output_tokens": 131072,
         "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
     },
     "zai": {
         "default_model": "glm-5.2",
-        "default_context_window_size": 1000000,  # 1M
+        "default_max_output_tokens": 1000000,  # 1M
         "endpoint": "https://api.z.ai/api/paas/v4/",
     },
     "deepseek": {
         "default_model": "deepseek-v4-flash",
-        "default_context_window_size": 393216,  # 384k
+        "default_max_output_tokens": 393216,  # 384k
         "endpoint": "https://api.deepseek.com",
     },
     "xai": {
         "default_model": "grok-4",
-        "default_context_window_size": 131072,
+        "default_max_output_tokens": 131072,
         "endpoint": "https://api.x.ai/v1",
     },
     # Special case: requires an endpoint from config (--set endpoint) and has
     # no built-in default model.
     "custom": {
         "default_model": None,
-        "default_context_window_size": None,
+        "default_max_output_tokens": None,
         "endpoint": CUSTOM_ENDPOINT_MARKER,
     },
 }
@@ -146,21 +147,21 @@ def get_default_model_from_provider(provider: str) -> str | None:
     return info.get("default_model")
 
 
-def get_default_context_window_size_from_provider(provider: str) -> int | None:
+def get_default_max_output_tokens_from_provider(provider: str) -> int | None:
     """
-    Get the built-in default context window size for a given provider name.
+    Get the built-in default max output tokens for a given provider name.
 
     Args:
         provider: The provider name (case-insensitive)
 
     Returns:
-        The default context window size if the provider has one, ``None``
+        The default max output tokens if the provider has one, ``None``
         otherwise (either the provider is unknown or it has no default).
     """
     info = get_provider_info(provider)
     if info is None:
         return None
-    return info.get("default_context_window_size")
+    return info.get("default_max_output_tokens")
 
 
 def canonical_provider_name(provider: str) -> str | None:

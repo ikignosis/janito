@@ -19,7 +19,7 @@ from janito.provider_config import (
     PROVIDER_INFO,
     canonical_provider_name,
     get_base_url_from_provider,
-    get_default_context_window_size_from_provider,
+    get_default_max_output_tokens_from_provider,
     get_default_model_from_provider,
     get_provider_info,
     is_supported_provider,
@@ -39,7 +39,7 @@ if pytest is not None:
             info = PROVIDER_INFO[name]
             # Every entry carries the full set of keys.
             assert "default_model" in info
-            assert "default_context_window_size" in info
+            assert "default_max_output_tokens" in info
             assert "endpoint" in info
 
     def test_get_provider_info_and_base_url():
@@ -60,25 +60,25 @@ if pytest is not None:
         info = get_provider_info("deepseek")
         assert info is not None
         assert info["default_model"] == "deepseek-v4-flash"
-        assert info["default_context_window_size"] == 393216
+        assert info["default_max_output_tokens"] == 393216
         assert info["endpoint"] == "https://api.deepseek.com"
         # Case-insensitive lookup.
         assert get_provider_info("DeepSeek")["endpoint"] == "https://api.deepseek.com"
         assert get_base_url_from_provider("deepseek") == "https://api.deepseek.com"
         assert get_default_model_from_provider("deepseek") == "deepseek-v4-flash"
-        assert get_default_context_window_size_from_provider("deepseek") == 393216
+        assert get_default_max_output_tokens_from_provider("deepseek") == 393216
 
-    def test_default_model_and_context_window():
-        # Providers expose built-in default models / context windows.
+    def test_default_model_and_max_output_tokens():
+        # Providers expose built-in default models / max output tokens.
         assert get_default_model_from_provider("openai") == "gpt-4"
         assert get_default_model_from_provider("alibaba") == "qwen3.8-max"
-        assert get_default_context_window_size_from_provider("openai") == 128000
+        assert get_default_max_output_tokens_from_provider("openai") == 128000
         # The "custom" provider has no built-in defaults.
         assert get_default_model_from_provider("custom") is None
-        assert get_default_context_window_size_from_provider("custom") is None
+        assert get_default_max_output_tokens_from_provider("custom") is None
         # Unknown provider returns None.
         assert get_default_model_from_provider("bogus") is None
-        assert get_default_context_window_size_from_provider("bogus") is None
+        assert get_default_max_output_tokens_from_provider("bogus") is None
 
     def test_canonical_provider_name_exact_and_case_insensitive():
         assert canonical_provider_name("openai") == "openai"

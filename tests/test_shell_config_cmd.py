@@ -6,9 +6,15 @@ from janito.shell.cmds.config import _print_config_info
 
 
 class TestPrintConfigInfo:
-    """Tests for _print_config_info context-window display logic."""
+    """Tests for _print_config_info max-output-tokens display logic."""
 
-    def _run(self, capsys, provider=None, configured_cw=None, default_cw=128000):
+    def _run(
+        self,
+        capsys,
+        provider=None,
+        configured_max_tokens=None,
+        default_max_tokens=128000,
+    ):
         """Helper: patch config lookups and capture printed output.
 
         Args:
@@ -29,36 +35,36 @@ class TestPrintConfigInfo:
                 return_value="sk-***7890",
             ),
             patch(
-                "janito.shell.cmds.config.load_context_window_size",
-                return_value=configured_cw,
+                "janito.shell.cmds.config.load_max_output_tokens",
+                return_value=configured_max_tokens,
             ),
             patch(
                 "janito.shell.cmds.config.load_endpoint_from_config",
                 return_value=None,
             ),
             patch(
-                "janito.shell.cmds.config.get_default_context_window_size_from_provider",
-                return_value=default_cw,
+                "janito.shell.cmds.config.get_default_max_output_tokens_from_provider",
+                return_value=default_max_tokens,
             ),
         ):
             _print_config_info(provider)
         return capsys.readouterr().out
 
-    def test_explicit_context_window_shown_as_is(self, capsys):
-        """When the user has set a context window, display it without suffix."""
-        out = self._run(capsys, configured_cw=65536)
-        assert "Context Window:     65536" in out
+    def test_explicit_max_output_tokens_shown_as_is(self, capsys):
+        """When the user has set max output tokens, display them without suffix."""
+        out = self._run(capsys, configured_max_tokens=65536)
+        assert "Max Output Tokens:  65536" in out
         assert "(default)" not in out
 
     def test_falls_back_to_provider_default(self, capsys):
         """When not configured, the provider's built-in default is shown with '(default)'."""
-        out = self._run(capsys, configured_cw=None, default_cw=128000)
-        assert "Context Window:     128000 (default)" in out
+        out = self._run(capsys, configured_max_tokens=None, default_max_tokens=128000)
+        assert "Max Output Tokens:  128000 (default)" in out
 
     def test_not_set_when_no_default_available(self, capsys):
         """When neither configured nor a provider default exists, show '(not set)'."""
-        out = self._run(capsys, configured_cw=None, default_cw=None)
-        assert "Context Window:     (not set)" in out
+        out = self._run(capsys, configured_max_tokens=None, default_max_tokens=None)
+        assert "Max Output Tokens:  (not set)" in out
 
     def test_session_provider_wins_over_configured_default(self, capsys):
         """An explicit session provider (e.g. --provider deepseek) is reported."""

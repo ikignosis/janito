@@ -8,17 +8,17 @@ from janito.auth_config import get_api_key
 from janito.general_config import (
     get_active_provider,
     get_masked_api_key,
-    load_context_window_size,
     load_endpoint_from_config,
+    load_max_output_tokens,
 )
-from janito.provider_config import get_default_context_window_size_from_provider
+from janito.provider_config import get_default_max_output_tokens_from_provider
 
 from .base import CmdHandler
 from .registry import register_command
 
 
 def _print_config_info(provider: str | None = None) -> None:
-    """Print current configuration info (provider, base_url, masked API key, context window size).
+    """Print current configuration info (provider, base_url, masked API key, max output tokens).
 
     Args:
         provider: The provider in effect for the current shell session (e.g.
@@ -29,7 +29,7 @@ def _print_config_info(provider: str | None = None) -> None:
         provider = get_active_provider()
     api_key = get_api_key(provider) or ""
     masked_key = get_masked_api_key(api_key)
-    context_window_size = load_context_window_size(provider)
+    max_output_tokens = load_max_output_tokens(provider)
 
     # Determine the actual base URL that will be used: a configured endpoint
     # override first, otherwise the provider's built-in default.
@@ -44,14 +44,18 @@ def _print_config_info(provider: str | None = None) -> None:
     else:
         base_url_display = "(default OpenAI URL)"
 
-    # Resolve the effective context window: an explicit configuration value
+    # Resolve the effective max output tokens: an explicit configuration value
     # first, otherwise the provider's built-in default from PROVIDER_INFO.
-    if context_window_size:
-        context_window_display = str(context_window_size)
+    if max_output_tokens:
+        max_output_tokens_display = str(max_output_tokens)
     else:
-        default_cw = get_default_context_window_size_from_provider(provider)
-        context_window_display = (
-            f"{default_cw} (default)" if default_cw else "(not set)"
+        default_max_output_tokens = get_default_max_output_tokens_from_provider(
+            provider
+        )
+        max_output_tokens_display = (
+            f"{default_max_output_tokens} (default)"
+            if default_max_output_tokens
+            else "(not set)"
         )
 
     print()
@@ -61,7 +65,7 @@ def _print_config_info(provider: str | None = None) -> None:
     print(f"  Provider:           {provider}")
     print(f"  Base URL:           {base_url_display}")
     print(f"  API Key:            {masked_key}")
-    print(f"  Context Window:     {context_window_display}")
+    print(f"  Max Output Tokens:  {max_output_tokens_display}")
     print("=" * 50)
     print()
 

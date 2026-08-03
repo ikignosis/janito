@@ -21,10 +21,10 @@ logger = logging.getLogger(__name__)
 CONFIG_PATH = get_config_dir() / "config.json"
 
 # Config keys that are stored per-provider (as ``<provider>.<key>``)
-PROVIDER_SCOPED_KEYS = {"model", "endpoint", "context-window-size"}
+PROVIDER_SCOPED_KEYS = {"model", "endpoint", "max-output-tokens"}
 
 # Config keys whose values should be coerced to int when set via CLI.
-INT_VALUED_KEYS = {"context-window-size"}
+INT_VALUED_KEYS = {"max-output-tokens"}
 
 
 def get_config_path() -> Path:
@@ -294,24 +294,37 @@ def load_model_from_config(cli_provider: str | None = None) -> str | None:
     return get_config_value(model_config_key(provider))
 
 
-def load_context_window_size(cli_provider: str | None = None) -> int | None:
-    """Load context window size from ~/.janito/config.json if it exists.
+def load_max_output_tokens(cli_provider: str | None = None) -> int | None:
+    """Load max output tokens from ~/.janito/config.json if it exists.
 
-    This value can be used to limit the context window size for API calls.
-    The context window size is stored per-provider under the nested providers
-    structure (e.g. providers.openai.context-window-size).
+    This value is used as the maximum output-token limit (``max_tokens`` /
+    ``max_completion_tokens``) for API calls. It is stored per-provider under
+    the nested providers structure (e.g. providers.openai.max-output-tokens).
+
+    For backward compatibility, the legacy ``<provider>.context-window-size``
+    and ``<provider>.context_window_size`` keys are still honored when the new
+    key is not set.
 
     Args:
         cli_provider: Provider passed via ``--provider`` (may be None). If not
             provided, the provider is read from config.json.
 
     Returns:
-        int: Context window size from config, or None if not found
+        int: Max output tokens from config, or None if not found
     """
     provider = determine_provider(cli_provider)
     if not provider:
         return None
     # Support both hyphenated and underscore formats in config
+    key = f"{provider}.max-output-tokens"
+    value = get_config_value(key)
+    if value is not None:
+        return int(value)
+    key = f"{provider}.max_output_tokens"
+    value = get_config_value(key)
+    if value is not None:
+        return int(value)
+    # Backward compatibility: legacy context-window-size / context_window_size keys.
     key = f"{provider}.context-window-size"
     value = get_config_value(key)
     if value is not None:
