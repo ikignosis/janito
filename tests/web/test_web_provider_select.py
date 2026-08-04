@@ -113,6 +113,8 @@ def test_providers_endpoint_shape(client):
         assert isinstance(entry["effective"], bool)
         assert "model" in entry
         assert "default_model" in entry
+        assert "default_max_input_tokens" in entry
+        assert "default_max_output_tokens" in entry
 
     names = {entry["name"] for entry in data["providers"]}
     assert "openai" in names

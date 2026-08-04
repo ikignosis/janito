@@ -34,6 +34,7 @@ from ..mcp_manager import get_mcp_manager
 # Import provider configuration for base URLs and built-in defaults
 from ..provider_config import (
     get_base_url_from_provider,
+    get_default_max_input_tokens_from_provider,
     get_default_max_output_tokens_from_provider,
     get_default_model_from_provider,
     is_custom_provider,
@@ -451,6 +452,10 @@ def send_prompt(
     if max_output_tokens is None:
         max_output_tokens = 100000  # default to 100k tokens if not set in config
 
+    # Load the provider's built-in max input tokens (context window) for the
+    # usage summary display.
+    max_input_tokens = get_default_max_input_tokens_from_provider(provider)
+
     # Check for preserve_thinking in config
     preserve_thinking = get_config_value("preserve_thinking")
     if preserve_thinking is not None:
@@ -708,7 +713,12 @@ def send_prompt(
                 if total_tokens is not None:
                     parts.append(f"Total: {format_tokens(total_tokens)}")
                 if input_tokens is not None:
-                    parts.append(f"In: {format_tokens(input_tokens)}")
+                    if max_input_tokens is not None:
+                        parts.append(
+                            f"In: {format_tokens(input_tokens)}/{format_tokens(max_input_tokens)}"
+                        )
+                    else:
+                        parts.append(f"In: {format_tokens(input_tokens)}")
                 if output_tokens is not None:
                     if max_output_tokens is not None:
                         parts.append(

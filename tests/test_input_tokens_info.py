@@ -51,13 +51,19 @@ if pytest is not None:
         output_tokens=50,
         total_tokens=200,
         cached_tokens=None,
+        max_input_tokens=None,
     ):
         """Replicate the parts-building logic from send_prompt."""
         parts = []
         if total_tokens is not None:
             parts.append(f"Total: {format_tokens(total_tokens)}")
         if input_tokens is not None:
-            parts.append(f"In: {format_tokens(input_tokens)}")
+            if max_input_tokens is not None:
+                parts.append(
+                    f"In: {format_tokens(input_tokens)}/{format_tokens(max_input_tokens)}"
+                )
+            else:
+                parts.append(f"In: {format_tokens(input_tokens)}")
         if output_tokens is not None:
             if max_output_tokens is not None:
                 parts.append(
@@ -70,8 +76,8 @@ if pytest is not None:
         return parts
 
     def test_input_with_max_tokens():
-        parts = _build_parts(1200, 65536)
-        assert "In: 1.2k" in parts
+        parts = _build_parts(1200, 65536, max_input_tokens=128000)
+        assert "In: 1.2k/128k" in parts
         assert "Out: 50/65.5k" in parts
 
     def test_input_without_max_tokens():
@@ -82,13 +88,18 @@ if pytest is not None:
         assert not any("/" in p for p in parts)
 
     def test_input_with_max_exact_values():
-        parts = _build_parts(500, 1000)
-        assert "In: 500" in parts
+        parts = _build_parts(500, 1000, max_input_tokens=1000)
+        assert "In: 500/1k" in parts
         assert "Out: 50/1k" in parts
 
     def test_input_zero_with_max():
-        parts = _build_parts(0, 65536)
-        assert "In: 0" in parts
+        parts = _build_parts(0, 65536, max_input_tokens=128000)
+        assert "In: 0/128k" in parts
+        assert "Out: 50/65.5k" in parts
+
+    def test_input_without_input_max_but_with_output_max():
+        parts = _build_parts(1200, 65536)
+        assert "In: 1.2k" in parts
         assert "Out: 50/65.5k" in parts
 
     # ---- Web UsageEvent serialization --------------------------------

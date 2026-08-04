@@ -8,6 +8,7 @@ Provider Info:
 {
     "openai": {
         "default_model": "gpt-4",
+        "default_max_input_tokens": 128000,
         "default_max_output_tokens": 128000,
         "endpoint": None,  # Standard OpenAI - no base_url needed
     },
@@ -29,6 +30,9 @@ CUSTOM_ENDPOINT_MARKER = "CUSTOM_ENDPOINT"
 #   - "default_model": the model used when the user has not configured one.
 #     ``None`` means the provider has no sensible default and the user must
 #     set a model explicitly (e.g. the "custom" provider).
+#   - "default_max_input_tokens": the maximum input-token (context window)
+#     limit used as the built-in default. ``None`` means there is no built-in
+#     limit (the caller falls back to its own default).
 #   - "default_max_output_tokens": the maximum output-token limit (max_tokens
 #     / max_completion_tokens) used when the user has not configured one.
 #     ``None`` means there is no built-in limit (the caller falls back to its
@@ -40,41 +44,49 @@ PROVIDER_INFO: dict[str, dict] = {
     # AI Providers with OpenAI-compatible APIs
     "openai": {
         "default_model": "gpt-4",
+        "default_max_input_tokens": 128000,
         "default_max_output_tokens": 128000,
         "endpoint": None,  # Standard OpenAI - no base_url needed
     },
     "minimax": {
         "default_model": "MiniMax-M3",
+        "default_max_input_tokens": 128000,
         "default_max_output_tokens": 511000,  # 512k
         "endpoint": "https://api.minimax.io/v1",
     },
     "xiaomi": {
         "default_model": "mimo-v2.5",
+        "default_max_input_tokens": 128000,
         "default_max_output_tokens": 120000,  # 128k
         "endpoint": "https://api.xiaomimimo.com/v1",
     },
     "moonshot": {
         "default_model": "kimi-k3-256k",
+        "default_max_input_tokens": 128000,
         "default_max_output_tokens": 250000,  # 256k
         "endpoint": "https://api.moonshot.ai/v1",
     },
     "alibaba": {
         "default_model": "qwen3.8-max",
+        "default_max_input_tokens": 1000000,  # 1M
         "default_max_output_tokens": 131072,
         "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
     },
     "zai": {
         "default_model": "glm-5.2",
+        "default_max_input_tokens": 128000,
         "default_max_output_tokens": 1000000,  # 1M
         "endpoint": "https://api.z.ai/api/paas/v4/",
     },
     "deepseek": {
         "default_model": "deepseek-v4-flash",
+        "default_max_input_tokens": 1000000,  # 1M
         "default_max_output_tokens": 393216,  # 384k
         "endpoint": "https://api.deepseek.com",
     },
     "xai": {
         "default_model": "grok-4",
+        "default_max_input_tokens": 128000,
         "default_max_output_tokens": 131072,
         "endpoint": "https://api.x.ai/v1",
     },
@@ -82,6 +94,7 @@ PROVIDER_INFO: dict[str, dict] = {
     # no built-in default model.
     "custom": {
         "default_model": None,
+        "default_max_input_tokens": None,
         "default_max_output_tokens": None,
         "endpoint": CUSTOM_ENDPOINT_MARKER,
     },
@@ -162,6 +175,23 @@ def get_default_max_output_tokens_from_provider(provider: str) -> int | None:
     if info is None:
         return None
     return info.get("default_max_output_tokens")
+
+
+def get_default_max_input_tokens_from_provider(provider: str) -> int | None:
+    """
+    Get the built-in default max input tokens for a given provider name.
+
+    Args:
+        provider: The provider name (case-insensitive)
+
+    Returns:
+        The default max input tokens if the provider has one, ``None``
+        otherwise (either the provider is unknown or it has no default).
+    """
+    info = get_provider_info(provider)
+    if info is None:
+        return None
+    return info.get("default_max_input_tokens")
 
 
 def canonical_provider_name(provider: str) -> str | None:
