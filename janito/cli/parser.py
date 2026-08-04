@@ -52,6 +52,7 @@ Examples:
   janito --show-system-prompt                               # Show the resolved system prompt
   janito --log=info,debug "Your prompt"                     # Enable logging
   janito --model gpt-4 "Your prompt"                        # Use specific model
+  janito --reasoning-level xhigh "Your prompt"               # Set reasoning depth
   janito --set model=gpt-4                                  # Set model for the active provider
   janito --provider openai --set model=gpt-4                # Set model for a specific provider
   janito --unset model                                      # Remove config value
@@ -136,6 +137,16 @@ Note: --set and --set-api-key must be used in separate commands.
         "--thinking",
         action="store_true",
         help="Enable thinking mode (sends extra_body={'enable_thinking': True} to the API)",
+    )
+
+    parser.add_argument(
+        "--reasoning-level",
+        metavar="LEVEL",
+        choices=["none", "minimal", "low", "medium", "high", "xhigh", "max"],
+        help="Reasoning depth for the API call (sends reasoning_effort=<LEVEL>). "
+        "Overrides the provider's configured value and built-in default "
+        "(e.g. qwen3.8-max defaults to 'xhigh'). "
+        "Examples: low, medium, high, xhigh",
     )
 
     parser.add_argument(

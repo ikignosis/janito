@@ -100,6 +100,23 @@ janito --set-api-key="your-dashscope-api-key" --provider alibaba
 | `qwen-turbo` | Fast, cost-effective |
 | `qwen-long` | Extended context window |
 
+### Reasoning Level
+
+The default model `qwen3.8-max` supports configurable reasoning depth via the
+OpenAI-compatible `reasoning_effort` parameter. The built-in default is
+`xhigh`; the supported levels are `low`, `medium` and `xhigh`.
+
+```bash
+# Override the reasoning depth for a single call
+janito --reasoning-level medium "Your prompt"
+
+# Set a per-provider default in the config
+janito --provider alibaba --set reasoning-level=medium
+```
+
+Resolution order: `--reasoning-level` > per-provider config value
+(`--set reasoning-level=...`) > built-in default (`xhigh`).
+
 ### Example
 
 ```bash

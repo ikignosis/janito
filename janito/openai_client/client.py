@@ -26,6 +26,7 @@ from janito.general_config import (
     load_max_output_tokens,
     load_model_from_config,
     load_provider_from_config,
+    load_reasoning_level,
 )
 
 # Import MCP manager
@@ -37,6 +38,7 @@ from ..provider_config import (
     get_default_max_input_tokens_from_provider,
     get_default_max_output_tokens_from_provider,
     get_default_model_from_provider,
+    get_default_reasoning_level_from_provider,
     is_custom_provider,
 )
 from ..tooling.changes import clear_changes, record_change
@@ -383,6 +385,7 @@ def send_prompt(
     thinking: bool = False,
     cli_model: str | None = None,
     cli_provider: str | None = None,
+    reasoning_level: str | None = None,
 ) -> str:
     """Send prompt to OpenAI endpoint and return response using streaming.
 
@@ -396,6 +399,9 @@ def send_prompt(
         thinking: If True, enable thinking mode (extra_body={'enable_thinking': True})
         cli_model: Model passed via ``--model`` (overrides the provider's config).
         cli_provider: Provider passed via ``--provider`` (overrides config/auth).
+        reasoning_level: Reasoning depth passed via ``--reasoning-level``
+            (overrides the provider's configured value and built-in default).
+            Sent to the API as ``reasoning_effort``.
     """
     logger.info("Sending prompt to API")
     # Remove any changes log from a previous prompt so ./janito/changes.jsonl
@@ -456,6 +462,14 @@ def send_prompt(
     # usage summary display.
     max_input_tokens = get_default_max_input_tokens_from_provider(provider)
 
+    # Reasoning level (reasoning_effort): --reasoning-level CLI arg, then the
+    # provider's configured value (--set reasoning-level=...), and finally the
+    # provider's built-in default (from PROVIDER_INFO, e.g. "xhigh" for
+    # Alibaba's qwen3.8-max). None means the API's own default applies.
+    reasoning_level = reasoning_level or load_reasoning_level(provider)
+    if reasoning_level is None:
+        reasoning_level = get_default_reasoning_level_from_provider(provider)
+
     # Check for preserve_thinking in config
     preserve_thinking = get_config_value("preserve_thinking")
     if preserve_thinking is not None:
@@ -502,6 +516,11 @@ def send_prompt(
         # Add max_tokens if max output tokens is set in config
         if max_output_tokens is not None:
             call_kwargs["max_completion_tokens"] = max_output_tokens
+
+        # Pass the reasoning level (reasoning_effort) when resolved (from
+        # --reasoning-level, per-provider config, or the built-in default).
+        if reasoning_level:
+            call_kwargs["reasoning_effort"] = reasoning_level
 
         # Pass preserve_thinking in extra_body if defined in config
         if preserve_thinking is not None:

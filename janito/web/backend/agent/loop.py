@@ -14,9 +14,13 @@ from janito.general_config import (
     get_active_provider,
     get_config_value,
     load_max_output_tokens,
+    load_reasoning_level,
 )
 from janito.openai_client.client import resolve_runtime_config
-from janito.provider_config import get_default_max_output_tokens_from_provider
+from janito.provider_config import (
+    get_default_max_output_tokens_from_provider,
+    get_default_reasoning_level_from_provider,
+)
 
 from ..config import WebServerConfig
 from ..events import (
@@ -87,12 +91,18 @@ async def stream_prompt(
         )
     preserve_thinking = get_config_value("preserve_thinking")
 
+    # Reasoning level (reasoning_effort): per-provider config value first,
+    # then the provider's built-in default (e.g. "xhigh" for qwen3.8-max).
+    reasoning_level = load_reasoning_level(effective_provider)
+    if reasoning_level is None:
+        reasoning_level = get_default_reasoning_level_from_provider(effective_provider)
+
     messages.append({"role": "user", "content": prompt})
 
     first_turn = True
     while True:
         call_kwargs = build_call_kwargs(
-            model, config, max_output_tokens, preserve_thinking
+            model, config, max_output_tokens, preserve_thinking, reasoning_level
         )
         call_kwargs["messages"] = messages
         if tools_schemas:

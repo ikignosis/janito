@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 CONFIG_PATH = get_config_dir() / "config.json"
 
 # Config keys that are stored per-provider (as ``<provider>.<key>``)
-PROVIDER_SCOPED_KEYS = {"model", "endpoint", "max-output-tokens"}
+PROVIDER_SCOPED_KEYS = {"model", "endpoint", "max-output-tokens", "reasoning-level"}
 
 # Config keys whose values should be coerced to int when set via CLI.
 INT_VALUED_KEYS = {"max-output-tokens"}
@@ -275,6 +275,22 @@ def endpoint_config_key(provider: str) -> str:
     return f"{normalize_provider(provider)}.endpoint"
 
 
+def reasoning_level_config_key(provider: str) -> str:
+    """Return the config key used to store the reasoning level for a provider.
+
+    Reasoning levels are stored per-provider using the
+    ``<provider>.reasoning-level`` key so that each provider can have its own
+    reasoning depth (e.g. ``low``/``medium``/``xhigh`` for Qwen3.8-Max).
+
+    Args:
+        provider: The provider name
+
+    Returns:
+        The provider-scoped config key, e.g. ``\"alibaba.reasoning-level\"``
+    """
+    return f"{normalize_provider(provider)}.reasoning-level"
+
+
 def load_model_from_config(cli_provider: str | None = None) -> str | None:
     """Load the model name for the active provider from ~/.janito/config.json.
 
@@ -333,6 +349,30 @@ def load_max_output_tokens(cli_provider: str | None = None) -> int | None:
     value = get_config_value(key)
     if value is not None:
         return int(value)
+    return None
+
+
+def load_reasoning_level(cli_provider: str | None = None) -> str | None:
+    """Load the reasoning level for the active provider from config.json.
+
+    The reasoning level is stored under a provider-scoped key
+    (``<provider>.reasoning-level``) so that different providers can each have
+    their own reasoning depth (e.g. ``low``/``medium``/``xhigh`` for
+    Qwen3.8-Max).
+
+    Args:
+        cli_provider: Provider passed via ``--provider`` (may be None). If not
+            provided, the provider is read from config.json.
+
+    Returns:
+        str: The reasoning level from config, or None if not found
+    """
+    provider = determine_provider(cli_provider)
+    if not provider:
+        return None
+    value = get_config_value(reasoning_level_config_key(provider))
+    if value is not None:
+        return str(value)
     return None
 
 

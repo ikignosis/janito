@@ -16,6 +16,7 @@ def build_call_kwargs(
     config,
     max_output_tokens: int | None,
     preserve_thinking,
+    reasoning_level: str | None = None,
 ) -> dict:
     """Build the base ``chat.completions.create`` parameters for one turn.
 
@@ -24,6 +25,7 @@ def build_call_kwargs(
       - max output tokens from ``janito.general_config`` -> max_tokens
         (``max_completion_tokens`` for gpt-5 models)
       - ``preserve_thinking`` config value -> extra_body
+      - ``reasoning_level`` -> ``reasoning_effort`` (e.g. low/medium/xhigh)
     """
     call_kwargs: dict = {
         "model": model,
@@ -35,6 +37,9 @@ def build_call_kwargs(
             call_kwargs["max_completion_tokens"] = max_output_tokens
         else:
             call_kwargs["max_tokens"] = max_output_tokens
+
+    if reasoning_level:
+        call_kwargs["reasoning_effort"] = reasoning_level
 
     if preserve_thinking is not None:
         call_kwargs.setdefault("extra_body", {})[

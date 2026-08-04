@@ -22,7 +22,9 @@ from janito.provider_config import (
     get_default_max_input_tokens_from_provider,
     get_default_max_output_tokens_from_provider,
     get_default_model_from_provider,
+    get_default_reasoning_level_from_provider,
     get_provider_info,
+    get_supported_reasoning_levels_from_provider,
     is_supported_provider,
     list_supported_providers,
     validate_provider_name,
@@ -86,6 +88,25 @@ if pytest is not None:
         assert get_default_model_from_provider("bogus") is None
         assert get_default_max_input_tokens_from_provider("bogus") is None
         assert get_default_max_output_tokens_from_provider("bogus") is None
+
+    def test_default_and_supported_reasoning_levels():
+        # Alibaba's default model (qwen3.8-max) declares reasoning levels.
+        assert get_default_reasoning_level_from_provider("alibaba") == "xhigh"
+        supported = get_supported_reasoning_levels_from_provider("alibaba")
+        assert supported is not None
+        assert [entry["effort"] for entry in supported] == ["low", "medium", "xhigh"]
+        for entry in supported:
+            assert "effort" in entry
+            assert "description" in entry
+        # Case-insensitive lookup works.
+        assert get_default_reasoning_level_from_provider("Alibaba") == "xhigh"
+        # Providers without configurable reasoning expose None.
+        assert get_default_reasoning_level_from_provider("openai") is None
+        assert get_supported_reasoning_levels_from_provider("openai") is None
+        assert get_default_reasoning_level_from_provider("custom") is None
+        # Unknown provider returns None.
+        assert get_default_reasoning_level_from_provider("bogus") is None
+        assert get_supported_reasoning_levels_from_provider("bogus") is None
 
     def test_canonical_provider_name_exact_and_case_insensitive():
         assert canonical_provider_name("openai") == "openai"

@@ -230,6 +230,46 @@ if pytest is not None:
         # Removing again returns False (already gone)
         assert gc.unset_config_key_from_cli("max-output-tokens", "openai") is False
 
+    def test_set_reasoning_level_per_provider(monkeypatch, tmp_path):
+        config_path = _use_temp_config(monkeypatch, tmp_path)
+        gc.set_config_from_cli("provider=alibaba")
+        gc.set_config_from_cli("reasoning-level=xhigh")
+        gc.set_config_from_cli("reasoning-level=low", "openai")
+        # Each provider has its own reasoning-level
+        assert gc.load_reasoning_level("alibaba") == "xhigh"
+        assert gc.load_reasoning_level("openai") == "low"
+        # Verify storage structure
+        config = _read_config(config_path)
+        assert config["providers"]["alibaba"]["reasoning-level"] == "xhigh"
+        assert config["providers"]["openai"]["reasoning-level"] == "low"
+        # Provider-scoped set/get round-trips through the CLI helpers.
+        assert gc.get_config_from_cli("reasoning-level", "alibaba") == "xhigh"
+
+    def test_set_reasoning_level_without_provider_errors(monkeypatch, tmp_path):
+        config_path = _use_temp_config(monkeypatch, tmp_path)
+        with pytest.raises(ProviderRequiredError):
+            gc.set_config_from_cli("reasoning-level=medium")
+        # Nothing should have been written
+        assert _read_config(config_path) == {}
+
+    def test_load_reasoning_level_unknown_provider_returns_none(monkeypatch, tmp_path):
+        _use_temp_config(monkeypatch, tmp_path)
+        gc.set_config_from_cli("reasoning-level=medium", "alibaba")
+        # No provider configured and unknown provider -> None
+        assert gc.load_reasoning_level("unknown") is None
+        assert gc.load_reasoning_level() is None
+
+    def test_unset_reasoning_level_per_provider(monkeypatch, tmp_path):
+        config_path = _use_temp_config(monkeypatch, tmp_path)
+        gc.set_config_from_cli("reasoning-level=xhigh", "alibaba")
+        gc.set_config_from_cli("reasoning-level=low", "openai")
+        assert gc.unset_config_key_from_cli("reasoning-level", "alibaba") is True
+        config = _read_config(config_path)
+        assert "alibaba" not in config.get("providers", {})
+        assert config["providers"]["openai"]["reasoning-level"] == "low"
+        # Removing again returns False (already gone)
+        assert gc.unset_config_key_from_cli("reasoning-level", "alibaba") is False
+
     def test_load_max_output_tokens_legacy_key_fallback(monkeypatch, tmp_path):
         """Legacy context-window-size / context_window_size keys are still read."""
         config_path = _use_temp_config(monkeypatch, tmp_path)

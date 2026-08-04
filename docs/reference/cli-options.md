@@ -52,6 +52,7 @@ If no prompt is given, janito starts an interactive chat shell.
 | `-S`, `--system-prompt <prompt>` | Override the system prompt (implies no tools) |
 | `--show-system-prompt` | Display the resolved system prompt and exit |
 | `-t`, `--thinking` | Enable thinking mode (sends `extra_body={'enable_thinking': True}`) |
+| `--reasoning-level <level>` | Set the reasoning depth for the API call (sends `reasoning_effort=<level>`). Overrides the provider's configured value and built-in default. Values: `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`. |
 
 ## Privileges
 

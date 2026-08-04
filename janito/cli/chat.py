@@ -61,12 +61,16 @@ def run_interactive_chat(args):
     # prompt uses the same configuration without environment variables).
     cli_model = getattr(args, "model", None)
     cli_provider = getattr(args, "provider", None)
+    cli_reasoning_level = getattr(args, "reasoning_level", None)
     try:
         _, _, model = resolve_runtime_config(cli_model, cli_provider)
     except ValueError:
         model = cli_model or "(not configured)"
     send_prompt_func = partial(
-        send_prompt, cli_model=cli_model, cli_provider=cli_provider
+        send_prompt,
+        cli_model=cli_model,
+        cli_provider=cli_provider,
+        reasoning_level=cli_reasoning_level,
     )
     print(
         "Starting interactive chat session. Type '/exit' or CTRL-D to end the session"
@@ -168,6 +172,7 @@ def run_single_prompt(args):
             thinking=args.thinking,
             cli_model=getattr(args, "model", None),
             cli_provider=getattr(args, "provider", None),
+            reasoning_level=getattr(args, "reasoning_level", None),
         )
     except KeyboardInterrupt:
         print("\nOperation cancelled by user.", file=sys.stderr)

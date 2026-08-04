@@ -37,6 +37,13 @@ CUSTOM_ENDPOINT_MARKER = "CUSTOM_ENDPOINT"
 #     / max_completion_tokens) used when the user has not configured one.
 #     ``None`` means there is no built-in limit (the caller falls back to its
 #     own default).
+#   - "default_reasoning_level": the reasoning level/effort used by default for
+#     the provider's default model when it supports configurable reasoning
+#     depth. ``None`` (or absent) means there is no built-in default.
+#   - "supported_reasoning_levels": the list of reasoning levels supported by
+#     the provider's default model, each with an ``effort`` key and a
+#     human-readable ``description``. Absent when the model has no
+#     configurable reasoning.
 #   - "endpoint": the OpenAI-compatible base URL. ``None`` means the standard
 #     OpenAI API endpoint (no custom base URL needed); the special
 #     ``CUSTOM_ENDPOINT`` marker means the endpoint must come from config.
@@ -70,6 +77,21 @@ PROVIDER_INFO: dict[str, dict] = {
         "default_model": "qwen3.8-max",
         "default_max_input_tokens": 1000000,  # 1M
         "default_max_output_tokens": 131072,
+        "default_reasoning_level": "xhigh",
+        "supported_reasoning_levels": [
+            {
+                "effort": "low",
+                "description": "Fast responses with lighter reasoning",
+            },
+            {
+                "effort": "medium",
+                "description": "Greater reasoning depth for complex problems",
+            },
+            {
+                "effort": "xhigh",
+                "description": "Extra high reasoning depth for complex problems",
+            },
+        ],
         "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
     },
     "zai": {
@@ -192,6 +214,50 @@ def get_default_max_input_tokens_from_provider(provider: str) -> int | None:
     if info is None:
         return None
     return info.get("default_max_input_tokens")
+
+
+def get_default_reasoning_level_from_provider(provider: str) -> str | None:
+    """
+    Get the built-in default reasoning level for a given provider name.
+
+    This is the reasoning level/effort used by default for the provider's
+    default model when it supports configurable reasoning depth (e.g. ``xhigh``
+    for Alibaba's ``qwen3.8-max``).
+
+    Args:
+        provider: The provider name (case-insensitive)
+
+    Returns:
+        The default reasoning level if the provider has one, ``None``
+        otherwise (either the provider is unknown or it has no default).
+    """
+    info = get_provider_info(provider)
+    if info is None:
+        return None
+    return info.get("default_reasoning_level")
+
+
+def get_supported_reasoning_levels_from_provider(provider: str) -> list | None:
+    """
+    Get the supported reasoning levels for a given provider name.
+
+    Each entry is a dict with an ``effort`` key and a human-readable
+    ``description``, describing the reasoning depths the provider's default
+    model supports (e.g. ``low``/``medium``/``xhigh`` for Alibaba's
+    ``qwen3.8-max``).
+
+    Args:
+        provider: The provider name (case-insensitive)
+
+    Returns:
+        The list of supported reasoning levels if the provider declares them,
+        ``None`` otherwise (either the provider is unknown or it has no
+        configurable reasoning).
+    """
+    info = get_provider_info(provider)
+    if info is None:
+        return None
+    return info.get("supported_reasoning_levels")
 
 
 def canonical_provider_name(provider: str) -> str | None:
