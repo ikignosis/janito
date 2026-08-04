@@ -1,8 +1,8 @@
-"""Tests for the shell /config command handler."""
+"""Tests for the shell /show_config command handler."""
 
 from unittest.mock import patch
 
-from janito.shell.cmds.config import _print_config_info
+from janito.shell.cmds.show_config import _print_config_info
 
 
 class TestPrintConfigInfo:
@@ -23,27 +23,27 @@ class TestPrintConfigInfo:
         """
         with (
             patch(
-                "janito.shell.cmds.config.get_active_provider",
+                "janito.shell.cmds.show_config.get_active_provider",
                 return_value="openai",
             ),
             patch(
-                "janito.shell.cmds.config.get_api_key",
+                "janito.shell.cmds.show_config.get_api_key",
                 return_value="sk-test-key-1234567890",
             ),
             patch(
-                "janito.shell.cmds.config.get_masked_api_key",
+                "janito.shell.cmds.show_config.get_masked_api_key",
                 return_value="sk-***7890",
             ),
             patch(
-                "janito.shell.cmds.config.load_max_output_tokens",
+                "janito.shell.cmds.show_config.load_max_output_tokens",
                 return_value=configured_max_tokens,
             ),
             patch(
-                "janito.shell.cmds.config.load_endpoint_from_config",
+                "janito.shell.cmds.show_config.load_endpoint_from_config",
                 return_value=None,
             ),
             patch(
-                "janito.shell.cmds.config.get_default_max_output_tokens_from_provider",
+                "janito.shell.cmds.show_config.get_default_max_output_tokens_from_provider",
                 return_value=default_max_tokens,
             ),
         ):

@@ -1,5 +1,5 @@
 """
-/config command handler - displays current configuration.
+/show_config command handler - displays current configuration.
 """
 
 from janito.auth_config import get_api_key
@@ -10,8 +10,12 @@ from janito.general_config import (
     get_masked_api_key,
     load_endpoint_from_config,
     load_max_output_tokens,
+    load_reasoning_level,
 )
-from janito.provider_config import get_default_max_output_tokens_from_provider
+from janito.provider_config import (
+    get_default_max_output_tokens_from_provider,
+    get_default_reasoning_level_from_provider,
+)
 
 from .base import CmdHandler
 from .registry import register_command
@@ -58,6 +62,19 @@ def _print_config_info(provider: str | None = None) -> None:
             else "(not set)"
         )
 
+    # Resolve the effective reasoning level: an explicit configuration value
+    # first, otherwise the provider's built-in default from PROVIDER_INFO.
+    reasoning_level = load_reasoning_level(provider)
+    if reasoning_level:
+        reasoning_level_display = reasoning_level
+    else:
+        default_reasoning_level = get_default_reasoning_level_from_provider(provider)
+        reasoning_level_display = (
+            f"{default_reasoning_level} (default)"
+            if default_reasoning_level
+            else "(not set)"
+        )
+
     print()
     print("=" * 50)
     print("Configuration Info")
@@ -66,19 +83,20 @@ def _print_config_info(provider: str | None = None) -> None:
     print(f"  Base URL:           {base_url_display}")
     print(f"  API Key:            {masked_key}")
     print(f"  Max Output Tokens:  {max_output_tokens_display}")
+    print(f"  Reasoning Level:    {reasoning_level_display}")
     print("=" * 50)
     print()
 
 
-class ConfigCmdHandler(CmdHandler):
-    """Command handler for /config command."""
+class ShowConfigCmdHandler(CmdHandler):
+    """Command handler for /show_config command."""
 
     @property
     def name(self) -> str:
-        return "/config"
+        return "/show_config"
 
     def handle(self, shell, user_input: str) -> bool:
-        """Handle the /config command."""
+        """Handle the /show_config command."""
         if user_input.lower() == self.name.lower():
             _print_config_info(getattr(shell, "provider", None))
             return True
@@ -86,5 +104,5 @@ class ConfigCmdHandler(CmdHandler):
 
 
 # Register this handler
-_handler = ConfigCmdHandler()
+_handler = ShowConfigCmdHandler()
 register_command(_handler)

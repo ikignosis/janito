@@ -31,3 +31,5 @@ Changes since `v4.18.1` (2026-08-04).
   `Out: 591/393.2k` format.
 - Raise the DeepSeek provider's `default_max_input_tokens` from 128k to 1M.
 - Raise the Alibaba (Qwen) provider's `default_max_input_tokens` from 128k to 1M.
+- Rename the interactive shell command `/config` to `/show_config`; it now also
+  displays the resolved reasoning level.
