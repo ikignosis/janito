@@ -102,7 +102,12 @@ async def stream_prompt(
     first_turn = True
     while True:
         call_kwargs = build_call_kwargs(
-            model, config, max_output_tokens, preserve_thinking, reasoning_level
+            model,
+            config,
+            max_output_tokens,
+            preserve_thinking,
+            reasoning_level,
+            provider=effective_provider,
         )
         call_kwargs["messages"] = messages
         if tools_schemas:

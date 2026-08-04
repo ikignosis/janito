@@ -51,7 +51,7 @@ If no prompt is given, janito starts an interactive chat shell.
 | `-Z`, `--no-system-prompt` | Do not set a system prompt and do not pass any tools |
 | `-S`, `--system-prompt <prompt>` | Override the system prompt (implies no tools) |
 | `--show-system-prompt` | Display the resolved system prompt and exit |
-| `-t`, `--thinking` | Enable thinking mode (sends `extra_body={'enable_thinking': True}`) |
+| `-t`, `--thinking` | Enable thinking mode (sends `extra_body={'enable_thinking': True}`). DeepSeek and Alibaba/Qwen have thinking enabled by default |
 | `--reasoning-level <level>` | Set the reasoning depth for the API call (sends `reasoning_effort=<level>`). Overrides the provider's configured value and built-in default. Values: `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`. |
 
 ## Privileges

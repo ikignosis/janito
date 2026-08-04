@@ -14,12 +14,14 @@ class TestPrintConfigInfo:
         provider=None,
         configured_max_tokens=None,
         default_max_tokens=128000,
+        thinking=False,
     ):
         """Helper: patch config lookups and capture printed output.
 
         Args:
             provider: The session provider to pass to ``_print_config_info``.
                 When None, the (patched) configured default is used.
+            thinking: The ``--thinking`` CLI flag passed to ``_print_config_info``.
         """
         with (
             patch(
@@ -47,7 +49,7 @@ class TestPrintConfigInfo:
                 return_value=default_max_tokens,
             ),
         ):
-            _print_config_info(provider)
+            _print_config_info(provider, thinking)
         return capsys.readouterr().out
 
     def test_explicit_max_output_tokens_shown_as_is(self, capsys):
@@ -72,3 +74,19 @@ class TestPrintConfigInfo:
         assert "Provider:           deepseek" in out
         # The configured default ('openai') must not be shown instead.
         assert "Provider:           openai" not in out
+
+    def test_thinking_enabled_by_provider_default(self, capsys):
+        """DeepSeek reasons by default: thinking shows 'enabled (provider default)'."""
+        out = self._run(capsys, provider="deepseek")
+        assert "Thinking:           enabled (provider default)" in out
+
+    def test_thinking_disabled_by_default(self, capsys):
+        """OpenAI has no default thinking: thinking shows 'disabled'."""
+        out = self._run(capsys, provider="openai")
+        assert "Thinking:           disabled" in out
+
+    def test_thinking_flag_overrides_provider_default(self, capsys):
+        """The --thinking flag forces thinking on without the '(provider default)' note."""
+        out = self._run(capsys, provider="openai", thinking=True)
+        assert "Thinking:           enabled" in out
+        assert "(provider default)" not in out

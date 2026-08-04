@@ -76,7 +76,7 @@ The server prints the URL it's listening on, then opens your default browser
 | `--model` | Model name (resolved into env before dispatch) |
 | `--gmail` | Enable Gmail toolset + email system prompt |
 | `--onedrive` | Enable OneDrive toolset + file system prompt |
-| `-t, --thinking` | Enable thinking/reasoning mode for all sessions |
+| `-t, --thinking` | Enable thinking/reasoning mode for all sessions (DeepSeek and Alibaba/Qwen have it on by default) |
 | `-S "prompt"` | Override system prompt (implies no tools) |
 | `-Z, --no-system-prompt` | No system prompt, no tools |
 | `-v, --verbose` | Verbose backend logging |

@@ -44,6 +44,11 @@ CUSTOM_ENDPOINT_MARKER = "CUSTOM_ENDPOINT"
 #     the provider's default model, each with an ``effort`` key and a
 #     human-readable ``description``. Absent when the model has no
 #     configurable reasoning.
+#   - "default_thinking": whether thinking mode (``extra_body=
+#     {'enable_thinking': True}``) is enabled by default for the provider's
+#     models. ``True`` for providers whose models reason by default (DeepSeek,
+#     Alibaba/Qwen); absent (or ``False``) for the rest. The CLI ``--thinking``
+#     flag still forces it on explicitly.
 #   - "endpoint": the OpenAI-compatible base URL. ``None`` means the standard
 #     OpenAI API endpoint (no custom base URL needed); the special
 #     ``CUSTOM_ENDPOINT`` marker means the endpoint must come from config.
@@ -78,6 +83,7 @@ PROVIDER_INFO: dict[str, dict] = {
         "default_max_input_tokens": 1000000,  # 1M
         "default_max_output_tokens": 131072,
         "default_reasoning_level": "xhigh",
+        "default_thinking": True,  # Qwen models reason by default
         "supported_reasoning_levels": [
             {
                 "effort": "low",
@@ -104,6 +110,7 @@ PROVIDER_INFO: dict[str, dict] = {
         "default_model": "deepseek-v4-flash",
         "default_max_input_tokens": 1000000,  # 1M
         "default_max_output_tokens": 393216,  # 384k
+        "default_thinking": True,  # DeepSeek models reason by default
         "endpoint": "https://api.deepseek.com",
     },
     "xai": {
@@ -258,6 +265,27 @@ def get_supported_reasoning_levels_from_provider(provider: str) -> list | None:
     if info is None:
         return None
     return info.get("supported_reasoning_levels")
+
+
+def get_default_thinking_from_provider(provider: str) -> bool:
+    """
+    Get the built-in default for thinking mode for a given provider name.
+
+    Providers whose models reason by default (DeepSeek, Alibaba/Qwen) declare
+    ``default_thinking: True``; everyone else falls back to ``False``. The CLI
+    ``--thinking`` flag still forces thinking on explicitly.
+
+    Args:
+        provider: The provider name (case-insensitive)
+
+    Returns:
+        True if the provider's models use thinking mode by default, False
+        otherwise (including unknown providers).
+    """
+    info = get_provider_info(provider)
+    if info is None:
+        return False
+    return bool(info.get("default_thinking"))
 
 
 def canonical_provider_name(provider: str) -> str | None:

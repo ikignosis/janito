@@ -48,6 +48,24 @@ class WebServerConfig:
     verbose: bool = False  # -v / --verbose
     no_history: bool = False  # --no-history
 
+    @property
+    def effective_thinking(self) -> bool:
+        """Whether thinking mode is active for the next prompt.
+
+        The explicit ``--thinking`` CLI flag wins; otherwise the effective
+        provider's built-in ``default_thinking`` applies (True for DeepSeek
+        and Alibaba/Qwen, whose models reason by default). The effective
+        provider is the session-only combo override, else the CLI ``--provider``,
+        else the persisted default.
+        """
+        if self.thinking:
+            return True
+        from janito.general_config import get_active_provider
+        from janito.provider_config import get_default_thinking_from_provider
+
+        provider = self.session_provider or self.provider or get_active_provider()
+        return bool(get_default_thinking_from_provider(provider))
+
     # --- Toolset enablement ---
     gmail: bool = False  # --gmail
     onedrive: bool = False  # --onedrive

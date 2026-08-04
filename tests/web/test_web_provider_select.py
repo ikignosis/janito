@@ -115,9 +115,16 @@ def test_providers_endpoint_shape(client):
         assert "default_model" in entry
         assert "default_max_input_tokens" in entry
         assert "default_max_output_tokens" in entry
+        assert "default_thinking" in entry
 
     names = {entry["name"] for entry in data["providers"]}
     assert "openai" in names
+
+    # DeepSeek and Alibaba/Qwen advertise thinking by default; openai does not.
+    by_name = {entry["name"]: entry for entry in data["providers"]}
+    assert by_name["deepseek"]["default_thinking"] is True
+    assert by_name["alibaba"]["default_thinking"] is True
+    assert by_name["openai"]["default_thinking"] in (None, False)
 
     # Exactly one provider is the effective one the next prompt uses.
     effective = [e for e in data["providers"] if e["effective"]]

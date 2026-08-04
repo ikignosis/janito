@@ -9,6 +9,7 @@ janito supports multiple AI providers. This guide covers configuration for each.
 | `openai` | Standard | OpenAI API (default) |
 | `custom` | Custom | Any OpenAI-compatible API (local servers, third-party) |
 | `alibaba` | Third-party | Alibaba Cloud DashScope (Qwen models) |
+| `deepseek` | Third-party | DeepSeek |
 | `minimax` | Third-party | MiniMax AI (abab models) |
 | `xiaomi` | Third-party | Xiaomi AI (Mimo models) |
 | `moonshot` | Third-party | Moonshot AI (Kimi models) |
@@ -117,6 +118,13 @@ janito --provider alibaba --set reasoning-level=medium
 Resolution order: `--reasoning-level` > per-provider config value
 (`--set reasoning-level=...`) > built-in default (`xhigh`).
 
+### Thinking Mode
+
+Qwen models reason by default, so thinking mode is enabled out of the box for
+the `alibaba` provider: every call sends
+`extra_body={'enable_thinking': True}`. Pass `-t` / `--thinking` to force it
+on for any provider.
+
 ### Example
 
 ```bash
@@ -124,6 +132,39 @@ Resolution order: `--reasoning-level` > per-provider config value
 janito --set provider=alibaba --set model=qwen-plus
 # Step 2: Store API key
 janito --set-api-key="your-dashscope-api-key" --provider alibaba
+# Step 3: Run prompt
+janito "Explain quantum computing"
+```
+
+## DeepSeek
+
+Use DeepSeek models.
+
+> **Get an API key:** Visit [DeepSeek Platform](https://platform.deepseek.com/) to create an account and generate an API key.
+
+### Configuration
+
+```bash
+# Step 1: Set provider and model
+janito --set provider=deepseek --set model=deepseek-v4-flash
+# Step 2: Store API key
+janito --set-api-key="your-deepseek-api-key" --provider deepseek
+```
+
+### Thinking Mode
+
+DeepSeek models reason by default, so thinking mode is enabled out of the box
+for the `deepseek` provider: every call sends
+`extra_body={'enable_thinking': True}`. Pass `-t` / `--thinking` to force it
+on for any provider.
+
+### Example
+
+```bash
+# Step 1: Set provider and model
+janito --set provider=deepseek --set model=deepseek-v4-flash
+# Step 2: Store API key
+janito --set-api-key="your-deepseek-api-key" --provider deepseek
 # Step 3: Run prompt
 janito "Explain quantum computing"
 ```

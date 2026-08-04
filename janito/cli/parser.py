@@ -136,7 +136,8 @@ Note: --set and --set-api-key must be used in separate commands.
         "-t",
         "--thinking",
         action="store_true",
-        help="Enable thinking mode (sends extra_body={'enable_thinking': True} to the API)",
+        help="Enable thinking mode (sends extra_body={'enable_thinking': True} "
+        "to the API). DeepSeek and Alibaba/Qwen have thinking enabled by default.",
     )
 
     parser.add_argument(

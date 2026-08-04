@@ -23,6 +23,13 @@ Changes since `v4.18.1` (2026-08-04).
   to both the CLI (`send_prompt`) and web agent (`build_call_kwargs`) API
   calls, and the web providers endpoint now exposes
   `default_reasoning_level` / `supported_reasoning_levels`.
+- Add `default_thinking` to the built-in per-provider info, set to `True` for
+  DeepSeek and Alibaba (Qwen) whose models reason by default. Thinking mode
+  now resolves from the `--thinking` flag, then the provider's built-in
+  default: the CLI (`send_prompt`) and web agent (`build_call_kwargs`) send
+  `extra_body={'enable_thinking': True}` automatically for those providers,
+  the web config endpoint reports the effective thinking state, and the
+  providers endpoint exposes `default_thinking`.
 
 ### Changed
 

@@ -100,6 +100,56 @@ if pytest is not None:
         client_mod.send_prompt("hello", use_mcp=False, cli_provider="openai")
         assert "reasoning_effort" not in fake_run.captured_kwargs
 
+    def test_send_prompt_thinking_defaults_on_for_deepseek(monkeypatch):
+        """DeepSeek reasons by default: enable_thinking is sent without -t."""
+        fake_run = _fake_run_returns("hi")
+        monkeypatch.setattr(
+            client_mod,
+            "resolve_runtime_config",
+            lambda *a, **k: (None, "sk-test", "deepseek-v4-flash"),
+        )
+        monkeypatch.setattr(client_mod, "_run_with_progress_bar", fake_run)
+        client_mod.send_prompt("hello", use_mcp=False, cli_provider="deepseek")
+        assert fake_run.captured_kwargs["extra_body"]["enable_thinking"] is True
+
+    def test_send_prompt_thinking_defaults_on_for_alibaba(monkeypatch):
+        """Alibaba/Qwen reasons by default: enable_thinking is sent without -t."""
+        fake_run = _fake_run_returns("hi")
+        monkeypatch.setattr(
+            client_mod,
+            "resolve_runtime_config",
+            lambda *a, **k: (None, "sk-test", "qwen3.8-max"),
+        )
+        monkeypatch.setattr(client_mod, "_run_with_progress_bar", fake_run)
+        client_mod.send_prompt("hello", use_mcp=False, cli_provider="alibaba")
+        assert fake_run.captured_kwargs["extra_body"]["enable_thinking"] is True
+
+    def test_send_prompt_thinking_off_by_default_for_openai(monkeypatch):
+        """OpenAI has no default thinking: enable_thinking is not sent."""
+        fake_run = _fake_run_returns("hi")
+        monkeypatch.setattr(
+            client_mod,
+            "resolve_runtime_config",
+            lambda *a, **k: (None, "sk-test", "gpt-4"),
+        )
+        monkeypatch.setattr(client_mod, "_run_with_progress_bar", fake_run)
+        client_mod.send_prompt("hello", use_mcp=False, cli_provider="openai")
+        assert "extra_body" not in fake_run.captured_kwargs
+
+    def test_send_prompt_explicit_thinking_flag_still_wins(monkeypatch):
+        """-t forces enable_thinking even for providers without a default."""
+        fake_run = _fake_run_returns("hi")
+        monkeypatch.setattr(
+            client_mod,
+            "resolve_runtime_config",
+            lambda *a, **k: (None, "sk-test", "gpt-4"),
+        )
+        monkeypatch.setattr(client_mod, "_run_with_progress_bar", fake_run)
+        client_mod.send_prompt(
+            "hello", use_mcp=False, cli_provider="openai", thinking=True
+        )
+        assert fake_run.captured_kwargs["extra_body"]["enable_thinking"] is True
+
     def test_build_call_kwargs_forwards_reasoning_effort():
         class _Cfg:
             thinking = False
@@ -115,6 +165,46 @@ if pytest is not None:
 
         kwargs = build_call_kwargs("gpt-4", _Cfg(), 1000, None, None)
         assert "reasoning_effort" not in kwargs
+
+    def test_build_call_kwargs_thinking_defaults_on_for_deepseek():
+        """Web agent enables thinking by default for DeepSeek."""
+
+        class _Cfg:
+            thinking = False
+
+        kwargs = build_call_kwargs(
+            "deepseek-v4-flash", _Cfg(), 1000, None, None, provider="deepseek"
+        )
+        assert kwargs["extra_body"]["enable_thinking"] is True
+
+    def test_build_call_kwargs_thinking_defaults_on_for_alibaba():
+        """Web agent enables thinking by default for Alibaba/Qwen."""
+
+        class _Cfg:
+            thinking = False
+
+        kwargs = build_call_kwargs(
+            "qwen3.8-max", _Cfg(), 1000, None, "xhigh", provider="alibaba"
+        )
+        assert kwargs["extra_body"]["enable_thinking"] is True
+
+    def test_build_call_kwargs_thinking_off_for_openai():
+        """Web agent does not enable thinking for providers without a default."""
+
+        class _Cfg:
+            thinking = False
+
+        kwargs = build_call_kwargs("gpt-4", _Cfg(), 1000, None, None, provider="openai")
+        assert "extra_body" not in kwargs
+
+    def test_build_call_kwargs_config_thinking_flag_wins():
+        """config.thinking=True forces enable_thinking regardless of provider."""
+
+        class _Cfg:
+            thinking = True
+
+        kwargs = build_call_kwargs("gpt-4", _Cfg(), 1000, None, None, provider="openai")
+        assert kwargs["extra_body"]["enable_thinking"] is True
 
     def test_cli_parser_accepts_reasoning_level_choices():
         from janito.cli.parser import create_parser

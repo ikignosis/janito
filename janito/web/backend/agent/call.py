@@ -10,6 +10,8 @@ collected content / reasoning / tool-call fragments; the caller owns the
 
 from dataclasses import dataclass, field
 
+from janito.provider_config import get_default_thinking_from_provider
+
 
 def build_call_kwargs(
     model: str,
@@ -17,15 +19,22 @@ def build_call_kwargs(
     max_output_tokens: int | None,
     preserve_thinking,
     reasoning_level: str | None = None,
+    provider: str | None = None,
 ) -> dict:
     """Build the base ``chat.completions.create`` parameters for one turn.
 
     Config-driven behaviour (from CLI args):
-      - ``config.thinking`` -> add extra_body enable_thinking
+      - ``config.thinking`` (or the provider's ``default_thinking`` when the
+        flag is off) -> add extra_body enable_thinking
       - max output tokens from ``janito.general_config`` -> max_tokens
         (``max_completion_tokens`` for gpt-5 models)
       - ``preserve_thinking`` config value -> extra_body
       - ``reasoning_level`` -> ``reasoning_effort`` (e.g. low/medium/xhigh)
+
+    Args:
+        provider: The effective provider name, used to resolve the built-in
+            ``default_thinking`` when ``config.thinking`` is not set (True for
+            DeepSeek and Alibaba/Qwen).
     """
     call_kwargs: dict = {
         "model": model,
@@ -46,7 +55,8 @@ def build_call_kwargs(
             "preserve_thinking"
         ] = preserve_thinking
 
-    if config.thinking:
+    thinking = config.thinking or get_default_thinking_from_provider(provider)
+    if thinking:
         call_kwargs.setdefault("extra_body", {})["enable_thinking"] = True
 
     call_kwargs["stream"] = True

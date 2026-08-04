@@ -39,6 +39,7 @@ from ..provider_config import (
     get_default_max_output_tokens_from_provider,
     get_default_model_from_provider,
     get_default_reasoning_level_from_provider,
+    get_default_thinking_from_provider,
     is_custom_provider,
 )
 from ..tooling.changes import clear_changes, record_change
@@ -396,7 +397,9 @@ def send_prompt(
         tools: Optional list of tool schemas to pass. If None, uses all available tools.
                If an empty list, no tools are passed.
         use_mcp: If True, load and use MCP tools (default True)
-        thinking: If True, enable thinking mode (extra_body={'enable_thinking': True})
+        thinking: If True, enable thinking mode (extra_body={'enable_thinking':
+            True}). When False (default), falls back to the provider's built-in
+            default, which is True for DeepSeek and Alibaba/Qwen.
         cli_model: Model passed via ``--model`` (overrides the provider's config).
         cli_provider: Provider passed via ``--provider`` (overrides config/auth).
         reasoning_level: Reasoning depth passed via ``--reasoning-level``
@@ -450,6 +453,12 @@ def send_prompt(
 
     # Load max output tokens from general config if set
     provider = cli_provider or get_active_provider()
+
+    # Thinking mode: the explicit --thinking flag wins, otherwise the
+    # provider's built-in default applies (True for DeepSeek and Alibaba/Qwen,
+    # which reason by default). See provider_config.PROVIDER_INFO.
+    if not thinking:
+        thinking = get_default_thinking_from_provider(provider)
     max_output_tokens = load_max_output_tokens(provider)
     if max_output_tokens is None:
         # Fall back to the provider's built-in default (from PROVIDER_INFO),

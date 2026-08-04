@@ -23,6 +23,7 @@ from janito.provider_config import (
     get_default_max_output_tokens_from_provider,
     get_default_model_from_provider,
     get_default_reasoning_level_from_provider,
+    get_default_thinking_from_provider,
     get_provider_info,
     get_supported_reasoning_levels_from_provider,
     is_supported_provider,
@@ -107,6 +108,21 @@ if pytest is not None:
         # Unknown provider returns None.
         assert get_default_reasoning_level_from_provider("bogus") is None
         assert get_supported_reasoning_levels_from_provider("bogus") is None
+
+    def test_default_thinking():
+        # DeepSeek and Alibaba/Qwen reason by default.
+        assert get_default_thinking_from_provider("deepseek") is True
+        assert get_default_thinking_from_provider("alibaba") is True
+        assert get_default_thinking_from_provider("DeepSeek") is True
+        assert get_default_thinking_from_provider("Alibaba") is True
+        # The provider info entries carry the flag.
+        assert PROVIDER_INFO["deepseek"]["default_thinking"] is True
+        assert PROVIDER_INFO["alibaba"]["default_thinking"] is True
+        # Everyone else defaults to False (explicit or absent).
+        for name in ("openai", "minimax", "xiaomi", "moonshot", "zai", "xai", "custom"):
+            assert get_default_thinking_from_provider(name) is False
+        # Unknown provider returns False.
+        assert get_default_thinking_from_provider("bogus") is False
 
     def test_canonical_provider_name_exact_and_case_insensitive():
         assert canonical_provider_name("openai") == "openai"

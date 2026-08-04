@@ -11,6 +11,7 @@ from ...general_config import (
 from ...provider_config import (
     CUSTOM_ENDPOINT_MARKER,
     get_base_url_from_provider,
+    get_default_thinking_from_provider,
     is_custom_provider,
 )
 
@@ -169,6 +170,16 @@ def handle_show_config(args=None) -> int:
     elif provider and is_custom_provider(provider):
         endpoint_source = "required but not set (set endpoint in config.json)"
 
+    # Resolve the effective thinking mode: the CLI --thinking flag first,
+    # otherwise the provider's built-in default (True for DeepSeek and
+    # Alibaba/Qwen).
+    thinking = getattr(args, "thinking", False) or get_default_thinking_from_provider(
+        provider
+    )
+    thinking_display = "enabled" if thinking else "disabled"
+    if thinking and not getattr(args, "thinking", False):
+        thinking_display += " (provider default)"
+
     print("Current Configuration:")
     print("=" * 40)
     print(f"Provider:  {provider or '(not configured)'}")
@@ -185,6 +196,7 @@ def handle_show_config(args=None) -> int:
         print(f"Endpoint:  {endpoint} ({endpoint_source})")
     else:
         print(f"Endpoint:  (default OpenAI) ({endpoint_source})")
+    print(f"Thinking:  {thinking_display}")
     print("=" * 40)
 
     return 0

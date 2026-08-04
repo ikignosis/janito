@@ -15,19 +15,23 @@ from janito.general_config import (
 from janito.provider_config import (
     get_default_max_output_tokens_from_provider,
     get_default_reasoning_level_from_provider,
+    get_default_thinking_from_provider,
 )
 
 from .base import CmdHandler
 from .registry import register_command
 
 
-def _print_config_info(provider: str | None = None) -> None:
+def _print_config_info(provider: str | None = None, thinking: bool = False) -> None:
     """Print current configuration info (provider, base_url, masked API key, max output tokens).
 
     Args:
         provider: The provider in effect for the current shell session (e.g.
             from ``--provider``). When None, falls back to the configured
             default provider.
+        thinking: The ``--thinking`` CLI flag for the session. The effective
+            thinking mode also considers the provider's built-in default (True
+            for DeepSeek and Alibaba/Qwen).
     """
     if provider is None:
         provider = get_active_provider()
@@ -75,6 +79,13 @@ def _print_config_info(provider: str | None = None) -> None:
             else "(not set)"
         )
 
+    # Resolve the effective thinking mode: the --thinking flag first, otherwise
+    # the provider's built-in default from PROVIDER_INFO.
+    effective_thinking = thinking or get_default_thinking_from_provider(provider)
+    thinking_display = "enabled" if effective_thinking else "disabled"
+    if effective_thinking and not thinking:
+        thinking_display += " (provider default)"
+
     print()
     print("=" * 50)
     print("Configuration Info")
@@ -84,6 +95,7 @@ def _print_config_info(provider: str | None = None) -> None:
     print(f"  API Key:            {masked_key}")
     print(f"  Max Output Tokens:  {max_output_tokens_display}")
     print(f"  Reasoning Level:    {reasoning_level_display}")
+    print(f"  Thinking:           {thinking_display}")
     print("=" * 50)
     print()
 
@@ -98,7 +110,10 @@ class ShowConfigCmdHandler(CmdHandler):
     def handle(self, shell, user_input: str) -> bool:
         """Handle the /show_config command."""
         if user_input.lower() == self.name.lower():
-            _print_config_info(getattr(shell, "provider", None))
+            _print_config_info(
+                getattr(shell, "provider", None),
+                getattr(shell, "thinking", False),
+            )
             return True
         return False
 
