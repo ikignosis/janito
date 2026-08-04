@@ -54,5 +54,21 @@ function statusBarComponent() {
         get privileges() {
             return this.config.privileges || this.status.privileges || {};
         },
+
+        // Toggle thinking mode at runtime (status-bar badge).  The change is
+        // in-memory on the server (POST /api/config/thinking) and applies to
+        // the very next prompt; it is NOT persisted to ~/.janito/config.json
+        // and is lost on restart — like the session-only provider switch.
+        // ``effective`` is what the next prompt actually uses, so the badge
+        // mirrors that value.
+        async toggleThinking() {
+            const next = !this.config.thinking;
+            try {
+                const data = await Api.setThinking(next);
+                this.config.thinking = data.effective;
+            } catch (e) {
+                console.error('Failed to toggle thinking:', e);
+            }
+        },
     };
 }

@@ -30,6 +30,15 @@ Changes since `v4.18.1` (2026-08-04).
   `extra_body={'enable_thinking': True}` automatically for those providers,
   the web config endpoint reports the effective thinking state, and the
   providers endpoint exposes `default_thinking`.
+- The web status bar's "thinking" badge is now a runtime toggle button: it
+  posts to the new `POST /api/config/thinking` endpoint, which flips thinking
+  mode for the running server only (in-memory, never written to
+  `~/.janito/config.json`, lost on restart) and applies to the very next
+  prompt. The override forces the state in both directions — it can disable
+  thinking even for providers that reason by default (DeepSeek, Qwen) — and
+  wins over the `--thinking` CLI flag and the provider's built-in
+  `default_thinking` (`WebServerConfig.effective_thinking` resolution order:
+  runtime override, CLI flag, provider default).
 
 ### Changed
 

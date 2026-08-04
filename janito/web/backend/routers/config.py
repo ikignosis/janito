@@ -86,9 +86,9 @@ async def patch_config(request: Request):
     except Exception:
         return JSONResponse({"detail": "Invalid JSON"}, status_code=400)
 
-    # ``thinking`` and ``verbose`` are CLI-level flags that cannot be
-    # meaningfully toggled at runtime, so they are intentionally excluded
-    # from the mutable set.
+    # ``thinking`` and ``verbose`` are CLI-level flags, so they are
+    # intentionally excluded from this persisted mutable set.  Thinking can
+    # still be toggled for the running server only via POST /api/config/thinking.
     updated = {}
 
     if "model" in body:
@@ -127,6 +127,42 @@ async def patch_config(request: Request):
             config.model = model or None
 
     return {"updated": updated}
+
+
+@router.post("/thinking")
+async def set_thinking(request: Request):
+    """Toggle thinking mode for this server session (in-memory only).
+
+    Web counterpart of the CLI's ``--thinking`` flag, scoped to the running
+    server: the status-bar "thinking" badge posts here and the new value
+    applies to the very next prompt.  Like the session-provider override it
+    is kept **in memory only** — ``~/.janito/config.json`` is left
+    untouched, so it does not leak into future CLI or web runs and is lost
+    when the server restarts.
+
+    The override *forces* the state in both directions: ``false`` disables
+    thinking even for providers that reason by default (DeepSeek, Qwen).
+    A body of ``{"thinking": true|false}`` sets the state explicitly; an
+    empty body (or ``{"toggle": true}``) flips the current effective value.
+    """
+    config = _get_config(request)
+    try:
+        body = await request.json()
+    except Exception:
+        body = None
+
+    if isinstance(body, dict) and "thinking" in body:
+        value = bool(body["thinking"])
+    else:
+        value = not config.effective_thinking
+    config.thinking_override = value
+
+    logger.info(f"Runtime thinking set to {value} (in-memory, not persisted)")
+    return {
+        "thinking": value,
+        "effective": config.effective_thinking,
+        "persisted": False,
+    }
 
 
 @router.get("/providers")

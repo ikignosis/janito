@@ -152,7 +152,7 @@ if pytest is not None:
 
     def test_build_call_kwargs_forwards_reasoning_effort():
         class _Cfg:
-            thinking = False
+            effective_thinking = False
 
         kwargs = build_call_kwargs("qwen3.8-max", _Cfg(), 1000, None, "xhigh")
         assert kwargs["reasoning_effort"] == "xhigh"
@@ -161,50 +161,29 @@ if pytest is not None:
 
     def test_build_call_kwargs_omits_reasoning_effort_when_none():
         class _Cfg:
-            thinking = False
+            effective_thinking = False
 
         kwargs = build_call_kwargs("gpt-4", _Cfg(), 1000, None, None)
         assert "reasoning_effort" not in kwargs
 
-    def test_build_call_kwargs_thinking_defaults_on_for_deepseek():
-        """Web agent enables thinking by default for DeepSeek."""
+    def test_build_call_kwargs_enables_thinking_when_effective():
+        """Web agent sends enable_thinking when the effective state is on
+        (runtime toggle, --thinking flag, or provider default)."""
 
         class _Cfg:
-            thinking = False
+            effective_thinking = True
 
-        kwargs = build_call_kwargs(
-            "deepseek-v4-flash", _Cfg(), 1000, None, None, provider="deepseek"
-        )
+        kwargs = build_call_kwargs("deepseek-v4-flash", _Cfg(), 1000, None, None)
         assert kwargs["extra_body"]["enable_thinking"] is True
 
-    def test_build_call_kwargs_thinking_defaults_on_for_alibaba():
-        """Web agent enables thinking by default for Alibaba/Qwen."""
+    def test_build_call_kwargs_omits_thinking_when_off():
+        """Web agent omits enable_thinking when the effective state is off."""
 
         class _Cfg:
-            thinking = False
+            effective_thinking = False
 
-        kwargs = build_call_kwargs(
-            "qwen3.8-max", _Cfg(), 1000, None, "xhigh", provider="alibaba"
-        )
-        assert kwargs["extra_body"]["enable_thinking"] is True
-
-    def test_build_call_kwargs_thinking_off_for_openai():
-        """Web agent does not enable thinking for providers without a default."""
-
-        class _Cfg:
-            thinking = False
-
-        kwargs = build_call_kwargs("gpt-4", _Cfg(), 1000, None, None, provider="openai")
+        kwargs = build_call_kwargs("gpt-4", _Cfg(), 1000, None, None)
         assert "extra_body" not in kwargs
-
-    def test_build_call_kwargs_config_thinking_flag_wins():
-        """config.thinking=True forces enable_thinking regardless of provider."""
-
-        class _Cfg:
-            thinking = True
-
-        kwargs = build_call_kwargs("gpt-4", _Cfg(), 1000, None, None, provider="openai")
-        assert kwargs["extra_body"]["enable_thinking"] is True
 
     def test_cli_parser_accepts_reasoning_level_choices():
         from janito.cli.parser import create_parser

@@ -75,6 +75,20 @@
 }
 .flag-badge.active { background: rgba(122, 162, 247, 0.2); color: var(--accent-hover); border-color: var(--accent); font-weight: 600; }
 
+/* Thinking badge doubles as a runtime on/off button (POST /api/config/thinking;
+   in-memory only, not persisted).  Reset the button defaults so it renders
+   like the sibling badges, and give it an interactive affordance. */
+.flag-badge.flag-toggle {
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    user-select: none;
+}
+.flag-badge.flag-toggle:hover { background: var(--bg-hover); border-color: var(--accent); }
+.flag-badge.flag-toggle:active { transform: translateY(1px); }
+.flag-badge.flag-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
 .conn-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 .conn-dot.connected { background: var(--green); }
 .conn-dot.disconnected { background: var(--red); }

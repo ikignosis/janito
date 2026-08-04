@@ -52,6 +52,11 @@ const Api = {
     setSessionProvider(name) {
         return this.post('/api/config/session-provider', { provider: name });
     },
+    // Runtime-only thinking toggle (status bar): in-memory on the server,
+    // never written to ~/.janito/config.json (unlike patchConfig).
+    setThinking(thinking) {
+        return this.post('/api/config/thinking', { thinking });
+    },
     setApiKey(provider, apiKey) {
         return this.post('/api/config/api-key', { provider, api_key: apiKey });
     },

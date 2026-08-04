@@ -48,16 +48,25 @@ class WebServerConfig:
     verbose: bool = False  # -v / --verbose
     no_history: bool = False  # --no-history
 
+    # Runtime thinking override set from the status-bar toggle (POST
+    # /api/config/thinking). In-memory only — never written to
+    # ~/.janito/config.json and lost on restart (like session_provider).
+    # ``None`` = no override (follow the CLI flag, else the provider default).
+    thinking_override: bool | None = None
+
     @property
     def effective_thinking(self) -> bool:
         """Whether thinking mode is active for the next prompt.
 
-        The explicit ``--thinking`` CLI flag wins; otherwise the effective
-        provider's built-in ``default_thinking`` applies (True for DeepSeek
+        Resolution order: the runtime ``thinking_override`` (status-bar
+        toggle) first, then the explicit ``--thinking`` CLI flag, then the
+        effective provider's built-in ``default_thinking`` (True for DeepSeek
         and Alibaba/Qwen, whose models reason by default). The effective
         provider is the session-only combo override, else the CLI ``--provider``,
         else the persisted default.
         """
+        if self.thinking_override is not None:
+            return self.thinking_override
         if self.thinking:
             return True
         from janito.general_config import get_active_provider

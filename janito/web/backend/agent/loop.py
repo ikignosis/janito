@@ -107,7 +107,6 @@ async def stream_prompt(
             max_output_tokens,
             preserve_thinking,
             reasoning_level,
-            provider=effective_provider,
         )
         call_kwargs["messages"] = messages
         if tools_schemas:

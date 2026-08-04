@@ -476,7 +476,14 @@
             <div class="status-item"><strong>Provider:</strong> <span x-text="provider"></span></div>
 
             <div class="status-item gap-sm">
-                <span class="flag-badge" :class="{ active: config.thinking }">thinking</span>
+                <!-- Thinking is a runtime toggle (POST /api/config/thinking):
+                     flips the effective state for the next prompt, in memory
+                     only — not persisted to ~/.janito/config.json. -->
+                <button type="button" class="flag-badge flag-toggle"
+                        :class="{ active: config.thinking }"
+                        @click="toggleThinking()"
+                        :title="'Thinking ' + (config.thinking ? 'on' : 'off') + ' — click to toggle (runtime, not persisted)'"
+                        :aria-pressed="config.thinking ? 'true' : 'false'">thinking</button>
                 <span class="flag-badge" :class="{ active: config.gmail }">gmail</span>
                 <span class="flag-badge" :class="{ active: config.onedrive }">onedrive</span>
                 <span class="flag-badge" :class="{ active: privileges.read }">read</span>
