@@ -14,6 +14,12 @@ Changes since `v4.18.1` (2026-08-04).
 - Print a startup banner (`Janito x.y.z - Working at <cwd>`, with the version
   in cyan and the working directory in magenta) on the shell right before the
   "Running with full privileges" warning.
+- The web session-start banner's "N tool(s) active" count is now a link that
+  opens a tools info dialog showing the same listing as the `/tools` command
+  (built-in tools with permission badges, skipped tools and MCP tools, plus a
+  summary footer). The dialog is a compact, bounded modal (capped at 70vh)
+  whose tools list scrolls inside it; it reuses the `/tools` data fetcher
+  (`_fetchToolsListing`) and lazily loads/caches the listing on first open.
 - Add `default_max_input_tokens` (128k) to the built-in per-provider info and
   expose it through `get_default_max_input_tokens_from_provider()` and the web
   providers endpoint.

@@ -58,6 +58,13 @@ function chatComponent() {
         sessionId: null,         // active session id
         _current: null,          // active session's in-flight assistant message
         toolsSummary: null,      // active session's { active, skipped, skippedList }
+        // Tools info dialog — opened from the session-start banner's
+        // "N tool(s) active" link. `toolsDialog` caches the same listing the
+        // /tools command fetches (see ChatCommandsMixin.openToolsDialog).
+        toolsDialogOpen: false,
+        toolsDialog: null,       // { builtin, mcp, skipped, total } or null
+        toolsDialogLoading: false,
+        toolsDialogError: null,
         _followBottom: true,     // auto-follow the scroll bottom? false = user "locked" the scroll
         _scrollThreshold: 80,    // px tolerance for "at the bottom" (avoids scrollbar jitter)
 

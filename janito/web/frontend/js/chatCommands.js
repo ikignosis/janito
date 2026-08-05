@@ -108,4 +108,26 @@ window.ChatCommandsMixin = {
         }
         if (isActive) this._forceScrollToBottom();
     },
+
+    // Open the tools info dialog from the session-start banner's "N tool(s)
+    // active" link. Renders the SAME data as /tools (via _fetchToolsListing)
+    // but in a modal overlay instead of a chat message. The listing is
+    // fetched lazily on the first open and cached for subsequent opens.
+    async openToolsDialog() {
+        this.toolsDialogOpen = true;
+        if (this.toolsDialog) return;   // already loaded
+        this.toolsDialogLoading = true;
+        this.toolsDialogError = null;
+        try {
+            this.toolsDialog = await _fetchToolsListing();
+        } catch (e) {
+            this.toolsDialogError = 'Failed to load tools: ' + e.message;
+        } finally {
+            this.toolsDialogLoading = false;
+        }
+    },
+
+    closeToolsDialog() {
+        this.toolsDialogOpen = false;
+    },
 };

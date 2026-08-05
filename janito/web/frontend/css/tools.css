@@ -293,3 +293,54 @@
     font-size: 13px;
     padding: 6px 0;
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Tools info dialog (opened from the session-start banner link)
+   The "N tool(s) active" text in the session-start banner is a link that
+   opens the same tools listing the /tools command renders, in a modal
+   overlay. Reuses the .tools-* classes above for a consistent look.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* Link affordance inside the session-start banner */
+.ssb-tools-link {
+    color: var(--accent-hover);
+    text-decoration: none;
+    cursor: pointer;
+    border-bottom: 1px dashed var(--accent);
+}
+.ssb-tools-link:hover {
+    color: var(--accent);
+    border-bottom-style: solid;
+}
+.ssb-tools-link strong { color: inherit; }
+
+/* Compact modal card with a scrollable tools list.
+   A definite `height` (capped at 70vh / 640px) keeps the dialog from
+   stretching to fill the viewport: the flex column pins the header and
+   footer, and .tools-dialog-body takes the remaining space and scrolls. */
+.tools-dialog.modal-card {
+    width: 640px;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    height: min(70vh, 640px);
+    min-height: 260px;
+}
+.tools-dialog .modal-head {
+    flex-shrink: 0;
+}
+.tools-dialog .modal-head .tools-panel-count {
+    font-size: 13px;
+}
+.tools-dialog-body {
+    overflow-y: auto;
+    margin: 12px 0 0;
+    padding-right: 6px;
+    min-height: 0;
+}
+.tools-dialog .modal-actions {
+    flex-shrink: 0;
+    padding-top: 14px;
+    margin-top: 10px;
+    border-top: 1px solid var(--border);
+}
