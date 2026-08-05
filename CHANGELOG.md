@@ -63,6 +63,14 @@ Changes since `v4.18.1` (2026-08-04).
   displays the resolved reasoning level.
 - The web topbar's dark/light theme toggle now sits at the rightmost position,
   after the provider switcher, MCP and Settings buttons.
+- The web status bar now lists the provider before the model, matching the
+  Settings drawer and provider switcher ordering (provider hosts the model).
+- The web status bar now shows the selected (effective) provider's default
+  model with a muted `(default)` marker instead of `(not set)` when no model
+  is explicitly configured or CLI-pinned — resolving the same way as the
+  provider switcher and Settings drawer (configured override first, then the
+  provider's built-in default). `(not set)` remains only when even the
+  provider has no default model.
 - The `ReplaceTextInFile` tool now prints a syntax-highlighted unified diff
   of the change (`BaseTool.report_diff`, which delegates to the new
   `report_diff` reporter) before its success message, so every replacement

@@ -304,3 +304,37 @@ def test_status_bar_reacts_to_provider_change():
     """The status bar reloads when the combo switches the provider."""
     js = (FRONTEND / "js" / "statusBar.js").read_text(encoding="utf-8")
     assert "janito-provider-changed" in js
+
+
+def test_status_bar_resolves_provider_default_model():
+    """The status bar loads the providers list and falls back to the selected
+    provider's default model when no model is explicitly configured."""
+    js = (FRONTEND / "js" / "statusBar.js").read_text(encoding="utf-8")
+    # The providers list is loaded so the default can be resolved.
+    assert "Api.getProviders" in js
+    assert "this.providers = (await Api.getProviders()).providers || [];" in js
+    # The selected provider is looked up by the effective provider name.
+    assert "get providerDetail()" in js
+    assert "p.name === this.provider" in js
+    # Resolution mirrors the provider switcher/settings: configured override
+    # first, then the provider's built-in default.
+    assert "get defaultModel()" in js
+    assert "p.model || p.default_model" in js
+    # The model getter falls back to the provider default when the runtime
+    # config/status carries no model.
+    assert "this.defaultModel" in js
+    # ...and a flag tells the template when the shown name is that fallback.
+    assert "get modelIsDefault()" in js
+    assert "!!this.defaultModel" in js
+
+
+def test_index_html_status_bar_shows_default_model_instead_of_not_set():
+    """The status bar renders the selected provider's default model (marked
+    '(default)') instead of '(not set)' when no model is configured; '(not
+    set)' remains only as a last resort when even the provider has none."""
+    html = (FRONTEND / "index.html").read_text(encoding="utf-8")
+    # The fallback marker is bound to the modelIsDefault flag.
+    assert "model && modelIsDefault" in html
+    assert "(default)" in html
+    # '(not set)' is still there for the no-default-at-all case.
+    assert "(not set)" in html

@@ -478,11 +478,15 @@
                 <span class="conn-dot" :class="connection"></span>
                 <span x-text="connection"></span>
             </div>
+            <div class="status-item"><strong>Provider:</strong> <span x-text="provider"></span></div>
             <div class="status-item"><strong>Model:</strong>
                 <span x-show="model" x-text="model"></span>
+                <!-- When no model is explicitly configured/CLI-pinned, the
+                     selected provider's default model is shown instead of
+                     "(not set)", marked muted so it reads as a fallback. -->
+                <span x-show="model && modelIsDefault" class="muted"> (default)</span>
                 <span x-show="!model" class="muted">(not set)</span>
             </div>
-            <div class="status-item"><strong>Provider:</strong> <span x-text="provider"></span></div>
 
             <div class="status-item gap-sm">
                 <!-- Thinking is a runtime toggle (POST /api/config/thinking):
