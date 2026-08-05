@@ -408,6 +408,7 @@ execute (yellow).
 ```python
 def report_start(self, message: str, end: str = "\n") -> None
 def report_progress(self, message: str, end: str = "\n") -> None
+def report_diff(self, old_str: str, new_str: str, end: str = "\n") -> None
 def report_result(self, message: str, end: str = "\n") -> None
 def report_error(self, message: str, end: str = "\n") -> None
 def report_warning(self, message: str, end: str = "\n") -> None
@@ -417,6 +418,7 @@ def report_warning(self, message: str, end: str = "\n") -> None
 |---|---|---|
 | `self.report_start(msg, end="\n")` | Colour by permissions: 🟢 `r`, 🟡 `w`/`x`, 🔵 none | Announce the operation is beginning |
 | `self.report_progress(msg, end="\n")` | Plain text (no colour) | Intermediate progress updates |
+| `self.report_diff(old_str, new_str, end="\n")` | Unified diff, syntax-highlighted (`diff` lexer) | Show what a change does (e.g. `ReplaceTextInFile` before `report_result`) |
 | `self.report_result(msg, end="\n")` | White + ✅ prefix | Final success summary |
 | `self.report_error(msg, end="\n")` | ❌ prefix | Errors |
 | `self.report_warning(msg, end="\n")` | ⚠️ prefix | Non-fatal warnings |

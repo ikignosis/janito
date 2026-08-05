@@ -12,6 +12,7 @@ a context-variable-based report handler (set in web mode) can intercept output.
 from abc import ABC, abstractmethod
 from typing import Any
 
+from .reporter import report_diff as _report_diff
 from .reporter import report_error as _report_error
 from .reporter import report_output as _report_output
 from .reporter import report_progress as _report_progress
@@ -134,6 +135,22 @@ class BaseTool(ABC):
             end (str): String appended after the message (default: "\n")
         """
         _report_result(message, end=end)
+
+    def report_diff(self, old_str: str, new_str: str, end: str = "\n") -> None:
+        """
+        Report the diff between two strings with rich syntax highlighting.
+
+        Generates a unified diff between ``old_str`` and ``new_str`` and
+        prints it on the terminal (syntax-highlighted with the Pygments
+        "diff" lexer). In web mode the diff is forwarded to the active
+        report handler as a ``"diff"`` level event.
+
+        Args:
+            old_str (str): The text that was searched for (the "before" side)
+            new_str (str): The replacement text (the "after" side)
+            end (str): String appended after the message (default: "\n")
+        """
+        _report_diff(old_str, new_str, end=end)
 
     def report_error(self, message: str, end: str = "\n") -> None:
         """

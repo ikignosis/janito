@@ -99,7 +99,8 @@
 }
 .tool-progress .level-tag { color: var(--text-muted); flex-shrink: 0; }
 .tool-progress .level-tag:not(:empty) { margin-right: 0.5ch; }
-.tool-progress.output {
+.tool-progress.output,
+.tool-progress.diff {
     font-family: var(--font-mono);
     background: var(--code-bg);
     color: var(--code-text);

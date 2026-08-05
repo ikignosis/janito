@@ -256,8 +256,11 @@
                                                 <!-- Live progress / output -->
                                                 <template x-for="(p, ppi) in part.tool.progress" :key="ppi">
                                                     <div class="tool-progress" :class="p.level">
-                                                        <template x-if="p.level !== 'output'">
+                                                        <template x-if="p.level !== 'output' && p.level !== 'diff'">
                                                             <span><span class="level-tag" x-text="levelIcon(p.level)"></span><span x-text="p.message"></span></span>
+                                                        </template>
+                                                        <template x-if="p.level === 'diff'">
+                                                            <span x-text="p.message" class="pre-wrap"></span>
                                                         </template>
                                                         <template x-if="p.level === 'output'">
                                                             <span x-text="p.message" class="pre-wrap"></span>

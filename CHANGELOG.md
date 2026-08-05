@@ -63,3 +63,7 @@ Changes since `v4.18.1` (2026-08-04).
   displays the resolved reasoning level.
 - The web topbar's dark/light theme toggle now sits at the rightmost position,
   after the provider switcher, MCP and Settings buttons.
+- The `ReplaceTextInFile` tool now prints a syntax-highlighted unified diff
+  of the change (`BaseTool.report_diff`, which delegates to the new
+  `report_diff` reporter) before its success message, so every replacement
+  shows exactly what changed.

@@ -101,7 +101,7 @@ class ToolProgressEvent:
     """Intermediate tool output (report_* calls inside tool execution)."""
 
     tool_call_id: str
-    level: str  # "start"|"progress"|"output"|"result"|"error"|"warning"|"info"
+    level: str  # "start"|"progress"|"output"|"diff"|"result"|"error"|"warning"|"info"
     message: str  # "output" = raw subprocess stdout/stderr (monospace in UI)
 
     type: ClassVar[str] = "tool_progress"

@@ -36,7 +36,7 @@ window.ChatFormatMixin = {
 
     levelIcon(level) {
         const icons = {
-            start: '', progress: '\u00b7', output: '', result: '\u2705',
+            start: '', progress: '\u00b7', output: '', diff: '\u2194', result: '\u2705',
             error: '\u274c', warning: '\u26a0\ufe0f', info: '\u2139\ufe0f',
         };
         return level in icons ? icons[level] : '\u00b7';

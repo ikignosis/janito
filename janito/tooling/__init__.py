@@ -13,6 +13,7 @@ from .decorator import is_tool, tool
 from .path_utils import norm_path
 from .reporter import (
     get_report_handler,
+    report_diff,
     report_error,
     report_info,
     report_output,
@@ -33,6 +34,7 @@ __all__ = [
     "get_report_handler",
     "is_tool",
     "norm_path",
+    "report_diff",
     "report_error",
     "report_info",
     "report_output",

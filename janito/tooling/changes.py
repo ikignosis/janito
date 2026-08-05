@@ -28,12 +28,13 @@ agent loop, so every access is wrapped and failures are swallowed.
 
 from __future__ import annotations
 
-import difflib
 import json
 import logging
 import threading
 from pathlib import Path
 from typing import Any
+
+from .reporter import build_diff
 
 logger = logging.getLogger(__name__)
 
@@ -226,6 +227,8 @@ def _guess_lexer(path: str, code: str) -> str:
 def _build_replace_diff(old_str: str, new_str: str) -> str:
     """Build a unified diff between ``old_str`` and ``new_str``.
 
+    Thin wrapper around :func:`janito.tooling.reporter.build_diff`.
+
     Args:
         old_str: The text that was searched for.
         new_str: The replacement text.
@@ -234,16 +237,7 @@ def _build_replace_diff(old_str: str, new_str: str) -> str:
         str: A unified diff (without trailing line terminators) suitable for
             syntax-highlighted display.
     """
-    old_lines = old_str.splitlines()
-    new_lines = new_str.splitlines()
-    diff = difflib.unified_diff(
-        old_lines,
-        new_lines,
-        fromfile="before",
-        tofile="after",
-        lineterm="",
-    )
-    return "\n".join(diff)
+    return build_diff(old_str, new_str)
 
 
 def render_changes(console=None) -> None:

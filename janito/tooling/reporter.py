@@ -9,6 +9,7 @@ In web mode, a context-variable-based report handler intercepts all report
 calls and forwards them as structured events instead of printing to stderr.
 """
 
+import difflib
 from collections.abc import Callable
 from contextvars import ContextVar
 
@@ -21,7 +22,7 @@ _console = Console(stderr=True, highlight=False, markup=False)
 # --- Pluggable report handler via contextvars ---
 
 # A report handler receives (level, message, end).
-# level is one of: "start", "progress", "output", "result", "error", "warning", "info"
+# level is one of: "start", "progress", "output", "diff", "result", "error", "warning", "info"
 ReportHandler = Callable[[str, str, str], None]
 
 _report_handler: ContextVar[ReportHandler | None] = ContextVar(
@@ -119,6 +120,57 @@ def report_result(message: str, end: str = "\n") -> None:
         handler("result", message, end)
         return
     _console.print(f" \u2705 {message}", style=Colors.WHITE, end=end)
+    _console.file.flush()
+
+
+def build_diff(old_str: str, new_str: str) -> str:
+    """
+    Build a unified diff between ``old_str`` and ``new_str``.
+
+    Args:
+        old_str: The text that was searched for (the "before" side).
+        new_str: The replacement text (the "after" side).
+
+    Returns:
+        str: A unified diff (without trailing line terminators) suitable
+            for syntax-highlighted display.
+    """
+    old_lines = old_str.splitlines()
+    new_lines = new_str.splitlines()
+    diff = difflib.unified_diff(
+        old_lines,
+        new_lines,
+        fromfile="before",
+        tofile="after",
+        lineterm="",
+    )
+    return "\n".join(diff)
+
+
+def report_diff(old_str: str, new_str: str, end: str = "\n") -> None:
+    """
+    Report the diff between ``old_str`` and ``new_str``.
+
+    The unified diff is printed on the terminal with rich syntax
+    highlighting (Pygments "diff" lexer). In web mode it is forwarded to
+    the active report handler as a ``"diff"`` level event.
+
+    Args:
+        old_str: The text that was searched for (the "before" side).
+        new_str: The replacement text (the "after" side).
+        end: String appended after the message (default: "\n")
+    """
+    diff_text = build_diff(old_str, new_str)
+    handler = _report_handler.get()
+    if handler:
+        handler("diff", diff_text, end)
+        return
+    from rich.syntax import Syntax
+
+    _console.print(
+        Syntax(diff_text or "", "diff", line_numbers=False, word_wrap=True),
+        end=end,
+    )
     _console.file.flush()
 
 

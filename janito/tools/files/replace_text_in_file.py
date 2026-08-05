@@ -84,7 +84,7 @@ class ReplaceTextInFile(BaseTool):
             # Get file size for progress indication
             file_size = os.path.getsize(abs_filepath)
             size_str = f"({file_size} bytes)"
-            self.report_progress(f" {size_str}", end="")
+            self.report_progress(f" {size_str}", end="\n")
 
             # Read the file content
             with open(abs_filepath, "r", encoding="utf-8") as f:
@@ -158,6 +158,9 @@ class ReplaceTextInFile(BaseTool):
             # Write the modified content back to the file
             with open(abs_filepath, "w", encoding="utf-8") as f:
                 f.write(new_content)
+
+            # Show the syntax-highlighted diff before the success message
+            self.report_diff(old_str, new_str)
 
             self.report_result(success_msg)
 
