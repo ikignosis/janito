@@ -121,6 +121,8 @@
                     <span class="ps-spinner" x-show="busy" aria-hidden="true"></span>
                 </div>
 
+                <button class="btn" @click="toggleMcp()" title="MCP services">🔌 MCP</button>
+                <button class="btn" @click="toggleSettings()" title="Settings">⚙ Settings</button>
                 <button class="theme-toggle" @click="toggleTheme()"
                         :title="theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
                         :aria-label="theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'">
@@ -141,8 +143,6 @@
                     </span>
                     <span class="theme-knob" :class="{ dark: theme === 'dark' }"></span>
                 </button>
-                <button class="btn" @click="toggleMcp()" title="MCP services">🔌 MCP</button>
-                <button class="btn" @click="toggleSettings()" title="Settings">⚙ Settings</button>
             </div>
         </div>
 

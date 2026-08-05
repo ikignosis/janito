@@ -61,3 +61,5 @@ Changes since `v4.18.1` (2026-08-04).
 - Raise the Alibaba (Qwen) provider's `default_max_input_tokens` from 128k to 1M.
 - Rename the interactive shell command `/config` to `/show_config`; it now also
   displays the resolved reasoning level.
+- The web topbar's dark/light theme toggle now sits at the rightmost position,
+  after the provider switcher, MCP and Settings buttons.
