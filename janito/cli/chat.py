@@ -2,13 +2,28 @@
 CLI chat execution modes: interactive and single prompt.
 """
 
+import os
 from functools import partial
 
+from .. import __version__
 from ..openai_client import RequestCancelled, resolve_runtime_config, send_prompt
 from ..shell import InteractiveShell
 from ..system_prompt import get_system_prompt_with_skills
+from ..tooling.path_utils import display_path
 from ..tools.gmail import GMAIL_SYSTEM_PROMPT
 from ..tools.onedrive import ONEDRIVE_SYSTEM_PROMPT
+
+
+def print_version_banner(console=None):
+    """Print a banner with the version and the current working directory."""
+    from rich.console import Console
+
+    if console is None:
+        console = Console()
+    console.print(
+        f"Janito [cyan]{__version__}[/cyan] - Working at "
+        f"[magenta]{display_path(os.getcwd())}[/magenta]"
+    )
 
 
 def run_interactive_chat(args):
@@ -20,6 +35,7 @@ def run_interactive_chat(args):
     if getattr(args, "full_privileges", False):
         from rich.console import Console
 
+        print_version_banner()
         Console().print(
             "WARNING: Running with full privileges, consider using -r, -w, -x",
             style="yellow",
@@ -119,6 +135,7 @@ def run_single_prompt(args):
     if getattr(args, "full_privileges", False):
         from rich.console import Console
 
+        print_version_banner()
         Console().print(
             "WARNING: Running with full privileges, consider using -r, -w, -x",
             style="yellow",

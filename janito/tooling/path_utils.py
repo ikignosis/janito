@@ -43,3 +43,44 @@ def norm_path(path):
     except ValueError:
         # If relative_to raises ValueError, it's not a subpath
         return str(path_obj)
+
+
+def display_path(path):
+    """
+    Return a short display form of a path with the home directory mapped to ``~``.
+
+    - If the path is the home directory itself, return ``~``.
+    - If the path is inside the home directory, return ``~/relative``.
+    - Otherwise, return the path unchanged.
+
+    Args:
+        path (str or Path): The path to display.
+
+    Returns:
+        str: The shortened display path.
+    """
+    # Convert to Path object if it's a string
+    if isinstance(path, str):
+        path_obj = Path(path)
+    else:
+        path_obj = path
+
+    # Resolve to an absolute path
+    abs_path = path_obj.expanduser().resolve()
+
+    # Determine the user's home directory (fall back to the raw path if it
+    # cannot be determined).
+    try:
+        home = Path.home()
+    except RuntimeError:
+        return str(path_obj)
+
+    # Not under the home directory: leave unchanged.
+    try:
+        rel_path = abs_path.relative_to(home)
+    except ValueError:
+        return str(path_obj)
+
+    if rel_path == Path("."):
+        return "~"
+    return f"~/{rel_path.as_posix()}"

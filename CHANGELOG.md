@@ -11,6 +11,9 @@ Changes since `v4.18.1` (2026-08-04).
 
 ### Added
 
+- Print a startup banner (`Janito x.y.z - Working at <cwd>`, with the version
+  in cyan and the working directory in magenta) on the shell right before the
+  "Running with full privileges" warning.
 - Add `default_max_input_tokens` (128k) to the built-in per-provider info and
   expose it through `get_default_max_input_tokens_from_provider()` and the web
   providers endpoint.
@@ -42,6 +45,9 @@ Changes since `v4.18.1` (2026-08-04).
 
 ### Changed
 
+- The startup banner now maps the home directory to `~` when showing the
+  working directory, e.g. `Janito 0.2.0 - Working at ~/janito` instead of the
+  full path.
 - The CLI token-usage summary now shows the input tokens over the provider's
   default max input tokens, e.g. `In: 54.2k/128k`, mirroring the existing
   `Out: 591/393.2k` format.

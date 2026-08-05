@@ -8,7 +8,7 @@ from pathlib import Path
 # Add the repo root to sys.path to allow importing the package directly.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from janito.tooling.path_utils import norm_path
+from janito.tooling.path_utils import display_path, norm_path
 
 
 def test_norm_path():
@@ -42,6 +42,36 @@ def test_norm_path():
     assert result4 == expected4, f"Expected {expected4}, got {result4}"
 
     print("All tests passed!")
+
+
+def test_display_path_maps_home_to_tilde(monkeypatch, tmp_path):
+    """Paths under the home directory are shown as ~/relative."""
+    home = tmp_path / "home"
+    project = home / "project"
+    project.mkdir(parents=True)
+    monkeypatch.setenv("HOME", str(home))
+
+    assert display_path(project) == "~/project"
+    assert display_path(str(project)) == "~/project"
+
+
+def test_display_path_maps_home_itself_to_tilde(monkeypatch, tmp_path):
+    """The home directory itself is shown as ~."""
+    home = tmp_path / "home"
+    home.mkdir(parents=True)
+    monkeypatch.setenv("HOME", str(home))
+
+    assert display_path(home) == "~"
+
+
+def test_display_path_leaves_other_paths_unchanged(monkeypatch, tmp_path):
+    """Paths outside the home directory are left unchanged."""
+    home = tmp_path / "home"
+    home.mkdir(parents=True)
+    monkeypatch.setenv("HOME", str(home))
+
+    outside = tmp_path / "outside"
+    assert display_path(outside) == str(outside.resolve())
 
 
 if __name__ == "__main__":
