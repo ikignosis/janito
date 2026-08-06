@@ -128,6 +128,10 @@ Changes since `v4.18.1` (2026-08-04).
 
 ### Changed
 
+- Remove the "Privileges: read · write · exec" line from the web
+  Settings drawer (it duplicated the status-bar badges and exposed internal
+  `-r`/`-w`/`-x` flag state); the now-unused `fine-print` utility class was
+  dropped with it.
 - Rename `janito/openai_client/client.py` to `janito/openai_client/completions_api.py`
   (the module now lives alongside the rest of the web backend call stack);
   imports and docstring references are updated accordingly.
