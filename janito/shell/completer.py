@@ -3,8 +3,8 @@ Command autocompletion for the interactive shell.
 
 Provides a :class:`prompt_toolkit` ``Completer`` that suggests registered
 slash commands (e.g. ``/tools``, ``/help``) as the user types. Suggestions
-only appear once the current token starts with a ``/``, so regular chat
-input is left untouched.
+only appear once the current token starts with a ``/`` **and** that token
+is the first one on the line, so regular chat input is left untouched.
 """
 
 from __future__ import annotations
@@ -25,10 +25,11 @@ class CommandCompleter(Completer):
     """Autocomplete registered shell commands that start with ``/``.
 
     The completer inspects the word currently being typed. If that word
-    starts with ``/`` (for example ``/t``), every registered command whose
-    name starts with the same prefix is offered as a completion, sorted
-    alphabetically. Words that do not start with ``/`` yield no suggestions,
-    keeping plain chat input free of command noise.
+    starts with ``/`` (for example ``/t``) **and** is the first token on
+    the line, every registered command whose name starts with the same
+    prefix is offered as a completion, sorted alphabetically. A ``/`` that
+    appears in the middle of a prompt is treated as regular chat text and
+    yields no suggestions, keeping plain chat input free of command noise.
 
     Args:
         commands: A zero-argument callable returning the current list of
@@ -48,6 +49,13 @@ class CommandCompleter(Completer):
 
         # Only complete when the current token looks like a command.
         if not word.startswith("/"):
+            return
+
+        # Only trigger when the ``/`` token is the first one on the line; a
+        # slash anywhere else is regular chat text, not a command.
+        line_before = document.current_line_before_cursor
+        before_word = line_before[: -len(word)] if word else line_before
+        if before_word.strip():
             return
 
         prefix = word

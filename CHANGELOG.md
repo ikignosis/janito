@@ -160,6 +160,10 @@ Changes since `v4.18.1` (2026-08-04).
 
 ### Fixed
 
+- The shell's `/cmd` autocompletion no longer triggers on a `/` that appears
+  in the middle of the line (e.g. `hello /t`): suggestions are now only
+  offered when the `/` token is the first one on the line (leading
+  whitespace is still allowed).
 - The Responses API client (`conversations_api.send_prompt`) no longer sends
   the now-invalid `include=["usage"]` parameter: `usage` is no longer a
   supported value for `include` in the Responses API (the parameter now only

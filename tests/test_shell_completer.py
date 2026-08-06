@@ -71,6 +71,21 @@ if pytest is not None:
         completer = _completer(["/tools"])
         assert _completions_for(completer, "hello") == []
 
+    def test_slash_in_middle_of_line_is_untouched():
+        # A ``/`` that is not at the start of the line is chat text, not a
+        # command, so it must not trigger command autocompletion.
+        completer = _completer(["/tools", "/help"])
+        assert _completions_for(completer, "hello /t") == []
+        assert _completions_for(completer, "say /help") == []
+        assert _completions_for(completer, "say /help please") == []
+        assert _completions_for(completer, "path /t") == []
+
+    def test_leading_whitespace_still_completes():
+        # The command only needs to be the first token of the line, so
+        # leading indentation/whitespace is allowed.
+        completer = _completer(["/tools"])
+        assert _completions_for(completer, "  /t") == ["/tools"]
+
     def test_empty_input_yields_nothing():
         completer = _completer(["/tools"])
         assert _completions_for(completer, "") == []
