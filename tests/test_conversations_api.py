@@ -176,6 +176,54 @@ def test_consume_stream_raises_on_failed_response():
         api._consume_response_stream(events)
 
 
+def test_consume_stream_raises_on_untyped_error_event():
+    """Some providers (e.g. Alibaba DashScope's /responses endpoint) stream
+    API errors as SSE events the SDK cannot type: ``event.type`` is None but
+    the payload carries the error as ``code``/``message`` attributes (e.g.
+    ``code='InvalidParameter'``, ``message="Unsupported model:
+    'qwen3.8-max'."``). These must raise instead of silently returning an
+    empty response."""
+    events = _stream(
+        [
+            _Event(
+                None,
+                code="InvalidParameter",
+                message="Unsupported model: 'qwen3.8-max'.",
+                request_id="req_1",
+            )
+        ]
+    )
+    with pytest.raises(RuntimeError, match="Unsupported model: 'qwen3.8-max'"):
+        api._consume_response_stream(events)
+
+
+def test_consume_stream_raises_on_empty_stream():
+    """A stream that yields no events at all must raise rather than silently
+    returning an empty response."""
+    with pytest.raises(RuntimeError, match="empty response"):
+        api._consume_response_stream(_stream([]))
+
+
+def test_consume_stream_cancel_is_not_an_empty_stream():
+    """An Enter-to-cancel short-circuit (no events consumed) must NOT be
+    mistaken for an empty stream."""
+    import threading
+
+    cancel = threading.Event()
+    cancel.set()
+
+    def events():
+        if False:
+            yield None  # pragma: no cover - keeps this a generator
+
+    content, _, tools, usage, response_id = api._consume_response_stream(
+        events(), cancel_event=cancel
+    )
+    assert content == ""
+    assert tools == []
+    assert response_id is None
+
+
 def test_consume_stream_cancel_short_circuits():
     import threading
 
@@ -515,6 +563,56 @@ def test_send_prompt_plain_response(monkeypatch):
     # Server-side conversation: no client-side items history to carry.
     assert result.input_items is None
     assert len(seen) == 1
+
+
+def test_send_prompt_raises_on_untyped_error_event(monkeypatch):
+    """A server-side provider that streams an untyped error event (e.g.
+    DashScope rejecting qwen3.8-max on /responses) must raise a clear error
+    instead of returning an empty ConversationResult."""
+
+    def create(**kwargs):
+        return _stream(
+            [
+                _Event(
+                    None,
+                    code="InvalidParameter",
+                    message="Unsupported model: 'qwen3.8-max'.",
+                )
+            ]
+        )
+
+    _mock_send_prompt(monkeypatch, create)
+    with pytest.raises(RuntimeError, match="Unsupported model: 'qwen3.8-max'"):
+        api.send_prompt("Hello", tools=None, use_mcp=False)
+
+
+def test_send_prompt_raises_on_empty_stream(monkeypatch):
+    """A stream with no events at all raises instead of returning an empty
+    result."""
+
+    def create(**kwargs):
+        return _stream([])
+
+    _mock_send_prompt(monkeypatch, create)
+    with pytest.raises(RuntimeError, match="empty response"):
+        api.send_prompt("Hello", tools=None, use_mcp=False)
+
+
+def test_send_prompt_raises_when_no_response_id_and_no_output(monkeypatch):
+    """A server-side provider that reports no response id and produces neither
+    content nor tool calls raises an error naming the model (safety net for
+    providers whose failure never surfaces as a proper event)."""
+
+    def create(**kwargs):
+        return _stream(
+            [
+                _Event("response.in_progress", response=_Response("unused")),
+            ]
+        )
+
+    _mock_send_prompt(monkeypatch, create)
+    with pytest.raises(RuntimeError, match="gpt-4o"):
+        api.send_prompt("Hello", tools=None, use_mcp=False)
 
 
 def test_send_prompt_sends_instructions_only_on_first_turn(monkeypatch):

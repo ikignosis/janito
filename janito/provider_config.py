@@ -99,7 +99,14 @@ PROVIDER_INFO: dict[str, dict] = {
     },
     "alibaba": {
         "model": "qwen3.8-max",
-        "supported_api_types": ["Completions"],
+        # Completions is the built-in default: DashScope's /responses endpoint
+        # does not (yet) support qwen3.8-max (it rejects it with "Unsupported
+        # model: 'qwen3.8-max'."), so the out-of-the-box provider must use the
+        # Completions API where the default model works. The Responses API is
+        # still supported for models that expose it (e.g. qwen3.7-max,
+        # qwen3.6-plus, qwen3.5-plus, qwen-plus, qwen-flash) and can be
+        # selected with --set api-type=Responses or --api-type responses.
+        "supported_api_types": ["Completions", "Responses"],
         "max_input_tokens": 1000000,  # 1M
         "max_output_tokens": 131072,
         "reasoning_level": "xhigh",

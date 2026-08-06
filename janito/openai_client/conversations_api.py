@@ -184,14 +184,31 @@ def _consume_response_stream(stream, cancel_event=None):
     partial_arguments: dict[str, str] = {}
     usage_info = None
     response_id = None
+    events_seen = 0
 
     for event in stream:
+        events_seen += 1
         # Honour an Enter-to-cancel request: stop consuming as soon as the
         # next event arrives so the worker can close the connection.
         if cancel_event is not None and cancel_event.is_set():
             break
 
         event_type = event.type
+
+        # Some OpenAI-compatible providers stream API errors as SSE events the
+        # SDK cannot type (``event.type`` is ``None``) but which carry the
+        # error payload as ``code``/``message`` attributes. Alibaba DashScope,
+        # for example, rejects a model its /responses endpoint does not
+        # support with ``code='InvalidParameter'``,
+        # ``message="Unsupported model: 'qwen3.8-max'."``. Surface the message
+        # instead of silently returning an empty response.
+        if event_type is None:
+            message = getattr(event, "message", None)
+            code = getattr(event, "code", None)
+            if message or code:
+                raise RuntimeError(f"{code}: {message}" if code else message)
+            # Unknown untyped event with no error payload: skip it.
+            continue
 
         # The response id is the handle used to chain the next turn; it is
         # known as soon as the server creates (or completes) the response.
@@ -242,6 +259,15 @@ def _consume_response_stream(stream, cancel_event=None):
 
     full_content = "".join(collected_content)
     reasoning_content = "".join(collected_reasoning) if collected_reasoning else None
+    # A healthy stream always yields at least a response.created/completed
+    # event; a stream with zero events means the provider failed to produce a
+    # response (e.g. an error that was never surfaced). Fail loudly instead of
+    # returning an empty answer. An Enter-to-cancel short-circuit must not be
+    # treated as an empty stream.
+    if events_seen == 0 and (cancel_event is None or not cancel_event.is_set()):
+        raise RuntimeError(
+            "The Responses API returned no stream events (empty response)."
+        )
     return full_content, reasoning_content, tool_calls, usage_info, response_id
 
 
@@ -550,6 +576,23 @@ def send_prompt(
             # stateless providers never send previous_response_id.
             if responses_in_server:
                 response_id = stream_response_id
+            # Safety net: a server-side provider that never reported a
+            # response id and produced neither content nor tool calls means
+            # the request failed without a proper error event. Raise a clear
+            # error naming the model (e.g. DashScope's /responses endpoint
+            # rejecting an unsupported model) instead of returning an empty
+            # ConversationResult.
+            if (
+                responses_in_server
+                and stream_response_id is None
+                and not full_content
+                and not tool_calls
+            ):
+                raise RuntimeError(
+                    f"The Responses API returned an empty response for model "
+                    f"'{model}'. The model may not be supported by this "
+                    f"endpoint."
+                )
         except NotFoundError as e:
             message = str(e).lower()
             if "model not exist" in message or "model not found" in message:

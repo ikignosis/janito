@@ -146,3 +146,26 @@ Changes since `v4.18.1` (2026-08-04).
   `tool`-role messages appended to the conversation history (including the
   structured error result for failed calls); `send_prompt` now delegates to
   it via a single `handle_tool_calls(...)` call. Behaviour is unchanged.
+
+### Fixed
+
+- The Responses API client (`conversations_api.send_prompt`) no longer
+  **silently returns an empty response** when a provider streams an API error
+  as an SSE event the OpenAI SDK cannot type (`event.type is None` but the
+  payload carries `code`/`message` attributes) — e.g. Alibaba DashScope's
+  `/responses` endpoint rejecting an unsupported model with
+  `code='InvalidParameter'`, `message="Unsupported model: 'qwen3.8-max'."`.
+  Such events now raise a clear `RuntimeError` with the server's message.
+  The client also raises instead of returning empty on a zero-event stream
+  and on a server-side response that reports no response id and produces
+  neither content nor tool calls (the raised error names the model). An
+  Enter-to-cancel short-circuit is still treated as a cancellation, not as
+  an empty stream.
+- The Alibaba (Qwen) provider now defaults to the **Completions** API
+  (`supported_api_types` is `["Completions", "Responses"]` instead of
+  `["Responses", "Completions"]`): DashScope's `/responses` endpoint does not
+  (yet) support the provider's default model `qwen3.8-max`, so the
+  out-of-the-box provider must use the API where the model works. The
+  Responses API remains selectable per-provider with `--set api-type=Responses`
+  or per-call with `--api-type responses` (using a model the endpoint
+  supports, e.g. `qwen3.7-max`).

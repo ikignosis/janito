@@ -143,12 +143,24 @@ if pytest is not None:
         ]
         # Case-insensitive lookups work.
         assert get_default_api_type_from_provider("OpenAI") == "Responses"
+        # Alibaba supports both APIs but defaults to Completions: its built-in
+        # default model qwen3.8-max is not yet supported by DashScope's
+        # /responses endpoint, so the out-of-the-box default must use the
+        # Completions API where the model works.
+        assert get_supported_api_types_from_provider("alibaba") == [
+            "Completions",
+            "Responses",
+        ]
+        assert get_default_api_type_from_provider("alibaba") == "Completions"
+        assert PROVIDER_INFO["alibaba"]["supported_api_types"] == [
+            "Completions",
+            "Responses",
+        ]
         # Every other provider is Completions-only for now.
         for name in (
             "minimax",
             "xiaomi",
             "moonshot",
-            "alibaba",
             "zai",
             "deepseek",
             "xai",
