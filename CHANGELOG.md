@@ -5,9 +5,9 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/joaopinto/janito/compare/v4.18.1...HEAD)
+## [Unreleased](https://github.com/joaopinto/janito/compare/v4.18.0...HEAD)
 
-Changes since `v4.18.1` (2026-08-04).
+Changes since `v4.18.0` (2026-08-03).
 
 ### Added
 
@@ -125,6 +125,10 @@ Changes since `v4.18.1` (2026-08-04).
   (previous_response_id)` for OpenAI, `stateless (client re-sends history)`
   for DeepSeek) when the effective API type is `Responses`. The line is
   omitted when the API type resolves to `Completions`.
+- Add a root-level `RELEASE.md` documenting the four-step release process
+  (determine version, run `scripts/promote_changelog.py`, commit the
+  changelog, tag), including the bump rules, exact commands and how the
+  release workflow validates the changelog.
 
 ### Changed
 
