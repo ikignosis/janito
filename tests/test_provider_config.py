@@ -186,13 +186,18 @@ if pytest is not None:
             "Completions",
             "Responses",
         ]
+        # DeepSeek supports both API types, Responses first (the default).
+        assert get_supported_api_types_from_provider("deepseek") == [
+            "Responses",
+            "Completions",
+        ]
+        assert get_default_api_type_from_provider("deepseek") == "Responses"
         # Every other provider is Completions-only for now.
         for name in (
             "minimax",
             "xiaomi",
             "moonshot",
             "zai",
-            "deepseek",
             "xai",
             "anthropic",
             "custom",
@@ -218,6 +223,29 @@ if pytest is not None:
         # Responses API design).
         assert get_responses_in_server_from_provider("minimax") is True
         # Unknown provider defaults to True.
+        assert get_responses_in_server_from_provider("bogus") is True
+
+    def test_responses_in_server_flag_honors_config_override(monkeypatch, tmp_path):
+        """A per-provider responses-in-server override in config.json wins
+        over the built-in default (e.g. set from the web Settings drawer's
+        Advanced section or ``--set responses-in-server=...``)."""
+        import janito.general_config as gc
+
+        monkeypatch.setattr(config_dir_mod, "_config_dir", tmp_path)
+
+        # OpenAI's built-in default is True; force it off via config.
+        gc.set_config_value("openai.responses-in-server", False)
+        assert get_responses_in_server_from_provider("openai") is False
+
+        # Clearing the override falls back to the built-in default.
+        gc.unset_config_value("openai.responses-in-server")
+        assert get_responses_in_server_from_provider("openai") is True
+
+        # DeepSeek's built-in default is False; force it on via config.
+        gc.set_config_value("deepseek.responses-in-server", True)
+        assert get_responses_in_server_from_provider("deepseek") is True
+
+        # Unknown providers still default to True regardless of config.
         assert get_responses_in_server_from_provider("bogus") is True
 
     def test_canonical_provider_name_exact_and_case_insensitive():

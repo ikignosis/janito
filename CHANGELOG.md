@@ -11,6 +11,25 @@ Changes since `v4.18.1` (2026-08-04).
 
 ### Added
 
+- The web Settings drawer gains an **Advanced** section (collapsed by
+  default) with three per-provider fields: an **Endpoint** text input
+  (base-URL override, empty clears it back to the built-in endpoint), an
+  **API Type** control (a combobox with one option per supported type,
+  bound to the effective value) and a togglable
+  **ResponsesInServer** switch that only appears while the API type is
+  "Responses".  All three are saved per provider with the drawer's Save
+  button via `PATCH /api/config` (stored under
+  `providers.<name>.{endpoint,api-type,responses-in-server}` in
+  `~/.janito/config.json`) and exposed per provider via
+  `GET /api/config/providers` (`api_type`, `supported_api_types`,
+  `responses_in_server`, `default_responses_in_server`,
+  `responses_in_server_override`).
+- Add a per-provider `responses-in-server` config override
+  (`--set responses-in-server=true|false` or the web Advanced section):
+  `get_responses_in_server_from_provider()` now honours the configured value
+  over the built-in default, so a provider's Responses endpoint can be
+  switched between server-side (`previous_response_id`) and stateless
+  (client re-sends history) conversation handling per deployment.
 - Add `anthropic` as a built-in provider (Claude models) with the
   OpenAI-compatible endpoint `https://api.anthropic.com/v1/`, a default model
   of `claude-sonnet-5` (200k input / 64k output tokens, Completions API),

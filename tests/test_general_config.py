@@ -360,8 +360,9 @@ if pytest is not None:
         # OpenAI's supported_api_types is ["Responses", "Completions"], so the
         # default (first entry) is the Responses API.
         assert gc.resolve_api_type(None, "openai") == "Responses"
-        # Completions-only providers resolve to Completions.
-        assert gc.resolve_api_type(None, "deepseek") == "Completions"
+        # DeepSeek now ships Responses first too, so it resolves to Responses.
+        assert gc.resolve_api_type(None, "deepseek") == "Responses"
+        # Completions-first providers resolve to Completions.
         assert gc.resolve_api_type(None, "alibaba") == "Completions"
         # Explicit CLI flag wins over the provider default.
         assert gc.resolve_api_type("Completions", "openai") == "Completions"
@@ -390,6 +391,58 @@ if pytest is not None:
         # An unknown provider has no supported_api_types entry, so the safe
         # Completions default applies.
         assert gc.resolve_api_type(None, "bogus") == "Completions"
+
+    # ---- Responses-in-server (per-provider override) --------------------
+
+    def test_responses_in_server_config_key_helper():
+        assert (
+            gc.responses_in_server_config_key("openai") == "openai.responses-in-server"
+        )
+        assert (
+            gc.responses_in_server_config_key("  OpenAI ")
+            == "openai.responses-in-server"
+        )
+
+    def test_set_responses_in_server_per_provider(monkeypatch, tmp_path):
+        config_path = _use_temp_config(monkeypatch, tmp_path)
+        gc.set_config_from_cli("responses-in-server=true", "openai")
+        gc.set_config_from_cli("responses-in-server=false", "deepseek")
+        assert gc.load_responses_in_server_from_config("openai") is True
+        assert gc.load_responses_in_server_from_config("deepseek") is False
+        config = _read_config(config_path)
+        assert config["providers"]["openai"]["responses-in-server"] is True
+        assert config["providers"]["deepseek"]["responses-in-server"] is False
+
+    def test_set_responses_in_server_normalizes_bool_forms(monkeypatch, tmp_path):
+        config_path = _use_temp_config(monkeypatch, tmp_path)
+        # 1/0 and on/off (in any case) are normalized to real booleans.
+        key, value = gc.set_config_from_cli("responses-in-server=1", "openai")
+        assert key == "openai.responses-in-server"
+        assert value is True
+        gc.set_config_from_cli("responses-in-server=OFF", "deepseek")
+        config = _read_config(config_path)
+        assert config["providers"]["openai"]["responses-in-server"] is True
+        assert config["providers"]["deepseek"]["responses-in-server"] is False
+
+    def test_set_responses_in_server_rejects_unknown_values(monkeypatch, tmp_path):
+        config_path = _use_temp_config(monkeypatch, tmp_path)
+        with pytest.raises(ValueError) as exc:
+            gc.set_config_from_cli("responses-in-server=maybe", "openai")
+        assert "boolean" in str(exc.value)
+        # Nothing should have been written
+        assert _read_config(config_path) == {}
+
+    def test_load_responses_in_server_defaults_to_none(monkeypatch, tmp_path):
+        _use_temp_config(monkeypatch, tmp_path)
+        assert gc.load_responses_in_server_from_config("openai") is None
+        assert gc.load_responses_in_server_from_config() is None
+
+    def test_unset_responses_in_server_per_provider(monkeypatch, tmp_path):
+        config_path = _use_temp_config(monkeypatch, tmp_path)
+        gc.set_config_from_cli("responses-in-server=true", "openai")
+        assert gc.unset_config_key_from_cli("responses-in-server", "openai") is True
+        assert "openai" not in config_path.read_text()
+        assert gc.unset_config_key_from_cli("responses-in-server", "openai") is False
 
 else:  # pragma: no cover - fallback runner without pytest
 

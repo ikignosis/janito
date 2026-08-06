@@ -27,10 +27,14 @@ PROVIDER_SCOPED_KEYS = {
     "max-output-tokens",
     "reasoning-level",
     "api-type",
+    "responses-in-server",
 }
 
 # Config keys whose values should be coerced to int when set via CLI.
 INT_VALUED_KEYS = {"max-output-tokens"}
+
+# Config keys whose values should be coerced to bool when set via CLI.
+BOOL_VALUED_KEYS = {"responses-in-server"}
 
 
 def get_config_path() -> Path:
@@ -445,6 +449,53 @@ def load_api_type(cli_provider: str | None = None) -> str | None:
     return None
 
 
+def responses_in_server_config_key(provider: str) -> str:
+    """Return the config key used to store the Responses-in-server flag.
+
+    The flag is stored per-provider using the ``<provider>.responses-in-server``
+    key (``True``/``False``) so that each provider can override whether its
+    Responses API endpoint keeps the conversation state server-side (chaining
+    turns with ``previous_response_id``) or is stateless (the client re-sends
+    the full history on every request).
+
+    Args:
+        provider: The provider name
+
+    Returns:
+        The provider-scoped config key, e.g. ``"openai.responses-in-server"``
+    """
+    return f"{normalize_provider(provider)}.responses-in-server"
+
+
+def load_responses_in_server_from_config(
+    cli_provider: str | None = None,
+) -> bool | None:
+    """Load the Responses-in-server override for a provider from config.json.
+
+    The override is stored under a provider-scoped key
+    (``<provider>.responses-in-server``) so that different providers can each
+    decide whether their Responses API keeps conversation state server-side.
+
+    Args:
+        cli_provider: Provider passed via ``--provider`` (may be None). If not
+            provided, the provider is read from config.json.
+
+    Returns:
+        bool: The configured override (``True``/``False``), or ``None`` when
+            no override is stored (the provider's built-in default applies).
+    """
+    provider = determine_provider(cli_provider)
+    if not provider:
+        return None
+    value = get_config_value(responses_in_server_config_key(provider))
+    if value is None:
+        return None
+    # Tolerate string forms written by hand/older configs ("true"/"false").
+    if isinstance(value, str):
+        return value.strip().lower() in ("true", "1", "yes", "on")
+    return bool(value)
+
+
 def load_endpoint_from_config(cli_provider: str | None = None) -> str | None:
     """Load custom endpoint URL from ~/.janito/config.json if it exists.
 
@@ -653,6 +704,21 @@ def set_config_from_cli(
             raise ValueError(
                 f"Config key '{key}' requires an integer value, got: {value!r}"
             )
+
+    # Coerce values for keys that should be stored as booleans (accepts
+    # true/false/1/0/yes/no/on/off in any case).
+    if base_key in BOOL_VALUED_KEYS:
+        if isinstance(value, str):
+            lowered = value.strip().lower()
+            if lowered in ("true", "1", "yes", "on"):
+                value = True
+            elif lowered in ("false", "0", "no", "off"):
+                value = False
+            else:
+                raise ValueError(
+                    f"Config key '{key}' requires a boolean value, got: {value!r}"
+                )
+        value = bool(value)
 
     # Normalize API type values to their canonical casing (accepts
     # completions/responses in any case) and reject anything else, so a typo

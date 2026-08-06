@@ -21,6 +21,19 @@ function settingsComponent() {
         saving: false,
         message: null,
 
+        // Advanced section (per-provider): endpoint override, API type
+        // (Responses/Completions) and the Responses-in-server flag.  Loaded
+        // from the selected provider's entry in /api/config/providers and
+        // saved per-provider via PATCH /api/config, like the model.
+        endpoint: '',
+        apiType: '',
+        responsesInServer: false,
+        // Pristine baselines for the Advanced fields (like originalModel):
+        // Save stays disabled until one of them actually changes.
+        originalEndpoint: '',
+        originalApiType: '',
+        originalResponsesInServer: false,
+
         // "Set API Key" modal state
         keyModalOpen: false,
         keyInput: '',
@@ -64,10 +77,22 @@ function settingsComponent() {
                 // provider in use, which may differ from the selection when a
                 // non-default provider is being configured).
                 this.model = this.defaultModel || this.config.model || '';
+                // Same for the Advanced section: every field describes the
+                // SELECTED provider.  The endpoint input carries the
+                // configured override ('' = fall back to the built-in
+                // endpoint); the API type is the configured override or the
+                // provider's built-in default (first supported type); the
+                // Responses-in-server flag is the effective value.
+                this.endpoint = this.selectedProviderDetail?.endpoint || '';
+                this.apiType = this.resolveApiType();
+                this.responsesInServer = !!this.selectedProviderDetail?.responses_in_server;
                 // Record the pristine baseline: nothing to save yet, so the
                 // Save button starts (and stays) disabled until the model
                 // changes, a default is staged, or an API key is staged.
                 this.originalModel = this.model;
+                this.originalEndpoint = this.endpoint;
+                this.originalApiType = this.apiType;
+                this.originalResponsesInServer = this.responsesInServer;
                 this.defaultChanged = false;
                 this.pendingDefaultProvider = null;
                 this.pendingApiKey = null;
@@ -91,10 +116,43 @@ function settingsComponent() {
         // picked provider's configured model (or its built-in default) so
         // the Model field always shows a value and describes the provider
         // being edited (keeping a model name from the previous provider
-        // would make the next API call fail).
+        // would make the next API call fail).  The Advanced fields follow
+        // the same rule: they describe the selected provider, so they are
+        // reloaded from its entry too.
         onProviderChange() {
             const p = this.providers.find((x) => x.name === this.selectedProvider);
             this.model = (p && (p.model || p.default_model)) || '';
+            this.endpoint = (p && p.endpoint) || '';
+            this.apiType = this.resolveApiType();
+            this.responsesInServer = !!(p && p.responses_in_server);
+        },
+
+        // The effective API type for the selected provider: the configured
+        // override first (``api_type``), then the provider's built-in
+        // default (the first of its ``supported_api_types``) — mirrors the
+        // CLI's ``resolve_api_type`` resolution.
+        resolveApiType() {
+            const p = this.selectedProviderDetail;
+            if (!p) return '';
+            return (
+                p.api_type ||
+                p.default_api_type ||
+                (p.supported_api_types && p.supported_api_types[0]) ||
+                ''
+            );
+        },
+
+        // The API types the selected provider supports.  Rendered as one
+        // option per type in the API Type combobox.
+        get supportedApiTypes() {
+            const p = this.selectedProviderDetail;
+            return (p && p.supported_api_types) || [];
+        },
+
+        // True while the selected API type is the Responses API, which is
+        // the only mode where the Responses-in-server toggle is meaningful.
+        get apiTypeIsResponses() {
+            return this.apiType === 'Responses';
         },
 
         // The provider object currently selected in the combobox (or null).
@@ -161,13 +219,18 @@ function settingsComponent() {
 
         // True while the drawer holds unsaved changes: the model field
         // differs from the value it loaded with, a different provider was
-        // staged as the default, or an API key was staged.  The Save button
-        // is disabled until one of these happens (issue #38).
+        // staged as the default, an API key was staged, or one of the
+        // Advanced section fields (endpoint / api type / Responses-in-server)
+        // changed.  The Save button is disabled until one of these happens
+        // (issue #38).
         get canSave() {
             return (
                 this.model !== this.originalModel ||
                 this.defaultChanged ||
-                this.apiKeyChanged
+                this.apiKeyChanged ||
+                this.endpoint !== this.originalEndpoint ||
+                this.apiType !== this.originalApiType ||
+                this.responsesInServer !== this.originalResponsesInServer
             );
         },
 
@@ -275,6 +338,27 @@ function settingsComponent() {
                     saved.push(...Object.keys(updated.updated));
                 }
 
+                // 2.5. Persist the Advanced section changes (endpoint / API
+                //    type / Responses-in-server) — only the fields that
+                //    actually changed, each scoped to the selected provider.
+                //    An emptied endpoint or API type clears the per-provider
+                //    override on the server (falls back to the built-in).
+                const advancedPatch = {};
+                if (this.endpoint !== this.originalEndpoint) {
+                    advancedPatch.endpoint = this.endpoint;
+                }
+                if (this.apiType !== this.originalApiType) {
+                    advancedPatch.api_type = this.apiType;
+                }
+                if (this.responsesInServer !== this.originalResponsesInServer) {
+                    advancedPatch.responses_in_server = this.responsesInServer;
+                }
+                if (Object.keys(advancedPatch).length) {
+                    advancedPatch.provider = this.selectedProvider;
+                    const updated = await Api.patchConfig(advancedPatch);
+                    saved.push(...Object.keys(updated.updated));
+                }
+
                 // 3. Store the staged API key (per-provider; independent of
                 //    the default-provider change above).
                 if (this.pendingApiKey) {
@@ -302,8 +386,14 @@ function settingsComponent() {
                 }
 
                 // The drawer is pristine again: disable the Save button until
-                // the next edit, default stage, or key stage.
+                // the next edit, default stage, or key stage.  The Advanced
+                // baselines are re-established from the freshly loaded
+                // provider entry (the server is the source of truth after a
+                // save), so saving with no changes stays a no-op.
                 this.originalModel = this.model;
+                this.originalEndpoint = this.endpoint;
+                this.originalApiType = this.apiType;
+                this.originalResponsesInServer = this.responsesInServer;
                 this.defaultChanged = false;
                 this.pendingDefaultProvider = null;
                 this.pendingApiKey = null;

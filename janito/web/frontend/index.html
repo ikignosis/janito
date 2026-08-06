@@ -691,6 +691,58 @@
                     </template>
                 </div>
 
+                <!-- Advanced section (collapsed by default): per-provider
+                     endpoint, API type and Responses-in-server.  All three
+                     describe the provider picked in the combo and are saved
+                     per-provider with Save, like the Model field. -->
+                <details class="advanced-section">
+                    <summary>Advanced</summary>
+
+                    <div class="form-group">
+                        <label for="endpoint-input">Endpoint</label>
+                        <input id="endpoint-input" type="text" x-model="endpoint"
+                               placeholder="https://api.example.com/v1"
+                               autocomplete="off" spellcheck="false">
+                        <div class="field-hint">
+                            Override the provider's base URL. Leave empty to use the built-in endpoint.
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="api-type-select">API Type</label>
+                        <!-- Combobox: one option per supported API type, bound
+                             to the effective apiType (configured override,
+                             else the provider's built-in default). -->
+                        <select id="api-type-select" x-model="apiType">
+                            <option value=""
+                                    x-show="supportedApiTypes.length === 0"
+                                    disabled>(not set)</option>
+                            <template x-for="t in supportedApiTypes" :key="t">
+                                <option :value="t" x-text="t"></option>
+                            </template>
+                        </select>
+                        <div class="field-hint">
+                            Selects the API the client talks to
+                            (Responses / Chat Completions).
+                        </div>
+                    </div>
+
+                    <!-- Responses-in-server only applies to the Responses API. -->
+                    <template x-if="apiTypeIsResponses">
+                        <div class="form-group">
+                            <label class="switch-row" for="responses-in-server-toggle">
+                                <span class="switch-label">
+                                    ResponsesInServer
+                                    <span class="field-hint">Server-side conversation state (previous_response_id).</span>
+                                </span>
+                                <input id="responses-in-server-toggle" type="checkbox"
+                                       class="switch-input" x-model="responsesInServer">
+                                <span class="switch-track" aria-hidden="true"></span>
+                            </label>
+                        </div>
+                    </template>
+                </details>
+
                 <div class="drawer-actions">
                     <button class="btn btn-primary" @click="save()"
                             :disabled="saving || !canSave"

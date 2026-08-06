@@ -136,7 +136,7 @@ PROVIDER_INFO: dict[str, dict] = {
     },
     "deepseek": {
         "model": "deepseek-v4-flash",
-        "supported_api_types": ["Completions"],
+        "supported_api_types": ["Responses", "Completions"],
         # DeepSeek's /responses endpoint is stateless: it cannot resolve a
         # previous_response_id, so the client must re-send the full history.
         "responses_in_server": False,
@@ -386,6 +386,12 @@ def get_responses_in_server_from_provider(provider: str) -> bool:
     re-send the entire conversation history on every request (like Chat
     Completions).
 
+    A per-provider override stored in ``~/.janito/config.json`` under
+    ``providers.<name>.responses-in-server`` (set from the CLI with
+    ``--set responses-in-server=...`` or from the web Settings drawer's
+    Advanced section) wins over the built-in default, so providers that ship
+    a default can still be flipped per deployment.
+
     Args:
         provider: The provider name (case-insensitive)
 
@@ -395,6 +401,15 @@ def get_responses_in_server_from_provider(provider: str) -> bool:
         do not declare the flag (the Responses API design) and for unknown
         providers.
     """
+    # A configured override takes priority over the built-in default.  The
+    # import is deferred to avoid a module-level cycle (general_config does
+    # not import provider_config at import time either).
+    from .general_config import load_responses_in_server_from_config
+
+    override = load_responses_in_server_from_config(provider)
+    if override is not None:
+        return override
+
     info = get_provider_info(provider)
     if info is None:
         return True

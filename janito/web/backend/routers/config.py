@@ -60,21 +60,42 @@ async def patch_config(request: Request):
     verbose logging are CLI-level flags and cannot be changed here; the
     default provider is changed via ``POST /api/config/default-provider``.
 
-    The ``model`` is a *provider-scoped* value: it is stored per provider
-    under ``providers.<name>.model`` in ``config.json`` (mirroring the CLI's
-    ``--set model=<name>``), so each provider keeps its own default model.
-    Pass ``provider`` in the body to target a specific provider (the one
-    selected in the Settings drawer); when omitted, the model is applied to
-    the provider the next prompt resolves to (a session override, else the
-    persisted default).  The value is written to disk so future CLI *and*
-    web runs pick it up, and is mirrored into the running server when it
-    affects the provider currently in use — so the very next prompt already
-    uses it, no restart needed.  An empty ``model`` clears the per-provider
+    Every mutable field is *provider-scoped*: it is stored per provider under
+    ``providers.<name>.<key>`` in ``config.json`` (mirroring the CLI's
+    ``--set ...``), so each provider keeps its own values.  Pass ``provider``
+    in the body to target a specific provider (the one selected in the
+    Settings drawer); when omitted, the value is applied to the provider the
+    next prompt resolves to (a session override, else the persisted default).
+    The value is written to disk so future CLI *and* web runs pick it up.
+    An empty ``model`` / ``endpoint`` / ``api_type`` clears the per-provider
     override (the provider falls back to its built-in default).
+
+    Supported fields:
+
+    * ``model`` -- per-provider default model (``providers.<name>.model``).
+      An empty value clears the override.  Mirrored into the running server
+      when it affects the provider currently in use.
+    * ``endpoint`` -- per-provider base-URL override
+      (``providers.<name>.endpoint``).  An empty value clears the override
+      (falls back to the provider's built-in endpoint).  The OpenAI client
+      resolves the base URL per call, so the next prompt already uses it.
+    * ``api_type`` -- per-provider API type (``providers.<name>.api-type``),
+      ``"Responses"`` or ``"Completions"`` (case-insensitive, canonicalized).
+      An empty value clears the override (falls back to the provider's
+      built-in default -- the first of its ``supported_api_types``).
+    * ``responses_in_server`` -- per-provider override of whether the
+      provider's Responses API keeps conversation state server-side
+      (``providers.<name>.responses-in-server``).  Accepts ``true``/``false``
+      (also ``1``/``0``/``yes``/``no``/``on``/``off``).  Only meaningful when
+      the provider's API type is ``Responses``.
     """
     from janito.general_config import (
+        api_type_config_key,
+        endpoint_config_key,
         get_active_provider,
         model_config_key,
+        normalize_api_type,
+        responses_in_server_config_key,
         set_config_value,
         unset_config_value,
     )
@@ -91,26 +112,32 @@ async def patch_config(request: Request):
     # still be toggled for the running server only via POST /api/config/thinking.
     updated = {}
 
+    mutable_fields = [
+        field
+        for field in ("model", "endpoint", "api_type", "responses_in_server")
+        if field in body
+    ]
+    if not mutable_fields:
+        return {"updated": updated}
+
+    # Resolve the provider the per-provider values belong to: an explicit
+    # ``provider`` from the body (the Settings drawer's selection) wins,
+    # otherwise the provider the next prompt resolves to.
+    raw_provider = str(body.get("provider") or "").strip()
+    if raw_provider:
+        try:
+            provider = validate_provider_name(raw_provider)
+        except ValueError as e:
+            return JSONResponse({"detail": str(e)}, status_code=400)
+    else:
+        provider = config.session_provider or config.provider or get_active_provider()
+
+    effective = config.session_provider or config.provider or get_active_provider()
+
     if "model" in body:
         model = str(body["model"]).strip()
 
-        # Resolve the provider the model belongs to: an explicit ``provider``
-        # from the body (the Settings drawer's selection) wins, otherwise the
-        # provider the next prompt resolves to.
-        raw_provider = str(body.get("provider") or "").strip()
-        if raw_provider:
-            try:
-                provider = validate_provider_name(raw_provider)
-            except ValueError as e:
-                return JSONResponse({"detail": str(e)}, status_code=400)
-        else:
-            provider = (
-                config.session_provider or config.provider or get_active_provider()
-            )
-
-        # Persist per-provider so each provider keeps its own default model
-        # (this is the step that was previously missing — the change only
-        # lived in memory and was lost on restart).
+        # Persist per-provider so each provider keeps its own default model.
         key = model_config_key(provider)
         if model:
             set_config_value(key, model)
@@ -122,9 +149,62 @@ async def patch_config(request: Request):
         # provider the next prompt actually uses; otherwise the server keeps
         # its current model and the new value still lands on disk for the
         # targeted provider.
-        effective = config.session_provider or config.provider or get_active_provider()
         if provider == effective:
             config.model = model or None
+
+    if "endpoint" in body:
+        endpoint = str(body["endpoint"]).strip()
+
+        # Persist per-provider (providers.<name>.endpoint).  An empty value
+        # clears the override so the provider falls back to its built-in
+        # endpoint.  No in-memory mirror needed: the OpenAI client resolves
+        # the base URL per call, so the very next prompt uses the new value.
+        key = endpoint_config_key(provider)
+        if endpoint:
+            set_config_value(key, endpoint)
+        else:
+            unset_config_value(key)
+        updated["endpoint"] = endpoint
+
+    if "api_type" in body:
+        raw = str(body["api_type"]).strip()
+
+        # Persist per-provider (providers.<name>.api-type), canonicalized to
+        # "Responses" / "Completions" (rejects anything else with 400).  An
+        # empty value clears the override so the provider falls back to its
+        # built-in default.
+        key = api_type_config_key(provider)
+        if raw:
+            try:
+                api_type = normalize_api_type(raw)
+            except ValueError as e:
+                return JSONResponse({"detail": str(e)}, status_code=400)
+            set_config_value(key, api_type)
+            updated["api_type"] = api_type
+        else:
+            unset_config_value(key)
+            updated["api_type"] = ""
+
+    if "responses_in_server" in body:
+        value = body["responses_in_server"]
+        if isinstance(value, str):
+            lowered = value.strip().lower()
+            if lowered in ("true", "1", "yes", "on"):
+                value = True
+            elif lowered in ("false", "0", "no", "off"):
+                value = False
+            else:
+                return JSONResponse(
+                    {"detail": "'responses_in_server' must be a boolean"},
+                    status_code=400,
+                )
+        responses_in_server = bool(value)
+
+        # Persist per-provider (providers.<name>.responses-in-server) so the
+        # CLI's Responses-API path (conversations_api) picks it up.  Only
+        # meaningful while the provider's API type is "Responses".
+        set_config_value(responses_in_server_config_key(provider), responses_in_server)
+        updated["responses_in_server"] = responses_in_server
 
     return {"updated": updated}
 
@@ -191,13 +271,16 @@ async def list_providers(request: Request):
     from janito.auth_config import get_api_key
     from janito.general_config import (
         get_active_provider,
+        load_api_type,
         load_endpoint_from_config,
         load_model_from_config,
+        load_responses_in_server_from_config,
     )
     from janito.provider_config import (
         CUSTOM_ENDPOINT_MARKER,
         PROVIDER_INFO,
         get_default_api_type_from_provider,
+        get_responses_in_server_from_provider,
     )
 
     config = _get_config(request)
@@ -222,14 +305,27 @@ async def list_providers(request: Request):
 
         api_key = get_api_key(name)
 
+        # Advanced per-provider settings (Settings drawer's Advanced section):
+        # the configured ``api_type`` override (``None`` when the provider's
+        # built-in default applies) and the effective ``responses_in_server``
+        # flag (configured override first, else the built-in default).
+        api_type_override = load_api_type(name)
+        responses_in_server = get_responses_in_server_from_provider(name)
+
         providers.append(
             {
                 "name": name,
                 "base_url": base_url,
                 "model": load_model_from_config(name),
                 "default_model": info.get("model"),
+                "api_type": api_type_override,
                 "default_api_type": get_default_api_type_from_provider(name),
                 "supported_api_types": info.get("supported_api_types"),
+                "responses_in_server": responses_in_server,
+                "default_responses_in_server": info.get("responses_in_server", True),
+                "responses_in_server_override": load_responses_in_server_from_config(
+                    name
+                ),
                 "default_max_input_tokens": info.get("max_input_tokens"),
                 "default_max_output_tokens": info.get("max_output_tokens"),
                 "default_reasoning_level": info.get("reasoning_level"),

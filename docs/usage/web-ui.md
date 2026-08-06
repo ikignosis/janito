@@ -118,7 +118,13 @@ The server prints the URL it's listening on, then opens your default browser
   "Set API Key" are all *staged* (dirty) changes that arm the Save button
   (shown with yellow "pending" badges/notes); a single Save click persists
   them together and disables Save again. Closing the drawer discards staged
-  changes.
+  changes. A collapsible **Advanced** section (closed by default) adds three
+  per-provider fields saved the same way: **Endpoint** (base-URL override,
+  empty = built-in), **API Type** (a combobox with one option per supported
+  type, bound to the effective value), and a
+  togglable **ResponsesInServer** switch that only appears while the API type
+  is "Responses" (whether the Responses API keeps the conversation
+  server-side via `previous_response_id`).
 - **MCP dashboard** — see connected services, connect/disconnect
 - **Status bar** — model, provider, active CLI flags, connection state, tokens
 - **`/tools` command** — typing `/tools` in the chat input renders a formatted,
