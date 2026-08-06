@@ -75,3 +75,10 @@ Changes since `v4.18.1` (2026-08-04).
   of the change (`BaseTool.report_diff`, which delegates to the new
   `report_diff` reporter) before its success message, so every replacement
   shows exactly what changed.
+- Move the CLI tool-execution loop out of `janito/openai_client/client.py`
+  into a new `ToolExecutor` class in `janito/tooling/executor.py`. The
+  executor owns routing each tool call to the MCP manager or the built-in
+  tools registry, usage / used-files / changes tracking, and producing the
+  `tool`-role messages appended to the conversation history (including the
+  structured error result for failed calls); `send_prompt` now delegates to
+  it via a single `handle_tool_calls(...)` call. Behaviour is unchanged.

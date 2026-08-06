@@ -3,7 +3,6 @@ OpenAI client module for sending prompts to OpenAI-compatible endpoints.
 Uses streaming (SSE) to display tokens as they arrive.
 """
 
-import json
 import logging
 import sys
 import threading
@@ -42,16 +41,17 @@ from ..provider_config import (
     get_default_thinking_from_provider,
     is_custom_provider,
 )
-from ..tooling.changes import clear_changes, record_change
+from ..tooling.changes import clear_changes
+
+# Import the tool executor (routes tool calls to the MCP manager or the
+# built-in registry and tracks usage/used-files/changes around each call)
+from ..tooling.executor import ToolExecutor
 
 # Import tools
-from ..tooling.tools_registry import get_all_tool_schemas, get_tool_by_name
-
-# Import tool usage tracking (best-effort, never fails)
-from ..tooling.tools_usage import record_tool_use
+from ..tooling.tools_registry import get_all_tool_schemas
 
 # Import used-files tracking (best-effort, never fails)
-from ..tooling.used_files import format_used_files, record_used_file, reset_used_files
+from ..tooling.used_files import format_used_files, reset_used_files
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
@@ -366,17 +366,6 @@ def _stream_response(client, call_kwargs, tools_schemas, cancel_event=None):
             stream.close()
 
 
-def _is_mcp_tool(tool_name: str) -> bool:
-    """Check if a tool name is an MCP tool (has service_ prefix)."""
-    # MCP tools are prefixed with their service name
-    # We check if the tool name starts with any known service prefix
-    mcp_manager = get_mcp_manager()
-    if mcp_manager:
-        service = mcp_manager.get_service_for_tool(tool_name)
-        return service is not None
-    return False
-
-
 def send_prompt(
     prompt: str,
     verbose: bool = False,
@@ -436,6 +425,10 @@ def send_prompt(
             mcp_tools = []
     else:
         mcp_tools = []
+
+    # Tool executor routes tool calls to the MCP manager or the built-in
+    # registry and tracks usage/used-files/changes around each call.
+    tool_executor = ToolExecutor(mcp_manager)
 
     # Get available tools if not explicitly provided
     if tools is None:
@@ -615,95 +608,10 @@ def send_prompt(
 
         # Check if the model wants to call tools
         if tool_calls_map:
-            # Build an assistant message dict (with tool_calls) for the history
-            tool_calls_list = []
-            for idx in sorted(tool_calls_map):
-                tc = tool_calls_map[idx]
-                tool_calls_list.append(
-                    {
-                        "id": tc["id"],
-                        "type": "function",
-                        "function": {
-                            "name": tc["name"],
-                            "arguments": tc["arguments"],
-                        },
-                    }
-                )
-            assistant_msg: dict[str, Any] = {
-                "role": "assistant",
-                "content": full_content or None,
-                "tool_calls": tool_calls_list,
-            }
-            messages.append(assistant_msg)
-
-            # Process each tool call
-            for tc in tool_calls_list:
-                tool_name = tc["function"]["name"]
-                tool_args = json.loads(tc["function"]["arguments"])
-                tool_call_id = tc["id"]
-
-                logger.info(f"Tool call: {tool_name}({tool_args})")
-
-                # Track the tool usage (best-effort, never raises)
-                record_tool_use(tool_name)
-
-                # Check if this is an MCP tool
-                is_mcp = _is_mcp_tool(tool_name)
-
-                try:
-                    if is_mcp and mcp_manager:
-                        # Route to MCP manager
-                        logger.debug(f"Routing MCP tool call: {tool_name}")
-                        tool_result = mcp_manager.call_tool(tool_name, tool_args)
-                        logger.info(f"MCP tool {tool_name} completed successfully")
-                    else:
-                        # Route to built-in tool
-                        tool_function = get_tool_by_name(tool_name)
-                        logger.debug(f"Executing built-in tool: {tool_name}")
-                        tool_result = tool_function(**tool_args)
-                        logger.info(f"Tool {tool_name} completed successfully")
-
-                    # Track which files this successful call touched (only when
-                    # the first argument is "filepath"; best-effort, never raises).
-                    # A tool signals logical failure via a falsy "success" key in
-                    # its result dict; such calls are not tracked.
-                    if not (
-                        isinstance(tool_result, dict)
-                        and tool_result.get("success") is False
-                    ):
-                        record_used_file(tool_name, tool_args)
-                        # Log the execution to ./janito/changes.jsonl so the
-                        # /changes command can replay it (best-effort).
-                        record_change(tool_name, tool_args)
-
-                    # Add the tool response to messages
-                    messages.append(
-                        {
-                            "tool_call_id": tool_call_id,
-                            "role": "tool",
-                            "name": tool_name,
-                            "content": json.dumps(tool_result),
-                        }
-                    )
-
-                except Exception as e:
-                    logger.error(f"Tool {tool_name} failed: {e}")
-                    # Handle tool execution errors
-                    error_result = {
-                        "success": False,
-                        "error": f"Tool execution failed: {e!s}",
-                    }
-                    messages.append(
-                        {
-                            "tool_call_id": tool_call_id,
-                            "role": "tool",
-                            "name": tool_name,
-                            "content": json.dumps(error_result),
-                        }
-                    )
-                    print(f"\u274c Tool error: {tool_name} - {e}", file=sys.stderr)
-
-            # Continue the loop to get the final response after tool calls
+            # Build the assistant message (with tool_calls), execute every
+            # call and append the tool responses to the history, then loop to
+            # get the final response after the tool calls.
+            tool_executor.handle_tool_calls(tool_calls_map, messages, full_content)
             continue
         else:
             # No more tool calls, return the final response
