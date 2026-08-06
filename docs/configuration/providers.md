@@ -15,6 +15,7 @@ janito supports multiple AI providers. This guide covers configuration for each.
 | `moonshot` | Third-party | Moonshot AI (Kimi models) |
 | `zai` | Third-party | Z.AI (GLM models) |
 | `xai` | Third-party | xAI (Grok models) |
+| `anthropic` | Third-party | Anthropic (Claude models) |
 
 !!! note
     The provider name is always validated against this list. Whenever you pass
@@ -351,6 +352,40 @@ janito --set-api-key="your-xai-api-key" --provider xai
 janito --set provider=xai --set model=grok-4
 # Step 2: Store API key
 janito --set-api-key="your-xai-api-key" --provider xai
+# Step 3: Run prompt
+janito "Explain quantum computing"
+```
+
+## Anthropic (Claude)
+
+Use Anthropic to access Claude models through their OpenAI-compatible API.
+
+> **Get an API key:** Visit [Anthropic Console](https://console.anthropic.com/) to create an account and generate an API key.
+
+### Configuration
+
+```bash
+# Step 1: Set provider and model
+janito --set provider=anthropic --set model=claude-sonnet-4-5
+# Step 2: Store API key
+janito --set-api-key="your-anthropic-api-key" --provider anthropic
+```
+
+### Popular Models
+
+| Model | Description |
+|-------|-------------|
+| `claude-sonnet-4-5` | Latest flagship model (200K context) |
+| `claude-opus-4-1` | Highest capability model (200K context) |
+| `claude-haiku-4-5` | Fast, cost-effective model (200K context) |
+
+### Example
+
+```bash
+# Step 1: Set provider and model
+janito --set provider=anthropic --set model=claude-sonnet-4-5
+# Step 2: Store API key
+janito --set-api-key="your-anthropic-api-key" --provider anthropic
 # Step 3: Run prompt
 janito "Explain quantum computing"
 ```

@@ -152,6 +152,15 @@ PROVIDER_INFO: dict[str, dict] = {
         "max_output_tokens": 131072,
         "endpoint": "https://api.x.ai/v1",
     },
+    "anthropic": {
+        "model": "claude-sonnet-4-5",
+        "supported_api_types": [
+            "Completions"
+        ],  # Anthropic's OpenAI-compatible /v1/chat/completions
+        "max_input_tokens": 200000,
+        "max_output_tokens": 64000,
+        "endpoint": "https://api.anthropic.com/v1/",
+    },
     # Special case: requires an endpoint from config (--set endpoint) and has
     # no built-in default model.
     "custom": {

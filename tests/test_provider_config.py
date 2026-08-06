@@ -80,6 +80,27 @@ if pytest is not None:
         assert get_default_max_input_tokens_from_provider("deepseek") == 1048576
         assert get_default_max_output_tokens_from_provider("deepseek") == 393216
 
+    def test_anthropic_provider():
+        info = get_provider_info("anthropic")
+        assert info is not None
+        assert info["model"] == "claude-sonnet-4-5"
+        assert info["max_input_tokens"] == 200000
+        assert info["max_output_tokens"] == 64000
+        assert info["endpoint"] == "https://api.anthropic.com/v1/"
+        assert info["supported_api_types"] == ["Completions"]
+        # Case-insensitive lookup.
+        assert (
+            get_provider_info("Anthropic")["endpoint"]
+            == "https://api.anthropic.com/v1/"
+        )
+        assert (
+            get_base_url_from_provider("anthropic") == "https://api.anthropic.com/v1/"
+        )
+        assert get_default_model_from_provider("anthropic") == "claude-sonnet-4-5"
+        assert get_default_max_input_tokens_from_provider("anthropic") == 200000
+        assert get_default_max_output_tokens_from_provider("anthropic") == 64000
+        assert get_default_api_type_from_provider("anthropic") == "Completions"
+
     def test_default_model_and_max_tokens():
         # Providers expose built-in default models / max tokens.
         assert get_default_model_from_provider("openai") == "gpt-5.6-luna"
@@ -124,7 +145,16 @@ if pytest is not None:
         assert PROVIDER_INFO["deepseek"]["thinking"] is True
         assert PROVIDER_INFO["alibaba"]["thinking"] is True
         # Everyone else defaults to False (explicit or absent).
-        for name in ("openai", "minimax", "xiaomi", "moonshot", "zai", "xai", "custom"):
+        for name in (
+            "openai",
+            "minimax",
+            "xiaomi",
+            "moonshot",
+            "zai",
+            "xai",
+            "anthropic",
+            "custom",
+        ):
             assert get_default_thinking_from_provider(name) is False
         # Unknown provider returns False.
         assert get_default_thinking_from_provider("bogus") is False
@@ -164,6 +194,7 @@ if pytest is not None:
             "zai",
             "deepseek",
             "xai",
+            "anthropic",
             "custom",
         ):
             assert get_supported_api_types_from_provider(name) == ["Completions"]
