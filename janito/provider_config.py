@@ -69,10 +69,10 @@ CUSTOM_ENDPOINT_MARKER = "CUSTOM_ENDPOINT"
 PROVIDER_INFO: dict[str, dict] = {
     # AI Providers with OpenAI-compatible APIs
     "openai": {
-        "model": "gpt-4",
+        "model": "gpt-5.6-luna",
         "supported_api_types": ["Responses", "Completions"],  # Responses is the default
         "responses_in_server": True,  # server-side conversation state (previous_response_id)
-        "max_input_tokens": 128000,
+        "max_input_tokens": 1050000,
         "max_output_tokens": 128000,
         "endpoint": None,  # Standard OpenAI - no base_url needed
     },
@@ -125,7 +125,7 @@ PROVIDER_INFO: dict[str, dict] = {
                 "description": "Extra high reasoning depth for complex problems",
             },
         ],
-        "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+        "endpoint": "https://dashscope-intl.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1",
     },
     "zai": {
         "model": "glm-5.2",
@@ -140,7 +140,7 @@ PROVIDER_INFO: dict[str, dict] = {
         # DeepSeek's /responses endpoint is stateless: it cannot resolve a
         # previous_response_id, so the client must re-send the full history.
         "responses_in_server": False,
-        "max_input_tokens": 1000000,  # 1M
+        "max_input_tokens": 1048576,  # 1M
         "max_output_tokens": 393216,  # 384k
         "thinking": True,  # DeepSeek models reason by default
         "endpoint": "https://api.deepseek.com",

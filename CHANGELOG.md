@@ -123,6 +123,13 @@ Changes since `v4.18.1` (2026-08-04).
   `Out: 591/393.2k` format.
 - Raise the DeepSeek provider's `default_max_input_tokens` from 128k to 1M.
 - Raise the Alibaba (Qwen) provider's `default_max_input_tokens` from 128k to 1M.
+- Update the built-in provider defaults in `PROVIDER_INFO`: the OpenAI
+  provider's default model is now `gpt-5.6-luna` (with `max_input_tokens`
+  raised from 128k to 1050000), the Alibaba (Qwen) endpoint now points at the
+  DashScope apps-protocol compatible-mode URL
+  (`https://dashscope-intl.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1`),
+  and the DeepSeek provider's `max_input_tokens` is now `1048576` (an exact
+  1M = 2^20) instead of `1000000`.
 - Rename the interactive shell command `/config` to `/show_config`; it now also
   displays the resolved reasoning level.
 - The web topbar's dark/light theme toggle now sits at the rightmost position,
