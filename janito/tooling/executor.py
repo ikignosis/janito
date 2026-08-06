@@ -2,7 +2,7 @@
 ToolExecutor - executes the tool calls the model makes during an agent turn.
 
 This module centralises the tool-execution logic that was previously embedded
-in the CLI agent loop (``janito/openai_client/client.py``): routing each tool
+in the CLI agent loop (``janito/openai_client/completions_api.py``): routing each tool
 call to either the MCP manager or the built-in tools registry, tracking tool
 usage / used files / changes, and producing the ``tool``-role messages that
 are appended to the conversation history. Failures are converted into

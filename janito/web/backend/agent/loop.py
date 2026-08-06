@@ -16,7 +16,7 @@ from janito.general_config import (
     load_max_output_tokens,
     load_reasoning_level,
 )
-from janito.openai_client.client import resolve_runtime_config
+from janito.openai_client.completions_api import resolve_runtime_config
 from janito.provider_config import (
     get_default_max_output_tokens_from_provider,
     get_default_reasoning_level_from_provider,

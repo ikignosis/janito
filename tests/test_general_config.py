@@ -298,6 +298,99 @@ if pytest is not None:
         gc.unset_config_value("provider")
         assert gc.determine_provider() is None
 
+    # ---- API type (Responses / Completions) ------------------------------
+
+    def test_api_type_config_key_helper():
+        assert gc.api_type_config_key("openai") == "openai.api-type"
+        assert gc.api_type_config_key("  OpenAI ") == "openai.api-type"
+
+    def test_set_api_type_per_provider(monkeypatch, tmp_path):
+        config_path = _use_temp_config(monkeypatch, tmp_path)
+        gc.set_config_from_cli("api-type=Responses", "openai")
+        gc.set_config_from_cli("api-type=Completions", "minimax")
+        assert gc.load_api_type("openai") == "Responses"
+        assert gc.load_api_type("minimax") == "Completions"
+        config = _read_config(config_path)
+        assert config["providers"]["openai"]["api-type"] == "Responses"
+        assert config["providers"]["minimax"]["api-type"] == "Completions"
+
+    def test_set_api_type_normalizes_case(monkeypatch, tmp_path):
+        config_path = _use_temp_config(monkeypatch, tmp_path)
+        # Lowercase values (as in `--set api-type=completions`) are normalized
+        # to the canonical casing when stored.
+        key, value = gc.set_config_from_cli("api-type=completions", "openai")
+        assert key == "openai.api-type"
+        assert value == "Completions"
+        gc.set_config_from_cli("api-type=responses", "minimax")
+        gc.set_config_from_cli("api-type=RESPONSES", "deepseek")
+        config = _read_config(config_path)
+        assert config["providers"]["openai"]["api-type"] == "Completions"
+        assert config["providers"]["minimax"]["api-type"] == "Responses"
+        assert config["providers"]["deepseek"]["api-type"] == "Responses"
+        assert gc.load_api_type("openai") == "Completions"
+        assert gc.load_api_type("minimax") == "Responses"
+
+    def test_set_api_type_rejects_unknown_values(monkeypatch, tmp_path):
+        config_path = _use_temp_config(monkeypatch, tmp_path)
+        with pytest.raises(ValueError) as exc:
+            gc.set_config_from_cli("api-type=bogus", "openai")
+        assert "Unsupported API type" in str(exc.value)
+        assert "Responses" in str(exc.value)
+        assert "Completions" in str(exc.value)
+        # Nothing should have been written
+        assert _read_config(config_path) == {}
+
+    def test_load_api_type_unknown_provider_returns_none(monkeypatch, tmp_path):
+        _use_temp_config(monkeypatch, tmp_path)
+        gc.set_config_from_cli("api-type=Responses", "openai")
+        assert gc.load_api_type("unknown") is None
+        assert gc.load_api_type() is None
+
+    def test_unset_api_type_per_provider(monkeypatch, tmp_path):
+        config_path = _use_temp_config(monkeypatch, tmp_path)
+        gc.set_config_from_cli("api-type=Responses", "openai")
+        assert gc.unset_config_key_from_cli("api-type", "openai") is True
+        assert "openai" not in config_path.read_text()
+        assert gc.unset_config_key_from_cli("api-type", "openai") is False
+
+    def test_resolve_api_type_defaults_to_provider_first_supported(
+        monkeypatch, tmp_path
+    ):
+        _use_temp_config(monkeypatch, tmp_path)
+        # OpenAI's supported_api_types is ["Responses", "Completions"], so the
+        # default (first entry) is the Responses API.
+        assert gc.resolve_api_type(None, "openai") == "Responses"
+        # Completions-only providers resolve to Completions.
+        assert gc.resolve_api_type(None, "deepseek") == "Completions"
+        assert gc.resolve_api_type(None, "alibaba") == "Completions"
+        # Explicit CLI flag wins over the provider default.
+        assert gc.resolve_api_type("Completions", "openai") == "Completions"
+        assert gc.resolve_api_type("Responses", "deepseek") == "Responses"
+        # Case is normalized.
+        assert gc.resolve_api_type("responses", "deepseek") == "Responses"
+
+    def test_resolve_api_type_from_config(monkeypatch, tmp_path):
+        _use_temp_config(monkeypatch, tmp_path)
+        # No config: provider default applies (Responses for OpenAI).
+        assert gc.resolve_api_type(None, "openai") == "Responses"
+        # A per-provider config override wins over the built-in default.
+        gc.set_config_from_cli("api-type=Completions", "openai")
+        assert gc.resolve_api_type(None, "openai") == "Completions"
+        # ... and the CLI flag still wins over the config value.
+        assert gc.resolve_api_type("Responses", "openai") == "Responses"
+
+    def test_resolve_api_type_rejects_unknown_values():
+        with pytest.raises(ValueError) as exc:
+            gc.resolve_api_type("Bogus", "openai")
+        assert "Unsupported API type" in str(exc.value)
+        assert "Responses" in str(exc.value)
+        assert "Completions" in str(exc.value)
+
+    def test_resolve_api_type_unknown_provider_falls_back_to_completions():
+        # An unknown provider has no supported_api_types entry, so the safe
+        # Completions default applies.
+        assert gc.resolve_api_type(None, "bogus") == "Completions"
+
 else:  # pragma: no cover - fallback runner without pytest
 
     def _main():

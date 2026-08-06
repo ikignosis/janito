@@ -19,12 +19,15 @@ from janito.provider_config import (
     PROVIDER_INFO,
     canonical_provider_name,
     get_base_url_from_provider,
+    get_default_api_type_from_provider,
     get_default_max_input_tokens_from_provider,
     get_default_max_output_tokens_from_provider,
     get_default_model_from_provider,
     get_default_reasoning_level_from_provider,
     get_default_thinking_from_provider,
     get_provider_info,
+    get_responses_in_server_from_provider,
+    get_supported_api_types_from_provider,
     get_supported_reasoning_levels_from_provider,
     is_supported_provider,
     list_supported_providers,
@@ -46,6 +49,8 @@ if pytest is not None:
             assert "max_input_tokens" in info
             assert "max_output_tokens" in info
             assert "endpoint" in info
+            assert "supported_api_types" in info
+            assert info["supported_api_types"]
 
     def test_get_provider_info_and_base_url():
         info = get_provider_info("minimax")
@@ -123,6 +128,54 @@ if pytest is not None:
             assert get_default_thinking_from_provider(name) is False
         # Unknown provider returns False.
         assert get_default_thinking_from_provider("bogus") is False
+
+    def test_supported_and_default_api_types():
+        # OpenAI supports both APIs and defaults to the Responses API (the
+        # first entry of its supported_api_types list).
+        assert get_supported_api_types_from_provider("openai") == [
+            "Responses",
+            "Completions",
+        ]
+        assert get_default_api_type_from_provider("openai") == "Responses"
+        assert PROVIDER_INFO["openai"]["supported_api_types"] == [
+            "Responses",
+            "Completions",
+        ]
+        # Case-insensitive lookups work.
+        assert get_default_api_type_from_provider("OpenAI") == "Responses"
+        # Every other provider is Completions-only for now.
+        for name in (
+            "minimax",
+            "xiaomi",
+            "moonshot",
+            "alibaba",
+            "zai",
+            "deepseek",
+            "xai",
+            "custom",
+        ):
+            assert get_supported_api_types_from_provider(name) == ["Completions"]
+            assert get_default_api_type_from_provider(name) == "Completions"
+        # Unknown provider returns None.
+        assert get_supported_api_types_from_provider("bogus") is None
+        assert get_default_api_type_from_provider("bogus") is None
+
+    def test_responses_in_server_flag():
+        """Providers whose /responses endpoint keeps server-side state chain
+        with previous_response_id; stateless endpoints (DeepSeek) do not."""
+        # OpenAI keeps the conversation server-side.
+        assert get_responses_in_server_from_provider("openai") is True
+        assert PROVIDER_INFO["openai"]["responses_in_server"] is True
+        # DeepSeek's /responses endpoint is stateless.
+        assert get_responses_in_server_from_provider("deepseek") is False
+        assert PROVIDER_INFO["deepseek"]["responses_in_server"] is False
+        # Case-insensitive lookups work.
+        assert get_responses_in_server_from_provider("DeepSeek") is False
+        # Providers that do not declare the flag default to True (the
+        # Responses API design).
+        assert get_responses_in_server_from_provider("minimax") is True
+        # Unknown provider defaults to True.
+        assert get_responses_in_server_from_provider("bogus") is True
 
     def test_canonical_provider_name_exact_and_case_insensitive():
         assert canonical_provider_name("openai") == "openai"

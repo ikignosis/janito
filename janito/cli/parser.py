@@ -53,8 +53,11 @@ Examples:
   janito --log=info,debug "Your prompt"                     # Enable logging
   janito --model gpt-4 "Your prompt"                        # Use specific model
   janito --reasoning-level xhigh "Your prompt"               # Set reasoning depth
+  janito --api-type Completions "Your prompt"                # Force the Chat Completions API
   janito --set model=gpt-4                                  # Set model for the active provider
   janito --provider openai --set model=gpt-4                # Set model for a specific provider
+  janito --set api-type=completions                         # Force the Chat Completions API
+  janito --set api-type=responses                           # Use the Responses API
   janito --unset model                                      # Remove config value
   janito --get model                                        # Get config value
   janito --set-secret mykey=myvalue                        # Store a secret
@@ -151,6 +154,17 @@ Note: --set and --set-api-key must be used in separate commands.
     )
 
     parser.add_argument(
+        "--api-type",
+        metavar="TYPE",
+        choices=["Responses", "Completions"],
+        help="API type to use for the provider: 'Responses' (the Responses "
+        "API, server-side conversation state) or 'Completions' (the Chat "
+        "Completions API). Overrides the provider's configured value "
+        "(--set api-type=...) and built-in default (the first entry of its "
+        "supported_api_types list, e.g. 'Responses' for OpenAI).",
+    )
+
+    parser.add_argument(
         "-r", "--read", action="store_true", help="Grant READ privilege"
     )
 
@@ -213,7 +227,8 @@ Note: --set and --set-api-key must be used in separate commands.
         "  provider is taken from --provider or the configured 'provider'.\n"
         "  Examples:\n"
         "    janito --set model=gpt-4 endpoint=https://api.example.com/v1\n"
-        "    janito --provider openai --set model=gpt-4",
+        "    janito --provider openai --set model=gpt-4\n"
+        "    janito --set api-type=completions   # or api-type=responses",
     )
 
     parser.add_argument(

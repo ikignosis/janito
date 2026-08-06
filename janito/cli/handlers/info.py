@@ -7,11 +7,13 @@ from ...general_config import (
     load_endpoint_from_config,
     load_model_from_config,
     load_provider_from_config,
+    resolve_api_type,
 )
 from ...provider_config import (
     CUSTOM_ENDPOINT_MARKER,
     get_base_url_from_provider,
     get_default_thinking_from_provider,
+    get_responses_in_server_from_provider,
     is_custom_provider,
 )
 
@@ -96,10 +98,20 @@ def handle_info(args) -> int:
             endpoint_source = "default OpenAI"
 
     # Print the info
+    api_type = resolve_api_type(getattr(args, "api_type", None), provider)
     print("Resolved Configuration:")
     print("=" * 40)
     print(f"Provider:     {provider} ({provider_source})")
     print(f"Model:        {model or '(not set)'} ({model_source})")
+    print(f"API Type:     {api_type}")
+    if api_type == "Responses":
+        responses_in_server = get_responses_in_server_from_provider(provider)
+        responses_display = (
+            "server-side (previous_response_id)"
+            if responses_in_server
+            else "stateless (client re-sends history)"
+        )
+        print(f"Responses In Server: {responses_display}")
     print(f"API Key:      {get_masked_api_key(api_key)} ({api_key_source})")
     print(f"Endpoint:     {endpoint or '(not set)'} ({endpoint_source})")
     print("=" * 40)
@@ -187,6 +199,10 @@ def handle_show_config(args=None) -> int:
         print(f"Model:     {model} ({provider}.model)")
     else:
         print("Model:     (not configured)")
+    api_type = resolve_api_type(
+        getattr(args, "api_type", None) if args is not None else None, provider
+    )
+    print(f"API Type:  {api_type}")
     masked = get_masked_api_key(api_key)
     if api_key:
         print(f"API Key:   {masked} ({api_key_source})")

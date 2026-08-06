@@ -48,9 +48,66 @@ Changes since `v4.18.1` (2026-08-04).
   wins over the `--thinking` CLI flag and the provider's built-in
   `default_thinking` (`WebServerConfig.effective_thinking` resolution order:
   runtime override, CLI flag, provider default).
+- Add `janito/openai_client/conversations_api.py`, a Responses API
+  (`client.responses.create`) counterpart to `completions_api.py` that
+  mirrors its behaviour (config resolution, tool loading, MCP support,
+  progress spinner, Enter-to-cancel, reasoning panel, used-files report and
+  token-usage summary) with one key difference: the conversation history is
+  no longer stored/updated on the client side. The Responses API keeps the
+  state server-side, so turns are chained with `previous_response_id` (from
+  the returned `ConversationResult.response_id`) and tool-call rounds are
+  chained internally via `function_call_output` input items; `instructions`
+  are only sent on the first turn. Tool schemas are converted up front from
+  the shared Chat Completions shape (`name`/`description`/`parameters`
+  nested under `function`) to the Responses API shape (top-level `name`)
+  via the new `_convert_tools_to_responses_format()` helper, since
+  `client.responses.create(tools=...)` rejects the Completions shape with
+  `tools[0]: missing field 'name'`. Exposed through the package as
+  `send_prompt_responses`, alongside the new `ConversationResult` type.
+- Support **stateless** Responses endpoints: a new per-provider
+  `responses_in_server` flag in `PROVIDER_INFO` (default `True`, the
+  Responses API design) declares whether the provider's `/responses`
+  endpoint keeps the conversation server-side and can resolve a
+  `previous_response_id`. DeepSeek declares `False` — its endpoint is
+  stateless and rejects tool outputs referencing a previous response with
+  `No tool call found for tool output with call_id ...`. For such providers
+  the Responses client falls back to the Chat Completions model of
+  ownership: the full conversation is tracked as Responses input items
+  (`ConversationResult.input_items`) and re-sent on every request via the
+  new `previous_items` argument, with `function_call` /
+  `function_call_output` items and the system instructions (folded in on the
+  first turn) forming the history; `previous_response_id` is never sent.
+  The interactive shell tracks these items per session (reset on
+  F2/`restart`, truncated by `/rollback`) and the wrapper / single-prompt
+  paths pass them through, while server-side providers keep the existing
+  id-chaining behaviour unchanged.
+- Add per-provider `supported_api_types` to `PROVIDER_INFO` — OpenAI declares
+  `["Responses", "Completions"]`, every other provider `["Completions"]` —
+  and select the API per provider: the **first** entry of the list is the
+  built-in default, overridable with `--api-type` or the per-provider
+  `--set api-type=...` config (new `resolve_api_type()` in `general_config`).
+  `--set api-type=completions|responses` accepts either value in any casing,
+  normalizes it to `Completions`/`Responses` when stored, and rejects anything
+  else with an error at set time (new `normalize_api_type()` in
+  `general_config`). The CLI `chat.py` wrapper now dispatches to
+  `conversations_api.send_prompt` (Responses) or `completions_api.send_prompt`
+  (Completions) accordingly:
+  OpenAI defaults to the Responses API, the interactive shell tracks the
+  server-side `previous_response_id` (reset on F2/`restart`,
+  `/rollback` resets the server conversation), `/ask` starts a fresh server
+  conversation, and `/show_config`, `--info`, `--show-config` and the web
+  providers endpoint all surface the resolved API type.
+- `janito --info` and the shell `/show_config` command now show the resolved
+  `responses_in_server` flag (e.g. `Responses In Server: server-side
+  (previous_response_id)` for OpenAI, `stateless (client re-sends history)`
+  for DeepSeek) when the effective API type is `Responses`. The line is
+  omitted when the API type resolves to `Completions`.
 
 ### Changed
 
+- Rename `janito/openai_client/client.py` to `janito/openai_client/completions_api.py`
+  (the module now lives alongside the rest of the web backend call stack);
+  imports and docstring references are updated accordingly.
 - Rename the built-in per-provider info fields in `PROVIDER_INFO` to drop the
   redundant `default_` prefix (every value in the entry is a default):
   `default_model` -> `model`, `default_max_input_tokens` -> `max_input_tokens`,

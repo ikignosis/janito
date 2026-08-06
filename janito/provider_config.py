@@ -30,6 +30,20 @@ CUSTOM_ENDPOINT_MARKER = "CUSTOM_ENDPOINT"
 #   - "model": the model used when the user has not configured one.
 #     ``None`` means the provider has no sensible default and the user must
 #     set a model explicitly (e.g. the "custom" provider).
+#   - "supported_api_types": the API types the provider supports
+#     ("Responses" and/or "Completions"). The **first** entry is the built-in
+#     default API type for the provider (e.g. OpenAI defaults to the
+#     Responses API). The effective type can be overridden per-provider with
+#     ``--set api-type=...`` or per-call with ``--api-type``.
+#   - "responses_in_server": whether the provider's Responses API endpoint
+#     keeps the conversation state server-side (so turns can be chained with
+#     ``previous_response_id``). ``True`` for providers that follow the
+#     OpenAI Responses API design (e.g. OpenAI); ``False`` for providers
+#     whose ``/responses`` endpoint is **stateless** (e.g. DeepSeek), which
+#     cannot resolve a previous response id and require the client to track
+#     and re-send the entire conversation history on every request (like
+#     Chat Completions). Absent defaults to ``True`` (the Responses API
+#     design). Only meaningful when the provider also supports "Responses".
 #   - "max_input_tokens": the maximum input-token (context window)
 #     limit used as the built-in default. ``None`` means there is no built-in
 #     limit (the caller falls back to its own default).
@@ -56,30 +70,36 @@ PROVIDER_INFO: dict[str, dict] = {
     # AI Providers with OpenAI-compatible APIs
     "openai": {
         "model": "gpt-4",
+        "supported_api_types": ["Responses", "Completions"],  # Responses is the default
+        "responses_in_server": True,  # server-side conversation state (previous_response_id)
         "max_input_tokens": 128000,
         "max_output_tokens": 128000,
         "endpoint": None,  # Standard OpenAI - no base_url needed
     },
     "minimax": {
         "model": "MiniMax-M3",
+        "supported_api_types": ["Completions"],
         "max_input_tokens": 128000,
         "max_output_tokens": 511000,  # 512k
         "endpoint": "https://api.minimax.io/v1",
     },
     "xiaomi": {
         "model": "mimo-v2.5",
+        "supported_api_types": ["Completions"],
         "max_input_tokens": 128000,
         "max_output_tokens": 120000,  # 128k
         "endpoint": "https://api.xiaomimimo.com/v1",
     },
     "moonshot": {
         "model": "kimi-k3-256k",
+        "supported_api_types": ["Completions"],
         "max_input_tokens": 128000,
         "max_output_tokens": 250000,  # 256k
         "endpoint": "https://api.moonshot.ai/v1",
     },
     "alibaba": {
         "model": "qwen3.8-max",
+        "supported_api_types": ["Completions"],
         "max_input_tokens": 1000000,  # 1M
         "max_output_tokens": 131072,
         "reasoning_level": "xhigh",
@@ -102,12 +122,17 @@ PROVIDER_INFO: dict[str, dict] = {
     },
     "zai": {
         "model": "glm-5.2",
+        "supported_api_types": ["Completions"],
         "max_input_tokens": 128000,
         "max_output_tokens": 1000000,  # 1M
         "endpoint": "https://api.z.ai/api/paas/v4/",
     },
     "deepseek": {
         "model": "deepseek-v4-flash",
+        "supported_api_types": ["Completions"],
+        # DeepSeek's /responses endpoint is stateless: it cannot resolve a
+        # previous_response_id, so the client must re-send the full history.
+        "responses_in_server": False,
         "max_input_tokens": 1000000,  # 1M
         "max_output_tokens": 393216,  # 384k
         "thinking": True,  # DeepSeek models reason by default
@@ -115,6 +140,7 @@ PROVIDER_INFO: dict[str, dict] = {
     },
     "xai": {
         "model": "grok-4",
+        "supported_api_types": ["Completions"],
         "max_input_tokens": 128000,
         "max_output_tokens": 131072,
         "endpoint": "https://api.x.ai/v1",
@@ -123,6 +149,7 @@ PROVIDER_INFO: dict[str, dict] = {
     # no built-in default model.
     "custom": {
         "model": None,
+        "supported_api_types": ["Completions"],
         "max_input_tokens": None,
         "max_output_tokens": None,
         "endpoint": CUSTOM_ENDPOINT_MARKER,
@@ -286,6 +313,76 @@ def get_default_thinking_from_provider(provider: str) -> bool:
     if info is None:
         return False
     return bool(info.get("thinking"))
+
+
+def get_supported_api_types_from_provider(provider: str) -> list[str] | None:
+    """
+    Get the list of API types a given provider supports.
+
+    Each entry declares which API types it can talk to: ``"Responses"``
+    (the Responses API, ``client.responses.create``) and/or
+    ``"Completions"`` (the Chat Completions API,
+    ``client.chat.completions.create``).
+
+    Args:
+        provider: The provider name (case-insensitive)
+
+    Returns:
+        The list of supported API types (e.g. ``["Responses", "Completions"]``
+        for OpenAI), ``None`` if the provider is unknown.
+    """
+    info = get_provider_info(provider)
+    if info is None:
+        return None
+    return info.get("supported_api_types")
+
+
+def get_default_api_type_from_provider(provider: str) -> str | None:
+    """
+    Get the built-in default API type for a given provider name.
+
+    The default is the **first** entry of the provider's
+    ``supported_api_types`` list (e.g. ``"Responses"`` for OpenAI). The
+    effective API type can be overridden per-provider with
+    ``--set api-type=...`` or per-call with ``--api-type``.
+
+    Args:
+        provider: The provider name (case-insensitive)
+
+    Returns:
+        The default API type (``"Responses"`` or ``"Completions"``), or
+        ``None`` if the provider is unknown or declares no supported types.
+    """
+    supported = get_supported_api_types_from_provider(provider)
+    if not supported:
+        return None
+    return supported[0]
+
+
+def get_responses_in_server_from_provider(provider: str) -> bool:
+    """
+    Get whether the provider's Responses API keeps conversation state server-side.
+
+    When ``True`` (e.g. OpenAI), the Responses endpoint stores the
+    conversation and turns are chained with ``previous_response_id``. When
+    ``False`` (e.g. DeepSeek), the ``/responses`` endpoint is **stateless**:
+    it cannot resolve a previous response id, so the client must track and
+    re-send the entire conversation history on every request (like Chat
+    Completions).
+
+    Args:
+        provider: The provider name (case-insensitive)
+
+    Returns:
+        ``True`` if the provider's Responses API keeps server-side state,
+        ``False`` if it is stateless. Defaults to ``True`` for providers that
+        do not declare the flag (the Responses API design) and for unknown
+        providers.
+    """
+    info = get_provider_info(provider)
+    if info is None:
+        return True
+    return bool(info.get("responses_in_server", True))
 
 
 def canonical_provider_name(provider: str) -> str | None:

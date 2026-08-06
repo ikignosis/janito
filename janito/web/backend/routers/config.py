@@ -194,7 +194,11 @@ async def list_providers(request: Request):
         load_endpoint_from_config,
         load_model_from_config,
     )
-    from janito.provider_config import CUSTOM_ENDPOINT_MARKER, PROVIDER_INFO
+    from janito.provider_config import (
+        CUSTOM_ENDPOINT_MARKER,
+        PROVIDER_INFO,
+        get_default_api_type_from_provider,
+    )
 
     config = _get_config(request)
     active_provider = get_active_provider()
@@ -224,6 +228,8 @@ async def list_providers(request: Request):
                 "base_url": base_url,
                 "model": load_model_from_config(name),
                 "default_model": info.get("model"),
+                "default_api_type": get_default_api_type_from_provider(name),
+                "supported_api_types": info.get("supported_api_types"),
                 "default_max_input_tokens": info.get("max_input_tokens"),
                 "default_max_output_tokens": info.get("max_output_tokens"),
                 "default_reasoning_level": info.get("reasoning_level"),

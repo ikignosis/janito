@@ -11,11 +11,13 @@ from janito.general_config import (
     load_endpoint_from_config,
     load_max_output_tokens,
     load_reasoning_level,
+    resolve_api_type,
 )
 from janito.provider_config import (
     get_default_max_output_tokens_from_provider,
     get_default_reasoning_level_from_provider,
     get_default_thinking_from_provider,
+    get_responses_in_server_from_provider,
 )
 
 from .base import CmdHandler
@@ -86,11 +88,29 @@ def _print_config_info(provider: str | None = None, thinking: bool = False) -> N
     if effective_thinking and not thinking:
         thinking_display += " (provider default)"
 
+    # Resolve the effective API type: --set api-type, otherwise the provider's
+    # built-in default (the first entry of its supported_api_types list).
+    api_type = resolve_api_type(None, provider)
+
+    # When the effective API type is the Responses API, surface whether the
+    # provider keeps the conversation state server-side (chained with
+    # previous_response_id) or serves a stateless /responses endpoint (the
+    # client re-sends the full history on every request, e.g. DeepSeek).
+    responses_in_server_display = ""
+    if api_type == "Responses":
+        if get_responses_in_server_from_provider(provider):
+            responses_in_server_display = "server-side (previous_response_id)"
+        else:
+            responses_in_server_display = "stateless (client re-sends history)"
+
     print()
     print("=" * 50)
     print("Configuration Info")
     print("=" * 50)
     print(f"  Provider:           {provider}")
+    print(f"  API Type:           {api_type}")
+    if responses_in_server_display:
+        print(f"  Responses In Server: {responses_in_server_display}")
     print(f"  Base URL:           {base_url_display}")
     print(f"  API Key:            {masked_key}")
     print(f"  Max Output Tokens:  {max_output_tokens_display}")

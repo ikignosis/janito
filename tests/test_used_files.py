@@ -220,7 +220,7 @@ if pytest is not None:
         never reaches the network; the reset happens before that call, so any
         state left over from a previous prompt must already be gone.
         """
-        import janito.openai_client.client as client_mod
+        import janito.openai_client.completions_api as client_mod
 
         _register(monkeypatch, "ReadFile", "r")
         used_files.record_used_file("ReadFile", {"filepath": "/prev.py"})

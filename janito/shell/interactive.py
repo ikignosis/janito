@@ -59,6 +59,21 @@ class InteractiveShell:
         # Index into messages_history marking the last known-good state;
         # /rollback and error recovery truncate back to here
         self.history_checkpoint: int = 0
+        # Server-side conversation handle for the Responses API: the id of the
+        # last response, passed as `previous_response_id` on the next turn.
+        # None in Completions mode (where history lives in messages_history),
+        # when no Responses conversation has started yet, and for stateless
+        # Responses providers (which never chain with an id).
+        self.previous_response_id: str | None = None
+        # Client-side Responses input items for stateless Responses providers
+        # (e.g. DeepSeek, whose /responses endpoint keeps no server state):
+        # the full conversation, re-sent on every request via `previous_items`.
+        # None in Completions mode and for server-side Responses providers
+        # (which keep the history on the server behind previous_response_id).
+        self.conversation_items: list[dict[str, Any]] | None = None
+        # Index into conversation_items marking the last known-good state;
+        # /rollback truncates back to here.
+        self.conversation_checkpoint: int = 0
         # Set True by the F2 key binding; signals the run loop to clear
         # history and start a fresh conversation
         self.restart_requested = False
@@ -185,6 +200,12 @@ class InteractiveShell:
             self.messages_history = []
         # Checkpoint starts after the system prompt (if any)
         self.history_checkpoint = len(self.messages_history)
+        # A fresh conversation also starts a fresh server-side conversation:
+        # the next turn must not chain to the previous response id, and any
+        # stateless client-side items history is dropped.
+        self.previous_response_id = None
+        self.conversation_items = None
+        self.conversation_checkpoint = 0
 
     def get_system_prompt(self) -> str | None:
         """Get the current system prompt."""
@@ -342,14 +363,35 @@ class InteractiveShell:
                 tools_to_use = [] if no_tools else None
                 # Save checkpoint so we can rollback history on cancel/error
                 self.history_checkpoint = len(self.messages_history)
+                self.conversation_checkpoint = (
+                    len(self.conversation_items) if self.conversation_items else 0
+                )
                 try:
-                    send_prompt_func(
+                    result = send_prompt_func(
                         user_input,
                         verbose=verbose,
                         previous_messages=self.messages_history,
+                        previous_response_id=self.previous_response_id,
+                        previous_items=self.conversation_items,
+                        instructions=self.get_system_prompt(),
                         tools=tools_to_use,
                         thinking=thinking,
                     )
+                    # Responses API mode: keep the conversation state the
+                    # provider uses. Server-side providers (e.g. OpenAI) keep
+                    # the history on the server, so remember the returned
+                    # response id to chain the next turn. Stateless providers
+                    # (e.g. DeepSeek) return the full conversation as input
+                    # items, which are re-sent on the next turn; never chain
+                    # with an id for them. Completions mode returns plain text
+                    # and updates previous_messages (self.messages_history) in
+                    # place, so nothing else is needed here.
+                    if hasattr(result, "input_items"):
+                        self.conversation_items = result.input_items
+                        if result.input_items is None:
+                            self.previous_response_id = result.response_id
+                        else:
+                            self.previous_response_id = None
                     # On success, keep the checkpoint where it is (before this turn)
                     # so /rollback can undo the last exchange. The next turn will
                     # update it before its own send_prompt call.

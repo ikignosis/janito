@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import pytest
 
 if pytest is not None:
-    from janito.openai_client.client import format_tokens
+    from janito.openai_client.completions_api import format_tokens
 
     # ---- format_tokens unit tests ------------------------------------
 

@@ -1,7 +1,7 @@
 """Headless streaming agentic loop for the web backend.
 
 This package lifts the agentic while-loop from
-``janito/openai_client/client.py -> send_prompt()`` into an async generator
+``janito/openai_client/completions_api.py -> send_prompt()`` into an async generator
 that yields structured events instead of printing to a terminal.
 
 Modules:
@@ -11,7 +11,7 @@ Modules:
   - :mod:`~.loop`    — ``stream_prompt()``, the orchestration skeleton.
 
 Reuses (unchanged) existing janito modules:
-  - ``janito.openai_client.client.resolve_runtime_config()`` -> config resolution
+  - ``janito.openai_client.completions_api.resolve_runtime_config()`` -> config resolution
   - ``janito.tooling.tools_registry.*``               -> schemas + lookup
   - ``janito.mcp_manager.get_mcp_manager()``          -> MCP tools
   - ``janito.general_config.*``                       -> context window, etc.

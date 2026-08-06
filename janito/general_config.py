@@ -21,7 +21,13 @@ logger = logging.getLogger(__name__)
 CONFIG_PATH = get_config_dir() / "config.json"
 
 # Config keys that are stored per-provider (as ``<provider>.<key>``)
-PROVIDER_SCOPED_KEYS = {"model", "endpoint", "max-output-tokens", "reasoning-level"}
+PROVIDER_SCOPED_KEYS = {
+    "model",
+    "endpoint",
+    "max-output-tokens",
+    "reasoning-level",
+    "api-type",
+}
 
 # Config keys whose values should be coerced to int when set via CLI.
 INT_VALUED_KEYS = {"max-output-tokens"}
@@ -291,6 +297,46 @@ def reasoning_level_config_key(provider: str) -> str:
     return f"{normalize_provider(provider)}.reasoning-level"
 
 
+def api_type_config_key(provider: str) -> str:
+    """Return the config key used to store the API type for a provider.
+
+    API types are stored per-provider using the ``<provider>.api-type`` key
+    (``\"Responses\"`` or ``\"Completions\"``) so that each provider can select
+    which API it talks to.
+
+    Args:
+        provider: The provider name
+
+    Returns:
+        The provider-scoped config key, e.g. ``\"openai.api-type\"``
+    """
+    return f"{normalize_provider(provider)}.api-type"
+
+
+def normalize_api_type(value: str) -> str:
+    """Normalize an API type value to its canonical form.
+
+    Accepts ``responses``/``completions`` in any casing (e.g. the values used
+    with ``--set api-type=...``) and returns the canonical ``\"Responses\"`` or
+    ``\"Completions\"``.
+
+    Args:
+        value: The raw API type value
+
+    Returns:
+        The canonical API type: ``\"Responses\"`` or ``\"Completions\"``
+
+    Raises:
+        ValueError: If the value is neither ``Responses`` nor ``Completions``
+    """
+    api_type = str(value).strip().capitalize()
+    if api_type not in ("Responses", "Completions"):
+        raise ValueError(
+            f"Unsupported API type '{value}'. Supported values: Responses, Completions"
+        )
+    return api_type
+
+
 def load_model_from_config(cli_provider: str | None = None) -> str | None:
     """Load the model name for the active provider from ~/.janito/config.json.
 
@@ -371,6 +417,29 @@ def load_reasoning_level(cli_provider: str | None = None) -> str | None:
     if not provider:
         return None
     value = get_config_value(reasoning_level_config_key(provider))
+    if value is not None:
+        return str(value)
+    return None
+
+
+def load_api_type(cli_provider: str | None = None) -> str | None:
+    """Load the API type for the active provider from config.json.
+
+    The API type is stored under a provider-scoped key
+    (``<provider>.api-type``) so that different providers can each select
+    which API they talk to (``"Responses"`` or ``"Completions"``).
+
+    Args:
+        cli_provider: Provider passed via ``--provider`` (may be None). If not
+            provided, the provider is read from config.json.
+
+    Returns:
+        str: The API type from config, or None if not found
+    """
+    provider = determine_provider(cli_provider)
+    if not provider:
+        return None
+    value = get_config_value(api_type_config_key(provider))
     if value is not None:
         return str(value)
     return None
@@ -459,6 +528,50 @@ def get_active_provider() -> str:
     return "openai"
 
 
+def resolve_api_type(
+    cli_api_type: str | None = None, cli_provider: str | None = None
+) -> str:
+    """Resolve the effective API type ("Responses" or "Completions").
+
+    The API type selects which client the CLI talks to: the Responses API
+    (``client.responses.create``, server-side conversation state) or the Chat
+    Completions API (``client.chat.completions.create``, client-side history).
+
+    Resolution rules:
+      - api_type: ``--api-type`` CLI arg, then the provider's configured
+        value (``--set api-type=...``), and finally the provider's built-in
+        default from ``PROVIDER_INFO.supported_api_types`` (its **first**
+        entry, e.g. ``"Responses"`` for OpenAI).
+      - provider: ``--provider`` (``cli_provider``), then the configured
+        provider (config.json), then auth.json's default, then ``"openai"``.
+
+    Args:
+        cli_api_type: API type passed via ``--api-type`` (highest priority).
+            May be None.
+        cli_provider: Provider passed via ``--provider``. May be None.
+
+    Returns:
+        The canonical API type: ``"Responses"`` or ``"Completions"``.
+
+    Raises:
+        ValueError: If an explicitly configured API type is neither
+            ``"Responses"`` nor ``"Completions"``.
+    """
+    from .provider_config import get_default_api_type_from_provider
+
+    raw = cli_api_type or load_api_type(cli_provider)
+    if raw:
+        try:
+            return normalize_api_type(raw)
+        except ValueError:
+            logger.error(f"Unsupported API type: {raw}")
+            raise
+
+    provider = cli_provider or get_active_provider()
+    default = get_default_api_type_from_provider(provider)
+    return default or "Completions"
+
+
 class ProviderRequiredError(ValueError):
     """Raised when a provider-scoped config key is used without a provider.
 
@@ -540,6 +653,12 @@ def set_config_from_cli(
             raise ValueError(
                 f"Config key '{key}' requires an integer value, got: {value!r}"
             )
+
+    # Normalize API type values to their canonical casing (accepts
+    # completions/responses in any case) and reject anything else, so a typo
+    # is reported when the value is set rather than at the first API call.
+    if base_key == "api-type":
+        value = normalize_api_type(value)
 
     set_config_value(key, value)
 

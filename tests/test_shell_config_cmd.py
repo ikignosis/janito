@@ -6,7 +6,7 @@ from janito.shell.cmds.show_config import _print_config_info
 
 
 class TestPrintConfigInfo:
-    """Tests for _print_config_info max-output-tokens display logic."""
+    """Tests for _print_config_info display logic (tokens, thinking, API type)."""
 
     def _run(
         self,
@@ -15,6 +15,8 @@ class TestPrintConfigInfo:
         configured_max_tokens=None,
         default_max_tokens=128000,
         thinking=False,
+        api_type="Responses",
+        responses_in_server=True,
     ):
         """Helper: patch config lookups and capture printed output.
 
@@ -22,6 +24,10 @@ class TestPrintConfigInfo:
             provider: The session provider to pass to ``_print_config_info``.
                 When None, the (patched) configured default is used.
             thinking: The ``--thinking`` CLI flag passed to ``_print_config_info``.
+            api_type: The effective API type returned by ``resolve_api_type``.
+            responses_in_server: Value returned by
+                ``get_responses_in_server_from_provider`` (only meaningful when
+                ``api_type`` is ``Responses``).
         """
         with (
             patch(
@@ -47,6 +53,14 @@ class TestPrintConfigInfo:
             patch(
                 "janito.shell.cmds.show_config.get_default_max_output_tokens_from_provider",
                 return_value=default_max_tokens,
+            ),
+            patch(
+                "janito.shell.cmds.show_config.resolve_api_type",
+                return_value=api_type,
+            ),
+            patch(
+                "janito.shell.cmds.show_config.get_responses_in_server_from_provider",
+                return_value=responses_in_server,
             ),
         ):
             _print_config_info(provider, thinking)
@@ -90,3 +104,23 @@ class TestPrintConfigInfo:
         out = self._run(capsys, provider="openai", thinking=True)
         assert "Thinking:           enabled" in out
         assert "(provider default)" not in out
+
+    def test_responses_in_server_shown_for_server_side_provider(self, capsys):
+        """Responses API + server-side state reports previous_response_id chaining."""
+        out = self._run(capsys, api_type="Responses", responses_in_server=True)
+        assert "API Type:           Responses" in out
+        assert "Responses In Server: server-side (previous_response_id)" in out
+
+    def test_responses_in_server_stateless_for_deepseek(self, capsys):
+        """DeepSeek's /responses endpoint is stateless."""
+        out = self._run(
+            capsys, provider="deepseek", api_type="Responses", responses_in_server=False
+        )
+        assert "API Type:           Responses" in out
+        assert "Responses In Server: stateless (client re-sends history)" in out
+
+    def test_responses_in_server_hidden_when_api_type_completions(self, capsys):
+        """The line is omitted when the API type resolves to Completions."""
+        out = self._run(capsys, provider="openai", api_type="Completions")
+        assert "API Type:           Completions" in out
+        assert "Responses In Server" not in out

@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import pytest
 
 import janito.config_dir as config_dir_mod
-import janito.openai_client.client as client_mod
+import janito.openai_client.completions_api as client_mod
 from janito.web.backend.agent.call import build_call_kwargs
 
 

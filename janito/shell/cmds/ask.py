@@ -62,6 +62,12 @@ class AskCmdHandler(CmdHandler):
                 question,
                 verbose=verbose,
                 previous_messages=ask_history,
+                # Responses API mode: /ask always starts a fresh server-side
+                # conversation (previous_response_id=None) with its own
+                # instructions; Completions mode ignores both kwargs and uses
+                # ask_history as before.
+                previous_response_id=None,
+                instructions="You are an helpful assistant",
                 tools=[],
                 thinking=thinking,
             )

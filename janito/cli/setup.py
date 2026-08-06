@@ -13,7 +13,7 @@ of failing deep inside the API call.
 
 import sys
 
-from ..openai_client.client import resolve_runtime_config
+from ..openai_client.completions_api import resolve_runtime_config
 
 
 def validate_runtime_config(args=None) -> None:
