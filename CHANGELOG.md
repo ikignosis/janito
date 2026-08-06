@@ -51,6 +51,13 @@ Changes since `v4.18.1` (2026-08-04).
 
 ### Changed
 
+- Rename the built-in per-provider info fields in `PROVIDER_INFO` to drop the
+  redundant `default_` prefix (every value in the entry is a default):
+  `default_model` -> `model`, `default_max_input_tokens` -> `max_input_tokens`,
+  `default_max_output_tokens` -> `max_output_tokens`,
+  `default_reasoning_level` -> `reasoning_level` and `default_thinking` ->
+  `thinking`. The accessor functions (`get_default_*_from_provider()`) and the
+  web providers endpoint response keep their existing names.
 - The startup banner now maps the home directory to `~` when showing the
   working directory, e.g. `Janito 0.2.0 - Working at ~/janito` instead of the
   full path.

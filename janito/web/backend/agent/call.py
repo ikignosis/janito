@@ -22,7 +22,7 @@ def build_call_kwargs(
 
     Config-driven behaviour (from CLI args):
       - ``config.effective_thinking`` (runtime toggle, else the ``--thinking``
-        flag, else the provider's built-in ``default_thinking``) -> add
+        flag, else the provider's built-in ``thinking``) -> add
         extra_body enable_thinking
       - max output tokens from ``janito.general_config`` -> max_tokens
         (``max_completion_tokens`` for gpt-5 models)

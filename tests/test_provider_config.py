@@ -42,9 +42,9 @@ if pytest is not None:
             assert name in PROVIDER_INFO
             info = PROVIDER_INFO[name]
             # Every entry carries the full set of keys.
-            assert "default_model" in info
-            assert "default_max_input_tokens" in info
-            assert "default_max_output_tokens" in info
+            assert "model" in info
+            assert "max_input_tokens" in info
+            assert "max_output_tokens" in info
             assert "endpoint" in info
 
     def test_get_provider_info_and_base_url():
@@ -64,9 +64,9 @@ if pytest is not None:
     def test_deepseek_provider():
         info = get_provider_info("deepseek")
         assert info is not None
-        assert info["default_model"] == "deepseek-v4-flash"
-        assert info["default_max_input_tokens"] == 1000000
-        assert info["default_max_output_tokens"] == 393216
+        assert info["model"] == "deepseek-v4-flash"
+        assert info["max_input_tokens"] == 1000000
+        assert info["max_output_tokens"] == 393216
         assert info["endpoint"] == "https://api.deepseek.com"
         # Case-insensitive lookup.
         assert get_provider_info("DeepSeek")["endpoint"] == "https://api.deepseek.com"
@@ -116,8 +116,8 @@ if pytest is not None:
         assert get_default_thinking_from_provider("DeepSeek") is True
         assert get_default_thinking_from_provider("Alibaba") is True
         # The provider info entries carry the flag.
-        assert PROVIDER_INFO["deepseek"]["default_thinking"] is True
-        assert PROVIDER_INFO["alibaba"]["default_thinking"] is True
+        assert PROVIDER_INFO["deepseek"]["thinking"] is True
+        assert PROVIDER_INFO["alibaba"]["thinking"] is True
         # Everyone else defaults to False (explicit or absent).
         for name in ("openai", "minimax", "xiaomi", "moonshot", "zai", "xai", "custom"):
             assert get_default_thinking_from_provider(name) is False

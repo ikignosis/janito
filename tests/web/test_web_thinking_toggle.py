@@ -9,7 +9,7 @@ forces the state in both directions (``false`` disables thinking even for
 providers that reason by default, e.g. DeepSeek/Qwen).
 
 ``config.effective_thinking`` resolves: runtime override > ``--thinking``
-CLI flag > provider built-in ``default_thinking``, and
+CLI flag > provider built-in ``thinking``, and
 ``build_call_kwargs`` sends ``extra_body={'enable_thinking': True}`` exactly
 when it is True.
 
@@ -131,7 +131,7 @@ def test_thinking_override_forces_off_for_default_thinking_provider(client):
     """DeepSeek reasons by default, but the toggle can force thinking off."""
     cfg = client.app.state.config
     _reset(cfg)
-    cfg.provider = "deepseek"  # built-in default_thinking is True
+    cfg.provider = "deepseek"  # built-in thinking is True
 
     assert cfg.effective_thinking is True  # provider default
     resp = client.post("/api/config/thinking", json={"thinking": False})

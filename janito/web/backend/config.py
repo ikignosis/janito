@@ -60,7 +60,7 @@ class WebServerConfig:
 
         Resolution order: the runtime ``thinking_override`` (status-bar
         toggle) first, then the explicit ``--thinking`` CLI flag, then the
-        effective provider's built-in ``default_thinking`` (True for DeepSeek
+        effective provider's built-in ``thinking`` (True for DeepSeek
         and Alibaba/Qwen, whose models reason by default). The effective
         provider is the session-only combo override, else the CLI ``--provider``,
         else the persisted default.

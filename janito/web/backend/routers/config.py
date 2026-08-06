@@ -172,9 +172,8 @@ async def list_providers(request: Request):
     Each entry aggregates data from the existing janito modules:
 
     * ``provider_config.PROVIDER_INFO`` — the built-in per-provider defaults
-      (``endpoint``, ``default_model``, ``default_max_input_tokens``,
-      ``default_max_output_tokens``, ``default_reasoning_level``,
-      ``supported_reasoning_levels`` and ``default_thinking``).
+      (``endpoint``, ``model``, ``max_input_tokens``, ``max_output_tokens``,
+      ``reasoning_level``, ``supported_reasoning_levels`` and ``thinking``).
       ``endpoint`` is ``None`` for standard OpenAI and the ``CUSTOM_ENDPOINT``
       marker for "custom".
     * ``general_config`` — the per-provider ``model`` and ``endpoint``
@@ -224,12 +223,12 @@ async def list_providers(request: Request):
                 "name": name,
                 "base_url": base_url,
                 "model": load_model_from_config(name),
-                "default_model": info.get("default_model"),
-                "default_max_input_tokens": info.get("default_max_input_tokens"),
-                "default_max_output_tokens": info.get("default_max_output_tokens"),
-                "default_reasoning_level": info.get("default_reasoning_level"),
+                "default_model": info.get("model"),
+                "default_max_input_tokens": info.get("max_input_tokens"),
+                "default_max_output_tokens": info.get("max_output_tokens"),
+                "default_reasoning_level": info.get("reasoning_level"),
                 "supported_reasoning_levels": info.get("supported_reasoning_levels"),
-                "default_thinking": info.get("default_thinking"),
+                "default_thinking": info.get("thinking"),
                 "endpoint": endpoint_override,
                 "api_key_set": bool(api_key),
                 "active": name == active_provider,

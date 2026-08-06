@@ -7,9 +7,9 @@ output tokens, and base URLs (endpoints) for the API.
 Provider Info:
 {
     "openai": {
-        "default_model": "gpt-4",
-        "default_max_input_tokens": 128000,
-        "default_max_output_tokens": 128000,
+        "model": "gpt-4",
+        "max_input_tokens": 128000,
+        "max_output_tokens": 128000,
         "endpoint": None,  # Standard OpenAI - no base_url needed
     },
     # ... more providers
@@ -27,24 +27,24 @@ CUSTOM_ENDPOINT_MARKER = "CUSTOM_ENDPOINT"
 # just the endpoint (the old ``PROVIDER_BASE_URLS`` only mapped a provider to
 # its base URL). The fields are:
 #
-#   - "default_model": the model used when the user has not configured one.
+#   - "model": the model used when the user has not configured one.
 #     ``None`` means the provider has no sensible default and the user must
 #     set a model explicitly (e.g. the "custom" provider).
-#   - "default_max_input_tokens": the maximum input-token (context window)
+#   - "max_input_tokens": the maximum input-token (context window)
 #     limit used as the built-in default. ``None`` means there is no built-in
 #     limit (the caller falls back to its own default).
-#   - "default_max_output_tokens": the maximum output-token limit (max_tokens
+#   - "max_output_tokens": the maximum output-token limit (max_tokens
 #     / max_completion_tokens) used when the user has not configured one.
 #     ``None`` means there is no built-in limit (the caller falls back to its
 #     own default).
-#   - "default_reasoning_level": the reasoning level/effort used by default for
+#   - "reasoning_level": the reasoning level/effort used by default for
 #     the provider's default model when it supports configurable reasoning
 #     depth. ``None`` (or absent) means there is no built-in default.
 #   - "supported_reasoning_levels": the list of reasoning levels supported by
 #     the provider's default model, each with an ``effort`` key and a
 #     human-readable ``description``. Absent when the model has no
 #     configurable reasoning.
-#   - "default_thinking": whether thinking mode (``extra_body=
+#   - "thinking": whether thinking mode (``extra_body=
 #     {'enable_thinking': True}``) is enabled by default for the provider's
 #     models. ``True`` for providers whose models reason by default (DeepSeek,
 #     Alibaba/Qwen); absent (or ``False``) for the rest. The CLI ``--thinking``
@@ -55,35 +55,35 @@ CUSTOM_ENDPOINT_MARKER = "CUSTOM_ENDPOINT"
 PROVIDER_INFO: dict[str, dict] = {
     # AI Providers with OpenAI-compatible APIs
     "openai": {
-        "default_model": "gpt-4",
-        "default_max_input_tokens": 128000,
-        "default_max_output_tokens": 128000,
+        "model": "gpt-4",
+        "max_input_tokens": 128000,
+        "max_output_tokens": 128000,
         "endpoint": None,  # Standard OpenAI - no base_url needed
     },
     "minimax": {
-        "default_model": "MiniMax-M3",
-        "default_max_input_tokens": 128000,
-        "default_max_output_tokens": 511000,  # 512k
+        "model": "MiniMax-M3",
+        "max_input_tokens": 128000,
+        "max_output_tokens": 511000,  # 512k
         "endpoint": "https://api.minimax.io/v1",
     },
     "xiaomi": {
-        "default_model": "mimo-v2.5",
-        "default_max_input_tokens": 128000,
-        "default_max_output_tokens": 120000,  # 128k
+        "model": "mimo-v2.5",
+        "max_input_tokens": 128000,
+        "max_output_tokens": 120000,  # 128k
         "endpoint": "https://api.xiaomimimo.com/v1",
     },
     "moonshot": {
-        "default_model": "kimi-k3-256k",
-        "default_max_input_tokens": 128000,
-        "default_max_output_tokens": 250000,  # 256k
+        "model": "kimi-k3-256k",
+        "max_input_tokens": 128000,
+        "max_output_tokens": 250000,  # 256k
         "endpoint": "https://api.moonshot.ai/v1",
     },
     "alibaba": {
-        "default_model": "qwen3.8-max",
-        "default_max_input_tokens": 1000000,  # 1M
-        "default_max_output_tokens": 131072,
-        "default_reasoning_level": "xhigh",
-        "default_thinking": True,  # Qwen models reason by default
+        "model": "qwen3.8-max",
+        "max_input_tokens": 1000000,  # 1M
+        "max_output_tokens": 131072,
+        "reasoning_level": "xhigh",
+        "thinking": True,  # Qwen models reason by default
         "supported_reasoning_levels": [
             {
                 "effort": "low",
@@ -101,30 +101,30 @@ PROVIDER_INFO: dict[str, dict] = {
         "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
     },
     "zai": {
-        "default_model": "glm-5.2",
-        "default_max_input_tokens": 128000,
-        "default_max_output_tokens": 1000000,  # 1M
+        "model": "glm-5.2",
+        "max_input_tokens": 128000,
+        "max_output_tokens": 1000000,  # 1M
         "endpoint": "https://api.z.ai/api/paas/v4/",
     },
     "deepseek": {
-        "default_model": "deepseek-v4-flash",
-        "default_max_input_tokens": 1000000,  # 1M
-        "default_max_output_tokens": 393216,  # 384k
-        "default_thinking": True,  # DeepSeek models reason by default
+        "model": "deepseek-v4-flash",
+        "max_input_tokens": 1000000,  # 1M
+        "max_output_tokens": 393216,  # 384k
+        "thinking": True,  # DeepSeek models reason by default
         "endpoint": "https://api.deepseek.com",
     },
     "xai": {
-        "default_model": "grok-4",
-        "default_max_input_tokens": 128000,
-        "default_max_output_tokens": 131072,
+        "model": "grok-4",
+        "max_input_tokens": 128000,
+        "max_output_tokens": 131072,
         "endpoint": "https://api.x.ai/v1",
     },
     # Special case: requires an endpoint from config (--set endpoint) and has
     # no built-in default model.
     "custom": {
-        "default_model": None,
-        "default_max_input_tokens": None,
-        "default_max_output_tokens": None,
+        "model": None,
+        "max_input_tokens": None,
+        "max_output_tokens": None,
         "endpoint": CUSTOM_ENDPOINT_MARKER,
     },
 }
@@ -186,7 +186,7 @@ def get_default_model_from_provider(provider: str) -> str | None:
     info = get_provider_info(provider)
     if info is None:
         return None
-    return info.get("default_model")
+    return info.get("model")
 
 
 def get_default_max_output_tokens_from_provider(provider: str) -> int | None:
@@ -203,7 +203,7 @@ def get_default_max_output_tokens_from_provider(provider: str) -> int | None:
     info = get_provider_info(provider)
     if info is None:
         return None
-    return info.get("default_max_output_tokens")
+    return info.get("max_output_tokens")
 
 
 def get_default_max_input_tokens_from_provider(provider: str) -> int | None:
@@ -220,7 +220,7 @@ def get_default_max_input_tokens_from_provider(provider: str) -> int | None:
     info = get_provider_info(provider)
     if info is None:
         return None
-    return info.get("default_max_input_tokens")
+    return info.get("max_input_tokens")
 
 
 def get_default_reasoning_level_from_provider(provider: str) -> str | None:
@@ -241,7 +241,7 @@ def get_default_reasoning_level_from_provider(provider: str) -> str | None:
     info = get_provider_info(provider)
     if info is None:
         return None
-    return info.get("default_reasoning_level")
+    return info.get("reasoning_level")
 
 
 def get_supported_reasoning_levels_from_provider(provider: str) -> list | None:
@@ -272,7 +272,7 @@ def get_default_thinking_from_provider(provider: str) -> bool:
     Get the built-in default for thinking mode for a given provider name.
 
     Providers whose models reason by default (DeepSeek, Alibaba/Qwen) declare
-    ``default_thinking: True``; everyone else falls back to ``False``. The CLI
+    ``thinking: True``; everyone else falls back to ``False``. The CLI
     ``--thinking`` flag still forces thinking on explicitly.
 
     Args:
@@ -285,7 +285,7 @@ def get_default_thinking_from_provider(provider: str) -> bool:
     info = get_provider_info(provider)
     if info is None:
         return False
-    return bool(info.get("default_thinking"))
+    return bool(info.get("thinking"))
 
 
 def canonical_provider_name(provider: str) -> str | None:
