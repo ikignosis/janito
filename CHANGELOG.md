@@ -13,7 +13,7 @@ Changes since `v4.18.1` (2026-08-04).
 
 - Add `anthropic` as a built-in provider (Claude models) with the
   OpenAI-compatible endpoint `https://api.anthropic.com/v1/`, a default model
-  of `claude-sonnet-4-5` (200k input / 64k output tokens, Completions API),
+  of `claude-sonnet-5` (200k input / 64k output tokens, Completions API),
   plus docs, provider-info tests and web provider listing support.
 - Print a startup banner (`Janito x.y.z - Working at <cwd>`, with the version
   in cyan and the working directory in magenta) on the shell right before the

@@ -153,7 +153,7 @@ PROVIDER_INFO: dict[str, dict] = {
         "endpoint": "https://api.x.ai/v1",
     },
     "anthropic": {
-        "model": "claude-sonnet-4-5",
+        "model": "claude-sonnet-5",
         "supported_api_types": [
             "Completions"
         ],  # Anthropic's OpenAI-compatible /v1/chat/completions

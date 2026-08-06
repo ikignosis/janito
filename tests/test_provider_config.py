@@ -83,7 +83,7 @@ if pytest is not None:
     def test_anthropic_provider():
         info = get_provider_info("anthropic")
         assert info is not None
-        assert info["model"] == "claude-sonnet-4-5"
+        assert info["model"] == "claude-sonnet-5"
         assert info["max_input_tokens"] == 200000
         assert info["max_output_tokens"] == 64000
         assert info["endpoint"] == "https://api.anthropic.com/v1/"
@@ -96,7 +96,7 @@ if pytest is not None:
         assert (
             get_base_url_from_provider("anthropic") == "https://api.anthropic.com/v1/"
         )
-        assert get_default_model_from_provider("anthropic") == "claude-sonnet-4-5"
+        assert get_default_model_from_provider("anthropic") == "claude-sonnet-5"
         assert get_default_max_input_tokens_from_provider("anthropic") == 200000
         assert get_default_max_output_tokens_from_provider("anthropic") == 64000
         assert get_default_api_type_from_provider("anthropic") == "Completions"

@@ -366,7 +366,7 @@ Use Anthropic to access Claude models through their OpenAI-compatible API.
 
 ```bash
 # Step 1: Set provider and model
-janito --set provider=anthropic --set model=claude-sonnet-4-5
+janito --set provider=anthropic --set model=claude-sonnet-5
 # Step 2: Store API key
 janito --set-api-key="your-anthropic-api-key" --provider anthropic
 ```
@@ -375,7 +375,7 @@ janito --set-api-key="your-anthropic-api-key" --provider anthropic
 
 | Model | Description |
 |-------|-------------|
-| `claude-sonnet-4-5` | Latest flagship model (200K context) |
+| `claude-sonnet-5` | Latest flagship model (200K context) |
 | `claude-opus-4-1` | Highest capability model (200K context) |
 | `claude-haiku-4-5` | Fast, cost-effective model (200K context) |
 
@@ -383,7 +383,7 @@ janito --set-api-key="your-anthropic-api-key" --provider anthropic
 
 ```bash
 # Step 1: Set provider and model
-janito --set provider=anthropic --set model=claude-sonnet-4-5
+janito --set provider=anthropic --set model=claude-sonnet-5
 # Step 2: Store API key
 janito --set-api-key="your-anthropic-api-key" --provider anthropic
 # Step 3: Run prompt
