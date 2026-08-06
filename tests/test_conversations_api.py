@@ -542,7 +542,10 @@ def test_send_prompt_plain_response(monkeypatch):
     def create(**kwargs):
         seen.append(kwargs)
         assert kwargs["input"] == "Hello"
-        assert kwargs["include"] == ["usage"]
+        # "usage" is no longer a valid include value: usage arrives on the
+        # final response.completed event by default (part of the Response
+        # object), so no include parameter is sent.
+        assert "include" not in kwargs
         assert "previous_response_id" not in kwargs
         return _stream(
             [

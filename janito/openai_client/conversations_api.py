@@ -216,7 +216,8 @@ def _consume_response_stream(stream, cancel_event=None):
             response_id = event.response.id
         elif event_type == "response.completed":
             response_id = event.response.id
-            # Usage is delivered on the final event when include=["usage"].
+            # Usage is delivered on the final event by default (it is part of
+            # the Response object; "usage" is no longer a valid include value).
             if event.response.usage:
                 usage_info = event.response.usage
         elif event_type == "response.failed":
@@ -541,10 +542,10 @@ def send_prompt(
             call_kwargs["extra_body"]["enable_thinking"] = True
 
         # ------ Streaming API call ------
-        # Stream the response; include=["usage"] makes the final
-        # response.completed event carry the usage statistics.
+        # Stream the response. Token usage arrives on the final
+        # response.completed event by default (part of the Response object);
+        # "usage" is no longer a valid value for include.
         call_kwargs["stream"] = True
-        call_kwargs["include"] = ["usage"]
 
         # Chain to the previous server-side response when continuing a
         # server-side conversation (multi-turn or tool-call round). Stateless

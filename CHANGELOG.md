@@ -149,6 +149,13 @@ Changes since `v4.18.1` (2026-08-04).
 
 ### Fixed
 
+- The Responses API client (`conversations_api.send_prompt`) no longer sends
+  the now-invalid `include=["usage"]` parameter: `usage` is no longer a
+  supported value for `include` in the Responses API (the parameter now only
+  accepts tool-related values such as `file_search_call.results`). Token
+  usage is delivered by default on the final `response.completed` event (it
+  is part of the Response object), which the stream consumer already reads
+  via `event.response.usage`.
 - The Responses API client (`conversations_api.send_prompt`) no longer
   **silently returns an empty response** when a provider streams an API error
   as an SSE event the OpenAI SDK cannot type (`event.type is None` but the
