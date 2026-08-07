@@ -77,6 +77,7 @@ Examples:
   janito --install-skill https://github.com/user/repo/tree/main/skills/git-commit  # Install a skill
   janito --list-skills                                        # List installed skills
   janito --uninstall-skill git-commit                         # Uninstall a skill
+  janito --init-codesearch                                   # Build code search index at ./.janito/codesearch.db
 
 Note: --set and --set-api-key must be used in separate commands.
   The 'model' key is stored per-provider (e.g. "openai.model"); the provider is
@@ -365,6 +366,13 @@ Note: --set and --set-api-key must be used in separate commands.
         "--show-system-prompt",
         action="store_true",
         help="Display the resolved system prompt and exit",
+    )
+
+    parser.add_argument(
+        "--init-codesearch",
+        action="store_true",
+        help="Build a code search index over the current directory and store "
+        "it at ./.janito/codesearch.db, then exit",
     )
 
     # --- Web UI options ---

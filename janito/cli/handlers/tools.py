@@ -36,6 +36,7 @@ def handle_list_tools(args) -> int:
     categories = {
         "File Operations": [],
         "System Operations": [],
+        "Code Search Operations": [],
         "Email Operations": [],
         "OneDrive Operations": [],
         "Other": [],
@@ -71,6 +72,8 @@ def handle_list_tools(args) -> int:
             categories["File Operations"].append(tool_info)
         elif name.startswith(("Get", "Run")):
             categories["System Operations"].append(tool_info)
+        elif name == "CodeSearch":
+            categories["Code Search Operations"].append(tool_info)
         elif (
             name.startswith(("Send", "Read", "Compose", "SearchEmail"))
             or "Email" in name

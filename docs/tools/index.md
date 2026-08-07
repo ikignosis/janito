@@ -7,6 +7,7 @@ janito includes built-in tools for common tasks.
 | Category | Tools | Description |
 |----------|-------|-------------|
 | **Files** | File operations | List, read, write, search files and directories |
+| **Code Search** | Code search | Search a pre-built trigram index (`--init-codesearch`) |
 | **Gmail** | Email management | Read, count, delete, move, and search emails |
 | **OneDrive** | Cloud storage | Browse, upload, download, search files |
 | **System** | Execution | Run Python code, execute PowerShell commands |
@@ -44,6 +45,7 @@ Progress messages go to stderr so they don't interfere with tool output.
 ## Related Topics
 
 - [File Tools](files.md)
+- [Code Search Tools](codesearch.md) - Search a pre-built trigram index
 - [Web Tools](web-search.md) - Fetch URLs and search the web (Brave)
 - [Gmail Tools](gmail.md)
 - [OneDrive Tools](onedrive.md)

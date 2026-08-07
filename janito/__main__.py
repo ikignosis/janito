@@ -32,6 +32,7 @@ from .cli.handlers import (
     handle_get_config,
     handle_get_secret,
     handle_info,
+    handle_init_codesearch,
     handle_install_skill,
     handle_list_keys,
     handle_list_mcp,
@@ -223,6 +224,10 @@ def main():
 
     if args.list_mcp:
         return handle_list_mcp(args)
+
+    # Handle --init-codesearch (build the code search index and exit)
+    if args.init_codesearch:
+        return handle_init_codesearch(args)
 
     # Validate that the runtime configuration (API key from auth store,
     # endpoint from provider default/config, model from --model or config)

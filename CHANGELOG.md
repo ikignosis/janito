@@ -11,6 +11,41 @@ Changes since `v4.19.0` (2026-08-06).
 
 ### Added
 
+- New `janito.codesearch` package: trigram-based code search with SQLite
+  backend, implementing the algorithm described by Russ Cox in "Regular
+  Expression Matching with a Trigram Index" (Google Code Search).
+  - `CodeSearch` class with `Create()`, `Update()`, and `Find()` methods.
+  - `MATCH.AND` / `MATCH.OR` enum for keyword search semantics.
+  - SQLite inverted index storing trigram posting lists.
+  - Incremental update support (detects added, deleted, and changed files
+    via SHA-1 hashing).
+- `CodeSearch.Create()` and `CodeSearch.Update()` now record the **last
+  update info** in the index database: after either operation completes, a
+  JSON blob is stored in the `meta` table (under the `last_update` key)
+  with the operation (`"create"`/`"update"`), an ISO-8601 timestamp plus
+  Unix epoch, and the resulting file/trigram counts. The info survives
+  closing/reopening the DB and is exposed through the new
+  `CodeSearch.last_update()` and `CodeSearch.last_modified()` methods
+  (`last_modified()` returns the Unix epoch of the last create/update;
+  both return `None` for indexes built before this feature).
+- The `CodeSearch` tool now auto-refreshes a stale index **at load time**
+  (`should_load()`): if the index's last recorded update is missing or
+  older than a 1-day TTL (`INDEX_TTL_SECONDS`), an incremental `Update()`
+  runs over the working directory before the tool is offered to the model,
+  printing a progress note. The refresh is best-effort — a failure never
+  prevents the tool from loading (it stays usable with the existing
+  index).
+- New `--init-codesearch` CLI flag builds the index over the current
+  directory and stores it at `./.janito/codesearch.db` (per-project, like
+  `history.log` and `changes.jsonl`), then exits. While building, it prints
+  "Indexing the current directory, this may take some time...".
+- New `CodeSearch` tool (new `codesearch` toolset, auto-loaded) searches the
+  pre-built index at `./.janito/codesearch.db`. It takes `keywords`
+  (required list) and `match` (`"and"`/`"or"`, default `"and"`) and returns
+  the matching file paths. The tool is only loaded when the index database
+  exists in the current working directory (`should_load()` gates on
+  `./.janito/codesearch.db`), so it is skipped — with a `--init-codesearch`
+  hint — until the index is built.
 - The file tools (`ListFiles`, `FindFiles`, `SearchText`, `SearchRegex`) now
   respect a `.janitoignore` file in the working directory. It behaves like
   `.gitignore` but is **always** respected: unlike `.gitignore`, it is not
@@ -45,6 +80,18 @@ Changes since `v4.19.0` (2026-08-06).
 - `janito.__main__` now propagates `main()`'s exit code
   (`sys.exit(main())`), so aborted config changes (e.g. a missing optional
   package) exit non-zero instead of always `0`.
+
+### Changed
+
+- The code search indexer (`CodeSearch.Create()` / `CodeSearch.Update()`,
+  used by `--init-codesearch` and the `CodeSearch` tool's 1-day refresh)
+  now **skips files and directories matched by the working directory's
+  `.gitignore`**, using the same `pathspec`-based helpers as the other file
+  tools (`SearchText`, `FindFiles`, `ListFiles`, `SearchRegex`).
+  `.janitoignore` is always respected, matching the other tools. As a
+  result the index only covers files the file tools would search, and a
+  file that becomes gitignored after the index was built is dropped on the
+  next `Update()`.
 
 
 ## [v4.19.0](https://github.com/joaopinto/janito/compare/v4.18.0...v4.19.0) - 2026-08-06
