@@ -268,4 +268,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # Propagate the exit code returned by main() (e.g. 1 for aborted config
+    # changes like setting an API type whose required package is missing) so
+    # scripts and CI can observe failures.
+    sys.exit(main())

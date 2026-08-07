@@ -167,6 +167,25 @@ def test_patch_api_type_rejects_unknown_value(client):
 
 
 @requires_fastapi
+def test_patch_api_type_anthropic_aborts_without_package(client):
+    """The native Anthropic SDK API type is rejected with 400 (nothing is
+    written) when the optional `anthropic` package is not installed, with a
+    message naming the package."""
+    gc.unset_config_value("anthropic.api-type")
+    before = gc.load_config()
+
+    resp = client.patch(
+        "/api/config", json={"api_type": "Anthropic", "provider": "anthropic"}
+    )
+    assert resp.status_code == 400
+    detail = resp.json()["detail"]
+    assert "Anthropic" in detail
+    assert "anthropic" in detail
+    assert "pip install anthropic" in detail
+    assert gc.load_config() == before
+
+
+@requires_fastapi
 def test_patch_api_type_empty_clears_override(client):
     """An empty api_type removes the per-provider override."""
     gc.set_config_value("openai.api-type", "Completions")
@@ -276,6 +295,19 @@ def test_providers_endpoint_exposes_advanced_fields(client):
     # DeepSeek's /responses endpoint is stateless by default.
     assert deepseek["responses_in_server"] is False
     assert deepseek["default_responses_in_server"] is False
+
+    anthropic = entries["anthropic"]
+    # Anthropic supports Completions (the built-in default) plus the native
+    # Anthropic SDK API type; the per-API-type endpoint map is exposed so the
+    # drawer could show per-type URLs.
+    assert anthropic["supported_api_types"] == ["Completions", "Anthropic"]
+    assert anthropic["default_api_type"] == "Completions"
+    assert anthropic["endpoint_by_api_type"] == {
+        "Completions": "https://api.anthropic.com/v1/",
+        "Anthropic": "https://api.anthropic.com",
+    }
+    # base_url reflects the default API type's built-in endpoint.
+    assert anthropic["base_url"] == "https://api.anthropic.com/v1/"
 
 
 # ---------------------------------------------------------------------------

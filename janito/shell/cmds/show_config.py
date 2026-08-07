@@ -41,13 +41,20 @@ def _print_config_info(provider: str | None = None, thinking: bool = False) -> N
     masked_key = get_masked_api_key(api_key)
     max_output_tokens = load_max_output_tokens(provider)
 
+    # Resolve the effective API type first (--set api-type, otherwise the
+    # provider's built-in default -- the first entry of its
+    # supported_api_types list) so the built-in base URL can be resolved per
+    # API type (endpoint_by_api_type, e.g. Anthropic's native-SDK URL).
+    api_type = resolve_api_type(None, provider)
+
     # Determine the actual base URL that will be used: a configured endpoint
-    # override first, otherwise the provider's built-in default.
+    # override first, otherwise the provider's built-in default for the
+    # effective API type.
     base_url = load_endpoint_from_config(provider)
     if not base_url:
-        from janito.provider_config import get_base_url_from_provider
+        from janito.provider_config import get_endpoint_for_api_type
 
-        base_url = get_base_url_from_provider(provider)
+        base_url = get_endpoint_for_api_type(provider, api_type)
 
     if base_url:
         base_url_display = base_url
@@ -87,10 +94,6 @@ def _print_config_info(provider: str | None = None, thinking: bool = False) -> N
     thinking_display = "enabled" if effective_thinking else "disabled"
     if effective_thinking and not thinking:
         thinking_display += " (provider default)"
-
-    # Resolve the effective API type: --set api-type, otherwise the provider's
-    # built-in default (the first entry of its supported_api_types list).
-    api_type = resolve_api_type(None, provider)
 
     # When the effective API type is the Responses API, surface whether the
     # provider keeps the conversation state server-side (chained with

@@ -33,7 +33,6 @@ from ..mcp_manager import get_mcp_manager
 
 # Import provider configuration for base URLs and built-in defaults
 from ..provider_config import (
-    get_base_url_from_provider,
     get_default_max_input_tokens_from_provider,
     get_default_max_output_tokens_from_provider,
     get_default_model_from_provider,
@@ -136,7 +135,9 @@ def format_tokens(count):
 
 
 def resolve_runtime_config(
-    cli_model: str | None = None, cli_provider: str | None = None
+    cli_model: str | None = None,
+    cli_provider: str | None = None,
+    cli_api_type: str | None = None,
 ) -> tuple[str | None, str, str]:
     """
     Resolve the runtime configuration (base_url, api_key, model) without
@@ -147,7 +148,10 @@ def resolve_runtime_config(
                   active provider (see ``auth_config.get_api_key``).
       - base_url: the endpoint configured for the provider (``--set endpoint``)
                   or, when none is set, the provider's built-in default base
-                  URL. ``None`` means the standard OpenAI endpoint.
+                  URL resolved for the effective API type (see
+                  ``provider_config.get_endpoint_for_api_type``, honoring the
+                  provider's ``endpoint_by_api_type`` map). ``None`` means the
+                  standard OpenAI endpoint.
       - model:    ``--model`` (``cli_model``) when given, otherwise the model
                   configured for the active provider (``<provider>.model``),
                   and finally the provider's built-in default model.
@@ -155,6 +159,10 @@ def resolve_runtime_config(
     Args:
         cli_model: Model passed via ``--model`` (highest priority). May be None.
         cli_provider: Provider passed via ``--provider``. May be None.
+        cli_api_type: API type passed via ``--api-type`` (or implied by the
+            selected client, e.g. ``"Anthropic"`` for the native Anthropic
+            SDK). Used to pick the built-in default endpoint when the provider
+            declares ``endpoint_by_api_type``. May be None.
 
     Returns:
         Tuple of (base_url, api_key, model). ``base_url`` may be None for the
@@ -200,7 +208,9 @@ def resolve_runtime_config(
         )
 
     # Base URL: configured endpoint for the provider, otherwise the provider's
-    # built-in default (None for standard OpenAI).
+    # built-in default resolved for the effective API type (None for standard
+    # OpenAI). The effective API type comes from --api-type, then the
+    # provider's configured api-type, then its built-in default.
     base_url = load_endpoint_from_config(provider)
     if not base_url:
         if is_custom_provider(provider):
@@ -209,7 +219,11 @@ def resolve_runtime_config(
                 f"Provider '{provider}' requires an endpoint. "
                 f"Set it with: janito --provider {provider} --set endpoint=<url>"
             )
-        base_url = get_base_url_from_provider(provider)
+        from ..general_config import resolve_api_type
+        from ..provider_config import get_endpoint_for_api_type
+
+        api_type = resolve_api_type(cli_api_type, provider)
+        base_url = get_endpoint_for_api_type(provider, api_type)
 
     logger.debug(f"Runtime config resolved: base_url={base_url}, model={model}")
     return base_url, api_key, model

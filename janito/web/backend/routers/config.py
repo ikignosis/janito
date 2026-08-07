@@ -170,13 +170,22 @@ async def patch_config(request: Request):
         raw = str(body["api_type"]).strip()
 
         # Persist per-provider (providers.<name>.api-type), canonicalized to
-        # "Responses" / "Completions" (rejects anything else with 400).  An
-        # empty value clears the override so the provider falls back to its
-        # built-in default.
+        # "Responses" / "Completions" / "Anthropic" (rejects anything else
+        # with 400). An empty value clears the override so the provider falls
+        # back to its built-in default. Native-SDK API types (e.g. "Anthropic")
+        # also require their optional package to be installed: when it is
+        # missing the change is aborted with 400 (nothing is written) and a
+        # message naming the package.
         key = api_type_config_key(provider)
         if raw:
             try:
                 api_type = normalize_api_type(raw)
+            except ValueError as e:
+                return JSONResponse({"detail": str(e)}, status_code=400)
+            from janito.provider_config import ensure_api_type_available
+
+            try:
+                ensure_api_type_available(api_type)
             except ValueError as e:
                 return JSONResponse({"detail": str(e)}, status_code=400)
             set_config_value(key, api_type)
@@ -280,6 +289,7 @@ async def list_providers(request: Request):
         CUSTOM_ENDPOINT_MARKER,
         PROVIDER_INFO,
         get_default_api_type_from_provider,
+        get_endpoint_for_api_type,
         get_responses_in_server_from_provider,
     )
 
@@ -292,16 +302,21 @@ async def list_providers(request: Request):
 
     providers = []
     for name, info in PROVIDER_INFO.items():
-        built_in_url = info.get("endpoint")
         # Resolve the effective base URL: a configured endpoint override
-        # takes priority, otherwise the provider's built-in default.
+        # takes priority, otherwise the provider's built-in default resolved
+        # for its default API type (honors the provider's
+        # ``endpoint_by_api_type`` map, e.g. Anthropic's native-SDK URL).
         endpoint_override = load_endpoint_from_config(name)
         if endpoint_override:
             base_url = endpoint_override
-        elif built_in_url and built_in_url != CUSTOM_ENDPOINT_MARKER:
-            base_url = built_in_url
         else:
-            base_url = None
+            built_in_url = get_endpoint_for_api_type(
+                name, get_default_api_type_from_provider(name)
+            )
+            if built_in_url and built_in_url != CUSTOM_ENDPOINT_MARKER:
+                base_url = built_in_url
+            else:
+                base_url = None
 
         api_key = get_api_key(name)
 
@@ -321,6 +336,7 @@ async def list_providers(request: Request):
                 "api_type": api_type_override,
                 "default_api_type": get_default_api_type_from_provider(name),
                 "supported_api_types": info.get("supported_api_types"),
+                "endpoint_by_api_type": info.get("endpoint_by_api_type"),
                 "responses_in_server": responses_in_server,
                 "default_responses_in_server": info.get("responses_in_server", True),
                 "responses_in_server_override": load_responses_in_server_from_config(
@@ -529,7 +545,8 @@ async def get_status(request: Request, provider: str | None = None):
     )
     from janito.provider_config import (
         CUSTOM_ENDPOINT_MARKER,
-        get_base_url_from_provider,
+        get_default_api_type_from_provider,
+        get_endpoint_for_api_type,
         validate_provider_name,
     )
 
@@ -549,10 +566,13 @@ async def get_status(request: Request, provider: str | None = None):
     api_key = get_api_key(target)
 
     # Endpoint resolution mirrors the runtime: a configured endpoint override
-    # first, otherwise the provider's built-in default (None => standard OpenAI).
+    # first, otherwise the provider's built-in default resolved for its
+    # default API type (None => standard OpenAI).
     base_url = load_endpoint_from_config(target)
     if not base_url:
-        provider_default = get_base_url_from_provider(target)
+        provider_default = get_endpoint_for_api_type(
+            target, get_default_api_type_from_provider(target)
+        )
         if provider_default and provider_default != CUSTOM_ENDPOINT_MARKER:
             base_url = provider_default
 

@@ -155,11 +155,23 @@ PROVIDER_INFO: dict[str, dict] = {
     "anthropic": {
         "model": "claude-sonnet-5",
         "supported_api_types": [
-            "Completions"
-        ],  # Anthropic's OpenAI-compatible /v1/chat/completions
+            "Completions",
+            "Anthropic",  # native Anthropic SDK (requires the `anthropic` package)
+        ],  # Completions is the built-in default: Anthropic's OpenAI-compatible
+        # /v1/chat/completions. The native Anthropic SDK API type is selectable
+        # with --set api-type=Anthropic / --api-type Anthropic (it requires the
+        # optional `anthropic` package; see REQUIRES_BY_API_TYPE).
         "max_input_tokens": 200000,
         "max_output_tokens": 64000,
         "endpoint": "https://api.anthropic.com/v1/",
+        # Per-API-type endpoints: the OpenAI-compatible Chat Completions URL
+        # and the native Anthropic SDK base URL. A provider whose dict holds a
+        # single entry uses that URL as the default for *any* API type (unless
+        # a config endpoint is set); see get_endpoint_for_api_type.
+        "endpoint_by_api_type": {
+            "Completions": "https://api.anthropic.com/v1/",
+            "Anthropic": "https://api.anthropic.com",
+        },
     },
     # Special case: requires an endpoint from config (--set endpoint) and has
     # no built-in default model.
@@ -170,6 +182,22 @@ PROVIDER_INFO: dict[str, dict] = {
         "max_output_tokens": None,
         "endpoint": CUSTOM_ENDPOINT_MARKER,
     },
+}
+
+# Optional Python package required by each non-OpenAI API type.
+#
+# The two built-in API types (``"Responses"`` and ``"Completions"``) are
+# served by the ``openai`` package, which is a hard dependency, so they never
+# appear here. Any *other* API type listed in a provider's
+# ``supported_api_types`` (e.g. ``"Anthropic"`` for the native Anthropic SDK)
+# is backed by an optional package declared in this dict, keyed by the
+# canonical API type.
+#
+# When the user attempts to set an API type whose required package is missing,
+# the change is aborted with a message naming the package that must be
+# installed (see :func:`ensure_api_type_available`).
+REQUIRES_BY_API_TYPE: dict[str, str] = {
+    "Anthropic": "anthropic",
 }
 
 
@@ -213,6 +241,164 @@ def get_base_url_from_provider(provider: str) -> str | None:
     if info is None:
         return None
     return info.get("endpoint")
+
+
+def get_endpoint_by_api_type(provider: str) -> dict[str, str] | None:
+    """
+    Get the per-API-type endpoint map for a given provider name.
+
+    Each entry maps a canonical API type (``"Completions"``, ``"Responses"``,
+    ``"Anthropic"``, ...) to the base URL used for that API type. When the
+    dict holds a **single** entry, that URL is the default for *any* API type
+    on the provider (unless a config endpoint override is set) -- see
+    :func:`get_endpoint_for_api_type`.
+
+    Args:
+        provider: The provider name (case-insensitive)
+
+    Returns:
+        The ``endpoint_by_api_type`` dict if the provider declares one,
+        ``None`` otherwise (either the provider is unknown or it has a single
+        built-in endpoint shared by all its API types).
+    """
+    info = get_provider_info(provider)
+    if info is None:
+        return None
+    return info.get("endpoint_by_api_type")
+
+
+def get_endpoint_for_api_type(provider: str, api_type: str | None = None) -> str | None:
+    """
+    Get the base URL for a provider's API type, honoring ``endpoint_by_api_type``.
+
+    Resolution rules:
+
+    1. If the provider declares an ``endpoint_by_api_type`` dict with a
+       **single** entry, that URL is returned for *any* API type (it is the
+       provider's default endpoint).
+    2. Otherwise, if ``api_type`` is given and present in the dict, that
+       entry's URL is returned.
+    3. Otherwise the provider's single built-in ``endpoint`` is returned
+       (``None`` for standard OpenAI, the ``CUSTOM_ENDPOINT`` marker for
+       "custom").
+
+    A per-provider config endpoint override (``--set endpoint=...``) always
+    wins over this resolution; callers (e.g. ``resolve_runtime_config``)
+    prefer ``load_endpoint_from_config`` before consulting this helper.
+
+    Args:
+        provider: The provider name (case-insensitive)
+        api_type: The canonical API type (e.g. ``"Completions"``) whose
+            endpoint to look up. May be ``None`` when the caller only wants
+            the provider's default endpoint.
+
+    Returns:
+        The base URL for the provider/API type, or ``None`` if the provider is
+        unknown or has no endpoint.
+    """
+    info = get_provider_info(provider)
+    if info is None:
+        return None
+
+    by_type = info.get("endpoint_by_api_type")
+    if by_type:
+        # A single-element dict is the default endpoint for any API type.
+        if len(by_type) == 1:
+            return next(iter(by_type.values()))
+        if api_type and api_type in by_type:
+            return by_type[api_type]
+
+    return info.get("endpoint")
+
+
+def get_all_api_types() -> list[str]:
+    """
+    List every canonical API type the CLI understands.
+
+    The two OpenAI-SDK types (``"Responses"`` and ``"Completions"``) plus the
+    keys of :data:`REQUIRES_BY_API_TYPE` (e.g. ``"Anthropic"`` for the native
+    Anthropic SDK). Used by ``normalize_api_type`` / ``--api-type`` validation
+    and by the web API-type comboboxes.
+
+    Returns:
+        Sorted list of canonical API type names.
+    """
+    return sorted(set(("Responses", "Completions")) | set(REQUIRES_BY_API_TYPE))
+
+
+def get_required_package_for_api_type(api_type: str) -> str | None:
+    """
+    Get the optional Python package required by an API type, if any.
+
+    API types served by the OpenAI SDK (``"Responses"`` / ``"Completions"``)
+    return ``None``: ``openai`` is a hard dependency. Native-SDK API types
+    (e.g. ``"Anthropic"``) return the package that must be installed for them
+    to work (see :data:`REQUIRES_BY_API_TYPE`).
+
+    Args:
+        api_type: The API type name (case-insensitive)
+
+    Returns:
+        The required package name, or ``None`` when the API type has no
+        optional-package requirement (or is unknown).
+    """
+    if not api_type:
+        return None
+    api_type_lower = api_type.strip().lower()
+    for key, package in REQUIRES_BY_API_TYPE.items():
+        if key.lower() == api_type_lower:
+            return package
+    return None
+
+
+def is_api_type_available(api_type: str) -> bool:
+    """
+    Check whether an API type's required package is installed.
+
+    API types without an optional-package requirement (``Responses`` /
+    ``Completions``) are always available.
+
+    Args:
+        api_type: The API type name (case-insensitive)
+
+    Returns:
+        ``True`` when the API type can be used (its required package is
+        installed or it has no requirement), ``False`` otherwise.
+    """
+    package = get_required_package_for_api_type(api_type)
+    if package is None:
+        return True
+    import importlib.util
+
+    return importlib.util.find_spec(package) is not None
+
+
+def ensure_api_type_available(api_type: str) -> None:
+    """
+    Abort with an actionable message when an API type's package is missing.
+
+    Called when the user attempts to *set* an API type (``--set api-type=...``
+    or the web Settings drawer). When the API type has no optional-package
+    requirement, this is a no-op.
+
+    Args:
+        api_type: The canonical API type name (e.g. ``"Anthropic"``)
+
+    Raises:
+        ValueError: If the API type requires an optional package that is not
+            installed. The message names the package and how to install it.
+    """
+    package = get_required_package_for_api_type(api_type)
+    if package is None:
+        return
+    import importlib.util
+
+    if importlib.util.find_spec(package) is None:
+        raise ValueError(
+            f"API type '{api_type}' requires the optional '{package}' package, "
+            f"which is not installed. "
+            f"Install it with: pip install {package}"
+        )
 
 
 def get_default_model_from_provider(provider: str) -> str | None:

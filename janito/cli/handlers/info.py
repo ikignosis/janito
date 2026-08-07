@@ -11,8 +11,8 @@ from ...general_config import (
 )
 from ...provider_config import (
     CUSTOM_ENDPOINT_MARKER,
-    get_base_url_from_provider,
     get_default_thinking_from_provider,
+    get_endpoint_for_api_type,
     get_responses_in_server_from_provider,
     is_custom_provider,
 )
@@ -78,6 +78,11 @@ def handle_info(args) -> int:
     else:
         api_key_source = "not set"
 
+    # Determine the effective API type first (--api-type, then the provider's
+    # configured api-type, then its built-in default) so the built-in endpoint
+    # can be resolved per API type (endpoint_by_api_type).
+    api_type = resolve_api_type(getattr(args, "api_type", None), provider)
+
     # Determine endpoint/base URL (priority: config > provider default)
     config_endpoint = load_endpoint_from_config(provider)
 
@@ -90,7 +95,7 @@ def handle_info(args) -> int:
     elif is_custom_provider(provider):
         endpoint_source = "required but not set (set endpoint in config.json)"
     else:
-        provider_default = get_base_url_from_provider(provider)
+        provider_default = get_endpoint_for_api_type(provider, api_type)
         if provider_default and provider_default != CUSTOM_ENDPOINT_MARKER:
             endpoint = provider_default
             endpoint_source = f"{provider} default"
@@ -98,7 +103,6 @@ def handle_info(args) -> int:
             endpoint_source = "default OpenAI"
 
     # Print the info
-    api_type = resolve_api_type(getattr(args, "api_type", None), provider)
     print("Resolved Configuration:")
     print("=" * 40)
     print(f"Provider:     {provider} ({provider_source})")
@@ -164,16 +168,20 @@ def handle_show_config(args=None) -> int:
 
     # Resolve the endpoint, mirroring the runtime resolution in
     # resolve_runtime_config: config.json endpoint > provider's built-in base
-    # URL. Displaying this makes key/endpoint mismatches (e.g. a token-plan key
-    # sent to the dashscope endpoint) visible.
+    # URL (resolved for the effective API type). Displaying this makes
+    # key/endpoint mismatches (e.g. a token-plan key sent to the dashscope
+    # endpoint) visible.
     endpoint = None
     endpoint_source = "not set"
+    api_type = resolve_api_type(
+        getattr(args, "api_type", None) if args is not None else None, provider
+    )
     config_endpoint = load_endpoint_from_config(provider)
     if config_endpoint:
         endpoint = config_endpoint
         endpoint_source = "config.json"
     elif provider and not is_custom_provider(provider):
-        provider_base = get_base_url_from_provider(provider)
+        provider_base = get_endpoint_for_api_type(provider, api_type)
         if provider_base and provider_base != CUSTOM_ENDPOINT_MARKER:
             endpoint = provider_base
             endpoint_source = f"{provider} default"
@@ -199,9 +207,6 @@ def handle_show_config(args=None) -> int:
         print(f"Model:     {model} ({provider}.model)")
     else:
         print("Model:     (not configured)")
-    api_type = resolve_api_type(
-        getattr(args, "api_type", None) if args is not None else None, provider
-    )
     print(f"API Type:  {api_type}")
     masked = get_masked_api_key(api_key)
     if api_key:

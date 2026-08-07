@@ -22,9 +22,9 @@ def _make_send_prompt_func(
 ):
     """Return a send-prompt callable bound to the resolved API type.
 
-    The returned wrapper accepts the union of the Completions and Responses
-    call signatures so the interactive shell can call it identically in both
-    modes:
+    The returned wrapper accepts the union of the Completions, Responses and
+    Anthropic call signatures so the interactive shell can call it identically
+    in all modes:
 
       - Completions mode: forwards ``previous_messages`` to
         ``completions_api.send_prompt`` and returns the assistant text (the
@@ -36,9 +36,13 @@ def _make_send_prompt_func(
         lives on the server, so ``previous_messages`` is ignored (the
         history is no longer stored/updated on the client side); stateless
         providers track the history in ``previous_items`` instead.
+      - Anthropic mode: forwards ``previous_messages`` / ``instructions`` to
+        ``anthropic_api.send_prompt`` (the native Anthropic SDK) and returns
+        the assistant text (the history list is mutated, like Completions).
 
     Args:
-        api_type: "Responses" or "Completions".
+        api_type: The canonical API type: "Responses", "Completions" or
+            "Anthropic".
         cli_model: Model passed via ``--model``.
         cli_provider: Provider passed via ``--provider``.
         reasoning_level: Reasoning depth passed via ``--reasoning-level``.
@@ -61,6 +65,35 @@ def _make_send_prompt_func(
                 verbose=verbose,
                 previous_response_id=previous_response_id,
                 previous_items=previous_items,
+                instructions=instructions,
+                tools=tools,
+                thinking=thinking,
+                cli_model=cli_model,
+                cli_provider=cli_provider,
+                reasoning_level=reasoning_level,
+            )
+
+        return send
+
+    if api_type == "Anthropic":
+        # Native Anthropic SDK client (the optional `anthropic` package; the
+        # API type is only settable when that package is installed).
+        from ..openai_client.anthropic_api import send_prompt as send_anthropic
+
+        def send(
+            prompt,
+            verbose=False,
+            previous_messages=None,
+            previous_response_id=None,
+            previous_items=None,
+            instructions=None,
+            tools=None,
+            thinking=False,
+        ):
+            return send_anthropic(
+                prompt,
+                verbose=verbose,
+                previous_messages=previous_messages,
                 instructions=instructions,
                 tools=tools,
                 thinking=thinking,

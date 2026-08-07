@@ -337,8 +337,28 @@ if pytest is not None:
         assert "Unsupported API type" in str(exc.value)
         assert "Responses" in str(exc.value)
         assert "Completions" in str(exc.value)
+        assert "Anthropic" in str(exc.value)
         # Nothing should have been written
         assert _read_config(config_path) == {}
+
+    def test_set_api_type_anthropic_aborts_without_package(monkeypatch, tmp_path):
+        """Setting the native Anthropic SDK API type without the optional
+        `anthropic` package aborts the change (nothing is written) with a
+        message naming the package."""
+        config_path = _use_temp_config(monkeypatch, tmp_path)
+        with pytest.raises(ValueError) as exc:
+            gc.set_config_from_cli("api-type=Anthropic", "anthropic")
+        message = str(exc.value)
+        assert "Anthropic" in message
+        assert "anthropic" in message
+        assert "pip install anthropic" in message
+        # Nothing should have been written
+        assert _read_config(config_path) == {}
+
+    def test_normalize_api_type_accepts_native_sdk_types():
+        assert gc.normalize_api_type("anthropic") == "Anthropic"
+        assert gc.normalize_api_type("ANTHROPIC") == "Anthropic"
+        assert gc.normalize_api_type("Anthropic") == "Anthropic"
 
     def test_load_api_type_unknown_provider_returns_none(monkeypatch, tmp_path):
         _use_temp_config(monkeypatch, tmp_path)
@@ -386,6 +406,7 @@ if pytest is not None:
         assert "Unsupported API type" in str(exc.value)
         assert "Responses" in str(exc.value)
         assert "Completions" in str(exc.value)
+        assert "Anthropic" in str(exc.value)
 
     def test_resolve_api_type_unknown_provider_falls_back_to_completions():
         # An unknown provider has no supported_api_types entry, so the safe

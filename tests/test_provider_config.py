@@ -17,7 +17,10 @@ import pytest
 import janito.config_dir as config_dir_mod
 from janito.provider_config import (
     PROVIDER_INFO,
+    REQUIRES_BY_API_TYPE,
     canonical_provider_name,
+    ensure_api_type_available,
+    get_all_api_types,
     get_base_url_from_provider,
     get_default_api_type_from_provider,
     get_default_max_input_tokens_from_provider,
@@ -25,10 +28,14 @@ from janito.provider_config import (
     get_default_model_from_provider,
     get_default_reasoning_level_from_provider,
     get_default_thinking_from_provider,
+    get_endpoint_by_api_type,
+    get_endpoint_for_api_type,
     get_provider_info,
+    get_required_package_for_api_type,
     get_responses_in_server_from_provider,
     get_supported_api_types_from_provider,
     get_supported_reasoning_levels_from_provider,
+    is_api_type_available,
     is_supported_provider,
     list_supported_providers,
     validate_provider_name,
@@ -87,7 +94,15 @@ if pytest is not None:
         assert info["max_input_tokens"] == 200000
         assert info["max_output_tokens"] == 64000
         assert info["endpoint"] == "https://api.anthropic.com/v1/"
-        assert info["supported_api_types"] == ["Completions"]
+        # Completions (OpenAI-compatible) is the built-in default; the native
+        # Anthropic SDK API type is the second supported type.
+        assert info["supported_api_types"] == ["Completions", "Anthropic"]
+        # Per-API-type endpoints: the OpenAI-compatible Chat Completions URL
+        # and the native Anthropic SDK base URL.
+        assert info["endpoint_by_api_type"] == {
+            "Completions": "https://api.anthropic.com/v1/",
+            "Anthropic": "https://api.anthropic.com",
+        }
         # Case-insensitive lookup.
         assert (
             get_provider_info("Anthropic")["endpoint"]
@@ -192,6 +207,13 @@ if pytest is not None:
             "Completions",
         ]
         assert get_default_api_type_from_provider("deepseek") == "Responses"
+        # Anthropic supports Completions (the built-in default) plus the
+        # native Anthropic SDK API type.
+        assert get_supported_api_types_from_provider("anthropic") == [
+            "Completions",
+            "Anthropic",
+        ]
+        assert get_default_api_type_from_provider("anthropic") == "Completions"
         # Every other provider is Completions-only for now.
         for name in (
             "minimax",
@@ -199,7 +221,6 @@ if pytest is not None:
             "moonshot",
             "zai",
             "xai",
-            "anthropic",
             "custom",
         ):
             assert get_supported_api_types_from_provider(name) == ["Completions"]
@@ -207,6 +228,131 @@ if pytest is not None:
         # Unknown provider returns None.
         assert get_supported_api_types_from_provider("bogus") is None
         assert get_default_api_type_from_provider("bogus") is None
+
+    # ---- endpoint_by_api_type (per-API-type endpoints) -------------------
+
+    def test_endpoint_by_api_type_map():
+        # Only providers that declare it expose a per-API-type endpoint map.
+        assert get_endpoint_by_api_type("anthropic") == {
+            "Completions": "https://api.anthropic.com/v1/",
+            "Anthropic": "https://api.anthropic.com",
+        }
+        # Providers without the map return None (single shared endpoint).
+        assert get_endpoint_by_api_type("openai") is None
+        assert get_endpoint_by_api_type("minimax") is None
+        # Unknown provider returns None.
+        assert get_endpoint_by_api_type("bogus") is None
+
+    def test_get_endpoint_for_api_type_multi_entry_map():
+        """A multi-entry map picks the URL of the requested API type."""
+        # Anthropic: the OpenAI-compatible Completions URL and the native SDK URL.
+        assert (
+            get_endpoint_for_api_type("anthropic", "Completions")
+            == "https://api.anthropic.com/v1/"
+        )
+        assert (
+            get_endpoint_for_api_type("anthropic", "Anthropic")
+            == "https://api.anthropic.com"
+        )
+        # An API type absent from the map falls back to the single built-in endpoint.
+        assert (
+            get_endpoint_for_api_type("anthropic", "Responses")
+            == "https://api.anthropic.com/v1/"
+        )
+        # Without an API type the single built-in endpoint applies.
+        assert get_endpoint_for_api_type("anthropic") == "https://api.anthropic.com/v1/"
+
+    def test_get_endpoint_for_api_type_single_entry_fallback():
+        """A single-entry endpoint_by_api_type dict is the default for ANY
+        API type (the issue's requirement), unless a config endpoint is set."""
+        import janito.provider_config as pc
+
+        # Inject a fake provider with a single-entry map to pin the rule.
+        fake = {
+            "model": "fake-model",
+            "supported_api_types": ["Completions", "Anthropic"],
+            "endpoint": "https://fallback.example/v1",
+            "endpoint_by_api_type": {"Anthropic": "https://native.example"},
+        }
+        original = dict(pc.PROVIDER_INFO)
+        pc.PROVIDER_INFO["fake-provider"] = fake
+        try:
+            # The single entry is used for any API type...
+            assert (
+                pc.get_endpoint_for_api_type("fake-provider", "Anthropic")
+                == "https://native.example"
+            )
+            assert (
+                pc.get_endpoint_for_api_type("fake-provider", "Completions")
+                == "https://native.example"
+            )
+            assert (
+                pc.get_endpoint_for_api_type("fake-provider", "Responses")
+                == "https://native.example"
+            )
+            assert (
+                pc.get_endpoint_for_api_type("fake-provider")
+                == "https://native.example"
+            )
+        finally:
+            pc.PROVIDER_INFO.clear()
+            pc.PROVIDER_INFO.update(original)
+
+    def test_get_endpoint_for_api_type_no_map_falls_back_to_endpoint():
+        """Providers without the map keep their single built-in endpoint."""
+        assert get_endpoint_for_api_type("openai") is None
+        assert get_endpoint_for_api_type("openai", "Responses") is None
+        assert (
+            get_endpoint_for_api_type("minimax", "Completions")
+            == "https://api.minimax.io/v1"
+        )
+        # Unknown provider returns None.
+        assert get_endpoint_for_api_type("bogus", "Completions") is None
+
+    # ---- REQUIRES_BY_API_TYPE (optional packages per API type) -----------
+
+    def test_requires_by_api_type_structure():
+        # The native Anthropic SDK API type requires the `anthropic` package.
+        assert REQUIRES_BY_API_TYPE == {"Anthropic": "anthropic"}
+        assert get_required_package_for_api_type("Anthropic") == "anthropic"
+        assert get_required_package_for_api_type("anthropic") == "anthropic"
+        # The OpenAI-SDK API types have no optional-package requirement.
+        assert get_required_package_for_api_type("Responses") is None
+        assert get_required_package_for_api_type("Completions") is None
+        # Unknown API types have no requirement either.
+        assert get_required_package_for_api_type("Bogus") is None
+        assert get_required_package_for_api_type("") is None
+        assert get_required_package_for_api_type(None) is None
+
+    def test_get_all_api_types_includes_native_sdk_types():
+        types = get_all_api_types()
+        assert "Responses" in types
+        assert "Completions" in types
+        assert "Anthropic" in types
+
+    def test_is_api_type_available():
+        # The OpenAI-SDK types are always available (hard dependency).
+        assert is_api_type_available("Responses") is True
+        assert is_api_type_available("Completions") is True
+        # "Anthropic" requires the optional `anthropic` package, which is not
+        # installed in the test environment.
+        assert is_api_type_available("Anthropic") is False
+
+    def test_ensure_api_type_available_aborts_when_package_missing():
+        """Setting the Anthropic API type without the `anthropic` package
+        raises an actionable ValueError (the change is aborted)."""
+        with pytest.raises(ValueError) as exc:
+            ensure_api_type_available("Anthropic")
+        message = str(exc.value)
+        assert "Anthropic" in message
+        assert "anthropic" in message
+        assert "pip install anthropic" in message
+
+    def test_ensure_api_type_available_noop_without_requirement():
+        # No requirement -> no error.
+        ensure_api_type_available("Responses")
+        ensure_api_type_available("Completions")
+        ensure_api_type_available("Bogus")
 
     def test_responses_in_server_flag():
         """Providers whose /responses endpoint keeps server-side state chain

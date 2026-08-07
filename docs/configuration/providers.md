@@ -379,6 +379,30 @@ janito --set-api-key="your-anthropic-api-key" --provider anthropic
 | `claude-opus-4-1` | Highest capability model (200K context) |
 | `claude-haiku-4-5` | Fast, cost-effective model (200K context) |
 
+### Native Anthropic SDK (optional)
+
+By default the `anthropic` provider talks to Anthropic's OpenAI-compatible
+endpoint (`https://api.anthropic.com/v1/`) through the **Chat Completions**
+API. A **native Anthropic SDK** API type (`Anthropic`) is also available: it
+uses the official `anthropic` Python package against
+`https://api.anthropic.com` (per-API-type endpoint, see
+`endpoint_by_api_type`).
+
+The `anthropic` package is **optional**; janito aborts the change (with a
+message naming the package) if you try to select the `Anthropic` API type
+without it:
+
+```bash
+# Install the optional package first
+pip install anthropic
+
+# Then select the native SDK API type
+janito --provider anthropic --set api-type=Anthropic
+
+# Per call
+janito --provider anthropic --api-type Anthropic "Explain quantum computing"
+```
+
 ### Example
 
 ```bash

@@ -18,6 +18,34 @@ Changes since `v4.19.0` (2026-08-06).
   flag). Results include `janitoignore_applied` /
   `files_ignored_by_janitoignore` / `janitoignore_ignored` counters and the
   CLI reports "Respecting .janitoignore" and per-file filtered counts.
+- Support for multiple API SDKs (infrastructure for optional SDKs):
+  - `PROVIDER_INFO` entries can declare a per-API-type endpoint map
+    (`endpoint_by_api_type`, e.g. Anthropic: `{"Completions": ".../v1/",
+    "Anthropic": "https://api.anthropic.com"}`). When the dict holds a
+    **single** entry that URL is the default for *any* API type (unless a
+    config endpoint is set). Endpoint resolution
+    (`resolve_runtime_config`, `--info`, `/show_config` and the web
+    providers/status endpoints) now picks the built-in endpoint for the
+    effective API type via the new `get_endpoint_for_api_type()`.
+  - `REQUIRES_BY_API_TYPE` maps native-SDK API types to their optional
+    Python package (e.g. `{"Anthropic": "anthropic"}`). Attempting to *set*
+    such an API type (`--set api-type=Anthropic` or the web Settings
+    drawer) while the package is missing aborts the change with a message
+    naming the package (`pip install anthropic`), and nothing is written.
+  - New canonical API type `Anthropic` (native Anthropic SDK), accepted by
+    `--api-type` / `--set api-type=...` and exposed via
+    `get_all_api_types()`. The `anthropic` provider now declares
+    `["Completions", "Anthropic"]` as its supported API types (Completions
+    stays the built-in default).
+  - New native Anthropic SDK client (`janito/openai_client/anthropic_api.py`)
+    mirroring the Completions client (streaming, tool calls, MCP, reasoning
+    panel, used-files report, usage summary, Enter-to-cancel); the CLI and
+    web dispatch the `Anthropic` API type to it. The `anthropic` package is
+    imported lazily and guarded with an actionable error.
+- `janito.__main__` now propagates `main()`'s exit code
+  (`sys.exit(main())`), so aborted config changes (e.g. a missing optional
+  package) exit non-zero instead of always `0`.
+
 
 ## [v4.19.0](https://github.com/joaopinto/janito/compare/v4.18.0...v4.19.0) - 2026-08-06
 

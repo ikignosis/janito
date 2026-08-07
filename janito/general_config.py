@@ -320,23 +320,29 @@ def api_type_config_key(provider: str) -> str:
 def normalize_api_type(value: str) -> str:
     """Normalize an API type value to its canonical form.
 
-    Accepts ``responses``/``completions`` in any casing (e.g. the values used
-    with ``--set api-type=...``) and returns the canonical ``\"Responses\"`` or
-    ``\"Completions\"``.
+    Accepts ``responses``/``completions`` (and any native-SDK API type, e.g.
+    ``anthropic``) in any casing -- the values used with ``--set api-type=...``
+    -- and returns the canonical form (``"Responses"`` / ``"Completions"`` /
+    ``"Anthropic"``, ...). The accepted set is the OpenAI-SDK types plus the
+    keys of ``REQUIRES_BY_API_TYPE`` (see ``provider_config.get_all_api_types``).
 
     Args:
         value: The raw API type value
 
     Returns:
-        The canonical API type: ``\"Responses\"`` or ``\"Completions\"``
+        The canonical API type (e.g. ``"Responses"``, ``"Completions"`` or
+        ``"Anthropic"``).
 
     Raises:
-        ValueError: If the value is neither ``Responses`` nor ``Completions``
+        ValueError: If the value is not a known API type
     """
+    from .provider_config import get_all_api_types
+
+    known = get_all_api_types()
     api_type = str(value).strip().capitalize()
-    if api_type not in ("Responses", "Completions"):
+    if api_type not in known:
         raise ValueError(
-            f"Unsupported API type '{value}'. Supported values: Responses, Completions"
+            f"Unsupported API type '{value}'. Supported values: " f"{', '.join(known)}"
         )
     return api_type
 
@@ -721,10 +727,16 @@ def set_config_from_cli(
         value = bool(value)
 
     # Normalize API type values to their canonical casing (accepts
-    # completions/responses in any case) and reject anything else, so a typo
-    # is reported when the value is set rather than at the first API call.
+    # completions/responses/... in any case) and reject anything else, so a
+    # typo is reported when the value is set rather than at the first API
+    # call. Native-SDK API types (e.g. "Anthropic") also require their
+    # optional package to be installed: when it is missing, the change is
+    # aborted (nothing is written) with a message naming the package.
     if base_key == "api-type":
         value = normalize_api_type(value)
+        from .provider_config import ensure_api_type_available
+
+        ensure_api_type_available(value)
 
     set_config_value(key, value)
 

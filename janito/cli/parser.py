@@ -156,10 +156,12 @@ Note: --set and --set-api-key must be used in separate commands.
     parser.add_argument(
         "--api-type",
         metavar="TYPE",
-        choices=["Responses", "Completions"],
+        choices=["Responses", "Completions", "Anthropic"],
         help="API type to use for the provider: 'Responses' (the Responses "
-        "API, server-side conversation state) or 'Completions' (the Chat "
-        "Completions API). Overrides the provider's configured value "
+        "API, server-side conversation state), 'Completions' (the Chat "
+        "Completions API) or 'Anthropic' (the native Anthropic SDK, only for "
+        "providers that declare it and when the optional 'anthropic' package "
+        "is installed). Overrides the provider's configured value "
         "(--set api-type=...) and built-in default (the first entry of its "
         "supported_api_types list, e.g. 'Responses' for OpenAI).",
     )
