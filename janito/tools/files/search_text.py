@@ -22,12 +22,25 @@ from .gitignore_utils import (
     load_gitignore_spec,
     load_janitoignore_spec,
 )
+from .glob_utils import matches_any_pattern
 
 
 @tool(permissions="r")
 class SearchText(BaseTool):
     """
     Tool for searching exact text matches in files and directories.
+
+    Args:
+        paths (str): Space-separated paths to search in (directories or files)
+        query (str): Exact text to search for
+        case_sensitive (bool): If False, perform case-insensitive search
+        max_depth (int, optional): Maximum directory depth to search (None = unlimited)
+        max_results (int, optional): Maximum number of results to return (None = unlimited)
+        count_only (bool): If True, return only match counts instead of matching lines
+        respect_gitignore (bool): Whether to respect .gitignore patterns.
+            .janitoignore patterns are always respected. Default is True.
+        exclude (str, optional): Space-separated glob patterns to exclude
+            (e.g. "*/node_modules/* */__pycache__/*").
     """
 
     def run(
@@ -39,6 +52,7 @@ class SearchText(BaseTool):
         max_results: int | None = 100,
         count_only: bool = False,
         respect_gitignore: bool = True,
+        exclude: str | None = None,
     ) -> dict[str, Any]:
         """
         Search for exact text matches in files and directories.
@@ -52,6 +66,8 @@ class SearchText(BaseTool):
             count_only (bool): If True, return only match counts instead of matching lines
             respect_gitignore (bool): Whether to respect .gitignore patterns.
                 .janitoignore patterns are always respected. Default is True.
+            exclude (str, optional): Space-separated glob patterns to exclude
+                (e.g. "*/node_modules/* */__pycache__/*").
 
         Returns:
             Dict[str, Any]: A dictionary containing:
@@ -75,6 +91,7 @@ class SearchText(BaseTool):
                     "error": "No paths provided",
                     "paths": paths,
                     "respect_gitignore": respect_gitignore,
+                    "exclude": exclude,
                 }
 
             # Validate paths exist
@@ -93,7 +110,13 @@ class SearchText(BaseTool):
                     "error": "No valid paths to search",
                     "paths": paths,
                     "respect_gitignore": respect_gitignore,
+                    "exclude": exclude,
                 }
+
+            # Parse exclude patterns
+            exclude_patterns: list[str] = []
+            if exclude:
+                exclude_patterns = exclude.strip().split()
 
             # Load ignore specs from the current working directory.
             # .janitoignore is always respected; .gitignore only when enabled.
@@ -122,6 +145,7 @@ class SearchText(BaseTool):
                     gitignore_spec,
                     janitoignore_spec,
                     cwd,
+                    exclude_patterns,
                 )
             else:
                 result = self._search_with_content(
@@ -133,6 +157,7 @@ class SearchText(BaseTool):
                     gitignore_spec,
                     janitoignore_spec,
                     cwd,
+                    exclude_patterns,
                 )
 
             if result["success"]:
@@ -156,6 +181,7 @@ class SearchText(BaseTool):
                 "paths": paths,
                 "query": query,
                 "respect_gitignore": respect_gitignore,
+                "exclude": exclude,
             }
 
     def _search_with_content(
@@ -168,15 +194,21 @@ class SearchText(BaseTool):
         gitignore_spec=None,
         janitoignore_spec=None,
         cwd: str | None = None,
+        exclude_patterns: list[str] | None = None,
     ) -> dict[str, Any]:
         """Search and return matching lines with content."""
         matches = []
         files_searched = 0
         files_ignored = 0
         janitoignore_ignored = 0
+        exclude_patterns = exclude_patterns or []
 
         for path in paths:
             if os.path.isfile(path):
+                # Skip single files matched by exclude patterns (matched
+                # against the basename, like FindFiles does for file roots)
+                if matches_any_pattern(os.path.basename(path), exclude_patterns):
+                    continue
                 # Search single file
                 file_matches = self._search_file(
                     path, query, case_sensitive, max_results
@@ -203,6 +235,7 @@ class SearchText(BaseTool):
                     gitignore_spec,
                     janitoignore_spec,
                     cwd,
+                    exclude_patterns,
                 )
                 matches.extend(dir_matches)
                 files_searched += dir_files_searched
@@ -234,6 +267,7 @@ class SearchText(BaseTool):
         gitignore_spec=None,
         janitoignore_spec=None,
         cwd: str | None = None,
+        exclude_patterns: list[str] | None = None,
     ) -> dict[str, Any]:
         """Search and return only match counts."""
         counts = {}
@@ -241,9 +275,13 @@ class SearchText(BaseTool):
         files_searched = 0
         files_ignored = 0
         janitoignore_ignored = 0
+        exclude_patterns = exclude_patterns or []
 
         for path in paths:
             if os.path.isfile(path):
+                # Skip single files matched by exclude patterns
+                if matches_any_pattern(os.path.basename(path), exclude_patterns):
+                    continue
                 # Count matches in single file
                 file_count = self._count_file_matches(path, query, case_sensitive)
                 if file_count > 0:
@@ -266,6 +304,7 @@ class SearchText(BaseTool):
                     gitignore_spec,
                     janitoignore_spec,
                     cwd,
+                    exclude_patterns,
                 )
                 counts.update(dir_counts)
                 total_matches += dir_total
@@ -344,12 +383,14 @@ class SearchText(BaseTool):
         gitignore_spec=None,
         janitoignore_spec=None,
         cwd: str | None = None,
+        exclude_patterns: list[str] | None = None,
     ) -> tuple:
         """Search a directory recursively and return matches."""
         matches = []
         files_searched = 0
         files_ignored = 0
         janitoignore_ignored = 0
+        exclude_patterns = exclude_patterns or []
 
         def _is_ignored(rel_to_cwd: str, is_dir: bool = False) -> bool:
             """Check a path (relative to cwd) against .janitoignore then .gitignore."""
@@ -381,12 +422,17 @@ class SearchText(BaseTool):
                         dirs.clear()  # Don't recurse deeper
                         continue
 
-                # Filter out ignored directories (modify in-place to prevent walking into them)
+                # Filter out ignored/excluded directories (modify in-place to
+                # prevent walking into them)
                 dirs[:] = [
                     d
                     for d in dirs
                     if not _is_ignored(
                         os.path.relpath(os.path.join(root, d), cwd), is_dir=True
+                    )
+                    and not matches_any_pattern(
+                        os.path.relpath(os.path.join(root, d), dirpath),
+                        exclude_patterns,
                     )
                 ]
 
@@ -395,6 +441,12 @@ class SearchText(BaseTool):
 
                     # Skip if ignored by .janitoignore / .gitignore (match relative to cwd)
                     if _is_ignored(os.path.relpath(filepath, cwd)):
+                        continue
+
+                    # Skip if excluded by glob patterns (match relative to search root)
+                    if matches_any_pattern(
+                        os.path.relpath(filepath, dirpath), exclude_patterns
+                    ):
                         continue
 
                     file_matches = self._search_file(
@@ -430,6 +482,7 @@ class SearchText(BaseTool):
         gitignore_spec=None,
         janitoignore_spec=None,
         cwd: str | None = None,
+        exclude_patterns: list[str] | None = None,
     ) -> tuple:
         """Count matches in a directory recursively."""
         counts = {}
@@ -437,6 +490,7 @@ class SearchText(BaseTool):
         files_searched = 0
         files_ignored = 0
         janitoignore_ignored = 0
+        exclude_patterns = exclude_patterns or []
 
         def _is_ignored(rel_to_cwd: str, is_dir: bool = False) -> bool:
             """Check a path (relative to cwd) against .janitoignore then .gitignore."""
@@ -468,12 +522,17 @@ class SearchText(BaseTool):
                         dirs.clear()  # Don't recurse deeper
                         continue
 
-                # Filter out ignored directories (modify in-place to prevent walking into them)
+                # Filter out ignored/excluded directories (modify in-place to
+                # prevent walking into them)
                 dirs[:] = [
                     d
                     for d in dirs
                     if not _is_ignored(
                         os.path.relpath(os.path.join(root, d), cwd), is_dir=True
+                    )
+                    and not matches_any_pattern(
+                        os.path.relpath(os.path.join(root, d), dirpath),
+                        exclude_patterns,
                     )
                 ]
 
@@ -482,6 +541,12 @@ class SearchText(BaseTool):
 
                     # Skip if ignored by .janitoignore / .gitignore (match relative to cwd)
                     if _is_ignored(os.path.relpath(filepath, cwd)):
+                        continue
+
+                    # Skip if excluded by glob patterns (match relative to search root)
+                    if matches_any_pattern(
+                        os.path.relpath(filepath, dirpath), exclude_patterns
+                    ):
                         continue
 
                     file_count = self._count_file_matches(
@@ -529,6 +594,11 @@ def main():
         "--no-gitignore", action="store_true", help="Disable .gitignore filtering"
     )
     parser.add_argument(
+        "--exclude",
+        "-e",
+        help="Space-separated glob patterns to exclude",
+    )
+    parser.add_argument(
         "--json", "-j", action="store_true", help="Output in JSON format"
     )
 
@@ -543,6 +613,7 @@ def main():
         max_results=args.max_results,
         count_only=args.count_only,
         respect_gitignore=not args.no_gitignore,
+        exclude=args.exclude,
     )
 
     if args.json:

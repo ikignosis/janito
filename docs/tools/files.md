@@ -109,11 +109,12 @@ Search for exact text matches.
 | `max_results` | int | `100` | Max results returned |
 | `count_only` | bool | `False` | Return counts instead of lines |
 | `respect_gitignore` | bool | `True` | Skip `.gitignore` paths (`.janitoignore` is always respected) |
+| `exclude` | str | `None` | Space-separated glob patterns to exclude, e.g. `"*/node_modules/* */__pycache__/*"` |
 
 ### SearchRegex
 
 Search for regular expression patterns. Same parameters as `SearchText`, but uses
-`pattern` (a regex) instead of `query`.
+`pattern` (a regex) instead of `query`, and also accepts `exclude`.
 
 ### CreateFile
 
@@ -180,7 +181,11 @@ Move or rename a file or directory.
 2. **Use `ReadFile`** with `from_line`/`to_line` for large files to limit output.
 3. **Use `count_only=True`** with the search tools to gauge how many matches exist
    before pulling full results.
-4. **Provide enough context in `old_str`** for `ReplaceTextInFile` so it matches
+4. **Use `exclude`** with the search tools to skip directories or files you don't
+   care about, e.g. `exclude="node_modules/* dist/*"`. Patterns are matched against
+   the full relative path and the basename, so both `skip/*` and `skip` work to
+   exclude a directory.
+5. **Provide enough context in `old_str`** for `ReplaceTextInFile` so it matches
    exactly once, or set `replace_all=True` intentionally.
 
 ## Direct CLI Testing

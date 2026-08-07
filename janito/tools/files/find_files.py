@@ -11,7 +11,6 @@ For direct execution, use: python -m janito.tools.files.find_files [args]
 For AI function calling, use through the tool registry (tooling.tools_registry).
 """
 
-import fnmatch
 import json
 import os
 import time
@@ -24,31 +23,7 @@ from .gitignore_utils import (
     load_gitignore_spec,
     load_janitoignore_spec,
 )
-
-
-def _matches_any_pattern(path: str, patterns: list[str]) -> bool:
-    """
-    Check if a path matches any of the given glob patterns.
-
-    Matching is performed against both the full relative path (with '/'
-    separators) and the basename, so patterns like '*.py' and
-    '*/tests/*.py' both work as expected.
-
-    Args:
-        path (str): The relative path to check (OS-normalised).
-        patterns (list[str]): List of glob patterns.
-
-    Returns:
-        bool: True if any pattern matches.
-    """
-    # Normalise to forward slashes so patterns are platform-independent
-    normalised = path.replace(os.sep, "/")
-    basename = os.path.basename(normalised)
-
-    for pat in patterns:
-        if fnmatch.fnmatch(normalised, pat) or fnmatch.fnmatch(basename, pat):
-            return True
-    return False
+from .glob_utils import matches_any_pattern
 
 
 def _parse_size(value: int | str | None) -> int | None:
@@ -317,11 +292,19 @@ class FindFiles(BaseTool):
                             dirnames.clear()
                             continue
 
-                    # Prune ignored directories (match relative to cwd)
+                    # Prune ignored/excluded directories (modify in-place so
+                    # they are not walked into)
                     kept: list[str] = []
                     for d in dirnames:
                         rel_d = os.path.relpath(os.path.join(dirpath, d), cwd)
                         if _is_ignored(rel_d, is_dir=True):
+                            continue
+                        # Match against the path relative to the search root so
+                        # pruning uses the same basis as _entry_matches
+                        if matches_any_pattern(
+                            os.path.relpath(os.path.join(dirpath, d), root_path),
+                            exclude_patterns,
+                        ):
                             continue
                         kept.append(d)
                     dirnames[:] = kept
@@ -478,11 +461,11 @@ class FindFiles(BaseTool):
 
         # ── pattern check (full relative path) ──
         if pattern is not None:
-            if not _matches_any_pattern(rel_path, [pattern]):
+            if not matches_any_pattern(rel_path, [pattern]):
                 return False
 
         # ── exclude check ──
-        if exclude_patterns and _matches_any_pattern(rel_path, exclude_patterns):
+        if exclude_patterns and matches_any_pattern(rel_path, exclude_patterns):
             return False
 
         # ── size check (only meaningful for regular files) ──

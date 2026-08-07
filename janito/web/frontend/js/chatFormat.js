@@ -116,13 +116,20 @@ window.ChatFormatMixin = {
                 if (size.length) criteria.push(`size ${size.join(',')}`);
                 if (args.modified_within_days != null) criteria.push(`modified <${args.modified_within_days}d`);
                 if (args.older_than_days != null) criteria.push(`older >${args.older_than_days}d`);
+                if (args.exclude) criteria.push(`exclude '${args.exclude}'`);
                 const crit = criteria.length ? ` [${criteria.join(', ')}]` : '';
                 return pathList(args.paths) + crit;
             }
-            case 'SearchText':
-                return `'${s(args.query)}' in ${pathList(args.paths)}`.trim();
-            case 'SearchRegex':
-                return `'${s(args.pattern)}' in ${pathList(args.paths)}`.trim();
+            case 'SearchText': {
+                const parts = [`'${s(args.query)}' in ${pathList(args.paths)}`];
+                if (args.exclude) parts.push(`exclude '${args.exclude}'`);
+                return parts.join(' ').trim();
+            }
+            case 'SearchRegex': {
+                const parts = [`'${s(args.pattern)}' in ${pathList(args.paths)}`];
+                if (args.exclude) parts.push(`exclude '${args.exclude}'`);
+                return parts.join(' ').trim();
+            }
             case 'ReadEmails':
             case 'CountEmails':
                 return s(args.folder);
