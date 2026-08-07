@@ -11,7 +11,6 @@ from each keyword and intersect (AND) or union (OR) the corresponding
 posting lists to find candidate files.
 """
 
-import hashlib
 import os
 from datetime import datetime
 from enum import Enum, auto
@@ -147,18 +146,6 @@ class CodeSearch:
             self._index = None
 
     @staticmethod
-    def _sha1_of_file(path: Path) -> str:
-        """Compute the SHA-1 hash of a file's contents."""
-        h = hashlib.sha1()
-        with open(path, "rb") as fh:
-            while True:
-                chunk = fh.read(65536)
-                if not chunk:
-                    break
-                h.update(chunk)
-        return h.hexdigest()
-
-    @staticmethod
     def _is_indexable(path: Path, max_size: int = DEFAULT_MAX_FILE_SIZE) -> bool:
         """
         Determine whether a file should be indexed.
@@ -281,7 +268,6 @@ class CodeSearch:
         """
         rel_path = self._relative_path(filepath)
         try:
-            sha1 = self._sha1_of_file(filepath)
             stat = filepath.stat()
             mtime = stat.st_mtime
             size = stat.st_size
@@ -296,7 +282,7 @@ class CodeSearch:
             if existing is not None:
                 index.delete_file(rel_path)
 
-            file_id = index.upsert_file(rel_path, sha1, mtime, size)
+            file_id = index.upsert_file(rel_path, mtime, size)
             index.add_trigrams(file_id, trigrams)
         except (OSError, UnicodeDecodeError):
             # Skip files that cannot be read
@@ -328,8 +314,8 @@ class CodeSearch:
 
         - **Added**: files present on disk but not in the index are indexed.
         - **Deleted**: files in the index but no longer on disk are removed.
-        - **Changed**: files whose SHA-1 hash differs from the indexed hash
-          are re-indexed.
+        - **Changed**: files whose last modified time differs from the
+          indexed one are re-indexed.
         """
         index = self._get_index()
         index.create_schema()  # ensure schema exists
@@ -349,10 +335,10 @@ class CodeSearch:
                 # New file -> index it
                 self._index_file(filepath, index)
             else:
-                # Existing file -> check if content changed
-                current_sha1 = self._sha1_of_file(filepath)
-                if current_sha1 != existing["sha1"]:
-                    # Content changed -> re-index
+                # Existing file -> check if it changed (by mtime)
+                stat = filepath.stat()
+                if stat.st_mtime != existing["mtime"]:
+                    # File modified since it was indexed -> re-index
                     self._index_file(filepath, index)
 
         # Remove deleted files

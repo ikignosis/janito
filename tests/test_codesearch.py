@@ -4,6 +4,7 @@ Tests for the janito.codesearch package.
 
 import os
 import shutil
+import sqlite3
 import tempfile
 import time
 import unittest
@@ -100,12 +101,14 @@ class TestCodeSearch(unittest.TestCase):
         cs.close()
 
     def test_update_changed_file(self):
-        """Test that Update re-indexes changed files."""
+        """Test that Update re-indexes changed files (detected by mtime)."""
         cs = CodeSearch(str(self.source_dir), self.db_path)
         cs.Create()
 
-        # Change a file
-        self._create_file("foo.py", "def foo():\n    return 'changed'\n")
+        # Change a file and bump its mtime so the change is detected
+        # regardless of filesystem timestamp granularity.
+        changed = self._create_file("foo.py", "def foo():\n    return 'changed'\n")
+        os.utime(changed, (time.time() + 10, time.time() + 10))
 
         cs.Update()
         results = list(cs.Find(["changed"], MATCH.AND))
@@ -114,6 +117,92 @@ class TestCodeSearch(unittest.TestCase):
         # Old content should no longer match
         results = list(cs.Find(["bar"], MATCH.AND))
         self.assertNotIn("foo.py", results)
+        cs.close()
+
+    def test_update_ignores_unchanged_file(self):
+        """Update() leaves files alone when their mtime did not change."""
+        cs = CodeSearch(str(self.source_dir), self.db_path)
+        cs.Create()
+
+        from janito.codesearch.index import Index
+
+        # Record the mtime that was indexed for baz.py, then rewrite the
+        # file while keeping that same mtime.
+        indexed_mtime = Index(self.db_path).get_file("baz.py")["mtime"]
+        untouched = self.source_dir / "baz.py"
+        untouched.write_text("changed = True\n", encoding="utf-8")
+        os.utime(untouched, (indexed_mtime, indexed_mtime))
+
+        cs.Update()
+
+        # The file is not re-indexed (its mtime still matches), so the new
+        # content is not searchable.
+        results = list(cs.Find(["changed"], MATCH.AND))
+        self.assertNotIn("baz.py", results)
+        cs.close()
+
+    def test_files_table_has_no_sha1_column(self):
+        """The index tracks files by mtime, not by a content hash."""
+        cs = CodeSearch(str(self.source_dir), self.db_path)
+        cs.Create()
+
+        conn = sqlite3.connect(self.db_path)
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(files)")]
+        conn.close()
+        self.assertNotIn("sha1", cols)
+
+        from janito.codesearch.index import Index
+
+        index = Index(self.db_path)
+        file_info = index.get_file("hello.py")
+        self.assertIsNotNone(file_info)
+        self.assertIn("mtime", file_info)
+        self.assertNotIn("sha1", file_info)
+        index.close()
+        cs.close()
+
+    def test_update_migrates_old_schema(self):
+        """Update() rebuilds an index created with the old sha1 schema."""
+        # Simulate an index produced by the previous schema version (v1),
+        # which stored a per-file SHA-1 content hash.
+        conn = sqlite3.connect(self.db_path)
+        conn.executescript(
+            """
+            CREATE TABLE meta (
+                key   TEXT PRIMARY KEY,
+                value TEXT
+            );
+            CREATE TABLE files (
+                id      INTEGER PRIMARY KEY AUTOINCREMENT,
+                path    TEXT UNIQUE NOT NULL,
+                sha1    TEXT NOT NULL,
+                mtime   REAL NOT NULL,
+                size    INTEGER NOT NULL
+            );
+            CREATE TABLE trigrams (
+                trigram TEXT NOT NULL,
+                file_id INTEGER NOT NULL,
+                PRIMARY KEY (trigram, file_id)
+            );
+            INSERT INTO meta(key, value) VALUES ('schema_version', '1');
+            INSERT INTO files(path, sha1, mtime, size)
+                VALUES ('hello.py', 'abc', 1.0, 10);
+            """
+        )
+        conn.commit()
+        conn.close()
+
+        cs = CodeSearch(str(self.source_dir), self.db_path)
+        cs.Update()  # detects the old schema and rebuilds in place
+
+        conn = sqlite3.connect(self.db_path)
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(files)")]
+        conn.close()
+        self.assertNotIn("sha1", cols)
+
+        # The index was rebuilt from disk and is searchable again
+        results = list(cs.Find(["hello"], MATCH.AND))
+        self.assertIn("hello.py", results)
         cs.close()
 
     def test_binary_and_hidden_files_skipped(self):

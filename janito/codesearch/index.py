@@ -4,7 +4,8 @@ SQLite-based inverted trigram index.
 This module provides the storage layer for the code search index.
 It uses SQLite to store:
 
-1. A ``files`` table mapping file paths to file IDs and content hashes.
+1. A ``files`` table mapping file paths to file IDs, last modified times
+   and sizes.
 2. A ``trigrams`` table mapping each trigram to the set of file IDs
    that contain it (the posting list).
 
@@ -18,8 +19,10 @@ import json
 import sqlite3
 from typing import Dict, List, Optional, Set
 
-# Schema version for forward compatibility
-SCHEMA_VERSION = 1
+# Schema version for forward compatibility. Version 2 dropped the
+# per-file SHA-1 content hash: Update() now detects changed files by
+# comparing the file's last modified time (mtime) instead.
+SCHEMA_VERSION = 2
 
 # Metadata key under which the info of the last Create()/Update() operation
 # is stored (as a JSON blob).
@@ -34,7 +37,6 @@ CREATE TABLE IF NOT EXISTS meta (
 CREATE TABLE IF NOT EXISTS files (
     id      INTEGER PRIMARY KEY AUTOINCREMENT,
     path    TEXT UNIQUE NOT NULL,
-    sha1    TEXT NOT NULL,
     mtime   REAL NOT NULL,
     size    INTEGER NOT NULL
 );
@@ -90,8 +92,17 @@ class Index:
     # ------------------------------------------------------------------
 
     def create_schema(self) -> None:
-        """Create the database schema if it does not exist."""
+        """Create the database schema if it does not exist.
+
+        If the database was created by an older schema version (e.g. an
+        index that still stores a per-file SHA-1 content hash), the tables
+        are dropped and recreated with the current layout. The index is
+        then rebuilt by ``CodeSearch.Create()``/``Update()``.
+        """
         conn = self._get_conn()
+        existing_version = self.get_meta("schema_version")
+        if existing_version is not None and existing_version != str(SCHEMA_VERSION):
+            self.drop_schema()
         conn.executescript(_SCHEMA_SQL)
         conn.execute(
             "INSERT OR REPLACE INTO meta(key, value) VALUES (?, ?)",
@@ -187,13 +198,12 @@ class Index:
     # File metadata
     # ------------------------------------------------------------------
 
-    def upsert_file(self, path: str, sha1: str, mtime: float, size: int) -> int:
+    def upsert_file(self, path: str, mtime: float, size: int) -> int:
         """
         Insert or update a file record and return its file ID.
 
         Args:
             path: Relative file path.
-            sha1: SHA-1 hash of the file content.
             mtime: Modification time (seconds since epoch).
             size: File size in bytes.
 
@@ -203,14 +213,13 @@ class Index:
         conn = self._get_conn()
         conn.execute(
             """
-            INSERT INTO files(path, sha1, mtime, size)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO files(path, mtime, size)
+            VALUES (?, ?, ?)
             ON CONFLICT(path) DO UPDATE SET
-                sha1 = excluded.sha1,
                 mtime = excluded.mtime,
                 size  = excluded.size
             """,
-            (path, sha1, mtime, size),
+            (path, mtime, size),
         )
         conn.commit()
         # Get the file ID (whether inserted or updated)
@@ -222,11 +231,11 @@ class Index:
         Retrieve a file record by path.
 
         Returns:
-            A dict with keys id, path, sha1, mtime, size, or None.
+            A dict with keys id, path, mtime, size, or None.
         """
         conn = self._get_conn()
         row = conn.execute(
-            "SELECT id, path, sha1, mtime, size FROM files WHERE path = ?",
+            "SELECT id, path, mtime, size FROM files WHERE path = ?",
             (path,),
         ).fetchone()
         if row is None:
@@ -234,9 +243,8 @@ class Index:
         return {
             "id": row[0],
             "path": row[1],
-            "sha1": row[2],
-            "mtime": row[3],
-            "size": row[4],
+            "mtime": row[2],
+            "size": row[3],
         }
 
     def get_all_files(self) -> List[dict]:
@@ -244,16 +252,13 @@ class Index:
         Retrieve all file records.
 
         Returns:
-            A list of dicts with keys id, path, sha1, mtime, size.
+            A list of dicts with keys id, path, mtime, size.
         """
         conn = self._get_conn()
         rows = conn.execute(
-            "SELECT id, path, sha1, mtime, size FROM files ORDER BY path"
+            "SELECT id, path, mtime, size FROM files ORDER BY path"
         ).fetchall()
-        return [
-            {"id": r[0], "path": r[1], "sha1": r[2], "mtime": r[3], "size": r[4]}
-            for r in rows
-        ]
+        return [{"id": r[0], "path": r[1], "mtime": r[2], "size": r[3]} for r in rows]
 
     def delete_file(self, path: str) -> None:
         """Delete a file record and all its trigram associations."""
