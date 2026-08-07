@@ -5,6 +5,9 @@ Tests for the AskUser tool (janito/tools/system/ask_user.py).
 Verifies that:
 - The tool returns success with the user's answer.
 - The tool echoes back the question.
+- The question is displayed inside a rich table on stderr.
+- Markdown in the question is rendered (not shown literally).
+- Console markup in the question is not interpreted.
 - The tool handles EOF gracefully (empty answer).
 - The tool handles exceptions gracefully (success=False).
 """
@@ -67,8 +70,8 @@ class TestAskUser:
 
         assert result["question"] == "Meaning of life?"
 
-    def test_question_printed_as_markdown(self):
-        """The question is rendered by rich as markdown on stderr."""
+    def test_question_printed_in_rich_table(self):
+        """The question is rendered by rich inside a table on stderr."""
         question = "What is the capital of France?"
         buffer = StringIO()
 
@@ -76,6 +79,14 @@ class TestAskUser:
             AskUser().run(question=question)
 
         output = buffer.getvalue()
+        # Table box-drawing characters are present (rich Table default box).
+        assert "┏" in output  # top-left corner
+        assert "└" in output  # bottom-left corner
+        assert "┃" in output  # heavy vertical border
+        # The question appears as the row value, labelled by the Field column.
+        assert "Field" in output
+        assert "Value" in output
+        assert "Question" in output
         assert question in output
 
     def test_question_markdown_is_rendered(self):

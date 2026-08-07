@@ -99,6 +99,10 @@ Changes since `v4.19.0` (2026-08-06).
 
 ### Changed
 
+- The `AskUser` tool's prompt is now displayed inside a `rich` table with
+  `Field`/`Value` columns (the `Question` row value is still rendered as
+  markdown), instead of a bare markdown paragraph. The input prompt
+  (`Your answer:`) is unchanged.
 - Moved the native DashScope SDK client from
   `janito/openai_client/dashscope_api.py` to `janito/dashscope_api.py`; it
   now imports its shared Completions helpers from

@@ -176,10 +176,10 @@ class BaseTool(ABC):
         """
         Prompt the user with a question in the console and return their answer.
 
-        This method displays the question to the user (rendered by ``rich``
-        as markdown, like LLM replies) and waits for input. It is intended
-        to be called by tools that need interactive input from the user
-        (e.g. the AskUser tool).
+        This method displays the question to the user inside a ``rich`` table
+        (the question text itself is still rendered as markdown, like LLM
+        replies) and waits for input. It is intended to be called by tools
+        that need interactive input from the user (e.g. the AskUser tool).
 
         Args:
             question (str): The question to display to the user.
@@ -189,9 +189,16 @@ class BaseTool(ABC):
         """
         from rich.console import Console
         from rich.markdown import Markdown
+        from rich.table import Table
 
         console = Console(stderr=True, highlight=False, markup=False)
-        console.print(Markdown(question))
+
+        table = Table(header_style="bold cyan", show_header=True, expand=False)
+        table.add_column("Field", style="cyan", no_wrap=True)
+        table.add_column("Value", overflow="fold")
+        table.add_row("Question", Markdown(question))
+
+        console.print(table)
 
         try:
             answer = input("Your answer: ").strip()
