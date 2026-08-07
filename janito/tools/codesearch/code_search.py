@@ -166,7 +166,9 @@ class CodeSearch(BaseTool):
                 }
 
             self.report_start(
-                f"\U0001f50d Searching code index for {', '.join(keywords) or '(no keywords)'} ({match_mode_str} match)"
+                f"\U0001f50d Searching code index for "
+                f"{', '.join(keywords) or '(no keywords)'} ({match_mode_str} match)",
+                end="",
             )
 
             matches: list[str] = []
