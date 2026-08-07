@@ -10,7 +10,7 @@ import time
 import unittest
 from pathlib import Path
 
-from janito.codesearch import MATCH, CodeSearch
+from janito.codesearch import MATCH, CodeSearch, CodeSearchMatch
 
 
 class TestCodeSearch(unittest.TestCase):
@@ -48,10 +48,12 @@ class TestCodeSearch(unittest.TestCase):
         cs = CodeSearch(str(self.source_dir), self.db_path)
         cs.Create()
 
-        # "hello" and "world" both appear in hello.py
+        # "hello" and "world" both appear on line 2 of hello.py
         results = list(cs.Find(["hello", "world"], MATCH.AND))
-        self.assertIn("hello.py", results)
-        self.assertNotIn("foo.py", results)
+        self.assertEqual(
+            [(m.path, m.lineno, m.content) for m in results],
+            [("hello.py", 2, "    print('hello world')")],
+        )
         cs.close()
 
     def test_create_and_find_or(self):
@@ -59,11 +61,67 @@ class TestCodeSearch(unittest.TestCase):
         cs = CodeSearch(str(self.source_dir), self.db_path)
         cs.Create()
 
-        # "foo" or "bar" should match foo.py and bar.py
+        # "foo" or "bar" should match lines in foo.py and bar.py
         results = list(cs.Find(["foo", "bar"], MATCH.OR))
-        self.assertIn("foo.py", results)
-        self.assertIn("bar.py", results)
+        paths = [m.path for m in results]
+        self.assertIn("foo.py", paths)
+        self.assertIn("bar.py", paths)
         cs.close()
+
+    def test_word_match_not_substring(self):
+        """Keywords must match whole words, not substrings."""
+        self._create_file(
+            "sub.py",
+            "foobar = 1\nfoo = 2\nfoo_bar = 3\n",
+        )
+        cs = CodeSearch(str(self.source_dir), self.db_path)
+        cs.Create()
+
+        # "foo" must not match "foobar" or "foo_bar" (it does match foo.py)
+        results = list(cs.Find(["foo"], MATCH.AND))
+        matches = [(m.path, m.lineno) for m in results]
+        self.assertIn(("sub.py", 2), matches)
+        self.assertNotIn(("sub.py", 1), matches)
+        self.assertNotIn(("sub.py", 3), matches)
+        cs.close()
+
+    def test_and_line_match(self):
+        """AND matches only lines containing all keywords."""
+        self._create_file(
+            "multi.py",
+            "import os\nimport sys\nimport os\n",
+        )
+        cs = CodeSearch(str(self.source_dir), self.db_path)
+        cs.Create()
+
+        # "import" and "os" co-occur only on lines 1 and 3
+        results = list(cs.Find(["import", "os"], MATCH.AND))
+        self.assertEqual(
+            [(m.path, m.lineno) for m in results],
+            [("multi.py", 1), ("multi.py", 3)],
+        )
+        cs.close()
+
+    def test_or_line_match(self):
+        """OR matches any line containing any keyword."""
+        self._create_file(
+            "multi.py",
+            "alpha = 1\nbeta = 2\ngamma = 3\n",
+        )
+        cs = CodeSearch(str(self.source_dir), self.db_path)
+        cs.Create()
+
+        results = list(cs.Find(["alpha", "gamma"], MATCH.OR))
+        self.assertEqual(
+            [(m.path, m.lineno) for m in results],
+            [("multi.py", 1), ("multi.py", 3)],
+        )
+        cs.close()
+
+    def test_match_format(self):
+        """CodeSearchMatch.format() renders 'path:lineno: content'."""
+        m = CodeSearchMatch(path="a.py", lineno=3, content="x = 1")
+        self.assertEqual(m.format(), "a.py:3: x = 1")
 
     def test_find_no_results(self):
         """Test a search that matches nothing."""
@@ -71,6 +129,18 @@ class TestCodeSearch(unittest.TestCase):
         cs.Create()
 
         results = list(cs.Find(["nonexistent", "keyword"], MATCH.AND))
+        self.assertEqual(results, [])
+        cs.close()
+
+    def test_find_skips_missing_files(self):
+        """Find() skips indexed files that no longer exist on disk."""
+        cs = CodeSearch(str(self.source_dir), self.db_path)
+        cs.Create()
+
+        # Remove a file from disk but not from the index (no Update()).
+        os.remove(self.source_dir / "baz.py")
+
+        results = list(cs.Find(["x = 1"], MATCH.AND))
         self.assertEqual(results, [])
         cs.close()
 
@@ -84,7 +154,7 @@ class TestCodeSearch(unittest.TestCase):
 
         cs.Update()
         results = list(cs.Find(["new_function"], MATCH.AND))
-        self.assertIn("new_file.py", results)
+        self.assertIn("new_file.py", [m.path for m in results])
         cs.close()
 
     def test_update_deleted_file(self):
@@ -97,7 +167,7 @@ class TestCodeSearch(unittest.TestCase):
 
         cs.Update()
         results = list(cs.Find(["x = 1"], MATCH.AND))
-        self.assertNotIn("baz.py", results)
+        self.assertNotIn("baz.py", [m.path for m in results])
         cs.close()
 
     def test_update_changed_file(self):
@@ -112,11 +182,11 @@ class TestCodeSearch(unittest.TestCase):
 
         cs.Update()
         results = list(cs.Find(["changed"], MATCH.AND))
-        self.assertIn("foo.py", results)
+        self.assertIn("foo.py", [m.path for m in results])
 
         # Old content should no longer match
         results = list(cs.Find(["bar"], MATCH.AND))
-        self.assertNotIn("foo.py", results)
+        self.assertNotIn("foo.py", [m.path for m in results])
         cs.close()
 
     def test_update_ignores_unchanged_file(self):
@@ -138,7 +208,7 @@ class TestCodeSearch(unittest.TestCase):
         # The file is not re-indexed (its mtime still matches), so the new
         # content is not searchable.
         results = list(cs.Find(["changed"], MATCH.AND))
-        self.assertNotIn("baz.py", results)
+        self.assertNotIn("baz.py", [m.path for m in results])
         cs.close()
 
     def test_files_table_has_no_sha1_column(self):
@@ -202,7 +272,7 @@ class TestCodeSearch(unittest.TestCase):
 
         # The index was rebuilt from disk and is searchable again
         results = list(cs.Find(["hello"], MATCH.AND))
-        self.assertIn("hello.py", results)
+        self.assertIn("hello.py", [m.path for m in results])
         cs.close()
 
     def test_binary_and_hidden_files_skipped(self):
@@ -228,9 +298,14 @@ class TestCodeSearch(unittest.TestCase):
         # ignored_dir/ are gitignored; .gitignore itself is hidden)
         self.assertEqual(cs.stats()["file_count"], 5)
 
-        self.assertNotIn("secret.py", list(cs.Find(["top_secret"], MATCH.AND)))
-        self.assertNotIn("ignored_dir/gen.py", list(cs.Find(["generated"], MATCH.AND)))
-        self.assertIn("hello.py", list(cs.Find(["hello"], MATCH.AND)))
+        self.assertNotIn(
+            "secret.py", [m.path for m in cs.Find(["top_secret"], MATCH.AND)]
+        )
+        self.assertNotIn(
+            "ignored_dir/gen.py",
+            [m.path for m in cs.Find(["generated"], MATCH.AND)],
+        )
+        self.assertIn("hello.py", [m.path for m in cs.Find(["hello"], MATCH.AND)])
         cs.close()
 
     def test_update_removes_newly_gitignored_file(self):
@@ -238,13 +313,13 @@ class TestCodeSearch(unittest.TestCase):
         cs = CodeSearch(str(self.source_dir), self.db_path)
         cs.Create()
 
-        self.assertIn("hello.py", list(cs.Find(["hello"], MATCH.AND)))
+        self.assertIn("hello.py", [m.path for m in cs.Find(["hello"], MATCH.AND)])
 
         # Ignore hello.py and re-sync
         self._create_file(".gitignore", "hello.py\n")
         cs.Update()
 
-        self.assertNotIn("hello.py", list(cs.Find(["hello"], MATCH.AND)))
+        self.assertNotIn("hello.py", [m.path for m in cs.Find(["hello"], MATCH.AND)])
         self.assertEqual(cs.stats()["file_count"], 4)
         cs.close()
 
@@ -257,27 +332,33 @@ class TestCodeSearch(unittest.TestCase):
         cs.Create()
 
         self.assertEqual(cs.stats()["file_count"], 5)
-        self.assertNotIn("secret.py", list(cs.Find(["top_secret"], MATCH.AND)))
+        self.assertNotIn(
+            "secret.py", [m.path for m in cs.Find(["top_secret"], MATCH.AND)]
+        )
         cs.close()
 
     def test_short_keyword_and(self):
-        """Test that short keywords (< 3 chars) in AND mode match all files."""
+        """Short keywords (< 3 chars) are still word-matched on lines."""
         cs = CodeSearch(str(self.source_dir), self.db_path)
         cs.Create()
 
-        results = list(cs.Find(["ab"], MATCH.AND))
-        # Should return all indexed files
-        self.assertEqual(len(results), 5)
+        results = list(cs.Find(["x"], MATCH.AND))
+        self.assertEqual(
+            [(m.path, m.lineno, m.content) for m in results],
+            [("baz.py", 1, "x = 1")],
+        )
         cs.close()
 
     def test_short_keyword_or(self):
-        """Test that short keywords (< 3 chars) in OR mode match all files."""
+        """Short keywords (< 3 chars) are word-matched on lines (OR)."""
         cs = CodeSearch(str(self.source_dir), self.db_path)
         cs.Create()
 
-        results = list(cs.Find(["ab"], MATCH.OR))
-        # Should return all indexed files
-        self.assertEqual(len(results), 5)
+        results = list(cs.Find(["y"], MATCH.OR))
+        self.assertEqual(
+            [(m.path, m.lineno) for m in results],
+            [("baz.py", 2)],
+        )
         cs.close()
 
     def test_empty_keywords(self):
@@ -294,7 +375,7 @@ class TestCodeSearch(unittest.TestCase):
         with CodeSearch(str(self.source_dir), self.db_path) as cs:
             cs.Create()
             results = list(cs.Find(["hello"], MATCH.AND))
-            self.assertIn("hello.py", results)
+            self.assertIn("hello.py", [m.path for m in results])
 
     def test_stats(self):
         """Test the stats method."""

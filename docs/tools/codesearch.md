@@ -34,20 +34,28 @@ janito --init-codesearch
 
 ## CodeSearch
 
-Searches the trigram index for files containing the given keywords. Returns
-the matching file paths relative to the working directory.
+Searches the trigram index for **lines** containing the given keywords.
+Keywords are matched as **whole words** (`foo` does not match `foobar` or
+`foo_bar`). The index narrows the candidate files, and every matching line
+is returned as `path:lineno: content` — the same format used by the other
+search tools.
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `keywords` | `array` of `string` | Yes | Keywords to search for. Keywords shorter than 3 characters cannot be indexed and match every file |
-| `match` | `string` | No | `"and"` (all keywords must be present) or `"or"` (any keyword is sufficient). Defaults to `"and"` |
+| `keywords` | `array` of `string` | Yes | Keywords to search for, matched as whole words. Keywords shorter than 3 characters cannot be indexed and are matched by scanning candidate files directly |
+| `match` | `string` | No | `"and"` (every keyword must appear on the same line) or `"or"` (any keyword is sufficient). Defaults to `"and"` |
 
 Example:
 
 ```python
 result = CodeSearch(keywords=["hello", "world"], match="and")
-# result["results"] == ["hello.py"]
+# result["matches"] == ["hello.py:5:     print('hello world')"]
 ```
+
+For `"and"`, lines are filtered in keyword order: lines containing the
+first keyword are found first, then narrowed to those also containing the
+second, third, ... keyword. Files that are in the index but no longer
+exist on disk are skipped.
 
 The index uses the trigram algorithm described by Russ Cox in *Regular
 Expression Matching with a Trigram Index* (Google Code Search), with SQLite

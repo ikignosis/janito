@@ -28,3 +28,15 @@ Changes since `v4.20.0` (2026-08-07).
   of every file on each refresh. Indexes created with the previous schema
   (v1, with a `sha1` column) are automatically rebuilt on the next
   `Create()`/`Update()`.
+- `CodeSearch.Find()` (and the `CodeSearch` tool) now performs **whole-word
+  matching** and returns **line results** instead of bare file paths.
+  Keywords must appear as whole words (`foo` no longer matches `foobar` or
+  `foo_bar`) on a single line; the trigram index still narrows the candidate
+  files, which are then scanned line by line (files in the index that no
+  longer exist on disk are skipped). For `"and"` every keyword must be on
+  the same line, for `"or"` any keyword suffices. `Find()` yields
+  `CodeSearchMatch(path, lineno, content)` objects, and the tool returns
+  `matches` formatted as `path:lineno: content` (the same format as the
+  other search tools) plus `total_matches`. This breaks the previous
+  filenames-only return contract on purpose; no backwards compatibility is
+  kept.

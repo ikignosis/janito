@@ -80,7 +80,7 @@ def test_should_load_refreshes_stale_index(project_with_index):
     # The refresh ran during load, so the new file is now searchable.
     result = CodeSearch().run(keywords=["freshly_added"], match="and")
     assert result["success"] is True
-    assert "fresh.py" in result["results"]
+    assert any(m.startswith("fresh.py:") for m in result["matches"])
 
     # And the recorded last-update time is now recent.
     with CodeSearchEngine(str(Path.cwd()), str(index_db_path)) as cs:
@@ -102,7 +102,7 @@ def test_should_load_skips_refresh_when_fresh(project_with_index):
     # file is not yet searchable.
     result = CodeSearch().run(keywords=["not_yet_indexed"], match="and")
     assert result["success"] is True
-    assert "late.py" not in result["results"]
+    assert not any(m.startswith("late.py:") for m in result["matches"])
 
 
 def test_should_load_refreshes_index_without_last_update(project_with_index):
@@ -128,7 +128,7 @@ def test_should_load_refreshes_index_without_last_update(project_with_index):
     # the new file is now searchable.
     result = CodeSearch().run(keywords=["legacy_file"], match="and")
     assert result["success"] is True
-    assert "legacy.py" in result["results"]
+    assert any(m.startswith("legacy.py:") for m in result["matches"])
 
 
 # ---------------------------------------------------------------------------
@@ -186,24 +186,26 @@ def test_schema(project_with_index):
 
 
 def test_run_and(project_with_index):
-    """AND search returns files containing all keywords."""
+    """AND search returns lines containing all keywords."""
     result = CodeSearch().run(keywords=["hello", "world"], match="and")
 
     assert result["success"] is True
     assert result["match"] == "and"
-    assert "hello.py" in result["results"]
-    assert "foo.py" not in result["results"]
-    assert result["count"] == 1
+    assert result["matches"] == ["hello.py:2:     print('hello world')"]
+    assert result["total_matches"] == 1
 
 
 def test_run_or(project_with_index):
-    """OR search returns files containing any keyword."""
+    """OR search returns lines containing any keyword."""
     result = CodeSearch().run(keywords=["foo", "bar"], match="or")
 
     assert result["success"] is True
     assert result["match"] == "or"
-    assert "foo.py" in result["results"]
-    assert result["count"] == 1
+    assert result["matches"] == [
+        "foo.py:1: def foo():",
+        "foo.py:2:     return 'bar'",
+    ]
+    assert result["total_matches"] == 2
 
 
 def test_run_default_match_is_and(project_with_index):
@@ -212,16 +214,16 @@ def test_run_default_match_is_and(project_with_index):
 
     assert result["success"] is True
     assert result["match"] == "and"
-    assert "hello.py" in result["results"]
+    assert result["matches"] == ["hello.py:2:     print('hello world')"]
 
 
 def test_run_no_results(project_with_index):
-    """A search matching nothing returns an empty result list."""
+    """A search matching nothing returns an empty match list."""
     result = CodeSearch().run(keywords=["nonexistent", "keyword"], match="and")
 
     assert result["success"] is True
-    assert result["results"] == []
-    assert result["count"] == 0
+    assert result["matches"] == []
+    assert result["total_matches"] == 0
 
 
 def test_run_invalid_match(project_with_index):

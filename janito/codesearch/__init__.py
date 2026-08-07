@@ -12,15 +12,15 @@ Usage:
     cs.Create()           # Build the index from scratch
     cs.Update()           # Incremental update (add/remove/change files)
 
-    # Search for files containing ALL keywords (AND)
-    for path in cs.Find(["foo", "bar"], MATCH.AND):
-        print(path)
+    # Search for lines containing ALL keywords (AND), whole-word matched
+    for m in cs.Find(["foo", "bar"], MATCH.AND):
+        print(m.format())  # -> "path:lineno: content"
 
-    # Search for files containing ANY keyword (OR)
-    for path in cs.Find(["foo", "bar"], MATCH.OR):
-        print(path)
+    # Search for lines containing ANY keyword (OR)
+    for m in cs.Find(["foo", "bar"], MATCH.OR):
+        print(f"{m.path}:{m.lineno}: {m.content}")
 """
 
-from .code_search import MATCH, CodeSearch
+from .code_search import MATCH, CodeSearch, CodeSearchMatch
 
-__all__ = ["CodeSearch", "MATCH"]
+__all__ = ["CodeSearch", "MATCH", "CodeSearchMatch"]

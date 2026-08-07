@@ -37,16 +37,20 @@ class CodeSearch(BaseTool):
     Tool for searching a pre-built trigram code search index.
 
     Searches the SQLite trigram index at ./.janito/codesearch.db (created
-    with `janito --init-codesearch`) for files whose contents contain the
-    given keywords. Returns the matching file paths (relative to the
-    working directory, POSIX style).
+    with `janito --init-codesearch`) for lines whose contents contain the
+    given keywords. Keywords are matched as whole words (so `foo` does not
+    match `foobar` or `foo_bar`), and the results include the file path,
+    line number and line content, in the same "path:lineno: content" format
+    used by the other search tools. With match="and" a line must contain
+    all keywords; with match="or" any keyword is sufficient.
 
     Args:
-        keywords (list[str]): List of keywords to search for. Files are
-            matched through the trigram index; keywords shorter than 3
-            characters cannot be indexed and match every file.
-        match (str): Match mode - "and" (all keywords must be present in
-            a file) or "or" (any keyword is sufficient). Defaults to "and".
+        keywords (list[str]): List of keywords to search for, matched as
+            whole words. Files are narrowed through the trigram index;
+            keywords shorter than 3 characters cannot be indexed and are
+            matched by scanning candidate files directly.
+        match (str): Match mode - "and" (all keywords must be present on
+            a line) or "or" (any keyword is sufficient). Defaults to "and".
     """
 
     @classmethod
@@ -108,22 +112,25 @@ class CodeSearch(BaseTool):
         match: str = "and",
     ) -> dict[str, Any]:
         """
-        Search the code search index for files containing the given keywords.
+        Search the code search index for lines containing the given keywords.
 
         Args:
-            keywords (list[str]): List of keywords to search for. Files are
-                matched through the trigram index; keywords shorter than 3
-                characters cannot be indexed and match every file.
-            match (str): Match mode - "and" (all keywords must be present in
-                a file) or "or" (any keyword is sufficient). Defaults to "and".
+            keywords (list[str]): List of keywords to search for, matched as
+                whole words. Files are narrowed through the trigram index;
+                keywords shorter than 3 characters cannot be indexed and are
+                matched by scanning candidate files directly.
+            match (str): Match mode - "and" (all keywords must be present on
+                a line) or "or" (any keyword is sufficient). Defaults to "and".
 
         Returns:
             Dict[str, Any]: A dictionary containing:
                 - 'success': bool indicating if the search succeeded
                 - 'keywords': the keywords that were searched for
                 - 'match': the match mode used ("and" or "or")
-                - 'results': list of matching file paths (relative, POSIX)
-                - 'count': number of matching files
+                - 'matches': list of matching lines formatted as
+                  'path:lineno: line_content' (the same format used by the
+                  SearchText / SearchRegex tools)
+                - 'total_matches': number of matching lines
                 - 'error': error message if the search failed (only present
                   if success=False)
         """
@@ -162,18 +169,19 @@ class CodeSearch(BaseTool):
                 f"\U0001f50d Searching code index for {', '.join(keywords) or '(no keywords)'} ({match_mode_str} match)"
             )
 
-            results: list[str] = []
+            matches: list[str] = []
             with CodeSearchEngine(str(Path.cwd()), str(index_db_path)) as cs:
-                results = list(cs.Find(keywords, match_mode))
+                for m in cs.Find(keywords, match_mode):
+                    matches.append(m.format())
 
-            self.report_result(f"Found {len(results)} matching files")
+            self.report_result(f"Found {len(matches)} matching lines")
 
             return {
                 "success": True,
                 "keywords": keywords,
                 "match": match_mode_str,
-                "results": results,
-                "count": len(results),
+                "matches": matches,
+                "total_matches": len(matches),
             }
 
         except Exception as e:
@@ -212,9 +220,11 @@ def main():
         print(json.dumps(result, indent=2))
     else:
         if result["success"]:
-            print(f"Found {result['count']} matching files ({result['match']} match):")
-            for path in result["results"]:
-                print(f"  {path}")
+            print(
+                f"Found {result['total_matches']} matching lines ({result['match']} match):"
+            )
+            for match in result["matches"]:
+                print(f"  {match}")
         else:
             print(f"Error: {result['error']}")
 
