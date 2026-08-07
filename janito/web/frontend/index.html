@@ -710,9 +710,11 @@
 
                     <div class="form-group">
                         <label for="api-type-select">API Type</label>
-                        <!-- Combobox: one option per supported API type, bound
-                             to the effective apiType (configured override,
-                             else the provider's built-in default). -->
+                        <!-- Combobox: one option per AVAILABLE supported API
+                             type, bound to the effective apiType (configured
+                             override, else the provider's built-in default).
+                             Types whose optional package is missing are not
+                             listed here — they are shown as info below. -->
                         <select id="api-type-select" x-model="apiType">
                             <option value=""
                                     x-show="supportedApiTypes.length === 0"
@@ -722,9 +724,21 @@
                             </template>
                         </select>
                         <div class="field-hint">
-                            Selects the API the client talks to
-                            (Responses / Chat Completions).
+                            Selects the API the client talks to.
                         </div>
+                        <!-- API types that cannot be used right now because
+                             their optional Python package is missing.  Shown
+                             as info only — they are never added to the
+                             combobox above, so they cannot be selected. -->
+                        <template x-if="unavailableApiTypes.length > 0">
+                            <div class="api-type-unavailable">
+                                <template x-for="u in unavailableApiTypes" :key="u.type">
+                                    <div class="api-type-unavailable-row">
+                                        <span x-text="u.reason"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
                     </div>
 
                     <!-- Responses-in-server only applies to the Responses API. -->

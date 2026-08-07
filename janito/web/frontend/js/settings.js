@@ -142,11 +142,25 @@ function settingsComponent() {
             );
         },
 
-        // The API types the selected provider supports.  Rendered as one
-        // option per type in the API Type combobox.
+        // The API types the selected provider supports AND that can be used
+        // right now (their optional package is installed).  Rendered as one
+        // option per type in the API Type combobox.  Types whose required
+        // package is missing are NOT added to the combo — they are surfaced
+        // separately through unavailableApiTypes so the user sees why they
+        // are missing and how to enable them.
         get supportedApiTypes() {
             const p = this.selectedProviderDetail;
-            return (p && p.supported_api_types) || [];
+            return ((p && p.api_types) || []).filter((t) => t.available).map((t) => t.type);
+        },
+
+        // The API types the selected provider supports but cannot be used
+        // right now because their optional Python package is missing (e.g.
+        // the native "Anthropic" API type without the `anthropic` package).
+        // Shown as info under the combobox (never added to it), each entry
+        // carrying the required package and an install hint.
+        get unavailableApiTypes() {
+            const p = this.selectedProviderDetail;
+            return ((p && p.api_types) || []).filter((t) => !t.available);
         },
 
         // True while the selected API type is the Responses API, which is

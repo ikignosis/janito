@@ -199,6 +199,21 @@ input.key-unset { color: var(--text-muted); font-style: italic; }
    (single-type providers simply show a one-option list).  Styled by the
    shared ``.form-group select`` rule above. */
 
+/* API types whose optional Python package is missing: shown as an info
+   note under the combobox (never added to it), naming the package and the
+   install command so the user knows how to enable the type. */
+.api-type-unavailable {
+    margin-top: 8px;
+    padding: 7px 9px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-tertiary);
+    font-size: 11.5px;
+    line-height: 1.45;
+    color: var(--text-secondary);
+}
+.api-type-unavailable-row + .api-type-unavailable-row { margin-top: 4px; }
+
 /* Responses-in-server switch (only rendered while the API type is Responses). */
 .switch-row {
     display: flex;

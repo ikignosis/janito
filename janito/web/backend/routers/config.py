@@ -276,6 +276,11 @@ async def list_providers(request: Request):
     * ``config.session_provider`` — a session-only override picked from the
       chat-page combo (never written to disk); the provider that the next
       prompt actually uses is flagged ``effective: true``.
+    * ``api_types`` — per-API-type availability for the Settings drawer's
+      API Type combobox.  Each entry is ``{type, available}`` plus, for
+      optional-package types, ``required_package`` and (when the package is
+      missing) a ``reason`` with the install hint.  Unavailable types are
+      kept out of the combobox and surfaced as info instead.
     """
     from janito.auth_config import get_api_key
     from janito.general_config import (
@@ -290,7 +295,9 @@ async def list_providers(request: Request):
         PROVIDER_INFO,
         get_default_api_type_from_provider,
         get_endpoint_for_api_type,
+        get_required_package_for_api_type,
         get_responses_in_server_from_provider,
+        is_api_type_available,
     )
 
     config = _get_config(request)
@@ -327,6 +334,28 @@ async def list_providers(request: Request):
         api_type_override = load_api_type(name)
         responses_in_server = get_responses_in_server_from_provider(name)
 
+        # Per-API-type availability for the Settings drawer's API Type
+        # combobox.  The OpenAI-SDK types (Responses / Completions) are
+        # always available (the `openai` package is a hard dependency);
+        # native-SDK types (e.g. ``Anthropic``) are only available while
+        # their optional package is installed.  The web UI keeps the
+        # unavailable types OUT of the combobox and shows this info instead,
+        # so the user sees why a type is missing and how to enable it.
+        api_types = []
+        for api_type in info.get("supported_api_types") or []:
+            package = get_required_package_for_api_type(api_type)
+            available = is_api_type_available(api_type)
+            entry = {"type": api_type, "available": available}
+            if package is not None:
+                entry["required_package"] = package
+            if not available:
+                entry["reason"] = (
+                    f"The {api_type} API requires the optional '{package}' "
+                    f"package, which is not installed. Install it with: "
+                    f"pip install {package}"
+                )
+            api_types.append(entry)
+
         providers.append(
             {
                 "name": name,
@@ -336,6 +365,7 @@ async def list_providers(request: Request):
                 "api_type": api_type_override,
                 "default_api_type": get_default_api_type_from_provider(name),
                 "supported_api_types": info.get("supported_api_types"),
+                "api_types": api_types,
                 "endpoint_by_api_type": info.get("endpoint_by_api_type"),
                 "responses_in_server": responses_in_server,
                 "default_responses_in_server": info.get("responses_in_server", True),

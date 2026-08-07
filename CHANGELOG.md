@@ -174,6 +174,15 @@ Changes since `v4.18.0` (2026-08-03).
 
 ### Changed
 
+- The web Settings drawer's **API Type** combobox now lists only the API
+  types that can actually be used: types whose required optional Python
+  package is missing (e.g. the native `Anthropic` type without the
+  `anthropic` package) are **not** added to the combo — instead they are
+  shown as an info note under it reading "The `<type>` API requires the
+  optional `<package>` package…" and naming the `pip install` command to
+  enable them. The providers endpoint now exposes per-type availability
+  (`api_types`: `type` / `available` / `required_package` / `reason`)
+  alongside the existing `supported_api_types` list.
 - Remove the "Privileges: read · write · exec" line from the web
   Settings drawer (it duplicated the status-bar badges and exposed internal
   `-r`/`-w`/`-x` flag state); the now-unused `fine-print` utility class was

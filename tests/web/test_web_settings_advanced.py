@@ -23,12 +23,19 @@ These tests pin down:
    rejects invalid values / unknown providers with ``400``;
 2. an empty ``endpoint`` / ``api_type`` clears the per-provider override;
 3. the providers endpoint exposes the Advanced fields
-   (``api_type``, ``supported_api_types``, ``responses_in_server``,
-   ``default_responses_in_server``, ``responses_in_server_override``);
+   (``api_type``, ``supported_api_types``, ``api_types``,
+   ``responses_in_server``, ``default_responses_in_server``,
+   ``responses_in_server_override``);
 4. the frontend wiring: the Advanced section is a collapsed ``<details>``,
    the endpoint is a text input, the API type is a combobox, and the
    ResponsesInServer switch is gated on the Responses API type; Save
    persists only the changed Advanced fields and re-baselines the drawer.
+
+The ``api_types`` field also carries per-type *availability*: API types
+whose optional Python package is missing (e.g. the native ``Anthropic``
+type without the ``anthropic`` package) are flagged ``available: false``
+with the required package and an install hint.  The web UI keeps those
+types OUT of the combobox and shows the info instead.
 """
 
 import sys
@@ -42,6 +49,7 @@ import pytest
 
 import janito.config_dir as config_dir_mod
 import janito.general_config as gc
+from janito.provider_config import is_api_type_available
 
 # The web routes need the optional `web` extra (fastapi). Skip gracefully
 # when fastapi is not installed (e.g. minimal tox envs).
@@ -309,6 +317,62 @@ def test_providers_endpoint_exposes_advanced_fields(client):
     # base_url reflects the default API type's built-in endpoint.
     assert anthropic["base_url"] == "https://api.anthropic.com/v1/"
 
+    # Every provider exposes per-type availability alongside the plain list.
+    for entry in entries.values():
+        by_type = {t["type"]: t for t in entry["api_types"]}
+        assert list(by_type) == entry["supported_api_types"]
+        for api_type, detail in by_type.items():
+            assert "available" in detail
+            # OpenAI-SDK types always carry no package requirement; the
+            # native types name the package and (when missing) an install hint.
+            if api_type in ("Responses", "Completions"):
+                assert detail["available"] is True
+                assert "required_package" not in detail
+                assert "reason" not in detail
+            else:
+                assert detail["required_package"]
+                assert detail["available"] == is_api_type_available(api_type)
+                if not detail["available"]:
+                    assert f"The {api_type} API requires" in detail["reason"]
+                    assert "pip install" in detail["reason"]
+                    assert detail["required_package"] in detail["reason"]
+
+
+@requires_fastapi
+def test_providers_endpoint_flags_unavailable_api_type(monkeypatch, client):
+    """An API type whose optional package is missing is exposed as
+    unavailable (with the package name and an install hint) so the web UI can
+    show the info WITHOUT adding the type to the combobox.
+
+    The optional `anthropic` package is forced missing regardless of the
+    environment, making the native-SDK API type deterministically
+    unavailable while the OpenAI-SDK types stay usable.
+    """
+    import importlib.util
+
+    monkeypatch.setattr(importlib.util, "find_spec", lambda name: None)
+
+    anthropic = _providers_by_name(client)["anthropic"]
+    by_type = {t["type"]: t for t in anthropic["api_types"]}
+
+    # The OpenAI-compatible Completions type is always available (no entry
+    # in REQUIRES_BY_API_TYPE), so it stays selectable in the combobox.
+    assert by_type["Completions"]["available"] is True
+    assert "required_package" not in by_type["Completions"]
+    assert "reason" not in by_type["Completions"]
+
+    # The native Anthropic type needs the optional `anthropic` package: it
+    # is flagged unavailable with a self-contained reason naming the type,
+    # the package and an install hint.
+    native = by_type["Anthropic"]
+    assert native["available"] is False
+    assert native["required_package"] == "anthropic"
+    assert native["reason"] == (
+        "The Anthropic API requires the optional 'anthropic' package, "
+        "which is not installed. Install it with: pip install anthropic"
+    )
+    assert native["type"] == "Anthropic"
+
 
 # ---------------------------------------------------------------------------
 # Frontend wiring (static checks, no server needed)
@@ -354,6 +418,12 @@ def test_index_html_api_type_combobox():
     # ...with one option per supported API type.
     assert 'x-for="t in supportedApiTypes"' in html
     assert ':value="t" x-text="t"' in html
+    # Unavailable API types (missing optional package) are NOT added to the
+    # combo: they are shown as info below it instead.
+    assert 'x-if="unavailableApiTypes.length > 0"' in html
+    assert 'x-for="u in unavailableApiTypes"' in html
+    assert 'class="api-type-unavailable"' in html
+    assert 'x-text="u.reason"' in html
 
 
 def test_index_html_responses_in_server_gated_on_responses():
@@ -392,6 +462,14 @@ def test_settings_js_resolves_api_type_from_provider():
     # The supported-types list drives the combobox options in the template.
     assert "get supportedApiTypes()" in js
     assert "p.supported_api_types" in js
+    # supportedApiTypes only yields AVAILABLE types (the combo never lists
+    # an API type whose optional package is missing)...
+    assert ".filter((t) => t.available)" in js
+    assert "t.available" in js
+    # ...and the unavailable ones are surfaced separately, with their
+    # required package / install hint, so the user sees why they are missing.
+    assert "get unavailableApiTypes()" in js
+    assert ".filter((t) => !t.available)" in js
 
 
 def test_settings_js_can_save_includes_advanced():
@@ -427,3 +505,5 @@ def test_drawers_css_styles_advanced_section():
     assert ".switch-track" in css
     assert ".switch-input:checked + .switch-track" in css
     assert ".field-hint" in css
+    # Styles the unavailable-API-type info note shown under the combobox.
+    assert ".api-type-unavailable" in css
