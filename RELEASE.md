@@ -15,12 +15,13 @@ Prerequisites:
 - `CHANGELOG.md` has been kept up to date while developing — new entries
   go under the `## [Unreleased]` section.
 
-The process is four steps:
+The process is five steps:
 
 1. [Determine the version](#1-determine-the-version)
 2. [Run the promote_changelog script](#2-run-the-promote_changelog-script)
 3. [Commit the changelog changes](#3-commit-the-changelog-changes)
 4. [Tag](#4-tag)
+5. [Push the tag](#5-push-the-tag)
 
 ## 1. Determine the version
 
@@ -96,10 +97,17 @@ git commit -m "chore(release): promote CHANGELOG for v4.19.0"
 
 ## 4. Tag
 
-Create an **annotated** tag for the version and push it:
+Create an **annotated** tag for the version:
 
 ```bash
 git tag -a v4.19.0 -m "Release version 4.19.0"
+```
+
+## 5. Push the tag
+
+Push `main` and the new tag:
+
+```bash
 git push origin main
 git push origin v4.19.0
 ```
