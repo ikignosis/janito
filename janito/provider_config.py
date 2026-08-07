@@ -105,8 +105,11 @@ PROVIDER_INFO: dict[str, dict] = {
         # Completions API where the default model works. The Responses API is
         # still supported for models that expose it (e.g. qwen3.7-max,
         # qwen3.6-plus, qwen3.5-plus, qwen-plus, qwen-flash) and can be
-        # selected with --set api-type=Responses or --api-type responses.
-        "supported_api_types": ["Completions", "Responses"],
+        # selected with --set api-type=Responses or --api-type responses. The
+        # native DashScope SDK API type is selectable with
+        # --set api-type=DashScope or --api-type DashScope (it requires the
+        # optional `dashscope` package; see REQUIRES_BY_API_TYPE).
+        "supported_api_types": ["Completions", "Responses", "DashScope"],
         "max_input_tokens": 1000000,  # 1M
         "max_output_tokens": 131072,
         "reasoning_level": "xhigh",
@@ -126,6 +129,14 @@ PROVIDER_INFO: dict[str, dict] = {
             },
         ],
         "endpoint": "https://dashscope-intl.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1",
+        # Per-API-type endpoints: the OpenAI-compatible Chat Completions /
+        # Responses URL and the native DashScope SDK base URL (the SDK talks
+        # to the DashScope native API, not the compatible-mode gateway).
+        "endpoint_by_api_type": {
+            "Completions": "https://dashscope-intl.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1",
+            "Responses": "https://dashscope-intl.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1",
+            "DashScope": "https://dashscope-intl.aliyuncs.com/api/v1",
+        },
     },
     "zai": {
         "model": "glm-5.2",
@@ -198,6 +209,7 @@ PROVIDER_INFO: dict[str, dict] = {
 # installed (see :func:`ensure_api_type_available`).
 REQUIRES_BY_API_TYPE: dict[str, str] = {
     "Anthropic": "anthropic",
+    "DashScope": "dashscope",
 }
 
 

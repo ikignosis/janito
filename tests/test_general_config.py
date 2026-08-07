@@ -355,10 +355,34 @@ if pytest is not None:
         # Nothing should have been written
         assert _read_config(config_path) == {}
 
+    def test_set_api_type_dashscope_aborts_without_package(monkeypatch, tmp_path):
+        """Setting the native DashScope SDK API type without the optional
+        `dashscope` package aborts the change (nothing is written) with a
+        message naming the package."""
+        import importlib.util
+
+        # Simulate a test environment without the optional package so the
+        # guard is exercised even when `dashscope` is installed locally.
+        monkeypatch.setattr(importlib.util, "find_spec", lambda name: None)
+        config_path = _use_temp_config(monkeypatch, tmp_path)
+        with pytest.raises(ValueError) as exc:
+            gc.set_config_from_cli("api-type=dashscope", "alibaba")
+        message = str(exc.value)
+        assert "DashScope" in message
+        assert "dashscope" in message
+        assert "pip install dashscope" in message
+        # Nothing should have been written
+        assert _read_config(config_path) == {}
+
     def test_normalize_api_type_accepts_native_sdk_types():
         assert gc.normalize_api_type("anthropic") == "Anthropic"
         assert gc.normalize_api_type("ANTHROPIC") == "Anthropic"
         assert gc.normalize_api_type("Anthropic") == "Anthropic"
+        # "DashScope" keeps its canonical casing (capitalize() would mangle it
+        # into "Dashscope", so matching is case-insensitive over the known set).
+        assert gc.normalize_api_type("dashscope") == "DashScope"
+        assert gc.normalize_api_type("DASHSCOPE") == "DashScope"
+        assert gc.normalize_api_type("DashScope") == "DashScope"
 
     def test_load_api_type_unknown_provider_returns_none(monkeypatch, tmp_path):
         _use_temp_config(monkeypatch, tmp_path)
@@ -389,6 +413,8 @@ if pytest is not None:
         assert gc.resolve_api_type("Responses", "deepseek") == "Responses"
         # Case is normalized.
         assert gc.resolve_api_type("responses", "deepseek") == "Responses"
+        # The native DashScope SDK type resolves (canonical casing) for alibaba.
+        assert gc.resolve_api_type("dashscope", "alibaba") == "DashScope"
 
     def test_resolve_api_type_from_config(monkeypatch, tmp_path):
         _use_temp_config(monkeypatch, tmp_path)

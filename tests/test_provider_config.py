@@ -191,15 +191,18 @@ if pytest is not None:
         # Alibaba supports both APIs but defaults to Completions: its built-in
         # default model qwen3.8-max is not yet supported by DashScope's
         # /responses endpoint, so the out-of-the-box default must use the
-        # Completions API where the model works.
+        # Completions API where the model works. The native DashScope SDK
+        # API type is also supported.
         assert get_supported_api_types_from_provider("alibaba") == [
             "Completions",
             "Responses",
+            "DashScope",
         ]
         assert get_default_api_type_from_provider("alibaba") == "Completions"
         assert PROVIDER_INFO["alibaba"]["supported_api_types"] == [
             "Completions",
             "Responses",
+            "DashScope",
         ]
         # DeepSeek supports both API types, Responses first (the default).
         assert get_supported_api_types_from_provider("deepseek") == [
@@ -237,6 +240,13 @@ if pytest is not None:
             "Completions": "https://api.anthropic.com/v1/",
             "Anthropic": "https://api.anthropic.com",
         }
+        # Alibaba maps the OpenAI-compatible types to the compatible-mode
+        # gateway and the native DashScope SDK to the native API base URL.
+        assert get_endpoint_by_api_type("alibaba") == {
+            "Completions": "https://dashscope-intl.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1",
+            "Responses": "https://dashscope-intl.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1",
+            "DashScope": "https://dashscope-intl.aliyuncs.com/api/v1",
+        }
         # Providers without the map return None (single shared endpoint).
         assert get_endpoint_by_api_type("openai") is None
         assert get_endpoint_by_api_type("minimax") is None
@@ -261,6 +271,25 @@ if pytest is not None:
         )
         # Without an API type the single built-in endpoint applies.
         assert get_endpoint_for_api_type("anthropic") == "https://api.anthropic.com/v1/"
+        # Alibaba: the OpenAI-compatible types keep the compatible-mode URL
+        # and the native DashScope SDK type uses the native API base URL.
+        assert (
+            get_endpoint_for_api_type("alibaba", "Completions")
+            == "https://dashscope-intl.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1"
+        )
+        assert (
+            get_endpoint_for_api_type("alibaba", "Responses")
+            == "https://dashscope-intl.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1"
+        )
+        assert (
+            get_endpoint_for_api_type("alibaba", "DashScope")
+            == "https://dashscope-intl.aliyuncs.com/api/v1"
+        )
+        # Without an API type the provider's single built-in endpoint applies.
+        assert (
+            get_endpoint_for_api_type("alibaba")
+            == "https://dashscope-intl.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1"
+        )
 
     def test_get_endpoint_for_api_type_single_entry_fallback():
         """A single-entry endpoint_by_api_type dict is the default for ANY
@@ -312,10 +341,17 @@ if pytest is not None:
     # ---- REQUIRES_BY_API_TYPE (optional packages per API type) -----------
 
     def test_requires_by_api_type_structure():
-        # The native Anthropic SDK API type requires the `anthropic` package.
-        assert REQUIRES_BY_API_TYPE == {"Anthropic": "anthropic"}
+        # The native Anthropic SDK API type requires the `anthropic` package
+        # and the native DashScope SDK API type requires the `dashscope`
+        # package.
+        assert REQUIRES_BY_API_TYPE == {
+            "Anthropic": "anthropic",
+            "DashScope": "dashscope",
+        }
         assert get_required_package_for_api_type("Anthropic") == "anthropic"
         assert get_required_package_for_api_type("anthropic") == "anthropic"
+        assert get_required_package_for_api_type("DashScope") == "dashscope"
+        assert get_required_package_for_api_type("dashscope") == "dashscope"
         # The OpenAI-SDK API types have no optional-package requirement.
         assert get_required_package_for_api_type("Responses") is None
         assert get_required_package_for_api_type("Completions") is None
@@ -329,24 +365,41 @@ if pytest is not None:
         assert "Responses" in types
         assert "Completions" in types
         assert "Anthropic" in types
+        assert "DashScope" in types
 
-    def test_is_api_type_available():
+    def test_is_api_type_available(monkeypatch):
         # The OpenAI-SDK types are always available (hard dependency).
         assert is_api_type_available("Responses") is True
         assert is_api_type_available("Completions") is True
-        # "Anthropic" requires the optional `anthropic` package, which is not
-        # installed in the test environment.
-        assert is_api_type_available("Anthropic") is False
+        # The native-SDK API types require optional packages; simulate a test
+        # environment where neither is installed so the assertions hold even
+        # when the packages are present on the machine running the suite.
+        import importlib.util
 
-    def test_ensure_api_type_available_aborts_when_package_missing():
+        monkeypatch.setattr(importlib.util, "find_spec", lambda name: None)
+        assert is_api_type_available("Anthropic") is False
+        assert is_api_type_available("DashScope") is False
+
+    def test_ensure_api_type_available_aborts_when_package_missing(monkeypatch):
         """Setting the Anthropic API type without the `anthropic` package
         raises an actionable ValueError (the change is aborted)."""
+        import importlib.util
+
+        monkeypatch.setattr(importlib.util, "find_spec", lambda name: None)
         with pytest.raises(ValueError) as exc:
             ensure_api_type_available("Anthropic")
         message = str(exc.value)
         assert "Anthropic" in message
         assert "anthropic" in message
         assert "pip install anthropic" in message
+
+        # Same for the native DashScope SDK API type.
+        with pytest.raises(ValueError) as exc:
+            ensure_api_type_available("DashScope")
+        message = str(exc.value)
+        assert "DashScope" in message
+        assert "dashscope" in message
+        assert "pip install dashscope" in message
 
     def test_ensure_api_type_available_noop_without_requirement():
         # No requirement -> no error.

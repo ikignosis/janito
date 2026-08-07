@@ -39,10 +39,13 @@ def _make_send_prompt_func(
       - Anthropic mode: forwards ``previous_messages`` / ``instructions`` to
         ``anthropic_api.send_prompt`` (the native Anthropic SDK) and returns
         the assistant text (the history list is mutated, like Completions).
+      - DashScope mode: forwards ``previous_messages`` / ``instructions`` to
+        ``dashscope_api.send_prompt`` (the native DashScope SDK) and returns
+        the assistant text (the history list is mutated, like Completions).
 
     Args:
-        api_type: The canonical API type: "Responses", "Completions" or
-            "Anthropic".
+        api_type: The canonical API type: "Responses", "Completions",
+            "Anthropic" or "DashScope".
         cli_model: Model passed via ``--model``.
         cli_provider: Provider passed via ``--provider``.
         reasoning_level: Reasoning depth passed via ``--reasoning-level``.
@@ -91,6 +94,35 @@ def _make_send_prompt_func(
             thinking=False,
         ):
             return send_anthropic(
+                prompt,
+                verbose=verbose,
+                previous_messages=previous_messages,
+                instructions=instructions,
+                tools=tools,
+                thinking=thinking,
+                cli_model=cli_model,
+                cli_provider=cli_provider,
+                reasoning_level=reasoning_level,
+            )
+
+        return send
+
+    if api_type == "DashScope":
+        # Native DashScope SDK client (the optional `dashscope` package; the
+        # API type is only settable when that package is installed).
+        from ..dashscope_api import send_prompt as send_dashscope
+
+        def send(
+            prompt,
+            verbose=False,
+            previous_messages=None,
+            previous_response_id=None,
+            previous_items=None,
+            instructions=None,
+            tools=None,
+            thinking=False,
+        ):
+            return send_dashscope(
                 prompt,
                 verbose=verbose,
                 previous_messages=previous_messages,

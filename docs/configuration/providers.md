@@ -142,6 +142,43 @@ janito --provider alibaba --set api-type=Responses
 janito --provider alibaba --api-type responses --model qwen3.7-max "Your prompt"
 ```
 
+### Native DashScope SDK (optional)
+
+By default the `alibaba` provider talks to DashScope's OpenAI-compatible
+endpoint through the **Chat Completions** API. A **native DashScope SDK** API
+type (`DashScope`) is also available: it uses the official `dashscope` Python
+package against the DashScope native API (`https://dashscope-intl.aliyuncs.com/api/v1`,
+per-API-type endpoint, see `endpoint_by_api_type`).
+
+The `dashscope` package is **optional**; janito aborts the change (with a
+message naming the package) if you try to select the `DashScope` API type
+without it:
+
+```bash
+# Install the optional package first
+pip install dashscope
+
+# Then select the native SDK API type
+janito --provider alibaba --set api-type=DashScope
+
+# Per call
+janito --provider alibaba --api-type DashScope "Explain quantum computing"
+```
+
+Thinking mode is enabled out of the box here too: the native SDK receives
+`enable_thinking=True` (Qwen models reason by default). The `dashscope`
+package does not use `reasoning_effort`, so `--reasoning-level` is accepted
+for parity but not mapped to a DashScope parameter.
+
+The DashScope native API serves models from two generation endpoints:
+`text-generation` for plain-text models (`qwen-plus`, `qwen-flash`, ...) and
+`multimodal-generation` for multimodal models (Qwen-VL / Qwen-Omni, the
+`qwen3.x-plus` generation, and the default model `qwen3.8-max`). janito picks
+the endpoint from the model name automatically and, if the API ever rejects
+the model for that endpoint (`InvalidParameter: url error, please check
+url`), retries once on the other endpoint — so the default `qwen3.8-max`
+model works out of the box here too.
+
 ### Example
 
 ```bash

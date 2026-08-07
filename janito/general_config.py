@@ -321,17 +321,18 @@ def normalize_api_type(value: str) -> str:
     """Normalize an API type value to its canonical form.
 
     Accepts ``responses``/``completions`` (and any native-SDK API type, e.g.
-    ``anthropic``) in any casing -- the values used with ``--set api-type=...``
-    -- and returns the canonical form (``"Responses"`` / ``"Completions"`` /
-    ``"Anthropic"``, ...). The accepted set is the OpenAI-SDK types plus the
-    keys of ``REQUIRES_BY_API_TYPE`` (see ``provider_config.get_all_api_types``).
+    ``anthropic``, ``dashscope``) in any casing -- the values used with
+    ``--set api-type=...`` -- and returns the canonical form
+    (``"Responses"`` / ``"Completions"`` / ``"Anthropic"`` / ``"DashScope"``,
+    ...). The accepted set is the OpenAI-SDK types plus the keys of
+    ``REQUIRES_BY_API_TYPE`` (see ``provider_config.get_all_api_types``).
 
     Args:
         value: The raw API type value
 
     Returns:
-        The canonical API type (e.g. ``"Responses"``, ``"Completions"`` or
-        ``"Anthropic"``).
+        The canonical API type (e.g. ``"Responses"``, ``"Completions"``,
+        ``"Anthropic"`` or ``"DashScope"``).
 
     Raises:
         ValueError: If the value is not a known API type
@@ -339,12 +340,13 @@ def normalize_api_type(value: str) -> str:
     from .provider_config import get_all_api_types
 
     known = get_all_api_types()
-    api_type = str(value).strip().capitalize()
-    if api_type not in known:
-        raise ValueError(
-            f"Unsupported API type '{value}'. Supported values: " f"{', '.join(known)}"
-        )
-    return api_type
+    raw = str(value).strip()
+    for api_type in known:
+        if api_type.lower() == raw.lower():
+            return api_type
+    raise ValueError(
+        f"Unsupported API type '{value}'. Supported values: " f"{', '.join(known)}"
+    )
 
 
 def load_model_from_config(cli_provider: str | None = None) -> str | None:

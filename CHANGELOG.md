@@ -77,12 +77,33 @@ Changes since `v4.19.0` (2026-08-06).
     panel, used-files report, usage summary, Enter-to-cancel); the CLI and
     web dispatch the `Anthropic` API type to it. The `anthropic` package is
     imported lazily and guarded with an actionable error.
+  - New canonical API type `DashScope` (native DashScope SDK) for the
+    `alibaba` provider: `--set api-type=DashScope` / `--api-type DashScope`
+    talks to the DashScope native API through the official `dashscope`
+    Python package (base URL `https://dashscope-intl.aliyuncs.com/api/v1`,
+    per-API-type endpoint via `endpoint_by_api_type`). The `alibaba`
+    provider now declares `["Completions", "Responses", "DashScope"]` as its
+    supported API types (Completions stays the built-in default), and
+    `REQUIRES_BY_API_TYPE` maps `DashScope` to the optional `dashscope`
+    package (setting it without the package aborts with a `pip install
+    dashscope` hint). New native DashScope SDK client
+    (`janito/openai_client/dashscope_api.py`) mirrors the Completions client
+    (streaming with `incremental_output`, tool calls, MCP, reasoning panel,
+    `enable_thinking` for Qwen models, used-files report, usage summary,
+    Enter-to-cancel); the CLI and web dispatch the `DashScope` API type to
+    it. `normalize_api_type()` now matches case-insensitively so
+    `dashscope` canonicalizes to `DashScope`.
 - `janito.__main__` now propagates `main()`'s exit code
   (`sys.exit(main())`), so aborted config changes (e.g. a missing optional
   package) exit non-zero instead of always `0`.
 
 ### Changed
 
+- Moved the native DashScope SDK client from
+  `janito/openai_client/dashscope_api.py` to `janito/dashscope_api.py`; it
+  now imports its shared Completions helpers from
+  `janito.openai_client.completions_api`. No public API change (the module
+  is only imported internally by `janito.cli.chat` and the tests).
 - The code search indexer (`CodeSearch.Create()` / `CodeSearch.Update()`,
   used by `--init-codesearch` and the `CodeSearch` tool's 1-day refresh)
   now **skips files and directories matched by the working directory's
@@ -92,6 +113,30 @@ Changes since `v4.19.0` (2026-08-06).
   result the index only covers files the file tools would search, and a
   file that becomes gitignored after the index was built is dropped on the
   next `Update()`.
+
+### Fixed
+
+- The native DashScope SDK API type no longer fails with
+  `InvalidParameter: url error, please check url` for **multimodal** models
+  such as the `alibaba` default `qwen3.8-max`. The DashScope native API
+  serves multimodal models (Qwen-VL / Qwen-Omni, the `qwen3.x-plus`
+  generation, `qwen3.8-max`) from the `multimodal-generation` endpoint and
+  plain-text models (`qwen-plus`, `qwen-flash`, `qwen3-max`, ...) from
+  `text-generation`. The DashScope client now picks the endpoint from the
+  model name (`MultiModalConversation` vs `Generation`), converts message
+  content to the multimodal form (`[{"text": "..."}]`) and, if the API ever
+  rejects the model for the chosen endpoint, retries once on the other
+  endpoint.
+- Tool calls in the native DashScope stream are now assembled correctly:
+  the API streams a tool call across many chunks (the `arguments` JSON is
+  split), and the client now accumulates the parts by `index` instead of
+  emitting a separate (partial) tool call per chunk, so tool execution
+  receives one complete `{id, name, arguments}` block per call.
+- The optional-package guard tests (`test_dashscope_api.py`,
+  `test_provider_config.py`, `test_general_config.py`) now patch
+  `importlib.util.find_spec` to simulate a missing package, so they pass
+  both in CI (package absent) and on machines where `dashscope` is
+  installed.
 
 
 ## [v4.19.0](https://github.com/joaopinto/janito/compare/v4.18.0...v4.19.0) - 2026-08-06
