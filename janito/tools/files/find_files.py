@@ -19,7 +19,11 @@ from typing import Any
 
 from ...tooling import BaseTool, norm_path
 from ...tooling.decorator import tool
-from .gitignore_utils import is_ignored_by_gitignore, load_gitignore_spec
+from .gitignore_utils import (
+    is_ignored_by_gitignore,
+    load_gitignore_spec,
+    load_janitoignore_spec,
+)
 
 
 def _matches_any_pattern(path: str, patterns: list[str]) -> bool:
@@ -106,7 +110,7 @@ class FindFiles(BaseTool):
         sort_by (str, optional): Sort results by "name", "size", or "mtime".
             Default is "name".
         respect_gitignore (bool): Whether to respect .gitignore patterns.
-            Default is True.
+            .janitoignore patterns are always respected. Default is True.
     """
 
     def run(
@@ -147,7 +151,7 @@ class FindFiles(BaseTool):
             sort_by (str, optional): Sort results by "name", "size", or "mtime".
                 Default is "name".
             respect_gitignore (bool): Whether to respect .gitignore patterns.
-                Default is True.
+                .janitoignore patterns are always respected. Default is True.
 
         Returns:
             Dict[str, Any]: A dictionary containing:
@@ -225,11 +229,13 @@ class FindFiles(BaseTool):
             if older_than_days is not None:
                 older_than = now - older_than_days * 86400
 
-            # ── Load .gitignore from the current working directory ──
+            # ── Load ignore specs from the current working directory ──
+            # .janitoignore is always respected; .gitignore only when enabled.
             cwd = os.getcwd()
             gitignore_spec = None
             if respect_gitignore:
                 gitignore_spec = load_gitignore_spec(cwd)
+            janitoignore_spec = load_janitoignore_spec(cwd)
 
             # ── Report start ──
             paths_str = ", ".join(norm_path(p) for p in valid_paths[:3])
@@ -259,7 +265,23 @@ class FindFiles(BaseTool):
             results: list[tuple[str, int, float]] = []  # (rel_path, size, mtime)
             entries_scanned = 0
             gitignore_ignored = 0
+            janitoignore_ignored = 0
             truncated = False
+
+            def _is_ignored(rel_to_cwd: str, is_dir: bool = False) -> bool:
+                """Check a path (relative to cwd) against .janitoignore then .gitignore."""
+                nonlocal gitignore_ignored, janitoignore_ignored
+                if janitoignore_spec and is_ignored_by_gitignore(
+                    rel_to_cwd, janitoignore_spec, is_dir=is_dir
+                ):
+                    janitoignore_ignored += 1
+                    return True
+                if gitignore_spec and is_ignored_by_gitignore(
+                    rel_to_cwd, gitignore_spec, is_dir=is_dir
+                ):
+                    gitignore_ignored += 1
+                    return True
+                return False
 
             for root_path in valid_paths:
                 if os.path.isfile(root_path):
@@ -295,18 +317,14 @@ class FindFiles(BaseTool):
                             dirnames.clear()
                             continue
 
-                    # Prune gitignored directories (match relative to cwd)
-                    if gitignore_spec:
-                        kept: list[str] = []
-                        for d in dirnames:
-                            rel_d = os.path.relpath(os.path.join(dirpath, d), cwd)
-                            if is_ignored_by_gitignore(
-                                rel_d, gitignore_spec, is_dir=True
-                            ):
-                                gitignore_ignored += 1
-                            else:
-                                kept.append(d)
-                        dirnames[:] = kept
+                    # Prune ignored directories (match relative to cwd)
+                    kept: list[str] = []
+                    for d in dirnames:
+                        rel_d = os.path.relpath(os.path.join(dirpath, d), cwd)
+                        if _is_ignored(rel_d, is_dir=True):
+                            continue
+                        kept.append(d)
+                    dirnames[:] = kept
 
                     # Process directories (when file_type is None or "dir")
                     if file_type is None or file_type == "dir":
@@ -315,12 +333,7 @@ class FindFiles(BaseTool):
                             full = os.path.join(dirpath, dname)
                             rel = os.path.relpath(full, root_path)
 
-                            if gitignore_spec and is_ignored_by_gitignore(
-                                os.path.relpath(full, cwd),
-                                gitignore_spec,
-                                is_dir=True,
-                            ):
-                                gitignore_ignored += 1
+                            if _is_ignored(os.path.relpath(full, cwd), is_dir=True):
                                 continue
 
                             try:
@@ -350,10 +363,7 @@ class FindFiles(BaseTool):
                             full = os.path.join(dirpath, fname)
                             rel = os.path.relpath(full, root_path)
 
-                            if gitignore_spec and is_ignored_by_gitignore(
-                                os.path.relpath(full, cwd), gitignore_spec
-                            ):
-                                gitignore_ignored += 1
+                            if _is_ignored(os.path.relpath(full, cwd)):
                                 continue
 
                             try:
@@ -400,13 +410,14 @@ class FindFiles(BaseTool):
 
             # ── Report result ──
             extra = " (truncated)" if truncated else ""
-            gi_msg = (
-                f", {gitignore_ignored} ignored by .gitignore"
-                if gitignore_ignored
-                else ""
-            )
+            ignore_msgs = []
+            if gitignore_ignored:
+                ignore_msgs.append(f"{gitignore_ignored} ignored by .gitignore")
+            if janitoignore_ignored:
+                ignore_msgs.append(f"{janitoignore_ignored} ignored by .janitoignore")
+            ignore_msg = f", {', '.join(ignore_msgs)}" if ignore_msgs else ""
             self.report_result(
-                f"Found {len(files)} matches from {entries_scanned} entries{extra}{gi_msg}"
+                f"Found {len(files)} matches from {entries_scanned} entries{extra}{ignore_msg}"
             )
 
             return {
@@ -419,6 +430,7 @@ class FindFiles(BaseTool):
                 "stats": {
                     "entries_scanned": entries_scanned,
                     "gitignore_ignored": gitignore_ignored,
+                    "janitoignore_ignored": janitoignore_ignored,
                 },
             }
 
@@ -564,8 +576,17 @@ def main():
             if result.get("truncated"):
                 print("  (results truncated)")
             stats = result.get("stats", {})
+            ignore_msgs = []
             if stats.get("gitignore_ignored", 0) > 0:
-                print(f"  ({stats['gitignore_ignored']} ignored by .gitignore)")
+                ignore_msgs.append(
+                    f"{stats['gitignore_ignored']} ignored by .gitignore"
+                )
+            if stats.get("janitoignore_ignored", 0) > 0:
+                ignore_msgs.append(
+                    f"{stats['janitoignore_ignored']} ignored by .janitoignore"
+                )
+            if ignore_msgs:
+                print(f"  ({', '.join(ignore_msgs)})")
             print("-" * 40)
             for f in result["files"]:
                 print(f"  {f}")

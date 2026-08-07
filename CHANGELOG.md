@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Changes since `v4.19.0` (2026-08-06).
 
+### Added
+
+- The file tools (`ListFiles`, `FindFiles`, `SearchText`, `SearchRegex`) now
+  respect a `.janitoignore` file in the working directory. It behaves like
+  `.gitignore` but is **always** respected: unlike `.gitignore`, it is not
+  gated behind the `respect_gitignore` setting (nor the `--no-gitignore` CLI
+  flag). Results include `janitoignore_applied` /
+  `files_ignored_by_janitoignore` / `janitoignore_ignored` counters and the
+  CLI reports "Respecting .janitoignore" and per-file filtered counts.
+
 ## [v4.19.0](https://github.com/joaopinto/janito/compare/v4.18.0...v4.19.0) - 2026-08-06
 
 Changes since `v4.18.0` (2026-08-03).

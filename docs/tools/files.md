@@ -77,7 +77,7 @@ List files and directories in a path.
 | `pattern` | str | `None` | Glob filter, e.g. `"*.py"` |
 | `recursive` | bool | `False` | Recurse into subdirectories |
 | `max_depth` | int | `None` | Max recursion depth (unlimited if `None`) |
-| `respect_gitignore` | bool | `True` | Skip paths matched by `.gitignore` |
+| `respect_gitignore` | bool | `True` | Skip paths matched by `.gitignore` (`.janitoignore` is always respected) |
 
 ### ReadFile
 
@@ -108,7 +108,7 @@ Search for exact text matches.
 | `max_depth` | int | `None` | Max directory depth |
 | `max_results` | int | `100` | Max results returned |
 | `count_only` | bool | `False` | Return counts instead of lines |
-| `respect_gitignore` | bool | `True` | Skip `.gitignore` paths |
+| `respect_gitignore` | bool | `True` | Skip `.gitignore` paths (`.janitoignore` is always respected) |
 
 ### SearchRegex
 
@@ -175,7 +175,8 @@ Move or rename a file or directory.
 ## Tips
 
 1. **Use `respect_gitignore=True`** (the default) when listing or searching to skip
-   build artifacts and dependencies.
+   build artifacts and dependencies. A `.janitoignore` file in the working directory
+   is **always** respected, even when `respect_gitignore=False`.
 2. **Use `ReadFile`** with `from_line`/`to_line` for large files to limit output.
 3. **Use `count_only=True`** with the search tools to gauge how many matches exist
    before pulling full results.

@@ -4,7 +4,8 @@ List Files Tool - A class-based tool for listing files and directories.
 
 This tool can be injected into AI clients to allow them to explore file systems.
 It provides the ability to list files in a directory, with optional filtering by pattern.
-Optionally respects .gitignore patterns when enabled.
+Optionally respects .gitignore patterns when enabled, and always respects
+.janitoignore patterns.
 
 Note: This tool requires the progress reporting system from the tooling package.
 For direct execution, use: python -m janito.tools.files.list_files [args]
@@ -17,7 +18,11 @@ from typing import Any
 
 from ...tooling import BaseTool, norm_path
 from ...tooling.decorator import tool
-from .gitignore_utils import is_ignored_by_gitignore, load_gitignore_spec
+from .gitignore_utils import (
+    is_ignored_by_gitignore,
+    load_gitignore_spec,
+    load_janitoignore_spec,
+)
 
 
 def _matches_pattern(filename: str, pattern: str) -> bool:
@@ -58,7 +63,8 @@ class ListFiles(BaseTool):
             pattern (str, optional): File pattern to filter results (e.g., "*.py", "data_*.csv").
             recursive (bool): Whether to list files recursively. Default is False.
             max_depth (int, optional): Maximum depth for recursive listing. Default is None (unlimited).
-            respect_gitignore (bool): Whether to respect .gitignore patterns. Default is True.
+            respect_gitignore (bool): Whether to respect .gitignore patterns.
+                .janitoignore patterns are always respected. Default is True.
 
         Returns:
             Dict[str, Any]: A dictionary containing:
@@ -98,11 +104,13 @@ class ListFiles(BaseTool):
                     "respect_gitignore": respect_gitignore,
                 }
 
-            # Load .gitignore from the current working directory
+            # Load ignore specs from the current working directory.
+            # .janitoignore is always respected; .gitignore only when enabled.
             cwd = os.getcwd()
             gitignore_spec = None
             if respect_gitignore:
                 gitignore_spec = load_gitignore_spec(cwd)
+            janitoignore_spec = load_janitoignore_spec(cwd)
 
             # Report start of operation
             recursive_str = "recursively" if recursive else ""
@@ -112,21 +120,35 @@ class ListFiles(BaseTool):
             dir_count = 0
             file_count = 0
             gitignore_ignored = 0
+            janitoignore_ignored = 0
+
+            def _is_ignored(rel_to_cwd: str, is_dir: bool = False) -> bool:
+                """Check a path (relative to cwd) against .janitoignore then .gitignore."""
+                nonlocal gitignore_ignored, janitoignore_ignored
+                if janitoignore_spec and is_ignored_by_gitignore(
+                    rel_to_cwd, janitoignore_spec, is_dir=is_dir
+                ):
+                    janitoignore_ignored += 1
+                    return True
+                if gitignore_spec and is_ignored_by_gitignore(
+                    rel_to_cwd, gitignore_spec, is_dir=is_dir
+                ):
+                    gitignore_ignored += 1
+                    return True
+                return False
 
             if recursive:
                 if max_depth is None:
                     for root, dirs, filenames in os.walk(abs_directory):
                         # Filter out ignored directories (modify in-place to prevent walking into them)
-                        if gitignore_spec:
-                            dirs[:] = [
-                                d
-                                for d in dirs
-                                if not is_ignored_by_gitignore(
-                                    os.path.relpath(os.path.join(root, d), cwd),
-                                    gitignore_spec,
-                                    is_dir=True,
-                                )
-                            ]
+                        dirs[:] = [
+                            d
+                            for d in dirs
+                            if not _is_ignored(
+                                os.path.relpath(os.path.join(root, d), cwd),
+                                is_dir=True,
+                            )
+                        ]
 
                         dir_count += len(dirs)
                         file_count += len(filenames)
@@ -136,13 +158,11 @@ class ListFiles(BaseTool):
                             rel_path = os.path.relpath(full_path, abs_directory)
                             name_is_dir = name in dirs
 
-                            # Skip if ignored by .gitignore
-                            if gitignore_spec and is_ignored_by_gitignore(
+                            # Skip if ignored by .janitoignore / .gitignore
+                            if _is_ignored(
                                 os.path.relpath(full_path, cwd),
-                                gitignore_spec,
                                 is_dir=name_is_dir,
                             ):
-                                gitignore_ignored += 1
                                 continue
 
                             if pattern is None or _matches_pattern(name, pattern):
@@ -153,16 +173,14 @@ class ListFiles(BaseTool):
                         depth = root[len(abs_directory) :].count(os.sep)
                         if depth <= max_depth:
                             # Filter out ignored directories
-                            if gitignore_spec:
-                                dirs[:] = [
-                                    d
-                                    for d in dirs
-                                    if not is_ignored_by_gitignore(
-                                        os.path.relpath(os.path.join(root, d), cwd),
-                                        gitignore_spec,
-                                        is_dir=True,
-                                    )
-                                ]
+                            dirs[:] = [
+                                d
+                                for d in dirs
+                                if not _is_ignored(
+                                    os.path.relpath(os.path.join(root, d), cwd),
+                                    is_dir=True,
+                                )
+                            ]
 
                             dir_count += len(dirs)
                             file_count += len(filenames)
@@ -172,13 +190,11 @@ class ListFiles(BaseTool):
                                 rel_path = os.path.relpath(full_path, abs_directory)
                                 name_is_dir = name in dirs
 
-                                # Skip if ignored by .gitignore
-                                if gitignore_spec and is_ignored_by_gitignore(
+                                # Skip if ignored by .janitoignore / .gitignore
+                                if _is_ignored(
                                     os.path.relpath(full_path, cwd),
-                                    gitignore_spec,
                                     is_dir=name_is_dir,
                                 ):
-                                    gitignore_ignored += 1
                                     continue
 
                                 if pattern is None or _matches_pattern(name, pattern):
@@ -192,13 +208,8 @@ class ListFiles(BaseTool):
                     item_path = os.path.join(abs_directory, item)
                     is_dir = os.path.isdir(item_path)
 
-                    # Skip if ignored by .gitignore (match relative to cwd)
-                    if gitignore_spec and is_ignored_by_gitignore(
-                        os.path.relpath(item_path, cwd),
-                        gitignore_spec,
-                        is_dir=is_dir,
-                    ):
-                        gitignore_ignored += 1
+                    # Skip if ignored by .janitoignore / .gitignore (match relative to cwd)
+                    if _is_ignored(os.path.relpath(item_path, cwd), is_dir=is_dir):
                         continue
 
                     if is_dir:
@@ -213,13 +224,14 @@ class ListFiles(BaseTool):
 
             # Report results
             total_found = len(files)
-            gitignore_msg = (
-                f", {gitignore_ignored} ignored by .gitignore"
-                if gitignore_ignored
-                else ""
-            )
+            ignore_msgs = []
+            if gitignore_ignored:
+                ignore_msgs.append(f"{gitignore_ignored} ignored by .gitignore")
+            if janitoignore_ignored:
+                ignore_msgs.append(f"{janitoignore_ignored} ignored by .janitoignore")
+            ignore_msg = f", {', '.join(ignore_msgs)}" if ignore_msgs else ""
             self.report_result(
-                f"Found {total_found} items ({file_count} files, {dir_count} dirs){gitignore_msg}"
+                f"Found {total_found} items ({file_count} files, {dir_count} dirs){ignore_msg}"
             )
 
             return {
@@ -231,11 +243,13 @@ class ListFiles(BaseTool):
                 "max_depth": max_depth,
                 "respect_gitignore": respect_gitignore,
                 "gitignore_applied": gitignore_spec is not None,
+                "janitoignore_applied": janitoignore_spec is not None,
                 "stats": {
                     "total_items": total_found,
                     "files": file_count,
                     "directories": dir_count,
                     "gitignore_ignored": gitignore_ignored,
+                    "janitoignore_ignored": janitoignore_ignored,
                 },
             }
 
@@ -307,13 +321,24 @@ def main():
                     print(f"Max depth: {result['max_depth']}")
             if result.get("gitignore_applied"):
                 print("Respecting .gitignore")
+            if result.get("janitoignore_applied"):
+                print("Respecting .janitoignore")
             print("-" * 40)
             for file in result["files"]:
                 print(file)
             stats = result.get("stats", {})
+            ignore_filters = []
             if stats.get("gitignore_ignored", 0) > 0:
+                ignore_filters.append(
+                    f".gitignore filtered {stats['gitignore_ignored']} items"
+                )
+            if stats.get("janitoignore_ignored", 0) > 0:
+                ignore_filters.append(
+                    f".janitoignore filtered {stats['janitoignore_ignored']} items"
+                )
+            if ignore_filters:
                 print("-" * 40)
-                print(f"(.gitignore filtered {stats['gitignore_ignored']} items)")
+                print(f"({', '.join(ignore_filters)})")
         else:
             print(f"Error: {result['error']}")
 
