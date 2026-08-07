@@ -19,7 +19,7 @@ Changes since `v4.20.0` (2026-08-07).
   single-file roots are matched against their basename, and the parameter works
   in `count_only` mode too. The shared glob matcher was extracted into
   `janito/tools/files/glob_utils.py`.
-- `HeadlessBrowseTool` in the `net` toolset: renders a URL with headless Google
+- `HeadlessBrowse` in the `net` toolset: renders a URL with headless Google
   Chrome and returns the page's DOM, so JavaScript-generated content is
   captured (unlike the plain-HTTP `GetUrl`). The tool is only loaded when a
   Chrome/Chromium-based browser binary is found (`should_load`), launches

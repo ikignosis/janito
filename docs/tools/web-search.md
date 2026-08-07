@@ -6,7 +6,7 @@ the web, and rendering pages with a headless browser.
 All tools live in the dedicated **`net`** toolset (`janito/tools/net/`), which is
 auto-loaded, so they are available in every session without extra flags. `WebSearch`
 additionally gates itself on the `brave_api_key` secret (see [Setup](#setup)) and is
-only advertised to the model once that secret is configured. `HeadlessBrowseTool`
+only advertised to the model once that secret is configured. `HeadlessBrowse`
 gates itself on the presence of a Google Chrome (or Chromium-based) browser binary.
 
 ## Setup
@@ -38,9 +38,9 @@ See [Secrets](../configuration/secrets.md) for more on the secrets store.
 
 `GetUrl` fetches content from any `http://` or `https://` URL and requires no setup.
 
-### HeadlessBrowseTool
+### HeadlessBrowse
 
-`HeadlessBrowseTool` renders a URL with **headless Google Chrome** and returns the
+`HeadlessBrowse` renders a URL with **headless Google Chrome** and returns the
 page's DOM. Unlike `GetUrl` (a plain HTTP fetch), it executes JavaScript, so it sees
 content that only appears after the page's scripts run (SPAs, client-side rendering,
 etc.). It requires **no setup** — but it is only loaded when a Google Chrome (or
@@ -53,7 +53,7 @@ simply not advertised to the model (check `/tools` for the skip reason).
 |------|-------------|-------------|
 | `GetUrl` | Fetch content from a URL | `r` |
 | `WebSearch` | Search the web via the Brave Search API | `r` |
-| `HeadlessBrowseTool` | Render a URL with headless Chrome (runs JavaScript) | `r` |
+| `HeadlessBrowse` | Render a URL with headless Chrome (runs JavaScript) | `r` |
 
 ## Usage
 
@@ -88,7 +88,7 @@ When fetched content exceeds `threshold`, it is stored in a temporary file (remo
 exit) and the tool returns the file path plus a message to explore it with search tools,
 instead of blowing up the model context.
 
-### HeadlessBrowseTool Parameters
+### HeadlessBrowse Parameters
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -140,7 +140,7 @@ The subscription token is invalid or rejected by Brave. Re-check the token at
 
 ### "Google Chrome (or another Chromium-based browser) was not found"
 
-`HeadlessBrowseTool` is not loaded because no Chrome/Chromium binary was found on
+`HeadlessBrowse` is not loaded because no Chrome/Chromium binary was found on
 the system. Install [Google Chrome](https://www.google.com/chrome/) (or Chromium,
 Brave, or Microsoft Edge) and restart janito. The tool finds the browser via `PATH`
 plus the standard macOS and Windows install locations.

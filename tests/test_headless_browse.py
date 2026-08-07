@@ -1,5 +1,5 @@
 """
-Tests for the HeadlessBrowseTool.
+Tests for the HeadlessBrowse.
 
 The tool renders a URL with headless Google Chrome and returns the page's DOM.
 Tests that actually drive Chrome are skipped when no Chrome/Chromium binary is
@@ -25,7 +25,7 @@ import pytest
 from janito.tools.net import headless_browse as hb_module
 from janito.tools.net.headless_browse import (
     BIG_CONTENT_THRESHOLD,
-    HeadlessBrowseTool,
+    HeadlessBrowse,
     _cleanup_temp_files,
     _find_chrome,
 )
@@ -104,12 +104,12 @@ def test_find_chrome_returns_path():
 def test_should_load_matches_binary_presence():
     """should_load() must agree with the binary finder and cache the path."""
     found = _find_chrome() is not None
-    assert HeadlessBrowseTool.should_load() is found
+    assert HeadlessBrowse.should_load() is found
     if found:
-        assert HeadlessBrowseTool._chrome_binary == _find_chrome()
-        assert HeadlessBrowseTool._load_skip_reason == ""
+        assert HeadlessBrowse._chrome_binary == _find_chrome()
+        assert HeadlessBrowse._load_skip_reason == ""
     else:
-        assert "not found" in HeadlessBrowseTool._load_skip_reason
+        assert "not found" in HeadlessBrowse._load_skip_reason
 
 
 # ── URL validation (no Chrome needed) ───────────────────────────────────────
@@ -117,7 +117,7 @@ def test_should_load_matches_binary_presence():
 
 def test_invalid_url_rejected():
     """Non-http(s) URLs must be rejected before launching Chrome."""
-    tool = HeadlessBrowseTool()
+    tool = HeadlessBrowse()
     result = tool.run(url="not a url")
 
     assert result["success"] is False
@@ -130,7 +130,7 @@ def test_invalid_url_rejected():
 @requires_chrome
 def test_renders_static_page(server):
     """Browsing a static page must return the page's DOM content."""
-    tool = HeadlessBrowseTool()
+    tool = HeadlessBrowse()
     result = tool.run(url=f"{server}/static")
 
     assert result["success"] is True
@@ -146,7 +146,7 @@ def test_renders_static_page(server):
 @requires_chrome
 def test_renders_javascript(server):
     """JavaScript must be executed before the DOM is dumped."""
-    tool = HeadlessBrowseTool()
+    tool = HeadlessBrowse()
     result = tool.run(url=f"{server}/js", wait_ms=2000)
 
     assert result["success"] is True
@@ -157,7 +157,7 @@ def test_renders_javascript(server):
 @requires_chrome
 def test_max_length_truncation(server):
     """Content above max_length must be truncated with the marker."""
-    tool = HeadlessBrowseTool()
+    tool = HeadlessBrowse()
     result = tool.run(url=f"{server}/static", max_length=50)
 
     assert result["success"] is True
@@ -168,7 +168,7 @@ def test_max_length_truncation(server):
 @requires_chrome
 def test_max_lines_truncation(server):
     """Content above max_lines must be truncated to that many lines."""
-    tool = HeadlessBrowseTool()
+    tool = HeadlessBrowse()
     result = tool.run(url=f"{server}/static", max_length=None, max_lines=2)
 
     assert result["success"] is True
@@ -179,7 +179,7 @@ def test_max_lines_truncation(server):
 @requires_chrome
 def test_big_content_stored_to_temp_file(server):
     """Oversized DOM must be written to a temp file and reported via message."""
-    tool = HeadlessBrowseTool()
+    tool = HeadlessBrowse()
     result = tool.run(url=f"{server}/big")
 
     assert result["success"] is True
@@ -203,7 +203,7 @@ def test_big_content_stored_to_temp_file(server):
 @requires_chrome
 def test_threshold_none_disables_temp_file(server):
     """threshold=None disables the temp-file behaviour (limits still apply)."""
-    tool = HeadlessBrowseTool()
+    tool = HeadlessBrowse()
     result = tool.run(url=f"{server}/big", threshold=None, max_length=100)
 
     assert result["success"] is True
@@ -216,7 +216,7 @@ def test_threshold_none_disables_temp_file(server):
 @requires_chrome
 def test_cleanup_removes_temp_files(server):
     """_cleanup_temp_files() must delete every tracked temp file."""
-    tool = HeadlessBrowseTool()
+    tool = HeadlessBrowse()
     result = tool.run(url=f"{server}/big")
     tmp_filename = result["tmp_filename"]
 

@@ -30,14 +30,14 @@ from ...tooling.decorator import tool
 # them on disk and hand back a pointer instead (same behaviour as GetUrl).
 BIG_CONTENT_THRESHOLD = 10_000
 
-# Temporary files created by HeadlessBrowseTool for oversized content. They are
+# Temporary files created by HeadlessBrowse for oversized content. They are
 # removed automatically when the janito process exits.
 _TEMP_FILES: set[str] = set()
 _atexit_registered = False
 
 
 def _cleanup_temp_files() -> None:
-    """Remove all temporary files created by HeadlessBrowseTool (on exit)."""
+    """Remove all temporary files created by HeadlessBrowse (on exit)."""
     for path in list(_TEMP_FILES):
         try:
             os.remove(path)
@@ -121,7 +121,7 @@ def _truncate_content(
 
 
 @tool(permissions="r")
-class HeadlessBrowseTool(BaseTool):
+class HeadlessBrowse(BaseTool):
     """
     Tool for rendering a URL with headless Google Chrome and returning the page content.
 
@@ -390,7 +390,7 @@ class HeadlessBrowseTool(BaseTool):
 
 # ── CLI testing harness ─────────────────────────────────────────────────────
 def main():
-    """Command line interface for testing the HeadlessBrowseTool."""
+    """Command line interface for testing the HeadlessBrowse."""
     import argparse
 
     parser = argparse.ArgumentParser(
@@ -450,7 +450,7 @@ Examples:
     )
     args = parser.parse_args()
 
-    result = HeadlessBrowseTool().run(
+    result = HeadlessBrowse().run(
         url=args.url,
         max_length=args.max_length,
         max_lines=args.max_lines,
