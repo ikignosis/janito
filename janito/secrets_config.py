@@ -14,20 +14,21 @@ storing arbitrary secret values like tokens, passwords, or other
 credentials that aren't provider-specific API keys.
 """
 
-import json
 import logging
-import os
 from pathlib import Path
 
-from .config_dir import get_config_dir, get_config_file_paths
+from .json_store import SecretsConfigStore
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
 
+# Module-level singleton store backing every function below.
+_store = SecretsConfigStore()
+
 
 def get_secrets_file_path() -> Path:
     """Get the path to the secrets configuration file (the write target)."""
-    return get_config_dir() / "secrets.json"
+    return _store.file_path()
 
 
 def get_secrets_file_paths() -> list[Path]:
@@ -41,14 +42,12 @@ def get_secrets_file_paths() -> list[Path]:
     Returns:
         List of paths, highest priority first.
     """
-    return get_config_file_paths("secrets.json")
+    return _store.file_paths()
 
 
 def ensure_secrets_directory() -> Path:
     """Ensure the ~/.janito directory exists."""
-    secrets_file = get_secrets_file_path()
-    secrets_file.parent.mkdir(parents=True, exist_ok=True)
-    return secrets_file.parent
+    return _store.ensure_directory()
 
 
 def load_secrets_config() -> dict[str, str]:
@@ -61,26 +60,7 @@ def load_secrets_config() -> dict[str, str]:
     Returns:
         Dict[str, str]: Dictionary of key-value secrets
     """
-    paths = get_secrets_file_paths()
-
-    if not any(path.exists() for path in paths):
-        logger.debug("Secrets config file not found")
-        return {}
-
-    merged: dict[str, str] = {}
-    # Iterate base -> local so that local entries override global ones.
-    for secrets_file in reversed(paths):
-        if not secrets_file.exists():
-            continue
-        try:
-            with open(secrets_file, "r", encoding="utf-8") as f:
-                content = f.read()
-            logger.debug(f"Loaded secrets config from {secrets_file}")
-            merged.update(json.loads(content))
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse secrets config: {e}")
-            continue
-    return merged
+    return _store.load()
 
 
 def save_secrets_config(config: dict[str, str]) -> bool:
@@ -92,20 +72,7 @@ def save_secrets_config(config: dict[str, str]) -> bool:
     Returns:
         bool: True if successful, False otherwise
     """
-    try:
-        ensure_secrets_directory()
-        secrets_file = get_secrets_file_path()
-
-        with open(secrets_file, "w", encoding="utf-8") as f:
-            json.dump(config, f, indent=2)
-
-        # Set restrictive permissions (read/write for owner only)
-        os.chmod(secrets_file, 0o600)
-        logger.debug(f"Saved secrets config to {secrets_file}")
-        return True
-    except OSError as e:
-        logger.error(f"Failed to save secrets config: {e}")
-        return False
+    return _store.save(config)
 
 
 def set_secret(key: str, value: str) -> bool:
@@ -119,13 +86,7 @@ def set_secret(key: str, value: str) -> bool:
     Returns:
         bool: True if successful, False otherwise
     """
-    logger.debug(f"Setting secret: {key}")
-    config = load_secrets_config()
-    config[key] = value
-    result = save_secrets_config(config)
-    if result:
-        logger.info(f"Secret saved: {key}")
-    return result
+    return _store.set_secret(key, value)
 
 
 def get_secret(key: str) -> str | None:
@@ -138,13 +99,7 @@ def get_secret(key: str) -> str | None:
     Returns:
         Optional[str]: The secret value if found, None otherwise
     """
-    config = load_secrets_config()
-    value = config.get(key)
-    if value:
-        logger.debug(f"Secret found: {key}")
-    else:
-        logger.debug(f"Secret not found: {key}")
-    return value
+    return _store.get_secret(key)
 
 
 def delete_secret(key: str) -> bool:
@@ -157,13 +112,7 @@ def delete_secret(key: str) -> bool:
     Returns:
         bool: True if deleted, False if not found
     """
-    config = load_secrets_config()
-
-    if key in config:
-        del config[key]
-        return save_secrets_config(config)
-
-    return False
+    return _store.delete_secret(key)
 
 
 def list_secrets() -> list:
@@ -173,8 +122,7 @@ def list_secrets() -> list:
     Returns:
         list: List of secret key names
     """
-    config = load_secrets_config()
-    return list(config.keys())
+    return _store.list_secrets()
 
 
 def secret_exists(key: str) -> bool:
@@ -187,5 +135,4 @@ def secret_exists(key: str) -> bool:
     Returns:
         bool: True if the secret exists, False otherwise
     """
-    config = load_secrets_config()
-    return key in config
+    return _store.secret_exists(key)

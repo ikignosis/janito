@@ -108,6 +108,191 @@ def _load_config_file(config_path: Path) -> dict[str, Any]:
         return {}
 
 
+class ConfigStore:
+    """Read/write primitives for ``~/.janito/config.json``.
+
+    The store centralizes the four config operations (``load``, ``save``,
+    ``get``, ``set``/``unset``) plus the provider-scoped key handling that
+    ``set`` and ``unset`` used to duplicate.  Reads merge the resolution
+    chain (project-local over base when ``-l`` / ``--local`` is active);
+    writes always target the primary (write) config file only, never the
+    merged view.
+    """
+
+    def load(self) -> dict[str, Any]:
+        """Load the entire config, merged across the resolution chain.
+
+        With ``-l`` / ``--local`` the project-local config.json (``./.janito``)
+        is deep-merged over the base one (``~/.janito`` or the ``-c`` override)
+        so local values take precedence; otherwise the single base file is read.
+
+        Returns:
+            Dict containing the config, or empty dict if no file exists or is invalid
+        """
+        paths = get_config_paths()
+        if not any(path.exists() for path in paths):
+            logger.debug("Config file not found")
+            return {}
+
+        merged: dict[str, Any] = {}
+        # Iterate base -> local so that local entries override global ones.
+        for config_path in reversed(paths):
+            if not config_path.exists():
+                continue
+            with open(config_path, "r") as f:
+                data = json.load(f)
+            logger.debug(f"Loaded config from {config_path}: {list(data.keys())}")
+            merged = _deep_merge(merged, data)
+        return merged
+
+    def save(self, config: dict[str, Any]) -> None:
+        """Save the config dictionary to config.json.
+
+        Args:
+            config: Dictionary to save to config.json
+
+        Raises:
+            IOError: If unable to write to the config file
+        """
+        config_path = get_config_path()
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(config_path, "w") as f:
+            json.dump(config, f, indent=2)
+        logger.debug(f"Saved config to {config_path}")
+
+    def get(self, key: str) -> Any | None:
+        """Get a config value by key.
+
+        Supports both flat keys and provider-scoped keys in the nested
+        structure.  For provider-scoped keys (e.g., ``"openai.model"``), it
+        reads from the nested providers structure.
+
+        Args:
+            key: The config key to retrieve
+
+        Returns:
+            The config value, or None if not found or config file doesn't exist
+        """
+        config = self.load()
+
+        # Check if this is a provider-scoped key (e.g., "openai.model")
+        if "." in key:
+            parts = key.split(".", 1)
+            if len(parts) == 2:
+                provider, subkey = parts
+                providers = config.get("providers", {})
+                if isinstance(providers, dict) and provider in providers:
+                    provider_config = providers[provider]
+                    if isinstance(provider_config, dict):
+                        value = provider_config.get(subkey)
+                        logger.debug(
+                            f"Getting config '{key}': {value if value is None else '(set)'}"
+                        )
+                        return value
+
+        # Fall back to flat key lookup
+        value = config.get(key)
+        logger.debug(f"Getting config '{key}': {value if value is None else '(set)'}")
+        return value
+
+    def set(self, key: str, value: Any) -> None:
+        """Set a config value.
+
+        Supports both flat keys and provider-scoped keys in the nested
+        structure.  For provider-scoped keys (e.g., ``"openai.model"``), it
+        writes to the nested providers structure.
+
+        Args:
+            key: The config key to set
+            value: The value to set
+        """
+        logger.debug(f"Setting config '{key}' = {value}")
+        # Writes target the primary config file only (never the merged view),
+        # so a --set in -l/--local mode stores the value in ./.janito without
+        # copying the global entries into the local file.
+        config = _load_config_file(get_config_path())
+
+        # Check if this is a provider-scoped key (e.g., "openai.model")
+        if "." in key:
+            parts = key.split(".", 1)
+            if len(parts) == 2:
+                provider, subkey = parts
+                if subkey in PROVIDER_SCOPED_KEYS:
+                    # Write to nested providers structure
+                    providers = config.get("providers")
+                    if not isinstance(providers, dict):
+                        providers = {}
+                        config["providers"] = providers
+                    provider_config = providers.get(provider)
+                    if not isinstance(provider_config, dict):
+                        provider_config = {}
+                        providers[provider] = provider_config
+                    provider_config[subkey] = value
+                    self.save(config)
+                    return
+
+        # Fall back to flat key storage
+        config[key] = value
+        self.save(config)
+
+    def unset(self, key: str) -> bool:
+        """Remove a config value by key.
+
+        Supports both flat keys and provider-scoped keys in the nested
+        structure.  For provider-scoped keys (e.g., ``"openai.model"``), it
+        removes from the nested providers structure.  If the provider dict
+        becomes empty after removal, the provider entry itself is also
+        removed.
+
+        Args:
+            key: The config key to remove
+
+        Returns:
+            bool: True if the key was removed, False if it didn't exist
+        """
+        # Writes target the primary config file only (see set).
+        config = _load_config_file(get_config_path())
+
+        # Check if this is a provider-scoped key (e.g., "openai.model")
+        if "." in key:
+            parts = key.split(".", 1)
+            if len(parts) == 2:
+                provider, subkey = parts
+                if subkey in PROVIDER_SCOPED_KEYS:
+                    providers = config.get("providers")
+                    if not isinstance(providers, dict):
+                        logger.debug(f"Config key not found for removal: {key}")
+                        return False
+                    provider_config = providers.get(provider)
+                    if not isinstance(provider_config, dict):
+                        logger.debug(f"Config key not found for removal: {key}")
+                        return False
+                    if subkey not in provider_config:
+                        logger.debug(f"Config key not found for removal: {key}")
+                        return False
+                    del provider_config[subkey]
+                    if not provider_config:
+                        del providers[provider]
+                    if not providers:
+                        del config["providers"]
+                    self.save(config)
+                    logger.info(f"Removed config key: {key}")
+                    return True
+
+        # Fall back to flat key removal
+        if key in config:
+            del config[key]
+            self.save(config)
+            logger.info(f"Removed config key: {key}")
+            return True
+        logger.debug(f"Config key not found for removal: {key}")
+        return False
+
+
+# Module-level singleton store backing the functions below.
+_store = ConfigStore()
+
+
 def load_config() -> dict[str, Any]:
     """Load the entire config.json file (merged across the resolution chain).
 
@@ -118,21 +303,7 @@ def load_config() -> dict[str, Any]:
     Returns:
         Dict containing the config, or empty dict if no file exists or is invalid
     """
-    paths = get_config_paths()
-    if not any(path.exists() for path in paths):
-        logger.debug("Config file not found")
-        return {}
-
-    merged: dict[str, Any] = {}
-    # Iterate base -> local so that local entries override global ones.
-    for config_path in reversed(paths):
-        if not config_path.exists():
-            continue
-        with open(config_path, "r") as f:
-            data = json.load(f)
-        logger.debug(f"Loaded config from {config_path}: {list(data.keys())}")
-        merged = _deep_merge(merged, data)
-    return merged
+    return _store.load()
 
 
 def save_config(config: dict[str, Any]) -> None:
@@ -144,11 +315,7 @@ def save_config(config: dict[str, Any]) -> None:
     Raises:
         IOError: If unable to write to the config file
     """
-    config_path = get_config_path()
-    config_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(config_path, "w") as f:
-        json.dump(config, f, indent=2)
-    logger.debug(f"Saved config to {config_path}")
+    _store.save(config)
 
 
 def get_config_value(key: str) -> Any | None:
@@ -164,27 +331,7 @@ def get_config_value(key: str) -> Any | None:
     Returns:
         The config value, or None if not found or config file doesn't exist
     """
-    config = load_config()
-
-    # Check if this is a provider-scoped key (e.g., "openai.model")
-    if "." in key:
-        parts = key.split(".", 1)
-        if len(parts) == 2:
-            provider, subkey = parts
-            providers = config.get("providers", {})
-            if isinstance(providers, dict) and provider in providers:
-                provider_config = providers[provider]
-                if isinstance(provider_config, dict):
-                    value = provider_config.get(subkey)
-                    logger.debug(
-                        f"Getting config '{key}': {value if value is None else '(set)'}"
-                    )
-                    return value
-
-    # Fall back to flat key lookup
-    value = config.get(key)
-    logger.debug(f"Getting config '{key}': {value if value is None else '(set)'}")
-    return value
+    return _store.get(key)
 
 
 def set_config_value(key: str, value: Any) -> None:
@@ -198,34 +345,7 @@ def set_config_value(key: str, value: Any) -> None:
         key: The config key to set
         value: The value to set
     """
-    logger.debug(f"Setting config '{key}' = {value}")
-    # Writes target the primary config file only (never the merged view), so a
-    # --set in -l/--local mode stores the value in ./.janito without copying
-    # the global entries into the local file.
-    config = _load_config_file(get_config_path())
-
-    # Check if this is a provider-scoped key (e.g., "openai.model")
-    if "." in key:
-        parts = key.split(".", 1)
-        if len(parts) == 2:
-            provider, subkey = parts
-            if subkey in PROVIDER_SCOPED_KEYS:
-                # Write to nested providers structure
-                providers = config.get("providers")
-                if not isinstance(providers, dict):
-                    providers = {}
-                    config["providers"] = providers
-                provider_config = providers.get(provider)
-                if not isinstance(provider_config, dict):
-                    provider_config = {}
-                    providers[provider] = provider_config
-                provider_config[subkey] = value
-                save_config(config)
-                return
-
-    # Fall back to flat key storage
-    config[key] = value
-    save_config(config)
+    _store.set(key, value)
 
 
 def unset_config_value(key: str) -> bool:
@@ -242,43 +362,7 @@ def unset_config_value(key: str) -> bool:
     Returns:
         bool: True if the key was removed, False if it didn't exist
     """
-    # Writes target the primary config file only (see set_config_value).
-    config = _load_config_file(get_config_path())
-
-    # Check if this is a provider-scoped key (e.g., "openai.model")
-    if "." in key:
-        parts = key.split(".", 1)
-        if len(parts) == 2:
-            provider, subkey = parts
-            if subkey in PROVIDER_SCOPED_KEYS:
-                providers = config.get("providers")
-                if not isinstance(providers, dict):
-                    logger.debug(f"Config key not found for removal: {key}")
-                    return False
-                provider_config = providers.get(provider)
-                if not isinstance(provider_config, dict):
-                    logger.debug(f"Config key not found for removal: {key}")
-                    return False
-                if subkey not in provider_config:
-                    logger.debug(f"Config key not found for removal: {key}")
-                    return False
-                del provider_config[subkey]
-                if not provider_config:
-                    del providers[provider]
-                if not providers:
-                    del config["providers"]
-                save_config(config)
-                logger.info(f"Removed config key: {key}")
-                return True
-
-    # Fall back to flat key removal
-    if key in config:
-        del config[key]
-        save_config(config)
-        logger.info(f"Removed config key: {key}")
-        return True
-    logger.debug(f"Config key not found for removal: {key}")
-    return False
+    return _store.unset(key)
 
 
 def load_provider_from_config() -> str | None:

@@ -41,6 +41,40 @@ Changes since `v4.20.0` (2026-08-07).
 
 ### Changed
 
+- Extracted the duplicated JSON-file store pattern (path resolution,
+  local-over-global merge, `0600` permissions, get/set/delete/list) into a
+  new `janito/json_store.py` module: `auth_config`, `secrets_config` and
+  `mcp_config` now delegate to `AuthConfigStore` / `SecretsConfigStore` /
+  `McpConfigStore` subclasses of a shared `JsonFileStore` base. Every
+  module-level function is preserved as a thin delegator to a module-level
+  singleton, so existing imports keep working. One intentional
+  normalization: `load_auth_config()` now tolerates a corrupted `auth.json`
+  (logs and returns `{}`) instead of propagating `json.JSONDecodeError`,
+  matching the existing `secrets_config` behaviour.
+- Introduced class-based APIs for the configuration modules while keeping
+  every module-level function as a backward-compatible delegator (same
+  pattern as the earlier module splits):
+  - `ProviderConfigLoader` (`janito/config_loaders.py`) centralizes the six
+    per-provider loaders (model, max-output-tokens with its legacy key
+    chain, reasoning-level, api-type, responses-in-server, endpoint). Its
+    helpers are imported lazily so the module is importable in either
+    direction of the `general_config` re-export (removes a latent circular
+    import when `config_loaders` is imported first).
+  - `Provider` / `ProviderRegistry` (`janito/provider_config.py`) provide
+    typed accessors over `PROVIDER_INFO`. The registry holds a live
+    reference (never a copy) and constructs providers on demand, so runtime
+    mutations of `PROVIDER_INFO` (e.g. injected test providers) are
+    reflected in every lookup; the whitespace distinction between
+    `get_provider_info` (no strip) and `canonical_provider_name` (strips) is
+    preserved. Directly constructing `Provider("unknown")` now raises
+    `ValueError` instead of `KeyError`.
+  - `ConfigStore` (`janito/general_config.py`) centralizes the
+    load/save/get/set/unset primitives and the provider-scoped key handling
+    previously duplicated between `set_config_value` and
+    `unset_config_value`.
+  - New tests: `tests/test_json_store.py`, `tests/test_config_loaders.py`,
+    `tests/test_provider.py`, `tests/test_config_store.py`.
+
 - The code search index no longer stores a per-file SHA-1 content hash.
   `CodeSearch.Update()` now detects changed files by comparing the file's
   last modified time (`mtime`) against the indexed one, avoiding a full read

@@ -1,0 +1,149 @@
+"""
+Tests for the Provider / ProviderRegistry classes (janito.provider_config).
+
+Covers typed accessors, case-insensitive lookup, the whitespace distinction
+between ``get`` (no strip, mirrors get_provider_info) and ``canonical_name``
+(strips), runtime mutation of PROVIDER_INFO, and validation errors.
+"""
+
+import sys
+from pathlib import Path
+
+# Add the repo root to sys.path to allow importing the package directly.
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+import pytest
+
+import janito.config_dir as config_dir_mod
+import janito.provider_config as pc
+from janito.provider_config import PROVIDER_INFO, Provider, ProviderRegistry
+
+if pytest is not None:
+
+    def test_provider_accessors():
+        p = Provider("alibaba")
+        assert p.name == "alibaba"
+        assert p.default_model() == "qwen3.8-max"
+        assert p.reasoning_level() == "xhigh"
+        assert p.default_thinking() is True
+        assert p.supported_api_types() == ["Completions", "Responses", "DashScope"]
+        assert p.default_api_type() == "Completions"
+        assert p.is_custom is False
+
+    def test_provider_custom():
+        p = Provider("custom")
+        assert p.is_custom is True
+        assert p.default_model() is None
+        assert p.max_input_tokens() is None
+
+    def test_provider_unknown_raises():
+        with pytest.raises(ValueError):
+            Provider("bogus")
+
+    def test_provider_endpoint_for():
+        p = Provider("anthropic")
+        assert p.endpoint_for("Completions") == "https://api.anthropic.com/v1/"
+        assert p.endpoint_for("Anthropic") == "https://api.anthropic.com"
+        # Multi-entry map: an absent API type falls back to the built-in endpoint.
+        assert p.endpoint_for("Responses") == "https://api.anthropic.com/v1/"
+
+    def test_registry_get_case_insensitive():
+        reg = ProviderRegistry()
+        assert reg.get("openai").name == "openai"
+        assert reg.get("OpenAI").name == "openai"
+        # get() does NOT strip whitespace (mirrors get_provider_info).
+        assert reg.get("  MiniMax ") is None
+        assert reg.get("bogus") is None
+        assert reg.get("") is None
+
+    def test_registry_canonical_name_strips():
+        reg = ProviderRegistry()
+        assert reg.canonical_name("  MiniMax ") == "minimax"
+        assert reg.canonical_name("  ") is None
+        assert reg.canonical_name(None) is None
+
+    def test_registry_require():
+        reg = ProviderRegistry()
+        assert reg.require("OpenAI").name == "openai"
+        with pytest.raises(ValueError) as exc:
+            reg.require("bogus")
+        assert "Supported providers" in str(exc.value)
+        for name in PROVIDER_INFO:
+            assert name in str(exc.value)
+
+    def test_registry_names():
+        reg = ProviderRegistry()
+        assert reg.names() == list(PROVIDER_INFO.keys())
+
+    def test_registry_reflects_runtime_mutations():
+        """The registry holds a reference (never a copy) to PROVIDER_INFO, so
+        injecting/restoring a provider is visible to every lookup."""
+        reg = ProviderRegistry()
+        original = dict(PROVIDER_INFO)
+        PROVIDER_INFO["fake-provider"] = {
+            "model": "fake-model",
+            "supported_api_types": ["Completions"],
+            "max_input_tokens": None,
+            "max_output_tokens": None,
+            "endpoint": None,
+        }
+        try:
+            assert reg.get("fake-provider") is not None
+            assert reg.get("fake-provider").default_model() == "fake-model"
+            assert reg.canonical_name("Fake-Provider") == "fake-provider"
+            assert "fake-provider" in reg.names()
+        finally:
+            PROVIDER_INFO.clear()
+            PROVIDER_INFO.update(original)
+        assert reg.get("fake-provider") is None
+
+    def test_registry_requires_reference():
+        reg = ProviderRegistry()
+        assert reg.requires is pc.REQUIRES_BY_API_TYPE
+
+    def test_module_functions_agree_with_registry():
+        """The module-level accessors behave identically to the class API."""
+        reg = ProviderRegistry()
+        assert pc.get_provider_info("minimax") == reg.get("minimax").info
+        assert (
+            pc.get_base_url_from_provider("minimax")
+            == reg.get("minimax").info["endpoint"]
+        )
+        assert (
+            pc.get_default_model_from_provider("openai")
+            == reg.get("openai").default_model()
+        )
+        assert (
+            pc.get_default_thinking_from_provider("deepseek")
+            == reg.get("deepseek").default_thinking()
+        )
+        assert (
+            pc.get_default_api_type_from_provider("anthropic")
+            == reg.get("anthropic").default_api_type()
+        )
+        assert pc.list_supported_providers() == reg.names()
+        assert pc.validate_provider_name("OpenAI") == reg.require("OpenAI").name
+        assert pc.canonical_provider_name("  MiniMax ") == reg.canonical_name(
+            "  MiniMax "
+        )
+
+    def test_responses_in_server_override_honored(monkeypatch, tmp_path):
+        """Provider.responses_in_server() honors a config override (and the
+        module function delegates to it)."""
+        import janito.general_config as gc
+
+        monkeypatch.setattr(config_dir_mod, "_config_dir", tmp_path)
+        gc.set_config_value("openai.responses-in-server", False)
+        assert Provider("openai").responses_in_server() is False
+        assert pc.get_responses_in_server_from_provider("openai") is False
+
+else:  # pragma: no cover - fallback runner without pytest
+
+    def _main():
+        for name, fn in sorted(globals().items()):
+            if name.startswith("test_") and callable(fn):
+                fn()
+                print(f"OK {name}")
+
+    if __name__ == "__main__":
+        _main()
