@@ -38,6 +38,16 @@ window.ChatHistoryMixin = {
                 if (msg.content) {
                     this._appendTextPart(current, msg.content, '\n\n');
                 }
+                // Native Responses-API image generation (image_generation
+                // tool): the backend stores the saved image paths on the
+                // assistant message; rebuild the content cards on reload.
+                if (Array.isArray(msg.images)) {
+                    for (const img of msg.images) {
+                        if (img && img.path) {
+                            current.parts.push({ kind: 'image', path: img.path });
+                        }
+                    }
+                }
                 if (Array.isArray(msg.tool_calls)) {
                     for (const tc of msg.tool_calls) {
                         let args = {};

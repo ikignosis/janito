@@ -153,6 +153,29 @@ class UsageEvent:
 
 
 @dataclass
+class ImageEvent:
+    """A native Responses API image_generation_call result.
+
+    The built-in ``image_generation`` tool returns base64-encoded images
+    directly in the response stream (no function call round-trip).  The
+    backend decodes them into temp PNG files (served by ``/api/images/``)
+    and emits one ``ImageEvent`` per image so the frontend can render it
+    as a content card.
+    """
+
+    path: str
+    revised_prompt: str = ""
+
+    type: ClassVar[str] = "image"
+
+    def to_dict(self) -> dict[str, Any]:
+        d = {"type": self.type, "path": self.path}
+        if self.revised_prompt:
+            d["revised_prompt"] = self.revised_prompt
+        return d
+
+
+@dataclass
 class DoneEvent:
     """Conversation turn complete."""
 
@@ -188,6 +211,7 @@ AgentEvent = Union[
     ToolResultEvent,
     WaitingEvent,
     ToolProgressEvent,
+    ImageEvent,
     UsageEvent,
     DoneEvent,
     ErrorEvent,

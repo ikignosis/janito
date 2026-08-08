@@ -220,6 +220,98 @@ def test_responses_build_call_kwargs_omits_optional_fields():
     assert "tools" not in kwargs
 
 
+def test_responses_build_call_kwargs_appends_image_generation_tool_for_gpt5():
+    """Mainline gpt-5 models get the native ``image_generation`` tool."""
+    from janito.web.backend.agent import responses
+
+    tools = [
+        {
+            "type": "function",
+            "function": {"name": "ReadFile", "description": "read", "parameters": {}},
+        }
+    ]
+    kwargs = responses.build_call_kwargs(
+        "gpt-5.6",
+        [{"role": "user", "content": "draw a cat"}],
+        tools,
+        _cfg(thinking=False),
+        None,
+        None,
+        None,
+    )
+    # Function tools are converted to the Responses top-level shape, then the
+    # native image_generation tool is appended verbatim (it is not a function
+    # schema and must not go through the conversion).
+    assert kwargs["tools"] == [
+        {
+            "type": "function",
+            "name": "ReadFile",
+            "description": "read",
+            "parameters": {},
+        },
+        {"type": "image_generation"},
+    ]
+    assert kwargs["tool_choice"] == "auto"
+
+
+def test_responses_build_call_kwargs_skips_image_generation_tool_for_other_models():
+    """Older / third-party models do not get the image_generation tool."""
+    from janito.web.backend.agent import responses
+
+    tools = [
+        {
+            "type": "function",
+            "function": {"name": "ReadFile", "description": "read", "parameters": {}},
+        }
+    ]
+    kwargs = responses.build_call_kwargs(
+        "gpt-4",
+        [{"role": "user", "content": "hi"}],
+        tools,
+        _cfg(thinking=False),
+        None,
+        None,
+        None,
+    )
+    assert kwargs["tools"] == [
+        {
+            "type": "function",
+            "name": "ReadFile",
+            "description": "read",
+            "parameters": {},
+        }
+    ]
+    # A non-gpt-5 model with no function tools gets no tools at all.
+    kwargs = responses.build_call_kwargs(
+        "gpt-4",
+        [{"role": "user", "content": "hi"}],
+        None,
+        _cfg(thinking=False),
+        None,
+        None,
+        None,
+    )
+    assert "tools" not in kwargs
+
+
+def test_responses_build_call_kwargs_image_generation_tool_without_function_tools():
+    """The native image_generation tool is enabled for gpt-5 even when no
+    function tools are configured (it is a model capability, not a tool)."""
+    from janito.web.backend.agent import responses
+
+    kwargs = responses.build_call_kwargs(
+        "gpt-5.6",
+        [{"role": "user", "content": "draw a cat"}],
+        None,
+        _cfg(thinking=False),
+        None,
+        None,
+        None,
+    )
+    assert kwargs["tools"] == [{"type": "image_generation"}]
+    assert kwargs["tool_choice"] == "auto"
+
+
 def test_responses_accumulator_folds_stream_events():
     from janito.web.backend.agent.responses import ResponsesTurnAccumulator
 
@@ -278,6 +370,84 @@ def test_responses_accumulator_raises_failed_error():
                 response=SimpleNamespace(error=SimpleNamespace(message="boom")),
             )
         )
+
+
+def test_responses_accumulator_captures_image_generation_call():
+    """image_generation_call output items are saved to temp PNG files."""
+    import base64
+    import os
+
+    from janito.web.backend.agent.responses import ResponsesTurnAccumulator
+
+    # A tiny valid PNG (signature + junk payload is enough for the test).
+    png_bytes = b"\x89PNG\r\n\x1a\n" + b"\x00\x00\x00\x0dIHDRjunk"
+    b64_data = base64.b64encode(png_bytes).decode()
+
+    acc = ResponsesTurnAccumulator()
+    acc.handle(
+        SimpleNamespace(
+            type="response.output_item.done",
+            item=SimpleNamespace(
+                type="image_generation_call",
+                id="img_1",
+                result=b64_data,
+                revised_prompt="A gray tabby cat hugging an otter",
+            ),
+        )
+    )
+
+    # No function-call tool turn is produced for a native image result.
+    assert acc.tool_calls_list() == []
+    assert len(acc.image_results) == 1
+    img = acc.image_results[0]
+    assert img["revised_prompt"] == "A gray tabby cat hugging an otter"
+    # The saved file is a kept temp PNG in the system temp directory, ready
+    # for the /api/images/ router to serve.
+    assert os.path.isfile(img["path"])
+    assert img["path"].endswith(".png")
+    with open(img["path"], "rb") as fh:
+        assert fh.read() == png_bytes
+    os.remove(img["path"])
+
+
+def test_responses_accumulator_ignores_invalid_image_generation_call():
+    """A malformed image_generation_call result is skipped, not fatal."""
+    import base64
+
+    from janito.web.backend.agent.responses import ResponsesTurnAccumulator
+
+    acc = ResponsesTurnAccumulator()
+    # Non-decodable base64 -> no image result, no crash.
+    acc.handle(
+        SimpleNamespace(
+            type="response.output_item.done",
+            item=SimpleNamespace(
+                type="image_generation_call", id="img_1", result="!!!not-base64!!!"
+            ),
+        )
+    )
+    assert acc.image_results == []
+    # Missing result entirely -> no image result.
+    acc.handle(
+        SimpleNamespace(
+            type="response.output_item.done",
+            item=SimpleNamespace(type="image_generation_call", id="img_2"),
+        )
+    )
+    assert acc.image_results == []
+    # Base64 that decodes to a non-PNG payload is still saved (the backend
+    # serves it as image/png; the bytes are whatever the model produced).
+    acc.handle(
+        SimpleNamespace(
+            type="response.output_item.done",
+            item=SimpleNamespace(
+                type="image_generation_call",
+                id="img_3",
+                result=base64.b64encode(b"just some bytes").decode(),
+            ),
+        )
+    )
+    assert len(acc.image_results) == 1
 
 
 # ---------------------------------------------------------------------------
@@ -808,6 +978,97 @@ def test_stream_prompt_responses_round_trip(monkeypatch):
     done = next(e for e in events if isinstance(e, DoneEvent))
     assert done.full_content == "Done!"
     assert done.message_count == len(messages)
+
+
+def test_stream_prompt_responses_emits_image_event(monkeypatch):
+    """A native image_generation_call becomes an ImageEvent and the image
+    path is persisted on the assistant message for history reload."""
+    import asyncio
+    import base64
+    import os
+
+    from janito.web.backend.agent import loop
+    from janito.web.backend.config import WebServerConfig
+    from janito.web.backend.events import DoneEvent, ImageEvent, TokenEvent
+
+    monkeypatch.setattr(
+        loop,
+        "resolve_runtime_config",
+        lambda *a, **k: (None, "sk-test", "gpt-5.6"),
+    )
+
+    png_bytes = b"\x89PNG\r\n\x1a\n" + b"\x00\x00\x00\x0dIHDRjunk"
+    fake_client = _FakeClient(
+        [
+            [
+                SimpleNamespace(
+                    type="response.output_text.delta",
+                    delta="Here is your image:",
+                ),
+                SimpleNamespace(
+                    type="response.output_item.done",
+                    item=SimpleNamespace(
+                        type="image_generation_call",
+                        id="img_1",
+                        result=base64.b64encode(png_bytes).decode(),
+                        revised_prompt="A tabby cat hugging an otter",
+                    ),
+                ),
+                SimpleNamespace(
+                    type="response.completed",
+                    response=SimpleNamespace(
+                        id="r1",
+                        usage=SimpleNamespace(
+                            total_tokens=8, input_tokens=5, output_tokens=3
+                        ),
+                    ),
+                ),
+            ],
+        ]
+    )
+    monkeypatch.setattr(
+        "janito.web.backend.agent.responses.create_client",
+        lambda base_url, api_key: fake_client,
+    )
+
+    config = WebServerConfig(provider="openai", no_tools=True, verbose=False)
+    messages: list[dict] = []
+
+    async def _run():
+        events = []
+        async for ev in loop.stream_prompt(
+            "draw a cat", messages, config, tools=[], use_mcp=False
+        ):
+            events.append(ev)
+        return events
+
+    events = asyncio.run(_run())
+
+    # The image result is surfaced as an ImageEvent with a saved temp PNG,
+    # and the turn still ends with a normal DoneEvent.
+    image_events = [e for e in events if isinstance(e, ImageEvent)]
+    assert len(image_events) == 1
+    img_path = image_events[0].path
+    assert os.path.isfile(img_path) and img_path.endswith(".png")
+    with open(img_path, "rb") as fh:
+        assert fh.read() == png_bytes
+
+    tokens = [e for e in events if isinstance(e, TokenEvent)]
+    assert [t.content for t in tokens] == ["Here is your image:"]
+    assert isinstance(events[-1], DoneEvent)
+
+    # The saved image path is persisted on the assistant message so the
+    # frontend can rebuild the content card from history.
+    assistant_msg = [m for m in messages if m["role"] == "assistant"][0]
+    assert assistant_msg["content"] == "Here is your image:"
+    assert assistant_msg["images"] == [
+        {"path": img_path, "revised_prompt": "A tabby cat hugging an otter"}
+    ]
+
+    # The image_generation tool was advertised to the model (gpt-5 model).
+    assert fake_client.calls[0]["tools"][-1] == {"type": "image_generation"}
+
+    os.remove(img_path)
 
 
 # ---------------------------------------------------------------------------

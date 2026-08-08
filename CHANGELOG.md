@@ -11,6 +11,19 @@ Changes since `v4.21.0` (2026-08-08).
 
 ### Added
 
+- The web agentic loop now supports native image generation on the
+  **Responses API**: when the effective model is a mainline gpt-5 family
+  model (e.g. `gpt-5.6`), the Responses runner automatically appends the
+  built-in `image_generation` tool to every turn (it is a model capability,
+  so it is enabled even with `--no-tools`). `image_generation_call` output
+  items streamed by the API are captured by `ResponsesTurnAccumulator`,
+  base64-decoded into kept temp PNG files (served by the existing
+  `/api/images/` router), and surfaced to the browser as a new `image` event
+  (`ImageEvent`) that the frontend renders as a content card. The saved
+  paths are also persisted on the turn's assistant message (`images` key) so
+  history reload rebuilds the cards. Non-gpt-5 models (e.g. `gpt-4`,
+  DeepSeek) are unaffected.
+
 - The web agentic loop now supports the same API types as the CLI clients,
   using the API type selected for the provider in use. `stream_prompt()`
   resolves the effective API type for the effective provider (`--api-type`

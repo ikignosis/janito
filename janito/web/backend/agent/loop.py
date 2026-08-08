@@ -117,6 +117,16 @@ def _build_assistant_message(acc: StreamAccumulator, full_content: str) -> dict:
     reasoning_content = acc.reasoning_content()
     if reasoning_content:
         assistant_message["reasoning_content"] = reasoning_content
+    # Native Responses-API image generation (image_generation tool): attach
+    # the saved image paths so the frontend can rebuild the content cards
+    # when the session history is reloaded.  Completions runners never set
+    # ``image_results``, so getattr keeps this a no-op for them.
+    image_results = getattr(acc, "image_results", None) or []
+    if image_results:
+        assistant_message["images"] = [
+            {"path": img["path"], "revised_prompt": img.get("revised_prompt", "")}
+            for img in image_results
+        ]
     return assistant_message
 
 

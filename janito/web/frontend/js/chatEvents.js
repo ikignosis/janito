@@ -93,6 +93,16 @@ const CHAT_EVENT_HANDLERS = {
         if (c.isActive) c.comp._scrollToBottom();
     },
 
+    image(c) {
+        // Native Responses-API image generation (image_generation tool):
+        // the backend already saved the PNG and emitted this event with its
+        // path, so render it inline as a content card.
+        c.comp._setStatus(c.store, 'streaming');
+        if (c.isActive) c.comp.status = 'streaming';
+        c.msg.parts.push({ kind: 'image', path: c.event.path });
+        if (c.isActive) c.comp._scrollToBottom();
+    },
+
     usage(c) {
         c.msg.usage = {
             total: c.event.total,

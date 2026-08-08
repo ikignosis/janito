@@ -17,10 +17,12 @@ stays in the portable OpenAI format (frontend rendering + on-disk
 persistence unchanged) and never needs a server-side ``response_id``.
 """
 
+import base64
 import json
 import logging
+import tempfile
 
-from ..events import ReasoningEvent, TokenEvent
+from ..events import ImageEvent, ReasoningEvent, TokenEvent
 from .call import usage_event_from_usage
 
 logger = logging.getLogger(__name__)
@@ -38,6 +40,44 @@ def _convert_tools(tools_schemas: list[dict]) -> list[dict]:
     from janito.openai_client.responses_stream import _convert_tools_to_responses_format
 
     return _convert_tools_to_responses_format(tools_schemas)
+
+
+def _model_supports_image_generation(model: str) -> bool:
+    """Whether a mainline Responses model supports the ``image_generation`` tool.
+
+    Per the OpenAI image-generation guide, ``gpt-5`` and newer mainline
+    models should support the built-in ``image_generation`` tool; the tool
+    handles GPT Image model selection internally.  Older / third-party
+    models (e.g. ``gpt-4``, DeepSeek) do not, so the tool is only appended
+    for the gpt-5 family.
+    """
+    return bool(model) and (model == "gpt-5" or model.startswith("gpt-5."))
+
+
+def _save_base64_image(b64_data: str) -> str | None:
+    """Decode a base64 PNG and write it to a kept temp file.
+
+    The file is written (not deleted) into the system temp directory so the
+    ``/api/images/<filename>`` endpoint can serve it to the frontend --
+    the same directory the ``CreateImage`` tool uses.  Returns the temp
+    path, or ``None`` when the data cannot be decoded or written.
+    """
+    try:
+        image_bytes = base64.b64decode(b64_data)
+    except (ValueError, TypeError) as e:
+        logger.warning(f"Failed to decode base64 image data: {e}")
+        return None
+    try:
+        tmp = tempfile.NamedTemporaryFile(
+            suffix=".png", prefix="janito_image_", delete=False
+        )
+        tmp_path = tmp.name
+        with open(tmp_path, "wb") as fh:
+            fh.write(image_bytes)
+        return tmp_path
+    except OSError as e:
+        logger.warning(f"Failed to write generated image to temp file: {e}")
+        return None
 
 
 def _text_of(content) -> str:
@@ -144,7 +184,17 @@ def build_call_kwargs(
     if config.effective_thinking:
         call_kwargs.setdefault("extra_body", {})["enable_thinking"] = True
 
-    if tools_schemas:
+    # Native image generation: mainline models (gpt-5+) can generate images
+    # through the Responses API's built-in ``image_generation`` tool.  It is
+    # a model capability, not a permissioned function tool, so it is enabled
+    # whenever the model supports it -- even with ``no_tools`` / an empty
+    # function-tools list.
+    if _model_supports_image_generation(model):
+        converted_tools = _convert_tools(tools_schemas or [])
+        converted_tools.append({"type": "image_generation"})
+        call_kwargs["tools"] = converted_tools
+        call_kwargs["tool_choice"] = "auto"
+    elif tools_schemas:
         call_kwargs["tools"] = _convert_tools(tools_schemas)
         call_kwargs["tool_choice"] = "auto"
     return call_kwargs
@@ -167,6 +217,10 @@ class ResponsesTurnAccumulator:
         self.tool_calls: list[dict] = []  # [{call_id, name, arguments}]
         self.partial_arguments: dict[str, str] = {}
         self.usage = None
+        # Native image generation results: [{path, revised_prompt}].  The
+        # built-in ``image_generation`` tool returns base64 images directly
+        # in the stream; the accumulator saves each to a temp PNG file.
+        self.image_results: list[dict] = []
 
     # ------------------------------------------------------------------
     # Stream driving
@@ -233,15 +287,47 @@ class ResponsesTurnAccumulator:
         self.partial_arguments[item_id] = getattr(event, "arguments", None) or ""
 
     def handle_output_item(self, event) -> None:
-        """Append a finished function_call output item to the tool calls."""
+        """Append a finished output item to the collected turn state.
+
+        Handles ``function_call`` items (tool calls for the tool-turn
+        runner) and ``image_generation_call`` items (native Responses-API
+        image generation, saved to a temp PNG file for the frontend).
+        """
         item = getattr(event, "item", None)
-        if getattr(item, "type", None) == "function_call":
+        item_type = getattr(item, "type", None)
+        if item_type == "function_call":
             self.tool_calls.append(
                 {
                     "call_id": getattr(item, "call_id", ""),
                     "name": getattr(item, "name", ""),
                     "arguments": getattr(item, "arguments", None)
                     or self.partial_arguments.get(getattr(item, "id", ""), ""),
+                }
+            )
+        elif item_type == "image_generation_call":
+            self._capture_image_generation(item)
+
+    def _capture_image_generation(self, item) -> None:
+        """Decode and save one ``image_generation_call`` result.
+
+        The item's ``result`` is a base64-encoded image (a plain string, or
+        a dict carrying ``b64_json``).  The decoded PNG is written to a
+        kept temp file so the ``/api/images/`` router can serve it.
+        """
+        result = getattr(item, "result", None)
+        b64_data = None
+        if isinstance(result, str):
+            b64_data = result
+        elif isinstance(result, dict):
+            b64_data = result.get("b64_json")
+        if not b64_data:
+            return
+        path = _save_base64_image(b64_data)
+        if path:
+            self.image_results.append(
+                {
+                    "path": path,
+                    "revised_prompt": getattr(item, "revised_prompt", None) or "",
                 }
             )
 
@@ -289,18 +375,29 @@ accumulator = ResponsesTurnAccumulator
 
 
 async def stream_turn_events(client, call_kwargs: dict, acc: ResponsesTurnAccumulator):
-    """Stream one Responses turn, yielding reasoning/token events.
+    """Stream one Responses turn, yielding reasoning/token/image events.
 
     The caller owns ``acc``; on completion it holds the full turn state for
-    end-of-turn assembly (``run_tool_turn`` / ``DoneEvent``).
+    end-of-turn assembly (``run_tool_turn`` / ``DoneEvent``).  Images
+    generated natively by the ``image_generation`` tool are saved to temp
+    PNG files by the accumulator and surfaced here as ``ImageEvent``s the
+    moment their output item completes (``emitted_images`` tracks the ones
+    already yielded so each image is emitted exactly once).
     """
     stream = await client.responses.create(**call_kwargs)
+    emitted_images = 0
     async for event in stream:
         reasoning_delta, content_delta = acc.handle(event)
         if reasoning_delta:
             yield ReasoningEvent(content=reasoning_delta)
         if content_delta:
             yield TokenEvent(content=content_delta)
+        for img in acc.image_results[emitted_images:]:
+            yield ImageEvent(
+                path=img["path"],
+                revised_prompt=img.get("revised_prompt", ""),
+            )
+            emitted_images += 1
 
 
 __all__ = [
@@ -309,4 +406,6 @@ __all__ = [
     "build_call_kwargs",
     "create_client",
     "stream_turn_events",
+    "_model_supports_image_generation",
+    "_save_base64_image",
 ]
