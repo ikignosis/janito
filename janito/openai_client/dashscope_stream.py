@@ -6,6 +6,12 @@ native DashScope SDK (``Generation.call`` / ``MultiModalConversation.call``)
 with streaming enabled.  They handle both the text-generation and
 multimodal-generation endpoints, accumulate tool-call arguments split across
 chunks, and honour the Enter-to-cancel ``cancel_event``.
+
+:class:`DashScopeStreamConsumer` is the real implementation: it holds the
+assembled response parts as instance attributes (no ``state`` dict plumbing)
+and drives the per-chunk handlers.  The module-level ``_consume_stream`` /
+``_consume_*`` functions are thin delegators kept for backward compatibility
+(they are re-exported from ``dashscope_api``).
 """
 
 import logging
@@ -61,7 +67,7 @@ def _to_multimodal_messages(messages: list[dict[str, Any]]) -> list[dict[str, An
     """Convert plain-string message content to DashScope multimodal form.
 
     The multimodal-generation API expects every message ``content`` to be a
-    list of modality items (``[{\"text\": \"...\"}]``) instead of a plain string.
+    list of modality items (``[{"text": "..."}]``) instead of a plain string.
     Returns a shallow copy with string contents wrapped; other fields
     (``tool_calls``, ``tool_call_id``, ``reasoning_content``) are kept as-is.
     """
@@ -80,7 +86,7 @@ def _get(obj: Any, key: str, default: Any = None) -> Any:
 
     The DashScope SDK response/message objects are ``DictMixin`` instances,
     which support both attribute access (``resp.output``) and mapping access
-    (``resp[\"output\"]``).  Some fields (e.g. ``tool_calls``) are plain dicts.
+    (``resp["output"]``).  Some fields (e.g. ``tool_calls``) are plain dicts.
     This helper abstracts over both so the stream consumer stays robust.
     """
     if obj is None:
@@ -90,86 +96,173 @@ def _get(obj: Any, key: str, default: Any = None) -> Any:
     return getattr(obj, key, default)
 
 
-def _consume_stream(stream, cancel_event=None):
-    """Consume a streaming DashScope generation response.
+class DashScopeStreamConsumer:
+    """Assemble DashScope generation stream chunks into a single response.
 
     Works for both the text-generation (``Generation.call``) and
-    multimodal-generation (``MultiModalConversation.call``) streams.
-
-    Returns ``(full_content, reasoning_content, tool_use_blocks, usage_info)``
-    where ``tool_use_blocks`` is a list of
-    ``{\"id\", \"name\", \"arguments\"}`` dicts (``arguments`` is the raw JSON
-    string from the model) and ``usage_info`` is a ``SimpleNamespace`` with
-    ``total_tokens``/``input_tokens``/``output_tokens`` (``None`` when the
-    API reported no usage).
-
-    With ``incremental_output=True`` (set by the caller) each chunk carries
-    only the newly generated text, so content / reasoning deltas are
-    accumulated.  Multimodal responses carry ``content`` as a list of
-    modality items (``[{\"text\": \"...\"}]``), which is joined here.  The
-    terminal chunk reports ``finish_reason == \"stop\"``; tool-call requests
-    stream across many chunks (the ``arguments`` JSON is split), so they are
-    accumulated by ``index``.
-
-    When ``cancel_event`` is set (user pressed Enter while waiting), the
-    stream is abandoned as soon as the next chunk arrives.
+    multimodal-generation (``MultiModalConversation.call``) streams.  The
+    consumer owns the accumulated content / reasoning text, the per-index
+    tool-call map, the usage counters and the finish flag.  :meth:`consume`
+    drives the stream and returns the response parts; the ``handle_*``
+    methods apply individual chunks/messages.
     """
-    state: dict[str, Any] = {
-        "content": [],
-        "reasoning": [],
+
+    def __init__(self) -> None:
+        self.content: list[str] = []
+        self.reasoning: list[str] = []
         # index -> {id, name, arguments}
-        "tool_calls": {},
-        "input_tokens": None,
-        "output_tokens": None,
-        "total_tokens": None,
-        "finish": False,
-    }
-    chunks_seen = 0
+        self.tool_calls: dict[int, dict[str, str]] = {}
+        self.input_tokens: int | None = None
+        self.output_tokens: int | None = None
+        self.total_tokens: int | None = None
+        self.finish: bool = False
+        self._chunks_seen = 0
 
-    for chunk in stream:
-        chunks_seen += 1
-        # Honour an Enter-to-cancel request: stop consuming as soon as the
-        # next chunk arrives so the worker can close the connection.
-        if cancel_event is not None and cancel_event.is_set():
-            break
-        _consume_dashscope_chunk(chunk, state)
-        if state["finish"]:
-            break
+    # ------------------------------------------------------------------
+    # Result accessors
+    # ------------------------------------------------------------------
 
-    tool_use_blocks = _build_tool_use_blocks(state["tool_calls"])
-    full_content = "".join(state["content"])
-    reasoning_content = "".join(state["reasoning"]) if state["reasoning"] else None
-    # A healthy stream always ends with a chunk whose finish_reason is "stop";
-    # a stream with zero chunks means the API failed before producing
-    # anything.  Fail loudly instead of returning an empty answer.  An
-    # Enter-to-cancel short-circuit must not be treated as an empty stream.
-    if chunks_seen == 0 and (cancel_event is None or not cancel_event.is_set()):
-        raise RuntimeError(
-            "The DashScope API returned no stream chunks (empty response)."
+    @property
+    def full_content(self) -> str:
+        """The assembled assistant text."""
+        return "".join(self.content)
+
+    @property
+    def reasoning_content(self) -> str | None:
+        """The assembled reasoning text, or ``None`` when none was streamed."""
+        return "".join(self.reasoning) if self.reasoning else None
+
+    @property
+    def usage_state(self) -> dict[str, Any]:
+        """The usage counters as a dict (for ``_build_usage_info``)."""
+        return {
+            "input_tokens": self.input_tokens,
+            "output_tokens": self.output_tokens,
+            "total_tokens": self.total_tokens,
+        }
+
+    # ------------------------------------------------------------------
+    # Stream driving
+    # ------------------------------------------------------------------
+
+    def consume(self, stream, cancel_event=None):
+        """Consume a streaming DashScope generation response.
+
+        Returns ``(full_content, reasoning_content, tool_use_blocks,
+        usage_info)`` where ``tool_use_blocks`` is a list of
+        ``{"id", "name", "arguments"}`` dicts (``arguments`` is the raw JSON
+        string from the model) and ``usage_info`` is a ``SimpleNamespace``
+        with ``total_tokens``/``input_tokens``/``output_tokens`` (``None``
+        when the API reported no usage).
+
+        With ``incremental_output=True`` (set by the caller) each chunk
+        carries only the newly generated text, so content / reasoning deltas
+        are accumulated.  Multimodal responses carry ``content`` as a list of
+        modality items (``[{"text": "..."}]``), which is joined here.  The
+        terminal chunk reports ``finish_reason == "stop"``; tool-call requests
+        stream across many chunks (the ``arguments`` JSON is split), so they
+        are accumulated by ``index``.
+
+        When ``cancel_event`` is set (user pressed Enter while waiting), the
+        stream is abandoned as soon as the next chunk arrives.
+        """
+        for chunk in stream:
+            self._chunks_seen += 1
+            # Honour an Enter-to-cancel request: stop consuming as soon as the
+            # next chunk arrives so the worker can close the connection.
+            if cancel_event is not None and cancel_event.is_set():
+                break
+            self.handle_chunk(chunk)
+            if self.finish:
+                break
+
+        # A healthy stream always ends with a chunk whose finish_reason is
+        # "stop"; a stream with zero chunks means the API failed before
+        # producing anything.  Fail loudly instead of returning an empty
+        # answer.  An Enter-to-cancel short-circuit must not be treated as an
+        # empty stream.
+        if self._chunks_seen == 0 and (
+            cancel_event is None or not cancel_event.is_set()
+        ):
+            raise RuntimeError(
+                "The DashScope API returned no stream chunks (empty response)."
+            )
+        tool_use_blocks = _build_tool_use_blocks(self.tool_calls)
+        return (
+            self.full_content,
+            self.reasoning_content,
+            tool_use_blocks,
+            _build_usage_info(self.usage_state),
         )
-    return full_content, reasoning_content, tool_use_blocks, _build_usage_info(state)
 
+    # ------------------------------------------------------------------
+    # Chunk handlers
+    # ------------------------------------------------------------------
 
-def _consume_dashscope_chunk(chunk, state: dict[str, Any]) -> None:
-    """Process one stream chunk, updating *state*."""
-    status_code = _get(chunk, "status_code")
-    if status_code is not None and status_code != 200:
-        _raise_dashscope_error(chunk, status_code)
+    def handle_chunk(self, chunk) -> None:
+        """Process one stream chunk."""
+        status_code = _get(chunk, "status_code")
+        if status_code is not None and status_code != 200:
+            _raise_dashscope_error(chunk, status_code)
 
-    output = _get(chunk, "output") or {}
-    choices = _get(output, "choices") or []
-    if not choices:
-        # Keep consuming: the terminal chunk may still carry usage.
-        _consume_usage(chunk, state)
-        return
+        output = _get(chunk, "output") or {}
+        choices = _get(output, "choices") or []
+        if not choices:
+            # Keep consuming: the terminal chunk may still carry usage.
+            self.consume_usage(chunk)
+            return
 
-    choice = choices[0]
-    message = _get(choice, "message") or {}
-    _consume_message(message, state)
-    _consume_usage(chunk, state)
+        choice = choices[0]
+        message = _get(choice, "message") or {}
+        self.handle_message(message)
+        self.consume_usage(chunk)
 
-    if _get(choice, "finish_reason") == "stop":
-        state["finish"] = True
+        if _get(choice, "finish_reason") == "stop":
+            self.finish = True
+
+    def handle_message(self, message) -> None:
+        """Accumulate content, reasoning and tool-call deltas from one message."""
+        content = _get(message, "content") or ""
+        if isinstance(content, list):
+            # Multimodal responses carry content as a list of modality items
+            # (e.g. [{"text": "..."}]); join the text parts.
+            content = "".join(
+                item.get("text", "") for item in content if isinstance(item, dict)
+            )
+        if content:
+            self.content.append(content)
+
+        reasoning = _get(message, "reasoning_content") or ""
+        if reasoning:
+            self.reasoning.append(reasoning)
+
+        # Tool-call requests stream across many chunks: each chunk carries a
+        # partial tool_call with an ``index`` and the ``arguments`` JSON is
+        # split across chunks, so accumulate by index (mirroring the
+        # Completions consumer) instead of appending one block per chunk.
+        for tc in _get(message, "tool_calls") or []:
+            self.handle_tool_call(tc)
+
+    def handle_tool_call(self, tc) -> None:
+        """Merge one DashScope tool-call chunk into the per-index map."""
+        idx = _get(tc, "index", 0) or 0
+        entry = self.tool_calls.setdefault(idx, {"id": "", "name": "", "arguments": ""})
+        if _get(tc, "id"):
+            entry["id"] = _get(tc, "id")
+        function = _get(tc, "function") or {}
+        if _get(function, "name"):
+            entry["name"] = _get(function, "name")
+        arguments = _get(function, "arguments")
+        if arguments:
+            entry["arguments"] += arguments
+
+    def consume_usage(self, chunk) -> None:
+        """Keep the most recent usage reported by the API."""
+        usage = _get(chunk, "usage")
+        if usage is not None:
+            self.input_tokens = _get(usage, "input_tokens", self.input_tokens)
+            self.output_tokens = _get(usage, "output_tokens", self.output_tokens)
+            self.total_tokens = _get(usage, "total_tokens", self.total_tokens)
 
 
 def _raise_dashscope_error(chunk, status_code: int) -> None:
@@ -186,53 +279,6 @@ def _raise_dashscope_error(chunk, status_code: int) -> None:
             f"DashScope API error (code={code}): {message}{detail}"
         )
     raise RuntimeError(f"DashScope API error (code={code}): {message}{detail}")
-
-
-def _consume_message(message, state: dict[str, Any]) -> None:
-    """Accumulate content, reasoning and tool-call deltas from one message."""
-    content = _get(message, "content") or ""
-    if isinstance(content, list):
-        # Multimodal responses carry content as a list of modality items
-        # (e.g. [{\"text\": \"...\"}]); join the text parts.
-        content = "".join(
-            item.get("text", "") for item in content if isinstance(item, dict)
-        )
-    if content:
-        state["content"].append(content)
-
-    reasoning = _get(message, "reasoning_content") or ""
-    if reasoning:
-        state["reasoning"].append(reasoning)
-
-    # Tool-call requests stream across many chunks: each chunk carries a
-    # partial tool_call with an ``index`` and the ``arguments`` JSON is
-    # split across chunks, so accumulate by index (mirroring the
-    # Completions consumer) instead of appending one block per chunk.
-    for tc in _get(message, "tool_calls") or []:
-        _consume_tool_call(tc, state["tool_calls"])
-
-
-def _consume_tool_call(tc, tool_calls_map: dict[int, dict[str, str]]) -> None:
-    """Merge one DashScope tool-call chunk into the per-index map."""
-    idx = _get(tc, "index", 0) or 0
-    entry = tool_calls_map.setdefault(idx, {"id": "", "name": "", "arguments": ""})
-    if _get(tc, "id"):
-        entry["id"] = _get(tc, "id")
-    function = _get(tc, "function") or {}
-    if _get(function, "name"):
-        entry["name"] = _get(function, "name")
-    arguments = _get(function, "arguments")
-    if arguments:
-        entry["arguments"] += arguments
-
-
-def _consume_usage(chunk, state: dict[str, Any]) -> None:
-    """Keep the most recent usage reported by the API."""
-    usage = _get(chunk, "usage")
-    if usage is not None:
-        state["input_tokens"] = _get(usage, "input_tokens", state["input_tokens"])
-        state["output_tokens"] = _get(usage, "output_tokens", state["output_tokens"])
-        state["total_tokens"] = _get(usage, "total_tokens", state["total_tokens"])
 
 
 def _build_tool_use_blocks(
@@ -262,6 +308,74 @@ def _build_usage_info(state: dict[str, Any]) -> Any:
             output_tokens=state["output_tokens"],
         )
     return None
+
+
+# ---------------------------------------------------------------------------
+# Backward-compatibility delegators (re-exported from ``dashscope_api``).
+# ---------------------------------------------------------------------------
+
+_STATE_KEYS = (
+    "content",
+    "reasoning",
+    "tool_calls",
+    "input_tokens",
+    "output_tokens",
+    "total_tokens",
+    "finish",
+)
+
+
+def _consumer_from_state(state: dict[str, Any]) -> DashScopeStreamConsumer:
+    """Build a consumer seeded from a legacy ``state`` dict."""
+    consumer = DashScopeStreamConsumer()
+    for key in _STATE_KEYS:
+        if key in state:
+            setattr(consumer, key, state[key])
+    return consumer
+
+
+def _state_from_consumer(
+    consumer: DashScopeStreamConsumer, state: dict[str, Any]
+) -> None:
+    """Write a consumer's parts back into a legacy ``state`` dict."""
+    for key in _STATE_KEYS:
+        state[key] = getattr(consumer, key)
+
+
+def _consume_stream(stream, cancel_event=None):
+    """Consume a streaming DashScope generation response.
+
+    See :meth:`DashScopeStreamConsumer.consume` for the return shape.
+    """
+    return DashScopeStreamConsumer().consume(stream, cancel_event=cancel_event)
+
+
+def _consume_dashscope_chunk(chunk, state: dict[str, Any]) -> None:
+    """Process one stream chunk into a legacy state dict."""
+    consumer = _consumer_from_state(state)
+    consumer.handle_chunk(chunk)
+    _state_from_consumer(consumer, state)
+
+
+def _consume_message(message, state: dict[str, Any]) -> None:
+    """Accumulate one message's deltas into a legacy state dict."""
+    consumer = _consumer_from_state(state)
+    consumer.handle_message(message)
+    _state_from_consumer(consumer, state)
+
+
+def _consume_tool_call(tc, tool_calls_map: dict[int, dict[str, str]]) -> None:
+    """Merge one tool-call chunk into a legacy per-index map (in-place)."""
+    consumer = DashScopeStreamConsumer()
+    consumer.tool_calls = tool_calls_map
+    consumer.handle_tool_call(tc)
+
+
+def _consume_usage(chunk, state: dict[str, Any]) -> None:
+    """Keep the most recent usage in a legacy state dict."""
+    consumer = _consumer_from_state(state)
+    consumer.consume_usage(chunk)
+    _state_from_consumer(consumer, state)
 
 
 def _stream_response(client, call_kwargs, tools_schemas, cancel_event=None):
@@ -301,7 +415,7 @@ def _stream_response(client, call_kwargs, tools_schemas, cancel_event=None):
         round_kwargs = dict(kwargs)
         if use_multimodal:
             # The multimodal API expects message content as a list of
-            # modality items ([{\"text\": \"...\"}]) instead of a plain string.
+            # modality items ([{"text": "..."}]) instead of a plain string.
             round_kwargs["messages"] = _to_multimodal_messages(round_kwargs["messages"])
         cls = MultiModalConversation if use_multimodal else Generation
         logger.debug(

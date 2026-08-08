@@ -41,6 +41,22 @@ Changes since `v4.20.0` (2026-08-07).
 
 ### Changed
 
+- Introduced `*StreamConsumer` classes as the real implementation of the
+  four stream-assembly modules, removing the ``state``-dict plumbing
+  between handlers: `ResponsesStreamConsumer`
+  (`janito/openai_client/responses_stream.py`), `CompletionsStreamConsumer`
+  (`completions_stream.py`), `AnthropicStreamConsumer`
+  (`anthropic_stream.py`) and `DashScopeStreamConsumer`
+  (`dashscope_stream.py`).  Each consumer holds the assembled response parts
+  (content / reasoning / tool calls / usage / response id) as instance
+  attributes, exposes `consume()` plus `handle_*` methods, and is driven by
+  the module-level `_consume_*` / `_stream_response` functions, which remain
+  as thin delegators so existing callers and test monkeypatches are
+  unaffected.  The re-exported `_handle_*`/`_consume_*` helpers keep their
+  exact signatures via small legacy ``state``-dict bridges (used by no code
+  path; kept for backward compatibility).  New tests:
+  `tests/test_stream_consumers.py`.
+
 - Introduced a shared `Client` base class
   (`janito/openai_client/base_client.py`) implementing the duplicated
   ~300-line agent-loop pipeline (reset tracking -> resolve runtime config ->
