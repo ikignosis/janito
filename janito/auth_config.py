@@ -15,15 +15,29 @@ import logging
 import os
 from pathlib import Path
 
-from .config_dir import get_config_dir
+from .config_dir import get_config_dir, get_config_file_paths
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
 
 
 def get_auth_file_path() -> Path:
-    """Get the path to the auth configuration file."""
+    """Get the path to the auth configuration file (the write target)."""
     return get_config_dir() / "auth.json"
+
+
+def get_auth_file_paths() -> list[Path]:
+    """Get all auth.json paths used for resolution, in priority order.
+
+    With ``-l`` / ``--local`` the project-local path (``./.janito/auth.json``)
+    comes first, followed by the base path (``~/.janito/auth.json`` or the
+    ``-c`` / ``--config-dir`` override). Otherwise only the base path is
+    returned.
+
+    Returns:
+        List of paths, highest priority first.
+    """
+    return get_config_file_paths("auth.json")
 
 
 def ensure_auth_directory() -> Path:
@@ -34,17 +48,31 @@ def ensure_auth_directory() -> Path:
 
 
 def load_auth_config() -> dict[str, str]:
-    """Load the authentication configuration from file."""
-    auth_file = get_auth_file_path()
+    """Load the authentication configuration from file.
 
-    if not auth_file.exists():
-        logger.debug(f"Auth config file not found: {auth_file}")
+    With ``-l`` / ``--local`` the project-local auth.json (``./.janito``) is
+    merged over the base one (``~/.janito`` or the ``-c`` override) so local
+    entries take precedence; otherwise only the base file is read.
+
+    Returns:
+        Dict of provider -> API key (plus the optional ``provider`` default).
+    """
+    paths = get_auth_file_paths()
+
+    if not any(path.exists() for path in paths):
+        logger.debug("Auth config file not found")
         return {}
 
-    with open(auth_file, "r", encoding="utf-8") as f:
-        content = f.read()
-    logger.debug(f"Loaded auth config from {auth_file}")
-    return json.loads(content)
+    merged: dict[str, str] = {}
+    # Iterate base -> local so that local entries override global ones.
+    for auth_file in reversed(paths):
+        if not auth_file.exists():
+            continue
+        with open(auth_file, "r", encoding="utf-8") as f:
+            content = f.read()
+        logger.debug(f"Loaded auth config from {auth_file}")
+        merged.update(json.loads(content))
+    return merged
 
 
 def save_auth_config(config: dict[str, str]) -> bool:

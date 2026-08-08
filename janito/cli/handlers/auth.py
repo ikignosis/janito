@@ -1,12 +1,13 @@
 """Authentication-related CLI handlers."""
 
+import json
 import sys
 
 from ...auth_config import (
     get_api_key,
     get_auth_file_path,
+    get_auth_file_paths,
     get_default_provider,
-    list_providers,
     set_api_key,
 )
 from ...general_config import get_masked_api_key, load_provider_from_config
@@ -109,26 +110,40 @@ def handle_set_api_key(args) -> int:
 def handle_list_keys(args) -> int:
     """Handle --list-keys command.
 
+    Shows the providers configured in each existing auth.json along the
+    resolution chain: with ``-l`` / ``--local`` both the project-local
+    ``./.janito/auth.json`` and the global ``~/.janito/auth.json`` (or the
+    ``-c`` override) are listed; otherwise only the base file is shown.
+
     Args:
         args: Parsed command line arguments
 
     Returns:
         int: Exit code (0 for success)
     """
-    providers = list_providers()
-    auth_file = get_auth_file_path()
+    auth_paths = [p for p in get_auth_file_paths() if p.exists()]
 
     print("Configured Authentication Providers:")
     print("=" * 40)
-    print(f"Config file: {auth_file}")
-    print()
 
-    if not providers:
+    if not auth_paths:
         print("No providers configured.")
-        print("\nUse --set-api-key with --provider to add API keys:")
+        print(f"Config file: {get_auth_file_path()}")
+        print()
+        print("Use --set-api-key with --provider to add API keys:")
         print("  janito --set-api-key <key> --provider openai")
-    else:
-        for provider in providers:
-            print(f"  {provider}: ***")
+        return 0
+
+    for auth_file in auth_paths:
+        with open(auth_file, "r", encoding="utf-8") as f:
+            config = json.load(f)
+        providers = [key for key in config if key != "provider"]
+        print(f"Config file: {auth_file}")
+        if not providers:
+            print("  (no providers configured)")
+        else:
+            for provider in providers:
+                print(f"  {provider}: ***")
+        print()
 
     return 0

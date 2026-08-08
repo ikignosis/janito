@@ -27,6 +27,17 @@ Changes since `v4.20.0` (2026-08-07).
   and mirrors `GetUrl`'s truncation and oversized-content-to-temp-file
   behaviour. Falls back from `--headless=new` to the legacy `--headless` flag
   for older Chromium builds. Closes #43.
+- `-l` / `--local` CLI switch for project-local configuration. When used,
+  `--set`, `--set-api-key`, `--set-secret` (and the other config/auth/secret
+  commands) store their files in `./.janito` (the current working directory)
+  instead of `~/.janito`. Reads resolve local values first and fall back to
+  the global directory (`~/.janito` or the `-c` / `--config-dir` override),
+  and `--list-keys` / `--list-secrets` show both the local and the global
+  entries. `janito/config_dir.py` gained a resolution chain
+  (`get_config_dirs` / `get_config_file_paths`) used by `general_config`,
+  `auth_config` and `secrets_config`; writes always target the primary file
+  only, so a local `--set` never copies global entries into `./.janito`.
+  Closes #45.
 
 ### Changed
 

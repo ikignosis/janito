@@ -18,6 +18,7 @@ from .general_config import (
     PROVIDER_SCOPED_KEYS,
     determine_provider,
     get_config_path,
+    get_config_paths,
     get_config_value,
     normalize_api_type,
     set_config_value,
@@ -169,7 +170,7 @@ def get_config_from_cli(key: str, cli_provider: str | None = None) -> str | None
         ProviderRequiredError: If a provider-scoped key is used but the
             provider cannot be determined
     """
-    if not get_config_path().exists():
+    if not any(path.exists() for path in get_config_paths()):
         raise FileNotFoundError(f"Config file not found: {get_config_path()}")
 
     if key in PROVIDER_SCOPED_KEYS:

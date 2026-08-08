@@ -8,6 +8,11 @@ Secrets are stored in `~/.janito/secrets.json`.
 
 > **Note:** Provider API keys set with `--set-api-key` are stored separately in `~/.janito/auth.json`. The secrets file is for arbitrary credentials such as Gmail app passwords or Azure client IDs.
 
+> **Note:** With `-l`/`--local`, secrets are stored in `./.janito/secrets.json`
+> (the current working directory) instead of `~/.janito/secrets.json`. Reads
+> resolve local values first and fall back to the global file, and
+> `--list-secrets` shows both.
+
 ## Setting Secrets
 
 ### Gmail Credentials

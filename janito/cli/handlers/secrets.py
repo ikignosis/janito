@@ -1,11 +1,13 @@
 """Secrets-related CLI handlers."""
 
+import json
 import sys
 
 from ...secrets_config import (
     delete_secret,
     get_secret,
     get_secrets_file_path,
+    get_secrets_file_paths,
     list_secrets,
     set_secret,
 )
@@ -153,27 +155,39 @@ def handle_delete_secret(args) -> int:
 def handle_list_secrets(args) -> int:
     """Handle --list-secrets command.
 
+    Shows the secrets stored in each existing secrets.json along the
+    resolution chain: with ``-l`` / ``--local`` both the project-local
+    ``./.janito/secrets.json`` and the global ``~/.janito/secrets.json`` (or
+    the ``-c`` override) are listed; otherwise only the base file is shown.
+
     Args:
         args: Parsed command line arguments
 
     Returns:
         int: Exit code (0 for success)
     """
-    secrets = list_secrets()
-    secrets_file = get_secrets_file_path()
+    secrets_paths = [p for p in get_secrets_file_paths() if p.exists()]
 
     print("Configured Secrets:")
     print("=" * 40)
-    print(f"Config file: {secrets_file}")
-    print()
 
-    if not secrets:
+    if not secrets_paths:
         print("No secrets configured.")
+        print(f"Config file: {get_secrets_file_path()}")
         print()
         print("Use --set-secret to add secrets:")
         print("  janito --set-secret key=value")
-    else:
-        for key in secrets:
-            print(f"  {key}")
+        return 0
+
+    for secrets_file in secrets_paths:
+        with open(secrets_file, "r", encoding="utf-8") as f:
+            config = json.load(f)
+        print(f"Config file: {secrets_file}")
+        if not config:
+            print("  (no secrets configured)")
+        else:
+            for key in config:
+                print(f"  {key}")
+        print()
 
     return 0

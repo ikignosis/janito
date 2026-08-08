@@ -55,7 +55,7 @@ from .cli.handlers.onedrive import (
 from .cli.input import read_stdin_prompt
 from .cli.logging_config import setup_logging
 from .cli.setup import validate_runtime_config
-from .config_dir import set_config_dir
+from .config_dir import set_config_dir, set_local_config_mode
 from .privileges import Privileges
 from .provider_config import validate_provider_name
 
@@ -79,8 +79,9 @@ def _track_rc(exit_code: int, new_rc: int) -> int:
 
 
 def _setup_runtime(args) -> int | None:
-    """Apply early CLI overrides (config dir, logging, provider, privileges)."""
+    """Apply early CLI overrides (config dir, local mode, logging, provider, privileges)."""
     set_config_dir(getattr(args, "config_dir", None))
+    set_local_config_mode(getattr(args, "local", False))
     setup_logging(args.log)
 
     # Whenever --provider <name> is used, verify it is a supported provider

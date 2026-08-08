@@ -21,6 +21,7 @@ If no prompt is given, janito starts an interactive chat shell.
 | Option | Description |
 |--------|-------------|
 | `-c`, `--config-dir <dir>` | Directory for all janito config (config, auth, secrets, MCP, skills). Defaults to `~/.janito` |
+| `-l`, `--local` | Use the project-local config directory `./.janito` (the current working directory) for `--set`, `--set-api-key`, `--set-secret`, etc. Reads resolve local values first and fall back to the global `~/.janito`; list operations show both |
 | `--config` | Open the interactive configuration wizard |
 | `--show-config` | Display the configured provider and model |
 | `--info` | Print resolved configuration (provider, model, API key) and exit |
@@ -31,7 +32,7 @@ If no prompt is given, janito starts an interactive chat shell.
 | `-f`, `--force` | Overwrite an existing API key without prompting (used with `--set-api-key`) |
 | `--provider <name>` | Provider name (e.g., `openai`, `custom`). Always validated against the supported providers; unknown names are rejected. |
 | `--model <name>` | Model name (overrides the provider's configured model) |
-| `--list-keys` | List configured providers and keys |
+| `--list-keys` | List configured providers and keys (with `-l`/`--local`, shows both the local and the global auth files) |
 
 > **Note:** `--set` and `--set-api-key` must be used in **separate commands**, not together on the same line.
 
@@ -42,7 +43,7 @@ If no prompt is given, janito starts an interactive chat shell.
 | `--set-secret <key=value>` | Set one or more secrets in `~/.janito/secrets.json` |
 | `--get-secret <key>` | Get one or more secret values |
 | `--delete-secret <key>` | Delete one or more secrets |
-| `--list-secrets` | List all configured secret keys |
+| `--list-secrets` | List all configured secret keys (with `-l`/`--local`, shows both the local and the global secrets files) |
 
 ## System Prompt
 
@@ -110,6 +111,19 @@ janito --info
 janito --set provider=openai --set model=gpt-4
 janito --set-api-key sk-your-key --provider openai
 janito --set-api-key sk-your-key   # uses the configured default provider
+```
+
+### Project-local configuration
+
+With `-l`/`--local`, configuration is stored in `./.janito` (the current
+working directory) instead of `~/.janito`. Reads resolve local values first
+and fall back to the global directory, and `--list-keys` / `--list-secrets`
+show both:
+
+```bash
+janito -l --set model=gpt-4                  # store config in ./.janito
+janito -l --set-api-key sk-your-key --provider openai   # store the key in ./.janito
+janito -l --list-keys                        # show global and local keys
 ```
 
 ### Secrets

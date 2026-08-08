@@ -25,6 +25,10 @@ Configuration:
 
   API keys are stored securely in ~/.janito/auth.json using --set-api-key
 
+  With -l/--local, config/auth/secrets are stored in ./.janito (the current
+  working directory) instead of ~/.janito; reads resolve local values first,
+  falling back to the global ~/.janito, and list operations show both.
+
 Options:
   --set-api-key KEY  Set API key for a provider (uses --provider, or the
                      configured default provider when --provider is omitted;
@@ -66,6 +70,9 @@ Examples:
   janito --delete-secret mykey                             # Delete a secret
   janito --config                                           # Interactive configuration setup
   janito -c ~/myconf --set provider=openai                 # Use a custom config dir for all config
+  janito -l --set model=gpt-4                              # Store config in ./.janito (project-local)
+  janito -l --set-api-key sk-xxx --provider openai         # Store API key in ./.janito
+  janito -l --list-keys                                    # Show global and local keys
   janito --provider custom --set endpoint=https://api.example.com/v1  # Use custom provider (set endpoint in config)
   janito --no-history                                          # Interactive chat without file history
   janito -t                                                    # Enable thinking mode
@@ -101,6 +108,16 @@ Note: --set and --set-api-key must be used in separate commands.
         metavar="DIR",
         help="Directory for all janito config (config, auth, secrets, MCP, skills). "
         "Defaults to ~/.janito",
+    )
+
+    parser.add_argument(
+        "-l",
+        "--local",
+        action="store_true",
+        help="Use the project-local config directory ./.janito (in the current "
+        "working directory) for --set, --set-api-key, --set-secret, etc. "
+        "instead of ~/.janito. Reads resolve local values first and fall back "
+        "to the global ~/.janito; list operations show both.",
     )
 
     parser.add_argument(

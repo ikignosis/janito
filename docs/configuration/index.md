@@ -15,6 +15,12 @@ janito stores your configuration in `~/.janito/`. The main configuration file is
 > (config, auth, secrets, MCP services and skills) in a different directory
 > instead of `~/.janito`. For example: `janito -c ~/myconf --set provider=openai`.
 
+> **Project-local config:** Use `-l`/`--local` to store config, API keys and
+> secrets in `./.janito` (the current working directory) instead of
+> `~/.janito`. Reads resolve local values first and fall back to the global
+> directory, and `--list-keys` / `--list-secrets` show both. For example:
+> `janito -l --set model=gpt-4`.
+
 ### View Configuration
 
 ```bash
@@ -41,12 +47,15 @@ Configuration is resolved from local files — janito does **not** read any
 overrides earlier):
 
 1. Provider's built-in default (endpoint) / no default (model)
-2. Configuration file (`~/.janito/config.json`)
+2. Configuration file (`~/.janito/config.json`; with `-l`/`--local`, the
+   project-local `./.janito/config.json` is consulted first and its values
+   override the global ones)
 3. Command-line arguments (`--model`, `--provider`, `--set endpoint=...`)
 
 API keys are read from the per-provider key stored in `~/.janito/auth.json`
 (set with `--set-api-key <key> --provider <name>`). There is no environment
-variable fallback.
+variable fallback. With `-l`/`--local`, keys in `./.janito/auth.json` take
+precedence over `~/.janito/auth.json`.
 
 > **Note:** When using CLI arguments, `--set` and `--set-api-key` must be run as **separate commands**. They cannot be combined in a single invocation.
 

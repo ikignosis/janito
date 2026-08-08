@@ -19,15 +19,29 @@ import logging
 import os
 from pathlib import Path
 
-from .config_dir import get_config_dir
+from .config_dir import get_config_dir, get_config_file_paths
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
 
 
 def get_secrets_file_path() -> Path:
-    """Get the path to the secrets configuration file."""
+    """Get the path to the secrets configuration file (the write target)."""
     return get_config_dir() / "secrets.json"
+
+
+def get_secrets_file_paths() -> list[Path]:
+    """Get all secrets.json paths used for resolution, in priority order.
+
+    With ``-l`` / ``--local`` the project-local path (``./.janito/secrets.json``)
+    comes first, followed by the base path (``~/.janito/secrets.json`` or the
+    ``-c`` / ``--config-dir`` override). Otherwise only the base path is
+    returned.
+
+    Returns:
+        List of paths, highest priority first.
+    """
+    return get_config_file_paths("secrets.json")
 
 
 def ensure_secrets_directory() -> Path:
@@ -40,23 +54,33 @@ def ensure_secrets_directory() -> Path:
 def load_secrets_config() -> dict[str, str]:
     """Load the secrets configuration from file.
 
+    With ``-l`` / ``--local`` the project-local secrets.json (``./.janito``)
+    is merged over the base one (``~/.janito`` or the ``-c`` override) so local
+    entries take precedence; otherwise only the base file is read.
+
     Returns:
         Dict[str, str]: Dictionary of key-value secrets
     """
-    secrets_file = get_secrets_file_path()
+    paths = get_secrets_file_paths()
 
-    if not secrets_file.exists():
-        logger.debug(f"Secrets config file not found: {secrets_file}")
+    if not any(path.exists() for path in paths):
+        logger.debug("Secrets config file not found")
         return {}
 
-    try:
-        with open(secrets_file, "r", encoding="utf-8") as f:
-            content = f.read()
-        logger.debug(f"Loaded secrets config from {secrets_file}")
-        return json.loads(content)
-    except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse secrets config: {e}")
-        return {}
+    merged: dict[str, str] = {}
+    # Iterate base -> local so that local entries override global ones.
+    for secrets_file in reversed(paths):
+        if not secrets_file.exists():
+            continue
+        try:
+            with open(secrets_file, "r", encoding="utf-8") as f:
+                content = f.read()
+            logger.debug(f"Loaded secrets config from {secrets_file}")
+            merged.update(json.loads(content))
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse secrets config: {e}")
+            continue
+    return merged
 
 
 def save_secrets_config(config: dict[str, str]) -> bool:

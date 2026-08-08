@@ -7,7 +7,9 @@ from ...general_config import (
     ProviderRequiredError,
     get_config_from_cli,
     get_config_path,
+    get_config_paths,
     get_masked_api_key,
+    load_config,
     load_endpoint_from_config,
     load_max_output_tokens,
     load_model_from_config,
@@ -30,13 +32,15 @@ def handle_get_config(keys: list[str], cli_provider: str = None) -> int:
         int: Exit code (0 for success, non-zero for error)
     """
     try:
-        if not keys:
-            # No keys specified, show all config
-            import json
+        import json
 
-            with open(get_config_path(), "r") as f:
-                config = json.load(f)
-            print(json.dumps(config, indent=2))
+        if not keys:
+            # No keys specified, show the resolved (merged) config: with
+            # -l/--local this reflects local values overlaid on the global
+            # ones (see janito.general_config.load_config).
+            if not any(path.exists() for path in get_config_paths()):
+                raise FileNotFoundError(get_config_path())
+            print(json.dumps(load_config(), indent=2))
             return 0
 
         errors = False

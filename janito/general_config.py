@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from .auth_config import get_default_provider
-from .config_dir import get_config_dir
+from .config_dir import get_config_dir, get_config_file_paths
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ BOOL_VALUED_KEYS = {"responses-in-server"}
 
 
 def get_config_path() -> Path:
-    """Get the path to the config.json file.
+    """Get the path to the config.json file (the write target).
 
     Returns:
         Path: Path to <config-dir>/config.json (defaults to ~/.janito/config.json)
@@ -52,24 +52,87 @@ def get_config_path() -> Path:
     return get_config_dir() / "config.json"
 
 
-def load_config() -> dict[str, Any]:
-    """Load the entire config.json file.
+def get_config_paths() -> list[Path]:
+    """Get all config.json paths used for resolution, in priority order.
+
+    With ``-l`` / ``--local`` the project-local path (``./.janito/config.json``)
+    comes first, followed by the base path (``~/.janito/config.json`` or the
+    ``-c`` / ``--config-dir`` override). Otherwise only the base path is
+    returned.
 
     Returns:
-        Dict containing the config, or empty dict if file doesn't exist or is invalid
+        List of paths, highest priority first.
     """
-    config_path = get_config_path()
+    return get_config_file_paths("config.json")
+
+
+def _deep_merge(base: dict, override: dict) -> dict:
+    """Deep-merge ``override`` into a copy of ``base`` (override wins).
+
+    Nested dicts are merged recursively so a local ``providers`` structure
+    overrides the global one per provider/subkey instead of replacing it
+    wholesale.
+
+    Args:
+        base: The base mapping (e.g. the global config).
+        override: The mapping applied on top (e.g. the local config).
+
+    Returns:
+        A new merged dict; neither input is mutated.
+    """
+    result = dict(base)
+    for key, value in override.items():
+        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
+            result[key] = _deep_merge(result[key], value)
+        else:
+            result[key] = value
+    return result
+
+
+def _load_config_file(config_path: Path) -> dict[str, Any]:
+    """Load a single config.json file.
+
+    Args:
+        config_path: Path to the config file to read.
+
+    Returns:
+        The parsed config, or an empty dict when the file is missing or invalid.
+    """
     try:
         with open(config_path, "r") as f:
-            config = json.load(f)
-            logger.debug(f"Loaded config from {config_path}: {list(config.keys())}")
-            return config
+            return json.load(f)
     except FileNotFoundError:
-        logger.debug(f"Config file not found: {config_path}")
         return {}
     except json.JSONDecodeError as e:
         logger.error(f"Invalid JSON in config file: {e}")
         return {}
+
+
+def load_config() -> dict[str, Any]:
+    """Load the entire config.json file (merged across the resolution chain).
+
+    With ``-l`` / ``--local`` the project-local config.json (``./.janito``) is
+    deep-merged over the base one (``~/.janito`` or the ``-c`` override) so
+    local values take precedence; otherwise the single base file is read.
+
+    Returns:
+        Dict containing the config, or empty dict if no file exists or is invalid
+    """
+    paths = get_config_paths()
+    if not any(path.exists() for path in paths):
+        logger.debug("Config file not found")
+        return {}
+
+    merged: dict[str, Any] = {}
+    # Iterate base -> local so that local entries override global ones.
+    for config_path in reversed(paths):
+        if not config_path.exists():
+            continue
+        with open(config_path, "r") as f:
+            data = json.load(f)
+        logger.debug(f"Loaded config from {config_path}: {list(data.keys())}")
+        merged = _deep_merge(merged, data)
+    return merged
 
 
 def save_config(config: dict[str, Any]) -> None:
@@ -136,7 +199,10 @@ def set_config_value(key: str, value: Any) -> None:
         value: The value to set
     """
     logger.debug(f"Setting config '{key}' = {value}")
-    config = load_config()
+    # Writes target the primary config file only (never the merged view), so a
+    # --set in -l/--local mode stores the value in ./.janito without copying
+    # the global entries into the local file.
+    config = _load_config_file(get_config_path())
 
     # Check if this is a provider-scoped key (e.g., "openai.model")
     if "." in key:
@@ -176,7 +242,8 @@ def unset_config_value(key: str) -> bool:
     Returns:
         bool: True if the key was removed, False if it didn't exist
     """
-    config = load_config()
+    # Writes target the primary config file only (see set_config_value).
+    config = _load_config_file(get_config_path())
 
     # Check if this is a provider-scoped key (e.g., "openai.model")
     if "." in key:
