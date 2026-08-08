@@ -48,3 +48,5 @@ Changes since `v4.20.0` (2026-08-07).
   other search tools) plus `total_matches`. This breaks the previous
   filenames-only return contract on purpose; no backwards compatibility is
   kept.
+- Enabled ruff's mccabe complexity check (`C901`) in `[tool.ruff.lint]` with
+  `max-complexity = 50` in `[tool.ruff.lint.mccabe]`. Closes #44.

@@ -63,7 +63,10 @@ line-length = 120
 target-version = "py310"
 
 [tool.ruff.lint]
-select = ["E", "F", "W"]
+select = ["C901", "E", "F", "W"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 50
 
 [tool.isort]
 profile = "black"
