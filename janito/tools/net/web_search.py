@@ -274,7 +274,7 @@ class WebSearch(BaseTool):
                 self.report_error(msg)
                 return {"success": False, "error": msg, "query": query}
 
-            self.report_start(f"\ud83d\udd0e Searching the web for: {query}", end="")
+            self.report_start(f"\U0001f50d Searching the web for: {query}", end="")
 
             # Build query parameters (only include the ones that were set).
             params = self._build_params(

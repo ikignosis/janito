@@ -80,6 +80,14 @@ if pytest is not None:
         assert info["max_input_tokens"] == 1048576  # 1M (2**20)
         assert info["max_output_tokens"] == 393216
         assert info["endpoint"] == "https://api.deepseek.com"
+        # OpenAI-compatible base URL for the OpenAI-SDK API types and the
+        # Anthropic-compatible base URL for the native Anthropic SDK API type.
+        assert info["supported_api_types"] == ["Responses", "Completions", "Anthropic"]
+        assert info["endpoint_by_api_type"] == {
+            "Completions": "https://api.deepseek.com",
+            "Responses": "https://api.deepseek.com",
+            "Anthropic": "https://api.deepseek.com/anthropic",
+        }
         # Case-insensitive lookup.
         assert get_provider_info("DeepSeek")["endpoint"] == "https://api.deepseek.com"
         assert get_base_url_from_provider("deepseek") == "https://api.deepseek.com"
@@ -204,10 +212,13 @@ if pytest is not None:
             "Responses",
             "DashScope",
         ]
-        # DeepSeek supports both API types, Responses first (the default).
+        # DeepSeek supports the Responses and Completions API types (Responses
+        # first, the default) plus the Anthropic-compatible API (native
+        # Anthropic SDK at https://api.deepseek.com/anthropic).
         assert get_supported_api_types_from_provider("deepseek") == [
             "Responses",
             "Completions",
+            "Anthropic",
         ]
         assert get_default_api_type_from_provider("deepseek") == "Responses"
         # Anthropic supports Completions (the built-in default) plus the
@@ -246,6 +257,13 @@ if pytest is not None:
             "Completions": "https://dashscope-intl.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1",
             "Responses": "https://dashscope-intl.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1",
             "DashScope": "https://dashscope-intl.aliyuncs.com/api/v1",
+        }
+        # DeepSeek maps the OpenAI-compatible types to api.deepseek.com and
+        # the native Anthropic SDK API type to the Anthropic-compatible URL.
+        assert get_endpoint_by_api_type("deepseek") == {
+            "Completions": "https://api.deepseek.com",
+            "Responses": "https://api.deepseek.com",
+            "Anthropic": "https://api.deepseek.com/anthropic",
         }
         # Providers without the map return None (single shared endpoint).
         assert get_endpoint_by_api_type("openai") is None
@@ -290,6 +308,22 @@ if pytest is not None:
             get_endpoint_for_api_type("alibaba")
             == "https://dashscope-intl.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1"
         )
+        # DeepSeek: the OpenAI-compatible types share api.deepseek.com and the
+        # native Anthropic SDK type uses the Anthropic-compatible base URL.
+        assert (
+            get_endpoint_for_api_type("deepseek", "Responses")
+            == "https://api.deepseek.com"
+        )
+        assert (
+            get_endpoint_for_api_type("deepseek", "Completions")
+            == "https://api.deepseek.com"
+        )
+        assert (
+            get_endpoint_for_api_type("deepseek", "Anthropic")
+            == "https://api.deepseek.com/anthropic"
+        )
+        # Without an API type the single built-in endpoint applies.
+        assert get_endpoint_for_api_type("deepseek") == "https://api.deepseek.com"
 
     def test_get_endpoint_for_api_type_single_entry_fallback():
         """A single-entry endpoint_by_api_type dict is the default for ANY

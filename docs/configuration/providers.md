@@ -205,6 +205,30 @@ janito --set provider=deepseek --set model=deepseek-v4-flash
 janito --set-api-key="your-deepseek-api-key" --provider deepseek
 ```
 
+### API Types and Base URLs
+
+The `deepseek` provider supports the OpenAI-compatible **Responses** and
+**Completions** API types (Responses is the built-in default) against the
+OpenAI-compatible base URL `https://api.deepseek.com`, plus a native
+**Anthropic** SDK API type against DeepSeek's Anthropic-compatible base URL
+`https://api.deepseek.com/anthropic` (per-API-type endpoint, see
+`endpoint_by_api_type`).
+
+The `anthropic` package is **optional**; janito aborts the change (with a
+message naming the package) if you try to select the `Anthropic` API type
+without it:
+
+```bash
+# Install the optional package first
+pip install anthropic
+
+# Then select the native Anthropic SDK API type
+janito --provider deepseek --set api-type=Anthropic
+
+# Per call
+janito --provider deepseek --api-type Anthropic "Explain quantum computing"
+```
+
 ### Thinking Mode
 
 DeepSeek models reason by default, so thinking mode is enabled out of the box

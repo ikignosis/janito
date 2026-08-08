@@ -296,10 +296,25 @@ def test_providers_endpoint_exposes_advanced_fields(client):
     assert "base_url" in openai
 
     deepseek = entries["deepseek"]
-    # DeepSeek supports both API types -> the drawer shows a combobox with
-    # both options; Responses (the first supported type) is the built-in default.
-    assert deepseek["supported_api_types"] == ["Responses", "Completions"]
+    # DeepSeek supports the Responses / Completions API types plus the
+    # Anthropic-compatible API (native Anthropic SDK); Responses (the first
+    # supported type) is the built-in default.
+    assert deepseek["supported_api_types"] == [
+        "Responses",
+        "Completions",
+        "Anthropic",
+    ]
     assert deepseek["default_api_type"] == "Responses"
+    # The per-API-type endpoint map is exposed: the OpenAI-compatible base
+    # URL for the OpenAI-SDK types and the Anthropic-compatible base URL for
+    # the native Anthropic SDK API type.
+    assert deepseek["endpoint_by_api_type"] == {
+        "Completions": "https://api.deepseek.com",
+        "Responses": "https://api.deepseek.com",
+        "Anthropic": "https://api.deepseek.com/anthropic",
+    }
+    # base_url reflects the default API type's built-in endpoint.
+    assert deepseek["base_url"] == "https://api.deepseek.com"
     # DeepSeek's /responses endpoint is stateless by default.
     assert deepseek["responses_in_server"] is False
     assert deepseek["default_responses_in_server"] is False

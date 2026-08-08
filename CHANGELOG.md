@@ -225,3 +225,12 @@ Changes since `v4.20.0` (2026-08-07).
   - The web config router (`janito/web/backend/routers/config.py`) moved its
     per-provider `PATCH /api/config` helpers to
     `janito/web/backend/routers/config_helpers.py`.
+
+- Updated the built-in `deepseek` provider info with its Anthropic-compatible
+  base URL (`https://api.deepseek.com/anthropic`). The provider now declares
+  the native `Anthropic` SDK API type (in addition to the OpenAI-compatible
+  `Responses` / `Completions` types) and an `endpoint_by_api_type` map: the
+  OpenAI-compatible types keep using `https://api.deepseek.com` while the
+  `Anthropic` type uses `https://api.deepseek.com/anthropic`, so the native
+  Anthropic SDK client can talk to DeepSeek with `--set api-type=Anthropic`
+  (requires the optional `anthropic` package).

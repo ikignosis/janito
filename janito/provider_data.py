@@ -150,7 +150,7 @@ PROVIDER_INFO: dict[str, dict] = {
     },
     "deepseek": {
         "model": "deepseek-v4-flash",
-        "supported_api_types": ["Responses", "Completions"],
+        "supported_api_types": ["Responses", "Completions", "Anthropic"],
         # DeepSeek's /responses endpoint is stateless: it cannot resolve a
         # previous_response_id, so the client must re-send the full history.
         "responses_in_server": False,
@@ -158,6 +158,18 @@ PROVIDER_INFO: dict[str, dict] = {
         "max_output_tokens": 393216,  # 384k
         "thinking": True,  # DeepSeek models reason by default
         "endpoint": "https://api.deepseek.com",
+        # Per-API-type endpoints: the OpenAI-compatible base URL (Chat
+        # Completions / Responses) and the Anthropic-compatible base URL for
+        # the native Anthropic SDK API type. DeepSeek's Anthropic API lives at
+        # https://api.deepseek.com/anthropic (see the DeepSeek API docs), so
+        # the native-SDK API type is selectable with --set api-type=Anthropic
+        # / --api-type Anthropic (it requires the optional `anthropic`
+        # package; see REQUIRES_BY_API_TYPE).
+        "endpoint_by_api_type": {
+            "Completions": "https://api.deepseek.com",
+            "Responses": "https://api.deepseek.com",
+            "Anthropic": "https://api.deepseek.com/anthropic",
+        },
     },
     "xai": {
         "model": "grok-4",
