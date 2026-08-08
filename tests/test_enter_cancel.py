@@ -147,6 +147,92 @@ def test_shell_enter_cancel_preserves_history(monkeypatch, capsys):
     assert "cancelled" in out.lower()
 
 
+def test_shell_enter_cancel_adds_content_to_history(monkeypatch, capsys):
+    """Enter-cancel lets the user append content and re-sends the combined prompt.
+
+    Pressing Enter while the request is pending interrupts the in-flight
+    request but, instead of just cancelling, the shell prompts for additional
+    lines; the combined message is rolled back and re-sent so the added
+    content becomes part of the conversation history (no duplicate or orphaned
+    user messages).
+    """
+    shell = InteractiveShell(model="test-model", no_history=True)
+    shell.initialize_history(system_prompt="sys")
+
+    calls = {"prompt": 0, "send": 0}
+    sent = []
+
+    def fake_prompt(*args, **kwargs):
+        calls["prompt"] += 1
+        if calls["prompt"] == 1:
+            return "hello"  # main prompt
+        if calls["prompt"] == 2:
+            return "more content"  # continuation line
+        if calls["prompt"] == 3:
+            return ""  # empty line finishes the continuation
+        raise EOFError  # end the session on the next main prompt
+
+    def send_prompt_func(user_input, **kwargs):
+        calls["send"] += 1
+        sent.append(user_input)
+        kwargs["previous_messages"].append({"role": "user", "content": user_input})
+        if calls["send"] == 1:
+            raise RequestCancelled("cancelled by Enter")
+        return "ok"
+
+    monkeypatch.setattr(shell.session, "prompt", fake_prompt)
+    shell.run(send_prompt_func, no_tools=True)
+
+    # The request was re-sent once with the combined prompt.
+    assert sent == ["hello", "hello\nmore content"]
+    # The history holds a single user message with the combined content, not
+    # the original prompt and the continuation as two separate turns.
+    user_messages = [
+        m.get("content") for m in shell.messages_history if m.get("role") == "user"
+    ]
+    assert user_messages == ["hello\nmore content"]
+    out = capsys.readouterr().out
+    assert "Add more content to the message" in out
+
+
+def test_shell_enter_cancel_multiple_continuation_lines(monkeypatch):
+    """Multiple continuation lines are joined into the single combined prompt."""
+    shell = InteractiveShell(model="test-model", no_history=True)
+    shell.initialize_history(system_prompt="sys")
+
+    calls = {"prompt": 0, "send": 0}
+    sent = []
+
+    def fake_prompt(*args, **kwargs):
+        calls["prompt"] += 1
+        sequence = [
+            "hello",
+            "line two",
+            "line three",
+            "",  # empty line finishes the continuation
+        ]
+        if calls["prompt"] <= len(sequence):
+            return sequence[calls["prompt"] - 1]
+        raise EOFError
+
+    def send_prompt_func(user_input, **kwargs):
+        calls["send"] += 1
+        sent.append(user_input)
+        kwargs["previous_messages"].append({"role": "user", "content": user_input})
+        if calls["send"] == 1:
+            raise RequestCancelled("cancelled by Enter")
+        return "ok"
+
+    monkeypatch.setattr(shell.session, "prompt", fake_prompt)
+    shell.run(send_prompt_func, no_tools=True)
+
+    assert sent == ["hello", "hello\nline two\nline three"]
+    user_messages = [
+        m.get("content") for m in shell.messages_history if m.get("role") == "user"
+    ]
+    assert user_messages == ["hello\nline two\nline three"]
+
+
 def test_shell_ctrl_c_still_rolls_back(monkeypatch, capsys):
     """Ctrl+C keeps rolling the conversation history back (regression)."""
     shell = _run_shell_turn(
