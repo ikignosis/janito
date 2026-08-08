@@ -2,6 +2,22 @@
 Main tools module for AI function calling.
 
 This module provides easy access to all available tools and their schemas.
+
+:class:`ToolsRegistry` groups the registry operations (lazy discovery,
+toolset loading, skills enable/disable, lookups) behind a single class API;
+the module-level functions below are thin delegators to a module-level
+singleton (:data:`_registry`), so existing import sites keep working.
+
+State location note
+-------------------
+The registry's state intentionally lives at **module level** (``AVAILABLE_TOOLS``,
+``_tools_initialized``, ``_loaded_toolsets``, ``_skills_enabled``): tests
+(``test_used_files.py``, ``test_tool_executor.py``) monkeypatch
+``tools_registry.AVAILABLE_TOOLS`` and ``tools_registry._tools_initialized``
+directly to inject stub tools without triggering the slow filesystem
+discovery.  ``ToolsRegistry`` methods therefore read the module globals and
+declare ``global`` only where they rebind a name (``_tools_initialized``,
+``_skills_enabled``).
 """
 
 import inspect
@@ -164,6 +180,199 @@ AVAILABLE_TOOLS: dict[str, Callable] = {}
 _tools_initialized: bool = False
 
 
+class ToolsRegistry:
+    """Grouped API over the module-level tools registry state.
+
+    Encapsulates the registry operations: lazy discovery
+    (:meth:`ensure_initialized`), dynamic toolset loading (:meth:`add_toolset`),
+    skills enable/disable (:meth:`enable_skills` / :meth:`disable_skills`) and
+    the tool lookups (:meth:`all_tools`, :meth:`get`, :meth:`permissions`, ...).
+
+    The underlying state lives at module level (``AVAILABLE_TOOLS``,
+    ``_tools_initialized``, ``_loaded_toolsets``, ``_skills_enabled``) so the
+    test monkeypatches of ``tools_registry.AVAILABLE_TOOLS`` /
+    ``_tools_initialized`` keep working; methods read the module globals and
+    declare ``global`` only where they rebind a name.
+    """
+
+    def ensure_initialized(self) -> None:
+        """
+        Run tool discovery on first access (lazy initialization).
+
+        This ensures ``running_privileges`` is already set by the time
+        ``discover_toolsets`` applies its privilege-based filtering.
+        """
+        global _tools_initialized
+        if _tools_initialized:
+            return
+        _tools_initialized = True
+
+        AVAILABLE_TOOLS.update(discover_toolsets(AUTOLOAD_TOOLSETS))
+
+        # Add skill tools if enabled
+        if _skills_enabled:
+            AVAILABLE_TOOLS.update(get_skills_tools())
+
+    def add_toolset(self, toolset_name: str) -> bool:
+        """
+        Dynamically add a toolset to the available tools.
+
+        Args:
+            toolset_name: Name of the toolset to add (e.g., "gmail", "files", "system")
+
+        Returns:
+            bool: True if the toolset was added, False if already loaded or invalid
+        """
+        self.ensure_initialized()
+
+        if toolset_name in _loaded_toolsets:
+            return False
+
+        _loaded_toolsets.add(toolset_name)
+
+        # Discover and load tools from the new toolset
+        new_tools = discover_toolsets([toolset_name])
+
+        if new_tools:
+            AVAILABLE_TOOLS.update(new_tools)
+            return True
+
+        return False
+
+    def all_tools(self) -> dict[str, Callable]:
+        """
+        Get all available tools as a dictionary mapping names to functions.
+
+        Returns:
+            Dict[str, Callable]: Dictionary of tool names to functions
+        """
+        self.ensure_initialized()
+        return AVAILABLE_TOOLS.copy()
+
+    def all_schemas(self) -> list[dict[str, Any]]:
+        """
+        Get all tool schemas in the format expected by OpenAI function calling.
+
+        Returns:
+            List[Dict[str, Any]]: List of tool schemas
+        """
+        self.ensure_initialized()
+        return [get_function_schema(tool) for tool in AVAILABLE_TOOLS.values()]
+
+    def all_permissions(self) -> dict[str, str]:
+        """
+        Get permissions for all available tools.
+
+        Returns:
+            Dict[str, str]: Dictionary mapping tool names to their permission strings
+        """
+        self.ensure_initialized()
+        return {
+            name: getattr(tool, "_tool_permissions", "")
+            for name, tool in AVAILABLE_TOOLS.items()
+        }
+
+    def get(self, name: str) -> Callable:
+        """
+        Get a specific tool by name.
+
+        Args:
+            name (str): Name of the tool
+
+        Returns:
+            Callable: The tool function
+
+        Raises:
+            KeyError: If tool with given name doesn't exist
+        """
+        self.ensure_initialized()
+        if name not in AVAILABLE_TOOLS:
+            raise KeyError(
+                f"Tool '{name}' not found. Available tools: {list(AVAILABLE_TOOLS.keys())}"
+            )
+        return AVAILABLE_TOOLS[name]
+
+    def schema(self, name: str) -> dict[str, Any]:
+        """
+        Get a specific tool schema by name.
+
+        Args:
+            name (str): Name of the tool
+
+        Returns:
+            Dict[str, Any]: The tool schema
+
+        Raises:
+            KeyError: If tool with given name doesn't exist
+        """
+        return get_function_schema(self.get(name))
+
+    def permissions(self, name: str) -> str:
+        """
+        Get the permissions required by a specific tool.
+
+        Args:
+            name (str): Name of the tool
+
+        Returns:
+            str: Permission string (e.g., "r", "rw", "rwx") or empty string if no permissions declared
+
+        Raises:
+            KeyError: If tool with given name doesn't exist
+        """
+        self.ensure_initialized()
+        if name not in AVAILABLE_TOOLS:
+            raise KeyError(
+                f"Tool '{name}' not found. Available tools: {list(AVAILABLE_TOOLS.keys())}"
+            )
+        return getattr(AVAILABLE_TOOLS[name], "_tool_permissions", "")
+
+    def skills_section(self) -> str:
+        """
+        Get the skills advertisement section to append to system prompts.
+
+        Returns:
+            String with skill names, descriptions, and tool instructions
+        """
+        if not _skills_enabled:
+            return ""
+
+        advertisement = get_skills_advertisement()
+
+        if not advertisement:
+            return ""
+
+        # Add tool usage instructions
+        tools_section = """
+\n## Skill Tools
+Use these tools to load skill content when needed:
+- **load_skill(skill_name)**: Load the full instructions from a skill's SKILL.md file
+- **read_skill_resource(skill_name, resource_name)**: Read a supplementary file from a skill
+
+You should load a skill when the user's request matches its description or you need specialized guidance."""
+
+        return advertisement + tools_section
+
+    def enable_skills(self) -> None:
+        """Enable skills support."""
+        global _skills_enabled
+        self.ensure_initialized()
+        _skills_enabled = True
+        AVAILABLE_TOOLS.update(get_skills_tools())
+
+    def disable_skills(self) -> None:
+        """Disable skills support."""
+        global _skills_enabled
+        self.ensure_initialized()
+        _skills_enabled = False
+        for tool_name in ["load_skill", "read_skill_resource"]:
+            AVAILABLE_TOOLS.pop(tool_name, None)
+
+
+# Module-level singleton backing the functions below.
+_registry = ToolsRegistry()
+
+
 def _ensure_initialized() -> None:
     """
     Run tool discovery on first access (lazy initialization).
@@ -171,16 +380,7 @@ def _ensure_initialized() -> None:
     This ensures ``running_privileges`` is already set by the time
     ``discover_toolsets`` applies its privilege-based filtering.
     """
-    global AVAILABLE_TOOLS, _tools_initialized
-    if _tools_initialized:
-        return
-    _tools_initialized = True
-
-    AVAILABLE_TOOLS.update(discover_toolsets(AUTOLOAD_TOOLSETS))
-
-    # Add skill tools if enabled
-    if _skills_enabled:
-        AVAILABLE_TOOLS.update(get_skills_tools())
+    _registry.ensure_initialized()
 
 
 def add_toolset(toolset_name: str) -> bool:
@@ -193,23 +393,7 @@ def add_toolset(toolset_name: str) -> bool:
     Returns:
         bool: True if the toolset was added, False if already loaded or invalid
     """
-    global AVAILABLE_TOOLS, _loaded_toolsets
-
-    _ensure_initialized()
-
-    if toolset_name in _loaded_toolsets:
-        return False
-
-    _loaded_toolsets.add(toolset_name)
-
-    # Discover and load tools from the new toolset
-    new_tools = discover_toolsets([toolset_name])
-
-    if new_tools:
-        AVAILABLE_TOOLS.update(new_tools)
-        return True
-
-    return False
+    return _registry.add_toolset(toolset_name)
 
 
 def get_all_tools() -> dict[str, Callable]:
@@ -219,8 +403,7 @@ def get_all_tools() -> dict[str, Callable]:
     Returns:
         Dict[str, Callable]: Dictionary of tool names to functions
     """
-    _ensure_initialized()
-    return AVAILABLE_TOOLS.copy()
+    return _registry.all_tools()
 
 
 def get_all_tool_schemas() -> list[dict[str, Any]]:
@@ -230,8 +413,7 @@ def get_all_tool_schemas() -> list[dict[str, Any]]:
     Returns:
         List[Dict[str, Any]]: List of tool schemas
     """
-    _ensure_initialized()
-    return [get_function_schema(tool) for tool in AVAILABLE_TOOLS.values()]
+    return _registry.all_schemas()
 
 
 def get_all_tool_permissions() -> dict[str, str]:
@@ -241,11 +423,7 @@ def get_all_tool_permissions() -> dict[str, str]:
     Returns:
         Dict[str, str]: Dictionary mapping tool names to their permission strings
     """
-    _ensure_initialized()
-    return {
-        name: getattr(tool, "_tool_permissions", "")
-        for name, tool in AVAILABLE_TOOLS.items()
-    }
+    return _registry.all_permissions()
 
 
 def get_tool_by_name(name: str) -> Callable:
@@ -261,12 +439,7 @@ def get_tool_by_name(name: str) -> Callable:
     Raises:
         KeyError: If tool with given name doesn't exist
     """
-    _ensure_initialized()
-    if name not in AVAILABLE_TOOLS:
-        raise KeyError(
-            f"Tool '{name}' not found. Available tools: {list(AVAILABLE_TOOLS.keys())}"
-        )
-    return AVAILABLE_TOOLS[name]
+    return _registry.get(name)
 
 
 def get_tool_schema_by_name(name: str) -> dict[str, Any]:
@@ -282,12 +455,7 @@ def get_tool_schema_by_name(name: str) -> dict[str, Any]:
     Raises:
         KeyError: If tool with given name doesn't exist
     """
-    _ensure_initialized()
-    if name not in AVAILABLE_TOOLS:
-        raise KeyError(
-            f"Tool '{name}' not found. Available tools: {list(AVAILABLE_TOOLS.keys())}"
-        )
-    return get_function_schema(AVAILABLE_TOOLS[name])
+    return _registry.schema(name)
 
 
 def get_tool_permissions(name: str) -> str:
@@ -303,12 +471,7 @@ def get_tool_permissions(name: str) -> str:
     Raises:
         KeyError: If tool with given name doesn't exist
     """
-    _ensure_initialized()
-    if name not in AVAILABLE_TOOLS:
-        raise KeyError(
-            f"Tool '{name}' not found. Available tools: {list(AVAILABLE_TOOLS.keys())}"
-        )
-    return getattr(AVAILABLE_TOOLS[name], "_tool_permissions", "")
+    return _registry.permissions(name)
 
 
 def get_skills_section() -> str:
@@ -318,41 +481,17 @@ def get_skills_section() -> str:
     Returns:
         String with skill names, descriptions, and tool instructions
     """
-    if not _skills_enabled:
-        return ""
-
-    advertisement = get_skills_advertisement()
-
-    if not advertisement:
-        return ""
-
-    # Add tool usage instructions
-    tools_section = """
-\n## Skill Tools
-Use these tools to load skill content when needed:
-- **load_skill(skill_name)**: Load the full instructions from a skill's SKILL.md file
-- **read_skill_resource(skill_name, resource_name)**: Read a supplementary file from a skill
-
-You should load a skill when the user's request matches its description or you need specialized guidance."""
-
-    return advertisement + tools_section
+    return _registry.skills_section()
 
 
 def enable_skills() -> None:
     """Enable skills support."""
-    global _skills_enabled
-    _ensure_initialized()
-    _skills_enabled = True
-    AVAILABLE_TOOLS.update(get_skills_tools())
+    _registry.enable_skills()
 
 
 def disable_skills() -> None:
     """Disable skills support."""
-    global _skills_enabled, AVAILABLE_TOOLS
-    _ensure_initialized()
-    _skills_enabled = False
-    for tool_name in ["load_skill", "read_skill_resource"]:
-        AVAILABLE_TOOLS.pop(tool_name, None)
+    _registry.disable_skills()
 
 
 if __name__ == "__main__":

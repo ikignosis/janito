@@ -41,6 +41,36 @@ Changes since `v4.20.0` (2026-08-07).
 
 ### Changed
 
+- Introduced `ToolsRegistry`
+  (`janito/tooling/tools_registry.py`) as a class-based API over the
+  module-level registry state (lazy discovery, toolset loading, skills
+  enable/disable, tool/schema/permission lookups).  The registry state
+  intentionally stays at module level (`AVAILABLE_TOOLS`,
+  `_tools_initialized`, ...) because the tests monkeypatch those names
+  directly to inject stub tools without triggering the slow filesystem
+  discovery; the module-level functions are now thin delegators to a
+  module-level singleton.  New tests: `tests/test_tools_registry.py`.
+- Deleted `janito/tooling/mcp_registry.py`: it was dead code (no importers
+  anywhere in `janito/` or `tests/`, not re-exported from the package).  The
+  live MCP-tool routing lives in `ToolExecutor` (via `MCPManager`), so the
+  legacy parallel registry served no purpose.
+- Introduced tracker classes for the three best-effort tracking side
+  features, each keeping its module-level functions as thin delegators to a
+  module-level singleton:
+  - `ChangesTracker` (`janito/tooling/changes.py`) - records and renders the
+    file-changing tool executions (the `/changes` command).
+  - `UsedFilesTracker` (`janito/tooling/used_files.py`) - tracks the READ /
+    WRITE file paths per prompt; instances carry their own state, which is
+    useful for the web backend's concurrent tools.
+  - `ToolUsageStore` (`janito/tooling/tools_usage.py`) - SQLite-backed
+    per-tool usage counters; accepts an explicit `db_path` for isolation.
+  - New tests: `tests/test_trackers.py`.
+- `janito/tooling/config_dir.py` (`ConfigDirManager`) was intentionally left
+  as module functions: the module is small, deliberately dependency-free, and
+  its two globals are monkeypatched directly by `test_config_dir.py` /
+  `test_local_config.py`, so a class would add ceremony without
+  encapsulation.
+
 - Introduced `*StreamConsumer` classes as the real implementation of the
   four stream-assembly modules, removing the ``state``-dict plumbing
   between handlers: `ResponsesStreamConsumer`
