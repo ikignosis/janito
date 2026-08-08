@@ -372,6 +372,24 @@ janito --set-api-key="your-moonshot-api-key" --provider moonshot
 | `moonshot-v1-32k` | Extended context window (32K) |
 | `moonshot-v1-128k` | Long context window (128K) |
 
+### Reasoning Level
+
+The default model `kimi-k3-256k` supports configurable reasoning depth via the
+OpenAI-compatible `reasoning_effort` parameter. The supported levels are
+`low`, `high` and `max`, and the built-in default is `max` (the API's own
+default).
+
+```bash
+# Override the reasoning depth for a single call
+janito --reasoning-level low "Your prompt"
+
+# Set a per-provider default in the config
+janito --provider moonshot --set reasoning-level=high
+```
+
+Resolution order: `--reasoning-level` > per-provider config value
+(`--set reasoning-level=...`) > built-in default (`max`).
+
 ### Example
 
 ```bash

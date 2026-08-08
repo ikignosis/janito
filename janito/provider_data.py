@@ -98,6 +98,23 @@ PROVIDER_INFO: dict[str, dict] = {
         "supported_api_types": ["Completions"],
         "max_input_tokens": 128000,
         "max_output_tokens": 250000,  # 256k
+        # Per the Moonshot/Kimi API reference, reasoning_effort accepts
+        # low/high/max (default max). Kimi K3 models always reason.
+        "reasoning_level": "max",
+        "supported_reasoning_levels": [
+            {
+                "effort": "low",
+                "description": "Lighter reasoning for fast responses",
+            },
+            {
+                "effort": "high",
+                "description": "Standard reasoning depth",
+            },
+            {
+                "effort": "max",
+                "description": "Maximum reasoning depth (the API default)",
+            },
+        ],
         "endpoint": "https://api.moonshot.ai/v1",
     },
     "alibaba": {

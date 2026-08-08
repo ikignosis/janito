@@ -43,6 +43,16 @@ Changes since `v4.21.0` (2026-08-08).
 
 ### Changed
 
+- The `moonshot` provider now declares its supported reasoning levels
+  (`low`/`high`/`max`, with `max` as the built-in default, per the
+  Moonshot/Kimi API reference) in `janito/provider_data.py` `PROVIDER_INFO`,
+  so `get_default_reasoning_level_from_provider("moonshot")`,
+  `get_supported_reasoning_levels_from_provider("moonshot")` and the web
+  `/providers` endpoint expose them. The Moonshot section of
+  `docs/configuration/providers.md` gained a "Reasoning Level" subsection
+  documenting the levels and the resolution order;
+  `tests/test_provider_config.py` now asserts the moonshot levels.
+
 - The web topbar's provider switcher combo now shares the exact styling of
   the Settings drawer's provider combobox (same bordered
   `.form-group select` look: background, border, radius, padding and font

@@ -156,9 +156,19 @@ if pytest is not None:
         for entry in supported:
             assert "effort" in entry
             assert "description" in entry
+        # Moonshot's default model (kimi-k3-256k) declares reasoning levels
+        # too (low/high/max per the Moonshot API reference, default max).
+        assert get_default_reasoning_level_from_provider("moonshot") == "max"
+        supported = get_supported_reasoning_levels_from_provider("moonshot")
+        assert supported is not None
+        assert [entry["effort"] for entry in supported] == ["low", "high", "max"]
+        for entry in supported:
+            assert "effort" in entry
+            assert "description" in entry
         # Case-insensitive lookup works.
         assert get_default_reasoning_level_from_provider("Alibaba") == "xhigh"
         assert get_supported_reasoning_levels_from_provider("DeepSeek") is not None
+        assert get_supported_reasoning_levels_from_provider("Moonshot") is not None
         # Providers without configurable reasoning expose None.
         assert get_default_reasoning_level_from_provider("openai") is None
         assert get_supported_reasoning_levels_from_provider("openai") is None
