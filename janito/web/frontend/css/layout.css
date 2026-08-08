@@ -178,49 +178,33 @@ html[data-theme="dark"] .theme-icon.moon  { color: var(--accent); opacity: 1; }
 
 /* Provider switcher combo — pick the provider right from the chat page
    (issue #34).  Lists the providers with an API key set; the selection is
-   promoted to the default via POST /api/config/default-provider. */
+   promoted to the default via POST /api/config/default-provider.
+   The <select> is styled like the Settings drawer's provider combobox
+   (.form-group select), so the two combos share the same look. */
 .provider-switcher {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    border: 1px solid var(--border);
-    background: var(--bg-tertiary);
-    border-radius: var(--radius);
-    padding: 5px 8px 5px 10px;
     margin-right: 4px;
-    transition: border-color 0.15s, box-shadow 0.15s;
-}
-.provider-switcher:hover { border-color: var(--accent); }
-.provider-switcher:focus-within {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--ring);
 }
 
 .ps-bolt { font-size: 13px; line-height: 1; }
 .ps-bolt.swapping { opacity: 0.4; }
 
 .provider-combo {
-    appearance: none;
-    -webkit-appearance: none;
-    background: transparent;
-    border: none;
-    outline: none;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
     color: var(--text-primary);
     font-family: var(--font-sans);
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 14px;
     cursor: pointer;
     max-width: 180px;
-    padding-right: 2px;
+    padding: 8px 12px;
 }
+.provider-combo:focus { outline: none; border-color: var(--accent); }
 .provider-combo:disabled { cursor: not-allowed; opacity: 0.6; }
 .provider-combo option { background: var(--bg-secondary); color: var(--text-primary); }
-
-.ps-caret {
-    font-size: 10px;
-    color: var(--text-muted);
-    pointer-events: none;
-}
 
 .ps-spinner {
     width: 11px;

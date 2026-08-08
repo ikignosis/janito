@@ -41,6 +41,16 @@ Changes since `v4.21.0` (2026-08-08).
   shows the effective API type for the selected provider, and
   `janito --web --api-type <type>` pins it for the whole server run.
 
+### Changed
+
+- The web topbar's provider switcher combo now shares the exact styling of
+  the Settings drawer's provider combobox (same bordered
+  `.form-group select` look: background, border, radius, padding and font
+  size), instead of the previous transparent select inside a pill wrapper.
+  The `<select>` itself now carries the border/background and the native
+  dropdown arrow, so the two combos render identically (the custom caret
+  span was removed).
+
 ### Removed
 
 - Removed the Enter-to-cancel functionality in interactive mode: pressing
