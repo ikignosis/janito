@@ -41,6 +41,19 @@ Changes since `v4.20.0` (2026-08-07).
 
 ### Changed
 
+- Extracted the system-prompt / toolset selection that was duplicated
+  between ``cli/chat.py`` and ``WebServerConfig`` into a shared
+  ``SessionSetup`` class (`janito/cli/session_setup.py`).  Both entry points
+  now delegate to it: ``cli/chat.py``'s ``_resolve_system_prompt`` /
+  ``_build_single_prompt_context`` / ``_enable_requested_toolsets`` and
+  ``WebServerConfig.get_effective_system_prompt`` / ``apply_toolsets`` (the
+  web ``apply_toolsets`` additionally enables the web-only ``"janitoweb"``
+  toolset via the new ``extra`` parameter).  ``chat.py`` keeps
+  ``get_system_prompt_with_skills`` as a documented backward-compat
+  re-export (``test_version_banner.py`` patches
+  ``chat_mod.get_system_prompt_with_skills``).  New tests:
+  `tests/test_session_setup.py` (including a CLI<->web parity check).
+
 - Introduced `ToolsRegistry`
   (`janito/tooling/tools_registry.py`) as a class-based API over the
   module-level registry state (lazy discovery, toolset loading, skills

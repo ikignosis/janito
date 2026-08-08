@@ -146,37 +146,27 @@ class WebServerConfig:
     def get_effective_system_prompt(self) -> str | None:
         """Resolve the system prompt for new sessions.
 
-        Mirrors the if/elif chain in ``cli/chat.py::run_interactive_chat()``.
+        Shared with ``cli/chat.py`` via :class:`janito.cli.session_setup.SessionSetup`.
         """
-        if self.system_prompt:
-            return self.system_prompt
-        if self.no_system_prompt:
-            return None
-        if self.onedrive:
-            from janito.tools.onedrive import ONEDRIVE_SYSTEM_PROMPT
+        from janito.cli.session_setup import SessionSetup
 
-            return ONEDRIVE_SYSTEM_PROMPT
-        if self.gmail:
-            from janito.tools.gmail import GMAIL_SYSTEM_PROMPT
-
-            return GMAIL_SYSTEM_PROMPT
-        from janito.system_prompt import get_system_prompt_with_skills
-
-        return get_system_prompt_with_skills()
+        return SessionSetup(
+            system_prompt=self.system_prompt,
+            no_system_prompt=self.no_system_prompt,
+            gmail=self.gmail,
+            onedrive=self.onedrive,
+        ).effective_system_prompt()
 
     def apply_toolsets(self) -> None:
         """Enable toolsets based on CLI flags (gmail, onedrive).
 
-        Mirrors the setup block in ``cli/chat.py::run_interactive_chat()``.
+        Shared with ``cli/chat.py`` via :class:`janito.cli.session_setup.SessionSetup`.
         Called once at server startup.
         """
-        from janito.tooling.tools_registry import add_toolset
+        from janito.cli.session_setup import SessionSetup
 
-        # The janitoweb toolset (CreateSVG, …) is web-only and always
+        # The janitoweb toolset (CreateSVG, ...) is web-only and always
         # loaded when the server runs in --web mode.  See issue #11.
-        add_toolset("janitoweb")
-
-        if self.gmail:
-            add_toolset("gmail")
-        if self.onedrive:
-            add_toolset("onedrive")
+        SessionSetup(gmail=self.gmail, onedrive=self.onedrive).enable_toolsets(
+            extra=["janitoweb"]
+        )

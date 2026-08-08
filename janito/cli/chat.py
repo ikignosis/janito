@@ -8,10 +8,10 @@ from .. import __version__
 from ..general_config import resolve_api_type
 from ..openai_client import RequestCancelled, resolve_runtime_config, send_prompt
 from ..shell import InteractiveShell
-from ..system_prompt import get_system_prompt_with_skills
+from ..system_prompt import (  # noqa: F401 (re-exported; tests patch chat_mod.get_system_prompt_with_skills)
+    get_system_prompt_with_skills,
+)
 from ..tooling.path_utils import display_path
-from ..tools.gmail import GMAIL_SYSTEM_PROMPT
-from ..tools.onedrive import ONEDRIVE_SYSTEM_PROMPT
 
 
 def _make_send_prompt_func(
@@ -186,31 +186,27 @@ def _print_full_privileges_warning(args) -> None:
 
 def _enable_requested_toolsets(args) -> None:
     """Enable Gmail/OneDrive toolsets when requested via CLI flags."""
-    if args.gmail:
-        from ..tooling.tools_registry import add_toolset
+    from .session_setup import SessionSetup
 
-        add_toolset("gmail")
+    SessionSetup(gmail=args.gmail, onedrive=args.onedrive).enable_toolsets()
+    if args.gmail:
         print("\u2713 Gmail tools enabled")
 
     if args.onedrive:
-        from ..tooling.tools_registry import add_toolset
-
-        add_toolset("onedrive")
         print("\u2713 OneDrive tools enabled")
 
 
 def _resolve_system_prompt(args) -> tuple[str | None, bool]:
     """Return ``(effective_system_prompt, no_tools)`` for the enabled modes."""
-    if args.system_prompt:
-        return args.system_prompt, True
-    if args.no_system_prompt:
-        return None, True
-    if args.onedrive:
-        return ONEDRIVE_SYSTEM_PROMPT, False
-    if args.gmail:
-        return GMAIL_SYSTEM_PROMPT, False
-    # Use system prompt with skills advertisement
-    return get_system_prompt_with_skills(), False
+    from .session_setup import SessionSetup
+
+    setup = SessionSetup(
+        system_prompt=args.system_prompt,
+        no_system_prompt=args.no_system_prompt,
+        gmail=args.gmail,
+        onedrive=args.onedrive,
+    )
+    return setup.effective_system_prompt(), setup.no_tools
 
 
 def _print_tool_summary(args) -> None:
@@ -287,19 +283,15 @@ def run_interactive_chat(args):
 
 def _build_single_prompt_context(args):
     """Build ``(messages_history, tools_to_use)`` for a single prompt run."""
-    if args.system_prompt:
-        return [{"role": "system", "content": args.system_prompt}], []
-    if args.no_system_prompt:
-        return [], []
-    # Choose system prompt based on enabled modes
-    if args.onedrive:
-        effective_system_prompt = ONEDRIVE_SYSTEM_PROMPT
-    elif args.gmail:
-        effective_system_prompt = GMAIL_SYSTEM_PROMPT
-    else:
-        # Use system prompt with skills advertisement
-        effective_system_prompt = get_system_prompt_with_skills()
-    return [{"role": "system", "content": effective_system_prompt}], None
+    from .session_setup import SessionSetup
+
+    setup = SessionSetup(
+        system_prompt=args.system_prompt,
+        no_system_prompt=args.no_system_prompt,
+        gmail=args.gmail,
+        onedrive=args.onedrive,
+    )
+    return setup.messages_context(), setup.tools_arg()
 
 
 def run_single_prompt(args):
