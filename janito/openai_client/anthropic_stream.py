@@ -73,7 +73,7 @@ class AnthropicStreamConsumer:
     # Stream driving
     # ------------------------------------------------------------------
 
-    def consume(self, stream, cancel_event=None):
+    def consume(self, stream):
         """Consume a streaming Anthropic Messages response and assemble its parts.
 
         Returns ``(full_content, reasoning_content, tool_use_blocks,
@@ -81,26 +81,16 @@ class AnthropicStreamConsumer:
         ``{"id", "name", "input"}`` dicts (``input`` is the parsed JSON
         argument object) and ``usage_info`` is a ``SimpleNamespace`` with
         ``total_tokens``/``input_tokens``/``output_tokens``.
-
-        When ``cancel_event`` is set (user pressed Enter while waiting), the
-        stream is abandoned as soon as the next event arrives.
         """
         for event in stream:
             self._events_seen += 1
-            # Honour an Enter-to-cancel request: stop consuming as soon as the
-            # next event arrives so the worker can close the connection.
-            if cancel_event is not None and cancel_event.is_set():
-                break
             if self.handle_event(event):
                 break
 
         # A healthy stream always ends with message_stop; a stream with zero
         # events means the API failed before producing anything. Fail loudly
-        # instead of returning an empty answer. An Enter-to-cancel
-        # short-circuit must not be treated as an empty stream.
-        if self._events_seen == 0 and (
-            cancel_event is None or not cancel_event.is_set()
-        ):
+        # instead of returning an empty answer.
+        if self._events_seen == 0:
             raise RuntimeError(
                 "The Anthropic API returned no stream events (empty response)."
             )
@@ -250,13 +240,13 @@ def _state_from_consumer(
         state[key] = getattr(consumer, key)
 
 
-def _consume_stream(stream, cancel_event=None):
+def _consume_stream(stream):
     """Consume a streaming Anthropic Messages response and assemble its parts.
 
     Returns ``(full_content, reasoning_content, tool_use_blocks, usage_info)``.
     See :meth:`AnthropicStreamConsumer.consume`.
     """
-    return AnthropicStreamConsumer().consume(stream, cancel_event=cancel_event)
+    return AnthropicStreamConsumer().consume(stream)
 
 
 def _handle_anthropic_event(event, state: dict[str, Any]) -> bool:
@@ -341,15 +331,12 @@ def _convert_tools_to_anthropic_format(
     return converted
 
 
-def _stream_response(client, call_kwargs, tools_schemas, cancel_event=None):
+def _stream_response(client, call_kwargs, tools_schemas):
     """Open a streaming Anthropic Messages call and fully consume it.
 
     Returns ``(full_content, reasoning_content, tool_use_blocks, usage_info)``.
     Tool schemas are attached here (mirroring ``completions_api._stream_response``);
     the caller builds the remaining kwargs per round.
-
-    When ``cancel_event`` is set (user pressed Enter while waiting), the
-    stream is abandoned and the underlying connection is closed.
     """
     if tools_schemas:
         logger.debug(
@@ -360,10 +347,4 @@ def _stream_response(client, call_kwargs, tools_schemas, cancel_event=None):
         logger.debug("Calling Anthropic Messages API (streaming) without tools")
         stream = client.messages.create(**call_kwargs)
 
-    try:
-        return _consume_stream(stream, cancel_event=cancel_event)
-    finally:
-        # Abort the underlying HTTP stream when the user pressed Enter so the
-        # connection is released promptly instead of streaming to completion.
-        if cancel_event is not None and cancel_event.is_set():
-            stream.close()
+    return _consume_stream(stream)

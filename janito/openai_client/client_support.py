@@ -8,10 +8,9 @@ reasoning panel, markdown content, token-usage summary) and the
 authentication-error explainer.  This module centralizes them so each client
 stays focused on its own API's wire format.
 
-The ``_run_with_progress_bar`` runner and the ``_is_enter_pressed`` detector
-stay in :mod:`janito.openai_client.completions_api` (they are tightly coupled
-to the Enter-to-cancel behaviour and are monkeypatched by tests through that
-module's namespace); every client re-uses them from there.
+The ``_run_with_progress_bar`` runner stays in
+:mod:`janito.openai_client.completions_api` (it is monkeypatched by tests
+through that module's namespace); every client re-uses it from there.
 """
 
 import logging

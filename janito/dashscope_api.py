@@ -4,7 +4,7 @@ DashScope SDK (``dashscope.Generation.call``).
 
 This is the counterpart of :mod:`janito.openai_client.completions_api` for the
 ``"DashScope"`` API type: the same config resolution, tool loading, MCP
-support, progress spinner, Enter-to-cancel, reasoning panel, used-files report
+support, progress spinner, reasoning panel, used-files report
 and token-usage summary, but talking to the DashScope native API through the
 official ``dashscope`` package instead of an OpenAI-compatible endpoint.
 
@@ -58,10 +58,9 @@ from janito.openai_client.base_client import Client
 from janito.openai_client.client_support import _display_usage, _handle_auth_error
 
 # Shared helpers reused from the Chat Completions implementation so all
-# client modules stay in sync: runtime config resolution, the progress
-# spinner / Enter-to-cancel runner and the request-cancelled signal.
+# client modules stay in sync: runtime config resolution and the progress
+# spinner runner.
 from janito.openai_client.completions_api import (
-    RequestCancelled,
     _run_with_progress_bar,
     resolve_runtime_config,
 )
@@ -505,6 +504,5 @@ def _finalize_response(
 
 
 __all__ = [
-    "RequestCancelled",
     "send_prompt",
 ]

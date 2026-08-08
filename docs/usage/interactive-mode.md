@@ -25,7 +25,6 @@ In interactive mode, these commands are available:
 | `restart` | Clear conversation history and start fresh |
 | `Ctrl+D` / `Ctrl+Z` | Exit (EOF) |
 | `Ctrl+C` | Cancel current input (rolls the last prompt/answer back out of the history) |
-| `Enter` | While a prompt is pending ("Waiting for response from the API server..."), interrupts the request and lets you add more content to the message: type extra lines and finish with an empty line, and the combined prompt is re-sent (the interrupted request is discarded, nothing you typed is lost). Pressing `Enter` again without typing anything keeps the original prompt in the conversation history as-is |
 | `help` | Show available commands |
 
 ## Chat Commands

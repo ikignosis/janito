@@ -4,9 +4,9 @@ the Responses API (``client.responses.create``) with server-side conversation
 state.
 
 This module mirrors :mod:`janito.openai_client.completions_api` (same config
-resolution, tool loading, MCP support, progress spinner, Enter-to-cancel,
-reasoning panel, used-files report and token-usage summary), but targets the
-Responses API instead of the Chat Completions API.
+resolution, tool loading, MCP support, progress spinner, reasoning panel,
+used-files report and token-usage summary), but targets the Responses API
+instead of the Chat Completions API.
 
 The important difference is **who owns the conversation history**. The
 Completions implementation stores and updates a ``messages`` list on the
@@ -83,13 +83,9 @@ from .client_support import (  # noqa: F401 (re-exported for backward compat)
 )
 
 # Shared helpers reused from the Chat Completions implementation so both
-# modules stay in sync: runtime config resolution, the progress spinner /
-# Enter-to-cancel runner and the request-cancelled signal.
-from .completions_api import (
-    RequestCancelled,
-    _run_with_progress_bar,
-    resolve_runtime_config,
-)
+# modules stay in sync: runtime config resolution and the progress spinner
+# runner.
+from .completions_api import _run_with_progress_bar, resolve_runtime_config
 from .responses_state import _build_call_kwargs, _init_conversation_state
 from .responses_stream import (  # noqa: F401 (re-exported for backward compat)
     _consume_response_stream,
@@ -602,7 +598,6 @@ def _finalize_conversation(
 
 __all__ = [
     "ConversationResult",
-    "RequestCancelled",
     "get_env_config",
     "resolve_runtime_config",
     "send_prompt",

@@ -60,7 +60,7 @@ Single prompt mode returns standard exit codes:
 |------|---------|
 | `0` | Success |
 | `1` | Error (configuration, API, etc.) |
-| `130` | Interrupted (Ctrl+C or Enter) |
+| `130` | Interrupted (Ctrl+C) |
 
 ## Use Cases
 

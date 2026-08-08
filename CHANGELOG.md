@@ -9,17 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Changes since `v4.21.0` (2026-08-08).
 
-### Added
+### Removed
 
-- In interactive mode, pressing `Enter` while a prompt is pending
-  ("Waiting for response from the API server...") now lets the user add more
-  content to their message instead of merely cancelling the request: extra
-  lines are collected (finish with an empty line) and the combined prompt is
-  re-sent, so nothing the user typed is lost and the extended message becomes
-  part of the conversation history. Pressing `Enter` again without typing
-  anything keeps the previous behaviour (the original prompt stays in the
-  history as-is). The interrupted request is rolled back before re-sending, so
-  no duplicate or orphaned user messages remain in the history.
+- Removed the Enter-to-cancel functionality in interactive mode: pressing
+  `Enter` while a prompt was pending ("Waiting for response from the API
+  server...") used to interrupt the in-flight request (letting the user
+  extend the message with extra lines). The shell no longer polls stdin for
+  an `Enter` press while waiting for the API, the `RequestCancelled`
+  exception and its handlers were dropped, and pressing `Enter` is ignored
+  until the response completes. Cancelling a pending request is still
+  possible with `Ctrl+C` (which rolls the last prompt/answer back out of the
+  history).
 
 ## [v4.21.0](https://github.com/joaopinto/janito/compare/v4.20.0...v4.21.0) - 2026-08-08
 

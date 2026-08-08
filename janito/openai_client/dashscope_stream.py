@@ -4,8 +4,8 @@ Stream consumption for the native DashScope generation API.
 These helpers are used by :mod:`janito.dashscope_api`, which talks to the
 native DashScope SDK (``Generation.call`` / ``MultiModalConversation.call``)
 with streaming enabled.  They handle both the text-generation and
-multimodal-generation endpoints, accumulate tool-call arguments split across
-chunks, and honour the Enter-to-cancel ``cancel_event``.
+multimodal-generation endpoints and accumulate tool-call arguments split
+across chunks.
 
 :class:`DashScopeStreamConsumer` is the real implementation: it holds the
 assembled response parts as instance attributes (no ``state`` dict plumbing)
@@ -145,7 +145,7 @@ class DashScopeStreamConsumer:
     # Stream driving
     # ------------------------------------------------------------------
 
-    def consume(self, stream, cancel_event=None):
+    def consume(self, stream):
         """Consume a streaming DashScope generation response.
 
         Returns ``(full_content, reasoning_content, tool_use_blocks,
@@ -162,16 +162,9 @@ class DashScopeStreamConsumer:
         terminal chunk reports ``finish_reason == "stop"``; tool-call requests
         stream across many chunks (the ``arguments`` JSON is split), so they
         are accumulated by ``index``.
-
-        When ``cancel_event`` is set (user pressed Enter while waiting), the
-        stream is abandoned as soon as the next chunk arrives.
         """
         for chunk in stream:
             self._chunks_seen += 1
-            # Honour an Enter-to-cancel request: stop consuming as soon as the
-            # next chunk arrives so the worker can close the connection.
-            if cancel_event is not None and cancel_event.is_set():
-                break
             self.handle_chunk(chunk)
             if self.finish:
                 break
@@ -179,11 +172,8 @@ class DashScopeStreamConsumer:
         # A healthy stream always ends with a chunk whose finish_reason is
         # "stop"; a stream with zero chunks means the API failed before
         # producing anything.  Fail loudly instead of returning an empty
-        # answer.  An Enter-to-cancel short-circuit must not be treated as an
-        # empty stream.
-        if self._chunks_seen == 0 and (
-            cancel_event is None or not cancel_event.is_set()
-        ):
+        # answer.
+        if self._chunks_seen == 0:
             raise RuntimeError(
                 "The DashScope API returned no stream chunks (empty response)."
             )
@@ -342,12 +332,12 @@ def _state_from_consumer(
         state[key] = getattr(consumer, key)
 
 
-def _consume_stream(stream, cancel_event=None):
+def _consume_stream(stream):
     """Consume a streaming DashScope generation response.
 
     See :meth:`DashScopeStreamConsumer.consume` for the return shape.
     """
-    return DashScopeStreamConsumer().consume(stream, cancel_event=cancel_event)
+    return DashScopeStreamConsumer().consume(stream)
 
 
 def _consume_dashscope_chunk(chunk, state: dict[str, Any]) -> None:
@@ -378,7 +368,7 @@ def _consume_usage(chunk, state: dict[str, Any]) -> None:
     _state_from_consumer(consumer, state)
 
 
-def _stream_response(client, call_kwargs, tools_schemas, cancel_event=None):
+def _stream_response(client, call_kwargs, tools_schemas):
     """Open a streaming DashScope generation call and fully consume it.
 
     Returns ``(full_content, reasoning_content, tool_use_blocks, usage_info)``.
@@ -392,9 +382,6 @@ def _stream_response(client, call_kwargs, tools_schemas, cancel_event=None):
     model name; when the API rejects the model with the "url error"
     (model/endpoint mismatch), the call is retried once on the other
     endpoint so misclassified models still work.
-
-    When ``cancel_event`` is set (user pressed Enter while waiting), the
-    stream is abandoned and the underlying connection is closed.
     """
     from dashscope import Generation, MultiModalConversation
 
@@ -425,25 +412,14 @@ def _stream_response(client, call_kwargs, tools_schemas, cancel_event=None):
         )
         stream = cls.call(**round_kwargs)
         try:
-            try:
-                return _consume_stream(stream, cancel_event=cancel_event)
-            except _ModelEndpointMismatch:
-                # The API rejected the model for this endpoint; retry once on
-                # the other one, unless the user already pressed Enter.
-                if cancel_event is not None and cancel_event.is_set():
-                    raise
-                if use_multimodal == attempts[-1]:
-                    raise
-                logger.debug(
-                    "DashScope rejected the model for this endpoint; "
-                    "retrying on the other generation endpoint"
-                )
-                continue
-        finally:
-            # Abort the underlying HTTP stream when the user pressed Enter so
-            # the connection is released promptly instead of streaming to
-            # completion.
-            if cancel_event is not None and cancel_event.is_set():
-                close = getattr(stream, "close", None)
-                if callable(close):
-                    close()
+            return _consume_stream(stream)
+        except _ModelEndpointMismatch:
+            # The API rejected the model for this endpoint; retry once on
+            # the other one.
+            if use_multimodal == attempts[-1]:
+                raise
+            logger.debug(
+                "DashScope rejected the model for this endpoint; "
+                "retrying on the other generation endpoint"
+            )
+            continue

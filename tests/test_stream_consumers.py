@@ -17,7 +17,6 @@ bridges.
 """
 
 import sys
-import threading
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -71,25 +70,6 @@ if pytest is not None:
         assert c.reasoning_content is None
         c.reasoning.append("thinking")
         assert c.reasoning_content == "thinking"
-
-    def test_responses_consumer_consume_cancel_short_circuits():
-        from janito.openai_client.responses_stream import ResponsesStreamConsumer
-
-        cancel = threading.Event()
-        cancel.set()
-
-        def events():
-            if False:
-                yield None  # pragma: no cover - keeps this a generator
-
-        c = ResponsesStreamConsumer()
-        content, reasoning, tools, usage, response_id = c.consume(
-            events(), cancel_event=cancel
-        )
-        # Cancel short-circuit must not raise the empty-stream error.
-        assert content == ""
-        assert tools == []
-        assert response_id is None
 
     def test_responses_consumer_empty_stream_raises():
         from janito.openai_client.responses_stream import ResponsesStreamConsumer

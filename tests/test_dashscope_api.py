@@ -120,20 +120,6 @@ if pytest is not None:
         with pytest.raises(RuntimeError, match="no stream chunks"):
             dashscope_api._consume_stream([])
 
-    def test_consume_stream_cancel_short_circuits():
-        """An Enter-to-cancel stop is not treated as an empty stream."""
-        import threading
-
-        cancel = threading.Event()
-        cancel.set()
-        chunks = [_chunk(content="partial")]
-        full, reasoning, tool_blocks, usage = dashscope_api._consume_stream(
-            chunks, cancel_event=cancel
-        )
-        assert full == ""
-        assert tool_blocks == []
-        # Cancel short-circuit must not raise the empty-stream error.
-
     def test_get_handles_dict_and_attribute_access():
         """_get reads both plain dicts and DictMixin-style objects."""
         assert dashscope_api._get({"a": 1}, "a") == 1

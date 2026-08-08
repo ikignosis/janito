@@ -169,25 +169,6 @@ if pytest is not None:
         with pytest.raises(RuntimeError, match="boom"):
             anthropic_api._consume_stream(events)
 
-    def test_consume_stream_cancel_short_circuits():
-        """An Enter-to-cancel stop is not treated as an empty stream."""
-        import threading
-
-        cancel = threading.Event()
-        cancel.set()
-        events = [
-            _event(
-                "message_start",
-                message=SimpleNamespace(usage=SimpleNamespace(input_tokens=1)),
-            )
-        ]
-        full, reasoning, tool_blocks, usage = anthropic_api._consume_stream(
-            events, cancel_event=cancel
-        )
-        assert full == ""
-        assert tool_blocks == []
-        # Cancel short-circuit must not raise the empty-stream error.
-
     def test_create_client_aborts_without_anthropic_package():
         """The optional `anthropic` package is guarded with an actionable error."""
         with pytest.raises(RuntimeError) as exc:

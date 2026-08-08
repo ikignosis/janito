@@ -4,7 +4,7 @@ Anthropic SDK (``client.messages.create``).
 
 This is the counterpart of :mod:`janito.openai_client.completions_api` for the
 ``"Anthropic"`` API type: the same config resolution, tool loading, MCP
-support, progress spinner, Enter-to-cancel, reasoning panel, used-files report
+support, progress spinner, reasoning panel, used-files report
 and token-usage summary, but talking to the Anthropic Messages API through the
 official ``anthropic`` package instead of an OpenAI-compatible endpoint.
 
@@ -82,13 +82,9 @@ from .base_client import Client
 from .client_support import _display_usage, _handle_auth_error
 
 # Shared helpers reused from the Chat Completions implementation so all
-# client modules stay in sync: runtime config resolution, the progress
-# spinner / Enter-to-cancel runner and the request-cancelled signal.
-from .completions_api import (
-    RequestCancelled,
-    _run_with_progress_bar,
-    resolve_runtime_config,
-)
+# client modules stay in sync: runtime config resolution and the progress
+# spinner runner.
+from .completions_api import _run_with_progress_bar, resolve_runtime_config
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
@@ -463,6 +459,5 @@ def _finalize_response(
 
 
 __all__ = [
-    "RequestCancelled",
     "send_prompt",
 ]

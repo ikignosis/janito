@@ -16,7 +16,6 @@ from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.styles import Style
 from rich.console import Console
 
-from ..openai_client import RequestCancelled
 from .completer import CommandCompleter
 
 _rich_console = Console(markup=False)
@@ -353,44 +352,6 @@ class InteractiveShell:
 
         return False
 
-    def _collect_continuation(self, user_input: str) -> str | None:
-        """Collect extra content after an Enter interrupt.
-
-        Pressing Enter while a request is pending cancels the in-flight
-        stream but keeps the user's message in the conversation history.
-        This prompts for additional lines so the user can extend that
-        message instead of losing it.
-
-        Returns:
-            The combined prompt (the original message plus the extra lines)
-            when the user typed more content, or ``None`` when they pressed
-            Enter again without typing anything (the cancelled prompt stays
-            in the history as-is).
-        """
-        print(
-            "Request interrupted (Enter). Add more content to the message "
-            "(empty line sends it):"
-        )
-        extra_lines: list[str] = []
-        while True:
-            try:
-                line = self.session.prompt("...> ")
-            except (KeyboardInterrupt, EOFError):
-                # Ctrl+C/Ctrl+D (or an F2/F12 keybinding that exited the
-                # inner prompt app) ends the continuation.
-                break
-            if line is None or self.do_it_requested:
-                # F2/F12 were pressed inside the continuation prompt: stop
-                # collecting so the run loop can handle them.
-                break
-            if not line.strip():
-                # Empty line finishes the continuation.
-                break
-            extra_lines.append(line)
-        if not extra_lines:
-            return None
-        return user_input + "\n" + "\n".join(extra_lines)
-
     def _send_prompt(self, user_input: str) -> None:
         """Send a prompt to the AI and update the conversation state."""
         tools_to_use = [] if self.no_tools else None
@@ -433,22 +394,6 @@ class InteractiveShell:
             print(
                 "Request interrupted, previous prompt/answer removed from the conversation history."
             )
-        except RequestCancelled:
-            # Enter was pressed while waiting for the API. Rather than just
-            # cancelling, let the user add more content to their message; if
-            # they do, roll back the user message appended by the cancelled
-            # request and re-send the combined prompt so the added content
-            # becomes part of the conversation history.
-            combined = self._collect_continuation(user_input)
-            if combined is None:
-                # No extra content: keep the prompt in the conversation
-                # history as-is (no rollback, unlike Ctrl+C above).
-                print(
-                    "Request cancelled (Enter). The prompt stays in the conversation history."
-                )
-                return
-            del self.messages_history[self.history_checkpoint :]
-            self._send_prompt(combined)
         except Exception as e:
             # Rollback on any other unexpected error as well
             del self.messages_history[self.history_checkpoint :]

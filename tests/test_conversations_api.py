@@ -9,7 +9,6 @@ and turns are chained with ``previous_response_id``.
 These tests verify:
   - ``_consume_response_stream`` text / reasoning / tool-call assembly.
   - ``response.failed`` is turned into a raised error.
-  - Enter-to-cancel short-circuits the stream and closes the connection.
   - ``send_prompt`` chains tool-call rounds via ``previous_response_id`` and
     returns a ``ConversationResult`` carrying the final server-side response
     id (no client-side history is kept or mutated).
@@ -202,88 +201,6 @@ def test_consume_stream_raises_on_empty_stream():
     returning an empty response."""
     with pytest.raises(RuntimeError, match="empty response"):
         api._consume_response_stream(_stream([]))
-
-
-def test_consume_stream_cancel_is_not_an_empty_stream():
-    """An Enter-to-cancel short-circuit (no events consumed) must NOT be
-    mistaken for an empty stream."""
-    import threading
-
-    cancel = threading.Event()
-    cancel.set()
-
-    def events():
-        if False:
-            yield None  # pragma: no cover - keeps this a generator
-
-    content, _, tools, usage, response_id = api._consume_response_stream(
-        events(), cancel_event=cancel
-    )
-    assert content == ""
-    assert tools == []
-    assert response_id is None
-
-
-def test_consume_stream_cancel_short_circuits():
-    import threading
-
-    cancel = threading.Event()
-
-    def events():
-        yield _Event("response.created", response=_Response("resp_5"))
-        yield _Event("response.output_text.delta", delta="partial")
-        # User presses Enter while waiting: cancel is set before the next event.
-        cancel.set()
-        yield _Event("response.output_text.delta", delta="more")
-        yield _Event("response.completed", response=_Response("resp_5"))
-
-    content, _, tools, usage, response_id = api._consume_response_stream(
-        events(), cancel_event=cancel
-    )
-    assert content == "partial"
-    assert tools == []
-    assert response_id == "resp_5"
-
-
-def test_stream_response_closes_connection_on_cancel():
-    import threading
-
-    cancel = threading.Event()
-
-    class FakeStream:
-        def __init__(self, client):
-            self.client = client
-
-        def __iter__(self):
-            yield _Event("response.created", response=_Response("r1"))
-            yield _Event("response.output_text.delta", delta="hi")
-            cancel.set()
-            yield _Event("response.completed", response=_Response("r1"))
-
-        def close(self):
-            self.client.closed = True
-
-    class FakeClient:
-        def __init__(self):
-            self.closed = False
-
-        @property
-        def responses(self):
-            client = self
-
-            class _Responses:
-                def create(self, **kwargs):
-                    return FakeStream(client)
-
-            return _Responses()
-
-    client = FakeClient()
-    cancel.clear()
-    content, _, _, _, _ = api._stream_response(
-        client, {"model": "m", "input": "hi", "stream": True}, None, cancel_event=cancel
-    )
-    assert content == "hi"
-    assert client.closed is True
 
 
 # ---- _convert_tools_to_responses_format ----------------------------------
@@ -743,7 +660,6 @@ def test_conversation_result_defaults():
 def test_module_reexports_completions_api_helpers():
     # Shared helpers are re-exported so callers can import everything from a
     # single module.
-    assert api.RequestCancelled is not None
     assert api.resolve_runtime_config is not None
     assert api.get_env_config is not None
 
