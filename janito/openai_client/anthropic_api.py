@@ -42,7 +42,7 @@ from typing import Any
 from rich.console import Console
 
 # Import general configuration handling
-from janito.general_config import get_active_provider, load_max_output_tokens
+from janito.general_config import load_max_output_tokens
 
 # Import provider configuration for built-in defaults
 from janito.provider_config import (
@@ -52,14 +52,13 @@ from janito.provider_config import (
 
 # Import the tool executor (routes tool calls to the MCP manager or the
 # built-in registry and tracks usage/used-files/changes around each call)
-from janito.tooling.changes import clear_changes
 from janito.tooling.executor import ToolExecutor
 
 # Import tools
 from janito.tooling.tools_registry import get_all_tool_schemas
 
 # Import used-files tracking (best-effort, never fails)
-from janito.tooling.used_files import format_used_files, reset_used_files
+from janito.tooling.used_files import format_used_files
 
 from .anthropic_stream import (  # noqa: F401 (re-exported for backward compat)
     _consume_stream,
@@ -75,17 +74,12 @@ from .anthropic_stream import (  # noqa: F401 (re-exported for backward compat)
     _stream_response,
 )
 
-# Shared client helpers (MCP loading, Rich console output, auth-error
-# explainer) and the Anthropic stream consumer.  Names that are only
-# re-exported for backward compatibility are marked ``noqa: F401``.
-from .client_support import (
-    _display_content,
-    _display_reasoning,
-    _display_usage,
-    _handle_auth_error,
-    _load_mcp,
-    _print_verbose_info,
-)
+# Shared agent-loop pipeline (see Client.send) implemented by AnthropicClient.
+from .base_client import Client
+
+# Shared client helpers (Rich console output, auth-error explainer) used by
+# the module's remaining functions (finalize / error handling).
+from .client_support import _display_usage, _handle_auth_error
 
 # Shared helpers reused from the Chat Completions implementation so all
 # client modules stay in sync: runtime config resolution, the progress
@@ -179,111 +173,144 @@ def send_prompt(
         RuntimeError: If the ``anthropic`` package is not installed.
     """
     logger.info("Sending prompt to Anthropic API (native SDK)")
-    # Remove any changes log from a previous prompt so ./janito/changes.jsonl
-    # only describes the changes made while handling the current prompt.
-    clear_changes()
-    # Clear the in-process used-files tracker so the end-of-prompt
-    # "Used files" report only describes files touched while handling the
-    # *current* prompt instead of accumulating across the whole session.
-    reset_used_files()
-    # This module is the "Anthropic" API type, so endpoint resolution picks
-    # the native-SDK base URL from the provider's endpoint_by_api_type map.
-    base_url, api_key, model = resolve_runtime_config(
-        cli_model, cli_provider, cli_api_type="Anthropic"
+    return AnthropicClient(
+        cli_model=cli_model,
+        cli_provider=cli_provider,
+        reasoning_level=reasoning_level,
+        use_mcp=use_mcp,
+    ).send(
+        prompt,
+        verbose=verbose,
+        previous_messages=previous_messages,
+        instructions=instructions,
+        tools=tools,
+        thinking=thinking,
     )
-    client = _create_client(base_url, api_key)
 
-    logger.debug(f"Anthropic client created with base_url={base_url}")
 
-    # Initialize MCP manager and load services if enabled; the tool executor
-    # routes tool calls to the MCP manager or the built-in registry and tracks
-    # usage/used-files/changes around each call.
-    mcp_manager, mcp_tools = _load_mcp(use_mcp)
-    tool_executor = ToolExecutor(mcp_manager)
-    tools_schemas = _resolve_tools(tools, mcp_tools)
+class AnthropicClient(Client):
+    """Native Anthropic SDK client (``client.messages.create``).
 
-    logger.debug(f"Using {len(tools_schemas)} tools total")
+    The conversation history is owned **client-side**: ``previous_messages``
+    is mutated in place (user/assistant turns are appended), exactly like
+    Completions mode.  The Anthropic Messages API takes the system prompt as a
+    top-level ``system`` parameter, so system-role messages are extracted from
+    the history (the in-place list keeps them so the shell's history stays
+    intact).  Every hook forwards to this module's globals so test
+    monkeypatches keep working.
+    """
 
-    provider = cli_provider or get_active_provider()
+    api_type = "Anthropic"
+    backend_default = "https://api.anthropic.com"
 
-    # Max output tokens: the Anthropic Messages API requires max_tokens, so
-    # the resolved value (config > provider built-in default > 100k) is always
-    # passed.
-    max_output_tokens = _resolve_max_output_tokens(provider)
-
-    # Load the provider's built-in max input tokens (context window) for the
-    # usage summary display.
-    max_input_tokens = get_default_max_input_tokens_from_provider(provider)
-
-    console = Console()
-
-    # Print model and backend info only in verbose mode
-    if verbose:
-        _print_verbose_info(
-            console, base_url, model, mcp_manager, "https://api.anthropic.com"
+    def _resolve_runtime_config(self):
+        # This module is the "Anthropic" API type, so endpoint resolution
+        # picks the native-SDK base URL from the endpoint_by_api_type map.
+        return resolve_runtime_config(
+            self.cli_model, self.cli_provider, cli_api_type="Anthropic"
         )
 
-    # Build the conversation. The Anthropic Messages API takes the system
-    # prompt as a top-level `system` parameter (not a "system"-role message),
-    # so system-role messages are extracted from the history and the request
-    # payload filters them out. The in-place history list keeps them so the
-    # shell's messages_history stays intact.
-    messages = previous_messages if previous_messages is not None else []
-    system = _resolve_system_prompt(instructions, messages)
+    def _create_sdk_client(self, base_url, api_key):
+        return _create_client(base_url, api_key)
 
-    # NOTE: check `is not None` (not truthiness). An empty list is a valid,
-    # caller-owned history (e.g. after a restart or with --no-system-prompt);
-    # using a truthy check would replace it with a new local list and the
-    # appended messages would never propagate back to the caller.
-    messages.append({"role": "user", "content": prompt})
+    def _create_tool_executor(self, mcp_manager):
+        return ToolExecutor(mcp_manager)
 
-    logger.debug(f"Starting message loop with {len(messages)} messages")
+    def _resolve_tools(self, tools, mcp_tools):
+        return _resolve_tools(tools, mcp_tools)
 
-    while True:
-        # Build the base call parameters. system is a top-level parameter that
-        # may be sent on every round (the Messages API is stateless and the
-        # full history is re-sent each time).
-        call_kwargs = _build_call_kwargs(model, messages, max_output_tokens, system)
+    def _resolve_model_settings(self, provider, thinking, reasoning_level):
+        # The Anthropic Messages API requires max_tokens, so the resolved
+        # value (config > provider built-in default > 100k) is always passed.
+        # thinking / reasoning_level are accepted for signature parity but the
+        # native extended-thinking mode is not wired yet.
+        return (
+            thinking,
+            _resolve_max_output_tokens(provider),
+            get_default_max_input_tokens_from_provider(provider),
+            None,
+        )
 
-        # Consume the full stream under a progress bar. The blocking work
-        # (connection setup + full response generation) runs in a worker thread
-        # via _run_with_progress_bar while the main thread drives the spinner,
-        # mirroring the completions_api behaviour.
+    def _init_conversation_state(self, prompt, provider, **kwargs):
+        # Build the conversation. The Anthropic Messages API takes the system
+        # prompt as a top-level `system` parameter (not a "system"-role
+        # message), so system-role messages are extracted from the history and
+        # the request payload filters them out. The in-place history list
+        # keeps them so the shell's messages_history stays intact.
+        previous_messages = kwargs.get("previous_messages")
+        messages = previous_messages if previous_messages is not None else []
+        system = _resolve_system_prompt(kwargs.get("instructions"), messages)
+
+        # NOTE: check `is not None` (not truthiness). An empty list is a valid,
+        # caller-owned history (e.g. after a restart or with
+        # --no-system-prompt); using a truthy check would replace it with a new
+        # local list and the appended messages would never propagate back to
+        # the caller.
+        messages.append({"role": "user", "content": prompt})
+        return {"messages": messages, "system": system}
+
+    def _build_call_kwargs(
+        self,
+        model,
+        state,
+        max_output_tokens,
+        reasoning_level,
+        preserve_thinking,
+        thinking,
+    ):
+        # system is a top-level parameter that may be sent on every round (the
+        # Messages API is stateless and the full history is re-sent each time).
+        return _build_call_kwargs(
+            model, state["messages"], max_output_tokens, state["system"]
+        )
+
+    def _run_stream_round(
+        self,
+        client,
+        call_kwargs,
+        tools_schemas,
+        state,
+        *,
+        base_url,
+        api_key,
+        model,
+        console,
+    ):
         try:
-            (
-                full_content,
-                reasoning_content,
-                tool_use_blocks,
-                usage_info,
-            ) = _run_with_progress_bar(
+            return _run_with_progress_bar(
                 _stream_response, client, call_kwargs, tools_schemas
             )
         except Exception as e:
             # The anthropic SDK raises its own exception types; format the
             # common authentication failure with the same actionable details
             # as the OpenAI clients (the exception is always re-raised).
-            _handle_auth_error(e, cli_provider, api_key, base_url, model, console)
+            _handle_auth_error(e, self.cli_provider, api_key, base_url, model, console)
             raise
 
-        logger.debug("Anthropic Messages streaming response completed")
-        _display_reasoning(reasoning_content, console)
+    def _handle_tool_calls(
+        self, tool_calls, full_content, reasoning_content, state, tool_executor
+    ):
+        # Record the assistant's message with its content blocks (text +
+        # tool_use) in the client-side history, then execute every call and
+        # send the results back as tool_result blocks before looping to get
+        # the final answer.
+        _handle_tool_blocks(tool_calls, full_content, state["messages"], tool_executor)
+        return state
 
-        # Display the assembled response using rich markdown
-        _display_content(full_content, console)
-
-        # Check if the model wants to call tools
-        if tool_use_blocks:
-            # Record the assistant's message with its content blocks (text +
-            # tool_use) in the client-side history, then execute every call
-            # and send the results back as tool_result blocks before looping
-            # to get the final answer.
-            _handle_tool_blocks(tool_use_blocks, full_content, messages, tool_executor)
-            continue
-
+    def _finalize(
+        self,
+        full_content,
+        reasoning_content,
+        state,
+        usage_info,
+        max_input_tokens,
+        max_output_tokens,
+        console,
+    ):
         # No more tool calls, return the final response.
         return _finalize_response(
             full_content,
-            messages,
+            state["messages"],
             usage_info,
             max_input_tokens,
             max_output_tokens,

@@ -17,8 +17,6 @@ from janito.auth_config import get_api_key, get_default_provider
 
 # Import general configuration handling
 from janito.general_config import (
-    get_active_provider,
-    get_config_value,
     load_endpoint_from_config,
     load_max_output_tokens,
     load_model_from_config,
@@ -35,7 +33,6 @@ from ..provider_config import (
     get_default_thinking_from_provider,
     is_custom_provider,
 )
-from ..tooling.changes import clear_changes
 
 # Import the tool executor (routes tool calls to the MCP manager or the
 # built-in registry and tracks usage/used-files/changes around each call)
@@ -45,7 +42,10 @@ from ..tooling.executor import ToolExecutor
 from ..tooling.tools_registry import get_all_tool_schemas
 
 # Import used-files tracking (best-effort, never fails)
-from ..tooling.used_files import format_used_files, reset_used_files
+from ..tooling.used_files import format_used_files
+
+# Shared agent-loop pipeline (see Client.send) implemented by CompletionsClient.
+from .base_client import Client
 
 # Shared helpers reused by every client module (token formatting, MCP
 # loading, Rich console output, auth-error explainer) and the Chat
@@ -310,106 +310,123 @@ def send_prompt(
             Sent to the API as ``reasoning_effort``.
     """
     logger.info("Sending prompt to API")
-    # Remove any changes log from a previous prompt so ./janito/changes.jsonl
-    # only describes the changes made while handling the current prompt.
-    clear_changes()
-    # Clear the in-process used-files tracker so the end-of-prompt
-    # "Used files" report only describes files touched while handling the
-    # *current* prompt instead of accumulating across the whole session.
-    reset_used_files()
-    base_url, api_key, model = resolve_runtime_config(cli_model, cli_provider)
+    return CompletionsClient(
+        cli_model=cli_model,
+        cli_provider=cli_provider,
+        reasoning_level=reasoning_level,
+        use_mcp=use_mcp,
+    ).send(
+        prompt,
+        verbose=verbose,
+        previous_messages=previous_messages,
+        tools=tools,
+        thinking=thinking,
+    )
 
-    # Create OpenAI client - base_url can be None for standard OpenAI
-    client = OpenAI(api_key=api_key, base_url=base_url)
 
-    logger.debug(f"OpenAI client created with base_url={base_url}")
+class CompletionsClient(Client):
+    """Chat Completions client (``client.chat.completions.create``).
 
-    # Initialize MCP manager and load services if enabled; the tool executor
-    # routes tool calls to the MCP manager or the built-in registry and tracks
-    # usage/used-files/changes around each call.
-    mcp_manager, mcp_tools = _load_mcp(use_mcp)
-    tool_executor = ToolExecutor(mcp_manager)
-    tools_schemas = _resolve_tools(tools, mcp_tools)
+    The conversation history is owned **client-side**: the caller-owned
+    ``previous_messages`` list is mutated in place (user/assistant turns are
+    appended), so the interactive shell's history keeps growing.  Every hook
+    forwards to this module's globals so test monkeypatches keep working.
+    """
 
-    logger.debug(f"Using {len(tools_schemas)} tools total")
+    api_type = "Completions"
 
-    provider = cli_provider or get_active_provider()
-    (
-        thinking,
+    def _resolve_runtime_config(self):
+        return resolve_runtime_config(self.cli_model, self.cli_provider)
+
+    def _create_sdk_client(self, base_url, api_key):
+        # base_url can be None for standard OpenAI
+        return OpenAI(api_key=api_key, base_url=base_url)
+
+    def _create_tool_executor(self, mcp_manager):
+        return ToolExecutor(mcp_manager)
+
+    def _resolve_tools(self, tools, mcp_tools):
+        return _resolve_tools(tools, mcp_tools)
+
+    def _resolve_model_settings(self, provider, thinking, reasoning_level):
+        return _resolve_model_settings(provider, thinking, reasoning_level)
+
+    def _init_conversation_state(self, prompt, provider, **kwargs):
+        # Use previous messages if provided, otherwise start with the user
+        # prompt.  NOTE: check `is not None` (not truthiness). An empty list
+        # is a valid, caller-owned history (e.g. after a restart or with
+        # --no-system-prompt); using a truthy check would replace it with a
+        # new local list and the appended messages would never propagate back
+        # to the caller, silently resetting the history on every turn.
+        previous_messages = kwargs.get("previous_messages")
+        messages = previous_messages if previous_messages is not None else []
+        messages.append({"role": "user", "content": prompt})
+        return messages
+
+    def _build_call_kwargs(
+        self,
+        model,
+        state,
         max_output_tokens,
-        max_input_tokens,
         reasoning_level,
-    ) = _resolve_model_settings(provider, thinking, reasoning_level)
-    preserve_thinking = get_config_value("preserve_thinking")
-    if preserve_thinking is not None:
-        logger.debug(f"Using preserve_thinking from config: {preserve_thinking}")
-
-    console = Console()
-
-    # Print model and backend info only in verbose mode
-    if verbose:
-        _print_verbose_info(console, base_url, model, mcp_manager, "api.openai.com")
-
-    # Use previous messages if provided, otherwise start with the user prompt.
-    # NOTE: check `is not None` (not truthiness). An empty list is a valid,
-    # caller-owned history (e.g. after a restart or with --no-system-prompt);
-    # using a truthy check would replace it with a new local list and the
-    # appended messages would never propagate back to the caller, silently
-    # resetting the conversation history on every turn.
-    messages = previous_messages if previous_messages is not None else []
-    messages.append({"role": "user", "content": prompt})
-
-    logger.debug(f"Starting message loop with {len(messages)} messages")
-
-    while True:
-        # Build the base call parameters
-        call_kwargs = _build_call_kwargs(
+        preserve_thinking,
+        thinking,
+    ):
+        return _build_call_kwargs(
             model,
-            messages,
+            state,
             max_output_tokens,
             reasoning_level,
             preserve_thinking,
             thinking,
         )
 
-        # Consume the full stream under a progress bar. The blocking work
-        # (connection setup + full response generation) runs in a worker thread
-        # via _run_with_progress_bar while the main thread drives the spinner.
+    def _run_stream_round(
+        self,
+        client,
+        call_kwargs,
+        tools_schemas,
+        state,
+        *,
+        base_url,
+        api_key,
+        model,
+        console,
+    ):
         try:
-            (
-                full_content,
-                reasoning_content,
-                tool_calls_map,
-                usage_info,
-            ) = _run_with_progress_bar(
+            return _run_with_progress_bar(
                 _stream_response, client, call_kwargs, tools_schemas
             )
         except NotFoundError as e:
             _handle_not_found_error(e, base_url, model, console)
             raise
         except AuthenticationError as e:
-            _handle_auth_error(e, cli_provider, api_key, base_url, model, console)
+            _handle_auth_error(e, self.cli_provider, api_key, base_url, model, console)
             raise
 
-        logger.debug("API streaming response completed")
-        _display_reasoning(reasoning_content, console)
+    def _handle_tool_calls(
+        self, tool_calls, full_content, reasoning_content, state, tool_executor
+    ):
+        # Build the assistant message (with tool_calls), execute every call
+        # and append the tool responses to the history, then loop to get the
+        # final response after the tool calls.
+        tool_executor.handle_tool_calls(tool_calls, state, full_content)
+        return state
 
-        # Display the assembled response using rich markdown
-        _display_content(full_content, console)
-
-        # Check if the model wants to call tools
-        if tool_calls_map:
-            # Build the assistant message (with tool_calls), execute every
-            # call and append the tool responses to the history, then loop to
-            # get the final response after the tool calls.
-            tool_executor.handle_tool_calls(tool_calls_map, messages, full_content)
-            continue
-
-        # No more tool calls, return the final response.
+    def _finalize(
+        self,
+        full_content,
+        reasoning_content,
+        state,
+        usage_info,
+        max_input_tokens,
+        max_output_tokens,
+        console,
+    ):
         return _finalize_response(
             full_content,
             reasoning_content,
-            messages,
+            state,
             usage_info,
             max_input_tokens,
             max_output_tokens,

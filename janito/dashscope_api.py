@@ -48,19 +48,14 @@ from typing import Any
 from rich.console import Console
 
 # Import general configuration handling
-from janito.general_config import get_active_provider, load_max_output_tokens
+from janito.general_config import load_max_output_tokens
 
-# Shared client helpers (MCP loading, Rich console output, auth-error
-# explainer) and the DashScope stream consumer.  Names that are only
-# re-exported for backward compatibility are marked ``noqa: F401``.
-from janito.openai_client.client_support import (
-    _display_content,
-    _display_reasoning,
-    _display_usage,
-    _handle_auth_error,
-    _load_mcp,
-    _print_verbose_info,
-)
+# Shared agent-loop pipeline (see Client.send) implemented by DashScopeClient.
+from janito.openai_client.base_client import Client
+
+# Shared client helpers (Rich console output, auth-error explainer) used by
+# the module's remaining functions (finalize / error handling).
+from janito.openai_client.client_support import _display_usage, _handle_auth_error
 
 # Shared helpers reused from the Chat Completions implementation so all
 # client modules stay in sync: runtime config resolution, the progress
@@ -95,14 +90,13 @@ from janito.provider_config import (
 
 # Import the tool executor (routes tool calls to the MCP manager or the
 # built-in registry and tracks usage/used-files/changes around each call)
-from janito.tooling.changes import clear_changes
 from janito.tooling.executor import ToolExecutor
 
 # Import tools
 from janito.tooling.tools_registry import get_all_tool_schemas
 
 # Import used-files tracking (best-effort, never fails)
-from janito.tooling.used_files import format_used_files, reset_used_files
+from janito.tooling.used_files import format_used_files
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
@@ -204,108 +198,130 @@ def send_prompt(
         RuntimeError: If the ``dashscope`` package is not installed.
     """
     logger.info("Sending prompt to DashScope API (native SDK)")
-    # Remove any changes log from a previous prompt so ./janito/changes.jsonl
-    # only describes the changes made while handling the current prompt.
-    clear_changes()
-    # Clear the in-process used-files tracker so the end-of-prompt
-    # "Used files" report only describes files touched while handling the
-    # *current* prompt instead of accumulating across the whole session.
-    reset_used_files()
-    # This module is the "DashScope" API type, so endpoint resolution picks
-    # the native-SDK base URL from the provider's endpoint_by_api_type map.
-    base_url, api_key, model = resolve_runtime_config(
-        cli_model, cli_provider, cli_api_type="DashScope"
+    return DashScopeClient(
+        cli_model=cli_model,
+        cli_provider=cli_provider,
+        reasoning_level=reasoning_level,
+        use_mcp=use_mcp,
+    ).send(
+        prompt,
+        verbose=verbose,
+        previous_messages=previous_messages,
+        instructions=instructions,
+        tools=tools,
+        thinking=thinking,
     )
-    client = _create_client(base_url, api_key)
 
-    logger.debug(f"DashScope client prepared with base_url={base_url}")
 
-    # Initialize MCP manager and load services if enabled; the tool executor
-    # routes tool calls to the MCP manager or the built-in registry and tracks
-    # usage/used-files/changes around each call.
-    mcp_manager, mcp_tools = _load_mcp(use_mcp)
-    tool_executor = ToolExecutor(mcp_manager)
-    tools_schemas = _resolve_tools(tools, mcp_tools)
+class DashScopeClient(Client):
+    """Native DashScope SDK client (``Generation.call``).
 
-    logger.debug(f"Using {len(tools_schemas)} tools total")
+    The conversation history is owned **client-side**: ``previous_messages``
+    is mutated in place (user/assistant turns are appended), exactly like
+    Completions mode.  The DashScope native API is stateless, so the full
+    history is re-sent on every round.  Every hook forwards to this module's
+    globals so test monkeypatches keep working.
+    """
 
-    provider = cli_provider or get_active_provider()
-    (
-        thinking,
-        max_output_tokens,
-        max_input_tokens,
-    ) = _resolve_model_settings(provider, thinking)
+    api_type = "DashScope"
+    backend_default = "https://dashscope-intl.aliyuncs.com/api/v1"
 
-    console = Console()
-
-    # Print model and backend info only in verbose mode
-    if verbose:
-        _print_verbose_info(
-            console,
-            base_url,
-            model,
-            mcp_manager,
-            "https://dashscope-intl.aliyuncs.com/api/v1",
+    def _resolve_runtime_config(self):
+        # This module is the "DashScope" API type, so endpoint resolution
+        # picks the native-SDK base URL from the endpoint_by_api_type map.
+        return resolve_runtime_config(
+            self.cli_model, self.cli_provider, cli_api_type="DashScope"
         )
 
-    # Build the conversation.  Unlike the Anthropic Messages API, DashScope
-    # accepts ``system``-role messages directly, so the history is sent
-    # as-is; a string ``instructions`` value is prepended as a system message.
-    messages = _init_messages(instructions, previous_messages, prompt)
+    def _create_sdk_client(self, base_url, api_key):
+        return _create_client(base_url, api_key)
 
-    logger.debug(f"Starting message loop with {len(messages)} messages")
+    def _create_tool_executor(self, mcp_manager):
+        return ToolExecutor(mcp_manager)
 
-    while True:
-        # Build the base call parameters.  The DashScope native API is
-        # stateless and the full history is re-sent on every round.
-        call_kwargs = _build_call_kwargs(model, messages, max_output_tokens, thinking)
+    def _resolve_tools(self, tools, mcp_tools):
+        return _resolve_tools(tools, mcp_tools)
 
-        # Consume the full stream under a progress bar. The blocking work
-        # (connection setup + full response generation) runs in a worker thread
-        # via _run_with_progress_bar while the main thread drives the spinner,
-        # mirroring the completions_api behaviour.
+    def _resolve_model_settings(self, provider, thinking, reasoning_level):
+        # The native DashScope SDK does not use reasoning_effort, so the
+        # reasoning level is dropped (accepted for signature parity).
+        thinking, max_output_tokens, max_input_tokens = _resolve_model_settings(
+            provider, thinking
+        )
+        return thinking, max_output_tokens, max_input_tokens, None
+
+    def _init_conversation_state(self, prompt, provider, **kwargs):
+        # Build the conversation.  Unlike the Anthropic Messages API, DashScope
+        # accepts ``system``-role messages directly, so the history is sent
+        # as-is; a string ``instructions`` value is prepended as a system
+        # message.
+        return _init_messages(
+            kwargs.get("instructions"), kwargs.get("previous_messages"), prompt
+        )
+
+    def _build_call_kwargs(
+        self,
+        model,
+        state,
+        max_output_tokens,
+        reasoning_level,
+        preserve_thinking,
+        thinking,
+    ):
+        # The DashScope native API is stateless and the full history is
+        # re-sent on every round.
+        return _build_call_kwargs(model, state, max_output_tokens, thinking)
+
+    def _run_stream_round(
+        self,
+        client,
+        call_kwargs,
+        tools_schemas,
+        state,
+        *,
+        base_url,
+        api_key,
+        model,
+        console,
+    ):
         try:
-            (
-                full_content,
-                reasoning_content,
-                tool_use_blocks,
-                usage_info,
-            ) = _run_with_progress_bar(
+            return _run_with_progress_bar(
                 _stream_response, client, call_kwargs, tools_schemas
             )
         except Exception as e:
             # The dashscope SDK raises its own exception types; format the
             # common authentication failure with the same actionable details
             # as the OpenAI clients (the exception is always re-raised).
-            _handle_auth_error(e, cli_provider, api_key, base_url, model, console)
+            _handle_auth_error(e, self.cli_provider, api_key, base_url, model, console)
             raise
 
-        logger.debug("DashScope streaming response completed")
-        _display_reasoning(reasoning_content, console)
+    def _handle_tool_calls(
+        self, tool_calls, full_content, reasoning_content, state, tool_executor
+    ):
+        # Record the assistant's message with its content and tool_calls in
+        # the client-side history, then execute every call and send the
+        # results back as tool-role messages before looping to get the final
+        # answer.
+        _handle_tool_blocks(
+            tool_calls, full_content, reasoning_content, state, tool_executor
+        )
+        return state
 
-        # Display the assembled response using rich markdown
-        _display_content(full_content, console)
-
-        # Check if the model wants to call tools
-        if tool_use_blocks:
-            # Record the assistant's message with its content and tool_calls
-            # in the client-side history, then execute every call and send
-            # the results back as tool-role messages before looping to get
-            # the final answer.
-            _handle_tool_blocks(
-                tool_use_blocks,
-                full_content,
-                reasoning_content,
-                messages,
-                tool_executor,
-            )
-            continue
-
+    def _finalize(
+        self,
+        full_content,
+        reasoning_content,
+        state,
+        usage_info,
+        max_input_tokens,
+        max_output_tokens,
+        console,
+    ):
         # No more tool calls, return the final response.
         return _finalize_response(
             full_content,
             reasoning_content,
-            messages,
+            state,
             usage_info,
             max_input_tokens,
             max_output_tokens,

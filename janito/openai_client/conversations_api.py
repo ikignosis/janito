@@ -46,12 +46,7 @@ from openai import AuthenticationError, NotFoundError, OpenAI
 from rich.console import Console
 
 # Import general configuration handling
-from janito.general_config import (
-    get_active_provider,
-    get_config_value,
-    load_max_output_tokens,
-    load_reasoning_level,
-)
+from janito.general_config import load_max_output_tokens, load_reasoning_level
 
 # Import provider configuration for built-in defaults
 from janito.provider_config import (
@@ -63,14 +58,16 @@ from janito.provider_config import (
 
 # Import the tool executor (routes tool calls to the MCP manager or the
 # built-in registry and tracks usage/used-files/changes around each call)
-from janito.tooling.changes import clear_changes
 from janito.tooling.executor import ToolExecutor
 
 # Import tools
 from janito.tooling.tools_registry import get_all_tool_schemas
 
 # Import used-files tracking (best-effort, never fails)
-from janito.tooling.used_files import format_used_files, reset_used_files
+from janito.tooling.used_files import format_used_files
+
+# Shared agent-loop pipeline (see Client.send) implemented by ResponsesClient.
+from .base_client import Client
 
 # Shared client helpers (MCP loading, Rich console output, auth-error
 # explainer) and the Responses API stream consumer.  Names that are only
@@ -209,80 +206,112 @@ def send_prompt(
         input items (to re-send with ``previous_items``).
     """
     logger.info("Sending prompt to Responses API")
-    # Remove any changes log from a previous prompt so ./janito/changes.jsonl
-    # only describes the changes made while handling the current prompt.
-    clear_changes()
-    # Clear the in-process used-files tracker so the end-of-prompt
-    # "Used files" report only describes files touched while handling the
-    # *current* prompt instead of accumulating across the whole session.
-    reset_used_files()
-    base_url, api_key, model = resolve_runtime_config(cli_model, cli_provider)
-
-    # Create OpenAI client - base_url can be None for standard OpenAI
-    client = OpenAI(api_key=api_key, base_url=base_url)
-
-    logger.debug(f"OpenAI client created with base_url={base_url}")
-
-    # Initialize MCP manager and load services if enabled; the tool executor
-    # routes tool calls to the MCP manager or the built-in registry and tracks
-    # usage/used-files/changes around each call.
-    mcp_manager, mcp_tools = _load_mcp(use_mcp)
-    tool_executor = ToolExecutor(mcp_manager)
-    tools_schemas = _resolve_tools(tools, mcp_tools)
-
-    logger.debug(f"Using {len(tools_schemas)} tools total")
-
-    provider = cli_provider or get_active_provider()
-    (
-        thinking,
-        max_output_tokens,
-        max_input_tokens,
-        reasoning_level,
-    ) = _resolve_model_settings(provider, thinking, reasoning_level)
-    preserve_thinking = get_config_value("preserve_thinking")
-    if preserve_thinking is not None:
-        logger.debug(f"Using preserve_thinking from config: {preserve_thinking}")
-
-    console = Console()
-
-    # Print model and backend info only in verbose mode
-    if verbose:
-        _print_verbose_info(console, base_url, model, mcp_manager, "api.openai.com")
-
-    # Conversation-state model depends on the provider: some Responses
-    # endpoints (e.g. OpenAI) keep the conversation server-side and chain
-    # turns with previous_response_id; others (e.g. DeepSeek's /responses,
-    # which is stateless) cannot resolve a previous response id, so the
-    # client tracks the full conversation as Responses input items and
-    # re-sends them on every request (like Chat Completions).
-    (
-        responses_in_server,
-        response_id,
-        conversation_items,
-        input_items,
-    ) = _init_conversation_state(
-        provider, previous_response_id, previous_items, instructions, prompt
+    return ResponsesClient(
+        cli_model=cli_model,
+        cli_provider=cli_provider,
+        reasoning_level=reasoning_level,
+        use_mcp=use_mcp,
+    ).send(
+        prompt,
+        verbose=verbose,
+        previous_response_id=previous_response_id,
+        previous_items=previous_items,
+        instructions=instructions,
+        tools=tools,
+        thinking=thinking,
     )
-    message_count = 1
 
-    while True:
-        # Build the base call parameters
-        call_kwargs = _build_call_kwargs(
-            model,
+
+class ResponsesClient(Client):
+    """Responses API client (``client.responses.create``).
+
+    The conversation state model depends on the provider: server-side
+    endpoints (e.g. OpenAI) chain turns with ``previous_response_id`` (the
+    history lives on the server); stateless endpoints (e.g. DeepSeek) track
+    the full conversation as Responses input items and re-send them on every
+    request.  Every hook forwards to this module's globals so test
+    monkeypatches keep working.
+    """
+
+    api_type = "Responses"
+
+    def _resolve_runtime_config(self):
+        return resolve_runtime_config(self.cli_model, self.cli_provider)
+
+    def _create_sdk_client(self, base_url, api_key):
+        # base_url can be None for standard OpenAI
+        return OpenAI(api_key=api_key, base_url=base_url)
+
+    def _create_tool_executor(self, mcp_manager):
+        return ToolExecutor(mcp_manager)
+
+    def _resolve_tools(self, tools, mcp_tools):
+        return _resolve_tools(tools, mcp_tools)
+
+    def _resolve_model_settings(self, provider, thinking, reasoning_level):
+        return _resolve_model_settings(provider, thinking, reasoning_level)
+
+    def _init_conversation_state(self, prompt, provider, **kwargs):
+        # Conversation-state model depends on the provider: some Responses
+        # endpoints (e.g. OpenAI) keep the conversation server-side and chain
+        # turns with previous_response_id; others (e.g. DeepSeek's /responses,
+        # which is stateless) cannot resolve a previous response id, so the
+        # client tracks the full conversation as Responses input items and
+        # re-sends them on every request (like Chat Completions).
+        (
+            responses_in_server,
+            response_id,
+            conversation_items,
             input_items,
+        ) = _init_conversation_state(
+            provider,
+            kwargs.get("previous_response_id"),
+            kwargs.get("previous_items"),
+            kwargs.get("instructions"),
+            prompt,
+        )
+        return {
+            "responses_in_server": responses_in_server,
+            "response_id": response_id,
+            "conversation_items": conversation_items,
+            "input_items": input_items,
+            "instructions": kwargs.get("instructions"),
+            "message_count": 1,
+        }
+
+    def _build_call_kwargs(
+        self,
+        model,
+        state,
+        max_output_tokens,
+        reasoning_level,
+        preserve_thinking,
+        thinking,
+    ):
+        return _build_call_kwargs(
+            model,
+            state["input_items"],
             max_output_tokens,
             reasoning_level,
             preserve_thinking,
             thinking,
-            response_id,
-            responses_in_server,
-            instructions,
+            state["response_id"],
+            state["responses_in_server"],
+            state["instructions"],
         )
 
-        # Consume the full stream under a progress bar. The blocking work
-        # (connection setup + full response generation) runs in a worker thread
-        # via _run_with_progress_bar while the main thread drives the spinner,
-        # mirroring the completions_api behaviour.
+    def _run_stream_round(
+        self,
+        client,
+        call_kwargs,
+        tools_schemas,
+        state,
+        *,
+        base_url,
+        api_key,
+        model,
+        console,
+    ):
         try:
             (
                 full_content,
@@ -295,56 +324,65 @@ def send_prompt(
             )
             # Only server-side conversations chain with the returned id;
             # stateless providers never send previous_response_id.
-            if responses_in_server:
-                response_id = stream_response_id
+            if state["responses_in_server"]:
+                state["response_id"] = stream_response_id
             # Safety net: a server-side provider that never reported a
             # response id and produced neither content nor tool calls means
             # the request failed without a proper error event. Raise a clear
             # error naming the model instead of returning an empty result.
             _validate_stream_result(
-                responses_in_server, stream_response_id, full_content, tool_calls, model
+                state["responses_in_server"],
+                stream_response_id,
+                full_content,
+                tool_calls,
+                model,
             )
         except NotFoundError as e:
-            _handle_not_found_error(e, base_url, model, response_id, console)
+            _handle_not_found_error(e, base_url, model, state["response_id"], console)
             raise
         except AuthenticationError as e:
-            _handle_auth_error(e, cli_provider, api_key, base_url, model, console)
+            _handle_auth_error(e, self.cli_provider, api_key, base_url, model, console)
             raise
+        return full_content, reasoning_content, tool_calls, usage_info
 
-        logger.debug("Responses API streaming response completed")
-        _display_reasoning(reasoning_content, console)
+    def _handle_tool_calls(
+        self, tool_calls, full_content, reasoning_content, state, tool_executor
+    ):
+        # Record the assistant's tool calls in the client-side history
+        # (stateless providers) and execute every call, sending the results
+        # back as function_call_output items chained to the response that
+        # produced the calls (server-side) or appended to the full history
+        # (stateless). Then continue the loop.
+        state["input_items"] = _handle_tool_calls(
+            tool_calls, full_content, state["conversation_items"], tool_executor
+        )
+        state["message_count"] += 1
+        return state
 
-        # Display the assembled response using rich markdown
-        _display_content(full_content, console)
-
-        # Check if the model wants to call tools
-        if tool_calls:
-            # Record the assistant's tool calls in the client-side history
-            # (stateless providers) and execute every call, sending the results
-            # back as function_call_output items chained to the response that
-            # produced the calls (server-side) or appended to the full history
-            # (stateless). Then continue the loop.
-            input_items = _handle_tool_calls(
-                tool_calls, full_content, conversation_items, tool_executor
-            )
-            message_count += 1
-            continue
-
-        # No more tool calls, return the final response. Server-side: the
-        # assistant message lives on the server and the caller only needs the
-        # response id to chain the next turn. Stateless: append the final
-        # assistant text to the client-side history and hand the full items
-        # back so the caller can re-send them next turn.
+    def _finalize(
+        self,
+        full_content,
+        reasoning_content,
+        state,
+        usage_info,
+        max_input_tokens,
+        max_output_tokens,
+        console,
+    ):
+        # Server-side: the assistant message lives on the server and the
+        # caller only needs the response id to chain the next turn. Stateless:
+        # append the final assistant text to the client-side history and hand
+        # the full items back so the caller can re-send them next turn.
         return _finalize_conversation(
             full_content,
-            conversation_items,
+            state["conversation_items"],
             usage_info,
             max_input_tokens,
             max_output_tokens,
-            message_count,
+            state["message_count"],
             console,
-            response_id,
-            responses_in_server,
+            state["response_id"],
+            state["responses_in_server"],
         )
 
 

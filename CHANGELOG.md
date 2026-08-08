@@ -41,6 +41,26 @@ Changes since `v4.20.0` (2026-08-07).
 
 ### Changed
 
+- Introduced a shared `Client` base class
+  (`janito/openai_client/base_client.py`) implementing the duplicated
+  ~300-line agent-loop pipeline (reset tracking -> resolve runtime config ->
+  create SDK client -> load MCP tools -> build the ToolExecutor -> resolve
+  model settings -> loop *stream / display / tool calls / finalize*) as a
+  template method (`Client.send`).  The four API clients now subclass it:
+  `CompletionsClient` (`completions_api`), `ResponsesClient`
+  (`conversations_api`), `AnthropicClient` (`anthropic_api`) and
+  `DashScopeClient` (`dashscope_api`); the module-level `send_prompt`
+  functions remain as thin wrappers with their exact signatures, so the
+  interactive shell, `cli/chat.py` and the tests are unaffected.
+  Each subclass implements its hooks as forwarders to its own module's
+  globals (`resolve_runtime_config`, `_run_with_progress_bar`, `OpenAI`,
+  `ToolExecutor`, `get_all_tool_schemas`, ...), so the existing test
+  monkeypatches keep working.  Conversation state differs per client: the
+  Responses client threads a small state dict (server-side `response_id` vs
+  stateless `input_items` + `message_count`), while the stateless clients
+  keep the caller-owned messages list with the historical "is not None"
+  empty-list semantics.  New tests: `tests/test_clients.py`.
+
 - Extracted the duplicated JSON-file store pattern (path resolution,
   local-over-global merge, `0600` permissions, get/set/delete/list) into a
   new `janito/json_store.py` module: `auth_config`, `secrets_config` and
