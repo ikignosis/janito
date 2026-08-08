@@ -41,6 +41,15 @@ Changes since `v4.20.0` (2026-08-07).
 
 ### Changed
 
+- The `deepseek` provider now declares its supported reasoning levels
+  (`low`/`high`/`max`, per the DeepSeek API reference) in
+  `janito/provider_data.py` `PROVIDER_INFO`, so
+  `get_supported_reasoning_levels_from_provider("deepseek")` and the web
+  `/providers` endpoint expose them (previously only `alibaba` declared
+  levels).  The DeepSeek section of `docs/configuration/providers.md` gained
+  a "Reasoning Level" subsection documenting the levels, the `medium`/`xhigh`
+  compatibility mappings and the `deepseek-v4-pro` `high`/`max` limitation;
+  `tests/test_provider_config.py` now asserts the deepseek levels.
 - Documentation: the README, `docs/index.md` and the providers guide
   (`docs/configuration/providers.md`) now state that janito supports **both**
   OpenAI-compatible APIs (the `Responses`/`Completions` API types) and native

@@ -148,8 +148,17 @@ if pytest is not None:
         for entry in supported:
             assert "effort" in entry
             assert "description" in entry
+        # DeepSeek's default model (deepseek-v4-flash) declares reasoning
+        # levels too (low/high/max per the DeepSeek API reference).
+        supported = get_supported_reasoning_levels_from_provider("deepseek")
+        assert supported is not None
+        assert [entry["effort"] for entry in supported] == ["low", "high", "max"]
+        for entry in supported:
+            assert "effort" in entry
+            assert "description" in entry
         # Case-insensitive lookup works.
         assert get_default_reasoning_level_from_provider("Alibaba") == "xhigh"
+        assert get_supported_reasoning_levels_from_provider("DeepSeek") is not None
         # Providers without configurable reasoning expose None.
         assert get_default_reasoning_level_from_provider("openai") is None
         assert get_supported_reasoning_levels_from_provider("openai") is None

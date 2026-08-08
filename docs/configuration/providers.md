@@ -244,6 +244,26 @@ janito --provider deepseek --set api-type=Anthropic
 janito --provider deepseek --api-type Anthropic "Explain quantum computing"
 ```
 
+### Reasoning Level
+
+The default model `deepseek-v4-flash` supports configurable reasoning depth via
+the OpenAI-compatible `reasoning_effort` parameter. The supported levels are
+`low`, `high` and `max` (the API's default is `high`; `medium`/`xhigh` are
+mapped to `high` for compatibility, and `deepseek-v4-pro` currently supports
+only `high`/`max`).
+
+```bash
+# Override the reasoning depth for a single call
+janito --reasoning-level max "Your prompt"
+
+# Set a per-provider default in the config
+janito --provider deepseek --set reasoning-level=high
+```
+
+Resolution order: `--reasoning-level` > per-provider config value
+(`--set reasoning-level=...`) > built-in default (none: the API's own default
+`high` applies).
+
 ### Thinking Mode
 
 DeepSeek models reason by default, so thinking mode is enabled out of the box
