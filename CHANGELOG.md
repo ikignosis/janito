@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Changes since `v4.21.0` (2026-08-08).
 
+### Added
+
+- The web agentic loop now supports the same API types as the CLI clients,
+  using the API type selected for the provider in use. `stream_prompt()`
+  resolves the effective API type for the effective provider (`--api-type`
+  first, then the provider's configured `api-type` written by the Settings
+  drawer's per-provider combo, then the provider's built-in default) and
+  dispatches to a per-type runner: `Completions` (the built-in Chat
+  Completions path), `Responses` (`client.responses.create`, stateless
+  input-items conversation model so the portable OpenAI-format session
+  history is re-sent every round), `Anthropic` (native `anthropic` SDK, with
+  system-prompt extraction and `tool_use`/`tool_result` conversion) and
+  `DashScope` (native `dashscope` SDK, streamed off the event loop with the
+  one-time multimodal/text endpoint retry). The session history stays in the
+  OpenAI chat format for every API type, so frontend rendering, on-disk
+  persistence and `run_tool_turn` are unchanged. The web status bar now
+  shows the effective API type for the selected provider, and
+  `janito --web --api-type <type>` pins it for the whole server run.
+
 ### Removed
 
 - Removed the Enter-to-cancel functionality in interactive mode: pressing

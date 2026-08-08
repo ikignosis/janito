@@ -35,6 +35,11 @@ class WebServerConfig:
     # --- AI / provider (resolved from auth store + config file) ---
     provider: str | None = None  # args.provider
     model: str | None = None  # args.model (or from provider config)
+    # args.api_type -- overrides the provider's configured api-type for the
+    # whole server run (like the CLI chat modes).  ``None`` = follow the
+    # provider's configured api-type (the web Settings drawer's per-provider
+    # combo, written to config.json) or its built-in default.
+    api_type: str | None = None
 
     # Session-only provider override set from the chat-page topbar combo.
     # Unlike ``provider`` (which mirrors the persisted default), this is
@@ -100,6 +105,7 @@ class WebServerConfig:
             provider=getattr(args, "provider", None),
             model=getattr(args, "model", None)
             or _resolve_model_from_config(getattr(args, "provider", None)),
+            api_type=getattr(args, "api_type", None),
             thinking=getattr(args, "thinking", False),
             verbose=getattr(args, "verbose", False),
             no_history=getattr(args, "no_history", False),
@@ -114,6 +120,7 @@ class WebServerConfig:
             for k in (
                 "provider",
                 "model",
+                "api_type",
                 "thinking",
                 "verbose",
                 "no_history",

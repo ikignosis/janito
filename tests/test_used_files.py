@@ -256,6 +256,7 @@ if pytest is not None:
             model = None
             provider = None
             session_provider = None
+            api_type = None
 
         async def _drain():
             events = []

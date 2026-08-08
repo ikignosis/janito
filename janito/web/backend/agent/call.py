@@ -149,22 +149,37 @@ class StreamAccumulator:
             max_tokens: The configured max-output-tokens limit (from
                 ``build_call_kwargs``), surfaced as ``input/max``.
         """
-        if not self.usage:
-            return None
-        from ..events import UsageEvent
+        return usage_event_from_usage(self.usage, max_tokens)
 
-        usage = self.usage
-        return UsageEvent(
-            total=getattr(usage, "total_tokens", 0) or 0,
-            input=getattr(usage, "prompt_tokens", 0) or 0,
-            output=getattr(usage, "completion_tokens", 0) or 0,
-            cached=(
-                getattr(
-                    getattr(usage, "prompt_tokens_details", None),
-                    "cached_tokens",
-                    0,
-                )
-                or 0
-            ),
-            max_tokens=max_tokens,
-        )
+
+def usage_event_from_usage(usage, max_tokens: int | None = None):
+    """Build a :class:`~janito.web.backend.events.UsageEvent` from a usage object.
+
+    Handles every usage shape the supported API types report:
+
+    - Chat Completions: ``total_tokens`` / ``prompt_tokens`` /
+      ``completion_tokens`` with ``prompt_tokens_details.cached_tokens``.
+    - Responses / DashScope / Anthropic: ``total_tokens`` / ``input_tokens`` /
+      ``output_tokens`` (``input_tokens_details.cached_tokens`` where the API
+      reports it).
+
+    Returns ``None`` when no usage was reported by the stream.
+    """
+    if usage is None:
+        return None
+    from ..events import UsageEvent
+
+    details = getattr(usage, "prompt_tokens_details", None) or getattr(
+        usage, "input_tokens_details", None
+    )
+    return UsageEvent(
+        total=getattr(usage, "total_tokens", 0) or 0,
+        input=getattr(usage, "prompt_tokens", None)
+        if getattr(usage, "prompt_tokens", None) is not None
+        else (getattr(usage, "input_tokens", 0) or 0),
+        output=getattr(usage, "completion_tokens", None)
+        if getattr(usage, "completion_tokens", None) is not None
+        else (getattr(usage, "output_tokens", 0) or 0),
+        cached=(getattr(details, "cached_tokens", 0) or 0),
+        max_tokens=max_tokens,
+    )

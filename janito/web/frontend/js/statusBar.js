@@ -53,6 +53,23 @@ function statusBarComponent() {
             return this.providers.find((p) => p.name === this.provider) || null;
         },
 
+        // The effective API type for the selected provider: the configured
+        // override first (``api_type``), then the provider's built-in
+        // default (the first of its ``supported_api_types``) — mirrors the
+        // backend's ``resolve_api_type`` resolution and the Settings
+        // drawer's combobox, so the badge shows the API the next prompt
+        // actually uses.
+        get apiType() {
+            const p = this.providerDetail;
+            if (!p) return '';
+            return (
+                p.api_type ||
+                p.default_api_type ||
+                (p.supported_api_types && p.supported_api_types[0]) ||
+                ''
+            );
+        },
+
         // The model the selected provider falls back to when nothing is
         // configured: its configured override first, then its built-in
         // default (mirrors the provider switcher / settings resolution).

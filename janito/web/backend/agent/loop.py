@@ -1,8 +1,20 @@
 """``stream_prompt()`` — the orchestration skeleton of the agentic loop.
 
 Everything heavy lives in sibling modules; this generator reads top to
-bottom: resolve config -> resolve tools -> loop { stream a response;
-either run tool calls and continue, or finish }.
+bottom: resolve config -> resolve API type -> resolve tools -> loop { stream a
+response; either run tool calls and continue, or finish }.
+
+The loop is API-type agnostic.  The API type for the turn is resolved for the
+*effective provider* (the one selected for the session/provider combo) via
+``resolve_api_type`` — ``--api-type`` first, then the provider's configured
+``api-type`` (written by the web Settings drawer), then the provider's
+built-in default.  Each API type contributes a small runner (client factory,
+call-kwargs builder, accumulator, stream driver) exposing the same interface:
+
+- Completions  -> ``janito.web.backend.agent.call`` (this module's built-in)
+- Responses    -> ``janito.web.backend.agent.responses``
+- Anthropic    -> ``janito.web.backend.agent.anthropic``
+- DashScope    -> ``janito.web.backend.agent.dashscope``
 """
 
 import logging
@@ -15,6 +27,7 @@ from janito.general_config import (
     get_config_value,
     load_max_output_tokens,
     load_reasoning_level,
+    resolve_api_type,
 )
 from janito.openai_client.completions_api import resolve_runtime_config
 from janito.provider_config import (
@@ -31,6 +44,9 @@ from ..events import (
     TokenEvent,
     WaitingEvent,
 )
+from . import anthropic as anthropic_runner
+from . import dashscope as dashscope_runner
+from . import responses as responses_runner
 from .call import StreamAccumulator, build_call_kwargs
 from .tooling import reset_used_files, resolve_tools
 from .turn import run_tool_turn
@@ -55,6 +71,20 @@ def _resolve_turn_config(config, effective_provider):
         reasoning_level = get_default_reasoning_level_from_provider(effective_provider)
 
     return max_output_tokens, preserve_thinking, reasoning_level
+
+
+def _runner_for(api_type: str):
+    """Return the web-agent runner module for a non-Completions API type.
+
+    ``None`` means the built-in Completions path (``call.py``) applies.
+    """
+    if api_type == "Responses":
+        return responses_runner
+    if api_type == "Anthropic":
+        return anthropic_runner
+    if api_type == "DashScope":
+        return dashscope_runner
+    return None
 
 
 def _build_turn_kwargs(
@@ -90,19 +120,64 @@ def _build_assistant_message(acc: StreamAccumulator, full_content: str) -> dict:
     return assistant_message
 
 
-async def _stream_turn_events(client, call_kwargs, acc):
-    """Stream one completion turn, yielding reasoning/token events.
+def _create_agent_client(runner, base_url, api_key):
+    """Create the SDK client for the API type (Completions is built-in)."""
+    if runner is None:
+        return AsyncOpenAI(api_key=api_key, base_url=base_url)
+    return runner.create_client(base_url, api_key)
+
+
+def _turn_call_kwargs_and_acc(
+    runner,
+    model,
+    config,
+    tools_schemas,
+    messages,
+    max_output_tokens,
+    preserve_thinking,
+    reasoning_level,
+):
+    """Build the per-type call kwargs and a fresh accumulator for one turn."""
+    if runner is None:
+        call_kwargs = _build_turn_kwargs(
+            model,
+            config,
+            tools_schemas,
+            messages,
+            max_output_tokens,
+            preserve_thinking,
+            reasoning_level,
+        )
+        return call_kwargs, StreamAccumulator()
+    call_kwargs = runner.build_call_kwargs(
+        model,
+        messages,
+        tools_schemas,
+        config,
+        max_output_tokens,
+        preserve_thinking,
+        reasoning_level,
+    )
+    return call_kwargs, runner.accumulator()
+
+
+async def _stream_turn(client, runner, call_kwargs, acc):
+    """Stream one API turn, yielding reasoning/token events.
 
     The caller owns ``acc``; on completion it holds the full turn state for
     end-of-turn assembly.
     """
-    stream = await client.chat.completions.create(**call_kwargs)
-    async for chunk in stream:
-        reasoning_delta, content_delta = acc.handle(chunk)
-        if reasoning_delta:
-            yield ReasoningEvent(content=reasoning_delta)
-        if content_delta:
-            yield TokenEvent(content=content_delta)
+    if runner is None:
+        stream = await client.chat.completions.create(**call_kwargs)
+        async for chunk in stream:
+            reasoning_delta, content_delta = acc.handle(chunk)
+            if reasoning_delta:
+                yield ReasoningEvent(content=reasoning_delta)
+            if content_delta:
+                yield TokenEvent(content=content_delta)
+        return
+    async for ev in runner.stream_turn_events(client, call_kwargs, acc):
+        yield ev
 
 
 async def stream_prompt(
@@ -133,19 +208,35 @@ async def stream_prompt(
     effective_provider = (
         config.session_provider or config.provider or get_active_provider()
     )
+    # The API type for this turn: --api-type first, then the provider's
+    # configured api-type (the web Settings drawer's per-provider combo, the
+    # same value the CLI's --set api-type=... writes), then the provider's
+    # built-in default (the first of its supported_api_types).
+    api_type = resolve_api_type(config.api_type, effective_provider)
+    runner = _runner_for(api_type)
+
     try:
+        # Endpoint resolution honors the API type: providers with an
+        # ``endpoint_by_api_type`` map get their per-type base URL (e.g.
+        # DeepSeek's Anthropic-compatible URL, Alibaba's native-SDK URL).
         base_url, api_key, model = resolve_runtime_config(
-            cli_model=config.model, cli_provider=effective_provider
+            cli_model=config.model,
+            cli_provider=effective_provider,
+            cli_api_type=api_type,
         )
     except Exception as e:
         yield ErrorEvent(message=str(e))
         return
 
-    client = AsyncOpenAI(api_key=api_key, base_url=base_url)
+    try:
+        client = _create_agent_client(runner, base_url, api_key)
+    except Exception as e:
+        yield ErrorEvent(message=str(e))
+        return
 
     if config.verbose:
         backend = base_url if base_url else "api.openai.com"
-        logger.info(f"Web agent: model={model} backend={backend}")
+        logger.info(f"Web agent: model={model} backend={backend} api_type={api_type}")
 
     mcp_enabled = use_mcp
     tools_schemas = await resolve_tools(config, tools, use_mcp)
@@ -158,7 +249,8 @@ async def stream_prompt(
 
     first_turn = True
     while True:
-        call_kwargs = _build_turn_kwargs(
+        call_kwargs, acc = _turn_call_kwargs_and_acc(
+            runner,
             model,
             config,
             tools_schemas,
@@ -173,9 +265,8 @@ async def stream_prompt(
         first_turn = False
 
         # --- Stream the completion, yielding tokens as they arrive ---
-        acc = StreamAccumulator()
         try:
-            async for ev in _stream_turn_events(client, call_kwargs, acc):
+            async for ev in _stream_turn(client, runner, call_kwargs, acc):
                 yield ev
         except Exception as e:
             logger.error(f"API streaming error: {e}")
@@ -185,7 +276,7 @@ async def stream_prompt(
         full_content = acc.full_content()
 
         # --- Handle tool calls -> continue the loop for the final response ---
-        if acc.tool_calls:
+        if acc.tool_calls_list():
             async for ev in run_tool_turn(
                 acc.tool_calls_list(), full_content, messages, mcp_enabled
             ):
