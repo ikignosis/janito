@@ -41,6 +41,10 @@ Changes since `v4.20.0` (2026-08-07).
 
 ### Changed
 
+- Documentation: the README, `docs/index.md` and the providers guide
+  (`docs/configuration/providers.md`) now state that janito supports **both**
+  OpenAI-compatible APIs (the `Responses`/`Completions` API types) and native
+  provider SDKs (the `Anthropic` and `DashScope` API types).
 - Extracted the system-prompt / toolset selection that was duplicated
   between ``cli/chat.py`` and ``WebServerConfig`` into a shared
   ``SessionSetup`` class (`janito/cli/session_setup.py`).  Both entry points

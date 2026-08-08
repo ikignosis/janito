@@ -16,7 +16,7 @@
 - 🌐 **Web UI (Alpha)** - Chat through a browser instead of the terminal with `--web`
 - 📊 **Real-time Progress** - Watch tool execution progress as it happens
 - 🚀 **Easy Setup** - Interactive configuration with `--config` or quick setup with `--set` flags
-- 🔗 **Any OpenAI-Compatible API** - Works with OpenAI, local servers (LM Studio, Ollama), and custom endpoints
+- 🔗 **OpenAI-Compatible & Native APIs** - Works with any OpenAI-compatible endpoint (OpenAI, LM Studio, Ollama, custom) and native SDKs (Anthropic, DashScope)
 
  NOTE: Janito should be used on development systems on which data loss is tolerable and there are no critical secrets
 

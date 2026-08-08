@@ -2,6 +2,21 @@
 
 janito supports multiple AI providers. This guide covers configuration for each.
 
+janito talks to models through **two kinds of API**:
+
+- **OpenAI-compatible APIs** — the `Responses` and `Completions` API types,
+  driven by the `openai` package. This is the default for OpenAI and for any
+  provider or local server (LM Studio, Ollama, the `custom` provider) that
+  exposes an OpenAI-compatible endpoint.
+- **Native APIs** — the providers' official SDKs, selectable through API
+  types such as `Anthropic` (native Anthropic SDK) and `DashScope` (native
+  DashScope SDK). These talk directly to the provider's native API instead of
+  its OpenAI-compatible gateway.
+
+The API type is selected per provider with `--set api-type=...` (see the
+[`Anthropic`](#native-anthropic-sdk-optional) and
+[`DashScope`](#native-dashscope-sdk-optional) sections below).
+
 ## Supported Providers
 
 | Provider | Type | Description |
