@@ -41,6 +41,145 @@ def _matches_pattern(filename: str, pattern: str) -> bool:
     return fnmatch.fnmatch(filename, pattern)
 
 
+class _IgnoreTracker:
+    """Track entries ignored by the .janitoignore / .gitignore specs.
+
+    Args:
+        cwd: The directory the ignore specs were loaded from; paths are
+            matched relative to it.
+        gitignore_spec: The parsed .gitignore spec, or None when disabled.
+        janitoignore_spec: The parsed .janitoignore spec, or None.
+    """
+
+    def __init__(self, cwd: str, gitignore_spec, janitoignore_spec):
+        self.cwd = cwd
+        self.gitignore_spec = gitignore_spec
+        self.janitoignore_spec = janitoignore_spec
+        self.gitignore_ignored = 0
+        self.janitoignore_ignored = 0
+
+    def is_ignored(self, abs_path: str, is_dir: bool = False) -> bool:
+        """Check ``abs_path`` (matched relative to cwd) against the specs."""
+        rel_to_cwd = os.path.relpath(abs_path, self.cwd)
+        if self.janitoignore_spec and is_ignored_by_gitignore(
+            rel_to_cwd, self.janitoignore_spec, is_dir=is_dir
+        ):
+            self.janitoignore_ignored += 1
+            return True
+        if self.gitignore_spec and is_ignored_by_gitignore(
+            rel_to_cwd, self.gitignore_spec, is_dir=is_dir
+        ):
+            self.gitignore_ignored += 1
+            return True
+        return False
+
+
+def _walk_recursive(
+    abs_directory: str,
+    pattern: str | None,
+    max_depth: int | None,
+    tracker: _IgnoreTracker,
+):
+    """Walk ``abs_directory`` recursively and return matching entries.
+
+    Returns:
+        Tuple of (files, dir_count, file_count).
+    """
+    files = []
+    dir_count = 0
+    file_count = 0
+
+    for root, dirs, filenames in os.walk(abs_directory):
+        depth = root[len(abs_directory) :].count(os.sep)
+        if max_depth is not None and depth > max_depth:
+            dirs[:] = []  # Don't recurse further
+            continue
+
+        # Filter out ignored directories (modify in-place to prevent walking into them)
+        dirs[:] = [
+            d
+            for d in dirs
+            if not tracker.is_ignored(os.path.join(root, d), is_dir=True)
+        ]
+
+        dir_count += len(dirs)
+        file_count += len(filenames)
+
+        for name in dirs + filenames:
+            full_path = os.path.join(root, name)
+            rel_path = os.path.relpath(full_path, abs_directory)
+            name_is_dir = name in dirs
+
+            # Skip if ignored by .janitoignore / .gitignore
+            if tracker.is_ignored(full_path, is_dir=name_is_dir):
+                continue
+
+            if pattern is None or _matches_pattern(name, pattern):
+                files.append(rel_path if rel_path != "." else name)
+
+    return files, dir_count, file_count
+
+
+def _walk_non_recursive(
+    abs_directory: str, pattern: str | None, tracker: _IgnoreTracker
+):
+    """List a single directory (non-recursive).
+
+    Returns:
+        Tuple of (files, dir_count, file_count).
+    """
+    files = []
+    dir_count = 0
+    file_count = 0
+
+    for item in os.listdir(abs_directory):
+        item_path = os.path.join(abs_directory, item)
+        is_dir = os.path.isdir(item_path)
+
+        # Skip if ignored by .janitoignore / .gitignore (match relative to cwd)
+        if tracker.is_ignored(item_path, is_dir=is_dir):
+            continue
+
+        if is_dir:
+            dir_count += 1
+        else:
+            file_count += 1
+        if pattern is None or _matches_pattern(item, pattern):
+            files.append(item)
+
+    return files, dir_count, file_count
+
+
+def _print_listing(result: dict[str, Any]) -> None:
+    """Print a human-friendly listing from a ListFiles result."""
+    norm_dir = norm_path(result["directory"])
+    print(f"Files in '{norm_dir}':")
+    if result["pattern"]:
+        print(f"Pattern: {result['pattern']}")
+    if result["recursive"]:
+        print("Recursive listing enabled")
+        if result.get("max_depth"):
+            print(f"Max depth: {result['max_depth']}")
+    if result.get("gitignore_applied"):
+        print("Respecting .gitignore")
+    if result.get("janitoignore_applied"):
+        print("Respecting .janitoignore")
+    print("-" * 40)
+    for file in result["files"]:
+        print(file)
+    stats = result.get("stats", {})
+    ignore_filters = []
+    if stats.get("gitignore_ignored", 0) > 0:
+        ignore_filters.append(f".gitignore filtered {stats['gitignore_ignored']} items")
+    if stats.get("janitoignore_ignored", 0) > 0:
+        ignore_filters.append(
+            f".janitoignore filtered {stats['janitoignore_ignored']} items"
+        )
+    if ignore_filters:
+        print("-" * 40)
+        print(f"({', '.join(ignore_filters)})")
+
+
 @tool(permissions="r")
 class ListFiles(BaseTool):
     """
@@ -107,117 +246,24 @@ class ListFiles(BaseTool):
             # Load ignore specs from the current working directory.
             # .janitoignore is always respected; .gitignore only when enabled.
             cwd = os.getcwd()
-            gitignore_spec = None
-            if respect_gitignore:
-                gitignore_spec = load_gitignore_spec(cwd)
+            gitignore_spec = load_gitignore_spec(cwd) if respect_gitignore else None
             janitoignore_spec = load_janitoignore_spec(cwd)
+            tracker = _IgnoreTracker(cwd, gitignore_spec, janitoignore_spec)
 
             # Report start of operation
             recursive_str = "recursively" if recursive else ""
-            self.report_start(f"📁 Listing files at {norm_dir} {recursive_str}", end="")
-
-            files = []
-            dir_count = 0
-            file_count = 0
-            gitignore_ignored = 0
-            janitoignore_ignored = 0
-
-            def _is_ignored(rel_to_cwd: str, is_dir: bool = False) -> bool:
-                """Check a path (relative to cwd) against .janitoignore then .gitignore."""
-                nonlocal gitignore_ignored, janitoignore_ignored
-                if janitoignore_spec and is_ignored_by_gitignore(
-                    rel_to_cwd, janitoignore_spec, is_dir=is_dir
-                ):
-                    janitoignore_ignored += 1
-                    return True
-                if gitignore_spec and is_ignored_by_gitignore(
-                    rel_to_cwd, gitignore_spec, is_dir=is_dir
-                ):
-                    gitignore_ignored += 1
-                    return True
-                return False
+            self.report_start(
+                f"\U0001f4c1 Listing files at {norm_dir} {recursive_str}", end=""
+            )
 
             if recursive:
-                if max_depth is None:
-                    for root, dirs, filenames in os.walk(abs_directory):
-                        # Filter out ignored directories (modify in-place to prevent walking into them)
-                        dirs[:] = [
-                            d
-                            for d in dirs
-                            if not _is_ignored(
-                                os.path.relpath(os.path.join(root, d), cwd),
-                                is_dir=True,
-                            )
-                        ]
-
-                        dir_count += len(dirs)
-                        file_count += len(filenames)
-
-                        for name in dirs + filenames:
-                            full_path = os.path.join(root, name)
-                            rel_path = os.path.relpath(full_path, abs_directory)
-                            name_is_dir = name in dirs
-
-                            # Skip if ignored by .janitoignore / .gitignore
-                            if _is_ignored(
-                                os.path.relpath(full_path, cwd),
-                                is_dir=name_is_dir,
-                            ):
-                                continue
-
-                            if pattern is None or _matches_pattern(name, pattern):
-                                files.append(rel_path if rel_path != "." else name)
-                else:
-                    # Walk with depth limit
-                    for root, dirs, filenames in os.walk(abs_directory):
-                        depth = root[len(abs_directory) :].count(os.sep)
-                        if depth <= max_depth:
-                            # Filter out ignored directories
-                            dirs[:] = [
-                                d
-                                for d in dirs
-                                if not _is_ignored(
-                                    os.path.relpath(os.path.join(root, d), cwd),
-                                    is_dir=True,
-                                )
-                            ]
-
-                            dir_count += len(dirs)
-                            file_count += len(filenames)
-
-                            for name in dirs + filenames:
-                                full_path = os.path.join(root, name)
-                                rel_path = os.path.relpath(full_path, abs_directory)
-                                name_is_dir = name in dirs
-
-                                # Skip if ignored by .janitoignore / .gitignore
-                                if _is_ignored(
-                                    os.path.relpath(full_path, cwd),
-                                    is_dir=name_is_dir,
-                                ):
-                                    continue
-
-                                if pattern is None or _matches_pattern(name, pattern):
-                                    files.append(rel_path if rel_path != "." else name)
-                        else:
-                            dirs[:] = []  # Don't recurse further
+                files, dir_count, file_count = _walk_recursive(
+                    abs_directory, pattern, max_depth, tracker
+                )
             else:
-                # Non-recursive listing
-                items = os.listdir(abs_directory)
-                for item in items:
-                    item_path = os.path.join(abs_directory, item)
-                    is_dir = os.path.isdir(item_path)
-
-                    # Skip if ignored by .janitoignore / .gitignore (match relative to cwd)
-                    if _is_ignored(os.path.relpath(item_path, cwd), is_dir=is_dir):
-                        continue
-
-                    if is_dir:
-                        dir_count += 1
-                    else:
-                        file_count += 1
-                    if pattern is None or _matches_pattern(item, pattern):
-                        files.append(item)
+                files, dir_count, file_count = _walk_non_recursive(
+                    abs_directory, pattern, tracker
+                )
 
             # Sort files for consistent output
             files.sort()
@@ -225,10 +271,12 @@ class ListFiles(BaseTool):
             # Report results
             total_found = len(files)
             ignore_msgs = []
-            if gitignore_ignored:
-                ignore_msgs.append(f"{gitignore_ignored} ignored by .gitignore")
-            if janitoignore_ignored:
-                ignore_msgs.append(f"{janitoignore_ignored} ignored by .janitoignore")
+            if tracker.gitignore_ignored:
+                ignore_msgs.append(f"{tracker.gitignore_ignored} ignored by .gitignore")
+            if tracker.janitoignore_ignored:
+                ignore_msgs.append(
+                    f"{tracker.janitoignore_ignored} ignored by .janitoignore"
+                )
             ignore_msg = f", {', '.join(ignore_msgs)}" if ignore_msgs else ""
             self.report_result(
                 f"Found {total_found} items ({file_count} files, {dir_count} dirs){ignore_msg}"
@@ -248,8 +296,8 @@ class ListFiles(BaseTool):
                     "total_items": total_found,
                     "files": file_count,
                     "directories": dir_count,
-                    "gitignore_ignored": gitignore_ignored,
-                    "janitoignore_ignored": janitoignore_ignored,
+                    "gitignore_ignored": tracker.gitignore_ignored,
+                    "janitoignore_ignored": tracker.janitoignore_ignored,
                 },
             }
 
@@ -311,34 +359,7 @@ def main():
         print(json.dumps(result, indent=2))
     else:
         if result["success"]:
-            norm_dir = norm_path(result["directory"])
-            print(f"Files in '{norm_dir}':")
-            if result["pattern"]:
-                print(f"Pattern: {result['pattern']}")
-            if result["recursive"]:
-                print("Recursive listing enabled")
-                if result.get("max_depth"):
-                    print(f"Max depth: {result['max_depth']}")
-            if result.get("gitignore_applied"):
-                print("Respecting .gitignore")
-            if result.get("janitoignore_applied"):
-                print("Respecting .janitoignore")
-            print("-" * 40)
-            for file in result["files"]:
-                print(file)
-            stats = result.get("stats", {})
-            ignore_filters = []
-            if stats.get("gitignore_ignored", 0) > 0:
-                ignore_filters.append(
-                    f".gitignore filtered {stats['gitignore_ignored']} items"
-                )
-            if stats.get("janitoignore_ignored", 0) > 0:
-                ignore_filters.append(
-                    f".janitoignore filtered {stats['janitoignore_ignored']} items"
-                )
-            if ignore_filters:
-                print("-" * 40)
-                print(f"({', '.join(ignore_filters)})")
+            _print_listing(result)
         else:
             print(f"Error: {result['error']}")
 

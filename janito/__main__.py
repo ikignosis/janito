@@ -73,17 +73,14 @@ def _flatten(values):
     return flat
 
 
-def main():
-    """Main entry point."""
-    parser = create_parser()
-    args = parser.parse_args()
+def _track_rc(exit_code: int, new_rc: int) -> int:
+    """Return the first non-zero exit code seen so far."""
+    return exit_code if exit_code != 0 else new_rc
 
-    # Apply the -c/--config-dir override as early as possible so that all
-    # subsequent config/auth/secrets/MCP/skills reads and writes use the
-    # requested directory instead of the default ~/.janito.
+
+def _setup_runtime(args) -> int | None:
+    """Apply early CLI overrides (config dir, logging, provider, privileges)."""
     set_config_dir(getattr(args, "config_dir", None))
-
-    # Configure logging based on --log argument
     setup_logging(args.log)
 
     # Whenever --provider <name> is used, verify it is a supported provider
@@ -97,7 +94,12 @@ def main():
             print(f"Error: {e}", file=sys.stderr)
             return 1
 
-    # Set up privileges from -r, -w, -x flags
+    _setup_privileges(args)
+    return None
+
+
+def _setup_privileges(args) -> None:
+    """Configure privilege flags from -r, -w, -x CLI flags."""
     if args.read or args.write or args.exec:
         if _privileges_mod.running_privileges is None:
             _privileges_mod.running_privileges = Privileges()
@@ -111,123 +113,123 @@ def main():
     if _privileges_mod.running_privileges is None:
         args.full_privileges = True
 
-    # Handle batch config operations (--set, --unset, --get, secrets)
+
+def _has_batch_config_ops(args) -> bool:
+    """Return True when any batch config operation flag was passed."""
+    return any(
+        flag is not None
+        for flag in (
+            args.set,
+            args.unset,
+            args.get,
+            args.set_secret,
+            args.delete_secret,
+        )
+    )
+
+
+def _handle_batch_config(args) -> int | None:
+    """Handle batch config operations (--set, --unset, --get, secrets)."""
+    if not _has_batch_config_ops(args):
+        return None
+
+    exit_code = 0
+    # Provider used for provider-scoped config keys (e.g. model). It is
+    # taken from --provider, falling back to the configured provider value.
+    cli_provider = getattr(args, "provider", None)
+
+    if args.set is not None:
+        exit_code = _track_rc(
+            exit_code, handle_set_config(_flatten(args.set), cli_provider)
+        )
+    if args.unset is not None:
+        exit_code = _track_rc(
+            exit_code, handle_unset_config(_flatten(args.unset), cli_provider)
+        )
+    if args.get is not None:
+        exit_code = _track_rc(
+            exit_code, handle_get_config(_flatten(args.get), cli_provider)
+        )
+    if args.set_secret is not None:
+        args._set_secret_vals = _flatten(args.set_secret)
+        exit_code = _track_rc(exit_code, handle_set_secret(args))
+    if args.delete_secret is not None:
+        args._delete_secret_keys = _flatten(args.delete_secret)
+        exit_code = _track_rc(exit_code, handle_delete_secret(args))
+
+    return exit_code
+
+
+def _dispatch_flag_command(args) -> int | None:
+    """Run the single flag-driven command handler, if any was requested."""
+    handlers = [
+        (args.info, lambda: handle_info(args)),
+        (args.show_config, lambda: handle_show_config(args)),
+        (args.show_system_prompt, lambda: handle_show_system_prompt(args)),
+        (args.config, lambda: handle_config_interactive()),
+        (args.list_keys, lambda: handle_list_keys(args)),
+        (args.set_api_key, lambda: handle_set_api_key(args)),
+        (args.list_secrets, lambda: handle_list_secrets(args)),
+        (args.get_secret is not None, lambda: handle_get_secret(args)),
+        (args.onedrive_auth, lambda: handle_onedrive_auth()),
+        (args.onedrive_logout, lambda: handle_onedrive_logout()),
+        (args.onedrive_status, lambda: handle_onedrive_status()),
+        (args.install_skill, lambda: handle_install_skill(args.install_skill)),
+        (args.list_skills, lambda: handle_list_skills(args)),
+        (args.uninstall_skill, lambda: handle_uninstall_skill(args.uninstall_skill)),
+        (args.list_tools, lambda: handle_list_tools(args)),
+        (args.list_mcp, lambda: handle_list_mcp(args)),
+        (args.init_codesearch, lambda: handle_init_codesearch(args)),
+    ]
+    for enabled, handler in handlers:
+        if enabled:
+            return handler()
+    return None
+
+
+def _run_web(args) -> int:
+    """Run the web UI server, failing with a hint when extras are missing."""
+    # The [web] extra (fastapi / uvicorn) is optional, so check its
+    # availability explicitly instead of a defensive try/except
+    # ImportError fallback, and fail with an actionable message.
     if (
-        args.set is not None
-        or args.unset is not None
-        or args.get is not None
-        or args.set_secret is not None
-        or args.delete_secret is not None
+        importlib.util.find_spec("fastapi") is None
+        or importlib.util.find_spec("uvicorn") is None
     ):
-        exit_code = 0
-
-        set_values = _flatten(args.set) if args.set is not None else None
-        unset_keys = _flatten(args.unset) if args.unset is not None else None
-        get_keys = _flatten(args.get) if args.get is not None else None
-        set_secret_vals = (
-            _flatten(args.set_secret) if args.set_secret is not None else None
+        print(
+            "Error: the web UI requires optional dependencies that "
+            "are not installed.",
+            file=sys.stderr,
         )
-        delete_secret_keys = (
-            _flatten(args.delete_secret) if args.delete_secret is not None else None
-        )
+        print("Install them with:\n\n    pip install janito[web]\n", file=sys.stderr)
+        return 1
 
-        # Provider used for provider-scoped config keys (e.g. model). It is
-        # taken from --provider, falling back to the configured provider value.
-        cli_provider = getattr(args, "provider", None)
+    from .web.backend.app import run_web
 
-        if set_values is not None:
-            rc = handle_set_config(set_values, cli_provider)
-            if rc != 0:
-                exit_code = rc
+    run_web(args)
+    return 0
 
-        if unset_keys is not None:
-            rc = handle_unset_config(unset_keys, cli_provider)
-            if rc != 0:
-                exit_code = rc
 
-        if get_keys is not None:
-            rc = handle_get_config(get_keys, cli_provider)
-            if rc != 0:
-                exit_code = rc
+def main():
+    """Main entry point."""
+    parser = create_parser()
+    args = parser.parse_args()
 
-        if set_secret_vals is not None:
-            args._set_secret_vals = set_secret_vals
-            rc = handle_set_secret(args)
-            if rc != 0:
-                exit_code = rc
-
-        if delete_secret_keys is not None:
-            args._delete_secret_keys = delete_secret_keys
-            rc = handle_delete_secret(args)
-            if rc != 0:
-                exit_code = rc
-
+    # Apply the -c/--config-dir override, logging, provider normalization and
+    # privilege flags as early as possible.
+    exit_code = _setup_runtime(args)
+    if exit_code is not None:
         return exit_code
 
-    # Handle --info option (print config and exit)
-    if args.info:
-        return handle_info(args)
+    # Handle batch config operations (--set, --unset, --get, secrets)
+    exit_code = _handle_batch_config(args)
+    if exit_code is not None:
+        return exit_code
 
-    # Handle --show-config option (display configured provider and model)
-    if args.show_config:
-        return handle_show_config(args)
-
-    # Handle --show-system-prompt option (display resolved system prompt and exit)
-    if args.show_system_prompt:
-        return handle_show_system_prompt(args)
-
-    # Handle --get for a single key (legacy: no --set/--unset provided)
-    # Note: --get without --set/--unset was handled above, but if only --get was passed
-    # alone with nargs="*", it would be caught by the batch block. This path handles edge cases.
-
-    # Handle interactive config setup
-    if args.config:
-        return handle_config_interactive()
-
-    # Handle auth commands
-    if args.list_keys:
-        return handle_list_keys(args)
-
-    if args.set_api_key:
-        return handle_set_api_key(args)
-
-    # Handle secrets get/list/delete
-    if args.list_secrets:
-        return handle_list_secrets(args)
-
-    if args.get_secret is not None:
-        return handle_get_secret(args)
-
-    # Handle OneDrive auth commands
-    if args.onedrive_auth:
-        return handle_onedrive_auth()
-
-    if args.onedrive_logout:
-        return handle_onedrive_logout()
-
-    if args.onedrive_status:
-        return handle_onedrive_status()
-
-    # Handle skill commands
-    if args.install_skill:
-        return handle_install_skill(args.install_skill)
-
-    if args.list_skills:
-        return handle_list_skills(args)
-
-    if args.uninstall_skill:
-        return handle_uninstall_skill(args.uninstall_skill)
-
-    # Handle info/list commands (these return early)
-    if args.list_tools:
-        return handle_list_tools(args)
-
-    if args.list_mcp:
-        return handle_list_mcp(args)
-
-    # Handle --init-codesearch (build the code search index and exit)
-    if args.init_codesearch:
-        return handle_init_codesearch(args)
+    # Handle single flag-driven commands (--info, --config, --list-*, ...)
+    exit_code = _dispatch_flag_command(args)
+    if exit_code is not None:
+        return exit_code
 
     # Validate that the runtime configuration (API key from auth store,
     # endpoint from provider default/config, model from --model or config)
@@ -238,27 +240,7 @@ def main():
     # Must come BEFORE read_stdin_prompt() to avoid blocking on non-tty
     # stdin in headless / service contexts.
     if args.web:
-        # The [web] extra (fastapi / uvicorn) is optional, so check its
-        # availability explicitly instead of a defensive try/except
-        # ImportError fallback, and fail with an actionable message.
-        if (
-            importlib.util.find_spec("fastapi") is None
-            or importlib.util.find_spec("uvicorn") is None
-        ):
-            print(
-                "Error: the web UI requires optional dependencies that "
-                "are not installed.",
-                file=sys.stderr,
-            )
-            print(
-                "Install them with:\n\n    pip install janito[web]\n", file=sys.stderr
-            )
-            return 1
-
-        from .web.backend.app import run_web
-
-        run_web(args)
-        return
+        return _run_web(args)
 
     # Check for stdin input
     stdin_prompt = read_stdin_prompt()
@@ -270,6 +252,7 @@ def main():
         run_interactive_chat(args)
     else:
         run_single_prompt(args)
+    return None
 
 
 if __name__ == "__main__":

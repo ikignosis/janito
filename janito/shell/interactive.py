@@ -229,6 +229,187 @@ class InteractiveShell:
         else:
             print("No input history file found.")
 
+    def _get_user_input(self) -> str | None:
+        """Prompt for the next input line.
+
+        Returns:
+            The user's input, ``None`` to end the session (Ctrl+D, or a
+            confirmed Ctrl+C quit), or ``""`` to continue without processing
+            (Ctrl+C declined, or F2 restart requested).
+        """
+        # Use HTML formatting for prompt
+        prompt_text = HTML(f'<style bg="#00008b">{self.model} # </style>')
+
+        try:
+            result = self.session.prompt(prompt_text, multiline=self.multiline_mode)
+            if result is None and self.restart_requested:
+                # F2 was pressed: the key binding exits the prompt app with a
+                # ``None`` result, the same value the run loop uses to signal
+                # "quit". Translate it into a "continue without processing"
+                # signal here; the run loop handles the restart right after.
+                return ""
+            return result
+        except KeyboardInterrupt:
+            # User pressed Ctrl+C - ask to confirm quit
+            try:
+                confirm = self.session.prompt(
+                    "\nDo you want to quit the conversation? (y/n): "
+                )
+                if confirm and confirm.lower().strip() in ["y", "yes"]:
+                    return None  # User wants to quit
+                return ""  # User doesn't want to quit, continue to next iteration
+            except (KeyboardInterrupt, EOFError):
+                # User pressed Ctrl+C or Ctrl+D again during confirmation
+                return None  # Quit
+        except EOFError:
+            # User pressed Ctrl+D at main prompt
+            return None
+
+    def _handle_restart_request(self) -> bool:
+        """Handle the F2 restart keybinding; True when the loop continues."""
+        if not self.restart_requested:
+            return False
+        # Reset to a fresh conversation while preserving the system prompt
+        # (matches startup behaviour). A plain .clear() would drop the
+        # system prompt and leave an empty history.
+        self.initialize_history(system_prompt=self._system_prompt)
+        # Clear screen before printing the message
+        os.system("cls" if os.name == "nt" else "clear")
+        _rich_console.print(
+            "[Keybinding F2] Conversation history cleared. Starting fresh conversation.",
+            style="bold white on green",
+        )
+        return True
+
+    def _reset_conversation(self, message: str) -> None:
+        """Reset to a fresh conversation while preserving the system prompt."""
+        self.initialize_history(system_prompt=self._system_prompt)
+        _rich_console.print(message, style="bold white on green")
+
+    def _handle_command(self, user_input: str) -> bool:
+        """Dispatch to registered command handlers; True when handled."""
+        for cmd_handler in self.commands:
+            if cmd_handler.handle(self, user_input):
+                return True
+        return False
+
+    def _is_unknown_command(self, user_input: str) -> bool:
+        """Reject unrecognized slash commands; True when handled."""
+        if user_input.strip().startswith("/"):
+            cmd_name = user_input.strip().split()[0]
+            print(f"Unknown command: {cmd_name}")
+            print("Type /help to see available commands.")
+            return True
+        return False
+
+    def _run_shell_command(self, user_input: str) -> None:
+        """Execute a ``!cmd`` shell command."""
+        import sys
+
+        cmd = user_input[1:].strip()
+        if not cmd:
+            return
+        print(f"[Shell] Executing: {cmd}")
+        try:
+            result = subprocess.run(
+                cmd, shell=True, capture_output=True, text=True, timeout=60
+            )
+            if result.stdout:
+                print(result.stdout)
+            if result.stderr:
+                print(result.stderr, file=sys.stderr)
+            print(f"[Shell] Exit code: {result.returncode}")
+        except subprocess.TimeoutExpired:
+            print(
+                "[Shell] Command timed out after 60 seconds",
+                file=sys.stderr,
+            )
+        except Exception as e:
+            print(f"[Shell] Error: {e}", file=sys.stderr)
+
+    def _dispatch_input(self, user_input: str) -> bool:
+        """Handle restart/command/unknown/shell input; True when consumed."""
+        if user_input.lower() == "restart":
+            # Reset to a fresh conversation while preserving the system
+            # prompt (matches startup behaviour). A plain .clear() would
+            # drop the system prompt and leave an empty history.
+            self._reset_conversation(
+                "Conversation history cleared. Starting fresh conversation."
+            )
+            return True
+
+        # Handle registered commands
+        if self._handle_command(user_input):
+            return True
+
+        # Reject unrecognized slash commands instead of sending them to the LLM
+        if self._is_unknown_command(user_input):
+            return True
+
+        # Handle !cmd for direct shell execution
+        if user_input.startswith("!"):
+            self._run_shell_command(user_input)
+            return True
+
+        return False
+
+    def _send_prompt(self, user_input: str) -> None:
+        """Send a prompt to the AI and update the conversation state."""
+        tools_to_use = [] if self.no_tools else None
+        # Save checkpoint so we can rollback history on cancel/error
+        self.history_checkpoint = len(self.messages_history)
+        self.conversation_checkpoint = (
+            len(self.conversation_items) if self.conversation_items else 0
+        )
+        try:
+            result = self.send_prompt_func(
+                user_input,
+                verbose=self.verbose,
+                previous_messages=self.messages_history,
+                previous_response_id=self.previous_response_id,
+                previous_items=self.conversation_items,
+                instructions=self.get_system_prompt(),
+                tools=tools_to_use,
+                thinking=self.thinking,
+            )
+            # Responses API mode: keep the conversation state the provider
+            # uses. Server-side providers (e.g. OpenAI) keep the history on
+            # the server, so remember the returned response id to chain the
+            # next turn. Stateless providers (e.g. DeepSeek) return the full
+            # conversation as input items, which are re-sent on the next turn;
+            # never chain with an id for them. Completions mode returns plain
+            # text and updates previous_messages (self.messages_history) in
+            # place, so nothing else is needed here.
+            if hasattr(result, "input_items"):
+                self.conversation_items = result.input_items
+                if result.input_items is None:
+                    self.previous_response_id = result.response_id
+                else:
+                    self.previous_response_id = None
+            # On success, keep the checkpoint where it is (before this turn)
+            # so /rollback can undo the last exchange. The next turn will
+            # update it before its own send_prompt call.
+        except KeyboardInterrupt:
+            # Rollback any messages appended during this prompt
+            del self.messages_history[self.history_checkpoint :]
+            print(
+                "Request interrupted, previous prompt/answer removed from the conversation history."
+            )
+        except RequestCancelled:
+            # Enter was pressed while waiting for the API: interrupt
+            # the request but keep the user's message in the
+            # conversation history (no rollback, unlike Ctrl+C above).
+            print(
+                "Request cancelled (Enter). The prompt stays in the conversation history."
+            )
+        except Exception as e:
+            # Rollback on any other unexpected error as well
+            del self.messages_history[self.history_checkpoint :]
+            print(f"Error: {e}")
+        # Note: send_prompt_func already appends user and assistant messages
+        # to previous_messages (which is self.messages_history), so we don't
+        # need to append them here.
+
     def run(
         self,
         send_prompt_func: Callable,
@@ -245,8 +426,6 @@ class InteractiveShell:
             no_tools: If True, don't pass any tools to the AI
             thinking: If True, enable thinking mode
         """
-        import sys
-
         # Store references so command handlers (e.g. /ask) can use them
         self.send_prompt_func = send_prompt_func
         self.verbose = verbose
@@ -258,29 +437,9 @@ class InteractiveShell:
             self.do_it_requested = False
             self.exit_requested = False
 
-            # Use HTML formatting for prompt
-            prompt_text = HTML(f'<style bg="#00008b">{self.model} # </style>')
-
-            try:
-                user_input = self.session.prompt(
-                    prompt_text, multiline=self.multiline_mode
-                )
-            except KeyboardInterrupt:
-                # User pressed Ctrl+C - ask to confirm quit
-                try:
-                    confirm = self.session.prompt(
-                        "\nDo you want to quit the conversation? (y/n): "
-                    )
-                    if confirm and confirm.lower().strip() in ["y", "yes"]:
-                        break  # User wants to quit
-                    else:
-                        continue  # User doesn't want to quit, continue to next iteration
-                except (KeyboardInterrupt, EOFError):
-                    # User pressed Ctrl+C or Ctrl+D again during confirmation
-                    break  # Quit
-            except EOFError:
-                # User pressed Ctrl+D at main prompt
-                break
+            user_input = self._get_user_input()
+            if user_input is None:
+                break  # User quit
 
             # Reset multiline mode after input is received (single-use)
             if self.multiline_mode:
@@ -293,127 +452,18 @@ class InteractiveShell:
                 user_input = "Do It"
 
             # Check if F2 was pressed (restart requested)
-            if self.restart_requested:
-                # Reset to a fresh conversation while preserving the system
-                # prompt (matches startup behaviour). A plain .clear() would
-                # drop the system prompt and leave an empty history.
-                self.initialize_history(system_prompt=self._system_prompt)
-                # Clear screen before printing the message
-                os.system("cls" if os.name == "nt" else "clear")
-                _rich_console.print(
-                    "[Keybinding F2] Conversation history cleared. Starting fresh conversation.",
-                    style="bold white on green",
-                )
+            if self._handle_restart_request():
                 continue
 
-            if user_input.lower() == "restart":
-                # Reset to a fresh conversation while preserving the system
-                # prompt (matches startup behaviour). A plain .clear() would
-                # drop the system prompt and leave an empty history.
-                self.initialize_history(system_prompt=self._system_prompt)
-                _rich_console.print(
-                    "Conversation history cleared. Starting fresh conversation.",
-                    style="bold white on green",
-                )
-                continue
-
-            # Handle registered commands
-            command_handled = False
-            for cmd_handler in self.commands:
-                if cmd_handler.handle(self, user_input):
-                    command_handled = True
-                    break
-            if command_handled:
+            # Handle restart text, registered commands, unknown commands and
+            # !cmd shell execution.
+            if self._dispatch_input(user_input):
                 # Check if exit was requested via a command
                 if self.exit_requested:
                     break
                 continue
 
-            # Reject unrecognized slash commands instead of sending them to the LLM
-            if user_input.strip().startswith("/"):
-                cmd_name = user_input.strip().split()[0]
-                print(f"Unknown command: {cmd_name}")
-                print("Type /help to see available commands.")
-                continue
-
-            # Handle !cmd for direct shell execution
-            if user_input.startswith("!"):
-                cmd = user_input[1:].strip()
-                if cmd:
-                    print(f"[Shell] Executing: {cmd}")
-                    try:
-                        result = subprocess.run(
-                            cmd, shell=True, capture_output=True, text=True, timeout=60
-                        )
-                        if result.stdout:
-                            print(result.stdout)
-                        if result.stderr:
-                            print(result.stderr, file=sys.stderr)
-                        print(f"[Shell] Exit code: {result.returncode}")
-                    except subprocess.TimeoutExpired:
-                        print(
-                            "[Shell] Command timed out after 60 seconds",
-                            file=sys.stderr,
-                        )
-                    except Exception as e:
-                        print(f"[Shell] Error: {e}", file=sys.stderr)
-                continue
-
             if user_input.strip():
-                tools_to_use = [] if no_tools else None
-                # Save checkpoint so we can rollback history on cancel/error
-                self.history_checkpoint = len(self.messages_history)
-                self.conversation_checkpoint = (
-                    len(self.conversation_items) if self.conversation_items else 0
-                )
-                try:
-                    result = send_prompt_func(
-                        user_input,
-                        verbose=verbose,
-                        previous_messages=self.messages_history,
-                        previous_response_id=self.previous_response_id,
-                        previous_items=self.conversation_items,
-                        instructions=self.get_system_prompt(),
-                        tools=tools_to_use,
-                        thinking=thinking,
-                    )
-                    # Responses API mode: keep the conversation state the
-                    # provider uses. Server-side providers (e.g. OpenAI) keep
-                    # the history on the server, so remember the returned
-                    # response id to chain the next turn. Stateless providers
-                    # (e.g. DeepSeek) return the full conversation as input
-                    # items, which are re-sent on the next turn; never chain
-                    # with an id for them. Completions mode returns plain text
-                    # and updates previous_messages (self.messages_history) in
-                    # place, so nothing else is needed here.
-                    if hasattr(result, "input_items"):
-                        self.conversation_items = result.input_items
-                        if result.input_items is None:
-                            self.previous_response_id = result.response_id
-                        else:
-                            self.previous_response_id = None
-                    # On success, keep the checkpoint where it is (before this turn)
-                    # so /rollback can undo the last exchange. The next turn will
-                    # update it before its own send_prompt call.
-                except KeyboardInterrupt:
-                    # Rollback any messages appended during this prompt
-                    del self.messages_history[self.history_checkpoint :]
-                    print(
-                        "Request interrupted, previous prompt/answer removed from the conversation history."
-                    )
-                except RequestCancelled:
-                    # Enter was pressed while waiting for the API: interrupt
-                    # the request but keep the user's message in the
-                    # conversation history (no rollback, unlike Ctrl+C above).
-                    print(
-                        "Request cancelled (Enter). The prompt stays in the conversation history."
-                    )
-                except Exception as e:
-                    # Rollback on any other unexpected error as well
-                    del self.messages_history[self.history_checkpoint :]
-                    print(f"Error: {e}")
-                # Note: send_prompt_func already appends user and assistant messages
-                # to previous_messages (which is self.messages_history), so we don't
-                # need to append them here.
+                self._send_prompt(user_input)
 
         print("\nChat session ended.")

@@ -172,12 +172,8 @@ def print_version_banner(console=None):
     )
 
 
-def run_interactive_chat(args):
-    """Run the interactive chat session.
-
-    Args:
-        args: Parsed command line arguments
-    """
+def _print_full_privileges_warning(args) -> None:
+    """Print a warning banner when running with full privileges."""
     if getattr(args, "full_privileges", False):
         from rich.console import Console
 
@@ -187,37 +183,66 @@ def run_interactive_chat(args):
             style="yellow",
         )
 
-    # Set up Gmail mode if requested
+
+def _enable_requested_toolsets(args) -> None:
+    """Enable Gmail/OneDrive toolsets when requested via CLI flags."""
     if args.gmail:
         from ..tooling.tools_registry import add_toolset
 
         add_toolset("gmail")
-        print("✓ Gmail tools enabled")
+        print("\u2713 Gmail tools enabled")
 
-    # Set up OneDrive mode if requested
     if args.onedrive:
         from ..tooling.tools_registry import add_toolset
 
         add_toolset("onedrive")
-        print("✓ OneDrive tools enabled")
+        print("\u2713 OneDrive tools enabled")
+
+
+def _resolve_system_prompt(args) -> tuple[str | None, bool]:
+    """Return ``(effective_system_prompt, no_tools)`` for the enabled modes."""
+    if args.system_prompt:
+        return args.system_prompt, True
+    if args.no_system_prompt:
+        return None, True
+    if args.onedrive:
+        return ONEDRIVE_SYSTEM_PROMPT, False
+    if args.gmail:
+        return GMAIL_SYSTEM_PROMPT, False
+    # Use system prompt with skills advertisement
+    return get_system_prompt_with_skills(), False
+
+
+def _print_tool_summary(args) -> None:
+    """Report the total number of active and skipped tools."""
+    from ..tooling.tools_registry import get_all_tools
+    from ..tools import get_skipped_tools
+
+    active_tools = get_all_tools()
+    skipped_tools = get_skipped_tools()
+    print(f"\u2713 {len(active_tools)} tool(s) active, {len(skipped_tools)} skipped")
+    if skipped_tools and args.verbose:
+        for tool_name, reason in skipped_tools.items():
+            print(f"    - {tool_name}: {reason}")
+
+
+def run_interactive_chat(args):
+    """Run the interactive chat session.
+
+    Args:
+        args: Parsed command line arguments
+    """
+    _print_full_privileges_warning(args)
+    _enable_requested_toolsets(args)
 
     # Check if any skills are installed
     from ..tooling.skills_provider import get_skills_provider
 
     skills = get_skills_provider().list_skills()
     if skills:
-        print(f"✓ {len(skills)} skill(s) available")
+        print(f"\u2713 {len(skills)} skill(s) available")
 
-    # Report the total number of active and skipped tools
-    from ..tooling.tools_registry import get_all_tools
-    from ..tools import get_skipped_tools
-
-    active_tools = get_all_tools()
-    skipped_tools = get_skipped_tools()
-    print(f"✓ {len(active_tools)} tool(s) active, {len(skipped_tools)} skipped")
-    if skipped_tools and args.verbose:
-        for tool_name, reason in skipped_tools.items():
-            print(f"    - {tool_name}: {reason}")
+    _print_tool_summary(args)
 
     # Resolve the model for display (and bind CLI model/provider so every
     # prompt uses the same configuration without environment variables).
@@ -244,22 +269,7 @@ def run_interactive_chat(args):
     )
 
     # Choose system prompt based on enabled modes
-    if args.system_prompt:
-        effective_system_prompt = args.system_prompt
-        no_tools = True
-    elif args.no_system_prompt:
-        effective_system_prompt = None
-        no_tools = True
-    elif args.onedrive:
-        effective_system_prompt = ONEDRIVE_SYSTEM_PROMPT
-        no_tools = False
-    elif args.gmail:
-        effective_system_prompt = GMAIL_SYSTEM_PROMPT
-        no_tools = False
-    else:
-        # Use system prompt with skills advertisement
-        effective_system_prompt = get_system_prompt_with_skills()
-        no_tools = False
+    effective_system_prompt, no_tools = _resolve_system_prompt(args)
 
     shell = InteractiveShell(
         model=model,
@@ -275,6 +285,23 @@ def run_interactive_chat(args):
     )
 
 
+def _build_single_prompt_context(args):
+    """Build ``(messages_history, tools_to_use)`` for a single prompt run."""
+    if args.system_prompt:
+        return [{"role": "system", "content": args.system_prompt}], []
+    if args.no_system_prompt:
+        return [], []
+    # Choose system prompt based on enabled modes
+    if args.onedrive:
+        effective_system_prompt = ONEDRIVE_SYSTEM_PROMPT
+    elif args.gmail:
+        effective_system_prompt = GMAIL_SYSTEM_PROMPT
+    else:
+        # Use system prompt with skills advertisement
+        effective_system_prompt = get_system_prompt_with_skills()
+    return [{"role": "system", "content": effective_system_prompt}], None
+
+
 def run_single_prompt(args):
     """Run a single prompt.
 
@@ -283,28 +310,8 @@ def run_single_prompt(args):
     """
     import sys
 
-    if getattr(args, "full_privileges", False):
-        from rich.console import Console
-
-        print_version_banner()
-        Console().print(
-            "WARNING: Running with full privileges, consider using -r, -w, -x",
-            style="yellow",
-        )
-
-    # Set up Gmail mode if requested
-    if args.gmail:
-        from ..tooling.tools_registry import add_toolset
-
-        add_toolset("gmail")
-        print("✓ Gmail tools enabled")
-
-    # Set up OneDrive mode if requested
-    if args.onedrive:
-        from ..tooling.tools_registry import add_toolset
-
-        add_toolset("onedrive")
-        print("✓ OneDrive tools enabled")
+    _print_full_privileges_warning(args)
+    _enable_requested_toolsets(args)
 
     prompt = args.prompt
 
@@ -313,23 +320,7 @@ def run_single_prompt(args):
         sys.exit(1)
 
     # Initialize messages history (with or without system prompt based on -Z or -S flag)
-    if args.system_prompt:
-        messages_history = [{"role": "system", "content": args.system_prompt}]
-        tools_to_use = []
-    elif args.no_system_prompt:
-        messages_history = []
-        tools_to_use = []
-    else:
-        # Choose system prompt based on enabled modes
-        if args.onedrive:
-            effective_system_prompt = ONEDRIVE_SYSTEM_PROMPT
-        elif args.gmail:
-            effective_system_prompt = GMAIL_SYSTEM_PROMPT
-        else:
-            # Use system prompt with skills advertisement
-            effective_system_prompt = get_system_prompt_with_skills()
-        messages_history = [{"role": "system", "content": effective_system_prompt}]
-        tools_to_use = None
+    messages_history, tools_to_use = _build_single_prompt_context(args)
 
     try:
         # Select the API type for the provider: --api-type, then the

@@ -39,7 +39,7 @@ def authenticate_command(args) -> int:
         print("  janito --set-secret azure_client_id=your-client-id", file=sys.stderr)
         print("\nTo get a client ID:", file=sys.stderr)
         print(
-            "1. Go to https://portal.azure.com → Azure Active Directory → App registrations",
+            "1. Go to https://portal.azure.com \u2192 Azure Active Directory \u2192 App registrations",
             file=sys.stderr,
         )
         print("2. Click 'New registration'", file=sys.stderr)
@@ -79,7 +79,7 @@ def authenticate_command(args) -> int:
         # Store tokens
         store_token_data(token_data)
 
-        print("\n  ✓ Authentication successful!")
+        print("\n  \u2713 Authentication successful!")
         print("\nYour tokens have been saved and will be automatically refreshed.")
         print("\nYou can now use OneDrive tools:")
         print('  janito --onedrive "List my files"')
@@ -90,7 +90,7 @@ def authenticate_command(args) -> int:
         print("\n\nAuthentication cancelled.")
         return 130
     except Exception as e:
-        print(f"\n\n✗ Authentication failed: {e}", file=sys.stderr)
+        print(f"\n\n\u2717 Authentication failed: {e}", file=sys.stderr)
         return 1
 
 
@@ -102,7 +102,7 @@ def logout_command(args) -> int:
     """
     print("Clearing authentication tokens...")
     clear_tokens()
-    print("✓ Logged out successfully.")
+    print("\u2713 Logged out successfully.")
     print("\nTo log in again, run:")
     print("  janito --onedrive-auth")
     return 0
@@ -139,21 +139,117 @@ def status_command(args) -> int:
             expires_at = float(expires_at_str)
             remaining = expires_at - time.time()
             if remaining > 0:
-                print(f"Access Token: ✓ Valid (expires in {int(remaining)}s)")
+                print(f"Access Token: \u2713 Valid (expires in {int(remaining)}s)")
             else:
-                print("Access Token: ✗ Expired (will refresh automatically)")
+                print("Access Token: \u2717 Expired (will refresh automatically)")
         else:
-            print("Access Token: ✓ Stored")
-        print("Refresh Token: ✓ Stored")
-        print("\n✓ Authenticated and ready to use!")
+            print("Access Token: \u2713 Stored")
+        print("Refresh Token: \u2713 Stored")
+        print("\n\u2713 Authenticated and ready to use!")
     else:
-        print("Access Token: ✗ Not found")
-        print("Refresh Token: ✗ Not found")
+        print("Access Token: \u2717 Not found")
+        print("Refresh Token: \u2717 Not found")
         print("\nRun authentication with:")
         print("  janito --onedrive-auth")
         return 1
 
     return 0
+
+
+def _print_list_result(result) -> None:
+    """Print a ListOneDriveFiles result in a human-friendly format."""
+    print(f"\u2713 Found {result['total_count']} items in {result['path']}")
+    print()
+    for item in result.get("items", []):
+        item_type = "\U0001F4C1" if item["type"] == "folder" else "\U0001F4C4"
+        size_str = f" ({_format_size(item.get('size'))})" if item.get("size") else ""
+        print(f"  {item_type} {item['name']}{size_str}")
+
+
+def _print_search_result(result) -> None:
+    """Print a SearchOneDriveFiles result in a human-friendly format."""
+    print(f"\u2713 Found {result['total_count']} matches for '{result['query']}'")
+    print()
+    for item in result.get("items", []):
+        item_type = "\U0001F4C1" if item["type"] == "folder" else "\U0001F4C4"
+        path_str = (
+            f" in {item.get('parent_path', '/')}" if item.get("parent_path") else ""
+        )
+        print(f"  {item_type} {item['name']}{path_str}")
+
+
+def _print_read_result(result) -> None:
+    """Print a ReadOneDriveFile result in a human-friendly format."""
+    print(f"\u2713 File: {result['path']}")
+    print(f"  ID: {result['file']['id']}")
+    print(f"  Size: {_format_size(result['file'].get('size'))}")
+    print(f"  Modified: {result['file'].get('modified')}")
+    print(f"  URL: {result['file'].get('web_url')}")
+    if result.get("content"):
+        print()
+        print("Content:")
+        print("-" * 40)
+        print(result["content"])
+
+
+def _run_tool_command(parser, args) -> int:
+    """Run the list/search/read subcommands and print the result."""
+    output_json = getattr(args, "json", False)
+
+    try:
+        if args.command == "list-files":
+            tool = ListOneDriveFiles()
+            result = tool.run(
+                path=args.path,
+                limit=args.limit,
+                order_by=args.order_by,
+                folder_only=args.folders_only,
+            )
+            printer = _print_list_result
+
+        elif args.command == "search-files":
+            tool = SearchOneDriveFiles()
+            result = tool.run(
+                query=args.query,
+                folder_path=args.folder,
+                file_type_filter=args.type,
+                limit=args.limit,
+            )
+            printer = _print_search_result
+
+        elif args.command == "read-file":
+            tool = ReadOneDriveFile()
+            result = tool.run(
+                path=args.path,
+                include_content=args.content,
+                max_content_length=args.max_content,
+            )
+            printer = _print_read_result
+
+        else:
+            parser.print_help()
+            return 1
+
+        # Output result
+        if output_json:
+            print(json.dumps(result, indent=2, default=str, ensure_ascii=False))
+        else:
+            if result["success"]:
+                printer(result)
+            else:
+                print(f"\u2717 Error: {result.get('error', 'Unknown error')}")
+
+        return 0 if result["success"] else 1
+
+    except KeyboardInterrupt:
+        print("\nOperation cancelled by user.")
+        return 130
+    except Exception as e:
+        if output_json:
+            print(json.dumps({"success": False, "error": str(e)}, indent=2))
+        else:
+            print(f"\u2717 Error: {e!s}", file=sys.stderr)
+        return 1
 
 
 def main():
@@ -286,106 +382,12 @@ Required secret:
     # Handle special commands
     if args.command == "authenticate":
         return authenticate_command(args)
-    elif args.command == "logout":
+    if args.command == "logout":
         return logout_command(args)
-    elif args.command == "status":
+    if args.command == "status":
         return status_command(args)
 
-    output_json = getattr(args, "json", False)
-
-    try:
-        if args.command == "list-files":
-            tool = ListOneDriveFiles()
-            result = tool.run(
-                path=args.path,
-                limit=args.limit,
-                order_by=args.order_by,
-                folder_only=args.folders_only,
-            )
-
-        elif args.command == "search-files":
-            tool = SearchOneDriveFiles()
-            result = tool.run(
-                query=args.query,
-                folder_path=args.folder,
-                file_type_filter=args.type,
-                limit=args.limit,
-            )
-
-        elif args.command == "read-file":
-            tool = ReadOneDriveFile()
-            result = tool.run(
-                path=args.path,
-                include_content=args.content,
-                max_content_length=args.max_content,
-            )
-
-        else:
-            parser.print_help()
-            return 1
-
-        # Output result
-        if output_json:
-            print(json.dumps(result, indent=2, default=str, ensure_ascii=False))
-        else:
-            if result["success"]:
-                if args.command == "list-files":
-                    print(
-                        f"\u2713 Found {result['total_count']} items in {result['path']}"
-                    )
-                    print()
-                    for item in result.get("items", []):
-                        item_type = (
-                            "\U0001F4C1" if item["type"] == "folder" else "\U0001F4C4"
-                        )
-                        size_str = (
-                            f" ({_format_size(item.get('size'))})"
-                            if item.get("size")
-                            else ""
-                        )
-                        print(f"  {item_type} {item['name']}{size_str}")
-
-                elif args.command == "search-files":
-                    print(
-                        f"\u2713 Found {result['total_count']} matches for '{result['query']}'"
-                    )
-                    print()
-                    for item in result.get("items", []):
-                        item_type = (
-                            "\U0001F4C1" if item["type"] == "folder" else "\U0001F4C4"
-                        )
-                        path_str = (
-                            f" in {item.get('parent_path', '/')}"
-                            if item.get("parent_path")
-                            else ""
-                        )
-                        print(f"  {item_type} {item['name']}{path_str}")
-
-                elif args.command == "read-file":
-                    print(f"\u2713 File: {result['path']}")
-                    print(f"  ID: {result['file']['id']}")
-                    print(f"  Size: {_format_size(result['file'].get('size'))}")
-                    print(f"  Modified: {result['file'].get('modified')}")
-                    print(f"  URL: {result['file'].get('web_url')}")
-                    if result.get("content"):
-                        print()
-                        print("Content:")
-                        print("-" * 40)
-                        print(result["content"])
-            else:
-                print(f"\u2717 Error: {result.get('error', 'Unknown error')}")
-
-        return 0 if result["success"] else 1
-
-    except KeyboardInterrupt:
-        print("\nOperation cancelled by user.")
-        return 130
-    except Exception as e:
-        if output_json:
-            print(json.dumps({"success": False, "error": str(e)}, indent=2))
-        else:
-            print(f"\u2717 Error: {e!s}", file=sys.stderr)
-        return 1
+    return _run_tool_command(parser, args)
 
 
 def _format_size(size_bytes: int) -> str:

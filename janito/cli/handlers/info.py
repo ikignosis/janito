@@ -18,6 +18,52 @@ from ...provider_config import (
 )
 
 
+def _resolve_provider_source(args) -> tuple[str, str]:
+    """Resolve the provider, with priority CLI > config.json > auth.json > fallback."""
+    cli_provider = getattr(args, "provider", None)
+
+    # 1. Check CLI argument directly
+    if cli_provider:
+        return cli_provider, "CLI argument"
+    # 2. Check config.json for provider
+    config_provider = load_provider_from_config()
+    if config_provider:
+        return config_provider, "config.json"
+    # 3. Check auth.json for default provider
+    default_provider = get_default_provider()
+    if default_provider:
+        return default_provider, "auth.json (default)"
+    # 4. Fall back to 'openai'
+    return "openai", "fallback"
+
+
+def _resolve_model_source(
+    provider: str, cli_model: str | None
+) -> tuple[str | None, str]:
+    """Resolve the model, with priority CLI > config."""
+    if cli_model:
+        return cli_model, "CLI argument"
+    config_model = load_model_from_config(provider)
+    if config_model:
+        return config_model, f"config.json ({provider}.model)"
+    return None, "not set"
+
+
+def _resolve_endpoint_source(provider: str, api_type: str) -> tuple[str | None, str]:
+    """Resolve the endpoint/base URL, with priority config > provider default."""
+    config_endpoint = load_endpoint_from_config(provider)
+    if config_endpoint:
+        return config_endpoint, f"config.json ({provider}.endpoint)"
+    if is_custom_provider(provider):
+        return None, "required but not set (set endpoint in config.json)"
+    provider_default = get_endpoint_for_api_type(provider, api_type)
+    if provider_default and provider_default != CUSTOM_ENDPOINT_MARKER:
+        return provider_default, f"{provider} default"
+    if provider_default is None:
+        return None, "default OpenAI"
+    return None, "not set"
+
+
 def handle_info(args) -> int:
     """Handle --info command.
 
@@ -29,78 +75,20 @@ def handle_info(args) -> int:
     Returns:
         int: Exit code (0 for success)
     """
-    cli_provider = getattr(args, "provider", None)
+    provider, provider_source = _resolve_provider_source(args)
 
-    # Determine resolved provider (priority: config.json > auth.json default > fallback)
-    provider = None
-    provider_source = ""
-
-    # 1. Check CLI argument directly
-    if cli_provider:
-        provider = cli_provider
-        provider_source = "CLI argument"
-    # 2. Check config.json for provider
-    else:
-        config_provider = load_provider_from_config()
-        if config_provider:
-            provider = config_provider
-            provider_source = "config.json"
-        else:
-            # 3. Check auth.json for default provider
-            default_provider = get_default_provider()
-            if default_provider:
-                provider = default_provider
-                provider_source = "auth.json (default)"
-            else:
-                # 4. Fall back to 'openai'
-                provider = "openai"
-                provider_source = "fallback"
-
-    # Determine resolved model (priority: CLI > config)
-    model = None
-    model_source = "not set"
-
-    cli_model = getattr(args, "model", None)
-
-    if cli_model:
-        model = cli_model
-        model_source = "CLI argument"
-    else:
-        config_model = load_model_from_config(provider)
-        if config_model:
-            model = config_model
-            model_source = f"config.json ({provider}.model)"
+    model, model_source = _resolve_model_source(provider, getattr(args, "model", None))
 
     # Determine API key (from auth.json for the resolved provider)
     api_key = get_api_key(provider)
-    if api_key:
-        api_key_source = f"auth.json (provider: {provider})"
-    else:
-        api_key_source = "not set"
+    api_key_source = f"auth.json (provider: {provider})" if api_key else "not set"
 
     # Determine the effective API type first (--api-type, then the provider's
     # configured api-type, then its built-in default) so the built-in endpoint
     # can be resolved per API type (endpoint_by_api_type).
     api_type = resolve_api_type(getattr(args, "api_type", None), provider)
 
-    # Determine endpoint/base URL (priority: config > provider default)
-    config_endpoint = load_endpoint_from_config(provider)
-
-    endpoint = None
-    endpoint_source = "not set"
-
-    if config_endpoint:
-        endpoint = config_endpoint
-        endpoint_source = f"config.json ({provider}.endpoint)"
-    elif is_custom_provider(provider):
-        endpoint_source = "required but not set (set endpoint in config.json)"
-    else:
-        provider_default = get_endpoint_for_api_type(provider, api_type)
-        if provider_default and provider_default != CUSTOM_ENDPOINT_MARKER:
-            endpoint = provider_default
-            endpoint_source = f"{provider} default"
-        elif provider_default is None:
-            endpoint_source = "default OpenAI"
+    endpoint, endpoint_source = _resolve_endpoint_source(provider, api_type)
 
     # Print the info
     print("Resolved Configuration:")

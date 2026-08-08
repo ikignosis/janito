@@ -11,7 +11,12 @@ from typing import Any
 
 from ...tooling import BaseTool
 from ...tooling.decorator import tool
-from .imap_utils import build_search_criteria, safe_decode
+from .imap_utils import (
+    build_search_criteria,
+    connect_gmail,
+    get_gmail_credentials,
+    safe_decode,
+)
 
 
 @tool(permissions="r")
@@ -33,6 +38,142 @@ class TrashEmail(BaseTool):
 
     IMAP_SERVER = "imap.gmail.com"
     IMAP_PORT = 993
+
+    def _select_folder(self, mail, folder: str) -> dict[str, Any] | None:
+        """Select the mailbox; returns an error result dict or None."""
+        status, messages = mail.select(folder)
+        if status != "OK":
+            mail.logout()
+            return {
+                "success": False,
+                "error": f"Failed to select folder '{folder}'",
+                "folder": folder,
+            }
+        return None
+
+    def _mark_trashed(self, mail, ids_to_trash) -> int:
+        """Mark message IDs as trashed using the STORE command."""
+        trashed_count = 0
+        for msg_id in ids_to_trash:
+            try:
+                status, response = mail.store(msg_id, "+FLAGS", "\\Trashed")
+                if status == "OK":
+                    trashed_count += 1
+            except Exception:
+                continue
+        return trashed_count
+
+    def _do_trash(
+        self,
+        folder: str,
+        message_ids: list[str] | None,
+        search_query: str | None,
+        from_address: str | None,
+        subject_contains: str | None,
+        older_than_days: int | None,
+        dry_run: bool,
+    ) -> dict[str, Any]:
+        """Perform the trash (or dry-run count); returns the result dict."""
+        action = "Counting (dry run)" if dry_run else "Moving to trash"
+        self.report_start(f"\ud83d\uddd1\ufe0f {action} emails from {folder}")
+
+        username, password = get_gmail_credentials()
+
+        if not username or not password:
+            return {
+                "success": False,
+                "error": (
+                    "Gmail credentials not configured."
+                    " Use: janito --set-secret"
+                    " gmail_username=... gmail_password=..."
+                ),
+                "folder": folder,
+            }
+
+        mail = connect_gmail(username, password, self.IMAP_SERVER, self.IMAP_PORT)
+
+        # Select the mailbox
+        select_error = self._select_folder(mail, folder)
+        if select_error:
+            return select_error
+
+        # Build search criteria
+        search_criteria = build_search_criteria(
+            message_ids=message_ids,
+            search_query=search_query,
+            from_address=from_address,
+            subject_contains=subject_contains,
+            older_than_days=older_than_days,
+        )
+
+        if not search_criteria:
+            mail.logout()
+            return {
+                "success": False,
+                "error": (
+                    "Must specify at least one criteria:"
+                    " message_ids, search_query, from_address,"
+                    " subject_contains, or older_than_days"
+                ),
+                "folder": folder,
+            }
+
+        self.report_progress(" Searching for emails to trash...")
+
+        status, message_ids_list = mail.search(None, search_criteria)
+
+        if status != "OK":
+            mail.logout()
+            return {
+                "success": False,
+                "error": "Failed to search emails",
+                "folder": folder,
+            }
+
+        ids_to_trash = message_ids_list[0].split()
+        found_count = len(ids_to_trash)
+
+        if found_count == 0:
+            mail.logout()
+            self.report_result("No emails found matching criteria")
+            return {
+                "success": True,
+                "folder": folder,
+                "found_count": 0,
+                "trashed_count": 0,
+                "dry_run": dry_run,
+            }
+
+        id_strings = [safe_decode(mid) for mid in ids_to_trash]
+
+        if dry_run:
+            mail.logout()
+            self.report_result(f"DRY RUN: Would trash {found_count} emails")
+            return {
+                "success": True,
+                "folder": folder,
+                "found_count": found_count,
+                "trashed_count": 0,
+                "message_ids": id_strings,
+                "dry_run": True,
+            }
+
+        # Move to Trash using +FLAGS (\\Trashed)
+        self.report_progress(f" Found {found_count} emails, moving to trash...")
+
+        trashed_count = self._mark_trashed(mail, ids_to_trash)
+
+        mail.logout()
+
+        self.report_result(f"Trashed {trashed_count} emails from {folder}")
+        return {
+            "success": True,
+            "folder": folder,
+            "found_count": found_count,
+            "trashed_count": trashed_count,
+            "message_ids": id_strings,
+            "dry_run": False,
+        }
 
     def run(
         self,
@@ -60,122 +201,15 @@ class TrashEmail(BaseTool):
             Dict[str, Any]: A dictionary containing operation results
         """
         try:
-            from janito.secrets_config import get_secret
-
-            action = "Counting (dry run)" if dry_run else "Moving to trash"
-            self.report_start(f"🗑️ {action} emails from {folder}")
-
-            username = get_secret("gmail_username")
-            password = get_secret("gmail_password")
-
-            if not username or not password:
-                return {
-                    "success": False,
-                    "error": (
-                        "Gmail credentials not configured."
-                        " Use: janito --set-secret"
-                        " gmail_username=... gmail_password=..."
-                    ),
-                    "folder": folder,
-                }
-
-            mail = imaplib.IMAP4_SSL(self.IMAP_SERVER, self.IMAP_PORT)
-            mail.login(username, password)
-
-            status, messages = mail.select(folder)
-            if status != "OK":
-                mail.logout()
-                return {
-                    "success": False,
-                    "error": f"Failed to select folder '{folder}'",
-                    "folder": folder,
-                }
-
-            # Build search criteria
-            search_criteria = build_search_criteria(
-                message_ids=message_ids,
-                search_query=search_query,
-                from_address=from_address,
-                subject_contains=subject_contains,
-                older_than_days=older_than_days,
+            return self._do_trash(
+                folder,
+                message_ids,
+                search_query,
+                from_address,
+                subject_contains,
+                older_than_days,
+                dry_run,
             )
-
-            if not search_criteria:
-                mail.logout()
-                return {
-                    "success": False,
-                    "error": (
-                        "Must specify at least one criteria:"
-                        " message_ids, search_query, from_address,"
-                        " subject_contains, or older_than_days"
-                    ),
-                    "folder": folder,
-                }
-
-            self.report_progress(" Searching for emails to trash...")
-
-            status, message_ids_list = mail.search(None, search_criteria)
-
-            if status != "OK":
-                mail.logout()
-                return {
-                    "success": False,
-                    "error": "Failed to search emails",
-                    "folder": folder,
-                }
-
-            ids_to_trash = message_ids_list[0].split()
-            found_count = len(ids_to_trash)
-
-            if found_count == 0:
-                mail.logout()
-                self.report_result("No emails found matching criteria")
-                return {
-                    "success": True,
-                    "folder": folder,
-                    "found_count": 0,
-                    "trashed_count": 0,
-                    "dry_run": dry_run,
-                }
-
-            id_strings = [safe_decode(mid) for mid in ids_to_trash]
-
-            if dry_run:
-                mail.logout()
-                self.report_result(f"DRY RUN: Would trash {found_count} emails")
-                return {
-                    "success": True,
-                    "folder": folder,
-                    "found_count": found_count,
-                    "trashed_count": 0,
-                    "message_ids": id_strings,
-                    "dry_run": True,
-                }
-
-            # Move to Trash using +FLAGS (\Trashed)
-            self.report_progress(f" Found {found_count} emails, moving to trash...")
-
-            trashed_count = 0
-            for msg_id in ids_to_trash:
-                try:
-                    status, response = mail.store(msg_id, "+FLAGS", "\\Trashed")
-                    if status == "OK":
-                        trashed_count += 1
-                except Exception:
-                    continue
-
-            mail.logout()
-
-            self.report_result(f"Trashed {trashed_count} emails from {folder}")
-            return {
-                "success": True,
-                "folder": folder,
-                "found_count": found_count,
-                "trashed_count": trashed_count,
-                "message_ids": id_strings,
-                "dry_run": False,
-            }
-
         except imaplib.IMAP4.error as e:
             error_msg = safe_decode(e.args[0]) if e.args else str(e)
             self.report_error(f"IMAP error: {error_msg}")

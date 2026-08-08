@@ -9,30 +9,8 @@ from ...tooling.tools_registry import (
 )
 
 
-def handle_list_tools(args) -> int:
-    """Handle --list-tools command.
-
-    Args:
-        args: Parsed command line arguments
-
-    Returns:
-        int: Exit code (0 for success)
-    """
-    # Add gmail toolset if --gmail flag is set
-    if getattr(args, "gmail", False):
-        add_toolset("gmail")
-
-    # Add onedrive toolset if --onedrive flag is set
-    if getattr(args, "onedrive", False):
-        add_toolset("onedrive")
-
-    schemas = get_all_tool_schemas()
-    permissions = get_all_tool_permissions()
-
-    print("Available Tools:")
-    print("=" * 60)
-
-    # Group tools by category based on name prefixes
+def _categorize_tools(schemas, permissions) -> dict[str, list[dict]]:
+    """Group tools by category based on name prefixes."""
     categories = {
         "File Operations": [],
         "System Operations": [],
@@ -49,9 +27,7 @@ def handle_list_tools(args) -> int:
 
         # Get parameter names only
         params = func_info["parameters"]["properties"]
-        param_names = list(params.keys())
-
-        tool_info = {"name": name, "permissions": perms, "params": param_names}
+        tool_info = {"name": name, "permissions": perms, "params": list(params.keys())}
 
         if (
             name.startswith(
@@ -84,7 +60,11 @@ def handle_list_tools(args) -> int:
         else:
             categories["Other"].append(tool_info)
 
-    # Display tools by category
+    return categories
+
+
+def _print_categories(categories: dict[str, list[dict]]) -> None:
+    """Display tools grouped by category."""
     for category, tools_list in categories.items():
         if tools_list:
             print(f"\n{category}:")
@@ -98,6 +78,33 @@ def handle_list_tools(args) -> int:
                     else " (no params)"
                 )
                 print(f"  {tool['name']}{perms_str}{params_str}")
+
+
+def handle_list_tools(args) -> int:
+    """Handle --list-tools command.
+
+    Args:
+        args: Parsed command line arguments
+
+    Returns:
+        int: Exit code (0 for success)
+    """
+    # Add gmail toolset if --gmail flag is set
+    if getattr(args, "gmail", False):
+        add_toolset("gmail")
+
+    # Add onedrive toolset if --onedrive flag is set
+    if getattr(args, "onedrive", False):
+        add_toolset("onedrive")
+
+    schemas = get_all_tool_schemas()
+    permissions = get_all_tool_permissions()
+
+    print("Available Tools:")
+    print("=" * 60)
+
+    categories = _categorize_tools(schemas, permissions)
+    _print_categories(categories)
 
     print(f"\nTotal: {len(schemas)} tools")
     print("\nPermission codes: r=read, w=write, x=execute")

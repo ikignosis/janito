@@ -17,6 +17,14 @@ from typing import Any
 
 from ...tooling import BaseTool
 from ...tooling.decorator import tool
+from .imap_utils import (
+    connect_gmail,
+    get_gmail_credentials,
+    missing_password_result,
+    missing_username_result,
+    resolve_search_criteria,
+    safe_decode,
+)
 
 
 def decode_email_header(header_str: str) -> str:
@@ -94,6 +102,36 @@ def parse_email_body(msg: email.message.EmailMessage) -> dict[str, Any]:
     return body
 
 
+def _parse_fetched_email(msg_id, msg_data, max_body_length: int) -> dict[str, Any]:
+    """Parse a raw RFC822 message into an email info dict."""
+    raw_email = msg_data[0][1]
+    msg = email.message_from_bytes(raw_email)
+
+    # Parse email headers
+    subject = decode_email_header(msg.get("Subject", "(No Subject)"))
+    sender = decode_email_header(msg.get("From", "Unknown"))
+    date = msg.get("Date", "Unknown")
+    message_id = msg.get("Message-ID", msg_id.decode())
+
+    # Parse body
+    body_dict = parse_email_body(msg)
+    body = body_dict["text"] or body_dict["html"]
+
+    # Truncate body if too long
+    if len(body) > max_body_length:
+        body = body[:max_body_length] + f"... [truncated, total {len(body)} chars]"
+
+    return {
+        "id": msg_id.decode(),
+        "message_id": message_id,
+        "subject": subject,
+        "from": sender,
+        "date": date,
+        "body": body,
+        "has_html": bool(body_dict["html"]),
+    }
+
+
 @tool(permissions="r")
 class ReadEmails(BaseTool):
     """
@@ -110,6 +148,128 @@ class ReadEmails(BaseTool):
 
     IMAP_SERVER = "imap.gmail.com"
     IMAP_PORT = 993
+
+    def _select_folder(self, mail, folder: str) -> dict[str, Any] | None:
+        """Select the mailbox; returns an error result dict or None."""
+        status, messages = mail.select(folder)
+        if status != "OK":
+            mail.logout()
+            self.report_error(f"Failed to select folder: {folder}")
+            return {
+                "success": False,
+                "error": (
+                    f"Failed to select folder '{folder}':"
+                    f" {messages[0].decode() if messages else 'Unknown error'}"
+                ),
+                "folder": folder,
+            }
+        return None
+
+    def _fetch_emails(
+        self, mail, email_ids_to_fetch, max_body_length: int
+    ) -> list[dict[str, Any]]:
+        """Fetch and parse the given email IDs."""
+        emails = []
+        for msg_id in email_ids_to_fetch:
+            try:
+                status, msg_data = mail.fetch(msg_id, "(RFC822)")
+                if status != "OK":
+                    continue
+
+                emails.append(_parse_fetched_email(msg_id, msg_data, max_body_length))
+            except Exception:
+                # Skip individual email errors
+                continue
+        return emails
+
+    def _do_read(
+        self,
+        folder: str,
+        limit: int,
+        unread_only: bool,
+        search_query: str | None,
+        max_body_length: int,
+    ) -> dict[str, Any]:
+        """Perform the read operation; returns the result dict."""
+        # Fetch credentials from secrets
+        self.report_start(f"\ud83d\udcec Connecting to Gmail to read {folder}")
+
+        username, password = get_gmail_credentials()
+
+        if not username:
+            self.report_error("Gmail username not found in secrets")
+            return missing_username_result(folder=folder)
+
+        if not password:
+            self.report_error("Gmail password not found in secrets")
+            return missing_password_result(folder=folder)
+
+        # Connect to Gmail IMAP server
+        self.report_progress(" Connecting to imap.gmail.com...")
+
+        mail = connect_gmail(username, password, self.IMAP_SERVER, self.IMAP_PORT)
+
+        # Select the mailbox
+        select_error = self._select_folder(mail, folder)
+        if select_error:
+            return select_error
+
+        # Build search criteria
+        search_criteria = resolve_search_criteria(search_query, unread_only)
+
+        # Search for emails
+        self.report_progress(
+            f"\ud83d\udd0d Searching for emails with criteria: {search_criteria}..."
+        )
+        status, message_ids = mail.search(None, search_criteria)
+
+        if status != "OK":
+            mail.logout()
+            self.report_error("Failed to search emails")
+            return {
+                "success": False,
+                "error": (
+                    f"Failed to search emails:"
+                    f" {message_ids[0].decode() if message_ids else 'Unknown error'}"
+                ),
+                "folder": folder,
+            }
+
+        # Get list of message IDs
+        id_list = message_ids[0].split()
+        total_found = len(id_list)
+
+        if total_found == 0:
+            mail.logout()
+            self.report_result("No emails found matching criteria")
+            return {
+                "success": True,
+                "folder": folder,
+                "emails": [],
+                "total_found": 0,
+            }
+
+        # Limit the number of emails to fetch
+        email_ids_to_fetch = id_list[-limit:] if limit < total_found else id_list
+
+        self.report_progress(
+            f" Found {total_found} emails, fetching {len(email_ids_to_fetch)}..."
+        )
+
+        emails = self._fetch_emails(mail, email_ids_to_fetch, max_body_length)
+
+        # Logout
+        mail.logout()
+
+        self.report_result(f"Fetched {len(emails)} emails from {folder}")
+
+        return {
+            "success": True,
+            "folder": folder,
+            "emails": emails,
+            "total_found": total_found,
+            "emails_returned": len(emails),
+        }
 
     def run(
         self,
@@ -138,160 +298,11 @@ class ReadEmails(BaseTool):
                 - 'error': error message if operation failed (only present if success=False)
         """
         try:
-            from janito.secrets_config import get_secret
-
-            # Fetch credentials from secrets
-            self.report_start(f"📬 Connecting to Gmail to read {folder}")
-
-            username = get_secret("gmail_username")
-            password = get_secret("gmail_password")
-
-            if not username:
-                self.report_error("Gmail username not found in secrets")
-                return {
-                    "success": False,
-                    "error": (
-                        "Secret 'gmail_username' not configured."
-                        " Use: janito --set-secret"
-                        " gmail_username=your-email@gmail.com"
-                    ),
-                    "folder": folder,
-                }
-
-            if not password:
-                self.report_error("Gmail password not found in secrets")
-                return {
-                    "success": False,
-                    "error": (
-                        "Secret 'gmail_password' not configured."
-                        " Use: janito --set-secret"
-                        " gmail_password=your-app-password"
-                    ),
-                    "folder": folder,
-                }
-
-            # Connect to Gmail IMAP server
-            self.report_progress(" Connecting to imap.gmail.com...")
-
-            mail = imaplib.IMAP4_SSL(self.IMAP_SERVER, self.IMAP_PORT)
-            mail.login(username, password)
-
-            # Select the mailbox
-            status, messages = mail.select(folder)
-            if status != "OK":
-                mail.logout()
-                self.report_error(f"Failed to select folder: {folder}")
-                return {
-                    "success": False,
-                    "error": (
-                        f"Failed to select folder '{folder}':"
-                        f" {messages[0].decode() if messages else 'Unknown error'}"
-                    ),
-                    "folder": folder,
-                }
-
-            # Build search criteria
-            if search_query:
-                search_criteria = search_query
-            elif unread_only:
-                search_criteria = "UNSEEN"
-            else:
-                search_criteria = "ALL"
-
-            # Search for emails
-            self.report_progress(
-                f"🔍 Searching for emails with criteria: {search_criteria}..."
+            return self._do_read(
+                folder, limit, unread_only, search_query, max_body_length
             )
-            status, message_ids = mail.search(None, search_criteria)
-
-            if status != "OK":
-                mail.logout()
-                self.report_error("Failed to search emails")
-                return {
-                    "success": False,
-                    "error": f"Failed to search emails: {message_ids[0].decode() if message_ids else 'Unknown error'}",
-                    "folder": folder,
-                }
-
-            # Get list of message IDs
-            id_list = message_ids[0].split()
-            total_found = len(id_list)
-
-            if total_found == 0:
-                mail.logout()
-                self.report_result("No emails found matching criteria")
-                return {
-                    "success": True,
-                    "folder": folder,
-                    "emails": [],
-                    "total_found": 0,
-                }
-
-            # Limit the number of emails to fetch
-            email_ids_to_fetch = id_list[-limit:] if limit < total_found else id_list
-
-            self.report_progress(
-                f" Found {total_found} emails, fetching {len(email_ids_to_fetch)}..."
-            )
-
-            emails = []
-            for msg_id in email_ids_to_fetch:
-                try:
-                    status, msg_data = mail.fetch(msg_id, "(RFC822)")
-                    if status != "OK":
-                        continue
-
-                    raw_email = msg_data[0][1]
-                    msg = email.message_from_bytes(raw_email)
-
-                    # Parse email headers
-                    subject = decode_email_header(msg.get("Subject", "(No Subject)"))
-                    sender = decode_email_header(msg.get("From", "Unknown"))
-                    date = msg.get("Date", "Unknown")
-                    message_id = msg.get("Message-ID", msg_id.decode())
-
-                    # Parse body
-                    body_dict = parse_email_body(msg)
-                    body = body_dict["text"] or body_dict["html"]
-
-                    # Truncate body if too long
-                    if len(body) > max_body_length:
-                        body = (
-                            body[:max_body_length]
-                            + f"... [truncated, total {len(body)} chars]"
-                        )
-
-                    email_info = {
-                        "id": msg_id.decode(),
-                        "message_id": message_id,
-                        "subject": subject,
-                        "from": sender,
-                        "date": date,
-                        "body": body,
-                        "has_html": bool(body_dict["html"]),
-                    }
-
-                    emails.append(email_info)
-
-                except Exception:
-                    # Skip individual email errors
-                    continue
-
-            # Logout
-            mail.logout()
-
-            self.report_result(f"Fetched {len(emails)} emails from {folder}")
-
-            return {
-                "success": True,
-                "folder": folder,
-                "emails": emails,
-                "total_found": total_found,
-                "emails_returned": len(emails),
-            }
-
         except imaplib.IMAP4.error as e:
-            error_msg = e.args[0].decode() if e.args else str(e)
+            error_msg = safe_decode(e.args[0]) if e.args else str(e)
             self.report_error(f"IMAP error: {error_msg}")
             return {
                 "success": False,

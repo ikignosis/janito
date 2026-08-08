@@ -72,6 +72,31 @@ class StreamAccumulator:
     tool_calls: dict[int, dict[str, str]] = field(default_factory=dict)
     usage: object | None = None
 
+    def _handle_reasoning_delta(self, delta) -> str | None:
+        """Capture reasoning/thinking content; returns the delta or None."""
+        for attr in ("reasoning_content", "reasoning"):
+            val = getattr(delta, attr, None)
+            if val:
+                self.reasoning.append(val)
+                return val
+        return None
+
+    def _handle_tool_call_delta(self, delta) -> None:
+        """Accumulate tool-call deltas (split across many chunks)."""
+        if not hasattr(delta, "tool_calls") or not delta.tool_calls:
+            return
+        for tc_delta in delta.tool_calls:
+            idx = tc_delta.index
+            if idx not in self.tool_calls:
+                self.tool_calls[idx] = {"id": "", "name": "", "arguments": ""}
+            if tc_delta.id:
+                self.tool_calls[idx]["id"] = tc_delta.id
+            if tc_delta.function:
+                if tc_delta.function.name:
+                    self.tool_calls[idx]["name"] = tc_delta.function.name
+                if tc_delta.function.arguments:
+                    self.tool_calls[idx]["arguments"] += tc_delta.function.arguments
+
     def handle(self, chunk) -> tuple[str | None, str | None]:
         """Process one chunk; returns ``(reasoning_delta, content_delta)``."""
         if hasattr(chunk, "usage") and chunk.usage:
@@ -83,13 +108,7 @@ class StreamAccumulator:
         delta = chunk.choices[0].delta
 
         # Reasoning / thinking content
-        reasoning_delta = None
-        for attr in ("reasoning_content", "reasoning"):
-            val = getattr(delta, attr, None)
-            if val:
-                reasoning_delta = val
-                self.reasoning.append(val)
-                break
+        reasoning_delta = self._handle_reasoning_delta(delta)
 
         # Main content
         content_delta = delta.content
@@ -97,18 +116,7 @@ class StreamAccumulator:
             self.content.append(content_delta)
 
         # Tool-call deltas (split across many chunks)
-        if hasattr(delta, "tool_calls") and delta.tool_calls:
-            for tc_delta in delta.tool_calls:
-                idx = tc_delta.index
-                if idx not in self.tool_calls:
-                    self.tool_calls[idx] = {"id": "", "name": "", "arguments": ""}
-                if tc_delta.id:
-                    self.tool_calls[idx]["id"] = tc_delta.id
-                if tc_delta.function:
-                    if tc_delta.function.name:
-                        self.tool_calls[idx]["name"] = tc_delta.function.name
-                    if tc_delta.function.arguments:
-                        self.tool_calls[idx]["arguments"] += tc_delta.function.arguments
+        self._handle_tool_call_delta(delta)
 
         return reasoning_delta, content_delta
 

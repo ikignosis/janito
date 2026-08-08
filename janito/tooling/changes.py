@@ -240,6 +240,51 @@ def _build_replace_diff(old_str: str, new_str: str) -> str:
     return build_diff(old_str, new_str)
 
 
+def _render_record(console, index: int, record: dict[str, Any]) -> None:
+    """Render a single recorded change to ``console``."""
+    from rich.markup import escape
+    from rich.panel import Panel
+    from rich.syntax import Syntax
+
+    tool_name = record.get("tool", "<unknown>")
+    params = record.get("params", {})
+    if not isinstance(params, dict):
+        params = {}
+
+    # Display the file path relative to the CWD when possible.
+    filepath = params.get(TRACKED_ARG_NAME, "")
+    try:
+        from .path_utils import norm_path
+
+        display_path = norm_path(filepath) if filepath else "<no filepath>"
+    except Exception:  # noqa: BLE001 - display must never break the report
+        display_path = filepath or "<no filepath>"
+
+    title = (
+        f"[bold]#{index}[/bold] [green]{tool_name}[/green] " f"{escape(display_path)}"
+    )
+    console.print()
+    console.print(Panel(title, border_style="cyan", padding=(0, 1)))
+
+    if tool_name == CREATE_FILE_TOOL:
+        content = params.get("content", "")
+        lexer = _guess_lexer(str(filepath), content)
+        console.print(Syntax(content or "", lexer, line_numbers=True, word_wrap=True))
+    elif tool_name == REPLACE_TEXT_TOOL:
+        old_str = params.get("old_str", "")
+        new_str = params.get("new_str", "")
+        diff_text = _build_replace_diff(old_str, new_str)
+        lexer = _guess_lexer(str(filepath), diff_text)
+        console.print(
+            Syntax(diff_text or "", lexer, line_numbers=False, word_wrap=True)
+        )
+    else:
+        # Show the parameters as a pretty-printed, syntax-highlighted
+        # JSON block for a readable summary.
+        params_json = json.dumps(params, ensure_ascii=False, indent=2)
+        console.print(Syntax(params_json, "json", line_numbers=False, word_wrap=True))
+
+
 def render_changes(console=None) -> None:
     """Render the recorded changes to ``console`` in a friendly format.
 
@@ -257,9 +302,6 @@ def render_changes(console=None) -> None:
     """
     try:
         from rich.console import Console
-        from rich.markup import escape
-        from rich.panel import Panel
-        from rich.syntax import Syntax
         from rich.text import Text
 
         if console is None:
@@ -278,48 +320,7 @@ def render_changes(console=None) -> None:
         console.print(header, highlight=False)
 
         for index, record in enumerate(records, start=1):
-            tool_name = record.get("tool", "<unknown>")
-            params = record.get("params", {})
-            if not isinstance(params, dict):
-                params = {}
-
-            # Display the file path relative to the CWD when possible.
-            filepath = params.get(TRACKED_ARG_NAME, "")
-            try:
-                from .path_utils import norm_path
-
-                display_path = norm_path(filepath) if filepath else "<no filepath>"
-            except Exception:  # noqa: BLE001 - display must never break the report
-                display_path = filepath or "<no filepath>"
-
-            title = (
-                f"[bold]#{index}[/bold] [green]{tool_name}[/green] "
-                f"{escape(display_path)}"
-            )
-            console.print()
-            console.print(Panel(title, border_style="cyan", padding=(0, 1)))
-
-            if tool_name == CREATE_FILE_TOOL:
-                content = params.get("content", "")
-                lexer = _guess_lexer(str(filepath), content)
-                console.print(
-                    Syntax(content or "", lexer, line_numbers=True, word_wrap=True)
-                )
-            elif tool_name == REPLACE_TEXT_TOOL:
-                old_str = params.get("old_str", "")
-                new_str = params.get("new_str", "")
-                diff_text = _build_replace_diff(old_str, new_str)
-                lexer = _guess_lexer(str(filepath), diff_text)
-                console.print(
-                    Syntax(diff_text or "", lexer, line_numbers=False, word_wrap=True)
-                )
-            else:
-                # Show the parameters as a pretty-printed, syntax-highlighted
-                # JSON block for a readable summary.
-                params_json = json.dumps(params, ensure_ascii=False, indent=2)
-                console.print(
-                    Syntax(params_json, "json", line_numbers=False, word_wrap=True)
-                )
+            _render_record(console, index, record)
     except Exception as e:  # noqa: BLE001 - reporting must never break the shell
         logger.debug(f"Failed to render changes: {e}")
         if console is not None:

@@ -83,6 +83,30 @@ class OneDriveBaseClient:
 
         return client_id
 
+    def _refresh_access_token(self) -> bool:
+        """Try to refresh the stored access token; returns True on success."""
+        from ...secrets_config import get_secret
+
+        refresh_token = get_secret("azure_refresh_token")
+        client_id = get_secret("azure_client_id")
+
+        if not refresh_token or not client_id:
+            return False
+
+        print(
+            " Access token expired, refreshing...",
+            file=__import__("sys").stderr,
+            flush=True,
+        )
+
+        auth = DeviceCodeAuth(client_id)
+        new_token_data = auth.refresh_access_token(refresh_token)
+        store_token_data(new_token_data)
+
+        self._access_token = new_token_data["access_token"]
+        self._token_expires_at = new_token_data["expires_at"]
+        return True
+
     def _ensure_authenticated(self) -> None:
         """
         Ensure we have a valid access token.
@@ -90,8 +114,6 @@ class OneDriveBaseClient:
         Checks for stored token and refreshes if needed.
         Raises ValueError if no credentials configured.
         """
-        from ...secrets_config import get_secret
-
         # Check for existing valid token
         token_data = get_stored_token()
 
@@ -101,22 +123,7 @@ class OneDriveBaseClient:
             return
 
         # Try to refresh if we have a refresh token
-        refresh_token = get_secret("azure_refresh_token")
-        client_id = get_secret("azure_client_id")
-
-        if refresh_token and client_id:
-            print(
-                " Access token expired, refreshing...",
-                file=__import__("sys").stderr,
-                flush=True,
-            )
-
-            auth = DeviceCodeAuth(client_id)
-            new_token_data = auth.refresh_access_token(refresh_token)
-            store_token_data(new_token_data)
-
-            self._access_token = new_token_data["access_token"]
-            self._token_expires_at = new_token_data["expires_at"]
+        if self._refresh_access_token():
             return
 
         # No token available
@@ -147,6 +154,31 @@ class OneDriveBaseClient:
         self._ensure_authenticated()
 
         return self._access_token
+
+    def _build_request_headers(
+        self, access_token: str, headers: dict[str, str] | None
+    ) -> dict[str, str]:
+        """Build the Authorization/Content-Type headers for a request."""
+        request_headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json",
+        }
+
+        if headers:
+            request_headers.update(headers)
+
+        return request_headers
+
+    @staticmethod
+    def _graph_error_message(response) -> str:
+        """Build a readable error message from a Graph API error response."""
+        try:
+            error_data = response.json()
+            error_message = error_data.get("error", {}).get("message", response.text)
+        except json.JSONDecodeError:
+            error_message = response.text
+
+        return f"Graph API error (status {response.status_code}): {error_message}"
 
     def _make_request(
         self,
@@ -180,13 +212,7 @@ class OneDriveBaseClient:
 
         url = f"{self.GRAPH_BASE_URL}{endpoint}"
 
-        request_headers = {
-            "Authorization": f"Bearer {access_token}",
-            "Content-Type": "application/json",
-        }
-
-        if headers:
-            request_headers.update(headers)
+        request_headers = self._build_request_headers(access_token, headers)
 
         max_retries = 3
         retry_count = 0
@@ -205,24 +231,7 @@ class OneDriveBaseClient:
                 # Handle token expiration
                 if response.status_code == 401:
                     # Token might be expired, try to refresh
-                    from ...secrets_config import get_secret
-
-                    refresh_token = get_secret("azure_refresh_token")
-                    client_id = get_secret("azure_client_id")
-
-                    if refresh_token and client_id and retry_count < max_retries - 1:
-                        print(
-                            " Access token expired, refreshing...",
-                            file=__import__("sys").stderr,
-                            flush=True,
-                        )
-
-                        auth = DeviceCodeAuth(client_id)
-                        new_token_data = auth.refresh_access_token(refresh_token)
-                        store_token_data(new_token_data)
-
-                        self._access_token = new_token_data["access_token"]
-                        self._token_expires_at = new_token_data["expires_at"]
+                    if retry_count < max_retries - 1 and self._refresh_access_token():
                         request_headers[
                             "Authorization"
                         ] = f"Bearer {self._access_token}"
@@ -237,17 +246,7 @@ class OneDriveBaseClient:
 
                 # Check for other errors
                 if response.status_code >= 400:
-                    try:
-                        error_data = response.json()
-                        error_message = error_data.get("error", {}).get(
-                            "message", response.text
-                        )
-                    except json.JSONDecodeError:
-                        error_message = response.text
-
-                    raise Exception(
-                        f"Graph API error (status {response.status_code}): {error_message}"
-                    )
+                    raise Exception(self._graph_error_message(response))
 
                 # Return JSON for successful responses
                 if response.text:

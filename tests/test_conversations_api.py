@@ -381,7 +381,10 @@ def test_send_prompt_stateless_replays_full_history(monkeypatch):
     """Stateless providers (responses_in_server False, e.g. DeepSeek) cannot
     resolve a previous_response_id: the client re-sends the full conversation
     as input items on every request and never chains with an id."""
-    monkeypatch.setattr(api, "get_responses_in_server_from_provider", lambda p: False)
+    monkeypatch.setattr(
+        "janito.openai_client.responses_state.get_responses_in_server_from_provider",
+        lambda p: False,
+    )
     seen = []
 
     def create(**kwargs):
@@ -479,7 +482,10 @@ def test_send_prompt_stateless_replays_full_history(monkeypatch):
 
 def test_send_prompt_stateless_continues_with_previous_items(monkeypatch):
     """The next turn re-sends the previous turn's items plus the new prompt."""
-    monkeypatch.setattr(api, "get_responses_in_server_from_provider", lambda p: False)
+    monkeypatch.setattr(
+        "janito.openai_client.responses_state.get_responses_in_server_from_provider",
+        lambda p: False,
+    )
     seen = []
 
     def create(**kwargs):

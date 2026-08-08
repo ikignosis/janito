@@ -282,6 +282,55 @@ async def _accept_session(
     return session
 
 
+async def _handle_restart(
+    session: ConversationSession,
+    sessions: SessionManager,
+    session_id: str,
+    websocket: WebSocket,
+) -> None:
+    """Restart the session (clear history) and confirm to the client."""
+    session.restart()
+    sessions.persist(session)  # mirror the cleared history to disk
+    await websocket.send_json({"type": "restarted"})
+
+
+def _maybe_auto_title(
+    sessions: SessionManager,
+    session_id: str,
+    session: ConversationSession,
+    content: str,
+) -> None:
+    """Auto-title the session from the first user prompt."""
+    if session.title == "New conversation":
+        sessions.set_title(session_id, content[:60])
+
+
+async def _process_prompt(
+    session: ConversationSession,
+    websocket: WebSocket,
+    config,
+    content: str,
+    pending_prompts: list[str],
+    sessions: SessionManager,
+) -> None:
+    """Process one user prompt, draining any prompts queued meanwhile.
+
+    Prompts that arrive while a turn is running are queued by
+    ``_await_cancel`` (instead of being silently discarded) and are
+    processed once the current turn finishes, so a submission is never
+    lost mid-stream.
+    """
+    _maybe_auto_title(sessions, session.session_id, session, content)
+    await _run_prompt_turn(
+        session, websocket, content, config, pending_prompts, sessions
+    )
+    for extra in pending_prompts:
+        _maybe_auto_title(sessions, session.session_id, session, extra)
+        await _run_prompt_turn(
+            session, websocket, extra, config, pending_prompts, sessions
+        )
+
+
 @router.websocket("/ws/{session_id}")
 async def chat_websocket(websocket: WebSocket, session_id: str):
     """Bidirectional streaming chat over WebSocket.
@@ -306,9 +355,7 @@ async def chat_websocket(websocket: WebSocket, session_id: str):
                 break
             msg_type = msg.get("type")
             if msg_type == "restart":
-                session.restart()
-                sessions.persist(session)  # mirror the cleared history to disk
-                await websocket.send_json({"type": "restarted"})
+                await _handle_restart(session, sessions, session_id, websocket)
                 continue
             if msg_type != "prompt":
                 continue  # ignore unknown message types (could be pings)
@@ -318,24 +365,10 @@ async def chat_websocket(websocket: WebSocket, session_id: str):
                 await websocket.send_json({"type": "error", "message": "Empty prompt"})
                 continue
 
-            # Auto-title the session from the first user prompt
-            if session.title == "New conversation":
-                sessions.set_title(session_id, content[:60])
-
-            # Prompts that arrive while a turn is running are queued by
-            # _await_cancel (instead of being silently discarded) and are
-            # processed once the current turn finishes, so a submission is
-            # never lost mid-stream.
             pending_prompts: list[str] = []
-            await _run_prompt_turn(
-                session, websocket, content, config, pending_prompts, sessions
+            await _process_prompt(
+                session, websocket, config, content, pending_prompts, sessions
             )
-            for extra in pending_prompts:
-                if session.title == "New conversation":
-                    sessions.set_title(session_id, extra[:60])
-                await _run_prompt_turn(
-                    session, websocket, extra, config, pending_prompts, sessions
-                )
     except WebSocketDisconnect:
         logger.debug(f"WebSocket client disconnected: {session_id}")
     except Exception as e:

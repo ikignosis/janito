@@ -19,11 +19,154 @@ from ...tooling import BaseTool, norm_path
 from ...tooling.decorator import tool
 
 
+def _count_items(abs_directory: str) -> int:
+    """Count the entries under ``abs_directory`` (excluding the root itself)."""
+    count = 0
+    for root, dirs, files in os.walk(abs_directory):
+        count += len(dirs) + len(files)
+    return count
+
+
 @tool(permissions="w")
 class RemoveDirectory(BaseTool):
     """
     Tool for removing a directory from the filesystem.
     """
+
+    def _validate_target(
+        self,
+        abs_directory: str,
+        norm_path_str: str,
+        directory: str,
+        recursive: bool,
+        force: bool,
+    ) -> dict[str, Any] | None:
+        """Return a result dict when the target is missing/not a directory, else None."""
+        if not os.path.exists(abs_directory):
+            if force:
+                message = (
+                    f"Directory does not exist (ignored due to force=True): "
+                    f"{norm_path_str}"
+                )
+                self.report_result(message)
+                return {
+                    "success": True,
+                    "directory": directory,
+                    "message": message,
+                    "recursive": recursive,
+                    "force": force,
+                    "items_removed": 0,
+                }
+            self.report_error(f"Directory does not exist: {norm_path_str}")
+            return {
+                "success": False,
+                "error": f"Directory does not exist: {norm_path_str}",
+                "directory": directory,
+                "recursive": recursive,
+                "force": force,
+            }
+
+        if not os.path.isdir(abs_directory):
+            if force:
+                message = (
+                    f"Path is not a directory (ignored due to force=True): "
+                    f"{norm_path_str}"
+                )
+                self.report_result(message)
+                return {
+                    "success": True,
+                    "directory": directory,
+                    "message": message,
+                    "recursive": recursive,
+                    "force": force,
+                    "items_removed": 0,
+                }
+            self.report_error(f"Path is not a directory: {norm_path_str}")
+            return {
+                "success": False,
+                "error": f"Path is not a directory: {norm_path_str}",
+                "directory": directory,
+                "recursive": recursive,
+                "force": force,
+            }
+
+        return None
+
+    def _remove_recursive(
+        self, abs_directory: str, norm_path_str: str, force: bool
+    ) -> tuple[str, int]:
+        """Remove a directory recursively; returns (message, items_removed)."""
+        items_removed = _count_items(abs_directory)
+        size_str = f"({items_removed} items)"
+        self.report_progress(f" {size_str}", end="")
+
+        try:
+            # Remove recursively
+            shutil.rmtree(abs_directory)
+            return (
+                f"Successfully removed directory recursively {norm_path_str}",
+                items_removed,
+            )
+        except Exception as e:
+            if not force:
+                raise e
+            # Try alternative removal methods or just report and continue
+            self.report_warning(
+                f"Partial removal completed, some items may remain: {e!s}"
+            )
+            return (
+                f"Partially removed directory {norm_path_str} (force mode)",
+                items_removed,
+            )
+
+    def _remove_non_recursive(
+        self,
+        abs_directory: str,
+        norm_path_str: str,
+        force: bool,
+        directory: str,
+        recursive: bool,
+    ):
+        """Remove an empty directory; returns (message, items_removed) or an error dict."""
+        try:
+            os.rmdir(abs_directory)
+            return f"Successfully removed empty directory {norm_path_str}", 0
+        except OSError as e:
+            if e.errno != 39:  # Directory not empty
+                raise e
+
+            if not force:
+                self.report_error(
+                    f"Directory not empty: {norm_path_str}"
+                    f" (use recursive=True to remove"
+                    f" non-empty directories)"
+                )
+                return {
+                    "success": False,
+                    "error": (
+                        f"Directory not empty: {norm_path_str}"
+                        f" (use recursive=True to remove"
+                        f" non-empty directories)"
+                    ),
+                    "directory": directory,
+                    "recursive": recursive,
+                    "force": force,
+                }
+
+            self.report_warning(
+                "Directory not empty, attempting recursive removal (force mode)"
+            )
+            # Count items before removal
+            items_removed = _count_items(abs_directory)
+            size_str = f"({items_removed} items)"
+            self.report_progress(f" {size_str}", end="")
+            shutil.rmtree(abs_directory)
+            message = (
+                f"Successfully removed directory"
+                f" recursively {norm_path_str}"
+                f" (force mode)"
+            )
+            return message, items_removed
 
     def run(
         self, directory: str, recursive: bool = False, force: bool = False
@@ -52,122 +195,31 @@ class RemoveDirectory(BaseTool):
             # Report start
             recursive_str = "recursively" if recursive else ""
             self.report_start(
-                f"🗑️ Removing directory {norm_path_str} {recursive_str}", end=""
+                f"\U0001f5d1\ufe0f Removing directory {norm_path_str} {recursive_str}",
+                end="",
             )
 
-            if not os.path.exists(abs_directory):
-                if force:
-                    self.report_result(
-                        f"Directory does not exist (ignored due to force=True): {norm_path_str}"
-                    )
-                    return {
-                        "success": True,
-                        "directory": directory,
-                        "message": f"Directory does not exist (ignored due to force=True): {norm_path_str}",
-                        "recursive": recursive,
-                        "force": force,
-                        "items_removed": 0,
-                    }
-                else:
-                    self.report_error(f"Directory does not exist: {norm_path_str}")
-                    return {
-                        "success": False,
-                        "error": f"Directory does not exist: {norm_path_str}",
-                        "directory": directory,
-                        "recursive": recursive,
-                        "force": force,
-                    }
-
-            if not os.path.isdir(abs_directory):
-                if force:
-                    self.report_result(
-                        f"Path is not a directory (ignored due to force=True): {norm_path_str}"
-                    )
-                    return {
-                        "success": True,
-                        "directory": directory,
-                        "message": f"Path is not a directory (ignored due to force=True): {norm_path_str}",
-                        "recursive": recursive,
-                        "force": force,
-                        "items_removed": 0,
-                    }
-                else:
-                    self.report_error(f"Path is not a directory: {norm_path_str}")
-                    return {
-                        "success": False,
-                        "error": f"Path is not a directory: {norm_path_str}",
-                        "directory": directory,
-                        "recursive": recursive,
-                        "force": force,
-                    }
+            # Validate the target exists and is a directory
+            validation = self._validate_target(
+                abs_directory, norm_path_str, directory, recursive, force
+            )
+            if validation is not None:
+                return validation
 
             # Count items if recursive
             items_removed = 0
             if recursive:
-                try:
-                    # Count items before removal
-                    for root, dirs, files in os.walk(abs_directory):
-                        items_removed += len(dirs) + len(files)
-                    size_str = f"({items_removed} items)"
-                    self.report_progress(f" {size_str}", end="")
-
-                    # Remove recursively
-                    shutil.rmtree(abs_directory)
-                    message = (
-                        f"Successfully removed directory recursively {norm_path_str}"
-                    )
-                except Exception as e:
-                    if force:
-                        # Try alternative removal methods or just report and continue
-                        self.report_warning(
-                            f"Partial removal completed, some items may remain: {e!s}"
-                        )
-                        message = (
-                            f"Partially removed directory {norm_path_str} (force mode)"
-                        )
-                    else:
-                        raise e
+                message, items_removed = self._remove_recursive(
+                    abs_directory, norm_path_str, force
+                )
             else:
                 # Non-recursive removal (only empty directories)
-                try:
-                    os.rmdir(abs_directory)
-                    message = f"Successfully removed empty directory {norm_path_str}"
-                except OSError as e:
-                    if e.errno == 39:  # Directory not empty
-                        if force:
-                            self.report_warning(
-                                "Directory not empty, attempting recursive removal (force mode)"
-                            )
-                            # Count items before removal
-                            for root, dirs, files in os.walk(abs_directory):
-                                items_removed += len(dirs) + len(files)
-                            size_str = f"({items_removed} items)"
-                            self.report_progress(f" {size_str}", end="")
-                            shutil.rmtree(abs_directory)
-                            message = (
-                                f"Successfully removed directory"
-                                f" recursively {norm_path_str}"
-                                f" (force mode)"
-                            )
-                        else:
-                            self.report_error(
-                                f"Directory not empty: {norm_path_str}"
-                                f" (use recursive=True to remove"
-                                f" non-empty directories)"
-                            )
-                            return {
-                                "success": False,
-                                "error": (
-                                    f"Directory not empty: {norm_path_str}"
-                                    f" (use recursive=True to remove"
-                                    f" non-empty directories)"
-                                ),
-                                "directory": directory,
-                                "recursive": recursive,
-                                "force": force,
-                            }
-                    else:
-                        raise e
+                result = self._remove_non_recursive(
+                    abs_directory, norm_path_str, force, directory, recursive
+                )
+                if isinstance(result, dict):
+                    return result  # error result
+                message, items_removed = result
 
             self.report_result(message)
 

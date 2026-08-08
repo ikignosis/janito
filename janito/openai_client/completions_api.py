@@ -10,7 +10,6 @@ from typing import Any
 
 from openai import AuthenticationError, NotFoundError, OpenAI
 from rich.console import Console
-from rich.markdown import Markdown
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 # Import auth handling (API keys come from the auth store, not the environment)
@@ -20,16 +19,12 @@ from janito.auth_config import get_api_key, get_default_provider
 from janito.general_config import (
     get_active_provider,
     get_config_value,
-    get_masked_api_key,
     load_endpoint_from_config,
     load_max_output_tokens,
     load_model_from_config,
     load_provider_from_config,
     load_reasoning_level,
 )
-
-# Import MCP manager
-from ..mcp_manager import get_mcp_manager
 
 # Import provider configuration for base URLs and built-in defaults
 from ..provider_config import (
@@ -51,6 +46,26 @@ from ..tooling.tools_registry import get_all_tool_schemas
 
 # Import used-files tracking (best-effort, never fails)
 from ..tooling.used_files import format_used_files, reset_used_files
+
+# Shared helpers reused by every client module (token formatting, MCP
+# loading, Rich console output, auth-error explainer) and the Chat
+# Completions stream consumer.  Re-exported here so existing
+# ``completions_api.<name>`` references (including tests) keep working.
+from .client_support import (  # noqa: F401 (re-exported for backward compat)
+    _display_content,
+    _display_reasoning,
+    _display_usage,
+    _handle_auth_error,
+    _load_mcp,
+    _print_verbose_info,
+    format_tokens,
+)
+from .completions_stream import (  # noqa: F401 (re-exported for backward compat)
+    _consume_chunk,
+    _consume_stream,
+    _consume_tool_call_delta,
+    _stream_response,
+)
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
@@ -103,35 +118,6 @@ def _is_enter_pressed() -> bool:
     except Exception:
         # Never let input detection break the request flow.
         return False
-
-
-def format_tokens(count):
-    """Convert a token count to a human-readable format.
-
-    Examples:
-        2000 -> "2k"
-        4000000 -> "4m"
-        150 -> "150"
-        12345 -> "12.3k"
-    """
-    if count is None:
-        return None
-    try:
-        value = float(count)
-    except (TypeError, ValueError):
-        return count
-
-    def _format(number):
-        # Trim trailing ".0" for whole numbers (e.g. "2.0k" -> "2k")
-        if number == int(number):
-            return str(int(number))
-        return f"{number:.1f}"
-
-    if value >= 1_000_000:
-        return f"{_format(value / 1_000_000)}m"
-    if value >= 1_000:
-        return f"{_format(value / 1_000)}k"
-    return str(int(value))
 
 
 def resolve_runtime_config(
@@ -294,92 +280,6 @@ def _run_with_progress_bar(func, *args, **kwargs):
     return result[0]
 
 
-def _consume_stream(stream, cancel_event=None):
-    """Consume a streaming completion and assemble the response parts.
-
-    Returns ``(full_content, reasoning_content, tool_calls_map, usage_info)``.
-
-    When ``cancel_event`` is set (user pressed Enter while waiting), the
-    stream is abandoned as soon as the next chunk arrives.
-    """
-    collected_content: list[str] = []
-    collected_reasoning: list[str] = []
-    tool_calls_map: dict[int, dict[str, str]] = {}  # index -> {id, name, arguments}
-    usage_info = None
-
-    for chunk in stream:
-        # Honour an Enter-to-cancel request: stop consuming as soon as the
-        # next chunk arrives so the worker can close the connection.
-        if cancel_event is not None and cancel_event.is_set():
-            break
-
-        # Usage stats arrive in the final chunk when include_usage is set
-        if hasattr(chunk, "usage") and chunk.usage:
-            usage_info = chunk.usage
-
-        if not chunk.choices:
-            continue
-
-        delta = chunk.choices[0].delta
-
-        # Collect reasoning / thinking content (DeepSeek R1, OpenAI o1/o3, …)
-        for attr in ("reasoning_content", "reasoning"):
-            val = getattr(delta, attr, None)
-            if val:
-                collected_reasoning.append(val)
-                break
-
-        # Accumulate main content silently
-        if delta.content:
-            collected_content.append(delta.content)
-
-        # Accumulate tool-call deltas (split across many chunks)
-        if hasattr(delta, "tool_calls") and delta.tool_calls:
-            for tc_delta in delta.tool_calls:
-                idx = tc_delta.index
-                if idx not in tool_calls_map:
-                    tool_calls_map[idx] = {"id": "", "name": "", "arguments": ""}
-                if tc_delta.id:
-                    tool_calls_map[idx]["id"] = tc_delta.id
-                if tc_delta.function:
-                    if tc_delta.function.name:
-                        tool_calls_map[idx]["name"] = tc_delta.function.name
-                    if tc_delta.function.arguments:
-                        tool_calls_map[idx]["arguments"] += tc_delta.function.arguments
-
-    full_content = "".join(collected_content)
-    reasoning_content = "".join(collected_reasoning) if collected_reasoning else None
-    return full_content, reasoning_content, tool_calls_map, usage_info
-
-
-def _stream_response(client, call_kwargs, tools_schemas, cancel_event=None):
-    """Open a streaming completion and fully consume it.
-
-    Returns ``(full_content, reasoning_content, tool_calls_map, usage_info)``.
-
-    When ``cancel_event`` is set (user pressed Enter while waiting), the
-    stream is abandoned and the underlying connection is closed.
-    """
-    if tools_schemas:
-        logger.debug(f"Calling API (streaming) with {len(tools_schemas)} tools")
-        stream = client.chat.completions.create(
-            **call_kwargs,
-            tools=tools_schemas,
-            tool_choice="auto",
-        )
-    else:
-        logger.debug("Calling API (streaming) without tools")
-        stream = client.chat.completions.create(**call_kwargs)
-
-    try:
-        return _consume_stream(stream, cancel_event=cancel_event)
-    finally:
-        # Abort the underlying HTTP stream when the user pressed Enter so the
-        # connection is released promptly instead of streaming to completion.
-        if cancel_event is not None and cancel_event.is_set():
-            stream.close()
-
-
 def send_prompt(
     prompt: str,
     verbose: bool = False,
@@ -424,27 +324,103 @@ def send_prompt(
 
     logger.debug(f"OpenAI client created with base_url={base_url}")
 
-    # Initialize MCP manager and load services if enabled
-    mcp_manager = None
-    if use_mcp:
-        mcp_manager = get_mcp_manager()
-        try:
-            mcp_manager.load_services()
-            mcp_tools = mcp_manager.get_all_tools()
-            logger.info(
-                f"Loaded {len(mcp_tools)} MCP tools from {len(mcp_manager.connected_services)} services"
-            )
-        except Exception as e:
-            logger.warning(f"Failed to load MCP tools: {e}")
-            mcp_tools = []
-    else:
-        mcp_tools = []
-
-    # Tool executor routes tool calls to the MCP manager or the built-in
-    # registry and tracks usage/used-files/changes around each call.
+    # Initialize MCP manager and load services if enabled; the tool executor
+    # routes tool calls to the MCP manager or the built-in registry and tracks
+    # usage/used-files/changes around each call.
+    mcp_manager, mcp_tools = _load_mcp(use_mcp)
     tool_executor = ToolExecutor(mcp_manager)
+    tools_schemas = _resolve_tools(tools, mcp_tools)
 
-    # Get available tools if not explicitly provided
+    logger.debug(f"Using {len(tools_schemas)} tools total")
+
+    provider = cli_provider or get_active_provider()
+    (
+        thinking,
+        max_output_tokens,
+        max_input_tokens,
+        reasoning_level,
+    ) = _resolve_model_settings(provider, thinking, reasoning_level)
+    preserve_thinking = get_config_value("preserve_thinking")
+    if preserve_thinking is not None:
+        logger.debug(f"Using preserve_thinking from config: {preserve_thinking}")
+
+    console = Console()
+
+    # Print model and backend info only in verbose mode
+    if verbose:
+        _print_verbose_info(console, base_url, model, mcp_manager, "api.openai.com")
+
+    # Use previous messages if provided, otherwise start with the user prompt.
+    # NOTE: check `is not None` (not truthiness). An empty list is a valid,
+    # caller-owned history (e.g. after a restart or with --no-system-prompt);
+    # using a truthy check would replace it with a new local list and the
+    # appended messages would never propagate back to the caller, silently
+    # resetting the conversation history on every turn.
+    messages = previous_messages if previous_messages is not None else []
+    messages.append({"role": "user", "content": prompt})
+
+    logger.debug(f"Starting message loop with {len(messages)} messages")
+
+    while True:
+        # Build the base call parameters
+        call_kwargs = _build_call_kwargs(
+            model,
+            messages,
+            max_output_tokens,
+            reasoning_level,
+            preserve_thinking,
+            thinking,
+        )
+
+        # Consume the full stream under a progress bar. The blocking work
+        # (connection setup + full response generation) runs in a worker thread
+        # via _run_with_progress_bar while the main thread drives the spinner.
+        try:
+            (
+                full_content,
+                reasoning_content,
+                tool_calls_map,
+                usage_info,
+            ) = _run_with_progress_bar(
+                _stream_response, client, call_kwargs, tools_schemas
+            )
+        except NotFoundError as e:
+            _handle_not_found_error(e, base_url, model, console)
+            raise
+        except AuthenticationError as e:
+            _handle_auth_error(e, cli_provider, api_key, base_url, model, console)
+            raise
+
+        logger.debug("API streaming response completed")
+        _display_reasoning(reasoning_content, console)
+
+        # Display the assembled response using rich markdown
+        _display_content(full_content, console)
+
+        # Check if the model wants to call tools
+        if tool_calls_map:
+            # Build the assistant message (with tool_calls), execute every
+            # call and append the tool responses to the history, then loop to
+            # get the final response after the tool calls.
+            tool_executor.handle_tool_calls(tool_calls_map, messages, full_content)
+            continue
+
+        # No more tool calls, return the final response.
+        return _finalize_response(
+            full_content,
+            reasoning_content,
+            messages,
+            usage_info,
+            max_input_tokens,
+            max_output_tokens,
+            console,
+        )
+
+
+def _resolve_tools(
+    tools: list[dict[str, Any]] | None, mcp_tools: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """Resolve the tool schemas (built-in + MCP)."""
     if tools is None:
         # Merge built-in tools with MCP tools
         built_in_tools = get_all_tool_schemas()
@@ -455,12 +431,15 @@ def send_prompt(
     else:
         tools_schemas = tools
         logger.debug(f"Using {len(tools_schemas)} provided tools")
+    return tools_schemas
 
-    logger.debug(f"Using {len(tools_schemas)} tools total")
 
-    # Load max output tokens from general config if set
-    provider = cli_provider or get_active_provider()
-
+def _resolve_model_settings(
+    provider: str,
+    thinking: bool,
+    reasoning_level: str | None,
+) -> tuple[bool, int | None, int | None, str | None]:
+    """Resolve thinking mode, token limits and reasoning level."""
     # Thinking mode: the explicit --thinking flag wins, otherwise the
     # provider's built-in default applies (True for DeepSeek and Alibaba/Qwen,
     # which reason by default). See provider_config.PROVIDER_INFO.
@@ -485,208 +464,102 @@ def send_prompt(
     reasoning_level = reasoning_level or load_reasoning_level(provider)
     if reasoning_level is None:
         reasoning_level = get_default_reasoning_level_from_provider(provider)
+    return thinking, max_output_tokens, max_input_tokens, reasoning_level
 
-    # Check for preserve_thinking in config
-    preserve_thinking = get_config_value("preserve_thinking")
+
+def _build_call_kwargs(
+    model: str,
+    messages: list[dict[str, Any]],
+    max_output_tokens: int | None,
+    reasoning_level: str | None,
+    preserve_thinking: Any,
+    thinking: bool,
+) -> dict[str, Any]:
+    """Build the Chat Completions call parameters for one round."""
+    call_kwargs = {
+        "model": model,
+        "messages": messages,
+        "temperature": 1.0,
+    }
+
+    # Add max_tokens if max output tokens is set in config
+    if max_output_tokens is not None:
+        call_kwargs["max_completion_tokens"] = max_output_tokens
+
+    # Pass the reasoning level (reasoning_effort) when resolved.
+    if reasoning_level:
+        call_kwargs["reasoning_effort"] = reasoning_level
+
+    # Pass preserve_thinking in extra_body if defined in config
     if preserve_thinking is not None:
-        logger.debug(f"Using preserve_thinking from config: {preserve_thinking}")
+        call_kwargs.setdefault("extra_body", {})[
+            "preserve_thinking"
+        ] = preserve_thinking
 
-    console = Console()
+    # Pass enable_thinking in extra_body if thinking flag is set
+    if thinking:
+        call_kwargs.setdefault("extra_body", {})["enable_thinking"] = True
 
-    # Print model and backend info only in verbose mode
-    if verbose:
-        backend = base_url if base_url else "api.openai.com"
-        from rich.text import Text
+    call_kwargs["stream"] = True
+    call_kwargs["stream_options"] = {"include_usage": True}
+    return call_kwargs
 
-        text = Text(f"----- Model: {model} | Backend: {backend}")
-        text.stylize("white on blue")
-        console.print(text, highlight=False)
 
-        # Show MCP status in verbose mode
-        if mcp_manager and mcp_manager.connected_services:
-            services_text = Text(
-                f"----- MCP Services: {', '.join(mcp_manager.connected_services)}"
-            )
-            services_text.stylize("white on green")
-            console.print(services_text, highlight=False)
+def _handle_not_found_error(
+    e: Exception,
+    base_url: str | None,
+    model: str,
+    console: Console,
+) -> None:
+    """Explain NotFoundError (unknown model) and re-raise."""
+    if "Model not exist" in str(e) or "model not exist" in str(e).lower():
+        api_url = base_url if base_url else "https://api.openai.com"
+        console.print(
+            f"[bold red]Error: Model not found.[/bold red] "
+            f"Current model being used: [bold]{model}[/bold] | API URL: [bold]{api_url}[/bold]"
+        )
+        console.print(
+            "[dim]Please check that the model name is correct and available "
+            "for your API key/provider.[/dim]"
+        )
+        logger.error(f"Model '{model}' not found at API URL '{api_url}': {e}")
 
-    # Use previous messages if provided, otherwise start with the user prompt.
-    # NOTE: check `is not None` (not truthiness). An empty list is a valid,
-    # caller-owned history (e.g. after a restart or with --no-system-prompt);
-    # using a truthy check would replace it with a new local list and the
-    # appended messages would never propagate back to the caller, silently
-    # resetting the conversation history on every turn.
-    messages = previous_messages if previous_messages is not None else []
-    messages.append({"role": "user", "content": prompt})
 
-    logger.debug(f"Starting message loop with {len(messages)} messages")
+def _finalize_response(
+    full_content: str,
+    reasoning_content: str | None,
+    messages: list[dict[str, Any]],
+    usage_info: Any,
+    max_input_tokens: int | None,
+    max_output_tokens: int | None,
+    console: Console,
+) -> str:
+    """Record the assistant message, print the end-of-turn reports and return."""
+    # Build the assistant message with reasoning_content if available
+    assistant_message = {"role": "assistant", "content": full_content}
+    if reasoning_content:
+        assistant_message["reasoning_content"] = reasoning_content
 
-    while True:
-        # Build the base call parameters
-        call_kwargs = {
-            "model": model,
-            "messages": messages,
-            "temperature": 1.0,
-        }
+    # Add assistant message to conversation history
+    messages.append(assistant_message)
 
-        # Add max_tokens if max output tokens is set in config
-        if max_output_tokens is not None:
-            call_kwargs["max_completion_tokens"] = max_output_tokens
+    # Display the tracked used files before the token usage summary.
+    # Nothing is printed when no files were tracked (empty Text).
+    used_files_report = format_used_files()
+    if used_files_report:
+        console.print(used_files_report, highlight=False)
 
-        # Pass the reasoning level (reasoning_effort) when resolved (from
-        # --reasoning-level, per-provider config, or the built-in default).
-        if reasoning_level:
-            call_kwargs["reasoning_effort"] = reasoning_level
-
-        # Pass preserve_thinking in extra_body if defined in config
-        if preserve_thinking is not None:
-            if "extra_body" not in call_kwargs:
-                call_kwargs["extra_body"] = {}
-            call_kwargs["extra_body"]["preserve_thinking"] = preserve_thinking
-
-        # Pass enable_thinking in extra_body if thinking flag is set
-        if thinking:
-            if "extra_body" not in call_kwargs:
-                call_kwargs["extra_body"] = {}
-            call_kwargs["extra_body"]["enable_thinking"] = True
-
-        # ------ Streaming API call ------
-        call_kwargs["stream"] = True
-        call_kwargs["stream_options"] = {"include_usage": True}
-
-        # Consume the full stream under a progress bar. The blocking work
-        # (connection setup + full response generation) runs in a worker thread
-        # via _run_with_progress_bar while the main thread drives the spinner,
-        # mirroring the pre-streaming behaviour where the spinner covered the
-        # entire request.
-        try:
-            (
-                full_content,
-                reasoning_content,
-                tool_calls_map,
-                usage_info,
-            ) = _run_with_progress_bar(
-                _stream_response, client, call_kwargs, tools_schemas
-            )
-        except NotFoundError as e:
-            if "Model not exist" in str(e) or "model not exist" in str(e).lower():
-                api_url = base_url if base_url else "https://api.openai.com"
-                console.print(
-                    f"[bold red]Error: Model not found.[/bold red] "
-                    f"Current model being used: [bold]{model}[/bold] | API URL: [bold]{api_url}[/bold]"
-                )
-                console.print(
-                    "[dim]Please check that the model name is correct and available "
-                    "for your API key/provider.[/dim]"
-                )
-                logger.error(f"Model '{model}' not found at API URL '{api_url}': {e}")
-            raise
-        except AuthenticationError as e:
-            provider = cli_provider or get_active_provider()
-            masked_key = get_masked_api_key(api_key)
-            api_url = base_url if base_url else "https://api.openai.com"
-            console.print(
-                "[bold red]Error: Authentication failed (invalid API key).[/bold red]"
-            )
-            console.print(f"  Provider: [bold]{provider}[/bold]")
-            console.print(f"  Model:    [bold]{model}[/bold]")
-            console.print(f"  API URL:  [bold]{api_url}[/bold]")
-            console.print(f"  API Key:  [bold]{masked_key}[/bold]")
-            console.print(
-                f"[dim]Please verify your API key for the '{provider}' provider "
-                f"and try again.[/dim]"
-            )
-            logger.error(
-                f"Authentication failed - provider: {provider}, model: {model}, "
-                f"api_url: {api_url}, api_key: {masked_key}: {e}"
-            )
-            raise
-
-        logger.debug("API streaming response completed")
-        if reasoning_content:
-            from rich.panel import Panel
-
-            console.print(
-                Panel(
-                    Markdown(reasoning_content),
-                    title="[bold cyan]\U0001f4ad Reasoning[/bold cyan]",
-                    border_style="cyan",
-                    padding=(1, 2),
-                )
-            )
-            logger.debug("Reasoning content displayed")
-
-        # Display the assembled response using rich markdown
-        if full_content:
-            console.print(Markdown(full_content))
-
-        # Check if the model wants to call tools
-        if tool_calls_map:
-            # Build the assistant message (with tool_calls), execute every
-            # call and append the tool responses to the history, then loop to
-            # get the final response after the tool calls.
-            tool_executor.handle_tool_calls(tool_calls_map, messages, full_content)
-            continue
-        else:
-            # No more tool calls, return the final response
-            # Build the assistant message with reasoning_content if available
-            assistant_message = {"role": "assistant", "content": full_content}
-            if reasoning_content:
-                assistant_message["reasoning_content"] = reasoning_content
-
-            # Add assistant message to conversation history
-            messages.append(assistant_message)
-
-            # Display the tracked used files before the token usage summary.
-            # Nothing is printed when no files were tracked (empty Text).
-            used_files_report = format_used_files()
-            if used_files_report:
-                console.print(used_files_report, highlight=False)
-
-            # Display token usage with magenta background
-            if usage_info:
-                total_tokens = getattr(usage_info, "total_tokens", None)
-                input_tokens = getattr(usage_info, "prompt_tokens", None)
-                output_tokens = getattr(usage_info, "completion_tokens", None)
-                cached_tokens = None
-                if (
-                    hasattr(usage_info, "prompt_tokens_details")
-                    and usage_info.prompt_tokens_details
-                ):
-                    cached_tokens = getattr(
-                        usage_info.prompt_tokens_details, "cached_tokens", None
-                    )
-
-                from rich.text import Text
-
-                parts = []
-                if total_tokens is not None:
-                    parts.append(f"Total: {format_tokens(total_tokens)}")
-                if input_tokens is not None:
-                    if max_input_tokens is not None:
-                        parts.append(
-                            f"In: {format_tokens(input_tokens)}/{format_tokens(max_input_tokens)}"
-                        )
-                    else:
-                        parts.append(f"In: {format_tokens(input_tokens)}")
-                if output_tokens is not None:
-                    if max_output_tokens is not None:
-                        parts.append(
-                            f"Out: {format_tokens(output_tokens)}/{format_tokens(max_output_tokens)}"
-                        )
-                    else:
-                        parts.append(f"Out: {format_tokens(output_tokens)}")
-                if cached_tokens is not None:
-                    parts.append(f"Cached: {format_tokens(cached_tokens)}")
-                parts.append(f"Messages: {len(messages)}")
-
-                token_text = Text(f"=== {' | '.join(parts)} ===")
-                token_text.stylize("white on magenta")
-                console.print(token_text, highlight=False)
-                logger.info(
-                    f"Request completed: total={total_tokens} tokens "
-                    f"(in={input_tokens}, out={output_tokens}, "
-                    f"cached={cached_tokens}, max={max_output_tokens}), "
-                    f"{len(messages)} messages"
-                )
-            return full_content
+    # Display token usage with magenta background
+    if usage_info:
+        _display_usage(
+            usage_info,
+            max_input_tokens,
+            max_output_tokens,
+            len(messages),
+            console,
+            label="Messages",
+            input_attr="prompt_tokens",
+            output_attr="completion_tokens",
+            cached_details_attr="prompt_tokens_details",
+        )
+    return full_content

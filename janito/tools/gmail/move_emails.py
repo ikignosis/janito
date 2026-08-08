@@ -11,7 +11,14 @@ from typing import Any
 
 from ...tooling import BaseTool
 from ...tooling.decorator import tool
-from .imap_utils import build_search_criteria, safe_decode
+from .imap_utils import (
+    build_search_criteria,
+    connect_gmail,
+    get_gmail_credentials,
+    missing_password_result,
+    missing_username_result,
+    safe_decode,
+)
 
 
 @tool(permissions="rw")
@@ -33,6 +40,205 @@ class MoveEmails(BaseTool):
 
     IMAP_SERVER = "imap.gmail.com"
     IMAP_PORT = 993
+
+    def _select_folder(
+        self, mail, folder: str, target_folder: str
+    ) -> dict[str, Any] | None:
+        """Select the source folder; returns an error result dict or None."""
+        status, messages = mail.select(folder)
+        if status != "OK":
+            mail.logout()
+            self.report_error(f"Failed to select source folder: {folder}")
+            return {
+                "success": False,
+                "error": f"Failed to select source folder '{folder}'",
+                "source_folder": folder,
+                "target_folder": target_folder,
+            }
+        return None
+
+    def _move_one(self, mail, msg_id, target_folder: str) -> tuple[bool, str | None]:
+        """Move a single message; returns (moved, failed_id or None)."""
+        try:
+            # Try MOVE command first (Gmail-specific)
+            status, response = mail.move(msg_id, target_folder)
+            if status == "OK":
+                return True, None
+            return False, safe_decode(msg_id)
+        except imaplib.IMAP4.error:
+            # Fallback: COPY then DELETE
+            try:
+                copy_status, _ = mail.copy(msg_id, target_folder)
+                if copy_status == "OK":
+                    # Mark original for deletion
+                    mail.store(msg_id, "+FLAGS", "\\Deleted")
+                    return True, None
+                return False, safe_decode(msg_id)
+            except Exception:
+                return False, safe_decode(msg_id)
+        except Exception:
+            return False, safe_decode(msg_id)
+
+    def _move_messages(
+        self, mail, ids_to_move, target_folder: str
+    ) -> tuple[int, list[str]]:
+        """Move all messages; returns (moved_count, failed_ids)."""
+        moved_count = 0
+        failed_ids = []
+        for msg_id in ids_to_move:
+            moved, failed_id = self._move_one(mail, msg_id, target_folder)
+            if moved:
+                moved_count += 1
+            else:
+                failed_ids.append(failed_id)
+        return moved_count, failed_ids
+
+    def _do_move(
+        self,
+        source_folder: str,
+        target_folder: str,
+        message_ids: list[str] | None,
+        search_query: str | None,
+        from_address: str | None,
+        subject_contains: str | None,
+        older_than_days: int | None,
+        dry_run: bool,
+    ) -> dict[str, Any]:
+        """Perform the move (or dry-run count); returns the result dict."""
+        action = "Counting (dry run)" if dry_run else "Moving"
+        self.report_start(
+            f"\ud83d\udce6 {action} emails from {source_folder} to {target_folder}"
+        )
+
+        username, password = get_gmail_credentials()
+
+        if not username:
+            self.report_error("Gmail username not found in secrets")
+            return missing_username_result(
+                source_folder=source_folder, target_folder=target_folder
+            )
+
+        if not password:
+            self.report_error("Gmail password not found in secrets")
+            return missing_password_result(
+                source_folder=source_folder, target_folder=target_folder
+            )
+
+        # Connect to Gmail IMAP server
+        self.report_progress(" Connecting to imap.gmail.com...")
+
+        mail = connect_gmail(username, password, self.IMAP_SERVER, self.IMAP_PORT)
+
+        # Select the source folder
+        select_error = self._select_folder(mail, source_folder, target_folder)
+        if select_error:
+            return select_error
+
+        # Build search criteria
+        search_criteria = build_search_criteria(
+            message_ids=message_ids,
+            search_query=search_query,
+            from_address=from_address,
+            subject_contains=subject_contains,
+            older_than_days=older_than_days,
+        )
+
+        if not search_criteria:
+            mail.logout()
+            self.report_error("No search criteria specified")
+            return {
+                "success": False,
+                "error": (
+                    "Must specify at least one criteria:"
+                    " message_ids, search_query, from_address,"
+                    " subject_contains, or older_than_days"
+                ),
+                "source_folder": source_folder,
+                "target_folder": target_folder,
+            }
+
+        self.report_progress("\ud83d\udd0d Searching for emails to move...")
+
+        # Search for emails
+        status, message_ids_list = mail.search(None, search_criteria)
+
+        if status != "OK":
+            mail.logout()
+            self.report_error("Failed to search emails")
+            return {
+                "success": False,
+                "error": "Failed to search emails",
+                "source_folder": source_folder,
+                "target_folder": target_folder,
+            }
+
+        # Get list of message IDs
+        ids_to_move = message_ids_list[0].split()
+        found_count = len(ids_to_move)
+
+        if found_count == 0:
+            mail.logout()
+            self.report_result("No emails found matching criteria")
+            return {
+                "success": True,
+                "source_folder": source_folder,
+                "target_folder": target_folder,
+                "found_count": 0,
+                "moved_count": 0,
+                "message_ids": [],
+                "dry_run": dry_run,
+            }
+
+        id_strings = [safe_decode(mid) for mid in ids_to_move]
+
+        if dry_run:
+            mail.logout()
+            self.report_result(
+                f"DRY RUN: Would move {found_count} emails from "
+                f"{source_folder} to {target_folder}"
+            )
+            return {
+                "success": True,
+                "source_folder": source_folder,
+                "target_folder": target_folder,
+                "found_count": found_count,
+                "moved_count": 0,
+                "message_ids": id_strings,
+                "dry_run": True,
+            }
+
+        # Copy emails to target folder
+        self.report_progress(f" Copying {found_count} emails to {target_folder}...")
+
+        moved_count, failed_ids = self._move_messages(mail, ids_to_move, target_folder)
+
+        # Expunge deleted messages from source
+        if moved_count > 0:
+            self.report_progress(" Expunging moved emails from source...")
+            mail.expunge()
+
+        # Logout
+        mail.logout()
+
+        self.report_result(
+            f"Moved {moved_count} emails from {source_folder} to {target_folder}"
+        )
+
+        result = {
+            "success": True,
+            "source_folder": source_folder,
+            "target_folder": target_folder,
+            "found_count": found_count,
+            "moved_count": moved_count,
+            "message_ids": id_strings,
+            "dry_run": False,
+        }
+
+        if failed_ids:
+            result["failed_ids"] = failed_ids
+            result["warning"] = f"Failed to move {len(failed_ids)} emails"
+
+        return result
 
     def run(
         self,
@@ -70,189 +276,16 @@ class MoveEmails(BaseTool):
                 - 'error': error message if operation failed
         """
         try:
-            from janito.secrets_config import get_secret
-
-            action = "Counting (dry run)" if dry_run else "Moving"
-            self.report_start(
-                f"📦 {action} emails from {source_folder} to {target_folder}"
+            return self._do_move(
+                source_folder,
+                target_folder,
+                message_ids,
+                search_query,
+                from_address,
+                subject_contains,
+                older_than_days,
+                dry_run,
             )
-
-            username = get_secret("gmail_username")
-            password = get_secret("gmail_password")
-
-            if not username:
-                self.report_error("Gmail username not found in secrets")
-                return {
-                    "success": False,
-                    "error": (
-                        "Secret 'gmail_username' not configured."
-                        " Use: janito --set-secret"
-                        " gmail_username=your-email@gmail.com"
-                    ),
-                    "source_folder": source_folder,
-                    "target_folder": target_folder,
-                }
-
-            if not password:
-                self.report_error("Gmail password not found in secrets")
-                return {
-                    "success": False,
-                    "error": (
-                        "Secret 'gmail_password' not configured."
-                        " Use: janito --set-secret"
-                        " gmail_password=your-app-password"
-                    ),
-                    "source_folder": source_folder,
-                    "target_folder": target_folder,
-                }
-
-            # Connect to Gmail IMAP server
-            self.report_progress(" Connecting to imap.gmail.com...")
-
-            mail = imaplib.IMAP4_SSL(self.IMAP_SERVER, self.IMAP_PORT)
-            mail.login(username, password)
-
-            # Select the source folder
-            status, messages = mail.select(source_folder)
-            if status != "OK":
-                mail.logout()
-                self.report_error(f"Failed to select source folder: {source_folder}")
-                return {
-                    "success": False,
-                    "error": f"Failed to select source folder '{source_folder}'",
-                    "source_folder": source_folder,
-                    "target_folder": target_folder,
-                }
-
-            # Build search criteria
-            search_criteria = build_search_criteria(
-                message_ids=message_ids,
-                search_query=search_query,
-                from_address=from_address,
-                subject_contains=subject_contains,
-                older_than_days=older_than_days,
-            )
-
-            if not search_criteria:
-                mail.logout()
-                self.report_error("No search criteria specified")
-                return {
-                    "success": False,
-                    "error": (
-                        "Must specify at least one criteria:"
-                        " message_ids, search_query, from_address,"
-                        " subject_contains, or older_than_days"
-                    ),
-                    "source_folder": source_folder,
-                    "target_folder": target_folder,
-                }
-
-            self.report_progress("🔍 Searching for emails to move...")
-
-            # Search for emails
-            status, message_ids_list = mail.search(None, search_criteria)
-
-            if status != "OK":
-                mail.logout()
-                self.report_error("Failed to search emails")
-                return {
-                    "success": False,
-                    "error": "Failed to search emails",
-                    "source_folder": source_folder,
-                    "target_folder": target_folder,
-                }
-
-            # Get list of message IDs
-            ids_to_move = message_ids_list[0].split()
-            found_count = len(ids_to_move)
-
-            if found_count == 0:
-                mail.logout()
-                self.report_result("No emails found matching criteria")
-                return {
-                    "success": True,
-                    "source_folder": source_folder,
-                    "target_folder": target_folder,
-                    "found_count": 0,
-                    "moved_count": 0,
-                    "message_ids": [],
-                    "dry_run": dry_run,
-                }
-
-            id_strings = [safe_decode(mid) for mid in ids_to_move]
-
-            if dry_run:
-                mail.logout()
-                self.report_result(
-                    f"DRY RUN: Would move {found_count} emails from {source_folder} to {target_folder}"
-                )
-                return {
-                    "success": True,
-                    "source_folder": source_folder,
-                    "target_folder": target_folder,
-                    "found_count": found_count,
-                    "moved_count": 0,
-                    "message_ids": id_strings,
-                    "dry_run": True,
-                }
-
-            # Copy emails to target folder
-            self.report_progress(f" Copying {found_count} emails to {target_folder}...")
-
-            moved_count = 0
-            failed_ids = []
-
-            for msg_id in ids_to_move:
-                try:
-                    # Try MOVE command first (Gmail-specific)
-                    status, response = mail.move(msg_id, target_folder)
-                    if status == "OK":
-                        moved_count += 1
-                    else:
-                        failed_ids.append(safe_decode(msg_id))
-                except imaplib.IMAP4.error:
-                    # Fallback: COPY then DELETE
-                    try:
-                        copy_status, _ = mail.copy(msg_id, target_folder)
-                        if copy_status == "OK":
-                            # Mark original for deletion
-                            mail.store(msg_id, "+FLAGS", "\\Deleted")
-                            moved_count += 1
-                        else:
-                            failed_ids.append(safe_decode(msg_id))
-                    except Exception:
-                        failed_ids.append(safe_decode(msg_id))
-                except Exception:
-                    failed_ids.append(safe_decode(msg_id))
-
-            # Expunge deleted messages from source
-            if moved_count > 0:
-                self.report_progress(" Expunging moved emails from source...")
-                mail.expunge()
-
-            # Logout
-            mail.logout()
-
-            self.report_result(
-                f"Moved {moved_count} emails from {source_folder} to {target_folder}"
-            )
-
-            result = {
-                "success": True,
-                "source_folder": source_folder,
-                "target_folder": target_folder,
-                "found_count": found_count,
-                "moved_count": moved_count,
-                "message_ids": id_strings,
-                "dry_run": False,
-            }
-
-            if failed_ids:
-                result["failed_ids"] = failed_ids
-                result["warning"] = f"Failed to move {len(failed_ids)} emails"
-
-            return result
-
         except imaplib.IMAP4.error as e:
             error_msg = safe_decode(e.args[0]) if e.args else str(e)
             self.report_error(f"IMAP error: {error_msg}")

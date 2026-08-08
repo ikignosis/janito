@@ -18,6 +18,64 @@ from ...tooling import BaseTool, norm_path
 from ...tooling.decorator import tool
 
 
+def _read_lines(f, max_lines: int | None) -> tuple[str, int]:
+    """Read up to ``max_lines`` from an open file; returns (content, lines_read)."""
+    if max_lines is None:
+        content = f.read()
+        return content, content.count("\n") + 1
+
+    lines = []
+    for j, line in enumerate(f):
+        if j >= max_lines:
+            break
+        lines.append(line.rstrip("\n"))
+    return "\n".join(lines), len(lines)
+
+
+def _read_one_file(
+    filepath: str, max_lines: int | None, index: int, total: int, tool
+) -> dict[str, Any]:
+    """Read a single file, returning a per-file result dict."""
+    abs_filepath = os.path.abspath(filepath)
+    norm_path_str = norm_path(abs_filepath)
+
+    # Show progress for each file
+    if total > 1:
+        tool.report_progress(f"\n  [{index + 1}/{total}] {norm_path_str}", end="")
+    else:
+        tool.report_progress(f" {norm_path_str}", end="")
+
+    if not os.path.exists(abs_filepath):
+        return {
+            "filepath": filepath,
+            "success": False,
+            "error": f"File does not exist: {norm_path_str}",
+        }
+
+    if not os.path.isfile(abs_filepath):
+        return {
+            "filepath": filepath,
+            "success": False,
+            "error": f"Path is not a file: {norm_path_str}",
+        }
+
+    # Get file size for progress indication
+    file_size = os.path.getsize(abs_filepath)
+    if file_size > 0:
+        tool.report_progress(f" ({file_size} bytes)", end="")
+
+    with open(abs_filepath, "r", encoding="utf-8") as f:
+        content, lines_read = _read_lines(f, max_lines)
+
+    return {
+        "filepath": filepath,
+        "success": True,
+        "content": content,
+        "lines_read": lines_read,
+        "max_lines": max_lines,
+    }
+
+
 @tool(permissions="r")
 class ReadMultipleFiles(BaseTool):
     """
@@ -65,78 +123,27 @@ class ReadMultipleFiles(BaseTool):
 
         try:
             # Report start
-            self.report_start(f"📖 Reading {len(filepath_list)} files", end="")
+            self.report_start(f"\U0001f4d6 Reading {len(filepath_list)} files", end="")
 
             results = []
             successful_count = 0
 
             for i, filepath in enumerate(filepath_list):
                 try:
-                    abs_filepath = os.path.abspath(filepath)
-                    norm_path_str = norm_path(abs_filepath)
-
-                    # Show progress for each file
-                    if len(filepath_list) > 1:
-                        self.report_progress(
-                            f"\n  [{i+1}/{len(filepath_list)}] {norm_path_str}", end=""
-                        )
-                    else:
-                        self.report_progress(f" {norm_path_str}", end="")
-
-                    if not os.path.exists(abs_filepath):
-                        error_result = {
-                            "filepath": filepath,
-                            "success": False,
-                            "error": f"File does not exist: {norm_path_str}",
-                        }
-                        results.append(error_result)
-                        continue
-
-                    if not os.path.isfile(abs_filepath):
-                        error_result = {
-                            "filepath": filepath,
-                            "success": False,
-                            "error": f"Path is not a file: {norm_path_str}",
-                        }
-                        results.append(error_result)
-                        continue
-
-                    # Get file size for progress indication
-                    file_size = os.path.getsize(abs_filepath)
-                    if file_size > 0:
-                        size_str = f"({file_size} bytes)"
-                        self.report_progress(f" {size_str}", end="")
-
-                    with open(abs_filepath, "r", encoding="utf-8") as f:
-                        if max_lines is not None:
-                            lines = []
-                            for j, line in enumerate(f):
-                                if j >= max_lines:
-                                    break
-                                lines.append(line.rstrip("\n"))
-                            content = "\n".join(lines)
-                            lines_read = len(lines)
-                        else:
-                            content = f.read()
-                            lines_read = content.count("\n") + 1
-
-                    success_result = {
-                        "filepath": filepath,
-                        "success": True,
-                        "content": content,
-                        "lines_read": lines_read,
-                        "max_lines": max_lines,
-                    }
-                    results.append(success_result)
-                    successful_count += 1
-
+                    result = _read_one_file(
+                        filepath, max_lines, i, len(filepath_list), self
+                    )
+                    results.append(result)
+                    if result["success"]:
+                        successful_count += 1
                 except Exception as e:
-                    error_result = {
-                        "filepath": filepath,
-                        "success": False,
-                        "error": str(e),
-                    }
-                    results.append(error_result)
+                    results.append(
+                        {
+                            "filepath": filepath,
+                            "success": False,
+                            "error": str(e),
+                        }
+                    )
 
             # Report final results
             total_files = len(filepath_list)

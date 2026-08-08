@@ -30,6 +30,94 @@ class DownloadOneDriveFile(BaseTool):
         https://docs.microsoft.com/en-us/graph/api/driveitem-get-content
     """
 
+    def _fetch_content(self, client, endpoint: str, path: str):
+        """Download raw content from Graph; returns (content, error_dict)."""
+        self.report_progress(" Downloading from Microsoft Graph...")
+
+        # Make request without automatic JSON parsing (binary content)
+        access_token = client._get_access_token()
+        url = f"{client.GRAPH_BASE_URL}{endpoint}"
+
+        import requests
+
+        response = requests.get(
+            url, headers={"Authorization": f"Bearer {access_token}"}, timeout=60
+        )
+
+        if response.status_code == 404:
+            self.report_error(f"File not found: {path}")
+            return None, {
+                "success": False,
+                "error": f"File not found: {path}",
+                "path": path,
+            }
+
+        if response.status_code >= 400:
+            try:
+                error_data = response.json()
+                error_message = error_data.get("error", {}).get(
+                    "message", response.text
+                )
+            except (ValueError, AttributeError):
+                error_message = response.text
+            self.report_error(f"Download failed: {error_message}")
+            return None, {
+                "success": False,
+                "error": f"Download failed: {error_message}",
+                "path": path,
+            }
+
+        return response.content, None
+
+    def _save_or_encode(
+        self, content: bytes, output_path: str | None, as_base64: bool, file_size: int
+    ) -> dict[str, Any]:
+        """Save the content to a file or return it encoded; returns result updates."""
+        result: dict[str, Any] = {}
+
+        # Save to file or return content
+        if output_path:
+            # Ensure directory exists
+            output_dir = os.path.dirname(output_path)
+            if output_dir:
+                os.makedirs(output_dir, exist_ok=True)
+
+            with open(output_path, "wb") as f:
+                f.write(content)
+
+            self.report_result(f"Saved to: {output_path}")
+            result["local_path"] = output_path
+
+        elif as_base64:
+            # Return base64 encoded content
+            b64_content = base64.b64encode(content).decode("utf-8")
+            result["content"] = b64_content
+            result["content_type"] = "base64"
+            self.report_result(f"Returned base64 content ({file_size} bytes)")
+
+        else:
+            # Try to decode as text for small files
+            try:
+                text_content = content.decode("utf-8")
+                if len(text_content) > 5000:
+                    text_content = (
+                        text_content[:5000]
+                        + f"\n... [truncated, total {len(text_content)} chars]"
+                    )
+                result["content"] = text_content
+                result["content_type"] = "text"
+                self.report_result(f"Returned text content ({file_size} bytes)")
+            except UnicodeDecodeError:
+                # Binary file - return base64
+                b64_content = base64.b64encode(content).decode("utf-8")
+                result["content"] = b64_content
+                result["content_type"] = "base64"
+                self.report_result(
+                    f"Binary file - returned base64 content ({file_size} bytes)"
+                )
+
+        return result
+
     def run(
         self, path: str, output_path: str | None = None, as_base64: bool = False
     ) -> dict[str, Any]:
@@ -54,7 +142,7 @@ class DownloadOneDriveFile(BaseTool):
         try:
             from .base_client import OneDriveBaseClient
 
-            self.report_start(f"⬇️ Downloading file: {path}")
+            self.report_start(f"\u2b07\ufe0f Downloading file: {path}")
 
             client = OneDriveBaseClient()
 
@@ -62,87 +150,18 @@ class DownloadOneDriveFile(BaseTool):
             encoded_path = path.replace(" ", "%20").lstrip("/")
             endpoint = f"/me/drive/root:/{encoded_path}:/content"
 
-            self.report_progress(" Downloading from Microsoft Graph...")
+            content, error = self._fetch_content(client, endpoint, path)
+            if error:
+                return error
 
-            # Make request without automatic JSON parsing (binary content)
-            access_token = client._get_access_token()
-            url = f"{client.GRAPH_BASE_URL}{endpoint}"
-
-            import requests
-
-            response = requests.get(
-                url, headers={"Authorization": f"Bearer {access_token}"}, timeout=60
-            )
-
-            if response.status_code == 404:
-                self.report_error(f"File not found: {path}")
-                return {
-                    "success": False,
-                    "error": f"File not found: {path}",
-                    "path": path,
-                }
-
-            if response.status_code >= 400:
-                try:
-                    error_data = response.json()
-                    error_message = error_data.get("error", {}).get(
-                        "message", response.text
-                    )
-                except (ValueError, AttributeError):
-                    error_message = response.text
-                self.report_error(f"Download failed: {error_message}")
-                return {
-                    "success": False,
-                    "error": f"Download failed: {error_message}",
-                    "path": path,
-                }
-
-            content = response.content
             file_size = len(content)
 
             self.report_progress(f" Downloaded {file_size} bytes")
 
             result = {"success": True, "path": path, "size": file_size}
-
-            # Save to file or return content
-            if output_path:
-                # Ensure directory exists
-                output_dir = os.path.dirname(output_path)
-                if output_dir:
-                    os.makedirs(output_dir, exist_ok=True)
-
-                with open(output_path, "wb") as f:
-                    f.write(content)
-
-                self.report_result(f"Saved to: {output_path}")
-                result["local_path"] = output_path
-
-            elif as_base64:
-                # Return base64 encoded content
-                b64_content = base64.b64encode(content).decode("utf-8")
-                result["content"] = b64_content
-                result["content_type"] = "base64"
-                self.report_result(f"Returned base64 content ({file_size} bytes)")
-            else:
-                # Try to decode as text for small files
-                try:
-                    text_content = content.decode("utf-8")
-                    if len(text_content) > 5000:
-                        text_content = (
-                            text_content[:5000]
-                            + f"\n... [truncated, total {len(text_content)} chars]"
-                        )
-                    result["content"] = text_content
-                    result["content_type"] = "text"
-                    self.report_result(f"Returned text content ({file_size} bytes)")
-                except UnicodeDecodeError:
-                    # Binary file - return base64
-                    b64_content = base64.b64encode(content).decode("utf-8")
-                    result["content"] = b64_content
-                    result["content_type"] = "base64"
-                    self.report_result(
-                        f"Binary file - returned base64 content ({file_size} bytes)"
-                    )
+            result.update(
+                self._save_or_encode(content, output_path, as_base64, file_size)
+            )
 
             return result
 

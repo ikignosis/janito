@@ -14,7 +14,14 @@ from typing import Any
 
 from ...tooling import BaseTool
 from ...tooling.decorator import tool
-from .imap_utils import build_search_criteria, safe_decode
+from .imap_utils import (
+    build_search_criteria,
+    connect_gmail,
+    get_gmail_credentials,
+    missing_password_result,
+    missing_username_result,
+    safe_decode,
+)
 
 
 @tool(permissions="rw")
@@ -36,6 +43,178 @@ class DeleteEmails(BaseTool):
 
     IMAP_SERVER = "imap.gmail.com"
     IMAP_PORT = 993
+
+    def _select_folder(self, mail, folder: str) -> dict[str, Any] | None:
+        """Select the mailbox; returns an error result dict or None."""
+        status, messages = mail.select(folder)
+        if status != "OK":
+            mail.logout()
+            self.report_error(f"Failed to select folder: {folder}")
+            return {
+                "success": False,
+                "error": (
+                    f"Failed to select folder '{folder}':"
+                    f" {safe_decode(messages[0]) if messages else 'Unknown error'}"
+                ),
+                "folder": folder,
+            }
+        return None
+
+    def _mark_deleted(self, mail, ids_to_delete) -> int:
+        """Mark message IDs as deleted using the STORE command."""
+        deleted_count = 0
+        for msg_id in ids_to_delete:
+            try:
+                status, response = mail.store(msg_id, "+FLAGS", "\\Deleted")
+                if status == "OK":
+                    deleted_count += 1
+            except Exception:
+                continue
+        return deleted_count
+
+    def _do_delete(
+        self,
+        folder: str,
+        message_ids: list[str] | None,
+        search_query: str | None,
+        older_than_days: int | None,
+        older_than_date: str | None,
+        from_address: str | None,
+        subject_contains: str | None,
+        dry_run: bool,
+    ) -> dict[str, Any]:
+        """Perform the delete (or dry-run count); returns the result dict."""
+        action = "Counting (dry run)" if dry_run else "Deleting"
+        self.report_start(f"\ud83d\uddd1\ufe0f {action} emails in {folder}")
+
+        username, password = get_gmail_credentials()
+
+        if not username:
+            self.report_error("Gmail username not found in secrets")
+            return missing_username_result(folder=folder)
+
+        if not password:
+            self.report_error("Gmail password not found in secrets")
+            return missing_password_result(folder=folder)
+
+        # Connect to Gmail IMAP server
+        self.report_progress(" Connecting to imap.gmail.com...")
+
+        mail = connect_gmail(username, password, self.IMAP_SERVER, self.IMAP_PORT)
+
+        # Select the mailbox
+        select_error = self._select_folder(mail, folder)
+        if select_error:
+            return select_error
+
+        # Build search criteria
+        search_criteria = build_search_criteria(
+            message_ids=message_ids,
+            search_query=search_query,
+            older_than_days=older_than_days,
+            older_than_date=older_than_date,
+            from_address=from_address,
+            subject_contains=subject_contains,
+        )
+
+        if not search_criteria:
+            mail.logout()
+            self.report_error("No deletion criteria specified")
+            return {
+                "success": False,
+                "error": (
+                    "Must specify at least one deletion criteria:"
+                    " message_ids, search_query, older_than_days,"
+                    " older_than_date, from_address, or"
+                    " subject_contains"
+                ),
+                "folder": folder,
+            }
+
+        self.report_progress(" Searching for emails to delete...")
+
+        # Search for emails matching criteria
+        status, message_ids_list = mail.search(None, search_criteria)
+
+        if status != "OK":
+            mail.logout()
+            self.report_error("Failed to search emails")
+            return {
+                "success": False,
+                "error": "Failed to search emails",
+                "folder": folder,
+            }
+
+        # Get list of message IDs
+        ids_to_delete = message_ids_list[0].split()
+        found_count = len(ids_to_delete)
+
+        if found_count == 0:
+            mail.logout()
+            self.report_result("No emails found matching deletion criteria")
+            return {
+                "success": True,
+                "folder": folder,
+                "found_count": 0,
+                "deleted_count": 0,
+                "message_ids": [],
+                "dry_run": dry_run,
+            }
+
+        # Convert bytes to strings for display
+        id_strings = [safe_decode(mid) for mid in ids_to_delete]
+
+        if dry_run:
+            self.report_progress(
+                f" Found {found_count} emails matching criteria (dry run - no deletion)"
+            )
+            mail.logout()
+            self.report_result(
+                f"DRY RUN: Would delete {found_count} emails: {id_strings[:10]}"
+                f"{'...' if found_count > 10 else ''}"
+            )
+            return {
+                "success": True,
+                "folder": folder,
+                "found_count": found_count,
+                "deleted_count": 0,
+                "message_ids": id_strings,
+                "dry_run": True,
+            }
+
+        # Confirm deletion with Gmail
+        self.report_progress(f" Found {found_count} emails, marking as deleted...")
+
+        # Mark emails as deleted using STORE command
+        deleted_count = self._mark_deleted(mail, ids_to_delete)
+
+        self.report_progress(f" Marked {deleted_count} emails as deleted, expunging...")
+
+        # Permanently delete marked emails
+        status, expunge_result = mail.expunge()
+
+        # Logout
+        mail.logout()
+
+        if status == "OK":
+            self.report_result(
+                f"Successfully deleted {deleted_count} emails from {folder}"
+            )
+            return {
+                "success": True,
+                "folder": folder,
+                "found_count": found_count,
+                "deleted_count": deleted_count,
+                "message_ids": id_strings,
+                "dry_run": False,
+            }
+        else:
+            self.report_error(f"Expunge returned status: {status}")
+            return {
+                "success": False,
+                "error": f"Expunge failed with status: {status}",
+                "folder": folder,
+            }
 
     def run(
         self,
@@ -79,176 +258,16 @@ class DeleteEmails(BaseTool):
                 - 'error': error message if operation failed (only present if success=False)
         """
         try:
-            from janito.secrets_config import get_secret
-
-            # Fetch credentials from secrets
-            action = "Counting (dry run)" if dry_run else "Deleting"
-            self.report_start(f"🗑️ {action} emails in {folder}")
-
-            username = get_secret("gmail_username")
-            password = get_secret("gmail_password")
-
-            if not username:
-                self.report_error("Gmail username not found in secrets")
-                return {
-                    "success": False,
-                    "error": (
-                        "Secret 'gmail_username' not configured."
-                        " Use: janito --set-secret"
-                        " gmail_username=your-email@gmail.com"
-                    ),
-                    "folder": folder,
-                }
-
-            if not password:
-                self.report_error("Gmail password not found in secrets")
-                return {
-                    "success": False,
-                    "error": (
-                        "Secret 'gmail_password' not configured."
-                        " Use: janito --set-secret"
-                        " gmail_password=your-app-password"
-                    ),
-                    "folder": folder,
-                }
-
-            # Connect to Gmail IMAP server
-            self.report_progress(" Connecting to imap.gmail.com...")
-
-            mail = imaplib.IMAP4_SSL(self.IMAP_SERVER, self.IMAP_PORT)
-            mail.login(username, password)
-
-            # Select the mailbox
-            status, messages = mail.select(folder)
-            if status != "OK":
-                mail.logout()
-                self.report_error(f"Failed to select folder: {folder}")
-                return {
-                    "success": False,
-                    "error": (
-                        f"Failed to select folder '{folder}':"
-                        f" {safe_decode(messages[0]) if messages else 'Unknown error'}"
-                    ),
-                    "folder": folder,
-                }
-
-            # Build search criteria
-            search_criteria = build_search_criteria(
-                message_ids=message_ids,
-                search_query=search_query,
-                older_than_days=older_than_days,
-                older_than_date=older_than_date,
-                from_address=from_address,
-                subject_contains=subject_contains,
+            return self._do_delete(
+                folder,
+                message_ids,
+                search_query,
+                older_than_days,
+                older_than_date,
+                from_address,
+                subject_contains,
+                dry_run,
             )
-
-            if not search_criteria:
-                mail.logout()
-                self.report_error("No deletion criteria specified")
-                return {
-                    "success": False,
-                    "error": (
-                        "Must specify at least one deletion criteria:"
-                        " message_ids, search_query, older_than_days,"
-                        " older_than_date, from_address, or"
-                        " subject_contains"
-                    ),
-                    "folder": folder,
-                }
-
-            self.report_progress(" Searching for emails to delete...")
-
-            # Search for emails matching criteria
-            status, message_ids_list = mail.search(None, search_criteria)
-
-            if status != "OK":
-                mail.logout()
-                self.report_error("Failed to search emails")
-                return {
-                    "success": False,
-                    "error": "Failed to search emails",
-                    "folder": folder,
-                }
-
-            # Get list of message IDs
-            ids_to_delete = message_ids_list[0].split()
-            found_count = len(ids_to_delete)
-
-            if found_count == 0:
-                mail.logout()
-                self.report_result("No emails found matching deletion criteria")
-                return {
-                    "success": True,
-                    "folder": folder,
-                    "found_count": 0,
-                    "deleted_count": 0,
-                    "message_ids": [],
-                    "dry_run": dry_run,
-                }
-
-            # Convert bytes to strings for display
-            id_strings = [safe_decode(mid) for mid in ids_to_delete]
-
-            if dry_run:
-                self.report_progress(
-                    f" Found {found_count} emails matching criteria (dry run - no deletion)"
-                )
-                mail.logout()
-                self.report_result(
-                    f"DRY RUN: Would delete {found_count} emails: {id_strings[:10]}{'...' if found_count > 10 else ''}"
-                )
-                return {
-                    "success": True,
-                    "folder": folder,
-                    "found_count": found_count,
-                    "deleted_count": 0,
-                    "message_ids": id_strings,
-                    "dry_run": True,
-                }
-
-            # Confirm deletion with Gmail
-            self.report_progress(f" Found {found_count} emails, marking as deleted...")
-
-            # Mark emails as deleted using STORE command
-            deleted_count = 0
-            for msg_id in ids_to_delete:
-                try:
-                    status, response = mail.store(msg_id, "+FLAGS", "\\Deleted")
-                    if status == "OK":
-                        deleted_count += 1
-                except Exception:
-                    continue
-
-            self.report_progress(
-                f" Marked {deleted_count} emails as deleted, expunging..."
-            )
-
-            # Permanently delete marked emails
-            status, expunge_result = mail.expunge()
-
-            # Logout
-            mail.logout()
-
-            if status == "OK":
-                self.report_result(
-                    f"Successfully deleted {deleted_count} emails from {folder}"
-                )
-                return {
-                    "success": True,
-                    "folder": folder,
-                    "found_count": found_count,
-                    "deleted_count": deleted_count,
-                    "message_ids": id_strings,
-                    "dry_run": False,
-                }
-            else:
-                self.report_error(f"Expunge returned status: {status}")
-                return {
-                    "success": False,
-                    "error": f"Expunge failed with status: {status}",
-                    "folder": folder,
-                }
-
         except imaplib.IMAP4.error as e:
             error_msg = safe_decode(e.args[0]) if e.args else str(e)
             self.report_error(f"IMAP error: {error_msg}")

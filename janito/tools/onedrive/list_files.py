@@ -38,6 +38,72 @@ class ListOneDriveFiles(BaseTool):
         janito --onedrive "List my Documents folder"
     """
 
+    def _fetch_items(
+        self, client, endpoint: str, params: dict, limit: int, folder_only: bool
+    ) -> list:
+        """Fetch items from Graph with pagination; returns the item list."""
+        all_items = []
+        next_link = None
+
+        while True:
+            if next_link:
+                # Use next link for pagination
+                response = client._make_request(
+                    method="GET",
+                    endpoint=next_link.replace(client.GRAPH_BASE_URL, ""),
+                    timeout=30,
+                )
+            else:
+                response = client._make_request(
+                    method="GET", endpoint=endpoint, params=params, timeout=30
+                )
+
+            items = response.get("value", [])
+
+            # Filter for folders only if requested
+            if folder_only:
+                items = [item for item in items if "folder" in item]
+
+            all_items.extend(items)
+
+            # Check for pagination
+            next_link = response.get("@odata.nextLink")
+            if not next_link or len(all_items) >= limit:
+                break
+
+        # Truncate if we got more than limit
+        if len(all_items) > limit:
+            all_items = all_items[:limit]
+        return all_items
+
+    @staticmethod
+    def _format_item(item: dict) -> dict:
+        """Format a drive item for cleaner output."""
+        formatted = {
+            "id": item.get("id"),
+            "name": item.get("name"),
+            "type": "folder" if item.get("folder") else "file",
+            "size": item.get("size"),
+            "created": item.get("createdDateTime"),
+            "modified": item.get("lastModifiedDateTime"),
+            "web_url": item.get("webUrl"),
+        }
+
+        if item.get("folder"):
+            formatted["child_count"] = item.get("folder", {}).get("childCount")
+
+        if item.get("file"):
+            formatted["mime_type"] = item.get("file", {}).get("mimeType")
+
+        if item.get("parentReference"):
+            parent_path = item["parentReference"].get("path", "")
+            # Handle both /me/drive/root: and /users/{userId}/drive/root: formats
+            parent_path = parent_path.replace("/me/drive/root:", "")
+            parent_path = re.sub(r"^/users/[^/]+/drive/root:", "", parent_path)
+            formatted["parent_path"] = parent_path or "/"
+
+        return formatted
+
     def run(
         self,
         path: str = "",
@@ -67,7 +133,9 @@ class ListOneDriveFiles(BaseTool):
         try:
             from .base_client import OneDriveBaseClient
 
-            self.report_start(f"📁 Listing files in OneDrive path: {path or 'root'}")
+            self.report_start(
+                f"\ud83d\udcc1 Listing files in OneDrive path: {path or 'root'}"
+            )
 
             client = OneDriveBaseClient()
 
@@ -83,66 +151,10 @@ class ListOneDriveFiles(BaseTool):
 
             self.report_progress(" Fetching file list from Microsoft Graph...")
 
-            all_items = []
-            next_link = None
-
-            while True:
-                if next_link:
-                    # Use next link for pagination
-                    response = client._make_request(
-                        method="GET",
-                        endpoint=next_link.replace(client.GRAPH_BASE_URL, ""),
-                        timeout=30,
-                    )
-                else:
-                    response = client._make_request(
-                        method="GET", endpoint=endpoint, params=params, timeout=30
-                    )
-
-                items = response.get("value", [])
-
-                # Filter for folders only if requested
-                if folder_only:
-                    items = [item for item in items if "folder" in item]
-
-                all_items.extend(items)
-
-                # Check for pagination
-                next_link = response.get("@odata.nextLink")
-                if not next_link or len(all_items) >= limit:
-                    break
-
-            # Truncate if we got more than limit
-            if len(all_items) > limit:
-                all_items = all_items[:limit]
+            all_items = self._fetch_items(client, endpoint, params, limit, folder_only)
 
             # Format items for cleaner output
-            formatted_items = []
-            for item in all_items:
-                formatted = {
-                    "id": item.get("id"),
-                    "name": item.get("name"),
-                    "type": "folder" if item.get("folder") else "file",
-                    "size": item.get("size"),
-                    "created": item.get("createdDateTime"),
-                    "modified": item.get("lastModifiedDateTime"),
-                    "web_url": item.get("webUrl"),
-                }
-
-                if item.get("folder"):
-                    formatted["child_count"] = item.get("folder", {}).get("childCount")
-
-                if item.get("file"):
-                    formatted["mime_type"] = item.get("file", {}).get("mimeType")
-
-                if item.get("parentReference"):
-                    parent_path = item["parentReference"].get("path", "")
-                    # Handle both /me/drive/root: and /users/{userId}/drive/root: formats
-                    parent_path = parent_path.replace("/me/drive/root:", "")
-                    parent_path = re.sub(r"^/users/[^/]+/drive/root:", "", parent_path)
-                    formatted["parent_path"] = parent_path or "/"
-
-                formatted_items.append(formatted)
+            formatted_items = [self._format_item(item) for item in all_items]
 
             self.report_result(
                 f"Found {len(formatted_items)} items in {path or 'root'}"

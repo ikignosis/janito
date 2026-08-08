@@ -5,6 +5,15 @@ import logging
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
+from .config_helpers import (
+    _patch_api_type,
+    _patch_endpoint,
+    _patch_model,
+    _patch_responses_in_server,
+    _read_json_body,
+    _resolve_target_provider,
+)
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
@@ -89,23 +98,12 @@ async def patch_config(request: Request):
       (also ``1``/``0``/``yes``/``no``/``on``/``off``).  Only meaningful when
       the provider's API type is ``Responses``.
     """
-    from janito.general_config import (
-        api_type_config_key,
-        endpoint_config_key,
-        get_active_provider,
-        model_config_key,
-        normalize_api_type,
-        responses_in_server_config_key,
-        set_config_value,
-        unset_config_value,
-    )
-    from janito.provider_config import validate_provider_name
+    from janito.general_config import get_active_provider
 
     config = _get_config(request)
-    try:
-        body = await request.json()
-    except Exception:
-        return JSONResponse({"detail": "Invalid JSON"}, status_code=400)
+    body, error = await _read_json_body(request)
+    if error:
+        return error
 
     # ``thinking`` and ``verbose`` are CLI-level flags, so they are
     # intentionally excluded from this persisted mutable set.  Thinking can
@@ -120,100 +118,21 @@ async def patch_config(request: Request):
     if not mutable_fields:
         return {"updated": updated}
 
-    # Resolve the provider the per-provider values belong to: an explicit
-    # ``provider`` from the body (the Settings drawer's selection) wins,
-    # otherwise the provider the next prompt resolves to.
-    raw_provider = str(body.get("provider") or "").strip()
-    if raw_provider:
-        try:
-            provider = validate_provider_name(raw_provider)
-        except ValueError as e:
-            return JSONResponse({"detail": str(e)}, status_code=400)
-    else:
-        provider = config.session_provider or config.provider or get_active_provider()
+    provider = _resolve_target_provider(body, config)
+    if isinstance(provider, JSONResponse):
+        return provider
 
     effective = config.session_provider or config.provider or get_active_provider()
 
-    if "model" in body:
-        model = str(body["model"]).strip()
-
-        # Persist per-provider so each provider keeps its own default model.
-        key = model_config_key(provider)
-        if model:
-            set_config_value(key, model)
-        else:
-            unset_config_value(key)
-        updated["model"] = model
-
-        # Mirror into the running server only when the change affects the
-        # provider the next prompt actually uses; otherwise the server keeps
-        # its current model and the new value still lands on disk for the
-        # targeted provider.
-        if provider == effective:
-            config.model = model or None
-
-    if "endpoint" in body:
-        endpoint = str(body["endpoint"]).strip()
-
-        # Persist per-provider (providers.<name>.endpoint).  An empty value
-        # clears the override so the provider falls back to its built-in
-        # endpoint.  No in-memory mirror needed: the OpenAI client resolves
-        # the base URL per call, so the very next prompt uses the new value.
-        key = endpoint_config_key(provider)
-        if endpoint:
-            set_config_value(key, endpoint)
-        else:
-            unset_config_value(key)
-        updated["endpoint"] = endpoint
-
-    if "api_type" in body:
-        raw = str(body["api_type"]).strip()
-
-        # Persist per-provider (providers.<name>.api-type), canonicalized to
-        # "Responses" / "Completions" / "Anthropic" (rejects anything else
-        # with 400). An empty value clears the override so the provider falls
-        # back to its built-in default. Native-SDK API types (e.g. "Anthropic")
-        # also require their optional package to be installed: when it is
-        # missing the change is aborted with 400 (nothing is written) and a
-        # message naming the package.
-        key = api_type_config_key(provider)
-        if raw:
-            try:
-                api_type = normalize_api_type(raw)
-            except ValueError as e:
-                return JSONResponse({"detail": str(e)}, status_code=400)
-            from janito.provider_config import ensure_api_type_available
-
-            try:
-                ensure_api_type_available(api_type)
-            except ValueError as e:
-                return JSONResponse({"detail": str(e)}, status_code=400)
-            set_config_value(key, api_type)
-            updated["api_type"] = api_type
-        else:
-            unset_config_value(key)
-            updated["api_type"] = ""
-
-    if "responses_in_server" in body:
-        value = body["responses_in_server"]
-        if isinstance(value, str):
-            lowered = value.strip().lower()
-            if lowered in ("true", "1", "yes", "on"):
-                value = True
-            elif lowered in ("false", "0", "no", "off"):
-                value = False
-            else:
-                return JSONResponse(
-                    {"detail": "'responses_in_server' must be a boolean"},
-                    status_code=400,
-                )
-        responses_in_server = bool(value)
-
-        # Persist per-provider (providers.<name>.responses-in-server) so the
-        # CLI's Responses-API path (conversations_api) picks it up.  Only
-        # meaningful while the provider's API type is "Responses".
-        set_config_value(responses_in_server_config_key(provider), responses_in_server)
-        updated["responses_in_server"] = responses_in_server
+    for patcher in (
+        _patch_model,
+        _patch_endpoint,
+        _patch_api_type,
+        _patch_responses_in_server,
+    ):
+        error = patcher(body, provider, effective, config, updated)
+        if error:
+            return error
 
     return {"updated": updated}
 
@@ -225,7 +144,7 @@ async def set_thinking(request: Request):
     Web counterpart of the CLI's ``--thinking`` flag, scoped to the running
     server: the status-bar "thinking" badge posts here and the new value
     applies to the very next prompt.  Like the session-provider override it
-    is kept **in memory only** — ``~/.janito/config.json`` is left
+    is kept **in memory only** -- ``~/.janito/config.json`` is left
     untouched, so it does not leak into future CLI or web runs and is lost
     when the server restarts.
 
@@ -260,23 +179,23 @@ async def list_providers(request: Request):
 
     Each entry aggregates data from the existing janito modules:
 
-    * ``provider_config.PROVIDER_INFO`` — the built-in per-provider defaults
+    * ``provider_config.PROVIDER_INFO`` -- the built-in per-provider defaults
       (``endpoint``, ``model``, ``max_input_tokens``, ``max_output_tokens``,
       ``reasoning_level``, ``supported_reasoning_levels`` and ``thinking``).
       ``endpoint`` is ``None`` for standard OpenAI and the ``CUSTOM_ENDPOINT``
       marker for "custom".
-    * ``general_config`` — the per-provider ``model`` and ``endpoint``
+    * ``general_config`` -- the per-provider ``model`` and ``endpoint``
       overrides stored in ``~/.janito/config.json`` under
       ``providers.<name>.{model,endpoint}``.
-    * ``auth_config.get_api_key()`` — whether an API key exists for the
+    * ``auth_config.get_api_key()`` -- whether an API key exists for the
       provider in ``~/.janito/auth.json`` (the key itself is never sent;
       only ``api_key_set: bool``).
-    * ``general_config.get_active_provider()`` — the persisted default
+    * ``general_config.get_active_provider()`` -- the persisted default
       provider (``active: true`` on that entry).
-    * ``config.session_provider`` — a session-only override picked from the
+    * ``config.session_provider`` -- a session-only override picked from the
       chat-page combo (never written to disk); the provider that the next
       prompt actually uses is flagged ``effective: true``.
-    * ``api_types`` — per-API-type availability for the Settings drawer's
+    * ``api_types`` -- per-API-type availability for the Settings drawer's
       API Type combobox.  Each entry is ``{type, available}`` plus, for
       optional-package types, ``required_package`` and (when the package is
       missing) a ``reason`` with the install hint.  Unavailable types are
@@ -392,14 +311,14 @@ async def set_session_provider(request: Request):
     """Switch the provider for this browser/server session only.
 
     Triggered by the chat-page topbar combo: the chosen provider becomes the
-    one used by the next prompt, but the change is kept **in memory only** —
+    one used by the next prompt, but the change is kept **in memory only** --
     ``~/.janito/config.json`` is left untouched, so it does not leak into
     future CLI or web runs and is lost when the server restarts.  (The
     Settings drawer's explicit "Set Default" button is the persisting
     counterpart and still uses ``POST /api/config/default-provider``.)
 
     A provider without an API key stored in ``~/.janito/auth.json`` is
-    rejected with ``400`` — switching to it would only make the next prompt
+    rejected with ``400`` -- switching to it would only make the next prompt
     fail with an authentication error.  The combo relies on this guard (it
     lists exactly the providers with a key set).
     """
@@ -426,7 +345,7 @@ async def set_session_provider(request: Request):
             {
                 "detail": (
                     f"No API key is set for provider '{provider}'. "
-                    "Set one first (Settings → Set API Key, or the CLI's "
+                    "Set one first (Settings -> Set API Key, or the CLI's "
                     "--set-api-key) before switching to it."
                 )
             },
@@ -434,7 +353,7 @@ async def set_session_provider(request: Request):
         )
 
     # In-memory only: nothing is written to ~/.janito/config.json here.
-    # Adopt the new provider's configured model too — keeping a model that
+    # Adopt the new provider's configured model too -- keeping a model that
     # belongs to the previous provider would make the next API call fail.
     config = _get_config(request)
     config.session_provider = provider
@@ -486,7 +405,7 @@ async def set_default_provider(request: Request):
             {
                 "detail": (
                     f"No API key is set for provider '{provider}'. "
-                    "Set one first (Settings → Set API Key, or the CLI's "
+                    "Set one first (Settings -> Set API Key, or the CLI's "
                     "--set-api-key) before making it the default."
                 )
             },
@@ -497,7 +416,7 @@ async def set_default_provider(request: Request):
     set_config_value("provider", provider)
 
     # Mirror into this running server: provider resolution now picks up the
-    # new default.  Also adopt the new provider's configured model — keeping
+    # new default.  Also adopt the new provider's configured model -- keeping
     # a model that belongs to the previous provider would make the next API
     # call fail.  (An explicitly pinned --model was already baked into
     # config.model at startup; runtime overrides via PATCH /api/config are
@@ -522,7 +441,7 @@ async def set_provider_api_key(request: Request):
     Web counterpart of ``janito --set-api-key <key> --provider <name>``:
     the key is written to the auth file (mode ``0600``) so both CLI and web
     runs pick it up.  The OpenAI client resolves the key per call, so the
-    next prompt already uses it — no restart needed.  The raw key is never
+    next prompt already uses it -- no restart needed.  The raw key is never
     echoed back; only the masked form (same as ``/status``) is returned.
     """
     from janito.auth_config import set_api_key
@@ -583,7 +502,7 @@ async def get_status(request: Request, provider: str | None = None):
     config = _get_config(request)
     active = get_active_provider()
 
-    # By default describe the *effective* provider — a session override from
+    # By default describe the *effective* provider -- a session override from
     # the chat-page combo wins over the persisted default.  ``active_provider``
     # keeps reporting the true persisted default either way.
     target = config.session_provider or active

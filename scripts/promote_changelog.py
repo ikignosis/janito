@@ -110,6 +110,46 @@ def _normalize_version(requested: str, last_tag: str) -> str:
     return requested
 
 
+def _resolve_release_refs(match) -> tuple[str, str]:
+    """Resolve ``(base_url, last_tag)`` from the Unreleased compare URL or git."""
+    url = match.group("url") or ""
+    compare_match = re.search(r"(?P<base>.*)/compare/(?P<last>.+)\.\.\.HEAD$", url)
+    if compare_match:
+        return compare_match.group("base"), compare_match.group("last")
+    return _base_url_from_remote(), _last_tag()
+
+
+def _resolve_version(version: str | None, last_tag: str, bump: str) -> str:
+    """Compute the new version, applying the leading-prefix convention."""
+    if version:
+        return _normalize_version(version, last_tag)
+    return _compute_next_version(last_tag, bump)
+
+
+def _validate_date(date: str | None) -> str:
+    """Validate a ``YYYY-MM-DD`` date; returns the release date string."""
+    release_date = date or _dt.date.today().isoformat()
+    if date:
+        try:
+            _dt.datetime.strptime(date, "%Y-%m-%d")
+        except ValueError as exc:
+            raise PromotionError(f"--date must be YYYY-MM-DD: {exc}") from exc
+    return release_date
+
+
+def _split_sections(text: str, match):
+    """Split the changelog around the [Unreleased] section.
+
+    Returns ``(prefix_text, body, suffix_text)``.
+    """
+    start = match.start()
+    next_heading = NEXT_HEADING_RE.search(text, match.end())
+    next_start = next_heading.start() if next_heading else len(text)
+
+    body = text[match.end() : next_start].strip("\n")
+    return text[:start], body, text[next_start:]
+
+
 def promote(
     changelog_path: Path,
     version: str | None,
@@ -128,45 +168,22 @@ def promote(
         )
 
     # --- Determine last tag, base URL and new version --------------------
-    url = match.group("url") or ""
-    compare_match = re.search(r"(?P<base>.*)/compare/(?P<last>.+)\.\.\.HEAD$", url)
-    if compare_match:
-        base_url = compare_match.group("base")
-        last_tag = compare_match.group("last")
-    else:
-        base_url = _base_url_from_remote()
-        last_tag = _last_tag()
-
-    if version:
-        new_version = _normalize_version(version, last_tag)
-    else:
-        new_version = _compute_next_version(last_tag, bump)
+    base_url, last_tag = _resolve_release_refs(match)
+    new_version = _resolve_version(version, last_tag, bump)
 
     if new_version == last_tag:
         raise PromotionError(f"New version {new_version} equals the last tag.")
 
-    release_date = date or _dt.date.today().isoformat()
-    if date:
-        try:
-            _dt.datetime.strptime(date, "%Y-%m-%d")
-        except ValueError as exc:
-            raise PromotionError(f"--date must be YYYY-MM-DD: {exc}") from exc
+    release_date = _validate_date(date)
 
     # --- Rebuild the changelog -------------------------------------------
-    start = match.start()
-    next_heading = NEXT_HEADING_RE.search(text, match.end())
-    next_start = next_heading.start() if next_heading else len(text)
-
-    body = text[match.end() : next_start].strip("\n")
+    prefix_text, body, suffix_text = _split_sections(text, match)
     if not re.search(r"^###\s+", body, re.MULTILINE):
         print(
-            f"⚠ Warning: the [Unreleased] section has no '###' subsections; "
+            f"\u26a0 Warning: the [Unreleased] section has no '###' subsections; "
             f"promoting an apparently empty release ({new_version}).",
             file=sys.stderr,
         )
-
-    prefix_text = text[:start]
-    suffix_text = text[next_start:]
 
     unreleased_block = (
         f"## [Unreleased]({base_url}/compare/{new_version}...HEAD)\n\n"
@@ -233,7 +250,7 @@ def main(argv: list[str] | None = None) -> int:
             dry_run=args.dry_run,
         )
     except PromotionError as exc:
-        print(f"✗ {exc}", file=sys.stderr)
+        print(f"\u2717 {exc}", file=sys.stderr)
         return 1
     return 0
 

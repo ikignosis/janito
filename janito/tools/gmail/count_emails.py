@@ -10,9 +10,17 @@ from the secrets module.
 import imaplib
 from typing import Any
 
-from ...secrets_config import get_secret
 from ...tooling import BaseTool
 from ...tooling.decorator import tool
+from .imap_utils import (
+    connect_gmail,
+    decode_imap_error,
+    get_gmail_credentials,
+    missing_password_result,
+    missing_username_result,
+    resolve_search_criteria,
+    safe_decode,
+)
 
 
 @tool(permissions="r")
@@ -34,6 +42,34 @@ class CountEmails(BaseTool):
 
     IMAP_SERVER = "imap.gmail.com"
     IMAP_PORT = 993
+
+    def _select_folder(self, mail, folder: str) -> dict[str, Any] | None:
+        """Select the mailbox; returns an error result dict or None."""
+        # Encode folder name as ASCII for Gmail compatibility
+        folder_encoded = (
+            folder.encode("ascii", "strict") if isinstance(folder, str) else folder
+        )
+        status, messages = mail.select(folder_encoded)
+        if status != "OK":
+            mail.logout()
+            self.report_error(f"Failed to select folder: {folder}")
+            raw = messages[0] if messages else None
+            decoded = safe_decode(raw) if raw else "Unknown error"
+            return {
+                "success": False,
+                "error": f"Failed to select folder '{folder}': {decoded}",
+                "folder": folder,
+            }
+        return None
+
+    def _count_by_criteria(self, mail, criteria: str, label: str) -> int | None:
+        """Search and count emails; returns None when the search fails."""
+        self.report_progress(f" Counting {label}...")
+        status, data = mail.search(None, criteria)
+        if status != "OK":
+            self.report_error(f"Failed to count {label}")
+            return None
+        return len(data[0].split()) if data[0] else 0
 
     def run(
         self,
@@ -60,108 +96,62 @@ class CountEmails(BaseTool):
         """
         try:
             # Fetch credentials from secrets
-            self.report_start(f"📊 Connecting to Gmail to count emails in {folder}")
+            self.report_start(
+                f"\ud83d\udcca Connecting to Gmail to count emails in {folder}"
+            )
 
-            username = get_secret("gmail_username")
-            password = get_secret("gmail_password")
+            username, password = get_gmail_credentials()
 
             if not username:
                 self.report_error("Gmail username not found in secrets")
-                return {
-                    "success": False,
-                    "error": (
-                        "Secret 'gmail_username' not configured."
-                        " Use: janito --set-secret"
-                        " gmail_username=your-email@gmail.com"
-                    ),
-                    "folder": folder,
-                }
+                return missing_username_result(folder=folder)
 
             if not password:
                 self.report_error("Gmail password not found in secrets")
-                return {
-                    "success": False,
-                    "error": (
-                        "Secret 'gmail_password' not configured."
-                        " Use: janito --set-secret"
-                        " gmail_password=your-app-password"
-                    ),
-                    "folder": folder,
-                }
+                return missing_password_result(folder=folder)
 
             # Connect to Gmail IMAP server
             self.report_progress(" Connecting to imap.gmail.com...")
 
-            mail = imaplib.IMAP4_SSL(self.IMAP_SERVER, self.IMAP_PORT)
-            mail.login(username, password)
+            mail = connect_gmail(username, password, self.IMAP_SERVER, self.IMAP_PORT)
 
-            # Select the mailbox (encode folder name as ASCII for Gmail compatibility)
-            folder_encoded = (
-                folder.encode("ascii", "strict") if isinstance(folder, str) else folder
-            )
-            status, messages = mail.select(folder_encoded)
-            if status != "OK":
-                mail.logout()
-                self.report_error(f"Failed to select folder: {folder}")
-                raw = messages[0] if messages else None
-                decoded = (
-                    raw.decode()
-                    if isinstance(raw, bytes)
-                    else raw
-                    if raw
-                    else "Unknown error"
-                )
-                return {
-                    "success": False,
-                    "error": (f"Failed to select folder '{folder}':" f" {decoded}"),
-                    "folder": folder,
-                }
+            # Select the mailbox
+            select_error = self._select_folder(mail, folder)
+            if select_error:
+                return select_error
 
             # Count total emails
-            self.report_progress(" Counting total emails...")
-            status, total_data = mail.search(None, "ALL")
-            if status != "OK":
+            total_count = self._count_by_criteria(mail, "ALL", "total emails")
+            if total_count is None:
                 mail.logout()
-                self.report_error("Failed to count total emails")
                 return {
                     "success": False,
                     "error": "Failed to count total emails",
                     "folder": folder,
                 }
-            total_count = len(total_data[0].split()) if total_data[0] else 0
 
             # Count unread emails
-            self.report_progress(" Counting unread emails...")
-            status, unread_data = mail.search(None, "UNSEEN")
-            if status != "OK":
+            unread_count = self._count_by_criteria(mail, "UNSEEN", "unread emails")
+            if unread_count is None:
                 mail.logout()
-                self.report_error("Failed to count unread emails")
                 return {
                     "success": False,
                     "error": "Failed to count unread emails",
                     "folder": folder,
                 }
-            unread_count = len(unread_data[0].split()) if unread_data[0] else 0
 
             # Count emails matching search criteria
-            if search_query:
-                search_criteria = search_query
-            elif unread_only:
-                search_criteria = "UNSEEN"
-            else:
-                search_criteria = "ALL"
-
-            self.report_progress(f" Counting emails matching: {search_criteria}...")
-            status, matching_data = mail.search(None, search_criteria)
-            if status != "OK":
+            search_criteria = resolve_search_criteria(search_query, unread_only)
+            matching_count = self._count_by_criteria(
+                mail, search_criteria, f"emails matching: {search_criteria}"
+            )
+            if matching_count is None:
                 mail.logout()
-                self.report_error("Failed to count matching emails")
                 return {
                     "success": False,
                     "error": "Failed to count matching emails",
                     "folder": folder,
                 }
-            matching_count = len(matching_data[0].split()) if matching_data[0] else 0
 
             # Logout
             mail.logout()
@@ -181,11 +171,7 @@ class CountEmails(BaseTool):
             }
 
         except imaplib.IMAP4.error as e:
-            error_msg = (
-                e.args[0].decode()
-                if e.args and isinstance(e.args[0], bytes)
-                else str(e.args[0] if e.args else e)
-            )
+            error_msg = decode_imap_error(e)
             self.report_error(f"IMAP error: {error_msg}")
             return {
                 "success": False,

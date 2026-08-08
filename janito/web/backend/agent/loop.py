@@ -38,6 +38,73 @@ from .turn import run_tool_turn
 logger = logging.getLogger(__name__)
 
 
+def _resolve_turn_config(config, effective_provider):
+    """Resolve max tokens / preserve_thinking / reasoning level for the turn."""
+    max_output_tokens = load_max_output_tokens(effective_provider)
+    if max_output_tokens is None:
+        # Fall back to the provider's built-in default (PROVIDER_INFO).
+        max_output_tokens = get_default_max_output_tokens_from_provider(
+            effective_provider
+        )
+    preserve_thinking = get_config_value("preserve_thinking")
+
+    # Reasoning level (reasoning_effort): per-provider config value first,
+    # then the provider's built-in default (e.g. "xhigh" for qwen3.8-max).
+    reasoning_level = load_reasoning_level(effective_provider)
+    if reasoning_level is None:
+        reasoning_level = get_default_reasoning_level_from_provider(effective_provider)
+
+    return max_output_tokens, preserve_thinking, reasoning_level
+
+
+def _build_turn_kwargs(
+    model,
+    config,
+    tools_schemas,
+    messages,
+    max_output_tokens,
+    preserve_thinking,
+    reasoning_level,
+) -> dict:
+    """Build the ``chat.completions.create`` kwargs for one turn."""
+    call_kwargs = build_call_kwargs(
+        model,
+        config,
+        max_output_tokens,
+        preserve_thinking,
+        reasoning_level,
+    )
+    call_kwargs["messages"] = messages
+    if tools_schemas:
+        call_kwargs["tools"] = tools_schemas
+        call_kwargs["tool_choice"] = "auto"
+    return call_kwargs
+
+
+def _build_assistant_message(acc: StreamAccumulator, full_content: str) -> dict:
+    """Build the assistant message dict from the accumulated turn."""
+    assistant_message = {"role": "assistant", "content": full_content}
+    reasoning_content = acc.reasoning_content()
+    if reasoning_content:
+        assistant_message["reasoning_content"] = reasoning_content
+    return assistant_message
+
+
+async def _stream_turn_events(client, call_kwargs, acc):
+    """Stream one completion turn, yielding reasoning/token events.
+
+    The caller owns ``acc``; on completion it holds the full turn state for
+    end-of-turn assembly.
+    """
+    stream = await client.chat.completions.create(**call_kwargs)
+    async for chunk in stream:
+        reasoning_delta, content_delta = acc.handle(chunk)
+        if reasoning_delta:
+            yield ReasoningEvent(content=reasoning_delta)
+        if content_delta:
+            yield TokenEvent(content=content_delta)
+
+
 async def stream_prompt(
     prompt: str,
     messages: list[dict],
@@ -62,7 +129,7 @@ async def stream_prompt(
     # Effective provider for this turn: a session-only override picked from
     # the chat-page combo wins over the CLI --provider, which wins over the
     # persisted default (config.json / auth.json).  The session override is
-    # never written to disk — see WebServerConfig.session_provider.
+    # never written to disk -- see WebServerConfig.session_provider.
     effective_provider = (
         config.session_provider or config.provider or get_active_provider()
     )
@@ -83,35 +150,23 @@ async def stream_prompt(
     mcp_enabled = use_mcp
     tools_schemas = await resolve_tools(config, tools, use_mcp)
 
-    max_output_tokens = load_max_output_tokens(effective_provider)
-    if max_output_tokens is None:
-        # Fall back to the provider's built-in default (PROVIDER_INFO).
-        max_output_tokens = get_default_max_output_tokens_from_provider(
-            effective_provider
-        )
-    preserve_thinking = get_config_value("preserve_thinking")
-
-    # Reasoning level (reasoning_effort): per-provider config value first,
-    # then the provider's built-in default (e.g. "xhigh" for qwen3.8-max).
-    reasoning_level = load_reasoning_level(effective_provider)
-    if reasoning_level is None:
-        reasoning_level = get_default_reasoning_level_from_provider(effective_provider)
+    max_output_tokens, preserve_thinking, reasoning_level = _resolve_turn_config(
+        config, effective_provider
+    )
 
     messages.append({"role": "user", "content": prompt})
 
     first_turn = True
     while True:
-        call_kwargs = build_call_kwargs(
+        call_kwargs = _build_turn_kwargs(
             model,
             config,
+            tools_schemas,
+            messages,
             max_output_tokens,
             preserve_thinking,
             reasoning_level,
         )
-        call_kwargs["messages"] = messages
-        if tools_schemas:
-            call_kwargs["tools"] = tools_schemas
-            call_kwargs["tool_choice"] = "auto"
 
         # Signal the browser that we're waiting for the API (replaces CLI spinner)
         yield WaitingEvent(phase="initial" if first_turn else "after_tools")
@@ -120,13 +175,8 @@ async def stream_prompt(
         # --- Stream the completion, yielding tokens as they arrive ---
         acc = StreamAccumulator()
         try:
-            stream = await client.chat.completions.create(**call_kwargs)
-            async for chunk in stream:
-                reasoning_delta, content_delta = acc.handle(chunk)
-                if reasoning_delta:
-                    yield ReasoningEvent(content=reasoning_delta)
-                if content_delta:
-                    yield TokenEvent(content=content_delta)
+            async for ev in _stream_turn_events(client, call_kwargs, acc):
+                yield ev
         except Exception as e:
             logger.error(f"API streaming error: {e}")
             yield ErrorEvent(message=f"API error: {e!s}")
@@ -143,11 +193,7 @@ async def stream_prompt(
             continue
 
         # --- No tool calls: final response ---
-        assistant_message = {"role": "assistant", "content": full_content}
-        reasoning_content = acc.reasoning_content()
-        if reasoning_content:
-            assistant_message["reasoning_content"] = reasoning_content
-        messages.append(assistant_message)
+        messages.append(_build_assistant_message(acc, full_content))
 
         usage_event = acc.usage_event(max_tokens=max_output_tokens)
         if usage_event:

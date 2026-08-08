@@ -4,10 +4,12 @@ Shared IMAP helpers for the Gmail tools.
 
 Consolidates utilities that were previously duplicated across the
 ``delete_emails``, ``move_emails`` and ``trash_emails`` modules
-(``_safe_decode`` and ``_build_search_criteria``).
+(``_safe_decode`` and ``_build_search_criteria``), plus the credential
+fetching, connection and error-decode boilerplate every tool repeats.
 """
 
 import datetime
+import imaplib
 
 
 def safe_decode(data: bytes | str) -> str:
@@ -23,6 +25,62 @@ def safe_decode(data: bytes | str) -> str:
     if isinstance(data, bytes):
         return data.decode("utf-8", errors="replace")
     return str(data)
+
+
+def decode_imap_error(e: imaplib.IMAP4.error) -> str:
+    """Decode an ``imaplib.IMAP4.error`` argument to a readable string."""
+    if e.args and isinstance(e.args[0], bytes):
+        return e.args[0].decode()
+    return str(e.args[0] if e.args else e)
+
+
+def get_gmail_credentials() -> tuple[str, str]:
+    """Fetch the Gmail username/password from the secrets store."""
+    from ..secrets_config import get_secret
+
+    return get_secret("gmail_username"), get_secret("gmail_password")
+
+
+def missing_username_result(**extra) -> dict:
+    """Return the failure dict for a missing ``gmail_username`` secret."""
+    result = {
+        "success": False,
+        "error": (
+            "Secret 'gmail_username' not configured."
+            " Use: janito --set-secret gmail_username=your-email@gmail.com"
+        ),
+    }
+    result.update(extra)
+    return result
+
+
+def missing_password_result(**extra) -> dict:
+    """Return the failure dict for a missing ``gmail_password`` secret."""
+    result = {
+        "success": False,
+        "error": (
+            "Secret 'gmail_password' not configured."
+            " Use: janito --set-secret gmail_password=your-app-password"
+        ),
+    }
+    result.update(extra)
+    return result
+
+
+def connect_gmail(username: str, password: str, server: str, port: int):
+    """Connect and log in to the Gmail IMAP server."""
+    mail = imaplib.IMAP4_SSL(server, port)
+    mail.login(username, password)
+    return mail
+
+
+def resolve_search_criteria(search_query: str | None, unread_only: bool) -> str:
+    """Pick the IMAP search criteria from the CLI options."""
+    if search_query:
+        return search_query
+    if unread_only:
+        return "UNSEEN"
+    return "ALL"
 
 
 def build_search_criteria(

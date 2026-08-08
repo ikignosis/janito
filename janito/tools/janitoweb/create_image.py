@@ -150,6 +150,191 @@ class CreateImage(BaseTool):
             return False
         return True
 
+    @staticmethod
+    def _build_payload(prompt: str, size: str) -> dict:
+        """Build the DashScope multimodal-generation request payload."""
+        return {
+            "model": _MODEL,
+            "input": {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [{"text": prompt}],
+                    }
+                ]
+            },
+            "parameters": {
+                "size": size,
+                "n": 1,
+                "watermark": False,
+                "thinking_mode": True,
+            },
+        }
+
+    def _post_request(self, endpoint: str, api_key: str, payload: dict):
+        """POST the generation payload; returns (body, error_message)."""
+        req = urllib.request.Request(
+            endpoint,
+            data=json.dumps(payload).encode("utf-8"),
+            method="POST",
+        )
+        req.add_header("Content-Type", "application/json")
+        req.add_header("Authorization", f"Bearer {api_key}")
+        req.add_header("User-Agent", "Mozilla/5.0 (compatible; AI-Tool/1.0)")
+
+        try:
+            with urllib.request.urlopen(req, timeout=_REQUEST_TIMEOUT) as resp:
+                return resp.read().decode("utf-8", errors="replace"), None
+        except urllib.error.HTTPError as e:
+            detail = ""
+            try:
+                detail = e.read().decode("utf-8", errors="replace")
+            except Exception:
+                pass
+            msg = f"HTTP Error {e.code}: {e.reason}"
+            if detail:
+                msg += f" \u2014 {detail[:500]}"
+            return None, msg
+        except urllib.error.URLError as e:
+            return None, f"URL Error: {e.reason}"
+
+    @staticmethod
+    def _parse_json(body: str):
+        """Parse the response body; returns (data, error_message)."""
+        try:
+            return json.loads(body), None
+        except json.JSONDecodeError as e:
+            return None, f"Invalid JSON response: {e}"
+
+    @staticmethod
+    def _extract_image_url(data: dict):
+        """Extract the generated image URL; returns (url, error_message)."""
+        try:
+            image_url = data["output"]["choices"][0]["message"]["content"][0]["image"]
+            return image_url, None
+        except (KeyError, IndexError, TypeError):
+            return None, "Unexpected response structure (no image URL)"
+
+    def _download_image(self, image_url: str):
+        """Download the generated image to a kept temp file; returns (path, error)."""
+        # Download the generated image into a temp file that is kept
+        # (delete=False) so it can be served to the frontend / inspected.
+        tmp = tempfile.NamedTemporaryFile(
+            suffix=".png", prefix="janito_image_", delete=False
+        )
+        tmp_path = tmp.name
+        tmp.close()
+        try:
+            img_req = urllib.request.Request(image_url)
+            img_req.add_header("User-Agent", "Mozilla/5.0 (compatible; AI-Tool/1.0)")
+            with urllib.request.urlopen(img_req, timeout=_REQUEST_TIMEOUT) as img_resp:
+                with open(tmp_path, "wb") as fh:
+                    while True:
+                        chunk = img_resp.read(8192)
+                        if not chunk:
+                            break
+                        fh.write(chunk)
+            return tmp_path, None
+        except Exception as e:
+            # Best-effort cleanup of the empty/partial temp file.
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
+            return None, f"Failed to download generated image: {e}"
+
+    def _do_generate(self, prompt: str, size: str) -> dict[str, Any]:
+        """Run the generation flow; returns the result dict."""
+        size = size or _DEFAULT_SIZE
+
+        if not prompt or not prompt.strip():
+            self.report_error("A non-empty 'prompt' is required")
+            return {"success": False, "error": "A non-empty 'prompt' is required"}
+
+        if size not in _VALID_SIZES:
+            msg = f"Invalid size {size!r}; must be one of " f"{', '.join(_VALID_SIZES)}"
+            self.report_error(msg)
+            return {"success": False, "error": msg, "prompt": prompt}
+
+        endpoint = _generation_endpoint()
+        if not endpoint:
+            self.report_error("No 'alibaba' provider endpoint configured")
+            return {
+                "success": False,
+                "error": "No 'alibaba' provider endpoint configured",
+                "prompt": prompt,
+            }
+
+        api_key = _resolve_api_key()
+        if not api_key:
+            msg = (
+                f"No DashScope API key found. Set the {_DASHSCOPE_ENV_KEY} "
+                "environment variable or run: janito --set-api-key "
+                "--provider alibaba"
+            )
+            self.report_error(msg)
+            return {"success": False, "error": msg, "prompt": prompt}
+
+        self.report_start(
+            f"\ud83c\udfa8 Generating image with {_MODEL} ({size})", end=""
+        )
+
+        payload = self._build_payload(prompt, size)
+
+        start_time = time.time()
+        body, error = self._post_request(endpoint, api_key, payload)
+        if error:
+            self.report_error(error)
+            return {"success": False, "error": error, "prompt": prompt}
+
+        data, error = self._parse_json(body)
+        if error:
+            self.report_error(error)
+            return {"success": False, "error": error, "prompt": prompt}
+
+        # The API returns a top-level 'code'/'message' pair on failure.
+        if data.get("code"):
+            msg = f"{data.get('code')}: {data.get('message', 'unknown error')}"
+            self.report_error(msg)
+            return {
+                "success": False,
+                "error": msg,
+                "prompt": prompt,
+                "request_id": data.get("request_id"),
+            }
+
+        image_url, error = self._extract_image_url(data)
+        if error:
+            self.report_error(error)
+            return {
+                "success": False,
+                "error": error,
+                "prompt": prompt,
+                "request_id": data.get("request_id"),
+            }
+
+        self.report_progress(" (downloading image)", end="")
+
+        tmp_path, error = self._download_image(image_url)
+        if error:
+            self.report_error(error)
+            return {"success": False, "error": error, "prompt": prompt}
+
+        execution_time_ms = int((time.time() - start_time) * 1000)
+        size_bytes = os.path.getsize(tmp_path)
+        self.report_result(f"Saved image to {tmp_path} ({size_bytes} bytes)")
+
+        return {
+            "success": True,
+            "content_type": "image",
+            "image_path": tmp_path,
+            "prompt": prompt,
+            "usage": data.get("usage"),
+            "request_id": data.get("request_id"),
+            "size_bytes": size_bytes,
+            "execution_time_ms": execution_time_ms,
+        }
+
     def run(self, prompt: str, size: str = _DEFAULT_SIZE) -> dict[str, Any]:
         """
         Generate an image from a text prompt and store it in a temp PNG file.
@@ -169,176 +354,7 @@ class CreateImage(BaseTool):
                 - 'error': error message (only present if success is False)
         """
         try:
-            if not prompt or not prompt.strip():
-                self.report_error("A non-empty 'prompt' is required")
-                return {"success": False, "error": "A non-empty 'prompt' is required"}
-
-            if not size:
-                size = _DEFAULT_SIZE
-            if size not in _VALID_SIZES:
-                msg = (
-                    f"Invalid size {size!r}; must be one of "
-                    f"{', '.join(_VALID_SIZES)}"
-                )
-                self.report_error(msg)
-                return {"success": False, "error": msg, "prompt": prompt}
-
-            endpoint = _generation_endpoint()
-            if not endpoint:
-                self.report_error("No 'alibaba' provider endpoint configured")
-                return {
-                    "success": False,
-                    "error": "No 'alibaba' provider endpoint configured",
-                    "prompt": prompt,
-                }
-
-            api_key = _resolve_api_key()
-            if not api_key:
-                msg = (
-                    f"No DashScope API key found. Set the {_DASHSCOPE_ENV_KEY} "
-                    "environment variable or run: janito --set-api-key "
-                    "--provider alibaba"
-                )
-                self.report_error(msg)
-                return {"success": False, "error": msg, "prompt": prompt}
-
-            self.report_start(f"🎨 Generating image with {_MODEL} ({size})", end="")
-
-            payload = {
-                "model": _MODEL,
-                "input": {
-                    "messages": [
-                        {
-                            "role": "user",
-                            "content": [{"text": prompt}],
-                        }
-                    ]
-                },
-                "parameters": {
-                    "size": size,
-                    "n": 1,
-                    "watermark": False,
-                    "thinking_mode": True,
-                },
-            }
-
-            req = urllib.request.Request(
-                endpoint,
-                data=json.dumps(payload).encode("utf-8"),
-                method="POST",
-            )
-            req.add_header("Content-Type", "application/json")
-            req.add_header("Authorization", f"Bearer {api_key}")
-            req.add_header("User-Agent", "Mozilla/5.0 (compatible; AI-Tool/1.0)")
-
-            start_time = time.time()
-            try:
-                with urllib.request.urlopen(req, timeout=_REQUEST_TIMEOUT) as resp:
-                    body = resp.read().decode("utf-8", errors="replace")
-            except urllib.error.HTTPError as e:
-                detail = ""
-                try:
-                    detail = e.read().decode("utf-8", errors="replace")
-                except Exception:
-                    pass
-                msg = f"HTTP Error {e.code}: {e.reason}"
-                if detail:
-                    msg += f" — {detail[:500]}"
-                self.report_error(msg)
-                return {"success": False, "error": msg, "prompt": prompt}
-            except urllib.error.URLError as e:
-                self.report_error(f"URL Error: {e.reason}")
-                return {
-                    "success": False,
-                    "error": f"URL Error: {e.reason}",
-                    "prompt": prompt,
-                }
-
-            try:
-                data = json.loads(body)
-            except json.JSONDecodeError as e:
-                self.report_error(f"Invalid JSON response: {e}")
-                return {
-                    "success": False,
-                    "error": f"Invalid JSON response: {e}",
-                    "prompt": prompt,
-                }
-
-            # The API returns a top-level 'code'/'message' pair on failure.
-            if data.get("code"):
-                msg = f"{data.get('code')}: {data.get('message', 'unknown error')}"
-                self.report_error(msg)
-                return {
-                    "success": False,
-                    "error": msg,
-                    "prompt": prompt,
-                    "request_id": data.get("request_id"),
-                }
-
-            try:
-                image_url = data["output"]["choices"][0]["message"]["content"][0][
-                    "image"
-                ]
-            except (KeyError, IndexError, TypeError):
-                self.report_error("Unexpected response structure (no image URL)")
-                return {
-                    "success": False,
-                    "error": "Unexpected response structure (no image URL)",
-                    "prompt": prompt,
-                    "request_id": data.get("request_id"),
-                }
-
-            self.report_progress(" (downloading image)", end="")
-
-            # Download the generated image into a temp file that is kept
-            # (delete=False) so it can be served to the frontend / inspected.
-            tmp = tempfile.NamedTemporaryFile(
-                suffix=".png", prefix="janito_image_", delete=False
-            )
-            tmp_path = tmp.name
-            tmp.close()
-            try:
-                img_req = urllib.request.Request(image_url)
-                img_req.add_header(
-                    "User-Agent", "Mozilla/5.0 (compatible; AI-Tool/1.0)"
-                )
-                with urllib.request.urlopen(
-                    img_req, timeout=_REQUEST_TIMEOUT
-                ) as img_resp:
-                    with open(tmp_path, "wb") as fh:
-                        while True:
-                            chunk = img_resp.read(8192)
-                            if not chunk:
-                                break
-                            fh.write(chunk)
-            except Exception as e:
-                # Best-effort cleanup of the empty/partial temp file.
-                try:
-                    os.remove(tmp_path)
-                except OSError:
-                    pass
-                self.report_error(f"Failed to download generated image: {e}")
-                return {
-                    "success": False,
-                    "error": f"Failed to download generated image: {e}",
-                    "prompt": prompt,
-                }
-
-            execution_time_ms = int((time.time() - start_time) * 1000)
-            size_bytes = os.path.getsize(tmp_path)
-            self.report_result(f"Saved image to {tmp_path} ({size_bytes} bytes)")
-
-            return {
-                "success": True,
-                "content_type": "image",
-                "image_path": tmp_path,
-                "prompt": prompt,
-                "usage": data.get("usage"),
-                "request_id": data.get("request_id"),
-                "size_bytes": size_bytes,
-                "execution_time_ms": execution_time_ms,
-            }
-
+            return self._do_generate(prompt, size)
         except Exception as e:
             self.report_error(f"Execution error: {e!s}")
             return {
@@ -374,13 +390,13 @@ def main():
         print(json.dumps(result, indent=2))
     else:
         if result["success"]:
-            print("✅ Image generated")
+            print("\u2705 Image generated")
             print(f"  File: {result['image_path']}")
             print(f"  Size: {result.get('size_bytes', 'N/A')} bytes")
             print(f"  Usage: {result.get('usage')}")
             print(f"  Request ID: {result.get('request_id')}")
         else:
-            print(f"❌ Error: {result['error']}")
+            print(f"\u274c Error: {result['error']}")
 
     return 0 if result["success"] else 1
 

@@ -85,6 +85,79 @@ def _copy_dir(src: Path, dst: Path) -> None:
     shutil.copytree(src, dst)
 
 
+def _clone_repository(repo_url: str, branch: str, temp_dir: str) -> bool:
+    """Clone ``repo_url`` into ``temp_dir``; returns False on failure."""
+    print("Cloning repository to temporary directory...")
+    clone_cmd = [
+        "git",
+        "clone",
+        "--depth",
+        "1",
+        "--branch",
+        branch,
+        repo_url,
+        temp_dir,
+    ]
+    result = subprocess.run(clone_cmd, capture_output=True, text=True)
+
+    if result.returncode != 0:
+        print("Error cloning repository:")
+        print(result.stderr)
+        return False
+
+    print("Clone successful.")
+    print()
+    return True
+
+
+def _install_skill_dir(skill_src: Path, skill_path: str, skill_name: str) -> bool:
+    """Validate and copy the skill directory; returns False on failure."""
+    # Validate skill directory exists
+    if not skill_src.exists():
+        print(f"Error: Skill directory not found: {skill_path}")
+        return False
+
+    if not skill_src.is_dir():
+        print(f"Error: Skill path is not a directory: {skill_path}")
+        return False
+
+    # Copy skill to ~/.janito/skills/
+    skill_dst = get_skills_dir() / skill_name
+    print(f"Copying skill to {skill_dst}...")
+    _ensure_skills_dir()
+    _copy_dir(skill_src, skill_dst)
+    print("Copy successful.")
+    print()
+    return True
+
+
+def _cleanup_temp_dir(temp_dir: str) -> None:
+    """Remove a temporary clone dir, handling Windows read-only files."""
+    if not os.path.exists(temp_dir):
+        return
+    try:
+        shutil.rmtree(temp_dir)
+    except PermissionError:
+        # On Windows, git files may be read-only; try with chmod
+        import stat
+
+        for root, dirs, files in os.walk(temp_dir):
+            for d in dirs:
+                try:
+                    os.chmod(os.path.join(root, d), stat.S_IWUSR | stat.S_IRUSR)
+                except OSError:
+                    pass
+            for f in files:
+                try:
+                    os.chmod(os.path.join(root, f), stat.S_IWUSR | stat.S_IRUSR)
+                except OSError:
+                    pass
+        try:
+            shutil.rmtree(temp_dir)
+        except OSError:
+            pass
+
+
 def handle_install_skill(url: str) -> int:
     """Install a skill from a GitHub URL.
 
@@ -127,46 +200,13 @@ def handle_install_skill(url: str) -> int:
     temp_dir = tempfile.mkdtemp(prefix="janito_skill_")
 
     try:
-        print("Cloning repository to temporary directory...")
-        clone_cmd = [
-            "git",
-            "clone",
-            "--depth",
-            "1",
-            "--branch",
-            branch,
-            repo_url,
-            temp_dir,
-        ]
-        result = subprocess.run(clone_cmd, capture_output=True, text=True)
-
-        if result.returncode != 0:
-            print("Error cloning repository:")
-            print(result.stderr)
+        if not _clone_repository(repo_url, branch, temp_dir):
             return 1
 
-        print("Clone successful.")
-        print()
-
-        # Source and destination paths
+        # Source path and copy skill to ~/.janito/skills/
         skill_src = Path(temp_dir) / skill_path
-        skill_dst = get_skills_dir() / skill_name
-
-        # Validate skill directory exists
-        if not skill_src.exists():
-            print(f"Error: Skill directory not found: {skill_path}")
+        if not _install_skill_dir(skill_src, skill_path, skill_name):
             return 1
-
-        if not skill_src.is_dir():
-            print(f"Error: Skill path is not a directory: {skill_path}")
-            return 1
-
-        # Copy skill to ~/.janito/skills/
-        print(f"Copying skill to {skill_dst}...")
-        _ensure_skills_dir()
-        _copy_dir(skill_src, skill_dst)
-        print("Copy successful.")
-        print()
         print(f"[OK] Skill '{skill_name}' installed successfully!")
 
     except Exception as e:
@@ -175,28 +215,7 @@ def handle_install_skill(url: str) -> int:
 
     finally:
         # Clean up temporary directory (ignore errors on Windows)
-        if os.path.exists(temp_dir):
-            try:
-                shutil.rmtree(temp_dir)
-            except PermissionError:
-                # On Windows, git files may be read-only; try with chmod
-                import stat
-
-                for root, dirs, files in os.walk(temp_dir):
-                    for d in dirs:
-                        try:
-                            os.chmod(os.path.join(root, d), stat.S_IWUSR | stat.S_IRUSR)
-                        except OSError:
-                            pass
-                    for f in files:
-                        try:
-                            os.chmod(os.path.join(root, f), stat.S_IWUSR | stat.S_IRUSR)
-                        except OSError:
-                            pass
-                try:
-                    shutil.rmtree(temp_dir)
-                except OSError:
-                    pass
+        _cleanup_temp_dir(temp_dir)
 
     return 0
 

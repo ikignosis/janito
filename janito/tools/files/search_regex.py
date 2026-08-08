@@ -12,22 +12,17 @@ For direct execution, use: python -m janito.tools.files.search_regex [args]
 For AI function calling, use through the tool registry (tooling.tools_registry).
 """
 
-import os
+import json
 import re
 from typing import Any
 
-from ...tooling import BaseTool, norm_path
+from ...tooling import norm_path
 from ...tooling.decorator import tool
-from .gitignore_utils import (
-    is_ignored_by_gitignore,
-    load_gitignore_spec,
-    load_janitoignore_spec,
-)
-from .glob_utils import matches_any_pattern
+from .search_base import SearchRunner, print_search_result
 
 
 @tool(permissions="r")
-class SearchRegex(BaseTool):
+class SearchRegex(SearchRunner):
     """
     Tool for searching regular expression patterns in files and directories.
 
@@ -43,6 +38,13 @@ class SearchRegex(BaseTool):
         exclude (str, optional): Space-separated glob patterns to exclude
             (e.g. "*/node_modules/* */__pycache__/*").
     """
+
+    term_key = "pattern"
+    error_label = "regex search"
+
+    def start_message(self, term: str, paths_str: str) -> str:
+        """Return the report_start message for this tool."""
+        return f"\U0001f50d Searching regex pattern '{term}' in {paths_str}"
 
     def run(
         self,
@@ -82,251 +84,23 @@ class SearchRegex(BaseTool):
                 - 'files_ignored_by_gitignore': number of files skipped due to .gitignore
                 - 'error': error message if operation failed (only present if success=False)
         """
-        try:
-            # Parse paths
-            path_list = paths.strip().split()
-            if not path_list:
-                self.report_error("No paths provided")
-                return {
-                    "success": False,
-                    "error": "No paths provided",
-                    "paths": paths,
-                    "respect_gitignore": respect_gitignore,
-                    "exclude": exclude,
-                }
-
-            # Validate paths exist
-            valid_paths = []
-            for path in path_list:
-                abs_path = os.path.abspath(path)
-                if not os.path.exists(abs_path):
-                    self.report_warning(f"Path does not exist: {norm_path(abs_path)}")
-                    continue
-                valid_paths.append(abs_path)
-
-            if not valid_paths:
-                self.report_error("No valid paths to search")
-                return {
-                    "success": False,
-                    "error": "No valid paths to search",
-                    "paths": paths,
-                    "respect_gitignore": respect_gitignore,
-                    "exclude": exclude,
-                }
-
-            # Parse exclude patterns
-            exclude_patterns: list[str] = []
-            if exclude:
-                exclude_patterns = exclude.strip().split()
-
-            # Load ignore specs from the current working directory.
-            # .janitoignore is always respected; .gitignore only when enabled.
-            cwd = os.getcwd()
-            gitignore_spec = None
-            if respect_gitignore:
-                gitignore_spec = load_gitignore_spec(cwd)
-            janitoignore_spec = load_janitoignore_spec(cwd)
-
-            # Report start
-            paths_str = ", ".join([norm_path(p) for p in valid_paths[:3]])
-            if len(valid_paths) > 3:
-                paths_str += f" (+{len(valid_paths) - 3} more)"
-            self.report_start(
-                f"🔍 Searching regex pattern '{pattern}' in {paths_str}", end=""
-            )
-
-            # Perform search
-            if count_only:
-                result = self._search_count_only(
-                    valid_paths,
-                    pattern,
-                    case_sensitive,
-                    max_depth,
-                    max_results,
-                    gitignore_spec,
-                    janitoignore_spec,
-                    cwd,
-                    exclude_patterns,
-                )
-            else:
-                result = self._search_with_content(
-                    valid_paths,
-                    pattern,
-                    case_sensitive,
-                    max_depth,
-                    max_results,
-                    gitignore_spec,
-                    janitoignore_spec,
-                    cwd,
-                    exclude_patterns,
-                )
-
-            if result["success"]:
-                if count_only:
-                    self.report_result(
-                        f"Found {result['total_matches']} matches in {result['files_searched']} files"
-                    )
-                else:
-                    match_count = len(result["matches"])
-                    self.report_result(
-                        f"Found {match_count} matches in {result['files_searched']} files"
-                    )
-
-            return result
-
-        except Exception as e:
-            self.report_error(f"Error during regex search: {e!s}")
-            return {
-                "success": False,
-                "error": str(e),
-                "paths": paths,
-                "pattern": pattern,
-                "respect_gitignore": respect_gitignore,
-                "exclude": exclude,
-            }
-
-    def _search_with_content(
-        self,
-        paths: list[str],
-        pattern: str,
-        case_sensitive: bool,
-        max_depth: int | None,
-        max_results: int | None,
-        gitignore_spec=None,
-        janitoignore_spec=None,
-        cwd: str | None = None,
-        exclude_patterns: list[str] | None = None,
-    ) -> dict[str, Any]:
-        """Search and return matching lines with content."""
-        matches = []
-        files_searched = 0
-        files_ignored = 0
-        janitoignore_ignored = 0
-        exclude_patterns = exclude_patterns or []
-
-        for path in paths:
-            if os.path.isfile(path):
-                # Skip single files matched by exclude patterns (matched
-                # against the basename, like FindFiles does for file roots)
-                if matches_any_pattern(os.path.basename(path), exclude_patterns):
-                    continue
-                # Search single file
-                file_matches = self._search_file(
-                    path, pattern, case_sensitive, max_results
-                )
-                if file_matches:
-                    matches.extend(file_matches)
-                    if max_results and len(matches) >= max_results:
-                        matches = matches[:max_results]
-                        break
-                files_searched += 1
-            else:
-                # Search directory recursively
-                (
-                    dir_matches,
-                    dir_files_searched,
-                    dir_files_ignored,
-                    dir_janitoignore_ignored,
-                ) = self._search_directory(
-                    path,
-                    pattern,
-                    case_sensitive,
-                    max_depth,
-                    max_results,
-                    gitignore_spec,
-                    janitoignore_spec,
-                    cwd,
-                    exclude_patterns,
-                )
-                matches.extend(dir_matches)
-                files_searched += dir_files_searched
-                files_ignored += dir_files_ignored
-                janitoignore_ignored += dir_janitoignore_ignored
-                if max_results and len(matches) >= max_results:
-                    matches = matches[:max_results]
-                    break
-
-        return {
-            "success": True,
-            "matches": matches,
-            "total_matches": len(matches),
-            "files_searched": files_searched,
-            "respect_gitignore": gitignore_spec is not None,
-            "gitignore_applied": gitignore_spec is not None,
-            "janitoignore_applied": janitoignore_spec is not None,
-            "files_ignored_by_gitignore": files_ignored,
-            "files_ignored_by_janitoignore": janitoignore_ignored,
-        }
-
-    def _search_count_only(
-        self,
-        paths: list[str],
-        pattern: str,
-        case_sensitive: bool,
-        max_depth: int | None,
-        max_results: int | None,
-        gitignore_spec=None,
-        janitoignore_spec=None,
-        cwd: str | None = None,
-        exclude_patterns: list[str] | None = None,
-    ) -> dict[str, Any]:
-        """Search and return only match counts."""
-        counts = {}
-        total_matches = 0
-        files_searched = 0
-        files_ignored = 0
-        janitoignore_ignored = 0
-        exclude_patterns = exclude_patterns or []
-
-        for path in paths:
-            if os.path.isfile(path):
-                # Skip single files matched by exclude patterns
-                if matches_any_pattern(os.path.basename(path), exclude_patterns):
-                    continue
-                # Count matches in single file
-                file_count = self._count_file_matches(path, pattern, case_sensitive)
-                if file_count > 0:
-                    counts[norm_path(path)] = file_count
-                    total_matches += file_count
-                files_searched += 1
-            else:
-                # Count matches in directory
-                (
-                    dir_counts,
-                    dir_total,
-                    dir_files,
-                    dir_ignored,
-                    dir_janitoignore_ignored,
-                ) = self._count_directory_matches(
-                    path,
-                    pattern,
-                    case_sensitive,
-                    max_depth,
-                    gitignore_spec,
-                    janitoignore_spec,
-                    cwd,
-                    exclude_patterns,
-                )
-                counts.update(dir_counts)
-                total_matches += dir_total
-                files_searched += dir_files
-                files_ignored += dir_ignored
-                janitoignore_ignored += dir_janitoignore_ignored
-
-        return {
-            "success": True,
-            "counts": counts,
-            "total_matches": total_matches,
-            "files_searched": files_searched,
-            "respect_gitignore": gitignore_spec is not None,
-            "gitignore_applied": gitignore_spec is not None,
-            "janitoignore_applied": janitoignore_spec is not None,
-            "files_ignored_by_gitignore": files_ignored,
-            "files_ignored_by_janitoignore": janitoignore_ignored,
-        }
+        return self.run_search(
+            paths,
+            pattern,
+            case_sensitive=case_sensitive,
+            max_depth=max_depth,
+            max_results=max_results,
+            count_only=count_only,
+            respect_gitignore=respect_gitignore,
+            exclude=exclude,
+        )
 
     def _search_file(
-        self, filepath: str, pattern: str, case_sensitive: bool, max_results: int | None
+        self,
+        filepath: str,
+        pattern: str,
+        case_sensitive: bool,
+        max_results: int | None,
     ) -> list[str]:
         """Search a single file and return matching lines."""
         try:
@@ -372,207 +146,11 @@ class SearchRegex(BaseTool):
             # Skip files that can't be read
             return 0
 
-    def _search_directory(
-        self,
-        dirpath: str,
-        pattern: str,
-        case_sensitive: bool,
-        max_depth: int | None,
-        max_results: int | None,
-        gitignore_spec=None,
-        janitoignore_spec=None,
-        cwd: str | None = None,
-        exclude_patterns: list[str] | None = None,
-    ) -> tuple:
-        """Search a directory recursively and return matches."""
-        matches = []
-        files_searched = 0
-        files_ignored = 0
-        janitoignore_ignored = 0
-        exclude_patterns = exclude_patterns or []
-
-        def _is_ignored(rel_to_cwd: str, is_dir: bool = False) -> bool:
-            """Check a path (relative to cwd) against .janitoignore then .gitignore."""
-            nonlocal files_ignored, janitoignore_ignored
-            if (
-                janitoignore_spec
-                and cwd
-                and is_ignored_by_gitignore(
-                    rel_to_cwd, janitoignore_spec, is_dir=is_dir
-                )
-            ):
-                janitoignore_ignored += 1
-                return True
-            if (
-                gitignore_spec
-                and cwd
-                and is_ignored_by_gitignore(rel_to_cwd, gitignore_spec, is_dir=is_dir)
-            ):
-                files_ignored += 1
-                return True
-            return False
-
-        try:
-            for root, dirs, files in os.walk(dirpath):
-                # Check depth limit
-                if max_depth is not None:
-                    current_depth = root[len(dirpath) :].count(os.sep)
-                    if current_depth >= max_depth:
-                        dirs.clear()  # Don't recurse deeper
-                        continue
-
-                # Filter out ignored/excluded directories (modify in-place to
-                # prevent walking into them)
-                dirs[:] = [
-                    d
-                    for d in dirs
-                    if not _is_ignored(
-                        os.path.relpath(os.path.join(root, d), cwd), is_dir=True
-                    )
-                    and not matches_any_pattern(
-                        os.path.relpath(os.path.join(root, d), dirpath),
-                        exclude_patterns,
-                    )
-                ]
-
-                for filename in files:
-                    filepath = os.path.join(root, filename)
-
-                    # Skip if ignored by .janitoignore / .gitignore (match relative to cwd)
-                    if _is_ignored(os.path.relpath(filepath, cwd)):
-                        continue
-
-                    # Skip if excluded by glob patterns (match relative to search root)
-                    if matches_any_pattern(
-                        os.path.relpath(filepath, dirpath), exclude_patterns
-                    ):
-                        continue
-
-                    file_matches = self._search_file(
-                        filepath,
-                        pattern,
-                        case_sensitive,
-                        max_results - len(matches) if max_results else None,
-                    )
-                    if file_matches:
-                        matches.extend(file_matches)
-                        if max_results and len(matches) >= max_results:
-                            files_searched += 1
-                            return (
-                                matches[:max_results],
-                                files_searched,
-                                files_ignored,
-                                janitoignore_ignored,
-                            )
-
-                    files_searched += 1
-
-        except Exception:
-            pass  # Skip directories that can't be accessed
-
-        return matches, files_searched, files_ignored, janitoignore_ignored
-
-    def _count_directory_matches(
-        self,
-        dirpath: str,
-        pattern: str,
-        case_sensitive: bool,
-        max_depth: int | None,
-        gitignore_spec=None,
-        janitoignore_spec=None,
-        cwd: str | None = None,
-        exclude_patterns: list[str] | None = None,
-    ) -> tuple:
-        """Count matches in a directory recursively."""
-        counts = {}
-        total_matches = 0
-        files_searched = 0
-        files_ignored = 0
-        janitoignore_ignored = 0
-        exclude_patterns = exclude_patterns or []
-
-        def _is_ignored(rel_to_cwd: str, is_dir: bool = False) -> bool:
-            """Check a path (relative to cwd) against .janitoignore then .gitignore."""
-            nonlocal files_ignored, janitoignore_ignored
-            if (
-                janitoignore_spec
-                and cwd
-                and is_ignored_by_gitignore(
-                    rel_to_cwd, janitoignore_spec, is_dir=is_dir
-                )
-            ):
-                janitoignore_ignored += 1
-                return True
-            if (
-                gitignore_spec
-                and cwd
-                and is_ignored_by_gitignore(rel_to_cwd, gitignore_spec, is_dir=is_dir)
-            ):
-                files_ignored += 1
-                return True
-            return False
-
-        try:
-            for root, dirs, files in os.walk(dirpath):
-                # Check depth limit
-                if max_depth is not None:
-                    current_depth = root[len(dirpath) :].count(os.sep)
-                    if current_depth >= max_depth:
-                        dirs.clear()  # Don't recurse deeper
-                        continue
-
-                # Filter out ignored/excluded directories (modify in-place to
-                # prevent walking into them)
-                dirs[:] = [
-                    d
-                    for d in dirs
-                    if not _is_ignored(
-                        os.path.relpath(os.path.join(root, d), cwd), is_dir=True
-                    )
-                    and not matches_any_pattern(
-                        os.path.relpath(os.path.join(root, d), dirpath),
-                        exclude_patterns,
-                    )
-                ]
-
-                for filename in files:
-                    filepath = os.path.join(root, filename)
-
-                    # Skip if ignored by .janitoignore / .gitignore (match relative to cwd)
-                    if _is_ignored(os.path.relpath(filepath, cwd)):
-                        continue
-
-                    # Skip if excluded by glob patterns (match relative to search root)
-                    if matches_any_pattern(
-                        os.path.relpath(filepath, dirpath), exclude_patterns
-                    ):
-                        continue
-
-                    file_count = self._count_file_matches(
-                        filepath, pattern, case_sensitive
-                    )
-                    if file_count > 0:
-                        counts[norm_path(filepath)] = file_count
-                        total_matches += file_count
-                    files_searched += 1
-
-        except Exception:
-            pass  # Skip directories that can't be accessed
-
-        return (
-            counts,
-            total_matches,
-            files_searched,
-            files_ignored,
-            janitoignore_ignored,
-        )
-
 
 # CLI interface for testing
 def main():
     """Command line interface for testing the SearchRegex tool."""
     import argparse
-    import json
 
     parser = argparse.ArgumentParser(
         description="Search regex tool for AI function calling"
@@ -618,42 +196,7 @@ def main():
     if args.json:
         print(json.dumps(result, indent=2))
     else:
-        if result["success"]:
-            if args.count_only:
-                print(f"Total matches: {result['total_matches']}")
-                print(f"Files searched: {result['files_searched']}")
-                if result.get("gitignore_applied"):
-                    print("Respecting .gitignore")
-                if result.get("janitoignore_applied"):
-                    print("Respecting .janitoignore")
-                ignored = result.get("files_ignored_by_gitignore", 0)
-                if ignored > 0:
-                    print(f"Files ignored by .gitignore: {ignored}")
-                janito_ignored = result.get("files_ignored_by_janitoignore", 0)
-                if janito_ignored > 0:
-                    print(f"Files ignored by .janitoignore: {janito_ignored}")
-                if result["counts"]:
-                    print("\nPer-file counts:")
-                    for filepath, count in result["counts"].items():
-                        print(f"  {norm_path(filepath)}: {count}")
-            else:
-                print(
-                    f"Found {len(result['matches'])} matches in {result['files_searched']} files:"
-                )
-                if result.get("gitignore_applied"):
-                    print("Respecting .gitignore")
-                if result.get("janitoignore_applied"):
-                    print("Respecting .janitoignore")
-                ignored = result.get("files_ignored_by_gitignore", 0)
-                if ignored > 0:
-                    print(f"Files ignored by .gitignore: {ignored}")
-                janito_ignored = result.get("files_ignored_by_janitoignore", 0)
-                if janito_ignored > 0:
-                    print(f"Files ignored by .janitoignore: {janito_ignored}")
-                for match in result["matches"]:
-                    print(f"  {match}")
-        else:
-            print(f"Error: {result['error']}")
+        print_search_result(result, args.count_only)
 
 
 if __name__ == "__main__":

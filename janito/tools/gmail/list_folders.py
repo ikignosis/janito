@@ -9,9 +9,15 @@ and labels. Credentials are securely retrieved from the secrets module.
 import imaplib
 from typing import Any
 
-from ...secrets_config import get_secret
 from ...tooling import BaseTool
 from ...tooling.decorator import tool
+from .imap_utils import (
+    connect_gmail,
+    decode_imap_error,
+    get_gmail_credentials,
+    missing_password_result,
+    missing_username_result,
+)
 
 
 @tool(permissions="r")
@@ -47,6 +53,27 @@ class ListFolders(BaseTool):
         "INBOX": "Primary inbox folder for incoming messages",
     }
 
+    def _fetch_folder_list(self, mail):
+        """Retrieve the raw folder list via the IMAP LIST command."""
+        self.report_progress(" Retrieving folder list...")
+        return mail.list()
+
+    def _parse_folder_list(self, folder_list) -> list[dict[str, Any]]:
+        """Parse raw IMAP LIST entries into folder dicts, sorted by name."""
+        folders = []
+        for folder_data in folder_list:
+            if not folder_data:
+                continue
+
+            # Parse folder data - format is: b'(\HasNoChildren) "/" "Folder Name"'
+            folder_info = self._parse_folder_entry(folder_data)
+            if folder_info:
+                folders.append(folder_info)
+
+        # Sort folders alphabetically
+        folders.sort(key=lambda x: x["name"].lower())
+        return folders
+
     def run(self, include_counts: bool = False) -> dict[str, Any]:
         """
         List all Gmail folders and labels.
@@ -65,42 +92,25 @@ class ListFolders(BaseTool):
         """
         try:
             # Fetch credentials from secrets
-            self.report_start("📂 Connecting to Gmail to list folders")
+            self.report_start("\ud83d\udcc2 Connecting to Gmail to list folders")
 
-            username = get_secret("gmail_username")
-            password = get_secret("gmail_password")
+            username, password = get_gmail_credentials()
 
             if not username:
                 self.report_error("Gmail username not found in secrets")
-                return {
-                    "success": False,
-                    "error": (
-                        "Secret 'gmail_username' not configured."
-                        " Use: janito --set-secret"
-                        " gmail_username=your-email@gmail.com"
-                    ),
-                }
+                return missing_username_result()
 
             if not password:
                 self.report_error("Gmail password not found in secrets")
-                return {
-                    "success": False,
-                    "error": (
-                        "Secret 'gmail_password' not configured."
-                        " Use: janito --set-secret"
-                        " gmail_password=your-app-password"
-                    ),
-                }
+                return missing_password_result()
 
             # Connect to Gmail IMAP server
             self.report_progress(" Connecting to imap.gmail.com...")
 
-            mail = imaplib.IMAP4_SSL(self.IMAP_SERVER, self.IMAP_PORT)
-            mail.login(username, password)
+            mail = connect_gmail(username, password, self.IMAP_SERVER, self.IMAP_PORT)
 
             # List all folders using LIST command
-            self.report_progress(" Retrieving folder list...")
-            status, folder_list = mail.list()
+            status, folder_list = self._fetch_folder_list(mail)
 
             if status != "OK":
                 mail.logout()
@@ -110,18 +120,7 @@ class ListFolders(BaseTool):
                     "error": "Failed to retrieve folder list from Gmail",
                 }
 
-            folders = []
-            for folder_data in folder_list:
-                if not folder_data:
-                    continue
-
-                # Parse folder data - format is: b'(\\HasNoChildren) "/" "Folder Name"'
-                folder_info = self._parse_folder_entry(folder_data)
-                if folder_info:
-                    folders.append(folder_info)
-
-            # Sort folders alphabetically
-            folders.sort(key=lambda x: x["name"].lower())
+            folders = self._parse_folder_list(folder_list)
 
             # Get email counts for each folder if requested
             if include_counts and folders:
@@ -149,11 +148,7 @@ class ListFolders(BaseTool):
             }
 
         except imaplib.IMAP4.error as e:
-            error_msg = (
-                e.args[0].decode()
-                if e.args and isinstance(e.args[0], bytes)
-                else str(e.args[0] if e.args else e)
-            )
+            error_msg = decode_imap_error(e)
             self.report_error(f"IMAP error: {error_msg}")
             return {"success": False, "error": f"IMAP connection error: {error_msg}"}
 

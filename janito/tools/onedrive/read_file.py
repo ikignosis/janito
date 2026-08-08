@@ -46,6 +46,74 @@ class ReadOneDriveFile(BaseTool):
         "application/x-python",
     }
 
+    @staticmethod
+    def _format_file_info(metadata: dict) -> dict:
+        """Format the Graph metadata response for cleaner output."""
+        file_info = {
+            "id": metadata.get("id"),
+            "name": metadata.get("name"),
+            "type": "folder" if metadata.get("folder") else "file",
+            "size": metadata.get("size"),
+            "created": metadata.get("createdDateTime"),
+            "modified": metadata.get("lastModifiedDateTime"),
+            "web_url": metadata.get("webUrl"),
+        }
+
+        if metadata.get("folder"):
+            file_info["child_count"] = metadata.get("folder", {}).get("childCount")
+
+        if metadata.get("file"):
+            file_info["mime_type"] = metadata.get("file", {}).get("mimeType")
+
+        if metadata.get("parentReference"):
+            parent_path = metadata["parentReference"].get("path", "")
+            # Handle both /me/drive/root: and /users/{userId}/drive/root: formats
+            parent_path = parent_path.replace("/me/drive/root:", "")
+            parent_path = re.sub(r"^/users/[^/]+/drive/root:", "", parent_path)
+            file_info["parent_path"] = parent_path or "/"
+
+        return file_info
+
+    @staticmethod
+    def _read_text_content(metadata: dict, max_content_length: int) -> dict:
+        """Extract the text content from the metadata; returns result updates."""
+        content = metadata.get("content", "")
+
+        if isinstance(content, str):
+            if len(content) > max_content_length:
+                content = (
+                    content[:max_content_length]
+                    + f"\n... [truncated, total {len(content)} chars]"
+                )
+        elif isinstance(content, bytes):
+            content = content.decode("utf-8", errors="replace")
+            if len(content) > max_content_length:
+                content = (
+                    content[:max_content_length]
+                    + f"\n... [truncated, total {len(content)} chars]"
+                )
+
+        return {"content": content}
+
+    def _read_content(
+        self, metadata: dict, file_info: dict, max_content_length: int
+    ) -> dict:
+        """Read text content when the file is text-based; returns result updates."""
+        mime_type = file_info.get("mime_type", "")
+
+        if mime_type not in self.TEXT_TYPES and not mime_type.startswith("text/"):
+            return {
+                "content_skipped": (
+                    f"Binary files not readable. Use DownloadOneDriveFile for: {mime_type}"
+                )
+            }
+
+        self.report_progress(" Reading text content...")
+        try:
+            return self._read_text_content(metadata, max_content_length)
+        except Exception as e:
+            return {"content_error": f"Could not read content: {e!s}"}
+
     def run(
         self, path: str, include_content: bool = False, max_content_length: int = 10000
     ) -> dict[str, Any]:
@@ -68,7 +136,7 @@ class ReadOneDriveFile(BaseTool):
         try:
             from .base_client import OneDriveBaseClient
 
-            self.report_start(f"📖 Reading file: {path}")
+            self.report_start(f"\ud83d\udcd6 Reading file: {path}")
 
             client = OneDriveBaseClient()
 
@@ -92,62 +160,15 @@ class ReadOneDriveFile(BaseTool):
             )
 
             # Format the response
-            file_info = {
-                "id": metadata.get("id"),
-                "name": metadata.get("name"),
-                "type": "folder" if metadata.get("folder") else "file",
-                "size": metadata.get("size"),
-                "created": metadata.get("createdDateTime"),
-                "modified": metadata.get("lastModifiedDateTime"),
-                "web_url": metadata.get("webUrl"),
-            }
-
-            if metadata.get("folder"):
-                file_info["child_count"] = metadata.get("folder", {}).get("childCount")
-
-            if metadata.get("file"):
-                file_info["mime_type"] = metadata.get("file", {}).get("mimeType")
-
-            if metadata.get("parentReference"):
-                parent_path = metadata["parentReference"].get("path", "")
-                # Handle both /me/drive/root: and /users/{userId}/drive/root: formats
-                parent_path = parent_path.replace("/me/drive/root:", "")
-                parent_path = re.sub(r"^/users/[^/]+/drive/root:", "", parent_path)
-                file_info["parent_path"] = parent_path or "/"
+            file_info = self._format_file_info(metadata)
 
             result = {"success": True, "path": path, "file": file_info}
 
             # Try to read content if requested
             if include_content:
-                mime_type = file_info.get("mime_type", "")
-
-                if mime_type in self.TEXT_TYPES or mime_type.startswith("text/"):
-                    self.report_progress(" Reading text content...")
-                    try:
-                        # Get content directly from the content property
-                        content = metadata.get("content", "")
-
-                        if isinstance(content, str):
-                            if len(content) > max_content_length:
-                                content = (
-                                    content[:max_content_length]
-                                    + f"\n... [truncated, total {len(content)} chars]"
-                                )
-                        elif isinstance(content, bytes):
-                            content = content.decode("utf-8", errors="replace")
-                            if len(content) > max_content_length:
-                                content = (
-                                    content[:max_content_length]
-                                    + f"\n... [truncated, total {len(content)} chars]"
-                                )
-
-                        result["content"] = content
-                    except Exception as e:
-                        result["content_error"] = f"Could not read content: {e!s}"
-                else:
-                    result[
-                        "content_skipped"
-                    ] = f"Binary files not readable. Use DownloadOneDriveFile for: {mime_type}"
+                result.update(
+                    self._read_content(metadata, file_info, max_content_length)
+                )
 
             self.report_result(f"Successfully read: {path}")
 

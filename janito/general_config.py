@@ -1,7 +1,13 @@
 """
 General configuration module for managing ~/.janito/config.json.
 
-This module provides a centralized interface for all config.json-related operations.
+This module provides a centralized interface for all config.json-related
+operations.  The per-provider loaders (``load_model_from_config``,
+``load_max_output_tokens``, ...) live in :mod:`janito.config_loaders` and the
+CLI-facing helpers (``set_config_from_cli``, ``get_config_from_cli``,
+``unset_config_key_from_cli``, ``ProviderRequiredError``) live in
+:mod:`janito.config_cli`; both are re-exported here so existing
+``janito.general_config.<name>`` references keep working.
 """
 
 import json
@@ -296,7 +302,7 @@ def reasoning_level_config_key(provider: str) -> str:
         provider: The provider name
 
     Returns:
-        The provider-scoped config key, e.g. ``\"alibaba.reasoning-level\"``
+        The provider-scoped config key, e.g. ``"alibaba.reasoning-level"``
     """
     return f"{normalize_provider(provider)}.reasoning-level"
 
@@ -305,14 +311,14 @@ def api_type_config_key(provider: str) -> str:
     """Return the config key used to store the API type for a provider.
 
     API types are stored per-provider using the ``<provider>.api-type`` key
-    (``\"Responses\"`` or ``\"Completions\"``) so that each provider can select
+    (``"Responses"`` or ``"Completions"``) so that each provider can select
     which API it talks to.
 
     Args:
         provider: The provider name
 
     Returns:
-        The provider-scoped config key, e.g. ``\"openai.api-type\"``
+        The provider-scoped config key, e.g. ``"openai.api-type"``
     """
     return f"{normalize_provider(provider)}.api-type"
 
@@ -349,114 +355,6 @@ def normalize_api_type(value: str) -> str:
     )
 
 
-def load_model_from_config(cli_provider: str | None = None) -> str | None:
-    """Load the model name for the active provider from ~/.janito/config.json.
-
-    The model is stored under a provider-scoped key (``<provider>.model``) so
-    that different providers can each have their own default model.
-
-    Args:
-        cli_provider: Provider passed via ``--provider`` (may be None). If not
-            provided, the provider is read from config.json.
-
-    Returns:
-        str: Model name from config, or None if not found or provider unknown
-    """
-    provider = determine_provider(cli_provider)
-    if not provider:
-        return None
-    return get_config_value(model_config_key(provider))
-
-
-def load_max_output_tokens(cli_provider: str | None = None) -> int | None:
-    """Load max output tokens from ~/.janito/config.json if it exists.
-
-    This value is used as the maximum output-token limit (``max_tokens`` /
-    ``max_completion_tokens``) for API calls. It is stored per-provider under
-    the nested providers structure (e.g. providers.openai.max-output-tokens).
-
-    For backward compatibility, the legacy ``<provider>.context-window-size``
-    and ``<provider>.context_window_size`` keys are still honored when the new
-    key is not set.
-
-    Args:
-        cli_provider: Provider passed via ``--provider`` (may be None). If not
-            provided, the provider is read from config.json.
-
-    Returns:
-        int: Max output tokens from config, or None if not found
-    """
-    provider = determine_provider(cli_provider)
-    if not provider:
-        return None
-    # Support both hyphenated and underscore formats in config
-    key = f"{provider}.max-output-tokens"
-    value = get_config_value(key)
-    if value is not None:
-        return int(value)
-    key = f"{provider}.max_output_tokens"
-    value = get_config_value(key)
-    if value is not None:
-        return int(value)
-    # Backward compatibility: legacy context-window-size / context_window_size keys.
-    key = f"{provider}.context-window-size"
-    value = get_config_value(key)
-    if value is not None:
-        return int(value)
-    key = f"{provider}.context_window_size"
-    value = get_config_value(key)
-    if value is not None:
-        return int(value)
-    return None
-
-
-def load_reasoning_level(cli_provider: str | None = None) -> str | None:
-    """Load the reasoning level for the active provider from config.json.
-
-    The reasoning level is stored under a provider-scoped key
-    (``<provider>.reasoning-level``) so that different providers can each have
-    their own reasoning depth (e.g. ``low``/``medium``/``xhigh`` for
-    Qwen3.8-Max).
-
-    Args:
-        cli_provider: Provider passed via ``--provider`` (may be None). If not
-            provided, the provider is read from config.json.
-
-    Returns:
-        str: The reasoning level from config, or None if not found
-    """
-    provider = determine_provider(cli_provider)
-    if not provider:
-        return None
-    value = get_config_value(reasoning_level_config_key(provider))
-    if value is not None:
-        return str(value)
-    return None
-
-
-def load_api_type(cli_provider: str | None = None) -> str | None:
-    """Load the API type for the active provider from config.json.
-
-    The API type is stored under a provider-scoped key
-    (``<provider>.api-type``) so that different providers can each select
-    which API they talk to (``"Responses"`` or ``"Completions"``).
-
-    Args:
-        cli_provider: Provider passed via ``--provider`` (may be None). If not
-            provided, the provider is read from config.json.
-
-    Returns:
-        str: The API type from config, or None if not found
-    """
-    provider = determine_provider(cli_provider)
-    if not provider:
-        return None
-    value = get_config_value(api_type_config_key(provider))
-    if value is not None:
-        return str(value)
-    return None
-
-
 def responses_in_server_config_key(provider: str) -> str:
     """Return the config key used to store the Responses-in-server flag.
 
@@ -473,64 +371,6 @@ def responses_in_server_config_key(provider: str) -> str:
         The provider-scoped config key, e.g. ``"openai.responses-in-server"``
     """
     return f"{normalize_provider(provider)}.responses-in-server"
-
-
-def load_responses_in_server_from_config(
-    cli_provider: str | None = None,
-) -> bool | None:
-    """Load the Responses-in-server override for a provider from config.json.
-
-    The override is stored under a provider-scoped key
-    (``<provider>.responses-in-server``) so that different providers can each
-    decide whether their Responses API keeps conversation state server-side.
-
-    Args:
-        cli_provider: Provider passed via ``--provider`` (may be None). If not
-            provided, the provider is read from config.json.
-
-    Returns:
-        bool: The configured override (``True``/``False``), or ``None`` when
-            no override is stored (the provider's built-in default applies).
-    """
-    provider = determine_provider(cli_provider)
-    if not provider:
-        return None
-    value = get_config_value(responses_in_server_config_key(provider))
-    if value is None:
-        return None
-    # Tolerate string forms written by hand/older configs ("true"/"false").
-    if isinstance(value, str):
-        return value.strip().lower() in ("true", "1", "yes", "on")
-    return bool(value)
-
-
-def load_endpoint_from_config(cli_provider: str | None = None) -> str | None:
-    """Load custom endpoint URL from ~/.janito/config.json if it exists.
-
-    This is used for the 'custom' provider or to override provider base URLs.
-
-    The endpoint is stored under a provider-scoped key
-    (``<provider>.endpoint``) so that different providers can each have their
-    own endpoint. The provider is resolved from ``cli_provider`` first, then
-    from the configured ``provider`` value.
-
-    For backward compatibility, the legacy top-level ``endpoint`` key is still
-    honored as a fallback when no provider-scoped endpoint is set.
-
-    Args:
-        cli_provider: Provider passed via ``--provider`` (may be None). If not
-            provided, the provider is read from config.json.
-
-    Returns:
-        str: Endpoint URL from config, or None if not found or provider unknown
-    """
-    provider = determine_provider(cli_provider)
-    if provider:
-        value = get_config_value(endpoint_config_key(provider))
-        if value is not None:
-            return value
-    # Backward compatibility: legacy top-level 'endpoint' key
-    return get_config_value("endpoint")
 
 
 def get_masked_api_key(api_key: str) -> str:
@@ -631,175 +471,27 @@ def resolve_api_type(
     return default or "Completions"
 
 
-class ProviderRequiredError(ValueError):
-    """Raised when a provider-scoped config key is used without a provider.
+# ---------------------------------------------------------------------------
+# Re-exports: the per-provider loaders and the CLI-facing helpers were split
+# into janito.config_loaders and janito.config_cli.  Re-exporting keeps
+# ``from janito.general_config import load_model_from_config, ...`` (used by
+# the client modules, web backend, shell commands and tests) working.
+# ---------------------------------------------------------------------------
 
-    This happens when a key such as ``model`` is set/get/unset via the CLI but
-    the provider cannot be determined (neither ``--provider`` nor a configured
-    ``provider`` value is available).
-    """
-
-
-def _resolve_provider_scoped_key(key: str, cli_provider: str | None = None) -> str:
-    """Resolve a provider-scoped config key (e.g. ``model``) to its full key.
-
-    Args:
-        key: The config key requested (e.g. ``model``)
-        cli_provider: Provider passed via ``--provider`` (may be None)
-
-    Returns:
-        The full provider-scoped key (e.g. ``openai.model``)
-
-    Raises:
-        ProviderRequiredError: If the key is provider-scoped but the provider
-            cannot be determined
-    """
-    provider = determine_provider(cli_provider)
-    if not provider:
-        raise ProviderRequiredError(
-            f"Cannot determine provider for config key '{key}'. "
-            f"Set one first with: janito --set provider=<name> "
-            f"or pass --provider <name>."
-        )
-    return f"{provider}.{key}"
-
-
-def set_config_from_cli(
-    key_value: str, cli_provider: str | None = None
-) -> tuple[str, str]:
-    """Set a config key-value pair from CLI input.
-
-    Provider-scoped keys (such as ``model``) are stored under a
-    ``<provider>.<key>`` key so each provider can have its own value. The
-    provider is taken from ``--provider`` or the configured ``provider`` value.
-
-    Args:
-        key_value: A string in the format "KEY=VALUE"
-        cli_provider: Provider passed via ``--provider`` (may be None)
-
-    Returns:
-        tuple: (key, value) that was set. For provider-scoped keys the returned
-            key is the full provider-scoped key (e.g. ``openai.model``).
-
-    Raises:
-        ValueError: If the format is invalid
-        ProviderRequiredError: If a provider-scoped key is used but the
-            provider cannot be determined
-    """
-    if "=" not in key_value:
-        raise ValueError("--set requires KEY=VALUE format")
-
-    key, value = key_value.split("=", 1)
-    key = key.strip()
-    value = value.strip()
-
-    if key in PROVIDER_SCOPED_KEYS:
-        key = _resolve_provider_scoped_key(key, cli_provider)
-
-    # Validate provider name against supported providers (those that map to a
-    # base URL) and normalize it to the canonical casing.
-    if key == "provider":
-        from .provider_config import validate_provider_name
-
-        value = validate_provider_name(value)
-
-    # Coerce values for keys that should be stored as integers.
-    base_key = key.rsplit(".", 1)[-1]
-    if base_key in INT_VALUED_KEYS:
-        try:
-            value = int(value)
-        except ValueError:
-            raise ValueError(
-                f"Config key '{key}' requires an integer value, got: {value!r}"
-            )
-
-    # Coerce values for keys that should be stored as booleans (accepts
-    # true/false/1/0/yes/no/on/off in any case).
-    if base_key in BOOL_VALUED_KEYS:
-        if isinstance(value, str):
-            lowered = value.strip().lower()
-            if lowered in ("true", "1", "yes", "on"):
-                value = True
-            elif lowered in ("false", "0", "no", "off"):
-                value = False
-            else:
-                raise ValueError(
-                    f"Config key '{key}' requires a boolean value, got: {value!r}"
-                )
-        value = bool(value)
-
-    # Normalize API type values to their canonical casing (accepts
-    # completions/responses/... in any case) and reject anything else, so a
-    # typo is reported when the value is set rather than at the first API
-    # call. Native-SDK API types (e.g. "Anthropic") also require their
-    # optional package to be installed: when it is missing, the change is
-    # aborted (nothing is written) with a message naming the package.
-    if base_key == "api-type":
-        value = normalize_api_type(value)
-        from .provider_config import ensure_api_type_available
-
-        ensure_api_type_available(value)
-
-    set_config_value(key, value)
-
-    return key, value
-
-
-def get_config_from_cli(key: str, cli_provider: str | None = None) -> str | None:
-    """Get a config value from CLI.
-
-    Provider-scoped keys (such as ``model``) are read from the
-    ``<provider>.<key>`` key. The provider is taken from ``--provider`` or the
-    configured ``provider`` value.
-
-    Args:
-        key: The config key to retrieve
-        cli_provider: Provider passed via ``--provider`` (may be None)
-
-    Returns:
-        The config value, or None if not found
-
-    Raises:
-        FileNotFoundError: If config file doesn't exist
-        json.JSONDecodeError: If config file contains invalid JSON
-        ProviderRequiredError: If a provider-scoped key is used but the
-            provider cannot be determined
-    """
-    if not get_config_path().exists():
-        raise FileNotFoundError(f"Config file not found: {get_config_path()}")
-
-    if key in PROVIDER_SCOPED_KEYS:
-        key = _resolve_provider_scoped_key(key, cli_provider)
-
-    # Use get_config_value which handles the nested structure
-    value = get_config_value(key)
-    if value is None:
-        return None
-
-    # Convert non-string values to string for printing
-    if not isinstance(value, str):
-        return json.dumps(value)
-    return value
-
-
-def unset_config_key_from_cli(key: str, cli_provider: str | None = None) -> bool:
-    """Remove a config value by key from CLI.
-
-    Provider-scoped keys (such as ``model``) are removed from the
-    ``<provider>.<key>`` key. The provider is taken from ``--provider`` or the
-    configured ``provider`` value.
-
-    Args:
-        key: The config key to remove
-        cli_provider: Provider passed via ``--provider`` (may be None)
-
-    Returns:
-        bool: True if the key was removed, False if it didn't exist
-
-    Raises:
-        ProviderRequiredError: If a provider-scoped key is used but the
-            provider cannot be determined
-    """
-    if key in PROVIDER_SCOPED_KEYS:
-        key = _resolve_provider_scoped_key(key, cli_provider)
-    return unset_config_value(key)
+from .config_cli import (  # noqa: E402,F401 (re-exported for backward compat)
+    ProviderRequiredError,
+    _coerce_bool_value,
+    _coerce_int_value,
+    _resolve_provider_scoped_key,
+    get_config_from_cli,
+    set_config_from_cli,
+    unset_config_key_from_cli,
+)
+from .config_loaders import (  # noqa: E402,F401 (re-exported for backward compat)
+    load_api_type,
+    load_endpoint_from_config,
+    load_max_output_tokens,
+    load_model_from_config,
+    load_reasoning_level,
+    load_responses_in_server_from_config,
+)

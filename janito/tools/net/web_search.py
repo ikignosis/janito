@@ -118,6 +118,15 @@ def _extract_news_results(data: dict[str, Any]) -> list[dict[str, Any]]:
     return results
 
 
+def _normalize_count(count) -> int:
+    """Coerce ``count`` to an int within ``[1, _MAX_COUNT]``."""
+    try:
+        count = int(count)
+    except (TypeError, ValueError):
+        count = 10
+    return max(1, min(count, _MAX_COUNT))
+
+
 @tool(permissions="r")
 class WebSearch(BaseTool):
     """
@@ -150,6 +159,61 @@ class WebSearch(BaseTool):
             )
             return False
         return True
+
+    @staticmethod
+    def _build_params(
+        query: str,
+        count: int,
+        country: str | None,
+        search_lang: str | None,
+        safesearch: str | None,
+        freshness: str | None,
+    ) -> dict[str, Any]:
+        """Build the query parameters (only include the ones that were set)."""
+        params: dict[str, Any] = {"q": query, "count": count}
+        if country:
+            params["country"] = country
+        if search_lang:
+            params["search_lang"] = search_lang
+        if safesearch:
+            params["safesearch"] = safesearch
+        if freshness:
+            params["freshness"] = freshness
+        return params
+
+    def _perform_request(self, url: str, api_key: str):
+        """GET the Brave Search endpoint; returns (body, error_message, status_code)."""
+        req = urllib.request.Request(url)
+        req.add_header("Accept", "application/json")
+        req.add_header("Accept-Encoding", "identity")
+        req.add_header("X-Subscription-Token", api_key)
+        req.add_header("User-Agent", "Mozilla/5.0 (compatible; janito/1.0)")
+
+        try:
+            with urllib.request.urlopen(req, timeout=_REQUEST_TIMEOUT) as resp:
+                return resp.read().decode("utf-8", errors="replace"), None, None
+        except urllib.error.HTTPError as e:
+            detail = ""
+            try:
+                err_body = e.read().decode("utf-8", errors="replace")
+                err_data = json.loads(err_body)
+                detail = (err_data.get("error") or {}).get("detail", "")
+            except Exception:
+                pass
+            msg = f"HTTP Error {e.code}: {e.reason}"
+            if detail:
+                msg += f" \u2014 {detail[:300]}"
+            return None, msg, e.code
+        except urllib.error.URLError as e:
+            return None, f"URL Error: {e.reason}", None
+
+    @staticmethod
+    def _parse_response(body: str):
+        """Parse the response body; returns (data, error_message)."""
+        try:
+            return json.loads(body), None
+        except json.JSONDecodeError as e:
+            return None, f"Invalid JSON response: {e}"
 
     def run(
         self,
@@ -191,11 +255,7 @@ class WebSearch(BaseTool):
             query = query.strip()
 
             # Validate / clamp count.
-            try:
-                count = int(count)
-            except (TypeError, ValueError):
-                count = 10
-            count = max(1, min(count, _MAX_COUNT))
+            count = _normalize_count(count)
 
             if safesearch is not None and safesearch not in _VALID_SAFESEARCH:
                 msg = (
@@ -214,66 +274,28 @@ class WebSearch(BaseTool):
                 self.report_error(msg)
                 return {"success": False, "error": msg, "query": query}
 
-            self.report_start(f"🔎 Searching the web for: {query}", end="")
+            self.report_start(f"\ud83d\udd0e Searching the web for: {query}", end="")
 
             # Build query parameters (only include the ones that were set).
-            params: dict[str, Any] = {"q": query, "count": count}
-            if country:
-                params["country"] = country
-            if search_lang:
-                params["search_lang"] = search_lang
-            if safesearch:
-                params["safesearch"] = safesearch
-            if freshness:
-                params["freshness"] = freshness
+            params = self._build_params(
+                query, count, country, search_lang, safesearch, freshness
+            )
 
             url = f"{_BRAVE_BASE_URL}{_SEARCH_PATH}?{urllib.parse.urlencode(params)}"
 
-            req = urllib.request.Request(url)
-            req.add_header("Accept", "application/json")
-            req.add_header("Accept-Encoding", "identity")
-            req.add_header("X-Subscription-Token", api_key)
-            req.add_header("User-Agent", "Mozilla/5.0 (compatible; janito/1.0)")
-
             start_time = time.time()
-            try:
-                with urllib.request.urlopen(req, timeout=_REQUEST_TIMEOUT) as resp:
-                    body = resp.read().decode("utf-8", errors="replace")
-            except urllib.error.HTTPError as e:
-                detail = ""
-                try:
-                    err_body = e.read().decode("utf-8", errors="replace")
-                    err_data = json.loads(err_body)
-                    detail = (err_data.get("error") or {}).get("detail", "")
-                except Exception:
-                    pass
-                msg = f"HTTP Error {e.code}: {e.reason}"
-                if detail:
-                    msg += f" — {detail[:300]}"
-                self.report_error(msg)
-                return {
-                    "success": False,
-                    "error": msg,
-                    "query": query,
-                    "status_code": e.code,
-                }
-            except urllib.error.URLError as e:
-                self.report_error(f"URL Error: {e.reason}")
-                return {
-                    "success": False,
-                    "error": f"URL Error: {e.reason}",
-                    "query": query,
-                }
+            body, error, status_code = self._perform_request(url, api_key)
+            if error:
+                self.report_error(error)
+                result = {"success": False, "error": error, "query": query}
+                if status_code:
+                    result["status_code"] = status_code
+                return result
 
-            try:
-                data = json.loads(body)
-            except json.JSONDecodeError as e:
-                self.report_error(f"Invalid JSON response: {e}")
-                return {
-                    "success": False,
-                    "error": f"Invalid JSON response: {e}",
-                    "query": query,
-                }
+            data, error = self._parse_response(body)
+            if error:
+                self.report_error(error)
+                return {"success": False, "error": error, "query": query}
 
             query_info = data.get("query") or {}
             results = _extract_web_results(data)
@@ -303,75 +325,3 @@ class WebSearch(BaseTool):
                 "error": f"Search failed: {e!s}",
                 "query": query,
             }
-
-
-# ── CLI testing harness ──────────────────────────────────────────────────
-def main():
-    """Command line interface for testing the WebSearch tool."""
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="Search the web via the Brave Search API",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  %(prog)s "python asyncio tutorial"
-  %(prog)s "latest AI news" --count 5 --freshness pw
-  %(prog)s "best cafes" --country US --json
-        """,
-    )
-    parser.add_argument("query", help="Search query")
-    parser.add_argument(
-        "--count",
-        "-n",
-        type=int,
-        default=10,
-        help="Number of results (1-20, default: 10)",
-    )
-    parser.add_argument("--country", help="2-letter country code (e.g. US)")
-    parser.add_argument("--search-lang", help="Language code (e.g. en)")
-    parser.add_argument(
-        "--safesearch", choices=_VALID_SAFESEARCH, help="Adult-content filter"
-    )
-    parser.add_argument(
-        "--freshness",
-        help='Page-age filter: "pd", "pw", "pm", "py", or "YYYY-MM-DDtoYYYY-MM-DD"',
-    )
-    parser.add_argument(
-        "--json", "-j", action="store_true", help="Output in JSON format"
-    )
-    args = parser.parse_args()
-
-    result = WebSearch().run(
-        query=args.query,
-        count=args.count,
-        country=args.country,
-        search_lang=args.search_lang,
-        safesearch=args.safesearch,
-        freshness=args.freshness,
-    )
-
-    if args.json:
-        print(json.dumps(result, indent=2))
-    else:
-        if result["success"]:
-            print(f"✅ {result['result_count']} results for: {result['query']}")
-            if result.get("altered_query"):
-                print(f"   (spellchecked: {result['altered_query']})")
-            for i, r in enumerate(result["results"], 1):
-                print(f"\n  {i}. {r['title']}")
-                print(f"     {r['url']}")
-                if r["description"]:
-                    print(f"     {r['description']}")
-            if result.get("news"):
-                print("\n  News:")
-                for r in result["news"]:
-                    print(f"   - {r['title']} ({r.get('source', '')}) {r['url']}")
-        else:
-            print(f"❌ Error: {result['error']}")
-
-    return 0 if result["success"] else 1
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

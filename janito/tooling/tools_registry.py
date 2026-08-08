@@ -22,26 +22,10 @@ _loaded_toolsets = set(AUTOLOAD_TOOLSETS.copy())
 _skills_enabled = True
 
 
-def get_function_schema(func: Callable) -> dict[str, Any]:
-    """
-    Generate a JSON schema for a function based on its signature and docstring.
-
-    Args:
-        func (Callable): The function to generate a schema for
-
-    Returns:
-        Dict[str, Any]: OpenAI function calling schema
-    """
-    # Get function name
-    func_name = func.__name__
-
-    # Get function docstring
-    docstring = inspect.getdoc(func) or ""
-
-    # Extract main description (first line or paragraph)
+def _parse_docstring(docstring: str, func_name: str):
+    """Extract the main description and per-parameter descriptions."""
     description = docstring.split("\n")[0] if docstring else f"Function {func_name}"
 
-    # Parse docstring for parameter descriptions
     param_descriptions = {}
     if docstring:
         # Look for Args section in docstring
@@ -60,6 +44,73 @@ def get_function_schema(func: Callable) -> dict[str, Any]:
                 clean_desc = re.sub(r"\s+", " ", desc.strip())
                 param_descriptions[param_name] = clean_desc
 
+    return description, param_descriptions
+
+
+def _resolve_array_items_type(args: tuple) -> str:
+    """Map the first list item hint to a JSON schema type."""
+    if not args:
+        return "string"
+    item_hint = args[0]
+    if item_hint is int:
+        return "integer"
+    if item_hint is float:
+        return "number"
+    if item_hint is bool:
+        return "boolean"
+    return "string"
+
+
+def _resolve_type_info(hint):
+    """Map a type hint to ``(param_type, items_type, is_array)``."""
+    param_type = "string"  # default
+    items_type = "string"  # default for array items
+    is_array = False
+
+    origin = getattr(hint, "__origin__", None)
+    args = getattr(hint, "__args__", ())
+
+    # Unwrap Optional (Union with None)
+    if origin is Union and type(None) in args:
+        # Get the non-None type
+        non_none_args = [a for a in args if a is not type(None)]
+        if len(non_none_args) == 1:
+            hint = non_none_args[0]
+            origin = getattr(hint, "__origin__", None)
+            args = getattr(hint, "__args__", ())
+
+    # Handle List[T] or List
+    if hint is list or origin is list:
+        is_array = True
+        items_type = _resolve_array_items_type(args)
+    elif hint is int:
+        param_type = "integer"
+    elif hint is float:
+        param_type = "number"
+    elif hint is bool:
+        param_type = "boolean"
+    # For other types, keep as string
+
+    return param_type, items_type, is_array
+
+
+def get_function_schema(func: Callable) -> dict[str, Any]:
+    """
+    Generate a JSON schema for a function based on its signature and docstring.
+
+    Args:
+        func (Callable): The function to generate a schema for
+
+    Returns:
+        Dict[str, Any]: OpenAI function calling schema
+    """
+    # Get function name
+    func_name = func.__name__
+
+    # Get function docstring and parse it
+    docstring = inspect.getdoc(func) or ""
+    description, param_descriptions = _parse_docstring(docstring, func_name)
+
     # Get function signature
     sig = inspect.signature(func)
     type_hints = get_type_hints(func)
@@ -70,48 +121,11 @@ def get_function_schema(func: Callable) -> dict[str, Any]:
 
     for param_name, param in sig.parameters.items():
         # Determine parameter type
-        param_type = "string"  # default
-        items_type = "string"  # default for array items
-        is_array = False
-
-        if param_name in type_hints:
-            hint = type_hints[param_name]
-
-            # Handle Optional[T] by unwrapping
-            origin = getattr(hint, "__origin__", None)
-            args = getattr(hint, "__args__", ())
-
-            # Unwrap Optional (Union with None)
-            if origin is Union and type(None) in args:
-                # Get the non-None type
-                non_none_args = [a for a in args if a is not type(None)]
-                if len(non_none_args) == 1:
-                    hint = non_none_args[0]
-                    origin = getattr(hint, "__origin__", None)
-                    args = getattr(hint, "__args__", ())
-
-            # Handle List[T] or List
-            if hint is list or origin is list:
-                is_array = True
-                if args:
-                    item_hint = args[0]
-                    if item_hint is int:
-                        items_type = "integer"
-                    elif item_hint is float:
-                        items_type = "number"
-                    elif item_hint is bool:
-                        items_type = "boolean"
-                    else:
-                        items_type = "string"
-                else:
-                    items_type = "string"
-            elif hint is int:
-                param_type = "integer"
-            elif hint is float:
-                param_type = "number"
-            elif hint is bool:
-                param_type = "boolean"
-            # For other types, keep as string
+        hint = type_hints.get(param_name)
+        if hint:
+            param_type, items_type, is_array = _resolve_type_info(hint)
+        else:
+            param_type, items_type, is_array = "string", "string", False
 
         # Build property schema
         if is_array:
@@ -314,8 +328,7 @@ def get_skills_section() -> str:
 
     # Add tool usage instructions
     tools_section = """
-
-## Skill Tools
+\n## Skill Tools
 Use these tools to load skill content when needed:
 - **load_skill(skill_name)**: Load the full instructions from a skill's SKILL.md file
 - **read_skill_resource(skill_name, resource_name)**: Read a supplementary file from a skill

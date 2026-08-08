@@ -13,13 +13,15 @@ posting lists to find candidate files.
 The candidate files are then scanned line by line: keywords must appear
 as **whole words** on a line, and ``Find`` returns the matching lines
 (path, line number and content) instead of just file names.
+
+The candidate-selection and line-scanning logic (and the ``MATCH`` enum
+and ``CodeSearchMatch`` dataclass) live in
+:mod:`janito.codesearch.candidates`; they are re-exported here so existing
+``janito.codesearch.code_search.<name>`` references keep working.
 """
 
 import os
-import re
-from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum, auto
 from pathlib import Path
 from typing import Iterator, List, Optional, Set
 
@@ -28,42 +30,15 @@ from ..tools.files.gitignore_utils import (
     load_gitignore_spec,
     load_janitoignore_spec,
 )
+from .candidates import (  # noqa: F401 (re-exported for backward compat)
+    MATCH,
+    CodeSearchMatch,
+    candidate_paths,
+    compile_matchers,
+    scan_candidates,
+)
 from .index import Index
-from .trigram import build_trigram_query, extract_trigrams
-
-
-class MATCH(Enum):
-    """Match mode for keyword search."""
-
-    AND = auto()  # All keywords must be present
-    OR = auto()  # Any keyword may be present
-
-
-@dataclass(frozen=True)
-class CodeSearchMatch:
-    """
-    A single matching line produced by ``CodeSearch.Find``.
-
-    Attributes:
-        path: Relative file path (POSIX style), relative to the source
-            root that was indexed.
-        lineno: 1-based line number of the match.
-        content: The full line content without the trailing newline.
-    """
-
-    path: str
-    lineno: int
-    content: str
-
-    def format(self) -> str:
-        """
-        Render the match in the same format as the other search tools.
-
-        Returns:
-            A string ``"path:lineno: content"`` (e.g. ``src/main.py:42: x``).
-        """
-        return f"{self.path}:{self.lineno}: {self.content}"
-
+from .trigram import extract_trigrams
 
 # File extensions that are typically source code / text and worth indexing.
 # Files with these extensions are indexed; others are skipped.
@@ -420,103 +395,16 @@ class CodeSearch:
 
         index = self._get_index()
 
-        # Compile a whole-word matcher for each keyword, keeping the order
-        # of the keywords list so AND filtering proceeds keyword by keyword.
-        compiled = [
-            (kw, re.compile(r"(?<!\w)" + re.escape(kw) + r"(?!\w)")) for kw in keywords
-        ]
+        compiled, keywords_with_trigrams, keywords_without_trigrams = compile_matchers(
+            keywords
+        )
 
-        # Build trigram sets for each keyword
-        keyword_trigrams = build_trigram_query(keywords)
-        keywords_with_trigrams = {
-            kw: tgs for kw, tgs in keyword_trigrams.items() if tgs
-        }
-        keywords_without_trigrams = {
-            kw for kw, tgs in keyword_trigrams.items() if not tgs
-        }
+        # Narrow the candidate files using the index.
+        candidates = candidate_paths(
+            index, keywords, match, keywords_with_trigrams, keywords_without_trigrams
+        )
 
-        # Narrow the candidate files using the index.  A short keyword
-        # (fewer than 3 characters) has no trigrams, so the index cannot
-        # narrow the search for it and every indexed file is a candidate.
-        if match == MATCH.OR and keywords_without_trigrams:
-            candidates = [f["path"] for f in index.get_all_files()]
-        elif match == MATCH.AND and not keywords_with_trigrams:
-            candidates = [f["path"] for f in index.get_all_files()]
-        else:
-            if match == MATCH.AND:
-                # Intersect posting lists for all trigrams of all keywords
-                all_trigrams: Set[str] = set()
-                for tgs in keywords_with_trigrams.values():
-                    all_trigrams.update(tgs)
-
-                if not all_trigrams:
-                    return
-
-                candidate_ids: Optional[Set[int]] = None
-                for trigram in all_trigrams:
-                    posting = set(index.get_posting_list(trigram))
-                    if candidate_ids is None:
-                        candidate_ids = posting
-                    else:
-                        candidate_ids &= posting
-                    # Early exit if no candidates left
-                    if not candidate_ids:
-                        return
-
-                file_ids = sorted(candidate_ids)
-
-            else:  # MATCH.OR
-                # Union posting lists for all trigrams of each keyword,
-                # then union across keywords
-                candidate_ids = set()
-                for tgs in keywords_with_trigrams.values():
-                    keyword_ids: Optional[Set[int]] = None
-                    for trigram in tgs:
-                        posting = set(index.get_posting_list(trigram))
-                        if keyword_ids is None:
-                            keyword_ids = posting
-                        else:
-                            keyword_ids &= posting
-                    if keyword_ids:
-                        candidate_ids.update(keyword_ids)
-
-                if not candidate_ids:
-                    return
-
-                file_ids = sorted(candidate_ids)
-
-            # Resolve file IDs to candidate paths
-            path_map = index.get_file_paths(file_ids)
-            candidates = [
-                path_map[fid] for fid in file_ids if path_map.get(fid) is not None
-            ]
-
-        # Scan the candidate files line by line; this line scan is the
-        # authoritative word match.
-        for rel_path in candidates:
-            filepath = self.source_path / rel_path
-            if not filepath.is_file():
-                # Indexed file no longer exists on disk -> skip it.
-                continue
-            try:
-                with open(filepath, "r", encoding="utf-8", errors="ignore") as fh:
-                    for lineno, line in enumerate(fh, 1):
-                        content = line.rstrip("\n")
-                        if match == MATCH.AND:
-                            matched = all(
-                                regex.search(content) for _, regex in compiled
-                            )
-                        else:
-                            matched = any(
-                                regex.search(content) for _, regex in compiled
-                            )
-                        if matched:
-                            yield CodeSearchMatch(
-                                path=rel_path, lineno=lineno, content=content
-                            )
-            except OSError:
-                # Skip files that cannot be read (permissions, binary, ...)
-                continue
+        yield from scan_candidates(self.source_path, candidates, match, compiled)
 
     def close(self) -> None:
         """Close the index database connection."""

@@ -49,4 +49,55 @@ Changes since `v4.20.0` (2026-08-07).
   filenames-only return contract on purpose; no backwards compatibility is
   kept.
 - Enabled ruff's mccabe complexity check (`C901`) in `[tool.ruff.lint]` with
-  `max-complexity = 50` in `[tool.ruff.lint.mccabe]`. Closes #44.
+  `max-complexity = 10` in `[tool.ruff.lint.mccabe]`. Closes #44.
+- Reduced the cyclomatic complexity of the remaining hot functions so the
+  whole codebase passes `ruff check` with `max-complexity = 10` (was 46 `C901`
+  violations). All refactors are behaviour-preserving:
+  - The CLI entry point (`janito/__main__.py`) was split into a dispatch
+    table plus small setup/batch-config helpers; the `--config` wizard
+    (`janito/cli/handlers/config.py`), `--info` resolution and the
+    interactive shell loop were decomposed into focused helpers.
+  - The `SearchText` and `SearchRegex` tools now share their directory
+    walking / ignore / exclude / aggregation logic via a new common base
+    module `janito/tools/files/search_base.py`; each tool keeps only its
+    per-line matcher, `run()` and CLI harness (each file roughly halved).
+  - The file tools (`ListFiles`, `MoveFile`, `RemoveDirectory`,
+    `ReadMultipleFiles`) extract their walk/validate/move logic into small
+    private helpers.
+  - The Gmail tools reuse shared credential fetching, IMAP connection and
+    search-criteria helpers in `janito/tools/gmail/imap_utils.py`; the
+    OneDrive tools (`base_client`, `list_files`, `read_file`,
+    `download_file`, `__main__`) extract request/format helpers.
+  - `CreateImage`, `WebSearch`, `CodeSearch.Find`, the web agent's
+    `stream_prompt`/`StreamAccumulator`, the WebSocket loop and
+    `patch_config` were decomposed into small helpers, and
+    `scripts/promote_changelog.py` splits out version/date/section
+    resolution.
+- Split the remaining production Python files over 600 lines into focused
+  modules. Every refactor is behaviour-preserving (no public API changed;
+  moved helpers are re-exported from their original modules so existing
+  imports and test monkeypatches keep working):
+  - The four API clients (`janito/openai_client/completions_api.py`,
+    `conversations_api.py`, `anthropic_api.py` and `janito/dashscope_api.py`)
+    now share their duplicated support code (token formatting, MCP loading,
+    Rich console output, auth-error explainer) from
+    `janito/openai_client/client_support.py`, and each client's stream
+    consumption moved to its own module (`completions_stream.py`,
+    `responses_stream.py`, `anthropic_stream.py`, `dashscope_stream.py`);
+    the Responses conversation-state setup moved to
+    `responses_state.py`. Each client file shrank below 600 lines.
+  - `janito/general_config.py` now only holds the core config storage and
+    key-resolution primitives; the per-provider loaders moved to
+    `janito/config_loaders.py` and the `--set`/`--get`/`--unset` CLI helpers
+    plus `ProviderRequiredError` moved to `janito/config_cli.py`.
+  - `janito/provider_config.py` keeps the accessor functions while the
+    static provider registry moved to `janito/provider_data.py`.
+  - `janito/tools/files/find_files.py` delegates its pure filter helpers to
+    `janito/tools/files/find_files_utils.py` and its standalone CLI harness
+    to `janito/tools/files/find_files_cli.py`.
+  - `janito/codesearch/code_search.py` delegates candidate selection and
+    line scanning (plus `MATCH`/`CodeSearchMatch`) to
+    `janito/codesearch/candidates.py`.
+  - The web config router (`janito/web/backend/routers/config.py`) moved its
+    per-provider `PATCH /api/config` helpers to
+    `janito/web/backend/routers/config_helpers.py`.
