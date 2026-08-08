@@ -15,14 +15,13 @@ Only execute trusted code and be aware of security implications.
 
 import json
 import os
-import queue
 import subprocess
 import sys
-import threading
 from typing import Any
 
 from ...tooling import BaseTool, format_duration_ms, norm_path
 from ...tooling.decorator import tool
+from ._streaming import stream_execute
 
 
 @tool(permissions="x")
@@ -80,194 +79,48 @@ class RunPythonCode(BaseTool):
         start_time = time.time()
 
         try:
-            # Determine working directory
-            if working_directory:
-                abs_working_dir = os.path.abspath(working_directory)
-                if not os.path.exists(abs_working_dir):
-                    return {
-                        "success": False,
-                        "error": f"Working directory does not exist: {abs_working_dir}",
-                        "exit_code": -1,
-                        "working_directory": working_directory,
-                    }
-            else:
-                abs_working_dir = os.getcwd()
+            abs_working_dir = self._resolve_working_dir(working_directory)
+            if abs_working_dir is None:
+                return {
+                    "success": False,
+                    "error": (
+                        f"Working directory does not exist: "
+                        f"{os.path.abspath(working_directory)}"
+                    ),
+                    "exit_code": -1,
+                    "working_directory": working_directory,
+                }
 
+            python_executable = python_executable or sys.executable
             norm_working_dir = norm_path(abs_working_dir)
+            self._report_exec_start(code, norm_working_dir)
+            python_command = self._build_command(python_executable, code)
 
-            # Determine Python executable
-            if python_executable is None:
-                python_executable = sys.executable
-
-            # Report the code to be executed
-            code_preview = code
-            if len(code) > 200:
-                code_preview = code[:200] + "..."
-            self.report_start(
-                f"🐍 Executing Python code in {norm_working_dir}:\n{code_preview}"
-            )
-
-            # Build Python command
-            # Use -c for executing code from command line
-            python_command = [python_executable, "-c", code]
-
-            # Initialize captured output
-            captured_stdout = []
-            captured_stderr = []
-
-            # Start the subprocess
-            process = subprocess.Popen(
+            exit_code, stdout_lines, stderr_lines, execution_time_ms = stream_execute(
                 python_command,
-                cwd=abs_working_dir,
-                stdout=subprocess.PIPE if capture_output else subprocess.DEVNULL,
-                stderr=subprocess.PIPE if capture_errors else subprocess.DEVNULL,
-                text=True,
-                shell=False,
-                bufsize=1,  # Line buffered
-                universal_newlines=True,
-                encoding="utf-8",
-                env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+                abs_working_dir,
+                capture_output,
+                capture_errors,
+                timeout,
+                start_time,
+                self.report_output,
+                popen_kwargs={
+                    "encoding": "utf-8",
+                    "env": {**os.environ, "PYTHONIOENCODING": "utf-8"},
+                },
             )
 
-            # Queue for handling output from threads
-            output_queue = queue.Queue()
-
-            def read_stream(stream, stream_name, capture_list):
-                """Read from a stream and put lines into the queue."""
-                try:
-                    for line in iter(stream.readline, ""):
-                        if line:
-                            output_queue.put((stream_name, line.rstrip("\r\n")))
-                            if capture_list is not None:
-                                capture_list.append(line)
-                    stream.close()
-                except Exception as e:
-                    output_queue.put(("error", f"Error reading {stream_name}: {e}"))
-
-            # Start reader threads for stdout and stderr
-            threads = []
-            if capture_output and process.stdout:
-                stdout_thread = threading.Thread(
-                    target=read_stream,
-                    args=(process.stdout, "stdout", captured_stdout),
-                    daemon=True,
-                )
-                stdout_thread.start()
-                threads.append(stdout_thread)
-
-            if capture_errors and process.stderr:
-                stderr_thread = threading.Thread(
-                    target=read_stream,
-                    args=(process.stderr, "stderr", captured_stderr),
-                    daemon=True,
-                )
-                stderr_thread.start()
-                threads.append(stderr_thread)
-
-            # Monitor the process and display output in real-time
-            exit_code = None
-            start_display_time = time.time()
-            displayed_any_output = False
-
-            while True:
-                # Check if process has finished
-                exit_code = process.poll()
-                process_finished = exit_code is not None
-
-                # Process any available output
-                try:
-                    while True:
-                        stream_name, line = output_queue.get_nowait()
-                        if stream_name == "stdout" or stream_name == "stderr":
-                            if not displayed_any_output:
-                                displayed_any_output = True
-                            self.report_output(line)
-                        elif stream_name == "error":
-                            self.report_output(f"STREAM ERROR: {line}")
-                except queue.Empty:
-                    pass
-
-                # If process finished, break
-                if process_finished:
-                    break
-
-                # Handle timeout
-                if timeout is not None:
-                    elapsed = time.time() - start_display_time
-                    if elapsed > timeout:
-                        process.kill()
-                        exit_code = -1
-                        break
-
-                # Small delay to prevent busy waiting
-                time.sleep(0.01)
-
-            # Wait for reader threads to finish
-            for thread in threads:
-                thread.join(timeout=1)
-
-            # Ensure all remaining output is processed
-            try:
-                while True:
-                    stream_name, line = output_queue.get_nowait()
-                    if stream_name == "stdout" or stream_name == "stderr":
-                        if not displayed_any_output:
-                            displayed_any_output = True
-                        self.report_output(line)
-            except queue.Empty:
-                pass
-
-            execution_time_ms = int((time.time() - start_time) * 1000)
-
-            # Create result object similar to subprocess.CompletedProcess
-            class MockResult:
-                def __init__(self, returncode, stdout_lines, stderr_lines):
-                    self.returncode = returncode
-                    self.stdout = "".join(stdout_lines) if stdout_lines else ""
-                    self.stderr = "".join(stderr_lines) if stderr_lines else ""
-
-            result = MockResult(exit_code, captured_stdout, captured_stderr)
-
-            # Determine success (exit code 0 typically means success)
-            success = result.returncode == 0
-
-            # Build result dictionary
-            output_result = {
-                "success": success,
-                "exit_code": result.returncode,
-                "command": code,
-                "working_directory": working_directory or abs_working_dir,
-                "execution_time_ms": execution_time_ms,
-            }
-
-            if capture_output:
-                output_result["stdout"] = result.stdout
-            if capture_errors:
-                output_result["stderr"] = result.stderr
-
-            # Report result
-            if success:
-                output_summary = f"Completed in {format_duration_ms(execution_time_ms)}"
-                if capture_output and result.stdout:
-                    lines = result.stdout.strip().split("\n")
-                    if len(lines) > 0:
-                        output_summary += f" ({len(lines)} lines output)"
-                self.report_result(output_summary)
-            else:
-                error_msg = f"Exit code {result.returncode}"
-                if capture_errors and result.stderr:
-                    # Truncate long error messages for display
-                    stderr_preview = result.stderr[:100].replace("\n", " ")
-                    if len(result.stderr) > 100:
-                        stderr_preview += "..."
-                    error_msg += f": {stderr_preview}"
-                self.report_error(error_msg)
-                output_result[
-                    "error"
-                ] = f"Python execution failed with exit code {result.returncode}"
-
-            return output_result
-
+            return self._build_result(
+                exit_code,
+                code,
+                working_directory,
+                abs_working_dir,
+                stdout_lines,
+                stderr_lines,
+                capture_output,
+                capture_errors,
+                execution_time_ms,
+            )
         except subprocess.TimeoutExpired:
             execution_time_ms = int((time.time() - start_time) * 1000)
             self.report_error(f"Timeout after {timeout}s")
@@ -279,7 +132,6 @@ class RunPythonCode(BaseTool):
                 "working_directory": working_directory or os.getcwd(),
                 "execution_time_ms": execution_time_ms,
             }
-
         except FileNotFoundError:
             self.report_error("Python executable not found")
             return {
@@ -290,7 +142,6 @@ class RunPythonCode(BaseTool):
                 "working_directory": working_directory or os.getcwd(),
                 "execution_time_ms": int((time.time() - start_time) * 1000),
             }
-
         except Exception as e:
             execution_time_ms = int((time.time() - start_time) * 1000)
             self.report_error(f"Execution error: {e!s}")
@@ -303,10 +154,122 @@ class RunPythonCode(BaseTool):
                 "execution_time_ms": execution_time_ms,
             }
 
+    def _resolve_working_dir(self, working_directory: str | None) -> str | None:
+        """Return the absolute working dir, or None when it does not exist."""
+        if working_directory:
+            abs_working_dir = os.path.abspath(working_directory)
+            if not os.path.exists(abs_working_dir):
+                return None
+            return abs_working_dir
+        return os.getcwd()
+
+    def _build_command(self, python_executable: str, code: str) -> list[str]:
+        """Build the python argv; use -c to execute code from the command line."""
+        return [python_executable, "-c", code]
+
+    def _report_exec_start(self, code: str, norm_working_dir: str) -> None:
+        """Report the code to be executed."""
+        code_preview = code
+        if len(code) > 200:
+            code_preview = code[:200] + "..."
+        self.report_start(
+            f"🐍 Executing Python code in {norm_working_dir}:\n{code_preview}"
+        )
+
+    def _build_result(
+        self,
+        exit_code: int,
+        code: str,
+        working_directory: str | None,
+        abs_working_dir: str,
+        stdout_lines: list[str],
+        stderr_lines: list[str],
+        capture_output: bool,
+        capture_errors: bool,
+        execution_time_ms: int,
+    ) -> dict[str, Any]:
+        """Assemble the result dict and report the outcome."""
+        success = exit_code == 0
+        stdout_text = "".join(stdout_lines) if stdout_lines else ""
+        stderr_text = "".join(stderr_lines) if stderr_lines else ""
+        output_result = {
+            "success": success,
+            "exit_code": exit_code,
+            "command": code,
+            "working_directory": working_directory or abs_working_dir,
+            "execution_time_ms": execution_time_ms,
+        }
+        if capture_output:
+            output_result["stdout"] = stdout_text
+        if capture_errors:
+            output_result["stderr"] = stderr_text
+        if success:
+            self._report_success(execution_time_ms, capture_output, stdout_text)
+        else:
+            self._report_failure(exit_code, capture_errors, stderr_text)
+            output_result[
+                "error"
+            ] = f"Python execution failed with exit code {exit_code}"
+        return output_result
+
+    def _report_success(
+        self,
+        execution_time_ms: int,
+        capture_output: bool,
+        stdout_text: str,
+    ) -> None:
+        """Report a successful execution summary."""
+        output_summary = f"Completed in {format_duration_ms(execution_time_ms)}"
+        if capture_output and stdout_text:
+            lines = stdout_text.strip().split("\n")
+            if lines:
+                output_summary += f" ({len(lines)} lines output)"
+        self.report_result(output_summary)
+
+    def _report_failure(
+        self,
+        exit_code: int,
+        capture_errors: bool,
+        stderr_text: str,
+    ) -> None:
+        """Report a failed execution, truncating long stderr previews."""
+        error_msg = f"Exit code {exit_code}"
+        if capture_errors and stderr_text:
+            stderr_preview = stderr_text[:100].replace("\n", " ")
+            if len(stderr_text) > 100:
+                stderr_preview += "..."
+            error_msg += f": {stderr_preview}"
+        self.report_error(error_msg)
+
 
 # CLI interface for testing
 def main():
     """Command line interface for testing the RunPythonCode tool."""
+    parser = _build_parser()
+    args = parser.parse_args()
+    code = _read_code(args, parser)
+    if code is None:
+        return 1
+
+    tool_instance = RunPythonCode()
+    result = tool_instance.run(
+        code=code,
+        working_directory=args.directory,
+        timeout=args.timeout,
+        capture_output=not args.no_capture_output,
+        capture_errors=not args.no_capture_errors,
+        python_executable=args.python,
+    )
+
+    if args.json:
+        print(json.dumps(result, indent=2))
+    else:
+        _print_result(result, args)
+    return 0 if result["success"] else 1
+
+
+def _build_parser():
+    """Build the CLI argument parser."""
     import argparse
 
     parser = argparse.ArgumentParser(
@@ -342,80 +305,65 @@ Examples:
     parser.add_argument(
         "--verbose", "-v", action="store_true", help="Show verbose output"
     )
+    return parser
 
-    args = parser.parse_args()
 
-    # Validate arguments
+def _read_code(args, parser) -> str | None:
+    """Resolve the code from --code/--file; return None on file errors."""
     if not args.code and not args.file:
         parser.error("Either --code or --file must be specified")
 
     if args.code and args.file:
         parser.error("Cannot specify both --code and --file")
 
-    # Get code from file if specified
     code = args.code
     if args.file:
         if not os.path.exists(args.file):
             print(f"Error: File not found: {args.file}")
-            return 1
+            return None
         try:
             with open(args.file, "r", encoding="utf-8") as f:
                 code = f.read()
         except Exception as e:
             print(f"Error reading file: {e}")
-            return 1
+            return None
+    return code
 
-    # Create tool instance and execute
-    tool_instance = RunPythonCode()
-    result = tool_instance.run(
-        code=code,
-        working_directory=args.directory,
-        timeout=args.timeout,
-        capture_output=not args.no_capture_output,
-        capture_errors=not args.no_capture_errors,
-        python_executable=args.python,
-    )
 
-    # Output results
-    if args.json:
-        print(json.dumps(result, indent=2))
+def _print_result(result: dict[str, Any], args) -> None:
+    """Pretty-print the tool result."""
+    if result["success"]:
+        print(f"? Python execution successful (exit code {result['exit_code']})")
+        print(f"  Working directory: {norm_path(result['working_directory'])}")
+        print(f"  Execution time: {format_duration_ms(result['execution_time_ms'])}")
+
+        if args.verbose:
+            print("\nCommand:")
+            print(f"  {result['command']}")
+
+        if result.get("stdout"):
+            print("\nOutput:")
+            print(result["stdout"])
+
+        if result.get("stderr"):
+            print("\nStderr:")
+            print(result["stderr"])
     else:
-        if result["success"]:
-            print(f"? Python execution successful (exit code {result['exit_code']})")
-            print(f"  Working directory: {norm_path(result['working_directory'])}")
-            print(
-                f"  Execution time: {format_duration_ms(result['execution_time_ms'])}"
-            )
+        print("? Python execution failed")
+        print(f"  Error: {result.get('error', 'Unknown error')}")
+        print(f"  Exit code: {result['exit_code']}")
 
-            if args.verbose:
-                print("\nCommand:")
-                print(f"  {result['command']}")
+        if args.verbose:
+            print("\nCommand:")
+            print(f"  {result['command']}")
 
-            if result.get("stdout"):
-                print("\nOutput:")
-                print(result["stdout"])
+        if result.get("stdout"):
+            print("\nOutput:")
+            print(result["stdout"])
 
-            if result.get("stderr"):
-                print("\nStderr:")
-                print(result["stderr"])
-        else:
-            print("? Python execution failed")
-            print(f"  Error: {result.get('error', 'Unknown error')}")
-            print(f"  Exit code: {result['exit_code']}")
-
-            if args.verbose:
-                print("\nCommand:")
-                print(f"  {result['command']}")
-
-            if result.get("stdout"):
-                print("\nOutput:")
-                print(result["stdout"])
-
-            if result.get("stderr"):
-                print("\nStderr:")
-                print(result["stderr"])
-
-    return 0 if result["success"] else 1
+        if result.get("stderr"):
+            print("\nStderr:")
+            print(result["stderr"])
 
 
 if __name__ == "__main__":

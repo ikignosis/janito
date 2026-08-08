@@ -18,13 +18,13 @@ issues, pull requests, releases, and other GitHub artifacts. Use with caution.
 import json
 import os
 import shutil
-import subprocess
 import sys
 import time
 from typing import Any
 
 from ...tooling import BaseTool, format_duration_ms
 from ...tooling.decorator import tool
+from ._streaming import stream_execute
 
 # Candidate executable names for the GitHub CLI.
 _GH_CANDIDATES = ("gh", "gh.exe")
@@ -186,162 +186,34 @@ class RunGitHubCLI(BaseTool):
             }
 
         try:
-            # Build the full command: gh <cmdline>
-            # We invoke through the shell so users can pass pipelines,
-            # quoting, and other shell constructs naturally.
             full_command = f"{gh_path} {cmdline}"
+            self._report_exec_start(cmdline)
+            shell_command = self._build_shell_command(full_command)
 
-            code_preview = cmdline
-            if len(code_preview) > 200:
-                code_preview = code_preview[:200] + "..."
-            self.report_start(f"⚙️ Executing: gh {code_preview}")
-
-            # ── Real-time streaming (same pattern as RunBashCode) ──
-            import queue
-            import threading
-
-            captured_stdout: list[str] = []
-            captured_stderr: list[str] = []
-
-            # Resolve a shell to run the command through (prefer bash, fall
-            # back to sh).  We do NOT hardcode a shell name because the
-            # platform may vary.
-            shell_exe = shutil.which("bash") or shutil.which("sh")
-            if shell_exe:
-                shell_command = [shell_exe, "-c", full_command]
-            else:
-                # Extremely unlikely (we already found gh), but be safe.
-                shell_command = full_command  # type: ignore[assignment]
-
-            process = subprocess.Popen(
+            exit_code, stdout_lines, stderr_lines, execution_time_ms = stream_execute(
                 shell_command,
-                cwd=os.getcwd(),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                bufsize=1,
-                encoding="utf-8",
-                errors="replace",
-                env={**os.environ},
+                os.getcwd(),
+                True,
+                True,
+                120,  # generous default for network-bound gh commands
+                start_time,
+                self.report_output,
+                report_blank_first=True,
+                popen_kwargs={
+                    "encoding": "utf-8",
+                    "errors": "replace",
+                    "env": {**os.environ},
+                },
             )
 
-            output_queue: queue.Queue[tuple[str, str]] = queue.Queue()
-
-            def read_stream(
-                stream: Any, stream_name: str, capture_list: list[str]
-            ) -> None:
-                """Read lines from *stream* and enqueue them."""
-                try:
-                    for line in iter(stream.readline, ""):
-                        if line:
-                            output_queue.put((stream_name, line.rstrip("\r\n")))
-                            capture_list.append(line)
-                    stream.close()
-                except Exception as e:  # pragma: no cover
-                    output_queue.put(("error", f"Error reading {stream_name}: {e}"))
-
-            threads: list[threading.Thread] = []
-            if process.stdout:
-                t = threading.Thread(
-                    target=read_stream,
-                    args=(process.stdout, "stdout", captured_stdout),
-                    daemon=True,
-                )
-                t.start()
-                threads.append(t)
-            if process.stderr:
-                t = threading.Thread(
-                    target=read_stream,
-                    args=(process.stderr, "stderr", captured_stderr),
-                    daemon=True,
-                )
-                t.start()
-                threads.append(t)
-
-            # ── Monitor loop ──
-            exit_code: int | None = None
-            displayed_any_output = False
-            timeout = 120  # generous default for network-bound gh commands
-
-            while True:
-                exit_code = process.poll()
-                process_finished = exit_code is not None
-
-                # Drain the queue
-                try:
-                    while True:
-                        stream_name, line = output_queue.get_nowait()
-                        if stream_name in ("stdout", "stderr"):
-                            if not displayed_any_output:
-                                self.report_output("")
-                                displayed_any_output = True
-                            self.report_output(line)
-                        elif stream_name == "error":
-                            self.report_output(f"STREAM ERROR: {line}")
-                except queue.Empty:
-                    pass
-
-                if process_finished:
-                    break
-
-                elapsed = time.time() - start_time
-                if elapsed > timeout:
-                    process.kill()
-                    exit_code = -1
-                    break
-
-                time.sleep(0.01)
-
-            # Join reader threads
-            for t in threads:
-                t.join(timeout=1)
-
-            # Drain any remaining output
-            try:
-                while True:
-                    stream_name, line = output_queue.get_nowait()
-                    if stream_name in ("stdout", "stderr"):
-                        if not displayed_any_output:
-                            self.report_output("")
-                            displayed_any_output = True
-                        self.report_output(line)
-            except queue.Empty:
-                pass
-
-            execution_time_ms = int((time.time() - start_time) * 1000)
-
-            stdout_str = "".join(captured_stdout)
-            stderr_str = "".join(captured_stderr)
-            success = exit_code == 0
-
-            result: dict[str, Any] = {
-                "success": success,
-                "exit_code": exit_code if exit_code is not None else -1,
-                "command": f"gh {cmdline}",
-                "gh_executable": gh_path,
-                "execution_time_ms": execution_time_ms,
-                "stdout": stdout_str,
-                "stderr": stderr_str,
-            }
-
-            if success:
-                summary = f"Completed in {format_duration_ms(execution_time_ms)}"
-                if stdout_str:
-                    n_lines = len(stdout_str.strip().split("\n"))
-                    summary += f" ({n_lines} lines output)"
-                self.report_result(summary)
-            else:
-                error_msg = f"Exit code {exit_code}"
-                if stderr_str:
-                    stderr_preview = stderr_str[:200].replace("\n", " ")
-                    if len(stderr_str) > 200:
-                        stderr_preview += "..."
-                    error_msg += f": {stderr_preview}"
-                self.report_error(error_msg)
-                result["error"] = f"gh exited with code {exit_code}"
-
-            return result
-
+            return self._build_result(
+                exit_code,
+                cmdline,
+                gh_path,
+                stdout_lines,
+                stderr_lines,
+                execution_time_ms,
+            )
         except FileNotFoundError:
             self.report_error("gh executable not found at runtime")
             return {
@@ -351,7 +223,6 @@ class RunGitHubCLI(BaseTool):
                 "command": f"gh {cmdline}",
                 "execution_time_ms": int((time.time() - start_time) * 1000),
             }
-
         except Exception as e:
             self.report_error(f"Execution error: {e!s}")
             return {
@@ -361,6 +232,70 @@ class RunGitHubCLI(BaseTool):
                 "command": f"gh {cmdline}",
                 "execution_time_ms": int((time.time() - start_time) * 1000),
             }
+
+    def _report_exec_start(self, cmdline: str) -> None:
+        """Report the command to be executed."""
+        code_preview = cmdline
+        if len(code_preview) > 200:
+            code_preview = code_preview[:200] + "..."
+        self.report_start(f"⚙️ Executing: gh {code_preview}")
+
+    def _build_shell_command(self, full_command: str) -> list[str] | str:
+        """Resolve a shell to run the command through (prefer bash, fall back to sh)."""
+        shell_exe = shutil.which("bash") or shutil.which("sh")
+        if shell_exe:
+            return [shell_exe, "-c", full_command]
+        # Extremely unlikely (we already found gh), but be safe.
+        return full_command
+
+    def _build_result(
+        self,
+        exit_code: int,
+        cmdline: str,
+        gh_path: str,
+        stdout_lines: list[str],
+        stderr_lines: list[str],
+        execution_time_ms: int,
+    ) -> dict[str, Any]:
+        """Assemble the result dict and report the outcome."""
+        stdout_str = "".join(stdout_lines)
+        stderr_str = "".join(stderr_lines)
+        success = exit_code == 0
+
+        result: dict[str, Any] = {
+            "success": success,
+            "exit_code": exit_code if exit_code is not None else -1,
+            "command": f"gh {cmdline}",
+            "gh_executable": gh_path,
+            "execution_time_ms": execution_time_ms,
+            "stdout": stdout_str,
+            "stderr": stderr_str,
+        }
+
+        if success:
+            self._report_success(execution_time_ms, stdout_str)
+        else:
+            self._report_failure(exit_code, stderr_str)
+            result["error"] = f"gh exited with code {exit_code}"
+        return result
+
+    def _report_success(self, execution_time_ms: int, stdout_str: str) -> None:
+        """Report a successful execution summary."""
+        summary = f"Completed in {format_duration_ms(execution_time_ms)}"
+        if stdout_str:
+            n_lines = len(stdout_str.strip().split("\n"))
+            summary += f" ({n_lines} lines output)"
+        self.report_result(summary)
+
+    def _report_failure(self, exit_code: int, stderr_str: str) -> None:
+        """Report a failed execution, truncating long stderr previews."""
+        error_msg = f"Exit code {exit_code}"
+        if stderr_str:
+            stderr_preview = stderr_str[:200].replace("\n", " ")
+            if len(stderr_str) > 200:
+                stderr_preview += "..."
+            error_msg += f": {stderr_preview}"
+        self.report_error(error_msg)
 
 
 # ── CLI testing harness ─────────────────────────────────────────────────────

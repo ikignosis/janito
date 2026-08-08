@@ -66,7 +66,7 @@ target-version = "py310"
 select = ["C901", "E", "F", "W"]
 
 [tool.ruff.lint.mccabe]
-max-complexity = 50
+max-complexity = 10
 
 [tool.isort]
 profile = "black"

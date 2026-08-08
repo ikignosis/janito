@@ -139,284 +139,45 @@ class FindFiles(BaseTool):
                 - 'stats': dict with 'entries_scanned' and 'gitignore_ignored'
                 - 'error': error message if operation failed (only if success=False)
         """
+        error = self._validate(file_type, sort_by, paths)
+        if error:
+            return error
+
+        valid_paths, error = self._collect_valid_paths(paths)
+        if error:
+            return error
+
+        exclude_patterns = exclude.strip().split() if exclude else []
+        min_bytes = _parse_size(min_size)
+        max_bytes = _parse_size(max_size)
+        newer_than, older_than = self._time_thresholds(
+            modified_within_days, older_than_days
+        )
+
+        self._report_search_start(
+            valid_paths,
+            pattern,
+            file_type,
+            min_bytes,
+            max_bytes,
+            modified_within_days,
+            older_than_days,
+        )
+
         try:
-            # ── Validate file_type ──
-            valid_types = {"file", "dir", "symlink"}
-            if file_type is not None and file_type not in valid_types:
-                self.report_error(
-                    f"Invalid file_type '{file_type}'. Must be one of: {', '.join(sorted(valid_types))}"
-                )
-                return {
-                    "success": False,
-                    "error": f"Invalid file_type '{file_type}'. Must be one of: {', '.join(sorted(valid_types))}",
-                    "paths": paths,
-                }
-
-            # ── Validate sort_by ──
-            valid_sorts = {"name", "size", "mtime"}
-            if sort_by is not None and sort_by not in valid_sorts:
-                self.report_error(
-                    f"Invalid sort_by '{sort_by}'. Must be one of: {', '.join(sorted(valid_sorts))}"
-                )
-                return {
-                    "success": False,
-                    "error": f"Invalid sort_by '{sort_by}'. Must be one of: {', '.join(sorted(valid_sorts))}",
-                    "paths": paths,
-                }
-
-            # ── Parse root paths ──
-            path_list = paths.strip().split()
-            if not path_list:
-                self.report_error("No paths provided")
-                return {"success": False, "error": "No paths provided", "paths": paths}
-
-            valid_paths: list[str] = []
-            for p in path_list:
-                abs_p = os.path.abspath(p)
-                if not os.path.exists(abs_p):
-                    self.report_warning(f"Path does not exist: {norm_path(abs_p)}")
-                    continue
-                valid_paths.append(abs_p)
-
-            if not valid_paths:
-                self.report_error("No valid paths to search")
-                return {
-                    "success": False,
-                    "error": "No valid paths to search",
-                    "paths": paths,
-                }
-
-            # ── Parse exclude patterns ──
-            exclude_patterns: list[str] = []
-            if exclude:
-                exclude_patterns = exclude.strip().split()
-
-            # ── Parse size limits ──
-            min_bytes = _parse_size(min_size)
-            max_bytes = _parse_size(max_size)
-
-            # ── Compute time thresholds ──
-            now = time.time()
-            newer_than: float | None = None
-            older_than: float | None = None
-            if modified_within_days is not None:
-                newer_than = now - modified_within_days * 86400
-            if older_than_days is not None:
-                older_than = now - older_than_days * 86400
-
-            # ── Load ignore specs from the current working directory ──
-            # .janitoignore is always respected; .gitignore only when enabled.
-            cwd = os.getcwd()
-            gitignore_spec = None
-            if respect_gitignore:
-                gitignore_spec = load_gitignore_spec(cwd)
-            janitoignore_spec = load_janitoignore_spec(cwd)
-
-            # ── Report start ──
-            paths_str = ", ".join(norm_path(p) for p in valid_paths[:3])
-            if len(valid_paths) > 3:
-                paths_str += f" (+{len(valid_paths) - 3} more)"
-            criteria: list[str] = []
-            if pattern:
-                criteria.append(f"pattern='{pattern}'")
-            if file_type:
-                criteria.append(f"type={file_type}")
-            if min_bytes is not None or max_bytes is not None:
-                size_desc = []
-                if min_bytes is not None:
-                    size_desc.append(f">={min_bytes}B")
-                if max_bytes is not None:
-                    size_desc.append(f"<={max_bytes}B")
-                criteria.append(f"size {','.join(size_desc)}")
-            if modified_within_days is not None:
-                criteria.append(f"modified <{modified_within_days}d")
-            if older_than_days is not None:
-                criteria.append(f"older >{older_than_days}d")
-
-            criteria_str = f" [{', '.join(criteria)}]" if criteria else ""
-            self.report_start(f"🔎 Finding files in {paths_str}{criteria_str}", end="")
-
-            # ── Walk and collect ──
-            results: list[tuple[str, int, float]] = []  # (rel_path, size, mtime)
-            entries_scanned = 0
-            gitignore_ignored = 0
-            janitoignore_ignored = 0
-            truncated = False
-
-            def _is_ignored(rel_to_cwd: str, is_dir: bool = False) -> bool:
-                """Check a path (relative to cwd) against .janitoignore then .gitignore."""
-                nonlocal gitignore_ignored, janitoignore_ignored
-                if janitoignore_spec and is_ignored_by_gitignore(
-                    rel_to_cwd, janitoignore_spec, is_dir=is_dir
-                ):
-                    janitoignore_ignored += 1
-                    return True
-                if gitignore_spec and is_ignored_by_gitignore(
-                    rel_to_cwd, gitignore_spec, is_dir=is_dir
-                ):
-                    gitignore_ignored += 1
-                    return True
-                return False
-
-            for root_path in valid_paths:
-                if os.path.isfile(root_path):
-                    # Single-file root — just check it directly
-                    entries_scanned += 1
-                    rel = os.path.basename(root_path)
-                    try:
-                        st = os.stat(root_path)
-                    except OSError:
-                        continue
-                    if self._entry_matches(
-                        rel,
-                        root_path,
-                        st,
-                        pattern,
-                        exclude_patterns,
-                        file_type,
-                        min_bytes,
-                        max_bytes,
-                        newer_than,
-                        older_than,
-                        None,
-                    ):
-                        results.append((rel, st.st_size, st.st_mtime))
-                    continue
-
-                # Directory root — walk
-                for dirpath, dirnames, filenames in os.walk(root_path):
-                    # Depth check
-                    if max_depth is not None:
-                        depth = dirpath[len(root_path) :].count(os.sep)
-                        if depth > max_depth:
-                            dirnames.clear()
-                            continue
-
-                    # Prune ignored/excluded directories (modify in-place so
-                    # they are not walked into)
-                    kept: list[str] = []
-                    for d in dirnames:
-                        rel_d = os.path.relpath(os.path.join(dirpath, d), cwd)
-                        if _is_ignored(rel_d, is_dir=True):
-                            continue
-                        # Match against the path relative to the search root so
-                        # pruning uses the same basis as _entry_matches
-                        if matches_any_pattern(
-                            os.path.relpath(os.path.join(dirpath, d), root_path),
-                            exclude_patterns,
-                        ):
-                            continue
-                        kept.append(d)
-                    dirnames[:] = kept
-
-                    # Process directories (when file_type is None or "dir")
-                    if file_type is None or file_type == "dir":
-                        for dname in dirnames:
-                            entries_scanned += 1
-                            full = os.path.join(dirpath, dname)
-                            rel = os.path.relpath(full, root_path)
-
-                            if _is_ignored(os.path.relpath(full, cwd), is_dir=True):
-                                continue
-
-                            try:
-                                st = os.lstat(full)
-                            except OSError:
-                                continue
-
-                            if self._entry_matches(
-                                rel,
-                                full,
-                                st,
-                                pattern,
-                                exclude_patterns,
-                                file_type,
-                                min_bytes,
-                                max_bytes,
-                                newer_than,
-                                older_than,
-                                gitignore_spec,
-                            ):
-                                results.append((rel, st.st_size, st.st_mtime))
-
-                    # Process files
-                    if file_type is None or file_type in ("file", "symlink"):
-                        for fname in filenames:
-                            entries_scanned += 1
-                            full = os.path.join(dirpath, fname)
-                            rel = os.path.relpath(full, root_path)
-
-                            if _is_ignored(os.path.relpath(full, cwd)):
-                                continue
-
-                            try:
-                                st = os.lstat(full)
-                            except OSError:
-                                continue
-
-                            if self._entry_matches(
-                                rel,
-                                full,
-                                st,
-                                pattern,
-                                exclude_patterns,
-                                file_type,
-                                min_bytes,
-                                max_bytes,
-                                newer_than,
-                                older_than,
-                                gitignore_spec,
-                            ):
-                                results.append((rel, st.st_size, st.st_mtime))
-
-                    # Early exit if we already have enough
-                    if max_results is not None and len(results) >= max_results:
-                        break
-
-                if max_results is not None and len(results) >= max_results:
-                    break
-
-            # ── Truncate ──
-            if max_results is not None and len(results) > max_results:
-                results = results[:max_results]
-                truncated = True
-
-            # ── Sort ──
-            if sort_by == "size":
-                results.sort(key=lambda r: r[1])
-            elif sort_by == "mtime":
-                results.sort(key=lambda r: r[2])
-            else:
-                results.sort(key=lambda r: r[0])
-
-            files = [r[0] for r in results]
-
-            # ── Report result ──
-            extra = " (truncated)" if truncated else ""
-            ignore_msgs = []
-            if gitignore_ignored:
-                ignore_msgs.append(f"{gitignore_ignored} ignored by .gitignore")
-            if janitoignore_ignored:
-                ignore_msgs.append(f"{janitoignore_ignored} ignored by .janitoignore")
-            ignore_msg = f", {', '.join(ignore_msgs)}" if ignore_msgs else ""
-            self.report_result(
-                f"Found {len(files)} matches from {entries_scanned} entries{extra}{ignore_msg}"
+            results, stats = self._collect_results(
+                valid_paths,
+                pattern,
+                exclude_patterns,
+                file_type,
+                min_bytes,
+                max_bytes,
+                newer_than,
+                older_than,
+                max_depth,
+                max_results,
+                respect_gitignore,
             )
-
-            return {
-                "success": True,
-                "files": files,
-                "total_found": len(files),
-                "truncated": truncated,
-                "paths": paths,
-                "pattern": pattern,
-                "stats": {
-                    "entries_scanned": entries_scanned,
-                    "gitignore_ignored": gitignore_ignored,
-                    "janitoignore_ignored": janitoignore_ignored,
-                },
-            }
-
         except Exception as e:
             self.report_error(f"Error during file search: {e!s}")
             return {
@@ -426,7 +187,443 @@ class FindFiles(BaseTool):
                 "pattern": pattern,
             }
 
+        files, truncated = self._finalize_results(results, max_results, sort_by)
+        self._report_result(files, stats, truncated)
+
+        return {
+            "success": True,
+            "files": files,
+            "total_found": len(files),
+            "truncated": truncated,
+            "paths": paths,
+            "pattern": pattern,
+            "stats": stats,
+        }
+
     # ── private helpers ──────────────────────────────────────────────
+
+    def _validate(
+        self,
+        file_type: str | None,
+        sort_by: str | None,
+        paths: str,
+    ) -> dict[str, Any] | None:
+        """Validate file_type/sort_by; return an error result or None."""
+        valid_types = {"file", "dir", "symlink"}
+        if file_type is not None and file_type not in valid_types:
+            msg = (
+                f"Invalid file_type '{file_type}'. Must be one of: "
+                f"{', '.join(sorted(valid_types))}"
+            )
+            self.report_error(msg)
+            return {"success": False, "error": msg, "paths": paths}
+        valid_sorts = {"name", "size", "mtime"}
+        if sort_by is not None and sort_by not in valid_sorts:
+            msg = (
+                f"Invalid sort_by '{sort_by}'. Must be one of: "
+                f"{', '.join(sorted(valid_sorts))}"
+            )
+            self.report_error(msg)
+            return {"success": False, "error": msg, "paths": paths}
+        return None
+
+    def _collect_valid_paths(
+        self, paths: str
+    ) -> tuple[list[str], dict[str, Any] | None]:
+        """Resolve the root paths; return (valid_paths, error_result)."""
+        path_list = paths.strip().split()
+        if not path_list:
+            self.report_error("No paths provided")
+            return (
+                [],
+                {"success": False, "error": "No paths provided", "paths": paths},
+            )
+        valid_paths: list[str] = []
+        for p in path_list:
+            abs_p = os.path.abspath(p)
+            if not os.path.exists(abs_p):
+                self.report_warning(f"Path does not exist: {norm_path(abs_p)}")
+                continue
+            valid_paths.append(abs_p)
+        if not valid_paths:
+            self.report_error("No valid paths to search")
+            return (
+                [],
+                {
+                    "success": False,
+                    "error": "No valid paths to search",
+                    "paths": paths,
+                },
+            )
+        return valid_paths, None
+
+    def _time_thresholds(
+        self,
+        modified_within_days: float | None,
+        older_than_days: float | None,
+    ) -> tuple[float | None, float | None]:
+        """Compute mtime boundaries from the day-based criteria."""
+        now = time.time()
+        newer_than = None
+        older_than = None
+        if modified_within_days is not None:
+            newer_than = now - modified_within_days * 86400
+        if older_than_days is not None:
+            older_than = now - older_than_days * 86400
+        return newer_than, older_than
+
+    def _report_search_start(
+        self,
+        valid_paths: list[str],
+        pattern: str | None,
+        file_type: str | None,
+        min_bytes: int | None,
+        max_bytes: int | None,
+        modified_within_days: float | None,
+        older_than_days: float | None,
+    ) -> None:
+        """Report the search start with a human-readable criteria summary."""
+        paths_str = ", ".join(norm_path(p) for p in valid_paths[:3])
+        if len(valid_paths) > 3:
+            paths_str += f" (+{len(valid_paths) - 3} more)"
+        criteria: list[str] = []
+        if pattern:
+            criteria.append(f"pattern='{pattern}'")
+        if file_type:
+            criteria.append(f"type={file_type}")
+        if min_bytes is not None or max_bytes is not None:
+            size_desc = []
+            if min_bytes is not None:
+                size_desc.append(f">={min_bytes}B")
+            if max_bytes is not None:
+                size_desc.append(f"<={max_bytes}B")
+            criteria.append(f"size {','.join(size_desc)}")
+        if modified_within_days is not None:
+            criteria.append(f"modified <{modified_within_days}d")
+        if older_than_days is not None:
+            criteria.append(f"older >{older_than_days}d")
+        criteria_str = f" [{', '.join(criteria)}]" if criteria else ""
+        self.report_start(f"🔎 Finding files in {paths_str}{criteria_str}", end="")
+
+    def _collect_results(
+        self,
+        valid_paths: list[str],
+        pattern: str | None,
+        exclude_patterns: list[str],
+        file_type: str | None,
+        min_bytes: int | None,
+        max_bytes: int | None,
+        newer_than: float | None,
+        older_than: float | None,
+        max_depth: int | None,
+        max_results: int | None,
+        respect_gitignore: bool,
+    ) -> tuple[list[tuple[str, int, float]], dict[str, int]]:
+        """Walk the roots; return (results, stats)."""
+        results: list[tuple[str, int, float]] = []
+        stats = {
+            "entries_scanned": 0,
+            "gitignore_ignored": 0,
+            "janitoignore_ignored": 0,
+        }
+
+        cwd = os.getcwd()
+        gitignore_spec = load_gitignore_spec(cwd) if respect_gitignore else None
+        janitoignore_spec = load_janitoignore_spec(cwd)
+
+        def is_ignored(rel_to_cwd: str, is_dir: bool = False) -> bool:
+            """Check a path against .janitoignore then .gitignore."""
+            if janitoignore_spec and is_ignored_by_gitignore(
+                rel_to_cwd, janitoignore_spec, is_dir=is_dir
+            ):
+                stats["janitoignore_ignored"] += 1
+                return True
+            if gitignore_spec and is_ignored_by_gitignore(
+                rel_to_cwd, gitignore_spec, is_dir=is_dir
+            ):
+                stats["gitignore_ignored"] += 1
+                return True
+            return False
+
+        for root_path in valid_paths:
+            if os.path.isfile(root_path):
+                self._collect_single_file(
+                    root_path,
+                    pattern,
+                    exclude_patterns,
+                    file_type,
+                    min_bytes,
+                    max_bytes,
+                    newer_than,
+                    older_than,
+                    results,
+                    stats,
+                )
+                continue
+            if self._walk_directory(
+                root_path,
+                pattern,
+                exclude_patterns,
+                file_type,
+                min_bytes,
+                max_bytes,
+                newer_than,
+                older_than,
+                max_depth,
+                max_results,
+                cwd,
+                is_ignored,
+                results,
+                stats,
+            ):
+                break
+        return results, stats
+
+    def _collect_single_file(
+        self,
+        root_path: str,
+        pattern: str | None,
+        exclude_patterns: list[str],
+        file_type: str | None,
+        min_bytes: int | None,
+        max_bytes: int | None,
+        newer_than: float | None,
+        older_than: float | None,
+        results: list[tuple[str, int, float]],
+        stats: dict[str, int],
+    ) -> None:
+        """Check a single-file root directly."""
+        stats["entries_scanned"] += 1
+        rel = os.path.basename(root_path)
+        try:
+            st = os.stat(root_path)
+        except OSError:
+            return
+        if self._entry_matches(
+            rel,
+            root_path,
+            st,
+            pattern,
+            exclude_patterns,
+            file_type,
+            min_bytes,
+            max_bytes,
+            newer_than,
+            older_than,
+        ):
+            results.append((rel, st.st_size, st.st_mtime))
+
+    def _walk_directory(
+        self,
+        root_path: str,
+        pattern: str | None,
+        exclude_patterns: list[str],
+        file_type: str | None,
+        min_bytes: int | None,
+        max_bytes: int | None,
+        newer_than: float | None,
+        older_than: float | None,
+        max_depth: int | None,
+        max_results: int | None,
+        cwd: str,
+        is_ignored,
+        results: list[tuple[str, int, float]],
+        stats: dict[str, int],
+    ) -> bool:
+        """Walk a directory root; return True when max_results was reached."""
+        for dirpath, dirnames, filenames in os.walk(root_path):
+            if max_depth is not None:
+                depth = dirpath[len(root_path) :].count(os.sep)
+                if depth > max_depth:
+                    dirnames.clear()
+                    continue
+            dirnames[:] = self._prune_dirs(
+                dirpath, dirnames, cwd, root_path, exclude_patterns, is_ignored
+            )
+            self._collect_dirs(
+                dirpath,
+                dirnames,
+                root_path,
+                pattern,
+                exclude_patterns,
+                file_type,
+                min_bytes,
+                max_bytes,
+                newer_than,
+                older_than,
+                cwd,
+                is_ignored,
+                results,
+                stats,
+            )
+            self._collect_files(
+                dirpath,
+                filenames,
+                root_path,
+                pattern,
+                exclude_patterns,
+                file_type,
+                min_bytes,
+                max_bytes,
+                newer_than,
+                older_than,
+                cwd,
+                is_ignored,
+                results,
+                stats,
+            )
+            if max_results is not None and len(results) >= max_results:
+                return True
+        return False
+
+    def _prune_dirs(
+        self,
+        dirpath: str,
+        dirnames: list[str],
+        cwd: str,
+        root_path: str,
+        exclude_patterns: list[str],
+        is_ignored,
+    ) -> list[str]:
+        """Return the dirnames to keep, pruning ignored/excluded directories."""
+        kept: list[str] = []
+        for d in dirnames:
+            full = os.path.join(dirpath, d)
+            rel_d = os.path.relpath(full, cwd)
+            if is_ignored(rel_d, is_dir=True):
+                continue
+            if matches_any_pattern(os.path.relpath(full, root_path), exclude_patterns):
+                continue
+            kept.append(d)
+        return kept
+
+    def _collect_dirs(
+        self,
+        dirpath: str,
+        dirnames: list[str],
+        root_path: str,
+        pattern: str | None,
+        exclude_patterns: list[str],
+        file_type: str | None,
+        min_bytes: int | None,
+        max_bytes: int | None,
+        newer_than: float | None,
+        older_than: float | None,
+        cwd: str,
+        is_ignored,
+        results: list[tuple[str, int, float]],
+        stats: dict[str, int],
+    ) -> None:
+        """Collect matching directory entries (when file_type allows dirs)."""
+        if file_type is not None and file_type != "dir":
+            return
+        for dname in dirnames:
+            stats["entries_scanned"] += 1
+            full = os.path.join(dirpath, dname)
+            rel = os.path.relpath(full, root_path)
+            if is_ignored(os.path.relpath(full, cwd), is_dir=True):
+                continue
+            try:
+                st = os.lstat(full)
+            except OSError:
+                continue
+            if self._entry_matches(
+                rel,
+                full,
+                st,
+                pattern,
+                exclude_patterns,
+                file_type,
+                min_bytes,
+                max_bytes,
+                newer_than,
+                older_than,
+            ):
+                results.append((rel, st.st_size, st.st_mtime))
+
+    def _collect_files(
+        self,
+        dirpath: str,
+        filenames: list[str],
+        root_path: str,
+        pattern: str | None,
+        exclude_patterns: list[str],
+        file_type: str | None,
+        min_bytes: int | None,
+        max_bytes: int | None,
+        newer_than: float | None,
+        older_than: float | None,
+        cwd: str,
+        is_ignored,
+        results: list[tuple[str, int, float]],
+        stats: dict[str, int],
+    ) -> None:
+        """Collect matching file entries (when file_type allows files/symlinks)."""
+        if file_type is not None and file_type not in ("file", "symlink"):
+            return
+        for fname in filenames:
+            stats["entries_scanned"] += 1
+            full = os.path.join(dirpath, fname)
+            rel = os.path.relpath(full, root_path)
+            if is_ignored(os.path.relpath(full, cwd)):
+                continue
+            try:
+                st = os.lstat(full)
+            except OSError:
+                continue
+            if self._entry_matches(
+                rel,
+                full,
+                st,
+                pattern,
+                exclude_patterns,
+                file_type,
+                min_bytes,
+                max_bytes,
+                newer_than,
+                older_than,
+            ):
+                results.append((rel, st.st_size, st.st_mtime))
+
+    def _finalize_results(
+        self,
+        results: list[tuple[str, int, float]],
+        max_results: int | None,
+        sort_by: str | None,
+    ) -> tuple[list[str], bool]:
+        """Truncate and sort the results; return (files, truncated)."""
+        truncated = False
+        if max_results is not None and len(results) > max_results:
+            results = results[:max_results]
+            truncated = True
+        if sort_by == "size":
+            results.sort(key=lambda r: r[1])
+        elif sort_by == "mtime":
+            results.sort(key=lambda r: r[2])
+        else:
+            results.sort(key=lambda r: r[0])
+        files = [r[0] for r in results]
+        return files, truncated
+
+    def _report_result(
+        self,
+        files: list[str],
+        stats: dict[str, int],
+        truncated: bool,
+    ) -> None:
+        """Report the final summary line."""
+        extra = " (truncated)" if truncated else ""
+        ignore_msgs = []
+        if stats["gitignore_ignored"]:
+            ignore_msgs.append(f"{stats['gitignore_ignored']} ignored by .gitignore")
+        if stats["janitoignore_ignored"]:
+            ignore_msgs.append(
+                f"{stats['janitoignore_ignored']} ignored by .janitoignore"
+            )
+        ignore_msg = f", {', '.join(ignore_msgs)}" if ignore_msgs else ""
+        self.report_result(
+            f"Found {len(files)} matches from {stats['entries_scanned']} entries{extra}{ignore_msg}"
+        )
 
     @staticmethod
     def _entry_matches(
@@ -440,46 +637,66 @@ class FindFiles(BaseTool):
         max_bytes: int | None,
         newer_than: float | None,
         older_than: float | None,
-        gitignore_spec,
     ) -> bool:
         """Return True if a single filesystem entry passes all filters."""
+        if not FindFiles._matches_type(st, file_type):
+            return False
+        if not FindFiles._matches_pattern_and_exclude(
+            rel_path, pattern, exclude_patterns
+        ):
+            return False
+        if not FindFiles._matches_size_and_time(
+            st, min_bytes, max_bytes, newer_than, older_than
+        ):
+            return False
+        return True
+
+    @staticmethod
+    def _matches_type(st: os.stat_result, file_type: str | None) -> bool:
+        """Check the file_type filter against a stat result."""
         import stat as stat_mod
 
-        # ── type check ──
-        if file_type is not None:
-            is_link = stat_mod.S_ISLNK(st.st_mode)
-            if file_type == "symlink":
-                if not is_link:
-                    return False
-            elif file_type == "dir":
-                if not stat_mod.S_ISDIR(st.st_mode):
-                    return False
-            elif file_type == "file":
-                # A symlink to a file is NOT a regular file
-                if is_link or not stat_mod.S_ISREG(st.st_mode):
-                    return False
+        if file_type is None:
+            return True
+        is_link = stat_mod.S_ISLNK(st.st_mode)
+        if file_type == "symlink":
+            return is_link
+        if file_type == "dir":
+            return stat_mod.S_ISDIR(st.st_mode)
+        if file_type == "file":
+            return not is_link and stat_mod.S_ISREG(st.st_mode)
+        return False
 
-        # ── pattern check (full relative path) ──
-        if pattern is not None:
-            if not matches_any_pattern(rel_path, [pattern]):
-                return False
-
-        # ── exclude check ──
+    @staticmethod
+    def _matches_pattern_and_exclude(
+        rel_path: str,
+        pattern: str | None,
+        exclude_patterns: list[str],
+    ) -> bool:
+        """Check pattern and exclude globs against the relative path."""
+        if pattern is not None and not matches_any_pattern(rel_path, [pattern]):
+            return False
         if exclude_patterns and matches_any_pattern(rel_path, exclude_patterns):
             return False
+        return True
 
-        # ── size check (only meaningful for regular files) ──
+    @staticmethod
+    def _matches_size_and_time(
+        st: os.stat_result,
+        min_bytes: int | None,
+        max_bytes: int | None,
+        newer_than: float | None,
+        older_than: float | None,
+    ) -> bool:
+        """Check size and mtime filters against a stat result."""
         if min_bytes is not None and st.st_size < min_bytes:
             return False
         if max_bytes is not None and st.st_size > max_bytes:
             return False
-
-        # ── mtime check ──
         if newer_than is not None and st.st_mtime < newer_than:
             return False
         if older_than is not None and st.st_mtime > older_than:
             return False
-
         return True
 
 

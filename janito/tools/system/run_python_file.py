@@ -15,14 +15,13 @@ Only execute trusted code and be aware of security implications.
 
 import json
 import os
-import queue
 import subprocess
 import sys
-import threading
 from typing import Any
 
 from ...tooling import BaseTool, format_duration_ms, norm_path
 from ...tooling.decorator import tool
+from ._streaming import stream_execute
 
 
 @tool(permissions="x")
@@ -83,8 +82,8 @@ class RunPythonFile(BaseTool):
         start_time = time.time()
 
         try:
-            # Validate file path
-            if not os.path.exists(file_path):
+            abs_file_path = self._resolve_file_path(file_path)
+            if abs_file_path is None:
                 return {
                     "success": False,
                     "error": f"Python file does not exist: {file_path}",
@@ -92,204 +91,53 @@ class RunPythonFile(BaseTool):
                     "file_path": file_path,
                 }
 
-            abs_file_path = os.path.abspath(file_path)
-            norm_file_path = norm_path(abs_file_path)
-
-            # Determine working directory
-            if working_directory:
-                abs_working_dir = os.path.abspath(working_directory)
-                if not os.path.exists(abs_working_dir):
-                    return {
-                        "success": False,
-                        "error": f"Working directory does not exist: {abs_working_dir}",
-                        "exit_code": -1,
-                        "file_path": file_path,
-                        "working_directory": working_directory,
-                    }
-            else:
-                # Use the directory containing the Python file as working directory by default
-                abs_working_dir = os.path.dirname(abs_file_path)
-
-            norm_working_dir = norm_path(abs_working_dir)
-
-            # Determine Python executable
-            if python_executable is None:
-                python_executable = sys.executable
-
-            # Build command preview for display
-            cmd_parts = [python_executable, norm_file_path]
-            if additional_args:
-                cmd_parts.extend(additional_args)
-            command_preview = " ".join(cmd_parts)
-            if len(command_preview) > 200:
-                command_preview = command_preview[:200] + "..."
-
-            # Report the file to be executed
-            self.report_start(
-                f"🐍 Executing Python file in {norm_working_dir}:\n{command_preview}"
+            abs_working_dir = self._resolve_working_dir(
+                working_directory, abs_file_path
             )
+            if abs_working_dir is None:
+                return {
+                    "success": False,
+                    "error": (
+                        f"Working directory does not exist: "
+                        f"{os.path.abspath(working_directory)}"
+                    ),
+                    "exit_code": -1,
+                    "file_path": file_path,
+                    "working_directory": working_directory,
+                }
 
-            # Build Python command
-            python_command = [python_executable, abs_file_path]
-            if additional_args:
-                python_command.extend(additional_args)
-
-            # Initialize captured output
-            captured_stdout = []
-            captured_stderr = []
-
-            # Start the subprocess
-            process = subprocess.Popen(
+            python_executable = python_executable or sys.executable
+            python_command = self._build_command(
+                python_executable, abs_file_path, additional_args
+            )
+            self._report_exec_start(
                 python_command,
-                cwd=abs_working_dir,
-                stdout=subprocess.PIPE if capture_output else subprocess.DEVNULL,
-                stderr=subprocess.PIPE if capture_errors else subprocess.DEVNULL,
-                text=True,
-                shell=False,
-                bufsize=1,  # Line buffered
-                universal_newlines=True,
+                norm_path(abs_file_path),
+                norm_path(abs_working_dir),
             )
 
-            # Queue for handling output from threads
-            output_queue = queue.Queue()
+            exit_code, stdout_lines, stderr_lines, execution_time_ms = stream_execute(
+                python_command,
+                abs_working_dir,
+                capture_output,
+                capture_errors,
+                timeout,
+                start_time,
+                self.report_output,
+            )
 
-            def read_stream(stream, stream_name, capture_list):
-                """Read from a stream and put lines into the queue."""
-                try:
-                    for line in iter(stream.readline, ""):
-                        if line:
-                            output_queue.put((stream_name, line.rstrip("\r\n")))
-                            if capture_list is not None:
-                                capture_list.append(line)
-                    stream.close()
-                except Exception as e:
-                    output_queue.put(("error", f"Error reading {stream_name}: {e}"))
-
-            # Start reader threads for stdout and stderr
-            threads = []
-            if capture_output and process.stdout:
-                stdout_thread = threading.Thread(
-                    target=read_stream,
-                    args=(process.stdout, "stdout", captured_stdout),
-                    daemon=True,
-                )
-                stdout_thread.start()
-                threads.append(stdout_thread)
-
-            if capture_errors and process.stderr:
-                stderr_thread = threading.Thread(
-                    target=read_stream,
-                    args=(process.stderr, "stderr", captured_stderr),
-                    daemon=True,
-                )
-                stderr_thread.start()
-                threads.append(stderr_thread)
-
-            # Monitor the process and display output in real-time
-            exit_code = None
-            start_display_time = time.time()
-            displayed_any_output = False
-
-            while True:
-                # Check if process has finished
-                exit_code = process.poll()
-                process_finished = exit_code is not None
-
-                # Process any available output
-                try:
-                    while True:
-                        stream_name, line = output_queue.get_nowait()
-                        if stream_name == "stdout" or stream_name == "stderr":
-                            if not displayed_any_output:
-                                displayed_any_output = True
-                            self.report_output(line)
-                        elif stream_name == "error":
-                            self.report_output(f"STREAM ERROR: {line}")
-                except queue.Empty:
-                    pass
-
-                # If process finished, break
-                if process_finished:
-                    break
-
-                # Handle timeout
-                if timeout is not None:
-                    elapsed = time.time() - start_display_time
-                    if elapsed > timeout:
-                        process.kill()
-                        exit_code = -1
-                        break
-
-                # Small delay to prevent busy waiting
-                time.sleep(0.01)
-
-            # Wait for reader threads to finish
-            for thread in threads:
-                thread.join(timeout=1)
-
-            # Ensure all remaining output is processed
-            try:
-                while True:
-                    stream_name, line = output_queue.get_nowait()
-                    if stream_name == "stdout" or stream_name == "stderr":
-                        if not displayed_any_output:
-                            displayed_any_output = True
-                        self.report_output(line)
-            except queue.Empty:
-                pass
-
-            execution_time_ms = int((time.time() - start_time) * 1000)
-
-            # Create result object similar to subprocess.CompletedProcess
-            class MockResult:
-                def __init__(self, returncode, stdout_lines, stderr_lines):
-                    self.returncode = returncode
-                    self.stdout = "".join(stdout_lines) if stdout_lines else ""
-                    self.stderr = "".join(stderr_lines) if stderr_lines else ""
-
-            result = MockResult(exit_code, captured_stdout, captured_stderr)
-
-            # Determine success (exit code 0 typically means success)
-            success = result.returncode == 0
-
-            # Build result dictionary
-            output_result = {
-                "success": success,
-                "exit_code": result.returncode,
-                "command": " ".join(python_command),
-                "file_path": file_path,
-                "working_directory": working_directory or abs_working_dir,
-                "execution_time_ms": execution_time_ms,
-            }
-
-            if capture_output:
-                output_result["stdout"] = result.stdout
-            if capture_errors:
-                output_result["stderr"] = result.stderr
-
-            # Report result
-            if success:
-                output_summary = f"Completed in {format_duration_ms(execution_time_ms)}"
-                if capture_output and result.stdout:
-                    lines = result.stdout.strip().split("\n")
-                    if len(lines) > 0:
-                        output_summary += f" ({len(lines)} lines output)"
-                self.report_result(output_summary)
-            else:
-                error_msg = f"Exit code {result.returncode}"
-                if capture_errors and result.stderr:
-                    # Truncate long error messages for display
-                    stderr_preview = result.stderr[:100].replace("\n", " ")
-                    if len(result.stderr) > 100:
-                        stderr_preview += "..."
-                    error_msg += f": {stderr_preview}"
-                self.report_error(error_msg)
-                output_result[
-                    "error"
-                ] = f"Python file execution failed with exit code {result.returncode}"
-
-            return output_result
-
+            return self._build_result(
+                exit_code,
+                python_command,
+                file_path,
+                working_directory,
+                abs_working_dir,
+                stdout_lines,
+                stderr_lines,
+                capture_output,
+                capture_errors,
+                execution_time_ms,
+            )
         except subprocess.TimeoutExpired:
             execution_time_ms = int((time.time() - start_time) * 1000)
             self.report_error(f"Timeout after {timeout}s")
@@ -304,7 +152,6 @@ class RunPythonFile(BaseTool):
                 "working_directory": working_directory or os.getcwd(),
                 "execution_time_ms": execution_time_ms,
             }
-
         except FileNotFoundError:
             self.report_error("Python executable not found")
             return {
@@ -315,7 +162,6 @@ class RunPythonFile(BaseTool):
                 "working_directory": working_directory or os.getcwd(),
                 "execution_time_ms": int((time.time() - start_time) * 1000),
             }
-
         except Exception as e:
             execution_time_ms = int((time.time() - start_time) * 1000)
             self.report_error(f"Execution error: {e!s}")
@@ -327,6 +173,119 @@ class RunPythonFile(BaseTool):
                 "working_directory": working_directory or os.getcwd(),
                 "execution_time_ms": execution_time_ms,
             }
+
+    def _resolve_file_path(self, file_path: str) -> str | None:
+        """Return the absolute file path, or None when it does not exist."""
+        if not os.path.exists(file_path):
+            return None
+        return os.path.abspath(file_path)
+
+    def _resolve_working_dir(
+        self, working_directory: str | None, abs_file_path: str
+    ) -> str | None:
+        """Return the absolute working dir, or None when it does not exist."""
+        if working_directory:
+            abs_working_dir = os.path.abspath(working_directory)
+            if not os.path.exists(abs_working_dir):
+                return None
+            return abs_working_dir
+        return os.path.dirname(abs_file_path)
+
+    def _build_command(
+        self,
+        python_executable: str,
+        abs_file_path: str,
+        additional_args: list[str] | None,
+    ) -> list[str]:
+        """Build the python argv list."""
+        python_command = [python_executable, abs_file_path]
+        if additional_args:
+            python_command.extend(additional_args)
+        return python_command
+
+    def _report_exec_start(
+        self,
+        python_command: list[str],
+        norm_file_path: str,
+        norm_working_dir: str,
+    ) -> None:
+        """Report the file to be executed."""
+        cmd_parts = [python_command[0], norm_file_path]
+        if len(python_command) > 2:
+            cmd_parts.extend(python_command[2:])
+        command_preview = " ".join(cmd_parts)
+        if len(command_preview) > 200:
+            command_preview = command_preview[:200] + "..."
+        self.report_start(
+            f"🐍 Executing Python file in {norm_working_dir}:\n{command_preview}"
+        )
+
+    def _build_result(
+        self,
+        exit_code: int,
+        python_command: list[str],
+        file_path: str,
+        working_directory: str | None,
+        abs_working_dir: str,
+        stdout_lines: list[str],
+        stderr_lines: list[str],
+        capture_output: bool,
+        capture_errors: bool,
+        execution_time_ms: int,
+    ) -> dict[str, Any]:
+        """Assemble the result dict and report the outcome."""
+        success = exit_code == 0
+        stdout_text = "".join(stdout_lines) if stdout_lines else ""
+        stderr_text = "".join(stderr_lines) if stderr_lines else ""
+        output_result = {
+            "success": success,
+            "exit_code": exit_code,
+            "command": " ".join(python_command),
+            "file_path": file_path,
+            "working_directory": working_directory or abs_working_dir,
+            "execution_time_ms": execution_time_ms,
+        }
+        if capture_output:
+            output_result["stdout"] = stdout_text
+        if capture_errors:
+            output_result["stderr"] = stderr_text
+        if success:
+            self._report_success(execution_time_ms, capture_output, stdout_text)
+        else:
+            self._report_failure(exit_code, capture_errors, stderr_text)
+            output_result[
+                "error"
+            ] = f"Python file execution failed with exit code {exit_code}"
+        return output_result
+
+    def _report_success(
+        self,
+        execution_time_ms: int,
+        capture_output: bool,
+        stdout_text: str,
+    ) -> None:
+        """Report a successful execution summary."""
+        output_summary = f"Completed in {format_duration_ms(execution_time_ms)}"
+        if capture_output and stdout_text:
+            lines = stdout_text.strip().split("\n")
+            if lines:
+                output_summary += f" ({len(lines)} lines output)"
+        self.report_result(output_summary)
+
+    def _report_failure(
+        self,
+        exit_code: int,
+        capture_errors: bool,
+        stderr_text: str,
+    ) -> None:
+        """Report a failed execution, truncating long stderr previews."""
+        error_msg = f"Exit code {exit_code}"
+        if capture_errors and stderr_text:
+            stderr_preview = stderr_text[:100].replace("\n", " ")
+            if len(stderr_text) > 100:
+                stderr_preview += "..."
+            error_msg += f": {stderr_preview}"
+        self.report_error(error_msg)
 
 
 # CLI interface for testing
