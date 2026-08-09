@@ -80,6 +80,11 @@ Changes since `v4.21.0` (2026-08-08).
 
 ### Changed
 
+- Docs: renamed `docs/cli_lanscape.md` to `docs/cli_landscape.md` (fixing
+  the misspelling) and expanded the CLI landscape table with an **OSS**
+  column and system-prompt sizes for janito, Opencode, Claude Code, Pi and
+  Codex.
+
 - The interactive shell command `/show_config` (displays the current
   configuration: provider, API type, base URL, masked API key, max output
   tokens, reasoning level and thinking mode) has been renamed to `/status`:
