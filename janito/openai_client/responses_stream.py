@@ -59,22 +59,32 @@ class ResponsesStreamConsumer:
     # Stream driving
     # ------------------------------------------------------------------
 
-    def consume(self, stream):
+    def consume(self, stream, cancel_event=None):
         """Consume a streaming Responses API response and assemble its parts.
 
         Returns ``(full_content, reasoning_content, tool_calls, usage_info,
         response_id)`` where ``tool_calls`` is a list of
         ``{"call_id", "name", "arguments"}`` dicts.
+
+        When ``cancel_event`` is set (user pressed Enter while waiting), the
+        stream is abandoned as soon as the next event arrives.
         """
         for event in stream:
             self._events_seen += 1
+            # Honour an Enter-to-cancel request: stop consuming as soon as the
+            # next event arrives so the worker can close the connection.
+            if cancel_event is not None and cancel_event.is_set():
+                break
             self.handle_event(event)
 
         # A healthy stream always yields at least a response.created/completed
         # event; a stream with zero events means the provider failed to
         # produce a response (e.g. an error that was never surfaced). Fail
-        # loudly instead of returning an empty answer.
-        if self._events_seen == 0:
+        # loudly instead of returning an empty answer. An Enter-to-cancel
+        # short-circuit must not be treated as an empty stream.
+        if self._events_seen == 0 and (
+            cancel_event is None or not cancel_event.is_set()
+        ):
             raise RuntimeError(
                 "The Responses API returned no stream events (empty response)."
             )
@@ -218,7 +228,7 @@ def _state_from_consumer(
         state[key] = getattr(consumer, key)
 
 
-def _consume_response_stream(stream):
+def _consume_response_stream(stream, cancel_event=None):
     """Consume a streaming Responses API response and assemble its parts.
 
     Returns ``(full_content, reasoning_content, tool_calls, usage_info,
@@ -226,7 +236,7 @@ def _consume_response_stream(stream):
     ``{"call_id", "name", "arguments"}`` dicts.  See
     :meth:`ResponsesStreamConsumer.consume`.
     """
-    return ResponsesStreamConsumer().consume(stream)
+    return ResponsesStreamConsumer().consume(stream, cancel_event=cancel_event)
 
 
 def _handle_stream_event(event, state: dict[str, Any]) -> None:
@@ -303,13 +313,16 @@ def _convert_tools_to_responses_format(
     return converted
 
 
-def _stream_response(client, call_kwargs, tools_schemas):
+def _stream_response(client, call_kwargs, tools_schemas, cancel_event=None):
     """Open a streaming Responses API call and fully consume it.
 
     Returns ``(full_content, reasoning_content, tool_calls, usage_info,
     response_id)``. Tool schemas are attached here (mirroring
     ``completions_api._stream_response``); the caller builds the remaining
     kwargs per round.
+
+    When ``cancel_event`` is set (user pressed Enter while waiting), the
+    stream is abandoned and the underlying connection is closed.
     """
     if tools_schemas:
         logger.debug(
@@ -324,4 +337,10 @@ def _stream_response(client, call_kwargs, tools_schemas):
         logger.debug("Calling Responses API (streaming) without tools")
         stream = client.responses.create(**call_kwargs)
 
-    return _consume_response_stream(stream)
+    try:
+        return _consume_response_stream(stream, cancel_event=cancel_event)
+    finally:
+        # Abort the underlying HTTP stream when the user pressed Enter so the
+        # connection is released promptly instead of streaming to completion.
+        if cancel_event is not None and cancel_event.is_set():
+            stream.close()

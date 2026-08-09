@@ -85,7 +85,11 @@ from .client_support import (  # noqa: F401 (re-exported for backward compat)
 # Shared helpers reused from the Chat Completions implementation so both
 # modules stay in sync: runtime config resolution and the progress spinner
 # runner.
-from .completions_api import _run_with_progress_bar, resolve_runtime_config
+from .completions_api import (
+    RequestCancelled,
+    _run_with_progress_bar,
+    resolve_runtime_config,
+)
 from .responses_state import _build_call_kwargs, _init_conversation_state
 from .responses_stream import (  # noqa: F401 (re-exported for backward compat)
     _consume_response_stream,
@@ -122,7 +126,9 @@ class ConversationResult:
             stateless providers (``responses_in_server`` False). Pass it back
             as ``previous_items`` to the next ``send_prompt`` call so the
             entire history is re-sent (the server keeps no state). ``None``
-            for server-side providers, which chain with ``response_id``.
+            for server-side providers, which chain with ``response_id``
+            (``previous_items`` is then only used to carry the pending user
+            messages of an Enter-cancelled turn).
     """
 
     content: str
@@ -171,12 +177,14 @@ def send_prompt(
             the ``response_id`` of the previous ``ConversationResult``. Only
             used for providers whose Responses API keeps server-side state
             (``responses_in_server`` True); ignored for stateless providers.
-        previous_items: The full conversation as Responses input items
-            (obtained from the previous result's ``input_items``). Only used
-            for stateless providers (``responses_in_server`` False), which
-            cannot resolve a ``previous_response_id`` and must re-send the
-            entire history on every request. ``None`` for a fresh
-            conversation.
+        previous_items: For stateless providers (``responses_in_server``
+            False), the full conversation as Responses input items (obtained
+            from the previous result's ``input_items``), which cannot resolve
+            a ``previous_response_id`` and must re-send the entire history on
+            every request. For server-side providers it may carry the pending
+            user messages of an Enter-cancelled turn, which are re-sent as
+            input items chained from ``previous_response_id`` (the last
+            completed response). ``None`` for a fresh conversation.
         instructions: System instructions for the conversation. For server-side
             providers they are only sent on the first turn (the server folds
             them into the stored conversation); for stateless providers they
@@ -259,6 +267,7 @@ class ResponsesClient(Client):
             response_id,
             conversation_items,
             input_items,
+            pending_items,
         ) = _init_conversation_state(
             provider,
             kwargs.get("previous_response_id"),
@@ -271,6 +280,7 @@ class ResponsesClient(Client):
             "response_id": response_id,
             "conversation_items": conversation_items,
             "input_items": input_items,
+            "pending_items": pending_items,
             "instructions": kwargs.get("instructions"),
             "message_count": 1,
         }
@@ -339,6 +349,25 @@ class ResponsesClient(Client):
         except AuthenticationError as e:
             _handle_auth_error(e, self.cli_provider, api_key, base_url, model, console)
             raise
+        except RequestCancelled as e:
+            # Enter was pressed while waiting for the API. Keep the
+            # conversation state so the shell can continue without losing the
+            # user's message:
+            #  - server-side: the aborted request created a server-side
+            #    response carrying the message, but the provider discards it
+            #    when the stream is interrupted (OpenAI answers
+            #    ``previous_response_id not found`` for it), so it cannot
+            #    chain the next turn. The caller keeps the last *completed*
+            #    response id (state["response_id"]) and re-sends the pending
+            #    user messages as input items chained from it.
+            #  - stateless: the server keeps nothing, so hand back the full
+            #    client-side items (which already include the cancelled
+            #    message) for the next turn to re-send.
+            if state["responses_in_server"]:
+                e.conversation_items = _pending_items_for_cancel(state)
+            else:
+                e.conversation_items = state["input_items"]
+            raise
         return full_content, reasoning_content, tool_calls, usage_info
 
     def _handle_tool_calls(
@@ -380,6 +409,35 @@ class ResponsesClient(Client):
             state["response_id"],
             state["responses_in_server"],
         )
+
+
+def _pending_items_for_cancel(state: dict[str, Any]) -> list[dict[str, Any]] | None:
+    """User messages to re-send after an Enter-cancel (server-side Responses).
+
+    The aborted request's server-side response is discarded by the provider
+    when the stream is interrupted (OpenAI answers ``previous_response_id not
+    found`` for it), so the caller must not chain the next turn from it.
+    Hand back the pending user messages (the cancelled prompt, plus any
+    earlier cancelled prompts still awaiting a completed response in the
+    caller's chain) so the next turn re-sends them as input items chained
+    from the last completed response id.
+
+    Returns ``None`` only when the state carries neither pending items nor a
+    string prompt (defensive; the real flow always builds one of the two).
+    """
+    pending = state.get("pending_items")
+    if pending:
+        return [dict(item) for item in pending]
+    input_items = state.get("input_items")
+    if isinstance(input_items, str):
+        return [
+            {
+                "type": "message",
+                "role": "user",
+                "content": [{"type": "input_text", "text": input_items}],
+            }
+        ]
+    return None
 
 
 def _resolve_tools(

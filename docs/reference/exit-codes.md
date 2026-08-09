@@ -8,7 +8,7 @@ janito returns standard exit codes for scripting and automation.
 |------|------|-------------|
 | `0` | Success | The command completed successfully |
 | `1` | General Error | Configuration or runtime error |
-| `130` | Interrupted | User cancelled with Ctrl+C |
+| `130` | Interrupted | User cancelled with Ctrl+C or Enter |
 
 ## Detailed Explanations
 
@@ -28,10 +28,10 @@ An error occurred during execution. Common causes:
 - File operation errors
 - Tool execution errors
 
-### 130 - Interrupted (Ctrl+C)
+### 130 - Interrupted (Ctrl+C or Enter)
 
-The user cancelled the operation by pressing Ctrl+C. This is a standard
-Unix-style interrupt code.
+The user cancelled the operation by pressing Ctrl+C, or pressed Enter while
+the request was pending. This is a standard Unix-style interrupt code.
 
 ## Checking Exit Codes
 

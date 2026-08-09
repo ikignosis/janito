@@ -77,6 +77,27 @@ if pytest is not None:
         with pytest.raises(RuntimeError, match="empty response"):
             ResponsesStreamConsumer().consume(_stream([]))
 
+    def test_responses_consumer_consume_cancel_short_circuits():
+        import threading
+
+        from janito.openai_client.responses_stream import ResponsesStreamConsumer
+
+        cancel = threading.Event()
+        cancel.set()
+
+        def events():
+            if False:
+                yield None  # pragma: no cover - keeps this a generator
+
+        c = ResponsesStreamConsumer()
+        content, reasoning, tools, usage, response_id = c.consume(
+            events(), cancel_event=cancel
+        )
+        # Cancel short-circuit must not raise the empty-stream error.
+        assert content == ""
+        assert tools == []
+        assert response_id is None
+
     def test_responses_legacy_handle_bridge_writes_back():
         """The re-exported _handle_* functions keep working with a state dict."""
         from janito.openai_client import responses_stream as rs

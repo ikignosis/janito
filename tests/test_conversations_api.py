@@ -573,6 +573,60 @@ def test_send_prompt_sends_instructions_only_on_first_turn(monkeypatch):
     assert seen[-1]["previous_response_id"] == "resp_prev"
 
 
+def test_send_prompt_server_side_resends_pending_items_with_completed_id(
+    monkeypatch,
+):
+    """Server-side Responses: after an Enter-cancel the next turn re-sends the
+    cancelled message as input items chained from the last *completed*
+    response id (the aborted response id is discarded by the provider and
+    never used, so no previous_response_not_found)."""
+    seen = []
+
+    def create(**kwargs):
+        seen.append(kwargs)
+        assert kwargs["previous_response_id"] == "resp_prev"
+        assert kwargs["input"] == [
+            {
+                "type": "message",
+                "role": "user",
+                "content": [{"type": "input_text", "text": "cancelled prompt"}],
+            },
+            {
+                "type": "message",
+                "role": "user",
+                "content": [{"type": "input_text", "text": "follow up"}],
+            },
+        ]
+        return _stream(
+            [
+                _Event("response.created", response=_Response("resp_n")),
+                _Event("response.output_text.delta", delta="ok"),
+                _Event("response.completed", response=_Response("resp_n")),
+            ]
+        )
+
+    _mock_send_prompt(monkeypatch, create)
+
+    result = api.send_prompt(
+        "follow up",
+        previous_response_id="resp_prev",
+        previous_items=[
+            {
+                "type": "message",
+                "role": "user",
+                "content": [{"type": "input_text", "text": "cancelled prompt"}],
+            }
+        ],
+        instructions="Be helpful",
+        tools=[],
+        use_mcp=False,
+    )
+    assert result.response_id == "resp_n"
+    # Server-side success: the pending items are folded into the server
+    # conversation; no client-side items are carried forward.
+    assert result.input_items is None
+
+
 def test_send_prompt_chains_tool_calls_without_client_history(monkeypatch):
     """The agent loop must chain tool rounds via previous_response_id and keep
     no client-side messages list (the caller-owned list is not touched)."""
@@ -838,3 +892,111 @@ def test_shell_rollback_truncates_stateless_conversation_items():
         {"type": "message", "role": "system", "content": []},
         {"type": "message", "role": "user", "content": []},
     ]
+
+
+def test_run_stream_round_recovers_response_id_on_cancel(monkeypatch):
+    """Enter-cancel (RequestCancelled) carries the conversation state so the
+    shell can continue without losing the user's message: server-side
+    conversations hand back the pending user messages (the aborted response
+    id is discarded by the provider and must NOT be chained from), stateless
+    conversations pass back the full client-side items (which include the
+    cancelled message)."""
+    from janito.openai_client import RequestCancelled
+
+    client = api.ResponsesClient()
+
+    # Server-side: the pending user messages are handed back for the caller
+    # to re-send chained from the last completed response id; the aborted
+    # response id from the partial stream is never attached.
+    pending = [
+        {
+            "type": "message",
+            "role": "user",
+            "content": [{"type": "input_text", "text": "List files"}],
+        }
+    ]
+    exc = RequestCancelled("cancelled")
+    exc.partial_result = ("", None, [], None, "resp_aborted")
+    monkeypatch.setattr(api, "_run_with_progress_bar", mock.Mock(side_effect=exc))
+
+    with pytest.raises(RequestCancelled) as excinfo:
+        client._run_stream_round(
+            mock.Mock(),
+            {},
+            [],
+            {
+                "responses_in_server": True,
+                "response_id": "r1",
+                "input_items": "List files",
+                "pending_items": pending,
+            },
+            base_url="https://api.example.com",
+            api_key="sk-test",  # pragma: allowlist secret
+            model="gpt-4o",
+            console=None,
+        )
+    # No aborted response id: the next turn keeps chaining from the last
+    # completed response ("r1").
+    assert getattr(excinfo.value, "response_id", None) is None
+    # The pending user messages are handed back so they are re-sent.
+    assert excinfo.value.conversation_items == pending
+
+    # Server-side without explicit pending items: a string prompt is wrapped
+    # into a user message item so the shell can re-send it.
+    exc3 = RequestCancelled("cancelled")
+    exc3.partial_result = ("", None, [], None, "resp_aborted")
+    monkeypatch.setattr(api, "_run_with_progress_bar", mock.Mock(side_effect=exc3))
+
+    with pytest.raises(RequestCancelled) as excinfo3:
+        client._run_stream_round(
+            mock.Mock(),
+            {},
+            [],
+            {
+                "responses_in_server": True,
+                "response_id": None,
+                "input_items": "List files",
+            },
+            base_url="https://api.example.com",
+            api_key="sk-test",  # pragma: allowlist secret
+            model="gpt-4o",
+            console=None,
+        )
+    assert getattr(excinfo3.value, "response_id", None) is None
+    assert excinfo3.value.conversation_items == pending
+
+    # Stateless: the full client-side items (system + cancelled message) are
+    # handed back so the next turn re-sends them; no id to chain with.
+    items = [
+        {
+            "type": "message",
+            "role": "system",
+            "content": [{"type": "input_text", "text": "Sys"}],
+        },
+        {
+            "type": "message",
+            "role": "user",
+            "content": [{"type": "input_text", "text": "List files"}],
+        },
+    ]
+    exc2 = RequestCancelled("cancelled")
+    exc2.partial_result = ("", None, [], None, "resp_x")
+    monkeypatch.setattr(api, "_run_with_progress_bar", mock.Mock(side_effect=exc2))
+
+    with pytest.raises(RequestCancelled) as excinfo2:
+        client._run_stream_round(
+            mock.Mock(),
+            {},
+            [],
+            {
+                "responses_in_server": False,
+                "response_id": None,
+                "input_items": items,
+            },
+            base_url="https://api.example.com",
+            api_key="sk-test",  # pragma: allowlist secret
+            model="gpt-4o",
+            console=None,
+        )
+    assert getattr(excinfo2.value, "response_id", None) is None
+    assert excinfo2.value.conversation_items == items

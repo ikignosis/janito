@@ -16,6 +16,7 @@ from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.styles import Style
 from rich.console import Console
 
+from ..openai_client import RequestCancelled
 from .completer import CommandCompleter
 
 _rich_console = Console(markup=False)
@@ -64,11 +65,14 @@ class InteractiveShell:
         # when no Responses conversation has started yet, and for stateless
         # Responses providers (which never chain with an id).
         self.previous_response_id: str | None = None
-        # Client-side Responses input items for stateless Responses providers
+        # Client-side Responses input items. For stateless Responses providers
         # (e.g. DeepSeek, whose /responses endpoint keeps no server state):
         # the full conversation, re-sent on every request via `previous_items`.
-        # None in Completions mode and for server-side Responses providers
-        # (which keep the history on the server behind previous_response_id).
+        # For server-side Responses providers (e.g. OpenAI): the pending user
+        # messages of Enter-cancelled turns, re-sent as input items chained
+        # from the last completed response id (see previous_response_id) and
+        # cleared again once a turn completes. None in Completions mode and
+        # for server-side Responses providers with no pending messages.
         self.conversation_items: list[dict[str, Any]] | None = None
         # Index into conversation_items marking the last known-good state;
         # /rollback truncates back to here.
@@ -388,6 +392,41 @@ class InteractiveShell:
             # On success, keep the checkpoint where it is (before this turn)
             # so /rollback can undo the last exchange. The next turn will
             # update it before its own send_prompt call.
+        except RequestCancelled as e:
+            # Enter was pressed while waiting for the API: interrupt the
+            # request but keep the conversation intact so the next turn still
+            # knows the user's message (no rollback, unlike Ctrl+C above).
+            # The client never chains the next turn from the aborted request:
+            # server-side Responses providers (e.g. OpenAI) discard the
+            # response of an interrupted stream, so its id cannot be used as
+            # previous_response_id. Instead the client hands back the user's
+            # messages as input items; the shell keeps the last completed
+            # response id (previous_response_id) and re-sends those items
+            # chained from it on the next turn.
+            items = getattr(e, "conversation_items", None)
+            if items is not None:
+                # Server-side Responses: the pending cancelled messages.
+                # Stateless Responses (e.g. DeepSeek): the full client-side
+                # items, which already include the cancelled message (this
+                # also covers a fresh conversation, where the shell had no
+                # items yet). Either way, store them so the next turn
+                # re-sends them.
+                self.conversation_items = items
+            elif self.conversation_items is not None:
+                # Fallback for stateless flows where the exception carries no
+                # items (e.g. the abort happened before the client built
+                # them): persist the cancelled message so the next turn
+                # includes it.
+                self.conversation_items.append(
+                    {
+                        "type": "message",
+                        "role": "user",
+                        "content": [{"type": "input_text", "text": user_input}],
+                    }
+                )
+            print(
+                "Request cancelled (Enter). The prompt stays in the conversation history."
+            )
         except KeyboardInterrupt:
             # Rollback any messages appended during this prompt
             del self.messages_history[self.history_checkpoint :]

@@ -6,7 +6,7 @@ import os
 
 from .. import __version__
 from ..general_config import resolve_api_type
-from ..openai_client import resolve_runtime_config, send_prompt
+from ..openai_client import RequestCancelled, resolve_runtime_config, send_prompt
 from ..shell import InteractiveShell
 from ..system_prompt import (  # noqa: F401 (re-exported; tests patch chat_mod.get_system_prompt_with_skills)
     get_system_prompt_with_skills,
@@ -341,5 +341,9 @@ def run_single_prompt(args):
             thinking=args.thinking,
         )
     except KeyboardInterrupt:
+        print("\nOperation cancelled by user.", file=sys.stderr)
+        sys.exit(130)
+    except RequestCancelled:
+        # Enter was pressed while waiting for the API response.
         print("\nOperation cancelled by user.", file=sys.stderr)
         sys.exit(130)

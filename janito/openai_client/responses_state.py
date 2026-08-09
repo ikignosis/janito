@@ -21,8 +21,23 @@ def _init_conversation_state(
     previous_items: list[dict[str, Any]] | None,
     instructions: str | None,
     prompt: str,
-) -> tuple[bool, str | None, list[dict[str, Any]] | None, str | list[dict[str, Any]]]:
-    """Set up the server-side or stateless conversation state."""
+) -> tuple[
+    bool,
+    str | None,
+    list[dict[str, Any]] | None,
+    str | list[dict[str, Any]],
+    list[dict[str, Any]] | None,
+]:
+    """Set up the server-side or stateless conversation state.
+
+    Returns ``(responses_in_server, response_id, conversation_items,
+    input_items, pending_items)``.  ``pending_items`` only applies to
+    server-side conversations: the user messages that are not yet part of a
+    completed response in the caller's chain (e.g. an Enter-cancelled prompt
+    that must survive the cancel).  The caller keeps them across cancelled
+    turns and re-sends them (chained from the last completed response id)
+    until a turn completes; ``None`` for stateless conversations.
+    """
     responses_in_server = get_responses_in_server_from_provider(provider)
     if responses_in_server:
         response_id = previous_response_id
@@ -30,6 +45,27 @@ def _init_conversation_state(
         # The first round sends the raw prompt; tool-call rounds send the
         # function_call_output items chained to the previous response.
         input_items: str | list[dict[str, Any]] = prompt
+        # Pending user messages (e.g. an Enter-cancelled prompt) that must be
+        # re-sent because they are not yet in a completed response the caller
+        # chains from.  They are sent as input items chained after the last
+        # completed response (previous_response_id), followed by the new
+        # prompt; on a cancel they are handed back so the next turn re-sends
+        # them (the aborted server response itself is discarded by the
+        # provider and cannot be chained from).
+        pending_items: list[dict[str, Any]] | None = []
+        if previous_items:
+            pending_items.extend(dict(item) for item in previous_items)
+        pending_items.append(
+            {
+                "type": "message",
+                "role": "user",
+                "content": [{"type": "input_text", "text": prompt}],
+            }
+        )
+        if previous_items:
+            # Pending messages exist: send them (plus the new prompt) as
+            # explicit input items chained from the last completed response.
+            input_items = pending_items
     else:
         # Stateless: never chain with previous_response_id; each request
         # re-sends the entire conversation as input items.
@@ -53,7 +89,14 @@ def _init_conversation_state(
             }
         )
         input_items = conversation_items
-    return responses_in_server, response_id, conversation_items, input_items
+        pending_items = None
+    return (
+        responses_in_server,
+        response_id,
+        conversation_items,
+        input_items,
+        pending_items,
+    )
 
 
 def _build_call_kwargs(

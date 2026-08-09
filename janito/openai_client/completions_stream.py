@@ -54,14 +54,22 @@ class CompletionsStreamConsumer:
     # Stream driving
     # ------------------------------------------------------------------
 
-    def consume(self, stream):
+    def consume(self, stream, cancel_event=None):
         """Consume a streaming completion and assemble the response parts.
 
         Returns ``(full_content, reasoning_content, tool_calls_map,
         usage_info)`` where ``tool_calls_map`` maps call index ->
         ``{id, name, arguments}``.
+
+        When ``cancel_event`` is set (user pressed Enter while waiting), the
+        stream is abandoned as soon as the next chunk arrives.
         """
         for chunk in stream:
+            # Honour an Enter-to-cancel request: stop consuming as soon as the
+            # next chunk arrives so the worker can close the connection.
+            if cancel_event is not None and cancel_event.is_set():
+                break
+
             # Usage stats arrive in the final chunk when include_usage is set
             if hasattr(chunk, "usage") and chunk.usage:
                 self.usage_info = chunk.usage
@@ -119,13 +127,13 @@ class CompletionsStreamConsumer:
 # ---------------------------------------------------------------------------
 
 
-def _consume_stream(stream):
+def _consume_stream(stream, cancel_event=None):
     """Consume a streaming completion and assemble the response parts.
 
     Returns ``(full_content, reasoning_content, tool_calls_map, usage_info)``.
     See :meth:`CompletionsStreamConsumer.consume`.
     """
-    return CompletionsStreamConsumer().consume(stream)
+    return CompletionsStreamConsumer().consume(stream, cancel_event=cancel_event)
 
 
 def _consume_chunk(delta, collected_content, collected_reasoning, tool_calls_map):
@@ -148,10 +156,13 @@ def _consume_tool_call_delta(tc_delta, tool_calls_map):
     consumer.handle_tool_call_delta(tc_delta)
 
 
-def _stream_response(client, call_kwargs, tools_schemas):
+def _stream_response(client, call_kwargs, tools_schemas, cancel_event=None):
     """Open a streaming completion and fully consume it.
 
     Returns ``(full_content, reasoning_content, tool_calls_map, usage_info)``.
+
+    When ``cancel_event`` is set (user pressed Enter while waiting), the
+    stream is abandoned and the underlying connection is closed.
     """
     if tools_schemas:
         logger.debug(f"Calling API (streaming) with {len(tools_schemas)} tools")
@@ -164,4 +175,10 @@ def _stream_response(client, call_kwargs, tools_schemas):
         logger.debug("Calling API (streaming) without tools")
         stream = client.chat.completions.create(**call_kwargs)
 
-    return _consume_stream(stream)
+    try:
+        return _consume_stream(stream, cancel_event=cancel_event)
+    finally:
+        # Abort the underlying HTTP stream when the user pressed Enter so the
+        # connection is released promptly instead of streaming to completion.
+        if cancel_event is not None and cancel_event.is_set():
+            stream.close()

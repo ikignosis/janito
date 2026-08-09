@@ -291,7 +291,7 @@ Progress messages go to stderr so they don't interfere with tool output.
 |-----------|---------|
 | `0` | Success |
 | `1` | Configuration or runtime error |
-| `130` | User cancelled (Ctrl+C) |
+| `130` | User cancelled (Ctrl+C or Enter) |
 
 ## Dependencies
 
