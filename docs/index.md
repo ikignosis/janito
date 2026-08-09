@@ -8,6 +8,7 @@
 - 📧 **Gmail Integration** - Read, search, and manage emails
 - ☁️ **OneDrive Integration** - Browse, upload, download, and share files
 - 🔌 **MCP Support** - Connect to Model Context Protocol servers
+- 🖥️ **Two Interfaces** - Terminal CLI/shell for scripts and quick prompts, plus a browser-based Web UI (`janito --web`) with sessions and dashboards
 - 📊 **Real-time Progress** - Watch tool execution progress as it happens
 - 🚀 **Easy Setup** - Interactive configuration with `--config` or quick setup with `--set` flags
 - 🌐 **OpenAI-Compatible & Native APIs** - Works with any OpenAI-compatible endpoint (OpenAI, LM Studio, Ollama, custom) and native SDKs (Anthropic, DashScope)
@@ -34,6 +35,17 @@ janito "Hello!"
 
 No need to switch between browser tabs or other applications. Chat with AI models while keeping your terminal workflow intact.
 
+### Two Interfaces, One Engine
+
+janito has two interfaces built on the same engine, tools, and configuration:
+
+| Interface | How to start | Best for |
+|-----------|--------------|----------|
+| **Terminal CLI/shell** | `janito "question"`, `janito`, `echo "text" \| janito` | Quick questions, scripting, configuration & secrets, terminal-first workflows |
+| **Web UI** | `janito --web` | Browser-based chat with sessions, tool-call cards, and dashboards |
+
+See [CLI vs Web UI](usage/cli-vs-web.md) for which features are available in each.
+
 ### Powerful Built-in Tools
 
 janito comes with tools for common tasks:
@@ -58,6 +70,7 @@ Use OpenAI, local LLM servers (LM Studio, Ollama), any OpenAI-compatible API, or
 1. [Install janito](getting-started/installation.md)
 2. [Configure your settings](getting-started/quick-start.md)
 3. [Start chatting](usage/interactive-mode.md)
+4. [Launch the web UI](usage/web-ui.md) or compare the [two interfaces](usage/cli-vs-web.md)
 
 ## License
 

@@ -1,6 +1,11 @@
 # Interactive Mode
 
-Interactive mode provides a chat shell for multi-turn conversations with context preservation.
+Interactive mode provides a **terminal shell** for multi-turn conversations with context preservation.
+
+> **This is the terminal (CLI/shell) interface.** janito also ships a
+> browser-based **web UI** (`janito --web`) with its own chat surface, session
+> sidebar, and dashboards. The two share the same engine and tools — see
+> [CLI vs Web UI](cli-vs-web.md) and [Web UI](web-ui.md) for the differences.
 
 ## Starting Interactive Mode
 
@@ -30,7 +35,11 @@ In interactive mode, these commands are available:
 
 ## Chat Commands
 
-Additional commands available in chat:
+Additional commands available in the terminal shell:
+
+> These commands are implemented by the **terminal shell**. The web chat only
+> handles `/tools` on the client (rendered as a card panel); any other slash
+> command typed there is sent to the model as ordinary text.
 
 | Command | Description |
 |---------|-------------|

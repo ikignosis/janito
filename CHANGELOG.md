@@ -11,6 +11,15 @@ Changes since `v4.21.0` (2026-08-08).
 
 ### Added
 
+- Documentation: the docs now distinguish between the **terminal CLI/shell**
+  and the **web UI** interfaces. A new page `docs/usage/cli-vs-web.md`
+  compares the two feature-by-feature (starting a session, chat experience,
+  commands & shortcuts, sessions & history, configuration & secrets,
+  authentication & security, tools & integrations, observability &
+  maintenance); `docs/usage/index.md`, `docs/usage/interactive-mode.md`,
+  `docs/usage/web-ui.md` and `docs/index.md` now cross-link the two
+  interfaces, and `mkdocs.yml` includes the new page in the Usage nav.
+
 - New `scripts/provider_token_benchmark.py` developer utility: runs
   `janito -p <provider> -v --log=info "<prompt>"` for every provider with a
   configured API key (discovered via `janito --list-keys`), extracts the

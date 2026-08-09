@@ -16,6 +16,41 @@ that yields structured events instead of printing to a terminal.
 
 ---
 
+## CLI vs Web UI
+
+The web UI and the terminal CLI/shell share the same engine, tools, and
+configuration, but each surface has interface-specific features. The full
+feature-by-feature breakdown is on [CLI vs Web UI](cli-vs-web.md); in short:
+
+**Web-only features**
+
+- Session sidebar (new chat, delete, rename, auto-naming) with persistence to
+  `./.janito/sessions/`
+- Settings drawer and provider switcher (runtime model / providers / API keys)
+- MCP dashboard (connect / disconnect services)
+- `/tools` rendered as a client-side card panel (the only slash command the web
+  chat handles locally)
+- Tool-call cards, collapsible Reasoning panel, token usage bar, status bar
+- The `janitoweb` toolset (`CreateSVG`, `CreateImage`) — always loaded in `--web` mode
+- `JANITO_WEB_TOKEN` bearer-token auth and the `--web*` server flags
+
+**CLI-only features**
+
+- Single-prompt and pipe input (`janito "..."`, `echo ... | janito`)
+- The interactive shell (`exit`, `restart`, `/changes`, `/show_tools_stats`,
+  `/mcp add|list|remove`, `!<command>`, `Ctrl+D`/`Ctrl+C`, `F2`/`F12`, ...)
+- Configuration & secrets maintenance (`--config`, `--set`, `--set-api-key`,
+  `--set-secret`, `--list-keys`, ...)
+- OneDrive authentication commands (`--onedrive-auth`, `--onedrive-status`,
+  `--onedrive-logout`)
+- Skill management (`--install-skill`, `--list-skills`, `--uninstall-skill`)
+- `--init-codesearch`, `--list-tools`, `--list-mcp`, `--log=...`, exit codes
+
+Everything else — the tools, privileges (`-r`/`-w`/`-x`), providers, models,
+Gmail/OneDrive toolsets, skills, MCP tools, and `--no-history` — works in both.
+
+---
+
 ## Installation
 
 The web UI requires optional dependencies (FastAPI + Uvicorn) that are **not**
