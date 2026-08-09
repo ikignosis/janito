@@ -13,10 +13,33 @@ import difflib
 from collections.abc import Callable
 from contextvars import ContextVar
 
+from pygments.style import Style
+from pygments.token import Generic, Text, Token
 from rich.console import Console
 
 # Shared console for stderr output (no auto-highlighting or markup interpretation)
 _console = Console(stderr=True, highlight=False, markup=False)
+
+
+class DiffTheme(Style):
+    """Pygments style for unified diffs.
+
+    Added lines (``+``) get a green background and removed lines (``-``) a red
+    background so the hunks stand out at a glance; the text stays plain white
+    on both so it remains readable, and context lines keep a neutral dark
+    background.
+    """
+
+    background_color = "#1e1e1e"
+
+    styles = {
+        Token: "#f8f8f2",
+        Text: "#f8f8f2",
+        Generic.Inserted: "#f8f8f2 bg:#143214",
+        Generic.Deleted: "#f8f8f2 bg:#3a1414",
+        Generic.Subheading: "bold #66d9ef",
+        Generic.Heading: "bold #66d9ef",
+    }
 
 
 # --- Pluggable report handler via contextvars ---
@@ -152,8 +175,9 @@ def report_diff(old_str: str, new_str: str, end: str = "\n") -> None:
     Report the diff between ``old_str`` and ``new_str``.
 
     The unified diff is printed on the terminal with rich syntax
-    highlighting (Pygments "diff" lexer). In web mode it is forwarded to
-    the active report handler as a ``"diff"`` level event.
+    highlighting (Pygments "diff" lexer): added lines get a green background
+    and removed lines a red background (see :class:`DiffTheme`). In web mode
+    it is forwarded to the active report handler as a ``"diff"`` level event.
 
     Args:
         old_str: The text that was searched for (the "before" side).
@@ -168,7 +192,13 @@ def report_diff(old_str: str, new_str: str, end: str = "\n") -> None:
     from rich.syntax import Syntax
 
     _console.print(
-        Syntax(diff_text or "", "diff", line_numbers=False, word_wrap=True),
+        Syntax(
+            diff_text or "",
+            "diff",
+            theme=DiffTheme,
+            line_numbers=False,
+            word_wrap=True,
+        ),
         end=end,
     )
     _console.file.flush()

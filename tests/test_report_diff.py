@@ -9,6 +9,7 @@ mode) or forwards it to the active report handler as a ``"diff"`` level event
 (web mode). ``ReplaceTextInFile`` calls it right before ``report_result``.
 """
 
+import io
 import sys
 from pathlib import Path
 
@@ -51,6 +52,56 @@ if pytest is not None:
         assert "+++ after" in out
         assert "-foo = 1" in out
         assert "+foo = 2" in out
+
+    def test_diff_theme_gives_removed_lines_red_background():
+        # Capture the ANSI output with a truecolor, force-terminal console.
+        from rich.console import Console
+
+        buf = io.StringIO()
+        orig = reporter._console
+        reporter._console = Console(
+            width=100, force_terminal=True, color_system="truecolor", file=buf
+        )
+        try:
+            reporter.report_diff("foo = 1", "foo = 2")
+        finally:
+            reporter._console = orig
+
+        out = buf.getvalue()
+        # #3a1414 (dark red) is the DiffTheme background for deleted lines.
+        assert "48;2;58;20;20" in out
+        assert "-foo = 1" in out
+
+    def test_diff_theme_gives_added_lines_green_background():
+        from rich.console import Console
+
+        buf = io.StringIO()
+        orig = reporter._console
+        reporter._console = Console(
+            width=100, force_terminal=True, color_system="truecolor", file=buf
+        )
+        try:
+            reporter.report_diff("foo = 1", "foo = 2")
+        finally:
+            reporter._console = orig
+
+        out = buf.getvalue()
+        # #143214 (dark green) is the DiffTheme background for added lines.
+        assert "48;2;20;50;20" in out
+        assert "+foo = 2" in out
+
+    def test_diff_theme_styles_removed_and_inserted_tokens():
+        from pygments.token import Generic
+
+        style = reporter.DiffTheme.style_for_token(Generic.Deleted)
+        assert style["bgcolor"] == "3a1414"
+        assert style["color"] == "f8f8f2"
+        assert style["bold"] is False
+
+        style = reporter.DiffTheme.style_for_token(Generic.Inserted)
+        assert style["bgcolor"] == "143214"
+        assert style["color"] == "f8f8f2"
+        assert style["bold"] is False
 
     def test_report_diff_routes_to_handler():
         events = []

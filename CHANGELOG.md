@@ -71,6 +71,20 @@ Changes since `v4.21.0` (2026-08-08).
 
 ### Changed
 
+- Unified diffs shown in the CLI (both the `report_diff` output emitted by
+  `ReplaceTextInFile` and the `/changes` command's `ReplaceTextInFile`
+  entries) are now rendered with a dedicated Pygments style
+  (`janito.tooling.reporter.DiffTheme`) that gives removed lines (`-`) a red
+  background and added lines (`+`) a green background, so the hunks stand out
+  at a glance (the text stays plain white on both, and context lines keep a
+  neutral dark background). The `/changes`
+  command now always renders these diffs with the Pygments "diff" lexer
+  (previously it guessed the lexer from the file path, which did not mark the
+  `-`/`+` lines). Added `tests/test_report_diff.py` coverage for the theme's
+  token styles and the emitted ANSI background codes, and a
+  `tests/test_changes.py` case asserting the diff backgrounds in the
+  `/changes` output.
+
 - The web chat page (previously a single ~900-line
   `janito/web/frontend/index.html`) is now composed server-side with Jinja2:
   the shell lives in `janito/web/backend/templates/base.html` and each UI

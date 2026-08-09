@@ -16,8 +16,9 @@ recorded execution in a friendly, human-readable format:
 * ``CreateFile`` \u2014 the written ``content`` is shown with rich syntax
   highlighting (the language is guessed from the file path).
 * ``ReplaceTextInFile`` \u2014 a unified diff between ``old_str`` and ``new_str``
-  is generated and shown, syntax-highlighted (again guessing the language from
-  the file path).
+  is generated and shown with the Pygments "diff" lexer; added lines get a
+  green background and removed lines a red background (see
+  :class:`janito.tooling.reporter.DiffTheme`).
 * Any other tool \u2014 its parameters are shown as pretty-printed JSON.
 
 :class:`ChangesTracker` implements the recording/rendering logic (the module
@@ -37,7 +38,7 @@ import threading
 from pathlib import Path
 from typing import Any
 
-from .reporter import build_diff
+from .reporter import DiffTheme, build_diff
 
 logger = logging.getLogger(__name__)
 
@@ -224,8 +225,9 @@ class ChangesTracker:
         """Render the recorded changes to ``console`` in a friendly format.
 
         * ``CreateFile`` \u2014 shows the ``content`` with rich syntax highlighting.
-        * ``ReplaceTextInFile`` \u2014 shows a syntax-highlighted diff between
-          ``old_str`` and ``new_str``.
+        * ``ReplaceTextInFile`` \u2014 shows a unified diff with the Pygments
+          "diff" lexer; added lines get a green background and removed lines a
+          red background (see :class:`janito.tooling.reporter.DiffTheme`).
         * Anything else \u2014 shows the parameters as pretty-printed JSON.
 
         A friendly message is printed when no changes have been recorded.  This
@@ -334,9 +336,16 @@ class ChangesTracker:
             old_str = params.get("old_str", "")
             new_str = params.get("new_str", "")
             diff_text = self._build_replace_diff(old_str, new_str)
-            lexer = self._guess_lexer(str(filepath), diff_text)
+            # Render as a unified diff (Pygments "diff" lexer) so added
+            # lines get a green background and removed lines a red one.
             console.print(
-                Syntax(diff_text or "", lexer, line_numbers=False, word_wrap=True)
+                Syntax(
+                    diff_text or "",
+                    "diff",
+                    theme=DiffTheme,
+                    line_numbers=False,
+                    word_wrap=True,
+                )
             )
         else:
             # Show the parameters as a pretty-printed, syntax-highlighted
@@ -410,8 +419,9 @@ def render_changes(console=None) -> None:
     """Render the recorded changes to ``console`` in a friendly format.
 
     * ``CreateFile`` \u2014 shows the ``content`` with rich syntax highlighting.
-    * ``ReplaceTextInFile`` \u2014 shows a syntax-highlighted diff between
-      ``old_str`` and ``new_str``.
+    * ``ReplaceTextInFile`` \u2014 shows a unified diff with the Pygments
+      "diff" lexer; added lines get a green background and removed lines a
+      red background (see :class:`janito.tooling.reporter.DiffTheme`).
     * Anything else \u2014 shows the parameters as pretty-printed JSON.
 
     A friendly message is printed when no changes have been recorded. This
