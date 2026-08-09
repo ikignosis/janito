@@ -71,6 +71,15 @@ Changes since `v4.21.0` (2026-08-08).
 
 ### Changed
 
+- The interactive shell command `/show_config` (displays the current
+  configuration: provider, API type, base URL, masked API key, max output
+  tokens, reasoning level and thinking mode) has been renamed to `/status`:
+  the handler now lives in `janito/shell/cmds/status.py` (class
+  `StatusCmdHandler`, registered as `/status`), and the package import in
+  `janito/shell/cmds/__init__.py` was updated accordingly. Updated
+  `tests/test_shell_config_cmd.py`, `tests/test_shell_completer.py` and the
+  docstring example in `janito/shell/cmds/base.py`.
+
 - The interactive shell command `/ask` (individual question with a fresh chat
   history) has been renamed to `/btw`: the handler now lives in
   `janito/shell/cmds/btw.py` (class `BtwCmdHandler`, registered as `/btw`),

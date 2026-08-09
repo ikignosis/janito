@@ -1,5 +1,5 @@
 """
-/show_config command handler - displays current configuration.
+/status command handler - displays current configuration.
 """
 
 from janito.auth_config import get_api_key
@@ -123,15 +123,15 @@ def _print_config_info(provider: str | None = None, thinking: bool = False) -> N
     print()
 
 
-class ShowConfigCmdHandler(CmdHandler):
-    """Command handler for /show_config command."""
+class StatusCmdHandler(CmdHandler):
+    """Command handler for /status command."""
 
     @property
     def name(self) -> str:
-        return "/show_config"
+        return "/status"
 
     def handle(self, shell, user_input: str) -> bool:
-        """Handle the /show_config command."""
+        """Handle the /status command."""
         if user_input.lower() == self.name.lower():
             _print_config_info(
                 getattr(shell, "provider", None),
@@ -142,5 +142,5 @@ class ShowConfigCmdHandler(CmdHandler):
 
 
 # Register this handler
-_handler = ShowConfigCmdHandler()
+_handler = StatusCmdHandler()
 register_command(_handler)

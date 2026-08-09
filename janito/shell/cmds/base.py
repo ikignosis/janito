@@ -20,7 +20,7 @@ class CmdHandler(ABC):
     @property
     @abstractmethod
     def name(self) -> str:
-        """The command name (e.g., '/show_config')."""
+        """The command name (e.g., '/status')."""
 
     @abstractmethod
     def handle(self, shell: "InteractiveShell", user_input: str) -> bool:

@@ -14,8 +14,8 @@ from . import (
     priv,
     prompt,
     rollback,
-    show_config,
     show_tools_stats,
+    status,
     tools,
 )
 from .base import CmdHandler
@@ -35,7 +35,7 @@ __all__ = [
     "prompt",
     "register_command",
     "rollback",
-    "show_config",
     "show_tools_stats",
+    "status",
     "tools",
 ]
