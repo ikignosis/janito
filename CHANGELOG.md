@@ -144,6 +144,42 @@ Changes since `v4.21.0` (2026-08-08).
   dropdown arrow, so the two combos render identically (the custom caret
   span was removed).
 
+### Fixed
+
+- MCP stdio commands configured as a single string (e.g. by `/mcp add`
+  `myserver stdio python -m mcp.server`) now work: `StdioTransport` splits
+  the command with `shlex.split()` before spawning the subprocess, so
+  `subprocess.Popen` receives proper argv instead of a single
+  space-joined string (which previously failed with `No such file or
+  directory`). Pre-split argv lists are still accepted as-is.
+
+- `MCPManager.get_all_tools()` no longer drops a service's tools when the
+  service had to be reconnected: the reconnect path previously `continue`d
+  past the `tools/list` call, so a restarted server's tools vanished from
+  the (cached) tool list until the manager was rebuilt.
+
+- The HTTP transport now clears its connected flag when a request or
+  notification fails, so `MCPManager` (and other callers) can detect a dead
+  remote server and attempt a reconnect instead of treating the stale
+  flag as live and silently returning an empty tool list.
+
+- `MCPManager.call_tool()` caches each service's tool names (populated by
+  `get_all_tools()`, invalidated on connect/unload) instead of re-listing
+  tools on every invocation; a failed live lookup no longer aborts the call
+  but is treated as "tool not found".
+
+- MCP image results no longer dump raw base64 into the conversation
+  history; `_process_tool_result` reports `[Image: <mime>, <N> bytes]`
+  instead.
+
+- `/mcp list`, `/mcp` help and `janito --list-mcp` now display the config
+  file path via `get_mcp_config_path()` so it honours the `-c` /
+  `--config-dir` override instead of the import-time constant.
+
+- Added `tests/test_mcp_client.py` covering both transports end to end
+  (stdio subprocess and HTTP/SSE), the stdio command-splitting fix, the
+  manager reconnect fix, and HTTP disconnection detection.
+
 ### Removed
 
 - Removed the Enter-to-cancel functionality in interactive mode: pressing

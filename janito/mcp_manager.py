@@ -24,6 +24,10 @@ class MCPManager:
         self._clients: dict[str, MCPTransport] = {}
         self._tools_cache: list[dict] | None = None
         self._cache_valid = False
+        # service name -> set of tool names, used by call_tool to avoid
+        # re-listing tools on every invocation. Invalidated whenever the
+        # set of connected services changes.
+        self._service_tool_names: dict[str, set[str]] = {}
 
     @property
     def connected_services(self) -> list[str]:
@@ -64,6 +68,7 @@ class MCPManager:
 
         # Invalidate cache when services change
         self._cache_valid = False
+        self._service_tool_names.clear()
 
     def unload_service(self, name: str) -> None:
         """
@@ -80,6 +85,7 @@ class MCPManager:
             finally:
                 del self._clients[name]
                 self._cache_valid = False
+                self._service_tool_names.pop(name, None)
                 logger.info(f"Unloaded MCP service: {name}")
 
     def unload_all(self) -> None:
@@ -108,13 +114,18 @@ class MCPManager:
                 if not client.is_connected:
                     # Try to reconnect
                     if client.connect():
-                        continue
+                        logger.info(f"Reconnected MCP service: {service_name}")
                     else:
                         logger.warning(f"Service '{service_name}' is not connected")
                         continue
 
                 # Get tools from this service
                 mcp_tools = client.list_tools()
+
+                # Cache the tool names so call_tool doesn't re-list on every call
+                self._service_tool_names[service_name] = {
+                    tool.get("name") for tool in mcp_tools
+                }
 
                 # Convert MCP tools to OpenAI format with service prefix
                 for tool in mcp_tools:
@@ -202,43 +213,67 @@ class MCPManager:
         # Report start of MCP tool call
         report_start(f"🔌 MCP tool: {prefixed_name}", end="")
 
-        # Find the service (last underscore-separated part is the tool name)
-        # We need to find the service name by checking which clients have this tool
+        # Find the service that provides this tool. We can't split on "_"
+        # (service names may contain underscores), so check each client by
+        # stripping its own name prefix.
         for service_name, client in self._clients.items():
             tool_name = prefixed_name[len(service_name) + 1 :]
 
             # Check if this client has this tool
+            if not client.is_connected:
+                continue
+            if not self._service_has_tool(service_name, tool_name):
+                continue
+
+            # Show which service we're calling
+            report_progress(f" [{service_name}]", end="")
+
             try:
-                if not client.is_connected:
-                    continue
+                result = client.call_tool(tool_name, arguments)
+                processed_result = self._process_tool_result(result)
 
-                tools = client.list_tools()
-                tool_names = [t.get("name") for t in tools]
+                # Report success with result summary
+                result_summary = self._get_result_summary(processed_result)
+                report_result(result_summary)
 
-                if tool_name in tool_names:
-                    # Show which service we're calling
-                    report_progress(f" [{service_name}]", end="")
-
-                    try:
-                        result = client.call_tool(tool_name, arguments)
-                        processed_result = self._process_tool_result(result)
-
-                        # Report success with result summary
-                        result_summary = self._get_result_summary(processed_result)
-                        report_result(result_summary)
-
-                        return processed_result
-
-                    except Exception as e:
-                        report_error(f" MCP tool error: {e!s}")
-                        raise
+                return processed_result
 
             except Exception as e:
-                logger.error(f"Error calling tool '{prefixed_name}': {e}")
+                report_error(f" MCP tool error: {e!s}")
                 raise
 
         report_error(f"MCP tool not found: {prefixed_name}")
         raise ValueError(f"Tool not found: {prefixed_name}")
+
+    def _service_has_tool(self, service_name: str, tool_name: str) -> bool:
+        """
+        Check whether a connected service exposes a tool, using the cached
+        name set when available.
+
+        Args:
+            service_name: The connected service name
+            tool_name: The bare tool name (without the service prefix)
+
+        Returns:
+            True if the service provides the tool, False otherwise
+        """
+        names = self._service_tool_names.get(service_name)
+        if names is not None:
+            return tool_name in names
+
+        # Cache not populated (get_all_tools hasn't run yet): list live.
+        client = self._clients.get(service_name)
+        if client is None:
+            return False
+
+        try:
+            tools = client.list_tools()
+        except Exception as e:
+            logger.error(f"Error listing tools from service '{service_name}': {e}")
+            return False
+
+        self._service_tool_names[service_name] = {tool.get("name") for tool in tools}
+        return tool_name in self._service_tool_names[service_name]
 
     def _process_tool_result(self, result: Any) -> Any:
         """
@@ -261,7 +296,11 @@ class MCPManager:
                     if block.get("type") == "text":
                         text_parts.append(block.get("text", ""))
                     elif block.get("type") == "image":
-                        text_parts.append(f"[Image: {block.get('data', 'N/A')}]")
+                        # Don't dump raw base64 into the conversation history;
+                        # report the image metadata instead.
+                        data = block.get("data", "") or ""
+                        mime = block.get("mimeType") or "unknown"
+                        text_parts.append(f"[Image: {mime}, {len(data)} bytes]")
 
                 if text_parts:
                     return "\n".join(text_parts)
@@ -326,6 +365,7 @@ class MCPManager:
         self.unload_all()
         self._tools_cache = None
         self._cache_valid = False
+        self._service_tool_names.clear()
         logger.info("MCP Manager shutdown complete")
 
 

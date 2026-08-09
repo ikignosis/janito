@@ -1,6 +1,6 @@
 """Tool and MCP listing CLI handlers."""
 
-from ...mcp_config import MCP_CONFIG_PATH, list_services
+from ...mcp_config import get_mcp_config_path, list_services
 from ...mcp_manager import get_mcp_manager
 from ...tooling.tools_registry import (
     add_toolset,
@@ -125,7 +125,7 @@ def handle_list_mcp(args) -> int:
 
     print("MCP Services:")
     print("=" * 60)
-    print(f"Config file: {MCP_CONFIG_PATH}")
+    print(f"Config file: {get_mcp_config_path()}")
     print()
 
     if not services:

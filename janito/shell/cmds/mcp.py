@@ -22,7 +22,7 @@ import shlex
 
 # Import MCP config functions
 from janito.mcp_config import (
-    MCP_CONFIG_PATH,
+    get_mcp_config_path,
     list_services,
     load_mcp_config,
     remove_service,
@@ -230,7 +230,7 @@ class McpCmdHandler(CmdHandler):
                     print(f"    Config:   {json.dumps(service_config)}")
                 print()
 
-        print(f"  Config file: {MCP_CONFIG_PATH}")
+        print(f"  Config file: {get_mcp_config_path()}")
         print("=" * 60)
         print()
 
@@ -282,7 +282,7 @@ class McpCmdHandler(CmdHandler):
         print("  /mcp list")
         print("  /mcp remove myserver")
         print()
-        print(f"  Config file: {MCP_CONFIG_PATH}")
+        print(f"  Config file: {get_mcp_config_path()}")
         print("=" * 60)
         print()
 

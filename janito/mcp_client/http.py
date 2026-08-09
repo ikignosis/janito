@@ -119,6 +119,9 @@ class HttpTransport(MCPTransport):
             return extract_result(result)
 
         except Exception as e:
+            # A failed request means the connection is no longer usable;
+            # clear the flag so callers (e.g. MCPManager) attempt a reconnect.
+            self._connected = False
             logger.error(f"HTTP request failed: {e}")
             raise
 
@@ -199,4 +202,6 @@ class HttpTransport(MCPTransport):
         try:
             requests.post(self.url, json=notification, headers=headers, timeout=5)
         except Exception as e:
+            # A failed notification also means the connection is gone.
+            self._connected = False
             logger.debug(f"Notification send failed (ignored): {e}")

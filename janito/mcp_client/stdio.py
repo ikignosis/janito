@@ -4,6 +4,7 @@ MCP transport using stdio (local subprocess communication).
 
 import logging
 import queue
+import shlex
 import subprocess
 import threading
 import time
@@ -32,14 +33,22 @@ class StdioTransport(MCPTransport):
     and exchanging JSON-RPC messages via stdin/stdout.
     """
 
-    def __init__(self, command: str, env: dict[str, str] = None):
+    def __init__(self, command: str | list[str], env: dict[str, str] = None):
         """
         Initialize stdio transport.
 
         Args:
-            command: The command to execute (e.g., "python -m mcp.server")
+            command: The command to execute, either a single string (e.g.
+                "python -m mcp.server") or a pre-split argv list. Strings are
+                split with :func:`shlex.split` so multi-word commands are
+                passed to the subprocess correctly without ``shell=True``.
             env: Optional environment variables to pass to the subprocess
         """
+        if isinstance(command, str):
+            # Commands are stored/configured as a single string (e.g. by the
+            # /mcp add command); split it into argv so Popen receives the
+            # program and its arguments separately.
+            command = shlex.split(command)
         self.command = command
         self.env = env or {}
         self.process: subprocess.Popen | None = None
