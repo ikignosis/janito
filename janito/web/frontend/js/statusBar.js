@@ -78,6 +78,24 @@ function statusBarComponent() {
             return (p && (p.model || p.default_model)) || null;
         },
 
+        // True when the next prompt can generate images.  Two providers
+        // expose image generation, mirroring the backend's gating so the
+        // badge shows what the next prompt actually supports:
+        //   - alibaba: the CreateImage tool (Wan 2.7 Image Pro) loads
+        //     whenever the active provider is alibaba
+        //     (CreateImage.should_load);
+        //   - openai: the Responses API runner appends the native
+        //     ``image_generation`` tool when the effective API type is
+        //     Responses (responses.build_call_kwargs).
+        get imageGen() {
+            const provider = (this.provider || '').toLowerCase();
+            if (provider === 'alibaba') return true;
+            return (
+                provider === 'openai' &&
+                (this.apiType || '').toLowerCase() === 'responses'
+            );
+        },
+
         // Effective model name, or null when nothing is configured at all
         // (CLI --model, runtime config, server status, or the selected
         // provider's default).  When only the provider's default applies,

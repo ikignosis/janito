@@ -499,6 +499,12 @@
                         :aria-pressed="config.thinking ? 'true' : 'false'">thinking</button>
                 <span class="flag-badge" :class="{ active: config.gmail }">gmail</span>
                 <span class="flag-badge" :class="{ active: config.onedrive }">onedrive</span>
+                <!-- Image generation availability: active for the alibaba
+                     provider (CreateImage / Wan) and for openai when the
+                     effective API type is Responses (native
+                     image_generation tool). -->
+                <span class="flag-badge" :class="{ active: imageGen }"
+                      title="Image generation available with the current provider">image</span>
                 <span class="flag-badge" :class="{ active: privileges.read }">read</span>
                 <span class="flag-badge" :class="{ active: privileges.write }">write</span>
                 <span class="flag-badge" :class="{ active: privileges.exec }">exec</span>

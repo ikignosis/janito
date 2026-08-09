@@ -11,6 +11,16 @@ Changes since `v4.21.0` (2026-08-08).
 
 ### Added
 
+- The web status bar now shows an "image" indicator that lights up when the
+  next prompt can generate images: whenever the provider in use is
+  **alibaba** (the `CreateImage` tool, Wan 2.7 Image Pro) or **openai**
+  with the effective API type set to the **Responses** API (the native
+  `image_generation` tool). The badge mirrors the backend's gating
+  (`CreateImage.should_load` / `responses.build_call_kwargs`) and is driven
+  by the same effective-provider / effective-API-type resolution the status
+  bar already uses, so it updates when the provider is switched from the
+  topbar combo or the API type is changed in Settings.
+
 - The web agentic loop now supports native image generation on the
   **Responses API**: when the effective model is a mainline gpt-5 family
   model (e.g. `gpt-5.6`), the Responses runner automatically appends the
