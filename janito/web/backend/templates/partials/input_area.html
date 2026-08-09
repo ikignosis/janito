@@ -1,0 +1,16 @@
+        <!-- Input area -->
+        <div class="input-area">
+            <div class="input-inner">
+                <textarea x-ref="input"
+                          x-model="input"
+                          @keydown="onKeydown($event)"
+                          @input="_autoResize()"
+                          rows="1"
+                          placeholder="Send a message… (Enter to send, Shift+Enter for newline, Ctrl+C to stop, F2 to restart)"></textarea>
+                <button class="btn btn-primary"
+                        @click="sendPrompt()"
+                        :disabled="!input.trim() || status !== 'idle'">
+                    Send
+                </button>
+            </div>
+        </div>

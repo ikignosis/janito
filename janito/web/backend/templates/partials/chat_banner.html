@@ -1,0 +1,36 @@
+                <!-- Session start: tools summary (sent by the backend when
+                     the WebSocket connects — web counterpart of the CLI's
+                     startup "N tools active, M skipped" line). The active
+                     count is a link that opens the tools info dialog (same
+                     data as the /tools command). -->
+                <template x-if="toolsSummary">
+                    <div class="session-start-banner">
+                        <span class="ssb-main">
+                            ⚡ <a href="#" class="ssb-tools-link"
+                                  @click.prevent="openToolsDialog()"
+                                  title="View tools info">
+                                <strong x-text="toolsSummary.active"></strong> tool(s) active
+                            </a>
+                            <span class="ssb-sep">·</span>
+                            <strong x-text="toolsSummary.skipped"></strong> skipped
+                        </span>
+                        <template x-if="toolsSummary.skipped > 0">
+                            <details class="ssb-details">
+                                <summary>why?</summary>
+                                <ul class="ssb-skipped-list">
+                                    <template x-for="(reason, name) in toolsSummary.skippedList" :key="name">
+                                        <li><code x-text="name"></code> — <span x-text="reason"></span></li>
+                                    </template>
+                                </ul>
+                            </details>
+                        </template>
+                    </div>
+                </template>
+
+                <!-- Empty state -->
+                <template x-if="messages.length === 0">
+                    <div class="empty-state">
+                        <h2>⚡ Janito Web</h2>
+                        <p>Start a conversation below. Streaming responses, tool calls, and MCP services are all live.</p>
+                    </div>
+                </template>

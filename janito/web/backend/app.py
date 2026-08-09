@@ -6,7 +6,6 @@ At the point ``run_web`` is called, ``__main__.py`` has already:
   - validated the runtime config (API key / endpoint / model)
 """
 
-import json
 import logging
 import re
 from pathlib import Path
@@ -18,6 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from .config import WebServerConfig
 from .security import TokenAuthMiddleware, add_cors
 from .session import SessionManager
+from .templating import make_environment
 
 logger = logging.getLogger(__name__)
 
@@ -88,35 +88,30 @@ def create_app(config: WebServerConfig) -> FastAPI:
     # Serve frontend (no build step — plain HTML/JS/CSS)
     frontend_dir = Path(__file__).parent.parent / "frontend"
     if frontend_dir.exists():
-        # Serve index.html via a dynamic route so we can inject the auth
-        # token (window.__JANITO_TOKEN__) needed by websocket.js / api.js
-        # when JANITO_WEB_TOKEN is set. Without this the WS handshake is
-        # rejected by TokenAuthMiddleware and the UI shows "Not connected".
-        index_file = frontend_dir / "index.html"
+        # Serve the page via Jinja2 templates (templates/base.html + the
+        # partials under templates/partials/). The auth token is passed as
+        # template context (window.__JANITO_TOKEN__) so websocket.js / api.js
+        # can authenticate when JANITO_WEB_TOKEN is set. Without it the WS
+        # handshake is rejected by TokenAuthMiddleware and the UI shows
+        # "Not connected".
+        template_env = make_environment()
 
-        if index_file.exists():
-            _token_script = (
-                "<script>window.__JANITO_TOKEN__ = "
-                + json.dumps(config.auth_token)
-                + ";</script>"
+        @app.get("/", response_class=HTMLResponse, include_in_schema=False)
+        async def serve_index():
+            # Render per request so frontend edits apply without restarting
+            # the server (Jinja2's FileSystemLoader auto-reloads on mtime
+            # changes), and send ``no-store`` so browsers never serve a
+            # stale shell.
+            html = template_env.get_template("base.html").render(
+                auth_token=config.auth_token
             )
-
-            @app.get("/", response_class=HTMLResponse, include_in_schema=False)
-            async def serve_index():
-                # Read the file per request so frontend edits apply without
-                # restarting the server, and send ``no-store`` so browsers
-                # never serve a stale shell.
-                html = index_file.read_text(encoding="utf-8")
-                # Cache-bust local /js/ + /css/ assets by fingerprinting each
-                # reference with its file mtime. Browsers aggressively cache
-                # these scripts, so without this a frontend edit (e.g. a new
-                # Alpine method in settings.js) keeps serving the stale copy
-                # and raises "X is not defined" against the fresh index.html.
-                html = _cache_bust_assets(html, frontend_dir)
-                return HTMLResponse(
-                    html.replace("</head>", _token_script + "\n</head>", 1),
-                    headers={"Cache-Control": "no-store"},
-                )
+            # Cache-bust local /js/ + /css/ assets by fingerprinting each
+            # reference with its file mtime. Browsers aggressively cache
+            # these scripts, so without this a frontend edit (e.g. a new
+            # Alpine method in settings.js) keeps serving the stale copy
+            # and raises "X is not defined" against the fresh page.
+            html = _cache_bust_assets(html, frontend_dir)
+            return HTMLResponse(html, headers={"Cache-Control": "no-store"})
 
         # Mount everything else (css/, js/, favicon, etc.) as static files.
         # html=False so "/" is handled by our dynamic route above.

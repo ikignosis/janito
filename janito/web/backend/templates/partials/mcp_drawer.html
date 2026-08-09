@@ -1,0 +1,53 @@
+    <!-- ============ MCP drawer ============ -->
+    <template x-if="mcpOpen">
+        <div class="drawer-overlay" @click.self="closeDrawers()"
+             x-data="mcpComponent()" x-init="open=true; load()">
+            <div class="drawer">
+                <h2>🔌 MCP Services</h2>
+
+                <template x-if="message">
+                    <div class="warning-text" x-text="message"></div>
+                </template>
+
+                <template x-if="loading">
+                    <div class="empty-state padded">Loading…</div>
+                </template>
+
+                <template x-if="!loading && services.length === 0">
+                    <div class="empty-state padded">
+                        No MCP services configured.<br>
+                        <small>Add services to <code>~/.janito/mcp_services.json</code></small>
+                    </div>
+                </template>
+
+                <template x-for="svc in services" :key="svc.name">
+                    <div class="mcp-service">
+                        <div class="mcp-service-header">
+                            <span class="conn-dot" :class="svc.connected ? 'connected' : 'disconnected'"></span>
+                            <span class="mcp-service-name" x-text="svc.name"></span>
+                            <span class="muted-tiny"
+                                  x-text="svc.transport"></span>
+                        </div>
+                        <div class="row">
+                            <template x-if="!svc.connected">
+                                <button class="btn" @click="connect(svc.name)" :disabled="busy === svc.name">
+                                    Connect
+                                </button>
+                            </template>
+                            <template x-if="svc.connected">
+                                <button class="btn" @click="disconnect(svc.name)" :disabled="busy === svc.name">
+                                    Disconnect
+                                </button>
+                            </template>
+                            <span class="muted-inline"
+                                  x-text="svc.connected ? 'Connected' : 'Disconnected'"></span>
+                        </div>
+                    </div>
+                </template>
+
+                <div class="margin-top">
+                    <button class="btn" @click="closeDrawers()">Close</button>
+                </div>
+            </div>
+        </div>
+    </template>

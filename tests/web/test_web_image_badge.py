@@ -16,12 +16,14 @@ computed getter) using static checks, like the thinking-toggle tests.
 
 from pathlib import Path
 
+from _frontend import render_index_html
+
 FRONTEND = Path(__file__).parent.parent.parent / "janito" / "web" / "frontend"
 
 
 def test_index_html_has_image_badge_bound_to_image_gen():
     """The status bar shows an image badge whose active state follows imageGen."""
-    html = (FRONTEND / "index.html").read_text(encoding="utf-8")
+    html = render_index_html()
     assert 'class="flag-badge" :class="{ active: imageGen }"' in html
     assert ">image</span>" in html
 

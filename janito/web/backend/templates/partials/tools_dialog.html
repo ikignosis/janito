@@ -1,0 +1,92 @@
+        <!-- ============ Tools info dialog ============
+             Opened by the session-start banner's "N tool(s) active" link.
+             Shows the same data as the /tools command (built-in, skipped and
+             MCP tools) in a modal overlay instead of a chat message. -->
+        <template x-if="toolsDialogOpen">
+            <div class="modal-overlay" @click.self="closeToolsDialog()"
+                 @keydown.escape.window="closeToolsDialog()">
+                <div class="modal-card tools-dialog" role="dialog" aria-modal="true"
+                     aria-labelledby="tools-dialog-title">
+                    <div class="modal-head">
+                        <h3 id="tools-dialog-title">🔧 Available Tools</h3>
+                        <template x-if="toolsDialog && !toolsDialogLoading">
+                            <span class="tools-panel-count"
+                                  x-text="toolsDialog.total + ' tool' + (toolsDialog.total === 1 ? '' : 's')"></span>
+                        </template>
+                        <button class="btn btn-icon modal-close" @click="closeToolsDialog()"
+                                aria-label="Close">✕</button>
+                    </div>
+
+                    <template x-if="toolsDialogLoading">
+                        <div class="tools-panel-loading">
+                            <span class="spinner"></span> Loading tools…
+                        </div>
+                    </template>
+
+                    <template x-if="!toolsDialogLoading && toolsDialogError">
+                        <div class="tools-panel-error">⚠ <span x-text="toolsDialogError"></span></div>
+                    </template>
+
+                    <template x-if="!toolsDialogLoading && !toolsDialogError && toolsDialog">
+                        <div class="tools-dialog-body">
+                            <!-- Built-in tools -->
+                            <div class="tools-section">
+                                <div class="tools-section-title">Built-in Tools</div>
+                                <template x-if="toolsDialog.builtin.length === 0">
+                                    <div class="tools-empty">(none loaded)</div>
+                                </template>
+                                <template x-for="t in toolsDialog.builtin" :key="t.name">
+                                    <div class="tools-row">
+                                        <span class="tools-row-name" x-text="t.name"></span>
+                                        <template x-if="permLabel(t.permissions)">
+                                            <span class="perm-badge" :class="permClass(t.permissions)"
+                                                  x-text="permLabel(t.permissions)"></span>
+                                        </template>
+                                        <span class="tools-row-desc" x-text="t.description"></span>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <!-- Skipped tools (collapsible) -->
+                            <template x-if="Object.keys(toolsDialog.skipped).length > 0">
+                                <details class="tools-section tools-skipped">
+                                    <summary class="tools-section-title">
+                                        Skipped Tools
+                                        <span class="tools-skipped-count"
+                                              x-text="'(' + Object.keys(toolsDialog.skipped).length + ')'"></span>
+                                    </summary>
+                                    <template x-for="(reason, name) in toolsDialog.skipped" :key="name">
+                                        <div class="tools-row">
+                                            <span class="tools-row-name" x-text="name"></span>
+                                            <span class="tools-row-desc tools-row-reason" x-text="reason"></span>
+                                        </div>
+                                    </template>
+                                </details>
+                            </template>
+
+                            <!-- MCP tools -->
+                            <div class="tools-section">
+                                <div class="tools-section-title">MCP Tools</div>
+                                <template x-if="toolsDialog.mcp.length === 0">
+                                    <div class="tools-empty">(no MCP services connected)</div>
+                                </template>
+                                <template x-for="t in toolsDialog.mcp" :key="t.name">
+                                    <div class="tools-row">
+                                        <span class="tools-row-name" x-text="t.name"></span>
+                                        <span class="tools-row-desc" x-text="t.description"></span>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <div class="tools-panel-footer">
+                                <span x-text="toolsDialog.total + ' tools (' + toolsDialog.builtin.length + ' built-in, ' + toolsDialog.mcp.length + ' MCP)'"></span>
+                            </div>
+                        </div>
+                    </template>
+
+                    <div class="modal-actions">
+                        <button class="btn" @click="closeToolsDialog()">Close</button>
+                    </div>
+                </div>
+            </div>
+        </template>

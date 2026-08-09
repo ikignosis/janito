@@ -14,6 +14,8 @@ card respect that size:
 
 from pathlib import Path
 
+from _frontend import render_index_html
+
 FRONTEND = Path(__file__).parent.parent.parent / "janito" / "web" / "frontend"
 
 
@@ -33,7 +35,7 @@ def test_chat_history_reconstructs_svg_view_size():
 
 def test_index_html_passes_svg_view_size_to_sanitizer():
     """The svg-card template forwards the size params to sanitizeSvg."""
-    html = (FRONTEND / "index.html").read_text(encoding="utf-8")
+    html = render_index_html()
     assert "sanitizeSvg(part.svg, part.view_width, part.view_height)" in html
 
 

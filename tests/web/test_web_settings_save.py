@@ -21,6 +21,8 @@ behaviour cannot regress silently.
 
 from pathlib import Path
 
+from _frontend import render_index_html
+
 FRONTEND = Path(__file__).parent.parent.parent / "janito" / "web" / "frontend"
 
 
@@ -114,14 +116,14 @@ def test_load_keeps_selected_provider_across_rebaseline():
 
 def test_index_html_disables_save_until_dirty():
     """The Save button is bound to the canSave computed property."""
-    html = (FRONTEND / "index.html").read_text(encoding="utf-8")
+    html = render_index_html()
     assert ':disabled="saving || !canSave"' in html
 
 
 def test_model_field_shows_default_model_as_value():
     """The Model field carries the default model as its VALUE (pre-filled
     when no override is set) instead of hiding it in a placeholder."""
-    html = (FRONTEND / "index.html").read_text(encoding="utf-8")
+    html = render_index_html()
     assert 'x-model="model"' in html
     # The default model lives in the field value now; the placeholder is
     # only a fallback hint for an emptied field.
@@ -157,7 +159,7 @@ def test_settings_js_prefills_model_with_default():
 def test_index_html_wires_pending_change_ui():
     """The drawer surfaces staged changes (pending badges/notes + a Cancel
     action for the staged default) until Save persists them."""
-    html = (FRONTEND / "index.html").read_text(encoding="utf-8")
+    html = render_index_html()
     assert "provider-pending-badge" in html
     assert "pending-note" in html
     assert "unstageDefault()" in html
@@ -169,7 +171,7 @@ def test_api_key_status_line_has_no_pending_change_badge():
     The line itself reports the stored state neutrally: "no key stored for
     this provider" when the provider has no key set (suppressed while a key
     is staged so it cannot contradict the pending note)."""
-    html = (FRONTEND / "index.html").read_text(encoding="utf-8")
+    html = render_index_html()
     # The pending-change claim badge is gone entirely...
     assert "Key Changed (pending on save)" not in html
     # The neutral "key configured" status was removed too...

@@ -30,6 +30,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import pytest
+from _frontend import render_index_html
 
 import janito.auth_config as ac
 import janito.config_dir as config_dir_mod
@@ -271,7 +272,7 @@ def test_default_provider_invalid_name_rejected(client):
 
 def test_index_html_wires_provider_switcher():
     """index.html loads the switcher script and renders the combo."""
-    html = (FRONTEND / "index.html").read_text(encoding="utf-8")
+    html = render_index_html()
     assert "/js/providerSwitcher.js" in html
     assert 'class="provider-combo"' in html
     assert "providerSwitcherComponent()" in html
@@ -332,7 +333,7 @@ def test_index_html_status_bar_shows_default_model_instead_of_not_set():
     """The status bar renders the selected provider's default model (marked
     '(default)') instead of '(not set)' when no model is configured; '(not
     set)' remains only as a last resort when even the provider has none."""
-    html = (FRONTEND / "index.html").read_text(encoding="utf-8")
+    html = render_index_html()
     # The fallback marker is bound to the modelIsDefault flag.
     assert "model && modelIsDefault" in html
     assert "(default)" in html

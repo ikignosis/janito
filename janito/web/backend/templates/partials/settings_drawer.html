@@ -1,0 +1,209 @@
+    <!-- ============ Settings drawer ============ -->
+    <template x-if="settingsOpen">
+        <div class="drawer-overlay" @click.self="closeDrawers()"
+             x-data="settingsComponent()" x-init="open=true; load()">
+            <div class="drawer">
+                <h2>⚙ Settings</h2>
+
+                <template x-if="message && !hintMessage">
+                    <div class="warning-text" x-text="message"></div>
+                </template>
+
+                <!-- Provider combobox (top) -->
+                <div class="form-group">
+                    <label>Provider</label>
+                    <select x-model="selectedProvider" @change="onProviderChange()">
+                        <template x-for="p in providers" :key="p.name">
+                            <option :value="p.name" x-text="p.name"></option>
+                        </template>
+                    </select>
+                    <div class="provider-hint">
+                        <span x-show="selectedProviderDetail && selectedProviderDetail.active && !isStagedProviderSelected"
+                              class="provider-active-badge">default</span>
+                        <span x-show="selectedProviderDetail && !selectedProviderDetail.active && !isStagedProviderSelected"
+                              class="hint-muted">not the default provider</span>
+                        <span x-show="isStagedProviderSelected"
+                              class="provider-pending-badge">default pending</span>
+                        <button class="btn set-default-btn"
+                                x-show="showSetDefault && !isStagedProviderSelected"
+                                @click="setDefaultProvider()"
+                                :disabled="!selectedProviderHasKey"
+                                title="Stage this provider as the default — saved with Save">
+                            Set Default
+                        </button>
+                        <button class="btn set-default-btn"
+                                x-show="isStagedProviderSelected"
+                                @click="unstageDefault()"
+                                title="Discard the pending default change">
+                            Cancel
+                        </button>
+                    </div>
+                    <template x-if="hintMessage">
+                        <div class="provider-confirm" x-text="hintMessage"></div>
+                    </template>
+                    <template x-if="defaultChanged && !isStagedProviderSelected">
+                        <div class="pending-note">
+                            Default change pending: <strong x-text="pendingDefaultProvider"></strong> — will be saved with Save.
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Model override -->
+                <div class="form-group">
+                    <label>Model</label>
+                    <input type="text" x-model="model" :placeholder="modelPlaceholder">
+                </div>
+
+                <div class="form-group">
+                    <label>API Key</label>
+                    <div class="api-key-row">
+                        <input type="text" class="flex-1"
+                               :value="status.api_key || ''" disabled
+                               :class="{ 'key-unset': !status.api_key_set }">
+                        <button class="btn set-key-btn"
+                                @click="openKeyModal()"
+                                :disabled="!selectedProvider"
+                                title="Change the API key for the selected provider">
+                            🔑 Set API Key
+                        </button>
+                    </div>
+                    <div class="api-key-hint">
+                        <!-- Neutral status for the selected provider; suppressed
+                             while a key change is staged (the pending note above
+                             is the only signal then). -->
+                        <span x-show="!(pendingApiKey && pendingApiKey.provider === selectedProvider) && selectedProviderDetail && !selectedProviderDetail.api_key_set"
+                              class="key-status unset">no key stored for this provider</span>
+                    </div>
+                    <template x-if="pendingApiKey">
+                        <div class="pending-note">
+                            API key change pending for <strong x-text="pendingApiKey.provider"></strong> — will be saved with Save.
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Advanced section (collapsed by default): per-provider
+                     endpoint, API type and Responses-in-server.  All three
+                     describe the provider picked in the combo and are saved
+                     per-provider with Save, like the Model field. -->
+                <details class="advanced-section">
+                    <summary>Advanced</summary>
+
+                    <div class="form-group">
+                        <label for="endpoint-input">Endpoint</label>
+                        <input id="endpoint-input" type="text" x-model="endpoint"
+                               placeholder="https://api.example.com/v1"
+                               autocomplete="off" spellcheck="false">
+                        <div class="field-hint">
+                            Override the provider's base URL. Leave empty to use the built-in endpoint.
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="api-type-select">API Type</label>
+                        <!-- Combobox: one option per AVAILABLE supported API
+                             type, bound to the effective apiType (configured
+                             override, else the provider's built-in default).
+                             Types whose optional package is missing are not
+                             listed here — they are shown as info below. -->
+                        <select id="api-type-select" x-model="apiType">
+                            <option value=""
+                                    x-show="supportedApiTypes.length === 0"
+                                    disabled>(not set)</option>
+                            <template x-for="t in supportedApiTypes" :key="t">
+                                <option :value="t" x-text="t"></option>
+                            </template>
+                        </select>
+                        <div class="field-hint">
+                            Selects the API the client talks to.
+                        </div>
+                        <!-- API types that cannot be used right now because
+                             their optional Python package is missing.  Shown
+                             as info only — they are never added to the
+                             combobox above, so they cannot be selected. -->
+                        <template x-if="unavailableApiTypes.length > 0">
+                            <div class="api-type-unavailable">
+                                <template x-for="u in unavailableApiTypes" :key="u.type">
+                                    <div class="api-type-unavailable-row">
+                                        <span x-text="u.reason"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Responses-in-server only applies to the Responses API. -->
+                    <template x-if="apiTypeIsResponses">
+                        <div class="form-group">
+                            <label class="switch-row" for="responses-in-server-toggle">
+                                <span class="switch-label">
+                                    ResponsesInServer
+                                    <span class="field-hint">Server-side conversation state (previous_response_id).</span>
+                                </span>
+                                <input id="responses-in-server-toggle" type="checkbox"
+                                       class="switch-input" x-model="responsesInServer">
+                                <span class="switch-track" aria-hidden="true"></span>
+                            </label>
+                        </div>
+                    </template>
+                </details>
+
+                <div class="drawer-actions">
+                    <button class="btn btn-primary" @click="save()"
+                            :disabled="saving || !canSave"
+                            title="Save pending changes">Save</button>
+                    <button class="btn" @click="closeDrawers()">Close</button>
+                </div>
+            </div>
+
+            <!-- ===== "Set API Key" modal ===== -->
+            <template x-if="keyModalOpen">
+                <div class="modal-overlay" @click.self="closeKeyModal()"
+                     @keydown.escape.window="closeKeyModal()">
+                    <div class="modal-card" role="dialog" aria-modal="true"
+                         aria-labelledby="key-modal-title">
+                        <div class="modal-head">
+                            <h3 id="key-modal-title">🔑 Set API Key</h3>
+                            <span class="modal-provider-chip" x-text="selectedProvider"></span>
+                            <button class="btn btn-icon modal-close" @click="closeKeyModal()"
+                                    aria-label="Close">✕</button>
+                        </div>
+
+                        <p class="modal-desc">
+                            The key is written to <code>~/.janito/auth.json</code> for
+                            <strong x-text="selectedProvider"></strong> and is used by the
+                            very next prompt — once you click <strong>Save</strong> in
+                            the drawer. Closing the drawer discards it.
+                        </p>
+
+                        <div class="form-group">
+                            <label for="api-key-input">API key</label>
+                            <div class="key-input-wrap">
+                                <input id="api-key-input" x-ref="keyInput"
+                                       :type="keyReveal ? 'text' : 'password'"
+                                       x-model="keyInput"
+                                       class="mono"
+                                       placeholder="sk-…"
+                                       autocomplete="off" spellcheck="false"
+                                       @keydown.enter="saveApiKey()">
+                                <button class="btn btn-icon key-reveal" type="button"
+                                        @click="keyReveal = !keyReveal"
+                                        :title="keyReveal ? 'Hide key' : 'Show key'"
+                                        :aria-pressed="keyReveal ? 'true' : 'false'"
+                                        x-text="keyReveal ? '🙈' : '👁'"></button>
+                            </div>
+                        </div>
+
+                        <template x-if="keyError">
+                            <div class="modal-error" x-text="keyError"></div>
+                        </template>
+
+                        <div class="modal-actions">
+                            <button class="btn" @click="closeKeyModal()">Cancel</button>
+                            <button class="btn btn-primary" @click="saveApiKey()"
+                                    :disabled="!keyInput.trim()">Set Key</button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </template>

@@ -13,6 +13,8 @@ differently from the name. These tests pin down the frontend wiring:
 
 from pathlib import Path
 
+from _frontend import render_index_html
+
 FRONTEND = Path(__file__).parent.parent.parent / "janito" / "web" / "frontend"
 
 
@@ -32,7 +34,7 @@ def test_index_html_renders_tool_path_next_to_name():
     The header calls ``toolSummary`` (which falls back to ``toolPath`` for
     tools without an entry); the summary span sits right after the name.
     """
-    html = (FRONTEND / "index.html").read_text(encoding="utf-8")
+    html = render_index_html()
     assert "toolSummary(part.tool.name, part.tool.args)" in html
     assert 'class="tool-path"' in html
     # The summary span sits immediately after the tool-name span.

@@ -16,6 +16,8 @@ content card and rebuilds the card from stored history:
 
 from pathlib import Path
 
+from _frontend import render_index_html
+
 FRONTEND = Path(__file__).parent.parent.parent / "janito" / "web" / "frontend"
 
 
@@ -36,6 +38,6 @@ def test_chat_history_reconstructs_image_parts():
 
 def test_index_html_renders_image_part():
     """The image part kind is rendered through imageUrl (shared card)."""
-    html = (FRONTEND / "index.html").read_text(encoding="utf-8")
+    html = render_index_html()
     assert "part.kind === 'image'" in html
     assert "imageUrl(part.path)" in html

@@ -1,0 +1,234 @@
+                <!-- Messages -->
+                <template x-for="(msg, idx) in messages" :key="idx">
+                    <div class="message" :class="msg.role">
+                        <div class="avatar" :class="msg.role"
+                             x-text="msg.role === 'user' ? 'U' : '⚡'"></div>
+                        <div class="message-body">
+
+                            <!-- Message parts rendered in arrival order:
+                                 reasoning cards, text, and tool-call cards are
+                                 interleaved exactly as the model produced them.
+                                 NOTE: x-for requires a SINGLE child element, so
+                                 all part variants are wrapped in one div. -->
+                            <template x-for="(part, pi) in msg.parts" :key="pi">
+                                <div>
+                                    <!-- Reasoning card -->
+                                    <template x-if="part.kind === 'reasoning'">
+                                        <div class="reasoning-panel">
+                                            <div class="reasoning-header" @click="part.open = !part.open">
+                                                <span x-text="part.open ? '▼' : '▶'"></span>
+                                                💭 Reasoning
+                                            </div>
+                                            <div class="reasoning-body" x-show="part.open" x-text="part.text"></div>
+                                        </div>
+                                    </template>
+
+                                    <!-- Assistant text (markdown) -->
+                                    <template x-if="part.kind === 'text'">
+                                        <div x-html="renderMarkdown(part.text)"></div>
+                                    </template>
+
+                                    <!-- Tool call card -->
+                                    <template x-if="part.kind === 'tool'">
+                                        <div class="tool-card">
+                                            <div class="tool-card-header" @click="part.tool.open = !part.tool.open">
+                                                <span x-text="part.tool.open ? '▼' : '▶'" class="muted"></span>
+                                                <span class="tool-name" x-text="part.tool.name"></span>
+                                                <template x-if="toolSummary(part.tool.name, part.tool.args)">
+                                                    <span class="tool-path" x-text="toolSummary(part.tool.name, part.tool.args)"></span>
+                                                </template>
+                                                <template x-if="permLabel(part.tool.permissions)">
+                                                    <span class="perm-badge" :class="permClass(part.tool.permissions)"
+                                                          x-text="permLabel(part.tool.permissions)"></span>
+                                                </template>
+                                                <span class="tool-status" :class="part.tool.status">
+                                                    <template x-if="part.tool.status === 'running'">
+                                                        <span><span class="spinner"></span> Running</span>
+                                                    </template>
+                                                    <template x-if="part.tool.status === 'done'">
+                                                        <span>✅ Done<template x-if="part.tool.execution_time_ms != null"><span class="tool-exec-time" x-text="'· ' + formatDuration(part.tool.execution_time_ms)"></span></template></span>
+                                                    </template>
+                                                    <template x-if="part.tool.status === 'error'">
+                                                        <span>❌ Error</span>
+                                                    </template>
+                                                </span>
+                                            </div>
+
+                                            <div class="tool-card-body" x-show="part.tool.open">
+                                                <!-- Arguments -->
+                                                <div class="tool-args-toggle" @click.stop="part.tool.argsOpen = !part.tool.argsOpen">
+                                                    Arguments <span x-text="part.tool.argsOpen ? '▾' : '▸'"></span>
+                                                </div>
+                                                <template x-if="part.tool.argsOpen">
+                                                    <div class="tool-args" x-text="toolArgsStr(part.tool.args)"></div>
+                                                </template>
+
+                                                <!-- Live progress / output -->
+                                                <template x-for="(p, ppi) in part.tool.progress" :key="ppi">
+                                                    <div class="tool-progress" :class="p.level">
+                                                        <template x-if="p.level !== 'output' && p.level !== 'diff'">
+                                                            <span><span class="level-tag" x-text="levelIcon(p.level)"></span><span x-text="p.message"></span></span>
+                                                        </template>
+                                                        <template x-if="p.level === 'diff'">
+                                                            <span x-text="p.message" class="pre-wrap"></span>
+                                                        </template>
+                                                        <template x-if="p.level === 'output'">
+                                                            <span x-text="p.message" class="pre-wrap"></span>
+                                                        </template>
+                                                    </div>
+                                                </template>
+
+                                                <!-- Result -->
+                                                <template x-if="part.tool.result !== null || part.tool.error">
+                                                    <div>
+                                                        <div class="tool-result-toggle" @click.stop="part.tool.resultOpen = !part.tool.resultOpen">
+                                                            Result <span x-text="part.tool.resultOpen ? '▾' : '▸'"></span>
+                                                        </div>
+                                                        <template x-if="part.tool.resultOpen">
+                                                            <div class="tool-result"
+                                                                 :class="{ 'has-error': part.tool.error }"
+                                                                 x-text="part.tool.error ? part.tool.error : toolResultStr(part.tool.result)"></div>
+                                                        </template>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+
+                                    <!-- SVG content card (CreateSVG tool result) -->
+                                    <template x-if="part.kind === 'svg'">
+                                        <div class="svg-card" x-html="sanitizeSvg(part.svg, part.view_width, part.view_height)"></div>
+                                    </template>
+
+                                    <!-- Image content card (CreateImage tool result) -->
+                                    <template x-if="part.kind === 'image'">
+                                        <div class="image-card">
+                                            <img :src="imageUrl(part.path)" alt="Generated image" loading="lazy">
+                                        </div>
+                                    </template>
+
+                                    <!-- /tools listing panel -->
+                                    <template x-if="part.kind === 'tools'">
+                                        <div class="tools-panel">
+                                            <template x-if="part.loading">
+                                                <div class="tools-panel-loading">
+                                                    <span class="spinner"></span> Loading tools…
+                                                </div>
+                                            </template>
+
+                                            <template x-if="!part.loading && part.error">
+                                                <div class="tools-panel-error">⚠ <span x-text="part.error"></span></div>
+                                            </template>
+
+                                            <template x-if="!part.loading && !part.error && part.tools">
+                                                <div>
+                                                    <div class="tools-panel-header">
+                                                        <span class="tools-panel-title">🔧 Available Tools</span>
+                                                        <span class="tools-panel-count"
+                                                              x-text="part.tools.total + ' tool' + (part.tools.total === 1 ? '' : 's')"></span>
+                                                    </div>
+
+                                                    <!-- Built-in tools -->
+                                                    <div class="tools-section">
+                                                        <div class="tools-section-title">Built-in Tools</div>
+                                                        <template x-if="part.tools.builtin.length === 0">
+                                                            <div class="tools-empty">(none loaded)</div>
+                                                        </template>
+                                                        <template x-for="t in part.tools.builtin" :key="t.name">
+                                                            <div class="tools-row">
+                                                                <span class="tools-row-name" x-text="t.name"></span>
+                                                                <template x-if="permLabel(t.permissions)">
+                                                                    <span class="perm-badge" :class="permClass(t.permissions)"
+                                                                          x-text="permLabel(t.permissions)"></span>
+                                                                </template>
+                                                                <span class="tools-row-desc" x-text="t.description"></span>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+
+                                                    <!-- Skipped tools (collapsible) -->
+                                                    <template x-if="Object.keys(part.tools.skipped).length > 0">
+                                                        <details class="tools-section tools-skipped">
+                                                            <summary class="tools-section-title">
+                                                                Skipped Tools
+                                                                <span class="tools-skipped-count"
+                                                                      x-text="'(' + Object.keys(part.tools.skipped).length + ')'"></span>
+                                                            </summary>
+                                                            <template x-for="(reason, name) in part.tools.skipped" :key="name">
+                                                                <div class="tools-row">
+                                                                    <span class="tools-row-name" x-text="name"></span>
+                                                                    <span class="tools-row-desc tools-row-reason" x-text="reason"></span>
+                                                                </div>
+                                                            </template>
+                                                        </details>
+                                                    </template>
+
+                                                    <!-- MCP tools -->
+                                                    <div class="tools-section">
+                                                        <div class="tools-section-title">MCP Tools</div>
+                                                        <template x-if="part.tools.mcp.length === 0">
+                                                            <div class="tools-empty">(no MCP services connected)</div>
+                                                        </template>
+                                                        <template x-for="t in part.tools.mcp" :key="t.name">
+                                                            <div class="tools-row">
+                                                                <span class="tools-row-name" x-text="t.name"></span>
+                                                                <span class="tools-row-desc" x-text="t.description"></span>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+
+                                                    <div class="tools-panel-footer">
+                                                        <span x-text="part.tools.total + ' tools (' + part.tools.builtin.length + ' built-in, ' + part.tools.mcp.length + ' MCP)'"></span>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+
+                            <!-- User text (plain, escaped via textContent) -->
+                            <template x-if="msg.role === 'user'">
+                                <div x-text="msg.content" class="pre-wrap"></div>
+                            </template>
+
+                            <!-- Waiting indicator (no content yet) -->
+                            <template x-if="msg.streaming && msg.parts.length === 0 && (status === 'waiting')">
+                                <div class="waiting">
+                                    <span class="dot-pulse"><span></span><span></span><span></span></span>
+                                    Thinking…
+                                </div>
+                            </template>
+
+                            <!-- Cancelled indicator -->
+                            <template x-if="msg.cancelled">
+                                <div class="cancelled-notice">⏹ Generation stopped by the user</div>
+                            </template>
+
+                            <!-- Usage -->
+                            <template x-if="msg.usage">
+                                <div class="usage-strip" role="note"
+                                     :aria-label="'Tokens: ' + formatTokens(msg.usage.total) + ' total, ' + formatTokens(msg.usage.input) + ' input, ' + formatTokens(msg.usage.output) + (msg.usage.max_tokens ? '/' + formatTokens(msg.usage.max_tokens) : '') + ' output' + (msg.usage.cached ? ', ' + formatTokens(msg.usage.cached) + ' cached' : '')">
+                                    <span class="usage-chip usage-total" title="Total tokens used for this response">
+                                        <span class="usage-label">tokens</span>
+                                        <span class="usage-value" x-text="formatTokens(msg.usage.total)"></span>
+                                    </span>
+                                    <span class="usage-chip" title="Input tokens sent to the model">
+                                        <span class="usage-label">in</span>
+                                        <span class="usage-value" x-text="formatTokens(msg.usage.input)"></span>
+                                    </span>
+                                    <span class="usage-chip" title="Output tokens generated by the model / max output tokens">
+                                        <span class="usage-label">out</span>
+                                        <span class="usage-value" x-text="formatTokens(msg.usage.output) + (msg.usage.max_tokens ? '/' + formatTokens(msg.usage.max_tokens) : '')"></span>
+                                    </span>
+                                    <template x-if="msg.usage.cached">
+                                        <span class="usage-chip usage-cached" title="Input tokens served from the provider's cache">
+                                            <span class="usage-label">cached</span>
+                                            <span class="usage-value" x-text="formatTokens(msg.usage.cached)"></span>
+                                        </span>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>

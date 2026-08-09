@@ -1,0 +1,48 @@
+        <!-- Status bar -->
+        <div class="status-bar" x-data="statusBarComponent()">
+            <div class="status-item">
+                <span class="conn-dot" :class="connection"></span>
+                <span x-text="connection"></span>
+            </div>
+            <div class="status-item"><strong>Provider:</strong> <span x-text="provider"></span></div>
+            <div class="status-item"><strong>API:</strong> <span x-text="apiType"></span></div>
+            <div class="status-item"><strong>Model:</strong>
+                <span x-show="model" x-text="model"></span>
+                <!-- When no model is explicitly configured/CLI-pinned, the
+                     selected provider's default model is shown instead of
+                     "(not set)", marked muted so it reads as a fallback. -->
+                <span x-show="model && modelIsDefault" class="muted"> (default)</span>
+                <span x-show="!model" class="muted">(not set)</span>
+            </div>
+
+            <div class="status-item gap-sm">
+                <!-- Thinking is a runtime toggle (POST /api/config/thinking):
+                     flips the effective state for the next prompt, in memory
+                     only — not persisted to ~/.janito/config.json. -->
+                <button type="button" class="flag-badge flag-toggle"
+                        :class="{ active: config.thinking }"
+                        @click="toggleThinking()"
+                        :title="'Thinking ' + (config.thinking ? 'on' : 'off') + ' — click to toggle (runtime, not persisted)'"
+                        :aria-pressed="config.thinking ? 'true' : 'false'">thinking</button>
+                <span class="flag-badge" :class="{ active: config.gmail }">gmail</span>
+                <span class="flag-badge" :class="{ active: config.onedrive }">onedrive</span>
+                <!-- Image generation availability: active for the alibaba
+                     provider (CreateImage / Wan) and for openai when the
+                     effective API type is Responses (native
+                     image_generation tool). -->
+                <span class="flag-badge" :class="{ active: imageGen }"
+                      title="Image generation available with the current provider">image</span>
+                <span class="flag-badge" :class="{ active: privileges.read }">read</span>
+                <span class="flag-badge" :class="{ active: privileges.write }">write</span>
+                <span class="flag-badge" :class="{ active: privileges.exec }">exec</span>
+            </div>
+
+            <template x-if="lastUsage">
+                <div class="status-item push-end">
+                    <strong>Tokens:</strong>
+                    <span x-text="formatTokens(lastUsage.total)"></span>
+                    (in <span x-text="formatTokens(lastUsage.input)"></span> /
+                    out <span x-text="formatTokens(lastUsage.output) + (lastUsage.max_tokens ? '/' + formatTokens(lastUsage.max_tokens) : '')"></span>)
+                </div>
+            </template>
+        </div>

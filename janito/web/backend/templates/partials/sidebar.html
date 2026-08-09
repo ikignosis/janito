@@ -1,0 +1,33 @@
+    <!-- ============ Sidebar (sessions) ============ -->
+    <aside class="sidebar" x-show="sidebarOpen"
+           x-data="sessionsComponent()" x-ref="sessions">
+        <div class="sidebar-header">
+            <span class="sidebar-title">⚡ Janito</span>
+            <button class="btn btn-icon" @click="create()" title="New conversation">＋</button>
+        </div>
+
+        <div class="session-list">
+            <template x-if="loading">
+                <div class="empty-state padded">Loading…</div>
+            </template>
+            <template x-for="s in sessions" :key="s.session_id">
+                <div class="session-item"
+                     :class="{ active: s.session_id === activeId }"
+                     @click="select(s.session_id)">
+                    <span class="session-indicator is-spinning"
+                          x-show="indicatorState(s.session_id) === 'spinner'"></span>
+                    <span class="session-indicator is-dot"
+                          x-show="indicatorState(s.session_id) === 'dot'"></span>
+                    <span class="title" x-text="s.title || 'New conversation'"></span>
+                    <button class="delete" @click="remove(s.session_id, $event)" title="Delete">✕</button>
+                </div>
+            </template>
+            <template x-if="!loading && sessions.length === 0">
+                <div class="empty-state padded-sm">No conversations yet</div>
+            </template>
+        </div>
+
+        <div class="sidebar-footer">
+            <button class="btn flex-1" @click="create()">New Chat</button>
+        </div>
+    </aside>

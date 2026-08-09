@@ -53,6 +53,22 @@ Changes since `v4.21.0` (2026-08-08).
 
 ### Changed
 
+- The web chat page (previously a single ~900-line
+  `janito/web/frontend/index.html`) is now composed server-side with Jinja2:
+  the shell lives in `janito/web/backend/templates/base.html` and each UI
+  section (sidebar, topbar, chat area, message/part rendering, input area,
+  status bar, tools dialog, settings drawer, MCP drawer, toast) in a partial
+  under `templates/partials/`. `janito/web/backend/templating.py` owns the
+  Jinja2 environment (shared by the app and the contract tests), and
+  `app.py` renders `base.html` per request — preserving the existing
+  behaviour: `no-store`, mtime-based cache-busting of local `/js/` + `/css/`
+  assets, and the `window.__JANITO_TOKEN__` injection (now a template
+  context value JSON-escaped via `tojson`). The rendered page is
+  byte-identical to the previous static file. `jinja2` was added to the
+  `web` optional dependency group, and the frontend contract tests now
+  render the templates through `tests/web/_frontend.py:render_index_html()`
+  instead of reading `frontend/index.html`.
+
 - The `moonshot` provider now declares its supported reasoning levels
   (`low`/`high`/`max`, with `max` as the built-in default, per the
   Moonshot/Kimi API reference) in `janito/provider_data.py` `PROVIDER_INFO`,

@@ -19,6 +19,8 @@ These tests pin down the frontend wiring:
 
 from pathlib import Path
 
+from _frontend import render_index_html
+
 FRONTEND = Path(__file__).parent.parent.parent / "janito" / "web" / "frontend"
 
 
@@ -44,7 +46,7 @@ def test_chat_component_initialises_dialog_state():
 
 def test_index_html_banner_link_opens_dialog():
     """The active-tools count in the session-start banner is a link."""
-    html = (FRONTEND / "index.html").read_text(encoding="utf-8")
+    html = render_index_html()
     assert 'class="ssb-tools-link"' in html
     assert '@click.prevent="openToolsDialog()"' in html
     # The link wraps the count, not the whole banner.
@@ -57,7 +59,7 @@ def test_index_html_banner_link_opens_dialog():
 
 def test_index_html_renders_dialog_template():
     """The tools dialog modal reuses the /tools panel classes."""
-    html = (FRONTEND / "index.html").read_text(encoding="utf-8")
+    html = render_index_html()
     assert 'x-if="toolsDialogOpen"' in html
     assert 'class="modal-card tools-dialog"' in html
     assert 'class="tools-dialog-body"' in html

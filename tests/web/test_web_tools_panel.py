@@ -19,6 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import pytest
+from _frontend import render_index_html
 
 # The web routes need the optional `web` extra (fastapi). Skip gracefully
 # when fastapi is not installed (e.g. minimal tox envs).
@@ -119,14 +120,7 @@ def test_mcp_tools_endpoint_shape(client):
 @requires_fastapi
 def test_frontend_loads_tools_command_script():
     """index.html references the chatCommands.js slash-command mixin."""
-    index = (
-        Path(__file__).parent.parent.parent
-        / "janito"
-        / "web"
-        / "frontend"
-        / "index.html"
-    )
-    html = index.read_text(encoding="utf-8")
+    html = render_index_html()
     assert "/js/chatCommands.js" in html
     # The panel template block must be present.
     assert "part.kind === 'tools'" in html

@@ -1,0 +1,10 @@
+    <!-- ============ Toast (transient notifications) ============
+         Kept mounted (x-show, not x-if) so the fade-out transition can
+         complete before the message is cleared. -->
+    <div class="toast"
+         :class="toast ? toast.kind : ''"
+         x-show="!!toast"
+         x-transition.opacity.duration.200ms
+         role="status"
+         x-text="toast ? toast.text : ''"
+         aria-live="polite"></div>

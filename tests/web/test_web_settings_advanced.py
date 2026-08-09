@@ -1,6 +1,7 @@
 """Backend + frontend wiring tests for the Settings drawer's Advanced section.
 
-The Settings drawer (``janito/web/frontend/index.html`` + ``settings.js``)
+The Settings drawer (``janito/web/backend/templates/partials/settings_drawer.html``
++ ``settings.js``)
 gains an "Advanced" section (collapsed by default) with three per-provider
 fields:
 
@@ -46,6 +47,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import pytest
+from _frontend import render_index_html
 
 import janito.config_dir as config_dir_mod
 import janito.general_config as gc
@@ -395,7 +397,7 @@ def test_providers_endpoint_flags_unavailable_api_type(monkeypatch, client):
 
 
 def _html():
-    return (FRONTEND / "index.html").read_text(encoding="utf-8")
+    return render_index_html()
 
 
 def _settings_js():

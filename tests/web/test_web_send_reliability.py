@@ -32,6 +32,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import pytest
+from _frontend import render_index_html
 
 # The web routes need the optional `web` extra (fastapi). Skip gracefully
 # when fastapi is not installed (e.g. minimal tox envs).
@@ -179,7 +180,7 @@ def test_send_button_disabled_for_all_busy_states():
     """The Send button is disabled for every non-idle status, including
     tool_running (previously enabled while the server dropped mid-turn
     prompts)."""
-    html = (FRONTEND / "index.html").read_text(encoding="utf-8")
+    html = render_index_html()
     assert ":disabled=\"!input.trim() || status !== 'idle'\"" in html
     # The old binding left tool_running enabled - make sure it is gone
     # (the string below is the exact old :disabled expression; the same

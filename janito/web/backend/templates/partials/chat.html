@@ -1,0 +1,42 @@
+        <!-- Chat area -->
+        <div class="chat-area-wrapper">
+        <div class="chat-area" x-ref="chatArea">
+            <div class="chat-inner">
+
+                {% include "partials/chat_banner.html" %}
+
+
+                {% include "partials/chat_messages.html" %}
+
+
+                <!-- Global error banner -->
+                <template x-if="error">
+                    <div class="message">
+                        <div class="message-body message-error">
+                            ⚠ <span x-text="error"></span>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Processing spinner — bottom-right of the chat area while a
+             request is in flight (waiting / streaming / tool running).
+             Uses the same spin effect as the session-tab indicators. -->
+        <span class="chat-spinner"
+              x-show="status === 'waiting' || status === 'streaming' || status === 'tool_running'"
+              x-transition.opacity.duration.200ms
+              aria-hidden="true"></span>
+
+        <!-- "Jump to latest" — appears when the user scrolls up mid-stream.
+             Pinned over the chat area; hidden again once at the bottom. -->
+        <button class="jump-to-latest"
+                x-show="!_followBottom"
+                x-transition.opacity.duration.150ms
+                @click="_forceScrollToBottom()"
+                title="Jump to latest" aria-label="Jump to latest message">
+            <span class="jump-dot" :class="{ live: status === 'streaming' || status === 'tool_running' }"></span>
+            Jump to latest
+            <span class="jump-arrow" aria-hidden="true">↓</span>
+        </button>
+        </div>

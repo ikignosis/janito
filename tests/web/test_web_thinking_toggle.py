@@ -32,6 +32,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import pytest
+from _frontend import render_index_html
 
 import janito.config_dir as config_dir_mod
 import janito.general_config as gc
@@ -200,7 +201,7 @@ def test_build_call_kwargs_honors_runtime_override(client):
 
 def test_index_html_thinking_badge_is_toggle_button():
     """The status-bar thinking element is a button that posts to the toggle."""
-    html = (FRONTEND / "index.html").read_text(encoding="utf-8")
+    html = render_index_html()
     assert 'class="flag-badge flag-toggle"' in html
     assert '@click="toggleThinking()"' in html
     assert ':class="{ active: config.thinking }"' in html

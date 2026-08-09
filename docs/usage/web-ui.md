@@ -167,6 +167,7 @@ janito --web [options]
 janito/web/backend/
    config.py     WebServerConfig (built from argparse)
    app.py        create_app(config) + run_web(args)  [FastAPI + uvicorn]
+   templating.py Jinja2 environment for the page templates (base + partials)
    agent.py      stream_prompt() — async event generator (headless agentic loop)
    events.py     TokenEvent, ToolCallEvent, ToolProgressEvent, …
    session.py    ConversationSession + SessionManager (TTL + persistence hooks)
@@ -181,8 +182,12 @@ janito/web/backend/
    ▼  reuses (unchanged)
 openai_client • tooling/* • tools/* • mcp_manager • general_config • …
 
+janito/web/backend/templates/   (Jinja2 — composed server-side by app.py)
+   base.html  •  partials/{sidebar,topbar,chat,chat_banner,chat_messages,
+   input_area,status_bar,tools_dialog,settings_drawer,mcp_drawer,toast}.html
+
 janito/web/frontend/   (Alpine.js — no build step)
-   index.html • css/theme.css • js/{app,chat,chatCommands,websocket,sessions,
+   css/theme.css • js/{app,chat,chatCommands,websocket,sessions,
    settings,mcp,statusBar,providerSwitcher,markdown,api}.js
 ```
 
@@ -233,13 +238,17 @@ Server → Client:  {"type": "error", "message": "API key invalid"}
 
 ## Frontend
 
-The frontend is **plain HTML + Alpine.js + CSS** with **no build step**. Libraries
-(Alpine.js, marked.js, highlight.js) load from a CDN. FastAPI serves
-`janito/web/frontend/` directly via `StaticFiles`, so `pip install janito[web]`
-makes the UI work immediately — no `npm`, no bundler.
+The frontend is **plain HTML + Alpine.js + CSS** with **no build step**. The page
+shell (`janito/web/backend/templates/base.html`) and its partials are composed
+server-side with Jinja2, so the markup stays declarative and split into
+manageable files; the static assets (CSS/JS) are served from
+`janito/web/frontend/` via `StaticFiles`. Libraries (Alpine.js, marked.js,
+highlight.js) load from a CDN, so `pip install janito[web]` makes the UI work
+immediately — no `npm`, no bundler.
 
 > To run fully offline, vendor the CDN libraries into
-> `frontend/js/vendor/` and update the `<script>` tags in `index.html`.
+> `frontend/js/vendor/` and update the `<script>` tags in
+> `backend/templates/base.html`.
 
 ---
 

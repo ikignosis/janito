@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Janito Web</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+    <!-- Apply the saved theme BEFORE first paint (light is the default) -->
+    <script>
+        try {
+            var saved = localStorage.getItem('janito-theme');
+            if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+        } catch (e) { /* storage unavailable — fall back to light */ }
+    </script>
+
+    <!-- Theme -->
+    <link rel="stylesheet" href="/css/theme.css">
+    <!-- highlight.js theme -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/styles/tokyo-night-dark.min.css">
+
+    <!-- Libraries (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+
+    <!-- Alpine.js (must be deferred so components are defined first) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
+
+    <!-- App scripts (order matters: helpers first). -->
+    <script src="/js/api.js"></script>
+    <script src="/js/markdown.js"></script>
+    <script src="/js/websocket.js"></script>
+    <!-- chat.js mixins (loaded before chat.js, which Object.assigns them) -->
+    <script src="/js/chatFormat.js"></script>
+    <script src="/js/chatMessages.js"></script>
+    <script src="/js/chatStore.js"></script>
+    <script src="/js/chatEvents.js"></script>
+    <script src="/js/chatHistory.js"></script>
+    <script src="/js/chatScroll.js"></script>
+    <script src="/js/chatCommands.js"></script>
+    <script src="/js/chat.js"></script>
+    <script src="/js/sessions.js"></script>
+    <script src="/js/settings.js"></script>
+    <script src="/js/mcp.js"></script>
+    <script src="/js/statusBar.js"></script>
+    <script src="/js/providerSwitcher.js"></script>
+    <script src="/js/app.js"></script>
+
+    <!-- Bearer token for the WebSocket/API calls (injected by the server so
+         websocket.js / api.js can authenticate when JANITO_WEB_TOKEN is set). -->
+    <script>window.__JANITO_TOKEN__ = {{ auth_token|tojson }};</script>
+</head>
+<body>
+
+<div class="app-layout" x-data="appComponent()" x-cloak>
+
+    {% include "partials/sidebar.html" %}
+
+
+    <!-- ============ Main content ============ -->
+    <div class="main-content"
+         x-data="chatComponent()" x-ref="chat">
+
+        {% include "partials/topbar.html" %}
+
+
+        {% include "partials/chat.html" %}
+
+
+        {% include "partials/input_area.html" %}
+
+
+        {% include "partials/status_bar.html" %}
+
+
+        {% include "partials/tools_dialog.html" %}
+
+    </div>
+
+    {% include "partials/settings_drawer.html" %}
+
+
+    {% include "partials/mcp_drawer.html" %}
+
+
+    {% include "partials/toast.html" %}
+
+
+</div>
+
+</body>
+</html>

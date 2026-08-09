@@ -20,8 +20,11 @@ from pathlib import Path
 
 # Add the repo root to sys.path to allow importing the package directly.
 sys.path.insert(0, str(Path(__file__).parent.parent))
+# The web frontend helpers live under tests/web.
+sys.path.insert(0, str(Path(__file__).parent / "web"))
 
 import pytest
+from _frontend import render_index_html
 
 if pytest is not None:
     from janito.openai_client.completions_api import format_tokens
@@ -161,20 +164,14 @@ if pytest is not None:
 
     def test_frontend_usage_strip_shows_output_max():
         """The usage-strip template must render ``output/max`` in the out chip."""
-        index = (
-            Path(__file__).parent.parent / "janito" / "web" / "frontend" / "index.html"
-        )
-        html = index.read_text(encoding="utf-8")
+        html = render_index_html()
         # The out-chip must append max_tokens when available
         assert "msg.usage.max_tokens" in html
         assert "formatTokens(msg.usage.output) + (msg.usage.max_tokens" in html
 
     def test_frontend_status_bar_shows_output_max():
         """The status bar must render ``output/max`` in the tokens area."""
-        index = (
-            Path(__file__).parent.parent / "janito" / "web" / "frontend" / "index.html"
-        )
-        html = index.read_text(encoding="utf-8")
+        html = render_index_html()
         assert "lastUsage.max_tokens" in html
         assert "formatTokens(lastUsage.output) + (lastUsage.max_tokens" in html
 

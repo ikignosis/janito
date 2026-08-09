@@ -17,6 +17,8 @@ These tests pin down the frontend wiring:
 
 from pathlib import Path
 
+from _frontend import render_index_html
+
 FRONTEND = Path(__file__).parent.parent.parent / "janito" / "web" / "frontend"
 
 
@@ -54,7 +56,7 @@ def test_tool_summary_mirrors_report_start_args():
 
 def test_index_html_renders_summary_next_to_name():
     """The tool-card header shows the summary after the tool name."""
-    html = (FRONTEND / "index.html").read_text(encoding="utf-8")
+    html = render_index_html()
     assert "toolSummary(part.tool.name, part.tool.args)" in html
     assert 'class="tool-path"' in html
     # The summary span sits immediately after the tool-name span.

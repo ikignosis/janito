@@ -39,6 +39,7 @@ from types import SimpleNamespace
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import pytest
+from _frontend import render_index_html
 
 import janito.config_dir as config_dir_mod
 
@@ -1084,6 +1085,6 @@ def test_status_bar_shows_effective_api_type():
     assert "p.api_type ||" in js
     assert "p.default_api_type" in js
 
-    html = (FRONTEND / "index.html").read_text(encoding="utf-8")
+    html = render_index_html()
     assert "<strong>API:</strong>" in html
     assert 'x-text="apiType"' in html
