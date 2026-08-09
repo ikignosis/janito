@@ -57,7 +57,10 @@ The web UI requires optional dependencies (FastAPI + Uvicorn) that are **not**
 part of the core install, keeping `janito` itself dependency-light:
 
 ```bash
+# pip
 pip install janito[web]
+# or uv
+uv tool install janito[web]
 ```
 
 If you run `janito --web` without the `[web]` extra installed, you'll get a
@@ -278,8 +281,9 @@ shell (`janito/web/backend/templates/base.html`) and its partials are composed
 server-side with Jinja2, so the markup stays declarative and split into
 manageable files; the static assets (CSS/JS) are served from
 `janito/web/frontend/` via `StaticFiles`. Libraries (Alpine.js, marked.js,
-highlight.js) load from a CDN, so `pip install janito[web]` makes the UI work
-immediately — no `npm`, no bundler.
+highlight.js) load from a CDN, so installing the `[web]` extra (see
+[Installation](#installation) above) makes the UI work immediately — no `npm`,
+no bundler.
 
 > To run fully offline, vendor the CDN libraries into
 > `frontend/js/vendor/` and update the `<script>` tags in

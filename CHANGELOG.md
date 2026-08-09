@@ -80,6 +80,11 @@ Changes since `v4.21.0` (2026-08-08).
 
 ### Changed
 
+- Docs: the web UI installation section (`docs/usage/web-ui.md`) now shows
+  the `uv tool install janito[web]` alternative next to
+  `pip install janito[web]`, and the frontend section no longer refers to
+  pip specifically when describing the `[web]` extra.
+
 - Docs: renamed `docs/cli_lanscape.md` to `docs/cli_landscape.md` (fixing
   the misspelling) and expanded the CLI landscape table with an **OSS**
   column and system-prompt sizes for janito, Opencode, Claude Code, Pi and
@@ -148,6 +153,12 @@ Changes since `v4.21.0` (2026-08-08).
   The `<select>` itself now carries the border/background and the native
   dropdown arrow, so the two combos render identically (the custom caret
   span was removed).
+
+- Docs: the Supported Providers table in `docs/configuration/providers.md`
+  no longer has a **Type** column (the `Standard` / `Custom` /
+  `Third-party` grouping was not referenced anywhere else in the docs),
+  and OpenAI is no longer marked as the default provider; the table now
+  lists `Provider` and `Description` only.
 
 ### Fixed
 

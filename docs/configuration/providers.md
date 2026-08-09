@@ -19,18 +19,18 @@ The API type is selected per provider with `--set api-type=...` (see the
 
 ## Supported Providers
 
-| Provider | Type | Description |
-|----------|------|-------------|
-| `openai` | Standard | OpenAI API (default) |
-| `custom` | Custom | Any OpenAI-compatible API (local servers, third-party) |
-| `alibaba` | Third-party | Alibaba Cloud DashScope (Qwen models) |
-| `deepseek` | Third-party | DeepSeek |
-| `minimax` | Third-party | MiniMax AI (abab models) |
-| `xiaomi` | Third-party | Xiaomi AI (Mimo models) |
-| `moonshot` | Third-party | Moonshot AI (Kimi models) |
-| `zai` | Third-party | Z.AI (GLM models) |
-| `xai` | Third-party | xAI (Grok models) |
-| `anthropic` | Third-party | Anthropic (Claude models) |
+| Provider | Description |
+|----------|-------------|
+| `openai` | OpenAI API |
+| `custom` | Any OpenAI-compatible API (local servers, third-party) |
+| `alibaba` | Alibaba Cloud DashScope (Qwen models) |
+| `deepseek` | DeepSeek |
+| `minimax` | MiniMax AI (MiniMax models) |
+| `xiaomi` | Xiaomi AI (Mimo models) |
+| `moonshot` | Moonshot AI (Kimi models) |
+| `zai` | Z.AI (GLM models) |
+| `xai` | xAI (Grok models) |
+| `anthropic` | Anthropic (Claude models) |
 
 !!! note
     The provider name is always validated against this list. Whenever you pass
