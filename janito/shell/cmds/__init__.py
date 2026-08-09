@@ -4,7 +4,7 @@ Shell commands package.
 
 # Import all command handlers to register them
 from . import (
-    ask,
+    btw,
     changes,
     exit,
     help,
@@ -23,7 +23,7 @@ from .registry import get_registered_commands, register_command
 
 __all__ = [
     "CmdHandler",
-    "ask",
+    "btw",
     "changes",
     "exit",
     "get_registered_commands",

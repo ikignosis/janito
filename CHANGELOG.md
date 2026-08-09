@@ -71,6 +71,13 @@ Changes since `v4.21.0` (2026-08-08).
 
 ### Changed
 
+- The interactive shell command `/ask` (individual question with a fresh chat
+  history) has been renamed to `/btw`: the handler now lives in
+  `janito/shell/cmds/btw.py` (class `BtwCmdHandler`, registered as `/btw`),
+  and the package import in `janito/shell/cmds/__init__.py` was updated
+  accordingly. Updated `tests/test_shell_completer.py` and the comment in
+  `janito/shell/interactive.py`.
+
 - Unified diffs shown in the CLI (both the `report_diff` output emitted by
   `ReplaceTextInFile` and the `/changes` command's `ReplaceTextInFile`
   entries) are now rendered with a dedicated Pygments style
