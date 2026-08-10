@@ -44,6 +44,7 @@ Additional commands available in the terminal shell:
 | Command | Description |
 |---------|-------------|
 | `/help` | Show help information |
+| `/skills` | List all available skills (home + local) |
 | `/tools` | List all available tools |
 | `/show_tools_stats` | Show tool usage statistics (from the SQLite `tools_use.db`) |
 | `/changes` | Show the file-changing tool executions recorded for the current prompt |

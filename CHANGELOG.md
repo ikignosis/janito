@@ -11,6 +11,13 @@ Changes since `v4.21.0` (2026-08-08).
 
 ### Added
 
+- New `/skills` shell command lists all available skills (home + local) with
+  their descriptions, mirroring the `/tools` command. Implemented in
+  `janito/shell/cmds/skills.py` and registered in the shell command package,
+  `/help`, command autocomplete, and the interactive-mode docs. Added
+  `tests/test_shell_skills_cmd.py` covering registration, dispatch, home/local
+  rendering, local-overrides-home dedup, truncation, and the empty case.
+
 - Documentation: the docs now distinguish between the **terminal CLI/shell**
   and the **web UI** interfaces. A new page `docs/usage/cli-vs-web.md`
   compares the two feature-by-feature (starting a session, chat experience,

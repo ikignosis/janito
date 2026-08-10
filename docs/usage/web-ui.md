@@ -37,8 +37,9 @@ feature-by-feature breakdown is on [CLI vs Web UI](cli-vs-web.md); in short:
 **CLI-only features**
 
 - Single-prompt and pipe input (`janito "..."`, `echo ... | janito`)
-- The interactive shell (`exit`, `restart`, `/changes`, `/show_tools_stats`,
-  `/mcp add|list|remove`, `!<command>`, `Ctrl+D`/`Ctrl+C`, `F2`/`F12`, ...)
+- The interactive shell (`exit`, `restart`, `/changes`, `/skills`,
+  `/show_tools_stats`, `/mcp add|list|remove`, `!<command>`, `Ctrl+D`/`Ctrl+C`,
+  `F2`/`F12`, ...)
 - Configuration & secrets maintenance (`--config`, `--set`, `--set-api-key`,
   `--set-secret`, `--list-keys`, ...)
 - OneDrive authentication commands (`--onedrive-auth`, `--onedrive-status`,

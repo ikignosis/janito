@@ -36,6 +36,7 @@ class HelpCmdHandler(CmdHandler):
         print("Additional features:")
         print("  !<command>  - Execute a shell command directly")
         print("  /prompt      - Show the system prompt")
+        print("  /skills      - List all available skills")
         print("  /tools       - List all available tools")
         print("  /show_tools_stats - Show tool usage statistics")
         print("  /changes     - Show the file-changing tool executions for this prompt")

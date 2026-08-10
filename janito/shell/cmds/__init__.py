@@ -15,6 +15,7 @@ from . import (
     prompt,
     rollback,
     show_tools_stats,
+    skills,
     status,
     tools,
 )
@@ -36,6 +37,7 @@ __all__ = [
     "register_command",
     "rollback",
     "show_tools_stats",
+    "skills",
     "status",
     "tools",
 ]

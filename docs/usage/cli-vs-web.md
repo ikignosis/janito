@@ -58,6 +58,7 @@ Legend: ✅ available · — not available
 | `Ctrl+D` / `Ctrl+Z` (EOF), `Ctrl+C` (cancel + rollback), Enter (cancel, keep prompt) | ✅ | — |
 | `F2` (restart conversation), `F12` (Do It / continue existing plan) | ✅ | — |
 | `/help` | ✅ | — |
+| `/skills` | ✅ | — |
 | `/tools` | ✅ | ✅ (client-side card panel) |
 | `/show_tools_stats` | ✅ | — |
 | `/changes` (replay file-changing tool executions) | ✅ | — |
