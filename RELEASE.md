@@ -15,13 +15,14 @@ Prerequisites:
 - `CHANGELOG.md` has been kept up to date while developing — new entries
   go under the `## [Unreleased]` section.
 
-The process is five steps:
+The process is six steps:
 
 1. [Determine the version](#1-determine-the-version)
 2. [Run the promote_changelog script](#2-run-the-promote_changelog-script)
 3. [Commit the changelog changes](#3-commit-the-changelog-changes)
 4. [Tag](#4-tag)
 5. [Push the tag](#5-push-the-tag)
+6. [Reset the changelog](#6-reset-the-changelog)
 
 ## 1. Determine the version
 
@@ -122,6 +123,41 @@ Pushing the tag triggers the release workflow
 2. Builds the wheel and sdist.
 3. Publishes to PyPI.
 4. Creates the GitHub Release with generated release notes.
+
+## 6. Reset the changelog
+
+After the release is out, reset `CHANGELOG.md` for the next development
+cycle: remove every released version section (the history is preserved in
+the GitHub Release notes), keeping only the header and a fresh, empty
+`[Unreleased]` section that points at the version just released:
+
+```bash
+VERSION=v4.19.0  # the version just released in step 4
+python - "$VERSION" <<'EOF'
+import sys
+from datetime import date
+from pathlib import Path
+
+version = sys.argv[1]
+path = Path("CHANGELOG.md")
+text = path.read_text(encoding="utf-8")
+header, _, _ = text.partition("## [Unreleased]")
+path.write_text(
+    header
+    + f"## [Unreleased](https://github.com/joaopinto/janito/compare/{version}...HEAD)\n\n"
+    + f"Changes since `{version}` ({date.today().isoformat()}).\n",
+    encoding="utf-8",
+)
+EOF
+```
+
+Stage and commit the reset. The `changelog-freshness` pre-commit hook
+passes because `CHANGELOG.md` is staged:
+
+```bash
+git add CHANGELOG.md
+git commit -m "chore(release): reset CHANGELOG after v4.19.0"
+```
 
 ## Troubleshooting
 
