@@ -2,6 +2,8 @@
 
 import sys
 
+import questionary
+
 from ...auth_config import get_api_key, set_api_key
 from ...general_config import (
     ProviderRequiredError,
@@ -170,17 +172,25 @@ def _prompt_with_default(
 
 
 def _prompt_provider(existing_provider: str | None) -> str | None:
-    """Prompt for the provider name; returns None to abort."""
+    """Prompt for the provider via a questionary select; returns None to abort."""
     print("Provider Configuration")
     print("-" * 30)
-    supported = list_supported_providers()
-    print(f"Available providers: {', '.join(sorted(supported))}")
-    print()
-    provider = _prompt_with_default("Enter provider name", default=existing_provider)
+    supported = sorted(list_supported_providers())
+    # Pre-select the currently configured provider when it is one of the
+    # supported choices (a hand-edited config may contain an unknown name).
+    default = existing_provider if existing_provider in supported else None
+    try:
+        provider = questionary.select(
+            "Select a provider",
+            choices=supported,
+            default=default,
+        ).ask()
+    except KeyboardInterrupt:
+        print("\n\nConfiguration cancelled.")
+        sys.exit(0)
     if not provider:
         print("Error: Provider name is required.", file=sys.stderr)
         return None
-    provider = provider.strip().lower()
     print(f"  Using provider: {provider}")
     print()
     return provider

@@ -18,7 +18,7 @@ You'll be prompted for:
 
 | Setting | Description | Example |
 |---------|-------------|---------|
-| **Provider** | Your API provider | `openai`, `custom` |
+| **Provider** | Your API provider, selected from a list | `openai`, `custom` |
 | **API Key** | Your API key (masked for security) | `sk-xxxxxxxxxxxxxxxx` |
 | **Model** | Model name to use | `gpt-4`, `claude-3-opus` |
 | **Max Output Tokens** | Maximum output tokens (default: 65536) | `65536` |

@@ -11,6 +11,19 @@ Changes since `v4.21.0` (2026-08-08).
 
 ### Added
 
+- `janito --config` now presents the provider list with a **questionary
+  interactive select** (`questionary.select`) instead of asking the user to
+  type a provider name. The currently configured provider is pre-selected
+  when it is a supported provider; Ctrl+C still cancels cleanly. Updated
+  `janito/cli/handlers/config.py` (the `_prompt_provider` helper), the
+  quick-start docs, and added `tests/test_config_interactive.py` covering the
+  select call, pre-selection, unknown-provider fallback, the empty-selection
+  error path, and the KeyboardInterrupt exit.
+
+- Added `questionary>=2.1.1` as a runtime dependency (interactive command-line
+  prompts, built on top of `prompt-toolkit`). Registered in `pyproject.toml`
+  and the `uv.lock` lockfile.
+
 - The **AskUser tool now works in web mode**: instead of reading from stdin
   (which is not available in the web server), `BaseTool.prompt_user` checks a
   pluggable prompt handler installed by the web backend
