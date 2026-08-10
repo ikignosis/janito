@@ -183,6 +183,15 @@ window.ChatFormatMixin = {
         }
     },
 
+    // True for the code-execution tools whose `code` argument is rendered
+    // as a block at the top of the tool card, visible before the tool
+    // actually starts running (before any output streams in).
+    isCodeTool(name) {
+        return name === 'RunBashCode'
+            || name === 'RunPythonCode'
+            || name === 'RunPowerShellCode';
+    },
+
     toolResultStr(result) {
         if (result === null || result === undefined) return '';
         if (typeof result === 'string') return result;

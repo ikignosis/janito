@@ -11,6 +11,15 @@ Changes since `v4.22.0` (2026-08-10).
 
 ### Changed
 
+- **The web chat's tool card for code-execution tools (`RunBashCode`,
+  `RunPythonCode`, `RunPowerShellCode`) now shows the submitted `code`
+  argument as a code block at the top of the card body, before the tool
+  actually executes** — i.e. it is visible as soon as the tool call is made,
+  above the live output/result sections (`chatFormat.js::isCodeTool` +
+  `templates/partials/chat_messages.html`, styled via `.tool-code` in
+  `frontend/css/tools.css`). Added contract tests in
+  `tests/web/test_web_bash_code_display.py`.
+
 - **The web chat's message input and Send button are now hidden when there
   is no active session** (e.g. after closing the last conversation): the
   input area (`templates/partials/input_area.html`) is gated on the active

@@ -63,6 +63,17 @@
                                                     <div class="tool-args" x-text="toolArgsStr(part.tool.args)"></div>
                                                 </template>
 
+                                                <!-- Submitted code (RunBashCode / RunPythonCode /
+                                                     RunPowerShellCode): shown at the top of the card
+                                                     as soon as the tool call is made, i.e. BEFORE the
+                                                     actual execution / any live output streams in. -->
+                                                <template x-if="isCodeTool(part.tool.name) && part.tool.args && part.tool.args.code">
+                                                    <div class="tool-code-block">
+                                                        <div class="section-label">Code</div>
+                                                        <pre class="tool-code" x-text="part.tool.args.code"></pre>
+                                                    </div>
+                                                </template>
+
                                                 <!-- Live progress / output -->
                                                 <template x-for="(p, ppi) in part.tool.progress" :key="ppi">
                                                     <div class="tool-progress" :class="p.level">

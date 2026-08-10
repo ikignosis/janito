@@ -125,6 +125,23 @@
     overflow-y: auto;
 }
 
+/* Submitted code for code-execution tools (RunBashCode, RunPythonCode,
+   RunPowerShellCode): rendered at the top of the tool-card body, before
+   the live output streams in. Same look as the output/progress blocks. */
+.tool-code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--code-bg);
+    color: var(--code-text);
+    border-radius: 4px;
+    padding: 8px;
+    margin-top: 6px;
+    white-space: pre-wrap;
+    overflow-x: auto;
+    max-height: 240px;
+    overflow-y: auto;
+}
+
 .section-label {
     font-size: 11px;
     color: var(--text-muted);
