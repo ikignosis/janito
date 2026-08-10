@@ -1,5 +1,8 @@
-        <!-- Input area -->
-        <div class="input-area">
+        <!-- Input area — only shown while a session is active. When the last
+             session is closed (zero sessions left), there is nothing to send
+             a message to, so the box and Send button are hidden until the
+             user selects or creates a conversation in the sidebar. -->
+        <div class="input-area" x-show="sessionId">
             <div class="input-inner">
                 <textarea x-ref="input"
                           x-model="input"

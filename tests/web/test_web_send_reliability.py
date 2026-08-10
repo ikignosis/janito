@@ -197,3 +197,44 @@ def test_notify_send_blocked_dispatches_toast_event():
     assert "_notifySendBlocked(text)" in js
     assert "CustomEvent('janito-toast'" in js
     assert "kind: 'error'" in js
+
+
+def test_input_area_hidden_without_active_session():
+    """The input box + Send button are only visible with an active session.
+
+    When the last session is closed (zero sessions left, `sessionId` is
+    null), the message input and Send button must not be shown: there is
+    nothing to send a message to. They reappear as soon as the user selects
+    or creates a conversation (which sets `sessionId`).
+    """
+    html = render_index_html()
+    # The whole input area (textarea + Send button) is gated on sessionId.
+    assert '<div class="input-area" x-show="sessionId">' in html
+    # The textarea and button still exist inside that hidden container.
+    assert '<textarea x-ref="input"' in html
+    assert "Send" in html
+
+
+def test_empty_state_mentions_no_active_conversation():
+    """With zero sessions the empty state tells the user what to do instead
+    of pointing at the (hidden) input box.
+
+    The original \"Start a conversation below\" copy only applies while a
+    session is active; without one the banner says to pick/create a
+    conversation in the sidebar.
+    """
+    html = render_index_html()
+    assert '<p x-show="sessionId">Start a conversation below.' in html
+    assert '<p x-show="!sessionId">No active conversation' in html
+
+
+def test_clear_active_discards_stale_draft():
+    """Closing the active session clears the typed draft from the input box.
+
+    The draft belonged to the closed conversation; keeping it would make a
+    stale message resurface when a new session is opened.
+    """
+    js = (FRONTEND / "js" / "chatStore.js").read_text(encoding="utf-8")
+    clear = js.split("clearActive() {", 1)[1]
+    assert "this.sessionId = null" in clear
+    assert "this.input = ''" in clear

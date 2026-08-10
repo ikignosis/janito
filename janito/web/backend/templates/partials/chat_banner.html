@@ -31,6 +31,10 @@
                 <template x-if="messages.length === 0">
                     <div class="empty-state">
                         <h2>⚡ Janito Web</h2>
-                        <p>Start a conversation below. Streaming responses, tool calls, and MCP services are all live.</p>
+                        <!-- With an active session the input box is visible. -->
+                        <p x-show="sessionId">Start a conversation below. Streaming responses, tool calls, and MCP services are all live.</p>
+                        <!-- With zero sessions the input box is hidden; the
+                             user must pick or create a conversation first. -->
+                        <p x-show="!sessionId">No active conversation — select or create one in the sidebar.</p>
                     </div>
                 </template>
