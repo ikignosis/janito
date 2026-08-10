@@ -33,6 +33,10 @@ function appComponent() {
         theme: 'light',          // 'light' | 'dark' — synced to <html data-theme>
         toast: null,             // { kind: 'ok'|'error', text } while shown
         _toastTimer: null,
+        // In-browser question from the assistant (AskUser tool):
+        // { sessionId, prompt_id, question } while the modal is open.
+        promptModal: null,
+        promptAnswer: '',        // the answer the user is typing
 
         init() {
             // Pick up whatever the pre-paint script (or the absence of it) set.
@@ -44,6 +48,60 @@ function appComponent() {
             // (e.g. the provider switcher).  The toast element lives at the
             // root of this component (bottom of index.html).
             window.addEventListener('janito-toast', (e) => this.showToast(e.detail));
+
+            // The assistant asked the user a question (AskUser tool). Shown
+            // by the chat component's event router, but the modal lives here
+            // (root scope) so it appears even when the asking session is in
+            // the background.
+            window.addEventListener('janito-prompt', (e) => {
+                this.promptModal = e.detail || null;
+                this.promptAnswer = '';
+                this.$nextTick(() => {
+                    const el = document.getElementById('prompt-modal-input');
+                    if (el) el.focus();
+                });
+            });
+
+            // A turn finished / was cancelled / errored while the modal was
+            // open (e.g. Ctrl+C): the backend has already resolved the
+            // question as empty, so close the modal. Scoped to the raising
+            // session so a background turn finishing never closes another
+            // session's open question.
+            window.addEventListener('janito-prompt-dismiss', (e) => {
+                const sid = e.detail && e.detail.sessionId;
+                if (sid && this.promptModal && this.promptModal.sessionId !== sid) {
+                    return; // a different session's question is still open
+                }
+                this.promptModal = null;
+                this.promptAnswer = '';
+            });
+        },
+
+        // Render the question text as markdown (same helper the chat uses).
+        renderPromptQuestion(text) {
+            return window.JanitoMarkdown
+                ? window.JanitoMarkdown.render(text || '')
+                : (text || '');
+        },
+
+        // Send the typed answer back to the session that asked, then close.
+        submitPromptAnswer() {
+            if (!this.promptModal) return;
+            window.dispatchEvent(new CustomEvent('janito-prompt-answer', {
+                detail: { ...this.promptModal, answer: this.promptAnswer },
+            }));
+            this.promptModal = null;
+            this.promptAnswer = '';
+        },
+
+        // Dismiss without answering: the tool receives an empty answer.
+        dismissPrompt() {
+            if (!this.promptModal) return;
+            window.dispatchEvent(new CustomEvent('janito-prompt-answer', {
+                detail: { ...this.promptModal, answer: '' },
+            }));
+            this.promptModal = null;
+            this.promptAnswer = '';
         },
 
         showToast(detail) {

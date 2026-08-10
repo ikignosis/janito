@@ -11,6 +11,25 @@ Changes since `v4.21.0` (2026-08-08).
 
 ### Added
 
+- The **AskUser tool now works in web mode**: instead of reading from stdin
+  (which is not available in the web server), `BaseTool.prompt_user` checks a
+  pluggable prompt handler installed by the web backend
+  (`janito/tooling/prompting.py` context variable, mirroring the reporter
+  pattern). The handler (`janito/web/backend/prompts.py`) registers a
+  per-connection pending prompt, sends a `{"type": "prompt", "prompt_id",
+  "question"}` frame to the browser and blocks the tool's worker thread until
+  the answer arrives. The frontend renders a modal (root app component,
+  `templates/partials/prompt_modal.html`) with the question (markdown) and an
+  answer box; submitting posts `{"type": "prompt_answer", "prompt_id",
+  "answer"}` back over the session's WebSocket, which the receive loop
+  (`_await_cancel` in `routers/chat.py`) resolves to wake the tool thread.
+  The modal works for background sessions too, cancelling a turn
+  (Ctrl+C) or a disconnect resolves any pending question as an empty answer
+  so the worker thread never hangs, and the CLI `input()` fallback is
+  unchanged. Added `tests/test_prompting.py` (handler delegation, stripping,
+  exception contract) and `tests/web/test_web_prompt_modal.py` (registry,
+  `_await_cancel` resolution, full tool-thread round trip, frontend wiring).
+
 - New `/skills` shell command lists all available skills (home + local) with
   their descriptions, mirroring the `/tools` command. Implemented in
   `janito/shell/cmds/skills.py` and registered in the shell command package,

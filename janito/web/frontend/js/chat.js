@@ -65,6 +65,11 @@ function chatComponent() {
         toolsDialog: null,       // { builtin, mcp, skipped, total } or null
         toolsDialogLoading: false,
         toolsDialogError: null,
+        // In-browser question from the assistant (AskUser tool) for the
+        // ACTIVE session: { prompt_id, question } or null. The modal itself
+        // lives in the root app component (works for background sessions);
+        // this projection mirrors the active session's store.pendingPrompt.
+        pendingPrompt: null,
         _followBottom: true,     // auto-follow the scroll bottom? false = user "locked" the scroll
         _scrollThreshold: 80,    // px tolerance for "at the bottom" (avoids scrollbar jitter)
 
@@ -97,6 +102,12 @@ function chatComponent() {
             window.addEventListener('janito-clear-session', () => {
                 this.clearActive();
             });
+            // The user answered the in-browser question modal (root app
+            // component): route the answer back over the raising session's
+            // socket so the blocked tool turn can resume.
+            window.addEventListener('janito-prompt-answer', (e) => {
+                this._submitPromptAnswer(e.detail);
+            });
         },
 
         // ---------------------------------------------------------------
@@ -114,6 +125,7 @@ function chatComponent() {
                     connection: 'disconnected',
                     current: null,
                     toolsSummary: null, // { active, skipped, skippedList } from session_start
+                    pendingPrompt: null, // in-browser question (AskUser) awaiting an answer
                     loaded: false,     // history fetched from the server yet?
                     loading: false,    // a history fetch is in flight
                     dirty: false,      // user already sent a message locally
@@ -142,6 +154,7 @@ function chatComponent() {
             this.connection = store.connection;
             this._current = store.current;
             this.toolsSummary = store.toolsSummary;
+            this.pendingPrompt = store.pendingPrompt;
             this._broadcastConn();
             this._forceScrollToBottom();
 
@@ -315,6 +328,25 @@ function chatComponent() {
             window.dispatchEvent(
                 new CustomEvent('janito-toast', { detail: { kind: 'error', text } })
             );
+        },
+
+        // Route an answer typed in the in-browser question modal (AskUser
+        // tool) back to the session that raised the question. The backend
+        // blocked the agent turn on this answer, so sending it lets the
+        // tool resume. Runs for active AND background sessions (the modal
+        // lives in the root app component).
+        _submitPromptAnswer({ sessionId, prompt_id, answer }) {
+            const store = this._store(sessionId);
+            const socket = this._socket(sessionId);
+            if (socket && prompt_id) {
+                socket.sendPromptAnswer(prompt_id, answer);
+            } else {
+                console.warn('[chat] prompt answer dropped: no socket or id', { sessionId, prompt_id });
+            }
+            // The modal is closed by the root app component; just clear the
+            // local pending state for this session.
+            store.pendingPrompt = null;
+            if (this.sessionId === sessionId) this.pendingPrompt = null;
         },
 
         // Name a new conversation from the start of its first message (the

@@ -11,6 +11,7 @@ This package provides infrastructure for AI tools including:
 from .base_tool import BaseTool
 from .decorator import is_tool, tool
 from .path_utils import norm_path
+from .prompting import get_prompt_handler, set_prompt_handler
 from .reporter import (
     get_report_handler,
     report_diff,
@@ -31,6 +32,7 @@ from .time_utils import format_duration_ms
 __all__ = [
     "BaseTool",
     "format_duration_ms",
+    "get_prompt_handler",
     "get_report_handler",
     "is_tool",
     "norm_path",
@@ -42,6 +44,7 @@ __all__ = [
     "report_result",
     "report_start",
     "report_warning",
+    "set_prompt_handler",
     "set_report_handler",
     "tool",
 ]

@@ -84,6 +84,7 @@ window.ChatStoreMixin = {
         this.error = null;
         this._current = null;
         this.toolsSummary = null;
+        this.pendingPrompt = null;
         this._broadcastConn();
     },
 };

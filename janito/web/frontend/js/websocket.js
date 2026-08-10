@@ -116,6 +116,12 @@ class ChatSocket {
         return this.send({ type: 'prompt', content });
     }
 
+    // Answer an in-browser question raised by an interactive tool (the
+    // AskUser tool). The backend blocks the agent turn until this arrives.
+    sendPromptAnswer(promptId, answer) {
+        return this.send({ type: 'prompt_answer', prompt_id: promptId, answer });
+    }
+
     sendCancel() {
         return this.send({ type: 'cancel' });
     }

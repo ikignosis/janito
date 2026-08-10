@@ -12,6 +12,7 @@ a context-variable-based report handler (set in web mode) can intercept output.
 from abc import ABC, abstractmethod
 from typing import Any
 
+from .prompting import get_prompt_handler
 from .reporter import report_diff as _report_diff
 from .reporter import report_error as _report_error
 from .reporter import report_output as _report_output
@@ -174,12 +175,16 @@ class BaseTool(ABC):
 
     def prompt_user(self, question: str) -> str:
         """
-        Prompt the user with a question in the console and return their answer.
+        Prompt the user with a question and return their answer.
 
-        This method displays the question to the user inside a ``rich`` table
-        (the question text itself is still rendered as markdown, like LLM
-        replies) and waits for input. It is intended to be called by tools
-        that need interactive input from the user (e.g. the AskUser tool).
+        In CLI mode the question is displayed inside a ``rich`` table (the
+        question text itself is still rendered as markdown, like LLM
+        replies) and the answer is read from stdin. In web mode the web
+        backend installs a prompt handler through the ``prompting`` context
+        variable: it presents the question as a modal in the browser and
+        waits for the answer, so no console is needed. This method is
+        intended to be called by tools that need interactive input from the
+        user (e.g. the AskUser tool).
 
         Args:
             question (str): The question to display to the user.
@@ -187,6 +192,11 @@ class BaseTool(ABC):
         Returns:
             str: The user's answer (stripped of leading/trailing whitespace).
         """
+        handler = get_prompt_handler()
+        if handler is not None:
+            # Web mode: the backend installed an in-browser prompt handler.
+            return handler(question).strip()
+
         from rich.console import Console
         from rich.markdown import Markdown
         from rich.table import Table

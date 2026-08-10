@@ -116,7 +116,31 @@ const CHAT_EVENT_HANDLERS = {
         }
     },
 
+    // The assistant raised an in-browser question (AskUser tool): the
+    // backend blocked the turn until the user answers. Record the pending
+    // question on the session store and surface the modal through the root
+    // app component (janito-prompt) so it appears even when this session is
+    // in the background.
+    prompt(c) {
+        c.store.pendingPrompt = {
+            prompt_id: c.event.prompt_id,
+            question: c.event.question,
+        };
+        if (c.isActive) {
+            c.comp.pendingPrompt = c.store.pendingPrompt;
+            c.comp._scrollToBottom();
+        }
+        window.dispatchEvent(new CustomEvent('janito-prompt', {
+            detail: {
+                sessionId: c.store.id,
+                prompt_id: c.event.prompt_id,
+                question: c.event.question,
+            },
+        }));
+    },
+
     done(c) {
+        c.comp._clearPendingPrompt(c);
         c.msg.streaming = false;
         c.msg.done = true;
         c.comp._setStatus(c.store, 'idle');
@@ -128,6 +152,7 @@ const CHAT_EVENT_HANDLERS = {
     },
 
     cancelled(c) {
+        c.comp._clearPendingPrompt(c);
         // Server confirmed the abort and rolled back the history to the
         // checkpoint. Remove the in-flight assistant message and the user
         // message that started this turn to stay in sync with the server.
@@ -141,6 +166,7 @@ const CHAT_EVENT_HANDLERS = {
     },
 
     error(c) {
+        c.comp._clearPendingPrompt(c);
         c.store.error = c.event.message;
         // Server rolled back the history to the checkpoint on error.
         c.comp._rollbackTurn(c.store);
@@ -162,7 +188,21 @@ const CHAT_EVENT_HANDLERS = {
     },
 };
 
+// Close the in-browser question modal (root app component) whenever the
+// turn that raised it ends without an answer (cancelled / error). The
+// backend resolves the pending question as empty in those cases, so the
+// modal would otherwise stay open with no way to answer. The dismiss is
+// scoped to the raising session so another session's open modal is not
+// closed by a background turn finishing.
 window.ChatEventsMixin = {
+    _clearPendingPrompt(c) {
+        if (!c.store.pendingPrompt) return;
+        c.store.pendingPrompt = null;
+        if (c.isActive) c.comp.pendingPrompt = null;
+        window.dispatchEvent(new CustomEvent('janito-prompt-dismiss', {
+            detail: { sessionId: c.store.id },
+        }));
+    },
     // Apply a streamed event to a specific session's store. Only mutates
     // the visible projection when that session is the active tab.
     _handleEvent(event, store) {

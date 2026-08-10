@@ -364,6 +364,33 @@ input.key-unset { color: var(--text-muted); font-style: italic; }
 
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
 
+/* ---- In-browser question modal (AskUser tool) ---- */
+.prompt-modal { width: 480px; }
+.prompt-question {
+    margin: 10px 0 14px;
+    font-size: 13.5px;
+    color: var(--text-primary);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.prompt-question p:first-child { margin-top: 0; }
+.prompt-question p:last-child { margin-bottom: 0; }
+.prompt-input {
+    width: 100%;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-primary);
+    padding: 9px 12px;
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    resize: vertical;
+    box-sizing: border-box;
+}
+.prompt-input:focus { outline: none; border-color: var(--accent); }
+
 .empty-state {
     text-align: center;
     color: var(--text-muted);

@@ -1,0 +1,33 @@
+    <!-- ============ In-browser question modal (AskUser tool) ============
+         Shown when the assistant raises a question that needs the user's
+         answer (the AskUser tool). The backend blocks the agent turn until
+         the answer is posted back as {"type": "prompt_answer", ...}.
+
+         Lives in the ROOT app component (not the chat component) so the
+         question is presented even when the session that asked it is in
+         the background; the answer is routed back over that session's
+         socket by the chat component (janito-prompt-answer event). -->
+    <template x-if="promptModal">
+        <div class="modal-overlay" @keydown.escape.window="dismissPrompt()">
+            <div class="modal-card prompt-modal" role="dialog" aria-modal="true"
+                 aria-labelledby="prompt-modal-title">
+                <div class="modal-head">
+                    <h3 id="prompt-modal-title">&#128064; Question from the assistant</h3>
+                    <button class="btn btn-icon modal-close" @click="dismissPrompt()"
+                            aria-label="Close">&#10005;</button>
+                </div>
+                <div class="modal-desc prompt-question"
+                     x-html="renderPromptQuestion(promptModal.question)"></div>
+                <textarea id="prompt-modal-input" class="prompt-input" rows="2"
+                          x-model="promptAnswer"
+                          @keydown.enter.prevent="submitPromptAnswer()"
+                          placeholder="Type your answer&#8230;"></textarea>
+                <div class="modal-actions">
+                    <button class="btn" @click="dismissPrompt()">Dismiss</button>
+                    <button class="btn btn-primary" @click="submitPromptAnswer()">
+                        Submit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>

@@ -12,8 +12,11 @@ import logging
 from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
 
+from janito.tooling.prompting import set_prompt_handler
+
 from ..agent import stream_prompt
 from ..events import event_to_dict
+from ..prompts import PromptRegistry, WebPromptHandler
 from ..session import ConversationSession, SessionManager
 
 logger = logging.getLogger(__name__)
@@ -66,7 +69,11 @@ async def _read_client_message(websocket: WebSocket) -> dict | None:
         return {}
 
 
-async def _await_cancel(websocket: WebSocket, pending_prompts: list[str]) -> bool:
+async def _await_cancel(
+    websocket: WebSocket,
+    pending_prompts: list[str],
+    prompt_registry: PromptRegistry | None = None,
+) -> bool:
     """Wait for a ``{"type": "cancel"}`` message from the client.
 
     Any ``{"type": "prompt"}`` message that arrives while a turn is in
@@ -74,6 +81,11 @@ async def _await_cancel(websocket: WebSocket, pending_prompts: list[str]) -> boo
     discarded, so the main loop can process it once the current turn ends.
     This prevents a submission from being lost when the client sends a new
     message while a response is still streaming or a tool is running.
+
+    ``{"type": "prompt_answer", ...}`` messages answer an in-browser
+    question raised by an interactive tool (the AskUser tool): they are
+    forwarded to ``prompt_registry`` so the worker thread blocked in
+    ``prompt_user()`` wakes up with the answer, and the loop keeps reading.
 
     Returns ``True`` when a cancel message is received, ``False`` when the
     socket disconnects.
@@ -86,6 +98,9 @@ async def _await_cancel(websocket: WebSocket, pending_prompts: list[str]) -> boo
         try:
             msg = json.loads(raw)
         except json.JSONDecodeError:
+            continue
+        if msg.get("type") == "prompt_answer" and prompt_registry is not None:
+            prompt_registry.resolve(msg.get("prompt_id", ""), msg.get("answer", ""))
             continue
         if msg.get("type") == "cancel":
             return True
@@ -106,9 +121,29 @@ def _rollback(session: ConversationSession) -> None:
 
 
 async def _stream_to_websocket(
-    websocket: WebSocket, content: str, messages: list[dict], config
+    websocket: WebSocket,
+    content: str,
+    messages: list[dict],
+    config,
+    prompt_registry: PromptRegistry | None = None,
 ):
-    """Run ``stream_prompt`` and forward every event to the client."""
+    """Run ``stream_prompt`` and forward every event to the client.
+
+    When a ``prompt_registry`` is provided (web mode), an in-browser prompt
+    handler is installed for the duration of the turn: interactive tools
+    (the AskUser tool) present their question as a browser modal instead of
+    reading stdin. The handler is installed through a context variable so
+    the worker thread that executes the tool (``asyncio.to_thread``) sees
+    it, and it is scoped to this turn's task.
+    """
+    if prompt_registry is not None:
+        set_prompt_handler(
+            WebPromptHandler(
+                websocket=websocket,
+                loop=asyncio.get_running_loop(),
+                registry=prompt_registry,
+            )
+        )
     async for event in stream_prompt(
         prompt=content,
         messages=messages,
@@ -124,6 +159,7 @@ async def _run_turn(
     content: str,
     config,
     pending_prompts: list[str],
+    prompt_registry: PromptRegistry | None = None,
 ) -> None:
     """Stream one prompt, racing the client's cancel request.
 
@@ -137,13 +173,23 @@ async def _run_turn(
     session.history_checkpoint = len(session.messages)
 
     stream_task = asyncio.ensure_future(
-        _stream_to_websocket(websocket, content, session.messages, config)
+        _stream_to_websocket(
+            websocket, content, session.messages, config, prompt_registry
+        )
     )
-    cancel_task = asyncio.ensure_future(_await_cancel(websocket, pending_prompts))
+    cancel_task = asyncio.ensure_future(
+        _await_cancel(websocket, pending_prompts, prompt_registry)
+    )
     done, pending = await asyncio.wait(
         {stream_task, cancel_task},
         return_when=asyncio.FIRST_COMPLETED,
     )
+
+    # The turn is over (finished, cancelled, errored or the socket
+    # disconnected): wake any tool thread still blocked on an in-browser
+    # question so it returns an empty answer instead of hanging forever.
+    if prompt_registry is not None:
+        prompt_registry.cancel_all()
 
     # Always clean up the task that didn't finish first.
     for task in pending:
@@ -175,6 +221,7 @@ async def _run_prompt_turn(
     config,
     pending_prompts: list[str],
     sessions: SessionManager,
+    prompt_registry: PromptRegistry | None = None,
 ) -> None:
     """Run one prompt turn with the shared error handling.
 
@@ -186,7 +233,9 @@ async def _run_prompt_turn(
     caller to drain.
     """
     try:
-        await _run_turn(session, websocket, content, config, pending_prompts)
+        await _run_turn(
+            session, websocket, content, config, pending_prompts, prompt_registry
+        )
         sessions.persist(session)
     except WebSocketDisconnect:
         raise
@@ -312,6 +361,7 @@ async def _process_prompt(
     content: str,
     pending_prompts: list[str],
     sessions: SessionManager,
+    prompt_registry: PromptRegistry | None = None,
 ) -> None:
     """Process one user prompt, draining any prompts queued meanwhile.
 
@@ -322,13 +372,65 @@ async def _process_prompt(
     """
     _maybe_auto_title(sessions, session.session_id, session, content)
     await _run_prompt_turn(
-        session, websocket, content, config, pending_prompts, sessions
+        session, websocket, content, config, pending_prompts, sessions, prompt_registry
     )
     for extra in pending_prompts:
         _maybe_auto_title(sessions, session.session_id, session, extra)
         await _run_prompt_turn(
-            session, websocket, extra, config, pending_prompts, sessions
+            session,
+            websocket,
+            extra,
+            config,
+            pending_prompts,
+            sessions,
+            prompt_registry,
         )
+
+
+async def _dispatch_client_message(
+    websocket: WebSocket,
+    session: ConversationSession,
+    session_id: str,
+    sessions: SessionManager,
+    config,
+    prompt_registry: PromptRegistry,
+    msg: dict,
+) -> None:
+    """Handle one client frame from the chat WebSocket.
+
+    ``restart`` clears the session; ``prompt_answer`` resolves an in-browser
+    question (AskUser tool) posted while the connection is idle (e.g. right
+    as the turn finished); ``prompt`` runs a full turn, draining any prompts
+    queued meanwhile. Unknown message types (e.g. pings) are ignored.
+    """
+    msg_type = msg.get("type")
+    if msg_type == "restart":
+        await _handle_restart(session, sessions, session_id, websocket)
+        return
+    if msg_type == "prompt_answer":
+        # An answer posted as the turn finished (e.g. the user hit Submit
+        # right as the stream ended). Resolving an unknown id is a harmless
+        # no-op.
+        prompt_registry.resolve(msg.get("prompt_id", ""), msg.get("answer", ""))
+        return
+    if msg_type != "prompt":
+        return  # ignore unknown message types (could be pings)
+
+    content = (msg.get("content") or "").strip()
+    if not content:
+        await websocket.send_json({"type": "error", "message": "Empty prompt"})
+        return
+
+    pending_prompts: list[str] = []
+    await _process_prompt(
+        session,
+        websocket,
+        config,
+        content,
+        pending_prompts,
+        sessions,
+        prompt_registry,
+    )
 
 
 @router.websocket("/ws/{session_id}")
@@ -336,8 +438,10 @@ async def chat_websocket(websocket: WebSocket, session_id: str):
     """Bidirectional streaming chat over WebSocket.
 
     Protocol (JSON messages):
-      Client -> Server:  {"type": "prompt"|"restart"|"cancel", ...}
-      Server -> Client:  {"type": "token"|"reasoning"|"tool_call"|...}
+      Client -> Server:  {"type": "prompt"|"restart"|"cancel"|
+                                "prompt_answer", ...}
+      Server -> Client:  {"type": "token"|"reasoning"|"tool_call"|
+                                "prompt"|...}
     """
     session = await _accept_session(websocket, session_id)
     if session is None:
@@ -348,26 +452,17 @@ async def chat_websocket(websocket: WebSocket, session_id: str):
     sessions: SessionManager = websocket.app.state.sessions
     config = websocket.app.state.config
 
+    # Tracks questions raised by interactive tools (AskUser) for this
+    # connection, answered by the browser via ``prompt_answer`` frames.
+    prompt_registry = PromptRegistry()
+
     try:
         while True:
             msg = await _read_client_message(websocket)
             if msg is None:  # disconnect
                 break
-            msg_type = msg.get("type")
-            if msg_type == "restart":
-                await _handle_restart(session, sessions, session_id, websocket)
-                continue
-            if msg_type != "prompt":
-                continue  # ignore unknown message types (could be pings)
-
-            content = (msg.get("content") or "").strip()
-            if not content:
-                await websocket.send_json({"type": "error", "message": "Empty prompt"})
-                continue
-
-            pending_prompts: list[str] = []
-            await _process_prompt(
-                session, websocket, config, content, pending_prompts, sessions
+            await _dispatch_client_message(
+                websocket, session, session_id, sessions, config, prompt_registry, msg
             )
     except WebSocketDisconnect:
         logger.debug(f"WebSocket client disconnected: {session_id}")
