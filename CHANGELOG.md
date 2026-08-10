@@ -87,6 +87,13 @@ Changes since `v4.21.0` (2026-08-08).
 
 ### Changed
 
+- The interactive shell command `/btw` (individual question with a fresh chat
+  history) has been renamed back to `/ask`: the handler now lives in
+  `janito/shell/cmds/ask.py` (class `AskCmdHandler`, registered as `/ask`),
+  and the package import in `janito/shell/cmds/__init__.py` was updated
+  accordingly. Updated `tests/test_shell_completer.py`, the comment in
+  `janito/shell/interactive.py` and `docs/usage/cli-vs-web.md`.
+
 - Docs: the web UI installation section (`docs/usage/web-ui.md`) now shows
   the `uv tool install janito[web]` alternative next to
   `pip install janito[web]`, and the frontend section no longer refers to

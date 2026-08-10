@@ -56,8 +56,8 @@ if pytest is not None:
         assert _completions_for(completer, "/h") == ["/help", "/history"]
 
     def test_slash_alone_lists_every_command():
-        completer = _completer(["/tools", "/btw", "/status"])
-        assert _completions_for(completer, "/") == ["/btw", "/status", "/tools"]
+        completer = _completer(["/tools", "/ask", "/status"])
+        assert _completions_for(completer, "/") == ["/ask", "/status", "/tools"]
 
     def test_exact_match_is_offered():
         completer = _completer(["/exit"])

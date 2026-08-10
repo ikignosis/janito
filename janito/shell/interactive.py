@@ -457,7 +457,7 @@ class InteractiveShell:
             no_tools: If True, don't pass any tools to the AI
             thinking: If True, enable thinking mode
         """
-        # Store references so command handlers (e.g. /btw) can use them
+        # Store references so command handlers (e.g. /ask) can use them
         self.send_prompt_func = send_prompt_func
         self.verbose = verbose
         self.no_tools = no_tools
