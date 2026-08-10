@@ -21,40 +21,14 @@ from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.text import Text
 
+# Shared usage normalization (also used by the web loop's UsageEvent).
+from janito.agent.usage import format_tokens, normalize_usage
+
 # Import MCP manager
 from janito.mcp_manager import get_mcp_manager
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
-
-
-def format_tokens(count):
-    """Convert a token count to a human-readable format.
-
-    Examples:
-        2000 -> "2k"
-        4000000 -> "4m"
-        150 -> "150"
-        12345 -> "12.3k"
-    """
-    if count is None:
-        return None
-    try:
-        value = float(count)
-    except (TypeError, ValueError):
-        return count
-
-    def _format(number):
-        # Trim trailing ".0" for whole numbers (e.g. "2.0k" -> "2k")
-        if number == int(number):
-            return str(int(number))
-        return f"{number:.1f}"
-
-    if value >= 1_000_000:
-        return f"{_format(value / 1_000_000)}m"
-    if value >= 1_000:
-        return f"{_format(value / 1_000)}k"
-    return str(int(value))
 
 
 def _load_mcp(use_mcp: bool) -> tuple[Any, list[dict[str, Any]]]:
@@ -143,37 +117,24 @@ def _display_usage(
 ) -> None:
     """Print the token usage summary line.
 
-    The token attribute names differ per API: Chat Completions reports
-    ``prompt_tokens``/``completion_tokens`` (with ``prompt_tokens_details``),
-    the Responses API reports ``input_tokens``/``output_tokens`` (with
-    ``input_tokens_details``), and the native SDKs (Anthropic / DashScope)
-    build a ``SimpleNamespace`` with ``input_tokens``/``output_tokens`` and no
-    cached-token details.  Pass ``cached_details_attr=None`` to skip the
-    cached-token read for APIs that do not report it.
-
-    Args:
-        usage_info: The usage object from the API response.
-        max_input_tokens: The context-window limit for the "In:" ratio.
-        max_output_tokens: The output-token limit for the "Out:" ratio.
-        message_count: Number of messages/responses chained this turn.
-        console: The Rich console to print to.
-        label: What ``message_count`` counts ("Messages" or "Responses").
-        input_attr: Attribute holding the input-token count.
-        output_attr: Attribute holding the output-token count.
-        cached_details_attr: Attribute holding the cached-token details, or
-            ``None`` when the API does not report cached tokens.
+    The token attribute names differ per API (Chat Completions reports
+    ``prompt_tokens``/``completion_tokens`` with ``prompt_tokens_details``,
+    the Responses API reports ``input_tokens``/``output_tokens`` with
+    ``input_tokens_details``, and the native SDKs build a ``SimpleNamespace``
+    with ``input_tokens``/``output_tokens`` and no cached-token details).
+    The shared :func:`normalize_usage` maps every shape onto one dict, so the
+    display no longer needs per-API attribute plumbing.  ``input_attr`` /
+    ``output_attr`` are retained for signature compatibility; pass
+    ``cached_details_attr=None`` to skip the cached-token read for APIs that
+    do not report it.
     """
-    total_tokens = getattr(usage_info, "total_tokens", None)
-    input_tokens = getattr(usage_info, input_attr, None)
-    output_tokens = getattr(usage_info, output_attr, None)
-    cached_tokens = None
-    details = (
-        getattr(usage_info, cached_details_attr, None)
-        if cached_details_attr is not None
-        else None
-    )
-    if details:
-        cached_tokens = getattr(details, "cached_tokens", None)
+    stats = normalize_usage(usage_info)
+    if stats is None:
+        return
+    total_tokens = stats["total"]
+    input_tokens = stats["input"]
+    output_tokens = stats["output"]
+    cached_tokens = stats["cached"] if cached_details_attr is not None else None
 
     parts = []
     if total_tokens is not None:

@@ -15,10 +15,12 @@ from __future__ import annotations
 import json
 import logging
 import sys
+import time
 from typing import Any
 
 from ..mcp_manager import MCPManager, get_mcp_manager
 from .changes import record_change
+from .reporter import set_report_handler
 from .tools_registry import get_tool_by_name
 from .tools_usage import record_tool_use
 from .used_files import record_used_file
@@ -42,6 +44,87 @@ def is_mcp_tool(tool_name: str) -> bool:
     if mcp_manager:
         return mcp_manager.get_service_for_tool(tool_name) is not None
     return False
+
+
+def run_tool(
+    tool_name: str,
+    tool_args: dict[str, Any],
+    use_mcp: bool = True,
+    *,
+    mcp_manager: MCPManager | None = None,
+    progress: Any = None,
+) -> tuple[Any, str | None, int]:
+    """Execute a single tool call and return ``(result, error, exec_time_ms)``.
+
+    This is the **shared tool-execution core** used by both agent loops:
+
+    - the CLI ``ToolExecutor.execute_tool_call`` (called synchronously),
+    - the web agent loop, which runs it in a thread via
+      ``asyncio.to_thread`` (``janito.web.backend.agent.tooling.execute_tool``).
+
+    It routes the call to the MCP manager or the built-in tools registry,
+    tracks usage / used files / changes (best-effort, never raises), and
+    converts a failing call into a structured ``{"success": False, ...}``
+    result instead of raising, so a failing tool never aborts the agent
+    loop.  When ``progress`` is given, it is installed as the report handler
+    for the duration of the call, so every ``report_*`` line the tool emits
+    is forwarded to it (web mode); the CLI passes ``None`` and keeps the
+    default Rich console output.
+
+    Args:
+        tool_name: The tool to invoke.
+        tool_args: The arguments to pass to the tool.
+        use_mcp: Whether MCP routing is enabled. When ``True``, MCP tools
+            (resolved via :func:`is_mcp_tool`) go to the manager; otherwise
+            every call goes to the built-in registry.
+        mcp_manager: The MCP manager used to route MCP tool calls. When
+            ``None``, the global manager (see :func:`get_mcp_manager`) is
+            used lazily.
+        progress: Optional ``(level, message, end)`` report callback.
+
+    Returns:
+        A tuple ``(result, error, exec_time_ms)``: ``result`` is the raw
+        tool result (a ``{"success": False, "error": ...}`` dict on
+        failure), ``error`` is ``None`` on success, and ``exec_time_ms`` is
+        the wall-clock execution time.
+    """
+    record_tool_use(tool_name)
+    if progress is not None:
+        set_report_handler(progress)
+    start = time.time()
+    error: str | None = None
+    result: Any = None
+    try:
+        if use_mcp and is_mcp_tool(tool_name):
+            manager = mcp_manager or get_mcp_manager()
+            result = manager.call_tool(tool_name, tool_args)
+        else:
+            tool_fn = get_tool_by_name(tool_name)
+            result = tool_fn(**tool_args)
+    except Exception as e:  # noqa: BLE001 - a failing tool must not stop the loop
+        logger.error(f"Tool {tool_name} failed: {e}")
+        error = str(e)
+        result = {
+            "success": False,
+            "error": f"Tool execution failed: {e!s}",
+        }
+    finally:
+        if progress is not None:
+            set_report_handler(None)  # restore default (Rich console)
+
+    # Track which files this successful call touched (only when the first
+    # argument is "filepath"; best-effort, never raises). A tool signals
+    # logical failure via a falsy "success" key in its result dict; such
+    # calls are not tracked.
+    if error is None and not (
+        isinstance(result, dict) and result.get("success") is False
+    ):
+        record_used_file(tool_name, tool_args)
+        # Log the execution to ./.janito/changes.jsonl so the /changes
+        # command can replay it (best-effort, never raises).
+        record_change(tool_name, tool_args)
+
+    return result, error, int((time.time() - start) * 1000)
 
 
 class ToolExecutor:
@@ -169,28 +252,16 @@ class ToolExecutor:
 
         logger.info(f"Tool call: {tool_name}({tool_args})")
 
-        # Track the tool usage (best-effort, never raises).
-        record_tool_use(tool_name)
-
-        try:
-            tool_result = self._run_tool(tool_name, tool_args)
-        except Exception as e:  # noqa: BLE001 - a failing tool must not stop the loop
-            logger.error(f"Tool {tool_name} failed: {e}")
-            tool_result = {
-                "success": False,
-                "error": f"Tool execution failed: {e!s}",
-            }
-            print(f"\u274c Tool error: {tool_name} - {e}", file=sys.stderr)
-
-        # Track which files this successful call touched (only when the first
-        # argument is "filepath"; best-effort, never raises). A tool signals
-        # logical failure via a falsy "success" key in its result dict; such
-        # calls are not tracked.
-        if not (isinstance(tool_result, dict) and tool_result.get("success") is False):
-            record_used_file(tool_name, tool_args)
-            # Log the execution to ./janito/changes.jsonl so the /changes
-            # command can replay it (best-effort).
-            record_change(tool_name, tool_args)
+        # The shared core does the routing, usage/used-files/changes tracking
+        # and failure shaping (see run_tool).
+        tool_result, error, _ = run_tool(
+            tool_name,
+            tool_args,
+            use_mcp=True,
+            mcp_manager=self.mcp_manager,
+        )
+        if error:
+            print(f"\u274c Tool error: {tool_name} - {error}", file=sys.stderr)
 
         return {
             "tool_call_id": tool_call_id,
@@ -199,37 +270,9 @@ class ToolExecutor:
             "content": json.dumps(tool_result),
         }
 
-    def _run_tool(self, tool_name: str, tool_args: dict) -> Any:
-        """Route a single tool call to the MCP manager or built-in registry.
-
-        Args:
-            tool_name: The tool to invoke.
-            tool_args: The arguments to pass to the tool.
-
-        Returns:
-            Any: The raw tool result (dict for built-in tools, any value for
-                MCP tools).
-
-        Raises:
-            KeyError: If the tool is not a built-in tool and not handled by a
-                connected MCP service.
-        """
-        if is_mcp_tool(tool_name):
-            # Route to MCP manager
-            logger.debug(f"Routing MCP tool call: {tool_name}")
-            result = self.mcp_manager.call_tool(tool_name, tool_args)
-            logger.info(f"MCP tool {tool_name} completed successfully")
-            return result
-
-        # Route to built-in tool
-        logger.debug(f"Executing built-in tool: {tool_name}")
-        tool_function = get_tool_by_name(tool_name)
-        result = tool_function(**tool_args)
-        logger.info(f"Tool {tool_name} completed successfully")
-        return result
-
 
 __all__ = [
     "ToolExecutor",
     "is_mcp_tool",
+    "run_tool",
 ]

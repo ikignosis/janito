@@ -6,22 +6,26 @@ These helpers are shared by the OpenAI-compatible clients that talk to
 streamed deltas (content, reasoning/thinking text and tool-call arguments,
 which arrive split across many chunks) into a single response.
 
-:class:`CompletionsStreamConsumer` is the real implementation: it holds the
-assembled response parts as instance attributes (no ``state`` dict plumbing)
-and drives the per-chunk handlers.  The module-level ``_consume_stream`` /
-``_consume_chunk`` / ``_consume_tool_call_delta`` functions are thin
-delegators kept for backward compatibility (they are re-exported from
-``completions_api``).
+The per-chunk folding lives in the shared
+:class:`~janito.agent.completions.CompletionsAccumulator` (also used by the
+web loop's ``StreamAccumulator``); :class:`CompletionsStreamConsumer` adds
+the CLI-specific driver — :meth:`consume` walks a sync stream with
+Enter-to-cancel support and returns the response parts.  The module-level
+``_consume_stream`` / ``_consume_chunk`` / ``_consume_tool_call_delta``
+functions are thin delegators kept for backward compatibility (they are
+re-exported from ``completions_api``).
 """
 
 import logging
+
+from janito.agent.completions import CompletionsAccumulator
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
 
 
-class CompletionsStreamConsumer:
-    """Assemble Chat Completions stream chunks into a single response.
+class CompletionsStreamConsumer(CompletionsAccumulator):
+    """Assemble Chat Completions stream chunks into a single response (CLI).
 
     The consumer owns the accumulated content / reasoning text and the
     per-index tool-call map (arguments arrive split across many chunks, so
@@ -30,15 +34,9 @@ class CompletionsStreamConsumer:
     chunks/deltas.
     """
 
-    def __init__(self) -> None:
-        self.content: list[str] = []
-        self.reasoning: list[str] = []
-        self.tool_calls: dict[int, dict[str, str]] = {}
-        self.usage_info = None
-
-    # ------------------------------------------------------------------
-    # Result accessors
-    # ------------------------------------------------------------------
+    # The CLI historically exposed the single-delta folding under this name;
+    # the shared base calls it ``_fold_tool_call_delta``.
+    handle_tool_call_delta = CompletionsAccumulator._fold_tool_call_delta
 
     @property
     def full_content(self) -> str:
@@ -49,6 +47,23 @@ class CompletionsStreamConsumer:
     def reasoning_content(self) -> str | None:
         """The assembled reasoning text, or ``None`` when none was streamed."""
         return "".join(self.reasoning) if self.reasoning else None
+
+    def handle_chunk(self, delta) -> None:
+        """Accumulate content, reasoning and tool-call deltas from one delta.
+
+        Legacy per-delta entry point: the CLI consumed one raw ``delta`` at a
+        time before the chunk-level ``handle`` API existed (the web loop and
+        the shared ``consume`` driver call ``handle(chunk)`` instead).
+        """
+        # Collect reasoning / thinking content (DeepSeek R1, OpenAI o1/o3, ...)
+        self._handle_reasoning_delta(delta)
+
+        # Accumulate main content silently
+        if delta.content:
+            self.content.append(delta.content)
+
+        # Accumulate tool-call deltas (split across many chunks)
+        self._handle_tool_call_delta(delta)
 
     # ------------------------------------------------------------------
     # Stream driving
@@ -69,15 +84,7 @@ class CompletionsStreamConsumer:
             # next chunk arrives so the worker can close the connection.
             if cancel_event is not None and cancel_event.is_set():
                 break
-
-            # Usage stats arrive in the final chunk when include_usage is set
-            if hasattr(chunk, "usage") and chunk.usage:
-                self.usage_info = chunk.usage
-
-            if not chunk.choices:
-                continue
-
-            self.handle_chunk(chunk.choices[0].delta)
+            self.handle(chunk)
 
         return (
             self.full_content,
@@ -85,41 +92,6 @@ class CompletionsStreamConsumer:
             self.tool_calls,
             self.usage_info,
         )
-
-    # ------------------------------------------------------------------
-    # Chunk handlers
-    # ------------------------------------------------------------------
-
-    def handle_chunk(self, delta) -> None:
-        """Accumulate content, reasoning and tool-call deltas from one chunk."""
-        # Collect reasoning / thinking content (DeepSeek R1, OpenAI o1/o3, ...)
-        for attr in ("reasoning_content", "reasoning"):
-            val = getattr(delta, attr, None)
-            if val:
-                self.reasoning.append(val)
-                break
-
-        # Accumulate main content silently
-        if delta.content:
-            self.content.append(delta.content)
-
-        # Accumulate tool-call deltas (split across many chunks)
-        if hasattr(delta, "tool_calls") and delta.tool_calls:
-            for tc_delta in delta.tool_calls:
-                self.handle_tool_call_delta(tc_delta)
-
-    def handle_tool_call_delta(self, tc_delta) -> None:
-        """Merge one tool-call delta into the per-index tool call map."""
-        idx = tc_delta.index
-        if idx not in self.tool_calls:
-            self.tool_calls[idx] = {"id": "", "name": "", "arguments": ""}
-        if tc_delta.id:
-            self.tool_calls[idx]["id"] = tc_delta.id
-        if tc_delta.function:
-            if tc_delta.function.name:
-                self.tool_calls[idx]["name"] = tc_delta.function.name
-            if tc_delta.function.arguments:
-                self.tool_calls[idx]["arguments"] += tc_delta.function.arguments
 
 
 # ---------------------------------------------------------------------------

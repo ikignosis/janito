@@ -87,6 +87,37 @@ Changes since `v4.21.0` (2026-08-08).
 
 ### Changed
 
+- The CLI and web agent loops now share a single **per-API adapter layer**
+  (`janito/agent/`), with two thin orchestration loops kept on top. The
+  per-API call-kwargs builders, stream accumulators, history converters and
+  usage normalization used to be implemented twice — once for the CLI
+  (`janito/openai_client/*`) and once for the web (`janito/web/backend/agent/*`).
+  They now live once:
+  - `janito/agent/completions.py` — the Chat Completions accumulator
+    (previously duplicated as the web `StreamAccumulator` and the CLI
+    `CompletionsStreamConsumer`, which is now a thin subclass adding the
+    synchronous Enter-cancel `consume` driver) and the web `build_call_kwargs`.
+  - `janito/agent/responses.py` / `anthropic.py` / `dashscope.py` — the
+    Responses/Anthropic/DashScope accumulators, kwargs builders and history
+    conversions (moved from the web runners; the web runner modules are now
+    thin shims that re-export the shared adapters and keep the async glue:
+    SDK client creation + event-stream drivers).
+  - `janito/agent/usage.py` — shared `normalize_usage` / `format_tokens` /
+    `usage_event_from_usage`, used by the CLI usage summary
+    (`client_support._display_usage`) and the web `UsageEvent` alike; the
+    per-API attribute plumbing (`input_attr`/`output_attr`) is gone.
+  - `janito/agent/events.py` — the agent event dataclasses, moved out of the
+    web backend (the `janito.web.backend.events` path re-exports them).
+  - `janito/tooling/executor.run_tool` — the shared synchronous tool-execution
+    core used by the CLI `ToolExecutor` and by the web loop (which runs it in
+    a thread, capturing `report_*` output as `ToolProgressEvent`s). The web
+    `agent/tooling.py` no longer re-implements MCP routing / usage / used-file
+    / changes tracking (`is_mcp_tool` is imported from the executor).
+  Behaviour is unchanged for both loops; all existing import paths (web
+  runner modules, `janito.web.backend.events`, the CLI stream consumers and
+  `format_tokens`) are preserved via re-export shims, so no test churn was
+  required. ~1,500 lines of duplicated adapter code were removed.
+
 - The interactive shell command `/btw` (individual question with a fresh chat
   history) has been renamed back to `/ask`: the handler now lives in
   `janito/shell/cmds/ask.py` (class `AskCmdHandler`, registered as `/ask`),

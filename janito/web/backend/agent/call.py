@@ -1,185 +1,24 @@
-"""OpenAI call-parameter building and stream accumulation.
+"""Completions adapter for the web agentic loop — shared with the CLI loop.
 
-``build_call_kwargs`` centralizes every model/provider quirk (gpt-5 token
-limits, preserve_thinking, enable_thinking) that used to live inline in the
-agentic loop.  ``StreamAccumulator`` folds raw streamed chunks into the
-collected content / reasoning / tool-call fragments; the caller owns the
-``async for`` so it can yield token events *while* the stream is arriving
-(preserving live streaming — chunks must not be buffered to completion).
+The call-parameter building and stream accumulation now live in
+:mod:`janito.agent.completions` (the shared per-API adapter layer used by
+both the CLI ``Client.send`` and the web ``stream_prompt`` loops).  This
+module re-exports them under their historical web names so the orchestration
+loop (``loop.py``) and existing tests keep their import paths.
 """
 
-from dataclasses import dataclass, field
+from janito.agent.completions import (  # noqa: F401
+    CompletionsAccumulator,
+    build_call_kwargs,
+)
+from janito.agent.usage import usage_event_from_usage  # noqa: F401
 
+#: Historical web name for the shared Completions accumulator.
+StreamAccumulator = CompletionsAccumulator
 
-def build_call_kwargs(
-    model: str,
-    config,
-    max_output_tokens: int | None,
-    preserve_thinking,
-    reasoning_level: str | None = None,
-) -> dict:
-    """Build the base ``chat.completions.create`` parameters for one turn.
-
-    Config-driven behaviour (from CLI args):
-      - ``config.effective_thinking`` (runtime toggle, else the ``--thinking``
-        flag, else the provider's built-in ``thinking``) -> add
-        extra_body enable_thinking
-      - max output tokens from ``janito.general_config`` -> max_tokens
-        (``max_completion_tokens`` for gpt-5 models)
-      - ``preserve_thinking`` config value -> extra_body
-      - ``reasoning_level`` -> ``reasoning_effort`` (e.g. low/medium/xhigh)
-    """
-    call_kwargs: dict = {
-        "model": model,
-        "temperature": 1.0,
-    }
-
-    if max_output_tokens is not None:
-        if model.startswith("gpt-5"):
-            call_kwargs["max_completion_tokens"] = max_output_tokens
-        else:
-            call_kwargs["max_tokens"] = max_output_tokens
-
-    if reasoning_level:
-        call_kwargs["reasoning_effort"] = reasoning_level
-
-    if preserve_thinking is not None:
-        call_kwargs.setdefault("extra_body", {})[
-            "preserve_thinking"
-        ] = preserve_thinking
-
-    thinking = config.effective_thinking
-    if thinking:
-        call_kwargs.setdefault("extra_body", {})["enable_thinking"] = True
-
-    call_kwargs["stream"] = True
-    call_kwargs["stream_options"] = {"include_usage": True}
-    return call_kwargs
-
-
-@dataclass
-class StreamAccumulator:
-    """Folds streamed completion chunks into one turn's collected state.
-
-    ``handle(chunk)`` returns the reasoning/text fragment carried by the
-    chunk (or ``None``) so the caller can forward it to the client
-    immediately, while the accumulator retains the full picture for
-    end-of-turn assembly.
-    """
-
-    content: list[str] = field(default_factory=list)
-    reasoning: list[str] = field(default_factory=list)
-    tool_calls: dict[int, dict[str, str]] = field(default_factory=dict)
-    usage: object | None = None
-
-    def _handle_reasoning_delta(self, delta) -> str | None:
-        """Capture reasoning/thinking content; returns the delta or None."""
-        for attr in ("reasoning_content", "reasoning"):
-            val = getattr(delta, attr, None)
-            if val:
-                self.reasoning.append(val)
-                return val
-        return None
-
-    def _handle_tool_call_delta(self, delta) -> None:
-        """Accumulate tool-call deltas (split across many chunks)."""
-        if not hasattr(delta, "tool_calls") or not delta.tool_calls:
-            return
-        for tc_delta in delta.tool_calls:
-            idx = tc_delta.index
-            if idx not in self.tool_calls:
-                self.tool_calls[idx] = {"id": "", "name": "", "arguments": ""}
-            if tc_delta.id:
-                self.tool_calls[idx]["id"] = tc_delta.id
-            if tc_delta.function:
-                if tc_delta.function.name:
-                    self.tool_calls[idx]["name"] = tc_delta.function.name
-                if tc_delta.function.arguments:
-                    self.tool_calls[idx]["arguments"] += tc_delta.function.arguments
-
-    def handle(self, chunk) -> tuple[str | None, str | None]:
-        """Process one chunk; returns ``(reasoning_delta, content_delta)``."""
-        if hasattr(chunk, "usage") and chunk.usage:
-            self.usage = chunk.usage
-
-        if not chunk.choices:
-            return None, None
-
-        delta = chunk.choices[0].delta
-
-        # Reasoning / thinking content
-        reasoning_delta = self._handle_reasoning_delta(delta)
-
-        # Main content
-        content_delta = delta.content
-        if content_delta:
-            self.content.append(content_delta)
-
-        # Tool-call deltas (split across many chunks)
-        self._handle_tool_call_delta(delta)
-
-        return reasoning_delta, content_delta
-
-    # --- End-of-turn assembly -------------------------------------------
-
-    def full_content(self) -> str:
-        return "".join(self.content)
-
-    def reasoning_content(self) -> str | None:
-        return "".join(self.reasoning) if self.reasoning else None
-
-    def tool_calls_list(self) -> list[dict]:
-        """Assembled tool calls in original index order (OpenAI wire format)."""
-        return [
-            {
-                "id": tc["id"],
-                "type": "function",
-                "function": {
-                    "name": tc["name"],
-                    "arguments": tc["arguments"],
-                },
-            }
-            for tc in (self.tool_calls[i] for i in sorted(self.tool_calls))
-        ]
-
-    def usage_event(self, max_tokens: int | None = None):
-        """Build a UsageEvent from the streamed usage info (or ``None``).
-
-        Args:
-            max_tokens: The configured max-output-tokens limit (from
-                ``build_call_kwargs``), surfaced as ``input/max``.
-        """
-        return usage_event_from_usage(self.usage, max_tokens)
-
-
-def usage_event_from_usage(usage, max_tokens: int | None = None):
-    """Build a :class:`~janito.web.backend.events.UsageEvent` from a usage object.
-
-    Handles every usage shape the supported API types report:
-
-    - Chat Completions: ``total_tokens`` / ``prompt_tokens`` /
-      ``completion_tokens`` with ``prompt_tokens_details.cached_tokens``.
-    - Responses / DashScope / Anthropic: ``total_tokens`` / ``input_tokens`` /
-      ``output_tokens`` (``input_tokens_details.cached_tokens`` where the API
-      reports it).
-
-    Returns ``None`` when no usage was reported by the stream.
-    """
-    if usage is None:
-        return None
-    from ..events import UsageEvent
-
-    details = getattr(usage, "prompt_tokens_details", None) or getattr(
-        usage, "input_tokens_details", None
-    )
-    return UsageEvent(
-        total=getattr(usage, "total_tokens", 0) or 0,
-        input=getattr(usage, "prompt_tokens", None)
-        if getattr(usage, "prompt_tokens", None) is not None
-        else (getattr(usage, "input_tokens", 0) or 0),
-        output=getattr(usage, "completion_tokens", None)
-        if getattr(usage, "completion_tokens", None) is not None
-        else (getattr(usage, "output_tokens", 0) or 0),
-        cached=(getattr(details, "cached_tokens", 0) or 0),
-        max_tokens=max_tokens,
-    )
+__all__ = [
+    "CompletionsAccumulator",
+    "StreamAccumulator",
+    "build_call_kwargs",
+    "usage_event_from_usage",
+]

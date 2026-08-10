@@ -3,21 +3,26 @@
 The tools registry, MCP manager and usage-tracking helpers are always
 present within the package, so they are imported directly (no defensive
 fallbacks).
+
+Tool *execution* is shared with the CLI loop: the synchronous core
+(:func:`janito.tooling.executor.run_tool`) does the routing, usage/used-
+files/changes tracking and failure shaping, and captures ``report_*``
+output through a progress callback.  This module wraps it in a thread and
+converts the captured output into ``ToolProgressEvent``s for the browser.
 """
 
 import asyncio
 import logging
-import time
 
 from janito.mcp_manager import get_mcp_manager
-from janito.tooling.changes import record_change
-from janito.tooling.reporter import set_report_handler
-from janito.tooling.tools_registry import get_all_tool_schemas, get_tool_by_name
+from janito.tooling.executor import (
+    is_mcp_tool as is_mcp_tool,  # re-exported for turn.py
+)
+from janito.tooling.executor import run_tool
+from janito.tooling.tools_registry import get_all_tool_schemas
 from janito.tooling.tools_registry import (
     get_tool_permissions as get_tool_permissions,  # re-exported for turn.py
 )
-from janito.tooling.tools_usage import record_tool_use
-from janito.tooling.used_files import record_used_file
 from janito.tooling.used_files import (
     reset_used_files as reset_used_files,  # re-exported for loop.py
 )
@@ -25,14 +30,6 @@ from janito.tooling.used_files import (
 from ..events import ToolProgressEvent
 
 logger = logging.getLogger(__name__)
-
-
-def is_mcp_tool(tool_name: str) -> bool:
-    """Check if a tool name is an MCP tool (has service_ prefix)."""
-    mcp_manager = get_mcp_manager()
-    if mcp_manager:
-        return mcp_manager.get_service_for_tool(tool_name) is not None
-    return False
 
 
 async def resolve_tools(config, tools: list[dict] | None, use_mcp: bool) -> list[dict]:
@@ -71,12 +68,11 @@ async def execute_tool(
     """Execute a single tool call, capturing report_* output as progress events.
 
     Returns a tuple ``(result_dict, progress_events, error, exec_time_ms)``.
-    The tool runs in a thread (tools are synchronous); ``contextvars`` ensure
-    the report handler is visible inside the thread and isolated per-task.
+    The tool runs in a thread via the shared :func:`run_tool` core; the
+    progress callback receives every ``report_*`` line (tools are
+    synchronous, so the handler sees them in the same thread) and converts
+    it into a ``ToolProgressEvent``.
     """
-    # Track the tool usage (best-effort, never raises)
-    record_tool_use(tool_name)
-
     progress_events: list[ToolProgressEvent] = []
 
     def handler(level: str, message: str, end: str):
@@ -88,39 +84,7 @@ async def execute_tool(
             )
         )
 
-    start = time.time()
-    set_report_handler(handler)
-    error: str | None = None
-    result = None
-    try:
-        if use_mcp and is_mcp_tool(tool_name):
-            mcp_manager = get_mcp_manager()
-            result = await asyncio.to_thread(
-                mcp_manager.call_tool, tool_name, tool_args
-            )
-        else:
-            tool_fn = get_tool_by_name(tool_name)
-            result = await asyncio.to_thread(tool_fn, **tool_args)
-    except Exception as e:
-        logger.error(f"Tool {tool_name} failed: {e}")
-        error = str(e)
-        result = {
-            "success": False,
-            "error": f"Tool execution failed: {e!s}",
-        }
-    finally:
-        set_report_handler(None)  # restore default (Rich console)
-
-    # Track which files this successful call touched (only when the first
-    # argument is "filepath"; best-effort, never raises). Skip calls that
-    # raised or that returned a logical failure ({"success": False}).
-    if error is None and not (
-        isinstance(result, dict) and result.get("success") is False
-    ):
-        record_used_file(tool_name, tool_args)
-        # Log the execution to ./.janito/changes.jsonl so the /changes command
-        # can replay it (best-effort, never raises).
-        record_change(tool_name, tool_args)
-
-    exec_time_ms = int((time.time() - start) * 1000)
+    result, error, exec_time_ms = await asyncio.to_thread(
+        run_tool, tool_name, tool_args, use_mcp, progress=handler
+    )
     return result, progress_events, error, exec_time_ms
