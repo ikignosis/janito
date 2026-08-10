@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from janito.cli.handlers.config import _prompt_provider
+from janito.cli.handlers.config import _prompt_max_input_tokens, _prompt_provider
 
 
 class _FakeQuestionary:
@@ -98,3 +98,66 @@ def test_prompt_provider_keyboard_interrupt_exits(capsys):
 
     assert exc_info.value.code == 0
     assert "Configuration cancelled." in capsys.readouterr().out
+
+
+# ---- max input tokens prompt -------------------------------------------
+
+
+def test_prompt_max_input_tokens_uses_existing_value_as_default(monkeypatch, capsys):
+    # Empty input accepts the default (the already-configured value).
+    monkeypatch.setattr(
+        "janito.cli.handlers.config._prompt_with_default",
+        lambda prompt, default=None, is_password=False: default,
+    )
+    result = _prompt_max_input_tokens("openai", 256000)
+    assert result == 256000
+    out = capsys.readouterr().out
+    assert "Max Input Tokens" in out
+    assert "Using max input tokens: 256000" in out
+
+
+def test_prompt_max_input_tokens_defaults_to_provider_builtin(monkeypatch):
+    monkeypatch.setattr(
+        "janito.cli.handlers.config._prompt_with_default",
+        lambda prompt, default=None, is_password=False: default,
+    )
+    monkeypatch.setattr(
+        "janito.cli.handlers.config.get_default_max_input_tokens_from_provider",
+        lambda provider: 200000,
+    )
+    result = _prompt_max_input_tokens("openai", None)
+    assert result == 200000
+
+
+def test_prompt_max_input_tokens_falls_back_to_128k(monkeypatch):
+    monkeypatch.setattr(
+        "janito.cli.handlers.config._prompt_with_default",
+        lambda prompt, default=None, is_password=False: default,
+    )
+    # No existing value and no provider built-in (e.g. 'custom').
+    monkeypatch.setattr(
+        "janito.cli.handlers.config.get_default_max_input_tokens_from_provider",
+        lambda provider: None,
+    )
+    result = _prompt_max_input_tokens("custom", None)
+    assert result == 128000
+
+
+def test_prompt_max_input_tokens_parses_input(monkeypatch, capsys):
+    monkeypatch.setattr(
+        "janito.cli.handlers.config._prompt_with_default",
+        lambda prompt, default=None, is_password=False: "1048576",
+    )
+    result = _prompt_max_input_tokens("openai", None)
+    assert result == 1048576
+    assert "Using max input tokens: 1048576" in capsys.readouterr().out
+
+
+def test_prompt_max_input_tokens_rejects_non_numeric(monkeypatch, capsys):
+    monkeypatch.setattr(
+        "janito.cli.handlers.config._prompt_with_default",
+        lambda prompt, default=None, is_password=False: "many",
+    )
+    result = _prompt_max_input_tokens("openai", None)
+    assert result is None
+    assert "Max input tokens must be a number." in capsys.readouterr().err

@@ -48,7 +48,7 @@ from typing import Any
 from rich.console import Console
 
 # Import general configuration handling
-from janito.general_config import load_max_output_tokens
+from janito.general_config import load_max_input_tokens, load_max_output_tokens
 
 # Shared agent-loop pipeline (see Client.send) implemented by DashScopeClient.
 from janito.openai_client.base_client import Client
@@ -363,9 +363,13 @@ def _resolve_model_settings(
     if max_output_tokens is None:
         max_output_tokens = 100000  # default to 100k tokens if not set in config
 
-    # Load the provider's built-in max input tokens (context window) for the
-    # usage summary display.
-    max_input_tokens = get_default_max_input_tokens_from_provider(provider)
+    # Load the provider's max input tokens (context window) for the usage
+    # summary display: a config override (--set max-input-tokens=... or the
+    # interactive --config wizard) wins, otherwise the provider's built-in
+    # default applies.
+    max_input_tokens = load_max_input_tokens(provider)
+    if max_input_tokens is None:
+        max_input_tokens = get_default_max_input_tokens_from_provider(provider)
     return thinking, max_output_tokens, max_input_tokens
 
 

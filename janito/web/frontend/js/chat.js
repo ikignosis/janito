@@ -66,9 +66,10 @@ function chatComponent() {
         toolsDialogLoading: false,
         toolsDialogError: null,
         // In-browser question from the assistant (AskUser tool) for the
-        // ACTIVE session: { prompt_id, question } or null. The modal itself
-        // lives in the root app component (works for background sessions);
-        // this projection mirrors the active session's store.pendingPrompt.
+        // ACTIVE session: { prompt_id, question, title } or null. The panel
+        // itself lives in the root app component (works for background
+        // sessions); this projection mirrors the active session's
+        // store.pendingPrompt.
         pendingPrompt: null,
         _followBottom: true,     // auto-follow the scroll bottom? false = user "locked" the scroll
         _scrollThreshold: 80,    // px tolerance for "at the bottom" (avoids scrollbar jitter)
@@ -126,6 +127,7 @@ function chatComponent() {
                     current: null,
                     toolsSummary: null, // { active, skipped, skippedList } from session_start
                     pendingPrompt: null, // in-browser question (AskUser) awaiting an answer
+                    title: null,         // session title (shown on the question panel)
                     loaded: false,     // history fetched from the server yet?
                     loading: false,    // a history fetch is in flight
                     dirty: false,      // user already sent a message locally
@@ -212,6 +214,9 @@ function chatComponent() {
             store.loading = true;
             try {
                 const session = await Api.getSession(id);
+                // Remember the title so the question panel can show which
+                // conversation asked (background sessions in particular).
+                store.title = session.title || null;
                 // If the user already started chatting in this session while
                 // the fetch was in flight, don't clobber their live messages.
                 if (!store.dirty) {
@@ -357,6 +362,7 @@ function chatComponent() {
         // like a flicker. Best-effort: a failed rename just logs.
         _autoTitle(id, content) {
             const title = content.slice(0, 60);
+            this._store(id).title = title;   // keep the question panel's chip fresh
             Api.renameSession(id, title)
                 .then(() => {
                     window.dispatchEvent(new CustomEvent('janito-session-title', {

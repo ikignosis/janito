@@ -18,6 +18,7 @@ from janito.auth_config import get_api_key, get_default_provider
 # Import general configuration handling
 from janito.general_config import (
     load_endpoint_from_config,
+    load_max_input_tokens,
     load_max_output_tokens,
     load_model_from_config,
     load_provider_from_config,
@@ -486,9 +487,13 @@ def _resolve_model_settings(
     if max_output_tokens is None:
         max_output_tokens = 100000  # default to 100k tokens if not set in config
 
-    # Load the provider's built-in max input tokens (context window) for the
-    # usage summary display.
-    max_input_tokens = get_default_max_input_tokens_from_provider(provider)
+    # Load the provider's max input tokens (context window) for the usage
+    # summary display: a config override (--set max-input-tokens=... or the
+    # interactive --config wizard) wins, otherwise the provider's built-in
+    # default applies.
+    max_input_tokens = load_max_input_tokens(provider)
+    if max_input_tokens is None:
+        max_input_tokens = get_default_max_input_tokens_from_provider(provider)
 
     # Reasoning level (reasoning_effort): --reasoning-level CLI arg, then the
     # provider's configured value (--set reasoning-level=...), and finally the

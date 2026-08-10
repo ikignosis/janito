@@ -42,7 +42,7 @@ from typing import Any
 from rich.console import Console
 
 # Import general configuration handling
-from janito.general_config import load_max_output_tokens
+from janito.general_config import load_max_input_tokens, load_max_output_tokens
 
 # Import provider configuration for built-in defaults
 from janito.provider_config import (
@@ -223,7 +223,7 @@ class AnthropicClient(Client):
         return (
             thinking,
             _resolve_max_output_tokens(provider),
-            get_default_max_input_tokens_from_provider(provider),
+            _resolve_max_input_tokens(provider),
             None,
         )
 
@@ -342,6 +342,18 @@ def _resolve_max_output_tokens(provider: str) -> int:
     if max_output_tokens is None:
         max_output_tokens = 100000  # default to 100k tokens if not set in config
     return max_output_tokens
+
+
+def _resolve_max_input_tokens(provider: str) -> int | None:
+    """Resolve max input tokens (config override > provider built-in default).
+
+    Used for the usage summary display only; ``None`` means the context window
+    is unknown, in which case the display omits the total.
+    """
+    max_input_tokens = load_max_input_tokens(provider)
+    if max_input_tokens is None:
+        max_input_tokens = get_default_max_input_tokens_from_provider(provider)
+    return max_input_tokens
 
 
 def _resolve_system_prompt(

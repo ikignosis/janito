@@ -60,6 +60,27 @@ if pytest is not None:
         assert loader.load_max_output_tokens("missing") is None
         assert loader.load_max_output_tokens() is None
 
+    def test_load_max_input_tokens(monkeypatch, tmp_path):
+        config_path = _use_temp_config(monkeypatch, tmp_path)
+        loader = ProviderConfigLoader()
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        config_path.write_text(
+            json.dumps(
+                {
+                    "providers": {
+                        "openai": {"max-input-tokens": 128000},
+                        "minimax": {"max_input_tokens": 4096},
+                    }
+                }
+            )
+        )
+        # Hyphenated and underscore keys are both honored; int coercion
+        # applies in all cases.
+        assert loader.load_max_input_tokens("openai") == 128000
+        assert loader.load_max_input_tokens("minimax") == 4096
+        assert loader.load_max_input_tokens("missing") is None
+        assert loader.load_max_input_tokens() is None
+
     def test_load_reasoning_level_coerces_to_str(monkeypatch, tmp_path):
         _use_temp_config(monkeypatch, tmp_path)
         loader = ProviderConfigLoader()
@@ -123,6 +144,7 @@ if pytest is not None:
         from janito.config_loaders import (
             load_api_type,
             load_endpoint_from_config,
+            load_max_input_tokens,
             load_max_output_tokens,
             load_model_from_config,
             load_reasoning_level,
@@ -133,11 +155,13 @@ if pytest is not None:
         set_config_value("provider", "openai")
         set_config_from_cli("model=gpt-4", "openai")
         set_config_from_cli("max-output-tokens=4096", "openai")
+        set_config_from_cli("max-input-tokens=128000", "openai")
 
         assert load_model_from_config("openai") == loader.load_model("openai")
         assert load_max_output_tokens("openai") == loader.load_max_output_tokens(
             "openai"
         )
+        assert load_max_input_tokens("openai") == loader.load_max_input_tokens("openai")
         assert load_reasoning_level("openai") == loader.load_reasoning_level("openai")
         assert load_api_type("openai") == loader.load_api_type("openai")
         assert load_responses_in_server_from_config(

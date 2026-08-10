@@ -13,13 +13,18 @@ from ...general_config import (
     get_masked_api_key,
     load_config,
     load_endpoint_from_config,
+    load_max_input_tokens,
     load_max_output_tokens,
     load_model_from_config,
     load_provider_from_config,
     set_config_from_cli,
     unset_config_key_from_cli,
 )
-from ...provider_config import is_custom_provider, list_supported_providers
+from ...provider_config import (
+    get_default_max_input_tokens_from_provider,
+    is_custom_provider,
+    list_supported_providers,
+)
 
 
 def handle_get_config(keys: list[str], cli_provider: str = None) -> int:
@@ -261,6 +266,34 @@ def _prompt_max_output_tokens(existing_max_output_tokens: int | None) -> int | N
     return max_output_tokens
 
 
+def _prompt_max_input_tokens(
+    provider: str, existing_max_input_tokens: int | None
+) -> int | None:
+    """Prompt for the max input tokens (context window); None to abort."""
+    print("Max Input Tokens")
+    print("-" * 30)
+    # Default to the value already configured for the provider, otherwise the
+    # provider's built-in context window, otherwise a generic 128k fallback.
+    default_max_input = existing_max_input_tokens
+    if default_max_input is None:
+        default_max_input = get_default_max_input_tokens_from_provider(provider)
+    if default_max_input is None:
+        default_max_input = 128000
+    max_input_str = _prompt_with_default(
+        "Enter max input tokens", default=str(default_max_input)
+    )
+    if not max_input_str:
+        return default_max_input
+    try:
+        max_input_tokens = int(max_input_str.strip())
+    except ValueError:
+        print("Error: Max input tokens must be a number.", file=sys.stderr)
+        return None
+    print(f"  Using max input tokens: {max_input_tokens}")
+    print()
+    return max_input_tokens
+
+
 def _prompt_custom_endpoint(provider: str, existing_endpoint: str | None) -> str | None:
     """Prompt for the endpoint (required for 'custom' provider); None to abort."""
     print("Endpoint (required for 'custom' provider)")
@@ -282,6 +315,7 @@ def _save_configuration(
     model: str,
     api_key: str,
     max_output_tokens: int,
+    max_input_tokens: int,
     endpoint: str | None,
 ) -> int:
     """Persist the interactive configuration; returns the exit code."""
@@ -301,6 +335,14 @@ def _save_configuration(
         print(
             f"[OK] Saved max output tokens {max_output_tokens} to config "
             f"({provider}.max-output-tokens)"
+        )
+
+        # Save max input tokens to config.json under the provider-scoped key
+        # (e.g. "openai.max-input-tokens") so each provider has its own limit.
+        set_config_from_cli(f"max-input-tokens={max_input_tokens}", provider)
+        print(
+            f"[OK] Saved max input tokens {max_input_tokens} to config "
+            f"({provider}.max-input-tokens)"
         )
 
         # Save endpoint to config.json under the provider-scoped key
@@ -332,6 +374,8 @@ def handle_config_interactive() -> int:
     - Provider name (with existing config value as default)
     - API key (with existing auth value for that provider as default, masked)
     - Max output tokens (with existing config value as default, default 65536)
+    - Max input tokens (with existing config value / provider built-in as
+      default, default 128000)
     - Endpoint (required only for 'custom' provider)
 
     Returns:
@@ -364,6 +408,15 @@ def handle_config_interactive() -> int:
     if max_output_tokens is None:
         return 1
 
+    # Default to the value already configured for the newly selected provider
+    # (so switching providers never inherits another provider's limit),
+    # otherwise the provider's built-in context window, otherwise 128k.
+    max_input_tokens = _prompt_max_input_tokens(
+        provider, load_max_input_tokens(provider)
+    )
+    if max_input_tokens is None:
+        return 1
+
     endpoint = None
     if is_custom_provider(provider):
         endpoint = _prompt_custom_endpoint(provider, existing_endpoint)
@@ -378,6 +431,7 @@ def handle_config_interactive() -> int:
     print(f"  Model:             {model}")
     print(f"  API Key:           {get_masked_api_key(api_key)}")
     print(f"  Max Output Tokens:    {max_output_tokens}")
+    print(f"  Max Input Tokens:     {max_input_tokens}")
     if endpoint:
         print(f"  Endpoint:          {endpoint}")
     print("=" * 50)
@@ -388,4 +442,6 @@ def handle_config_interactive() -> int:
         print("Configuration cancelled.")
         return 0
 
-    return _save_configuration(provider, model, api_key, max_output_tokens, endpoint)
+    return _save_configuration(
+        provider, model, api_key, max_output_tokens, max_input_tokens, endpoint
+    )

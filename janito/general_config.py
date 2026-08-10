@@ -30,6 +30,7 @@ CONFIG_PATH = get_config_dir() / "config.json"
 PROVIDER_SCOPED_KEYS = {
     "model",
     "endpoint",
+    "max-input-tokens",
     "max-output-tokens",
     "reasoning-level",
     "api-type",
@@ -37,7 +38,7 @@ PROVIDER_SCOPED_KEYS = {
 }
 
 # Config keys whose values should be coerced to int when set via CLI.
-INT_VALUED_KEYS = {"max-output-tokens"}
+INT_VALUED_KEYS = {"max-input-tokens", "max-output-tokens"}
 
 # Config keys whose values should be coerced to bool when set via CLI.
 BOOL_VALUED_KEYS = {"responses-in-server"}
@@ -442,6 +443,22 @@ def endpoint_config_key(provider: str) -> str:
     return f"{normalize_provider(provider)}.endpoint"
 
 
+def max_input_tokens_config_key(provider: str) -> str:
+    """Return the config key used to store max input tokens for a provider.
+
+    Max input tokens (the context-window limit) are stored per-provider using
+    the ``<provider>.max-input-tokens`` key so that each provider can have its
+    own override of the built-in default.
+
+    Args:
+        provider: The provider name
+
+    Returns:
+        The provider-scoped config key, e.g. ``"openai.max-input-tokens"``
+    """
+    return f"{normalize_provider(provider)}.max-input-tokens"
+
+
 def reasoning_level_config_key(provider: str) -> str:
     """Return the config key used to store the reasoning level for a provider.
 
@@ -641,6 +658,7 @@ from .config_cli import (  # noqa: E402,F401 (re-exported for backward compat)
 from .config_loaders import (  # noqa: E402,F401 (re-exported for backward compat)
     load_api_type,
     load_endpoint_from_config,
+    load_max_input_tokens,
     load_max_output_tokens,
     load_model_from_config,
     load_reasoning_level,

@@ -95,6 +95,35 @@ class ProviderConfigLoader:
                 return int(value)
         return None
 
+    def load_max_input_tokens(self, cli_provider: str | None = None) -> int | None:
+        """Load max input tokens from ~/.janito/config.json if it exists.
+
+        This value is the maximum input-token (context window) limit used for
+        the usage summary display. It is stored per-provider under the nested
+        providers structure (e.g. providers.openai.max-input-tokens).
+
+        Args:
+            cli_provider: Provider passed via ``--provider`` (may be None). If
+                not provided, the provider is read from config.json.
+
+        Returns:
+            int: Max input tokens from config, or None if not found
+        """
+        from .general_config import get_config_value
+
+        provider = self._resolve_provider(cli_provider)
+        if not provider:
+            return None
+        # Support both hyphenated and underscore formats in config.
+        for key in (
+            f"{provider}.max-input-tokens",
+            f"{provider}.max_input_tokens",
+        ):
+            value = get_config_value(key)
+            if value is not None:
+                return int(value)
+        return None
+
     def load_reasoning_level(self, cli_provider: str | None = None) -> str | None:
         """Load the reasoning level for the active provider from config.json.
 
@@ -242,6 +271,23 @@ def load_max_output_tokens(cli_provider: str | None = None) -> int | None:
         int: Max output tokens from config, or None if not found
     """
     return _loader.load_max_output_tokens(cli_provider)
+
+
+def load_max_input_tokens(cli_provider: str | None = None) -> int | None:
+    """Load max input tokens from ~/.janito/config.json if it exists.
+
+    This value is the maximum input-token (context window) limit used for
+    the usage summary display. It is stored per-provider under the nested
+    providers structure (e.g. providers.openai.max-input-tokens).
+
+    Args:
+        cli_provider: Provider passed via ``--provider`` (may be None). If not
+            provided, the provider is read from config.json.
+
+    Returns:
+        int: Max input tokens from config, or None if not found
+    """
+    return _loader.load_max_input_tokens(cli_provider)
 
 
 def load_reasoning_level(cli_provider: str | None = None) -> str | None:

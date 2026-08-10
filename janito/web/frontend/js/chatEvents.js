@@ -118,7 +118,7 @@ const CHAT_EVENT_HANDLERS = {
 
     // The assistant raised an in-browser question (AskUser tool): the
     // backend blocked the turn until the user answers. Record the pending
-    // question on the session store and surface the modal through the root
+    // question on the session store and surface the panel through the root
     // app component (janito-prompt) so it appears even when this session is
     // in the background.
     prompt(c) {
@@ -135,6 +135,7 @@ const CHAT_EVENT_HANDLERS = {
                 sessionId: c.store.id,
                 prompt_id: c.event.prompt_id,
                 question: c.event.question,
+                title: c.store.title || null,
             },
         }));
     },
@@ -188,11 +189,11 @@ const CHAT_EVENT_HANDLERS = {
     },
 };
 
-// Close the in-browser question modal (root app component) whenever the
+// Close the in-browser question panel (root app component) whenever the
 // turn that raised it ends without an answer (cancelled / error). The
 // backend resolves the pending question as empty in those cases, so the
-// modal would otherwise stay open with no way to answer. The dismiss is
-// scoped to the raising session so another session's open modal is not
+// panel would otherwise stay open with no way to answer. The dismiss is
+// scoped to the raising session so another session's open panel is not
 // closed by a background turn finishing.
 window.ChatEventsMixin = {
     _clearPendingPrompt(c) {

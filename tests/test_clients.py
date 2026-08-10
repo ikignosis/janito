@@ -181,6 +181,10 @@ if pytest is not None:
         monkeypatch.setattr(
             anthropic_api, "_resolve_max_output_tokens", lambda provider: 64000
         )
+        # No config override: the provider's built-in default applies.
+        monkeypatch.setattr(
+            anthropic_api, "load_max_input_tokens", lambda provider: None
+        )
         monkeypatch.setattr(
             anthropic_api,
             "get_default_max_input_tokens_from_provider",
@@ -195,6 +199,25 @@ if pytest is not None:
         assert max_in == 200000
         # reasoning_level is accepted but not used by the native SDK.
         assert reasoning is None
+
+    def test_anthropic_model_settings_config_override_wins(monkeypatch):
+        from janito.openai_client import anthropic_api
+
+        monkeypatch.setattr(
+            anthropic_api, "_resolve_max_output_tokens", lambda provider: 64000
+        )
+        # A configured max-input-tokens override beats the built-in default.
+        monkeypatch.setattr(
+            anthropic_api, "load_max_input_tokens", lambda provider: 4096
+        )
+        monkeypatch.setattr(
+            anthropic_api,
+            "get_default_max_input_tokens_from_provider",
+            lambda provider: 200000,
+        )
+        c = anthropic_api.AnthropicClient()
+        _, _, max_in, _ = c._resolve_model_settings("anthropic", False, "high")
+        assert max_in == 4096
 
     def test_dashscope_model_settings_returns_4_tuple(monkeypatch):
         import janito.dashscope_api as dsa

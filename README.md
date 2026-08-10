@@ -69,6 +69,7 @@ You'll be prompted for:
 - **API Key** - Masked for security
 - **Model** - e.g., `gpt-4`, `gpt-3.5-turbo`
 - **Max Output Tokens** - Maximum output tokens (default: 65536)
+- **Max Input Tokens** - Maximum input tokens / context window (default: 128000)
 
 ### Quick Configuration with `--set`
 

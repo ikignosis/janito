@@ -22,6 +22,7 @@ You'll be prompted for:
 | **API Key** | Your API key (masked for security) | `sk-xxxxxxxxxxxxxxxx` |
 | **Model** | Model name to use | `gpt-4`, `claude-3-opus` |
 | **Max Output Tokens** | Maximum output tokens (default: 65536) | `65536` |
+| **Max Input Tokens** | Maximum input tokens / context window (default: 128000) | `128000` |
 
 ### Quick Configuration with Flags
 

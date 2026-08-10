@@ -230,6 +230,46 @@ if pytest is not None:
         # Removing again returns False (already gone)
         assert gc.unset_config_key_from_cli("max-output-tokens", "openai") is False
 
+    def test_max_input_tokens_config_key_helper():
+        assert gc.max_input_tokens_config_key("openai") == "openai.max-input-tokens"
+        assert gc.max_input_tokens_config_key("  OpenAI ") == "openai.max-input-tokens"
+
+    def test_set_max_input_tokens_per_provider(monkeypatch, tmp_path):
+        config_path = _use_temp_config(monkeypatch, tmp_path)
+        gc.set_config_from_cli("provider=openai")
+        gc.set_config_from_cli("max-input-tokens=128000")
+        gc.set_config_from_cli("max-input-tokens=256000", "minimax")
+        # Each provider has its own max-input-tokens
+        assert gc.load_max_input_tokens("openai") == 128000
+        assert gc.load_max_input_tokens("minimax") == 256000
+        # Values are stored as ints (coerced via INT_VALUED_KEYS)
+        key, value = gc.set_config_from_cli("max-input-tokens=200000", "deepseek")
+        assert key == "deepseek.max-input-tokens"
+        assert value == 200000
+        config = _read_config(config_path)
+        assert config["providers"]["openai"]["max-input-tokens"] == 128000
+        assert config["providers"]["minimax"]["max-input-tokens"] == 256000
+        assert config["providers"]["deepseek"]["max-input-tokens"] == 200000
+
+    def test_set_max_input_tokens_rejects_non_int(monkeypatch, tmp_path):
+        config_path = _use_temp_config(monkeypatch, tmp_path)
+        with pytest.raises(ValueError) as exc:
+            gc.set_config_from_cli("max-input-tokens=one-hundred-thousand", "openai")
+        assert "integer" in str(exc.value)
+        # Nothing should have been written
+        assert _read_config(config_path) == {}
+
+    def test_unset_max_input_tokens_per_provider(monkeypatch, tmp_path):
+        config_path = _use_temp_config(monkeypatch, tmp_path)
+        gc.set_config_from_cli("max-input-tokens=128000", "openai")
+        gc.set_config_from_cli("max-input-tokens=256000", "minimax")
+        assert gc.unset_config_key_from_cli("max-input-tokens", "openai") is True
+        config = _read_config(config_path)
+        assert "openai" not in config.get("providers", {})
+        assert config["providers"]["minimax"]["max-input-tokens"] == 256000
+        # Removing again returns False (already gone)
+        assert gc.unset_config_key_from_cli("max-input-tokens", "openai") is False
+
     def test_set_reasoning_level_per_provider(monkeypatch, tmp_path):
         config_path = _use_temp_config(monkeypatch, tmp_path)
         gc.set_config_from_cli("provider=alibaba")

@@ -11,6 +11,27 @@ Changes since `v4.21.0` (2026-08-08).
 
 ### Added
 
+- Added `ARCHITECTURE.md`, a summarized architecture document covering the
+  entry point and CLI dispatch, the shared agent-loop pipeline and API
+  clients, the tooling system (registry, executor, toolsets, skills, MCP),
+  the web backend, code search, configuration stores and the end-to-end turn
+  flow.
+
+- `janito --config` now also prompts for **max input tokens** (the context
+  window) in addition to max output tokens. The default is the value already
+  configured for the provider, otherwise the provider's built-in context
+  window, otherwise 128000; the value is stored per-provider as
+  `providers.<name>.max-input-tokens` (also settable with
+  `janito --set max-input-tokens=...`). All clients (Completions, Responses,
+  Anthropic, DashScope) honor the config override when displaying the
+  token-usage summary, falling back to the provider's built-in default.
+  Added `load_max_input_tokens` to `janito/config_loaders.py` (re-exported by
+  `janito/general_config.py`), the `_prompt_max_input_tokens` wizard step, the
+  `max-input-tokens` entry in `PROVIDER_SCOPED_KEYS` / `INT_VALUED_KEYS`, docs
+  updates, and tests in `tests/test_config_interactive.py`,
+  `tests/test_config_loaders.py`, `tests/test_general_config.py` and
+  `tests/test_clients.py`.
+
 - `janito --config` now presents the provider list with a **questionary
   interactive select** (`questionary.select`) instead of asking the user to
   type a provider name. The currently configured provider is pre-selected
@@ -118,6 +139,18 @@ Changes since `v4.21.0` (2026-08-08).
   `janito --web --api-type <type>` pins it for the whole server run.
 
 ### Changed
+
+- The **AskUser question in web mode is now a non-blocking bottom sheet
+  instead of a centered modal with a dimmed full-screen backdrop**
+  (`templates/partials/prompt_modal.html`): the conversation stays visible
+  and scrollable behind the panel, so the user can review the chat window
+  before answering. The panel also shows which conversation asked the
+  question (useful when a background session raises it) via a title chip
+  carried on the `janito-prompt` event (`chatEvents.js`, with the session
+  title tracked per-store in `chat.js`). Positioning/layers live in
+  `css/drawers.css` (`.prompt-panel`, `z-index` 250 — above modals/drawers,
+  below toasts). Updated `tests/web/test_web_prompt_modal.py` to pin the
+  new panel markup and the title plumbing.
 
 - The CLI and web agent loops now share a single **per-API adapter layer**
   (`janito/agent/`), with two thin orchestration loops kept on top. The

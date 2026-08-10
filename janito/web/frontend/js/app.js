@@ -34,7 +34,7 @@ function appComponent() {
         toast: null,             // { kind: 'ok'|'error', text } while shown
         _toastTimer: null,
         // In-browser question from the assistant (AskUser tool):
-        // { sessionId, prompt_id, question } while the modal is open.
+        // { sessionId, prompt_id, question, title } while the panel is open.
         promptModal: null,
         promptAnswer: '',        // the answer the user is typing
 
@@ -50,21 +50,21 @@ function appComponent() {
             window.addEventListener('janito-toast', (e) => this.showToast(e.detail));
 
             // The assistant asked the user a question (AskUser tool). Shown
-            // by the chat component's event router, but the modal lives here
+            // by the chat component's event router, but the panel lives here
             // (root scope) so it appears even when the asking session is in
             // the background.
             window.addEventListener('janito-prompt', (e) => {
                 this.promptModal = e.detail || null;
                 this.promptAnswer = '';
                 this.$nextTick(() => {
-                    const el = document.getElementById('prompt-modal-input');
+                    const el = document.getElementById('prompt-panel-input');
                     if (el) el.focus();
                 });
             });
 
-            // A turn finished / was cancelled / errored while the modal was
+            // A turn finished / was cancelled / errored while the panel was
             // open (e.g. Ctrl+C): the backend has already resolved the
-            // question as empty, so close the modal. Scoped to the raising
+            // question as empty, so close the panel. Scoped to the raising
             // session so a background turn finishing never closes another
             // session's open question.
             window.addEventListener('janito-prompt-dismiss', (e) => {
