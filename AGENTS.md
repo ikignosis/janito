@@ -4,5 +4,6 @@
     - list the open issues and locate one that matches with the changes, add "closes #issue" to the commit comments
     - Run git diff to check the changes and generate the commit message
 - After modifying code check tests/ and execute/update the tests as required
+- When adressing architecture related questions or changes review ARCHITECTURE.md
 - The web app/web mode is stored at janito/web
 - Avoid defensive try/except import fallbacks

@@ -1,0 +1,293 @@
+# Architecture
+
+This document summarizes the architecture of **janito**, a development agent
+with function calling, MCP support and skills. It runs through two interfaces
+built on the same engine: a terminal CLI/shell and an (alpha) browser-based
+web UI.
+
+---
+
+## Overview
+
+Janito is a Python 3.10+ application organized as a single `janito` package
+plus a `tests/` suite. At a high level it is a loop:
+
+```
+user prompt ──► resolve config ──► create SDK client ──► stream model response
+                                                              │
+                                              model wants tools? │
+                                                              ▼
+                                                     execute tools
+                                                              │
+                                                              ▼
+                                                   append results, loop
+                                                              │
+                                              no more tools?   │
+                                                              ▼
+                                                      display final answer
+```
+
+Everything else — CLI parsing, tool discovery, MCP, skills, the web UI,
+configuration — exists to feed or present this loop.
+
+### Top-level layout
+
+| Path | Responsibility |
+|------|----------------|
+| `janito/__main__.py` | Entry point: argument parsing, dispatch, runtime setup |
+| `janito/cli/` | CLI parsing, chat modes, flag-driven command handlers |
+| `janito/shell/` | Interactive prompt_toolkit shell and `/`-commands |
+| `janito/agent/` | Shared per-API adapters used by both the CLI and web loops |
+| `janito/openai_client/` | API clients and the shared agent-loop pipeline |
+| `janito/tooling/` | Tool framework: registry, executor, skills, tracking |
+| `janito/tools/` | Built-in tool implementations, organized in toolsets |
+| `janito/mcp_client/` + `mcp_manager.py` | MCP server connections and tool routing |
+| `janito/web/` | FastAPI web backend + plain HTML/JS/CSS frontend |
+| `janito/codesearch/` | SQLite trigram index backing the code-search tool |
+| `janito/*config*.py`, `provider_*.py` | Configuration storage, loaders, provider registry |
+| `docs/`, `mkdocs.yml` | MkDocs documentation site |
+
+---
+
+## Entry point & CLI dispatch
+
+`janito/__main__.py` (`main()`) is the single entry point (also registered as
+the `janito` console script). Flow:
+
+1. **Parse args** with `janito/cli/parser.py` (argparse).
+2. **Setup runtime** (`_setup_runtime`): apply `-c/--config-dir`, `--local`,
+   logging, normalize `--provider`, and apply `-r/-w/-x` privilege flags into
+   the module-level `running_privileges` (used later by tool discovery).
+3. **Batch config ops** (`--set/--unset/--get/--set-secret/--delete-secret`)
+   via `_handle_batch_config`.
+4. **Flag-driven commands** (`--info`, `--config`, `--list-*`,
+   `--set-api-key`, `--onedrive-*`, `--install-skill`, `--init-codesearch`,
+   ...) via `_dispatch_flag_command` → handlers in `janito/cli/handlers/`.
+5. **Validate runtime config** (`validate_runtime_config`) — API key, endpoint
+   and model must resolve before any session starts.
+6. **Dispatch to a mode**:
+   - `--web` → `janito/web/backend/app.py:run_web` (checks the optional
+     `[web]` extras first);
+   - stdin pipe → single-prompt mode;
+   - `--prompt` → `run_single_prompt`; otherwise `run_interactive_chat`
+     (both in `janito/cli/chat.py`).
+
+`janito/cli/chat.py` builds a `send_prompt_func` bound to the resolved API
+type (Responses / Completions / Anthropic / DashScope) and drives either the
+interactive shell or a single prompt. `janito/cli/session_setup.py` decides
+the effective system prompt and which toolsets to enable (`--gmail`,
+`--onedrive`).
+
+---
+
+## Interfaces
+
+### Terminal CLI / shell
+
+- **Single prompt**: one turn, exit. `echo ... | janito` and `janito "..."`.
+- **Interactive chat** (`janito/shell/interactive.py`): prompt_toolkit-based
+  shell with file-backed history, a bottom toolbar (model/provider), key
+  bindings (restart, "do it", cancel), a command completer, and `/`-commands
+  (`janito/shell/cmds/`): `/rollback`, `/history`, `/priv`, `/mcp`, `/skills`,
+  `/tools`, `/changes`, `/ask`, `/multi`, ... Commands are registered through
+  a small registry (`cmds/registry.py`).
+
+### Web UI (alpha)
+
+`janito --web` runs a FastAPI server (see [Web backend](#web-backend)) with a
+browser chat interface served as static HTML/JS/CSS (no build step).
+
+---
+
+## Agent loop & API clients
+
+The heart of the engine is a **template-method turn pipeline** defined in
+`janito/openai_client/base_client.py` (`Client.send`), shared by four clients:
+
+| Client | API type | File |
+|--------|----------|------|
+| Completions | `chat.completions` | `openai_client/completions_api.py` |
+| Responses | `/responses` | `openai_client/conversations_api.py` |
+| Anthropic | native `anthropic` SDK | `openai_client/anthropic_api.py` |
+| DashScope | native `dashscope` SDK | `dashscope_api.py` + `openai_client/dashscope_stream.py` |
+
+The pipeline per turn:
+
+1. Reset per-prompt tracking (`clear_changes`, `reset_used_files`).
+2. Resolve `(base_url, api_key, model)` from CLI args / config / provider data.
+3. Create the SDK client; load MCP services and tools (if enabled).
+4. Create a `ToolExecutor` (tool-call routing + bookkeeping).
+5. Resolve tool schemas (built-in registry + MCP), model settings
+   (max tokens, thinking, reasoning level).
+6. Loop: stream a response → display reasoning/content → if tool calls were
+   requested, execute them (see [Tool execution](#tool-execution)) and loop
+   again; otherwise finalize (usage summary, reports, return value).
+
+The web loop (`janito/web/backend/agent/loop.py`) drives the **same turn
+pipeline asynchronously**, yielding structured events instead of printing
+Rich output. Both loops share the per-API adapter layer in `janito/agent/`
+(`completions.py`, `responses.py`, `anthropic.py`, `dashscope.py`, `usage.py`,
+`events.py`), so API-specific call-kwargs building, stream accumulation and
+history conversion are implemented once.
+
+---
+
+## Tooling system
+
+### Discovery & registry (`janito/tooling/`)
+
+- **`tools_registry.py`** — lazy, module-level `ToolsRegistry` singleton:
+  - `ensure_initialized()` runs discovery on first access so privilege flags
+    are set before tools are filtered;
+  - autoloads the `files`, `system`, `net`, `codesearch` toolsets;
+  - `get_function_schema()` generates OpenAI-compatible JSON schemas from a
+    tool's type hints and docstring;
+  - `add_toolset()` enables on-demand toolsets (gmail, onedrive);
+  - `enable_skills()/disable_skills()` toggle skill tools.
+
+- **`executor.py`** — `ToolExecutor` + shared `run_tool()` core (the
+  single tool-execution path used by both the CLI and web loops):
+  - routes each call to the MCP manager (tools prefixed with a `service_`
+    name) or the built-in registry;
+  - tracks tool usage, used files and changes (best-effort);
+  - never raises: failures become `{"success": False, "error": ...}` results
+    so the model can react.
+
+- **`base_tool.py` / `decorator.py`** — `BaseTool` ABC and the
+  `@tool(permissions="...")` decorator marking a class as a tool.
+
+- **`reporter.py` / `prompting.py`** — pluggable progress-report and
+  user-prompt handlers (Rich console in the CLI, WebSocket frames in web
+  mode).
+
+- **`skills_provider.py`** — progressive-disclosure skills: advertise
+  (~100 tokens) in the system prompt, load full `SKILL.md` when activated,
+  read resources on demand. Skills are discovered from `~/.janito/skills`
+  and `.janito/skills` (local wins).
+
+- **`changes.py`, `used_files.py`, `tools_usage.py`** — per-prompt tracking
+  feeding `/changes`, "Used files" reports and tool stats.
+
+### Toolsets (`janito/tools/`)
+
+Tools are grouped in directories (`files/`, `system/`, `net/`, `codesearch/`,
+`gmail/`, `onedrive/`, `janitoweb/`). `discover_toolsets()` in
+`janito/tools/__init__.py` scans each toolset for `@tool`-marked classes,
+runs their `should_load()` gate (missing binaries, credentials, platform),
+checks `_tool_permissions` against `running_privileges`, and wraps each class
+as a callable with the `run()` signature.
+
+### Privileges
+
+`janito/privileges.py` defines a `Privileges` dataclass (READ/WRITE/EXEC) and
+a module-level `running_privileges`. When `-r/-w/-x` are passed, tools whose
+declared permissions are not satisfied are skipped during discovery with a
+recorded reason (`get_skipped_tools()`).
+
+---
+
+## MCP support
+
+- **`janito/mcp_manager.py`** — `MCPManager` manages multiple connected
+  services: `load_services()`, transport lifecycle, tool listing/caching,
+  and `call_tool()` routing by service prefix.
+- **`janito/mcp_client/`** — transport layer: `stdio.py` (subprocess) and
+  `http.py` (streamable HTTP), with a `factory.py` selecting the transport
+  from `mcp_config.py` service definitions.
+- Services are configured interactively via the `/mcp` shell command or
+  `--list-mcp`, stored in the config store, and loaded at the start of every
+  turn when MCP is enabled.
+
+---
+
+## Web backend
+
+`janito/web/backend/` (FastAPI + uvicorn, optional `[web]` extras):
+
+- **`app.py`** — app factory: mounts API routers (`/api/chat`, `/api/config`,
+  `/api/tools`, `/api/mcp`, `/api/images`, `/api/health`), session manager,
+  token-auth middleware and CORS, and serves the frontend via Jinja2
+  templates + static files.
+- **`session.py` / `session_store.py`** — TTL-based `SessionManager` with
+  conversations persisted to `.janito/sessions/` so they survive restarts.
+- **`security.py`** — optional bearer-token auth (`JANITO_WEB_TOKEN`) and CORS.
+- **`agent/`** — the async agent loop (`loop.py` orchestrates; `turn.py`
+  runs tool turns; `call.py` is the Completions runner; `responses.py`,
+  `anthropic.py`, `dashscope.py` are the other API runners). Tool calls run
+  through the shared `run_tool` core in a worker thread
+  (`asyncio.to_thread`).
+- **`events.py` / `prompts.py`** — structured SSE/WebSocket events and the
+  web AskUser prompt handler.
+- **Frontend** (`janito/web/frontend/`): plain HTML/JS/CSS (Alpine.js) with
+  WebSocket chat, session list, settings drawer, tool-call cards and a prompt
+  modal.
+
+---
+
+## Code search
+
+`janito/codesearch/` powers the `CodeSearch` tool with a **SQLite-based
+inverted trigram index**:
+
+- `index.py` — schema (files, trigrams posting lists) and the `Index` class;
+- `trigram.py` — trigram extraction;
+- `candidates.py` — candidate file scoring/ranking;
+- `code_search.py` — the query layer (and the tool wraps it).
+
+The index is created/updated with `janito --init-codesearch` and stored under
+`.janito/` in the working directory.
+
+---
+
+## Configuration
+
+Configuration lives in the config dir (default `~/.janito/`, overridable with
+`-c/--config-dir` or local `.janito/` with `--local`):
+
+| Store | File | Contents |
+|-------|------|----------|
+| Config | `config.json` | provider, model, tokens, api-type, endpoint, MCP services, ... |
+| Auth | `auth.json` | API keys per provider |
+| Secrets | `secrets.json` | additional named secrets |
+
+Key modules:
+
+- **`config_dir.py`** — config-dir resolution and local-mode flag.
+- **`json_store.py`** — thread-safe read/write primitives for the JSON stores.
+- **`general_config.py`** — read/write helpers, key scoping, `resolve_api_type()`;
+  re-exports the per-provider loaders from **`config_loaders.py`**.
+- **`provider_data.py`** — static `PROVIDER_INFO` registry (providers, default
+  models, endpoints, supported API types, server- vs client-side Responses
+  state, token limits, reasoning levels).
+- **`provider_config.py`** — accessors over `PROVIDER_INFO`
+  (endpoints, defaults, api-type validation).
+- **`auth_config.py`, `secrets_config.py`, `mcp_config.py`** — auth, secrets
+  and MCP service stores.
+- **`config_cli.py`** — CLI helpers for the `--set/--get/--unset` family.
+
+The system prompt (`janito/system_prompt.py`) composes the base prompt, the
+skills advertisement section, and the current project's `AGENTS.md` content.
+
+---
+
+## A typical turn (end to end)
+
+1. User runs `janito "fix the test"` (or chats in the shell / web UI).
+2. `__main__` resolves config, validates runtime, dispatches to
+   `run_single_prompt` / `run_interactive_chat`.
+3. The chosen API client (`Client.send` pipeline) streams the model response.
+4. If the model emits tool calls, `ToolExecutor` → `run_tool()` executes them
+   (built-in registry or MCP), tracking usage/used-files/changes, and the
+   results are appended to the conversation.
+5. The loop repeats until the model answers; the final answer is displayed
+   (Rich in the CLI, events/WebSocket in web mode) with a token-usage summary.
+
+---
+
+## Testing & quality
+
+- `tests/` — pytest suite (~50 files) covering clients, tooling, config,
+  shell commands, skills, codesearch and web (`tests/web/`).
+- `tox.ini` + `pyproject.toml` — tox environments, ruff linting/isort.
+- `.pre-commit-config.yaml` + `.secrets.baseline` — pre-commit hooks and
+  detect-secrets baseline.
