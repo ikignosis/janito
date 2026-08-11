@@ -40,6 +40,72 @@ function settingsComponent() {
         keyReveal: false,
         keyError: null,
 
+        // Provider variants (issue #47): create a new <provider>-<word>
+        // variant or delete the one selected in the combo.
+        variantName: '',           // staged new variant name
+        variantError: null,
+
+        // True while the combo shows a registered variant (as opposed to a
+        // base provider).
+        get selectedIsVariant() {
+            const p = this.selectedProviderDetail;
+            return !!(p && p.variant);
+        },
+
+        // True while the selected variant is the one the next prompt
+        // resolves to (deleting it would break the running session).
+        get selectedVariantInUse() {
+            return !!(
+                this.selectedProviderDetail &&
+                this.selectedProviderDetail.effective
+            );
+        },
+
+        // Register a new variant via POST /api/config/variants (the web
+        // counterpart of `janito --create-variant`).  The new variant is
+        // persisted in config.json and shows up in the combo right away.
+        async createVariant() {
+            const name = this.variantName.trim();
+            if (!name) {
+                this.variantError = 'Enter a variant name, e.g. alibaba-tokenplan.';
+                return;
+            }
+            this.variantError = null;
+            try {
+                await Api.createVariant(name);
+                this.variantName = '';
+                this.message = 'Saved: created variant ' + name;
+                window.dispatchEvent(new CustomEvent('config-updated'));
+                await this.load();
+            } catch (e) {
+                this.variantError = e.message;
+            }
+        },
+
+        // Delete the selected variant via DELETE /api/config/variants/{name}
+        // (the web counterpart of `janito --delete-variant`).  Refuses while
+        // the variant is the effective provider of the running session.
+        async deleteVariant() {
+            const p = this.selectedProviderDetail;
+            if (!p || !p.variant) return;
+            if (p.effective) {
+                this.message =
+                    'Delete failed: this variant is in use by the current session.';
+                return;
+            }
+            if (!window.confirm(`Delete provider variant '${p.name}' and its configuration?`)) {
+                return;
+            }
+            try {
+                await Api.deleteVariant(p.name);
+                this.message = 'Saved: deleted variant ' + p.name;
+                window.dispatchEvent(new CustomEvent('config-updated'));
+                await this.load();
+            } catch (e) {
+                this.message = 'Delete failed: ' + e.message;
+            }
+        },
+
         async toggle() {
             this.open = !this.open;
             if (this.open) await this.load();

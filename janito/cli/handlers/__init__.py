@@ -17,10 +17,13 @@ from .secrets import (
 )
 from .skills import handle_install_skill, handle_list_skills, handle_uninstall_skill
 from .tools import handle_list_mcp, handle_list_tools
+from .variants import handle_create_variant, handle_delete_variant
 
 __all__ = [
     "handle_config_interactive",
+    "handle_create_variant",
     "handle_delete_secret",
+    "handle_delete_variant",
     "handle_get_config",
     "handle_get_secret",
     "handle_info",

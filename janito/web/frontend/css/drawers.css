@@ -126,6 +126,24 @@ input.key-unset { color: var(--text-muted); font-style: italic; }
     border-color: color-mix(in srgb, var(--yellow) 45%, transparent);
 }
 
+/* ---- Provider variant rows (settings drawer, issue #47) ---- */
+.variant-create-row { display: flex; gap: 8px; align-items: stretch; }
+.variant-create-row input { width: auto; }
+.variant-delete-row { display: flex; gap: 8px; align-items: center; }
+.delete-variant-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+    border-radius: 8px;
+    white-space: nowrap;
+    transition: background-color 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+}
+.delete-variant-btn:hover:not(:disabled) {
+    border-color: var(--red, #e5534b);
+    color: var(--red, #e5534b);
+}
+.delete-variant-btn:active:not(:disabled) { transform: translateY(1px); }
+
+
 /* Staged (unsaved) change notes — "Set Default" and "Set API Key" mark the
    drawer dirty and are only persisted when the drawer's Save button is
    clicked, so the pending state is surfaced until then. */

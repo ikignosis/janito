@@ -36,6 +36,23 @@ If no prompt is given, janito starts an interactive chat shell.
 
 > **Note:** `--set` and `--set-api-key` must be used in **separate commands**, not together on the same line.
 
+## Provider Variants
+
+| Option | Description |
+|--------|-------------|
+| `--create-variant <name>` | Register a provider variant `<provider>-<word>` (e.g. `alibaba-tokenplan`) in `config.json`. After creation the name behaves like any provider (`--provider`, `--set provider=`, `--set-api-key`), inheriting its base provider's built-in defaults with its own per-variant model/endpoint/API key |
+| `--delete-variant <name>` | Delete a provider variant and its per-variant configuration (model, endpoint, API type, tokens, reasoning level, API key). Refuses to delete the configured default provider |
+
+```bash
+janito --create-variant alibaba-tokenplan
+janito --provider alibaba-tokenplan --set model=qwen-plus
+janito --set-api-key sk-xxx --provider alibaba-tokenplan
+janito --set provider=alibaba-tokenplan
+janito --delete-variant alibaba-tokenplan
+```
+
+See [Provider Variants](../configuration/variants.md) for the full guide.
+
 ## Secrets
 
 | Option | Description |

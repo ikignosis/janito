@@ -44,6 +44,7 @@ nav:
   - Configuration:
       - configuration/index.md
       - configuration/providers.md
+      - configuration/variants.md
       - configuration/secrets.md
   - Usage:
       - usage/index.md

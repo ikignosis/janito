@@ -1,0 +1,132 @@
+# Provider Variants
+
+A **provider variant** is a second configuration for an already-supported
+provider, named `<provider>-<word>` (e.g. `alibaba-tokenplan`). It lets you
+run the same provider with different models, endpoints and API keys — for
+example one Alibaba account billed per-token and another with a prepaid
+token plan — without reconfiguring anything each time.
+
+A variant **inherits** its base provider's built-in defaults (model,
+endpoint, API types, token limits, reasoning level, thinking mode) and keeps
+its own:
+
+- per-variant model / endpoint / API type / tokens (`providers.<name>.*` in
+  `config.json`), and
+- its own API key (`auth.json`, keyed by the variant name).
+
+After creation the variant name behaves like any provider: it is accepted by
+`-p`/`--provider`, `--set provider=`, `--set-api-key` and every other
+command, and it shows up in the web UI's provider combo and Settings drawer.
+
+## Creating a variant
+
+```bash
+janito --create-variant alibaba-tokenplan
+```
+
+The name must follow the syntax `<provider>-<word>`: the part before the
+first `-` must be a supported provider (the *base*), and the word is
+user-defined (it may itself contain hyphens, e.g. `alibaba-token-plan`).
+The variant is registered in `config.json`:
+
+```json
+{
+  "variants": {
+    "alibaba-tokenplan": {}
+  }
+}
+```
+
+## Configuring a variant
+
+Once registered, configure it like any provider — the values are stored
+under the variant's own keys:
+
+```bash
+# Per-variant model
+janito --provider alibaba-tokenplan --set model=qwen-plus
+
+# Per-variant endpoint (e.g. a proxy or regional URL)
+janito --provider alibaba-tokenplan --set endpoint=https://my-proxy.example.com/v1
+
+# Per-variant API key
+janito --set-api-key sk-xxx --provider alibaba-tokenplan
+
+# Per-variant API type / tokens / reasoning
+janito --provider alibaba-tokenplan --set api-type=Responses
+janito --provider alibaba-tokenplan --set max-output-tokens=65536
+janito --provider alibaba-tokenplan --set reasoning-level=medium
+```
+
+Everything you don't set falls back to the **base provider's** built-in
+defaults. For example, `alibaba-tokenplan` without an explicit model uses
+`qwen3.8-max`, the `alibaba` provider's default.
+
+### Using a variant
+
+```bash
+# Single call
+janito -p alibaba-tokenplan "Explain quantum computing"
+
+# Make it the default provider
+janito --set provider=alibaba-tokenplan
+
+# Verify the resolution
+janito --info
+```
+
+`--info` / `--show-config` and the shell `/status` command show the variant
+name, its effective model, endpoint and masked API key, so a variant using
+the wrong endpoint or a missing key is immediately visible.
+
+### Custom-provider variants
+
+The `custom` provider (any OpenAI-compatible endpoint) can have variants
+too, e.g. `custom-local` for a local server and `custom-proxy` for a
+third-party gateway — each with its own endpoint and model:
+
+```bash
+janito --create-variant custom-local
+janito --provider custom-local --set endpoint=http://localhost:1234/v1
+janito --provider custom-local --set model=my-local-model
+janito --set-api-key not-needed --provider custom-local
+```
+
+## Deleting a variant
+
+```bash
+janito --delete-variant alibaba-tokenplan
+```
+
+Deleting a variant removes:
+
+- its `variants` entry in `config.json`,
+- every per-variant config key (`providers.<name>.model`,
+  `providers.<name>.endpoint`, API type, tokens, reasoning level,
+  responses-in-server), and
+- its API key in `auth.json`.
+
+janito **refuses** to delete the variant that is currently the configured
+default provider — switch the default first (`janito --set provider=<name>`).
+
+## Web UI
+
+The web UI (alpha) surfaces variants in the Settings drawer's **Variants**
+section: create a new `<provider>-<word>` variant, configure it like any
+provider (model, endpoint, API key), and delete it (except while it is the
+provider in use). Registered variants also appear in the chat page's
+provider combo and in the Settings drawer's provider list.
+
+## Resolution order
+
+For a variant `<base>-<word>`, values resolve as follows (later overrides
+earlier):
+
+1. Base provider's built-in defaults (from `PROVIDER_INFO`, e.g. the
+   `alibaba` entry)
+2. Per-variant configuration file values (`providers.<base>-<word>.<key>`)
+3. Command-line arguments (`--model`, `--provider`, `--set endpoint=...`)
+
+The API key comes from `auth.json` under the variant name. See
+[Configuration Priority](index.md#configuration-priority) for the general
+resolution model.

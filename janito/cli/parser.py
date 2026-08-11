@@ -85,6 +85,11 @@ Examples:
   janito --list-skills                                        # List installed skills
   janito --uninstall-skill git-commit                         # Uninstall a skill
   janito --init-codesearch                                   # Build code search index at ./.janito/codesearch.db
+  janito --create-variant alibaba-tokenplan                  # Register a provider variant (<provider>-<word>)
+  janito --provider alibaba-tokenplan --set model=qwen-plus  # Configure the variant (per-variant model)
+  janito --set-api-key sk-xxx --provider alibaba-tokenplan   # Store an API key for the variant
+  janito --set provider=alibaba-tokenplan                    # Use the variant as the default provider
+  janito --delete-variant alibaba-tokenplan                  # Delete the variant and its config/API key
 
 Note: --set and --set-api-key must be used in separate commands.
   The 'model' key is stored per-provider (e.g. "openai.model"); the provider is
@@ -392,6 +397,24 @@ Note: --set and --set-api-key must be used in separate commands.
         action="store_true",
         help="Build a code search index over the current directory and store "
         "it at ./.janito/codesearch.db, then exit",
+    )
+
+    parser.add_argument(
+        "--create-variant",
+        metavar="NAME",
+        help="Create a provider variant '<provider>-<word>' (e.g. "
+        "alibaba-tokenplan) and register it in config.json, so the variant "
+        "name can be used as a provider (--provider, --set provider=, "
+        "--set-api-key). The variant inherits its base provider's built-in "
+        "defaults and keeps its own per-variant model/endpoint/API key.",
+    )
+
+    parser.add_argument(
+        "--delete-variant",
+        metavar="NAME",
+        help="Delete a provider variant and its per-variant configuration "
+        "(model, endpoint, API type, tokens, reasoning level, API key). "
+        "Refuses to delete the configured default provider.",
     )
 
     # --- Web UI options ---

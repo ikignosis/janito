@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Changes since `v4.22.0` (2026-08-10).
 
+### Added
+
+- **Provider variants** (`janito/general_config.py`, `janito/provider_config.py`,
+  `janito/cli/parser.py`, `janito/cli/handlers/variants.py`, web backend +
+  frontend): multiple configurations for the same provider, named
+  `<provider>-<word>` (e.g. `alibaba-tokenplan`). `--create-variant <name>`
+  registers a variant in `config.json` (a `"variants"` entry with `{}`), after
+  which the name is accepted anywhere a provider name is used (`-p`/`--provider`,
+  `--set provider=`, `--set-api-key`, `--info`, shell `/status`, web combos). A
+  variant inherits its base provider's built-in defaults (model, endpoint, API
+  types, token limits, reasoning, thinking) while keeping its own per-variant
+  config keys (`providers.<name>.*`) and API key (`auth.json`). `--delete-variant
+  <name>` removes the entry, the per-variant config and the API key, refusing to
+  delete the configured default provider. Unregistered variant-looking names are
+  rejected with a `--create-variant` hint. Web: variants appear in the Settings
+  drawer's provider list and new "Variants" section (create/delete), plus
+  `POST /api/config/variants` and `DELETE /api/config/variants/{name}`. Docs in
+  `docs/configuration/variants.md`. Closes #47.
+
 ### Changed
 
 - **`ReadFile` arguments improved** (`janito/tools/files/read_file.py`): renamed

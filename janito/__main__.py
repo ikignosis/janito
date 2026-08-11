@@ -52,6 +52,7 @@ from .cli.handlers.onedrive import (
     handle_onedrive_logout,
     handle_onedrive_status,
 )
+from .cli.handlers.variants import handle_create_variant, handle_delete_variant
 from .cli.input import read_stdin_prompt
 from .cli.logging_config import setup_logging
 from .cli.setup import validate_runtime_config
@@ -181,6 +182,8 @@ def _dispatch_flag_command(args) -> int | None:
         (args.list_tools, lambda: handle_list_tools(args)),
         (args.list_mcp, lambda: handle_list_mcp(args)),
         (args.init_codesearch, lambda: handle_init_codesearch(args)),
+        (args.create_variant, lambda: handle_create_variant(args.create_variant)),
+        (args.delete_variant, lambda: handle_delete_variant(args.delete_variant)),
     ]
     for enabled, handler in handlers:
         if enabled:

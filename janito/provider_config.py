@@ -25,39 +25,68 @@ from .provider_data import (  # noqa: F401 (re-exported for backward compat)
 class Provider:
     """A supported provider from :data:`PROVIDER_INFO` with typed accessors.
 
+    A provider may be a built-in provider (``name`` in ``PROVIDER_INFO``) or
+    a registered *variant* (``<provider>-<word>``): in that case the variant
+    name is kept as :attr:`name`, ``variant_of`` names the base provider and
+    every typed accessor reads the **base provider's** info entry, so the
+    variant inherits the base's built-in defaults while keeping its own
+    per-variant config overrides.
+
     Args:
-        name: The canonical (correctly cased) provider name as used in
-            :data:`PROVIDER_INFO`.
+        name: The provider name (a ``PROVIDER_INFO`` key, or a registered
+            variant name).
         data: The provider registry dict to read from. Defaults to the
             module-level :data:`PROVIDER_INFO` (held by reference, so
             mutations to the registry are reflected).
+        variant_of: The base provider name when ``name`` is a variant.
+            Defaults to ``None`` (``name`` is a built-in provider).
     """
 
-    def __init__(self, name: str, data: dict | None = None):
+    def __init__(
+        self, name: str, data: dict | None = None, variant_of: str | None = None
+    ):
         data = PROVIDER_INFO if data is None else data
-        if name not in data:
+        if name not in data and variant_of is None:
             supported = ", ".join(sorted(data.keys()))
             raise ValueError(
                 f"Unknown provider '{name}'. Supported providers: {supported}"
             )
+        if variant_of is not None and variant_of not in data:
+            supported = ", ".join(sorted(data.keys()))
+            raise ValueError(
+                f"Unknown base provider '{variant_of}' for variant '{name}'. "
+                f"Supported providers: {supported}"
+            )
         self._data = data
         self._name = name
-        self._info = data[name]
+        self._base_name = variant_of
+        self._info = data[variant_of] if variant_of is not None else data[name]
 
     @property
     def name(self) -> str:
-        """The canonical provider name (e.g. ``"openai"``)."""
+        """The provider name (e.g. ``"openai"`` or ``"alibaba-tokenplan"``)."""
         return self._name
 
     @property
+    def is_variant(self) -> bool:
+        """Whether this provider is a registered variant (``<provider>-<word>``)."""
+        return self._base_name is not None
+
+    @property
+    def base_name(self) -> str | None:
+        """The base provider this variant inherits from, or ``None``."""
+        return self._base_name
+
+    @property
     def info(self) -> dict:
-        """The raw ``PROVIDER_INFO`` entry for this provider."""
+        """The raw info entry backing this provider (the base's for variants)."""
         return self._info
 
     @property
     def is_custom(self) -> bool:
-        """Whether this is the special ``"custom"`` provider."""
-        return self._name == "custom"
+        """Whether this is the special ``"custom"`` provider (or a variant of it)."""
+        base = self._base_name or self._name
+        return base == "custom"
 
     def _get(self, key: str, default=None):
         """Read an attribute from the provider's info entry."""
@@ -153,6 +182,12 @@ class ProviderRegistry:
     constructs :class:`Provider` instances on demand, so runtime mutations to
     ``PROVIDER_INFO`` (e.g. tests injecting a fake provider) are reflected in
     every lookup.
+
+    Besides the built-in providers, the registry also resolves **registered
+    provider variants** (``<provider>-<word>``, created with
+    ``janito --create-variant``): a variant is looked up case-insensitively
+    and yields a :class:`Provider` over the *base* provider's info entry,
+    keeping the variant name as the provider name.
     """
 
     def __init__(self, data: dict | None = None, requires: dict | None = None):
@@ -172,8 +207,44 @@ class ProviderRegistry:
         """The optional-package map (API type -> required package)."""
         return self._requires
 
+    @staticmethod
+    def _variant_base(name: str) -> str | None:
+        """Return the canonical base provider of a registered variant.
+
+        A variant is a ``<provider>-<word>`` name registered via
+        ``janito --create-variant`` (stored under the ``variants`` key in
+        config.json).  The base is the provider prefix (before the first
+        ``-``), which must be a supported provider (a ``PROVIDER_INFO``
+        entry) and the variant itself must be registered.
+
+        Args:
+            name: The provider name to check.
+
+        Returns:
+            The canonical base provider name if ``name`` is a registered
+            variant, otherwise ``None``.
+        """
+        from .general_config import is_registered_variant
+
+        parsed = parse_variant_name(name)
+        if parsed is None:
+            return None
+        base, _ = parsed
+        base_lower = base.strip().lower()
+        if not base_lower:
+            return None
+        for key in PROVIDER_INFO:
+            if key.lower() == base_lower:
+                return key if is_registered_variant(name) else None
+        return None
+
     def canonical_name(self, provider: str) -> str | None:
         """Return the canonical (correctly cased) name for a provider.
+
+        Supports both the built-in providers in ``PROVIDER_INFO`` and
+        registered provider variants (``<provider>-<word>``).  Variants are
+        matched case-insensitively and returned in their canonical
+        (lowercased) form.
 
         Args:
             provider: The provider name (case-insensitive, surrounding
@@ -181,7 +252,8 @@ class ProviderRegistry:
 
         Returns:
             The canonical provider name as used in ``PROVIDER_INFO`` if the
-            provider is supported, otherwise ``None``.
+            provider is supported, the lowercased variant name if it is a
+            registered variant, otherwise ``None``.
         """
         if not provider:
             return None
@@ -193,14 +265,21 @@ class ProviderRegistry:
         for key in self._data:
             if key.lower() == provider_lower:
                 return key
+
+        # Registered provider variant (<provider>-<word>): the base must be a
+        # supported provider and the variant must be registered.
+        if self._variant_base(provider) is not None:
+            return provider_lower
         return None
 
     def get(self, name: str) -> Provider | None:
         """Look up a provider by name (case-insensitive, no whitespace strip).
 
         Mirrors the historical :func:`get_provider_info` semantics: an exact
-        match wins, then a case-insensitive match. Surrounding whitespace is
-        *not* stripped here (use :meth:`canonical_name` for that).
+        match wins, then a case-insensitive match.  Registered provider
+        variants resolve to a :class:`Provider` over the base provider's info.
+        Surrounding whitespace is *not* stripped here (use
+        :meth:`canonical_name` for that).
 
         Args:
             name: The provider name.
@@ -220,28 +299,51 @@ class ProviderRegistry:
             if key.lower() == name_lower:
                 return Provider(key, self._data)
 
+        # Registered provider variant: build a Provider over the base
+        # provider's info, keeping the variant name as the provider name.
+        base = self._variant_base(name)
+        if base is not None:
+            return Provider(name.strip().lower(), self._data, variant_of=base)
+
         return None
 
     def require(self, name: str) -> Provider:
         """Return the provider, raising ``ValueError`` when unsupported.
 
         Args:
-            name: The provider name to validate (case-insensitive).
+            name: The provider name to validate (case-insensitive).  May be
+                a supported provider or a registered variant.
 
         Returns:
             A :class:`Provider` for the canonical provider name.
 
         Raises:
             ValueError: If the provider is not supported. The message
-                enumerates the supported providers.
+                enumerates the supported providers and, when the name looks
+                like an unregistered variant, hints at ``--create-variant``.
         """
         canonical = self.canonical_name(name)
         if canonical is None:
             supported = ", ".join(sorted(self._data.keys()))
+            hint = ""
+            if parse_variant_name(name) is not None:
+                hint = (
+                    f" Note: '{name}' looks like a provider variant "
+                    f"(<provider>-<word>) but is not registered; create it "
+                    f"with: janito --create-variant {name.strip()}"
+                )
+            raise ValueError(
+                f"Unknown provider '{name}'. Supported providers: {supported}.{hint}"
+            )
+        if canonical in self._data:
+            return Provider(canonical, self._data)
+        base = self._variant_base(canonical)
+        if base is None:  # pragma: no cover - canonical implies a match
+            supported = ", ".join(sorted(self._data.keys()))
             raise ValueError(
                 f"Unknown provider '{name}'. Supported providers: {supported}"
             )
-        return Provider(canonical, self._data)
+        return Provider(canonical, self._data, variant_of=base)
 
     def names(self) -> list:
         """List all supported provider names."""
@@ -636,19 +738,92 @@ def is_supported_provider(provider: str) -> bool:
     return _registry.canonical_name(provider) is not None
 
 
+def parse_variant_name(name: str) -> tuple[str, str] | None:
+    """Split a variant-style name into its ``(base_provider, word)`` parts.
+
+    A variant name follows the syntax ``<provider>-<word>``; the split
+    happens on the **first** hyphen, so the word may itself contain hyphens
+    (e.g. ``alibaba-token-plan`` -> ``("alibaba", "token-plan")``).
+
+    Args:
+        name: The raw name.
+
+    Returns:
+        A ``(base, word)`` tuple with both parts non-empty (stripped), or
+        ``None`` when the name is not in ``<provider>-<word>`` form.
+    """
+    if not name:
+        return None
+    parts = str(name).split("-", 1)
+    if len(parts) != 2:
+        return None
+    base, word = parts[0].strip(), parts[1].strip()
+    if not base or not word:
+        return None
+    return base, word
+
+
+def is_variant_style_name(name: str) -> bool:
+    """Whether ``name`` looks like a provider variant (``<provider>-<word>``).
+
+    This only checks the shape; the variant need not be registered (use
+    :func:`is_registered_provider_variant` for that).
+
+    Args:
+        name: The provider name.
+
+    Returns:
+        True if the name matches the ``<provider>-<word>`` syntax.
+    """
+    return parse_variant_name(name) is not None
+
+
+def is_registered_provider_variant(name: str) -> bool:
+    """Whether ``name`` is a registered provider variant (not a base provider).
+
+    Unlike :func:`is_supported_provider` (which also accepts built-in
+    providers), this only returns True for registered variants.
+
+    Args:
+        name: The provider name.
+
+    Returns:
+        True if the name is a registered variant.
+    """
+    return _registry._variant_base(name) is not None
+
+
+def list_variants() -> list:
+    """List all registered provider variant names, sorted.
+
+    Returns:
+        Sorted list of registered variant names (e.g. ``["alibaba-tokenplan"]``).
+    """
+    from .general_config import load_variants
+
+    return sorted(load_variants().keys())
+
+
 def is_custom_provider(provider: str) -> bool:
     """
     Check if a provider is the special "custom" provider.
+
+    A provider variant of "custom" (e.g. ``custom-local``, created with
+    ``--create-variant custom-local``) counts as custom too: it inherits the
+    "custom" provider's built-in defaults.
 
     Args:
         provider: The provider name (case-insensitive)
 
     Returns:
-        True if the provider is "custom", False otherwise
+        True if the provider is "custom" (or a variant of it), False otherwise
     """
     if not provider:
         return False
-    return provider.lower() == "custom"
+    if provider.strip().lower() == "custom":
+        return True
+    found = _registry.get(provider)
+    return found.is_custom if found is not None else False
 
 
 def validate_provider_name(provider: str) -> str:

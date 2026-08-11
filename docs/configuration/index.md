@@ -5,6 +5,7 @@ Learn how to configure janito for your needs.
 ## Topics
 
 - [Providers](providers.md) - Configure OpenAI, local servers, or custom providers
+- [Provider Variants](variants.md) - Multiple configurations for the same provider (`<provider>-<word>`)
 - [Secrets](secrets.md) - Manage API keys and sensitive credentials
 
 ## Configuration File
