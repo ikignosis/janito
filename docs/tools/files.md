@@ -86,8 +86,13 @@ Read the contents of a file (1-based indexing).
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `filepath` | str | — | File to read |
-| `from_line` | int | `1` | Start line (1-based) |
-| `to_line` | int | `None` | End line (defaults to end of file) |
+| `start_line` | int | `1` | Start line (1-based) |
+| `max_lines` | int | `None` | Max lines to read from `start_line` (defaults to end of file) |
+| `head` | bool | `False` | Return only the first 10 lines of the file |
+| `tail` | bool | `False` | Return only the last 10 lines of the file |
+
+`head` and `tail` take precedence over `start_line`/`max_lines`, and cannot be
+combined (`head=True` + `tail=True` is an error).
 
 ### ReadMultipleFiles
 
@@ -178,7 +183,8 @@ Move or rename a file or directory.
 1. **Use `respect_gitignore=True`** (the default) when listing or searching to skip
    build artifacts and dependencies. A `.janitoignore` file in the working directory
    is **always** respected, even when `respect_gitignore=False`.
-2. **Use `ReadFile`** with `from_line`/`to_line` for large files to limit output.
+2. **Use `ReadFile`** with `start_line`/`max_lines` (or `head`/`tail`) for large
+   files to limit output.
 3. **Use `count_only=True`** with the search tools to gauge how many matches exist
    before pulling full results.
 4. **Use `exclude`** with the search tools to skip directories or files you don't
@@ -194,7 +200,7 @@ Every file tool can be run directly for testing, outside of chat:
 
 ```bash
 python -m janito.tools.files.list_files . --pattern "*.py" --recursive
-python -m janito.tools.files.read_file README.md --from-line 1 --to-line 20
+python -m janito.tools.files.read_file README.md --start-line 1 --max-lines 20
 python -m janito.tools.files.search_text . "TODO"
 ```
 

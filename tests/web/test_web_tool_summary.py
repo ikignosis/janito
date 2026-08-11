@@ -33,9 +33,9 @@ def test_chat_format_defines_tool_summary_helper():
 def test_tool_summary_mirrors_report_start_args():
     """The summary table covers the args each tool prints via report_start."""
     js = (FRONTEND / "js" / "chatFormat.js").read_text(encoding="utf-8")
-    # ReadFile: filepath + line range (from_line / to_line)
+    # ReadFile: filepath + line range (start_line / max_lines) or head/tail
     assert "case 'ReadFile':" in js
-    assert "args.to_line" in js
+    assert "args.max_lines" in js
     # MoveFile: source -> destination
     assert "case 'MoveFile':" in js
     assert "args.destination" in js

@@ -555,7 +555,7 @@ return {
 - Echo back input parameters so the LLM can correlate the result with the
   call.
 - Keep values JSON-serialisable (strings, numbers, bools, lists, dicts).
-- For large outputs consider truncation parameters (see `ReadFile.to_line`,
+- For large outputs consider truncation parameters (see `ReadFile.max_lines`,
   `GetUrl.max_length`).
 
 ---
