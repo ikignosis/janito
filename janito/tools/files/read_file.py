@@ -16,9 +16,6 @@ from typing import Any
 from ...tooling import BaseTool, norm_path
 from ...tooling.decorator import tool
 
-# Number of lines returned by the head/tail flags.
-_HEAD_TAIL_LINES = 10
-
 
 @tool(permissions="r")
 class ReadFile(BaseTool):
@@ -30,8 +27,6 @@ class ReadFile(BaseTool):
         start_line (int): Starting line number (1-based). Defaults to 1.
         max_lines (int, optional): Maximum number of lines to read from
             start_line. Defaults to None (read to end of file).
-        head (bool): If True, return only the first 10 lines of the file.
-        tail (bool): If True, return only the last 10 lines of the file.
     """
 
     def run(
@@ -39,8 +34,6 @@ class ReadFile(BaseTool):
         filepath: str,
         start_line: int = 1,
         max_lines: int | None = None,
-        head: bool = False,
-        tail: bool = False,
     ) -> dict[str, Any]:
         """
         Read the contents of a file.
@@ -52,10 +45,6 @@ class ReadFile(BaseTool):
                 starting from ``start_line``. If None, reads to the end of the
                 file. Values beyond the end of the file are clamped to the
                 last line, so the tool returns all the lines it could read.
-            head (bool): If True, return only the first 10 lines of the file.
-                Takes precedence over ``start_line``/``max_lines``.
-            tail (bool): If True, return only the last 10 lines of the file.
-                Takes precedence over ``start_line``/``max_lines``.
 
         Returns:
             Dict[str, Any]: A dictionary containing:
@@ -73,12 +62,7 @@ class ReadFile(BaseTool):
             norm_path_str = norm_path(abs_filepath)
 
             # Report start
-            range_info = ""
-            if head:
-                range_info = f" (first {_HEAD_TAIL_LINES} lines)"
-            elif tail:
-                range_info = f" (last {_HEAD_TAIL_LINES} lines)"
-            elif max_lines is not None:
+            if max_lines is not None:
                 range_info = f" (start at line {start_line}, max {max_lines} lines)"
             else:
                 range_info = f" (start at line {start_line}, until EOF)"
@@ -116,7 +100,7 @@ class ReadFile(BaseTool):
 
             try:
                 actual_from, effective_max = self._resolve_slice(
-                    start_line, max_lines, head, tail, total_lines
+                    start_line, max_lines, total_lines
                 )
             except ValueError as e:
                 error_msg = str(e)
@@ -174,20 +158,14 @@ class ReadFile(BaseTool):
     def _resolve_slice(
         start_line: int,
         max_lines: int | None,
-        head: bool,
-        tail: bool,
         total_lines: int,
     ) -> tuple[int, int | None]:
         """
         Resolve the slice to read as (0-based start line, line limit).
 
-        ``head``/``tail`` take precedence over ``start_line``/``max_lines``.
-
         Args:
             start_line: Requested 1-based start line.
             max_lines: Requested line limit (None = read to end of file).
-            head: If True, read only the first 10 lines.
-            tail: If True, read only the last 10 lines.
             total_lines: Number of lines in the file.
 
         Returns:
@@ -197,15 +175,6 @@ class ReadFile(BaseTool):
         Raises:
             ValueError: if the arguments are invalid.
         """
-        if head and tail:
-            raise ValueError("head and tail cannot both be True")
-
-        if head:
-            return 0, _HEAD_TAIL_LINES
-
-        if tail:
-            return max(total_lines - _HEAD_TAIL_LINES, 0), _HEAD_TAIL_LINES
-
         if start_line < 1 or start_line > total_lines:
             raise ValueError(
                 f"start_line ({start_line}) is out of range. "
@@ -245,16 +214,6 @@ def main():
         help="Maximum number of lines to read (default: end of file)",
     )
     parser.add_argument(
-        "--head",
-        action="store_true",
-        help="Return only the first 10 lines of the file",
-    )
-    parser.add_argument(
-        "--tail",
-        action="store_true",
-        help="Return only the last 10 lines of the file",
-    )
-    parser.add_argument(
         "--json", "-j", action="store_true", help="Output in JSON format"
     )
 
@@ -265,8 +224,6 @@ def main():
         filepath=args.filepath,
         start_line=args.start_line,
         max_lines=args.max_lines,
-        head=args.head,
-        tail=args.tail,
     )
 
     if args.json:

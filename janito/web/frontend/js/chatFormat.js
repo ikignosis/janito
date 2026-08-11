@@ -83,11 +83,7 @@ window.ChatFormatMixin = {
         switch (name) {
             case 'ReadFile': {
                 let sum = s(args.filepath);
-                if (args.head) {
-                    sum += ' (first 10 lines)';
-                } else if (args.tail) {
-                    sum += ' (last 10 lines)';
-                } else if (args.max_lines !== undefined && args.max_lines !== null) {
+                if (args.max_lines !== undefined && args.max_lines !== null) {
                     sum += ` (start at line ${args.start_line || 1}, max ${args.max_lines} lines)`;
                 } else {
                     sum += ` (start at line ${args.start_line || 1}, until EOF)`;

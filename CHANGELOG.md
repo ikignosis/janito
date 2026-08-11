@@ -115,6 +115,16 @@ Changes since `v4.22.0` (2026-08-10).
 
 ### Removed
 
+- **`ReadFile` `head`/`tail` flags removed** (`janito/tools/files/read_file.py`):
+  the `head` and `tail` boolean parameters (returning only the first/last 10
+  lines of a file) are gone, along with the `_HEAD_TAIL_LINES` constant, the
+  head/tail precedence logic in `_resolve_slice`, and the CLI `--head`/`--tail`
+  flags. Line-range reads are now exclusively expressed with
+  `start_line`/`max_lines`. Updated the web tool-card summary
+  (`janito/web/frontend/js/chatFormat.js`), the docs in `docs/tools/files.md`,
+  and the tests in `tests/test_read_file.py` /
+  `tests/web/test_web_tool_summary.py`.
+
 - **The web UI can no longer create or delete provider variants**: the
   Settings drawer's "Variants" section (create/delete UI), the
   `createVariant` / `deleteVariant` API-client methods, and the

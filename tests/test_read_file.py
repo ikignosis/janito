@@ -4,8 +4,7 @@ Tests for the ReadFile tool's line-range handling.
 The tool reads a 1-based ``start_line`` and up to ``max_lines`` lines. A
 ``max_lines`` value that exceeds the number of lines in the file must not
 raise an error: the tool clamps it to the last available line and returns
-all the lines it could read. The ``head``/``tail`` flags return only the
-first/last 10 lines of the file.
+all the lines it could read.
 """
 
 import sys
@@ -24,14 +23,6 @@ def sample_file(tmp_path):
     """Create a 5-line sample file and return its path."""
     path = tmp_path / "sample.txt"
     path.write_text("line 1\nline 2\nline 3\nline 4\nline 5\n", encoding="utf-8")
-    return str(path)
-
-
-@pytest.fixture
-def big_file(tmp_path):
-    """Create a 25-line sample file and return its path."""
-    path = tmp_path / "big.txt"
-    path.write_text("".join(f"line {i}\n" for i in range(1, 26)), encoding="utf-8")
     return str(path)
 
 
@@ -93,55 +84,3 @@ def test_start_line_out_of_range_still_errors(sample_file):
     assert result["success"] is False
     assert "start_line (99) is out of range" in result["error"]
     assert result["total_lines"] == 5
-
-
-def test_head_returns_first_ten_lines(big_file):
-    """head=True returns exactly the first 10 lines of the file."""
-    result = ReadFile().run(filepath=big_file, head=True)
-
-    assert result["success"] is True
-    assert result["total_lines"] == 25
-    assert result["start_line"] == 1
-    assert result["max_lines"] == 10
-    assert result["lines_read"] == 10
-    assert result["content"] == "".join(f"line {i}\n" for i in range(1, 11))
-
-
-def test_tail_returns_last_ten_lines(big_file):
-    """tail=True returns exactly the last 10 lines of the file."""
-    result = ReadFile().run(filepath=big_file, tail=True)
-
-    assert result["success"] is True
-    assert result["total_lines"] == 25
-    assert result["start_line"] == 16
-    assert result["max_lines"] == 10
-    assert result["lines_read"] == 10
-    assert result["content"] == "".join(f"line {i}\n" for i in range(16, 26))
-
-
-def test_head_on_small_file_returns_everything(sample_file):
-    """head=True on a file with fewer than 10 lines returns the whole file."""
-    result = ReadFile().run(filepath=sample_file, head=True)
-
-    assert result["success"] is True
-    assert result["start_line"] == 1
-    assert result["lines_read"] == 5
-    assert result["content"] == "line 1\nline 2\nline 3\nline 4\nline 5\n"
-
-
-def test_tail_on_small_file_returns_everything(sample_file):
-    """tail=True on a file with fewer than 10 lines returns the whole file."""
-    result = ReadFile().run(filepath=sample_file, tail=True)
-
-    assert result["success"] is True
-    assert result["start_line"] == 1
-    assert result["lines_read"] == 5
-    assert result["content"] == "line 1\nline 2\nline 3\nline 4\nline 5\n"
-
-
-def test_head_and_tail_together_still_errors(sample_file):
-    """head=True and tail=True at the same time is invalid."""
-    result = ReadFile().run(filepath=sample_file, head=True, tail=True)
-
-    assert result["success"] is False
-    assert "head and tail cannot both be True" in result["error"]
