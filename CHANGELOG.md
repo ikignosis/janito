@@ -54,6 +54,17 @@ Changes since `v4.22.0` (2026-08-10).
   command that crashes mid-way can't leave the shell with a raw/no-echo
   terminal. Tests in `tests/test_shell_cmd.py`. Closes #48.
 
+- **`janito --show-config` now displays the provider's built-in default
+  model when none is explicitly configured** (`janito/cli/handlers/info.py`):
+  the `Model:` line previously showed `(not configured)` whenever no model
+  was set in config.json, even though the session would use the provider's
+  default model. It now mirrors the runtime resolution
+  (`resolve_runtime_config`): `--model` (shown as `CLI argument`), then
+  `<provider>.model` from config.json, and finally the provider's built-in
+  default (shown as `<provider> default`); a provider without a default
+  model (e.g. `custom`) still reports `(not configured)`. The `--model` CLI
+  override is now honored too. Tests in `tests/test_info.py`.
+
 ### Changed
 
 - **`ReadFile` arguments improved** (`janito/tools/files/read_file.py`): renamed

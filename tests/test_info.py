@@ -13,7 +13,7 @@ The line is shown only when the effective API type resolves to ``Responses``:
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from janito.cli.handlers.info import handle_info
+from janito.cli.handlers.info import handle_info, handle_show_config
 
 
 def _fake_resolve_api_type(cli_api_type, provider):
@@ -101,3 +101,95 @@ def test_responses_in_server_shown_when_api_type_forced_responses(capsys):
     out = _run(capsys, provider="minimax", api_type="responses")
     assert "API Type:     Responses" in out
     assert "Responses In Server: server-side (previous_response_id)" in out
+
+
+def _run_show_config(
+    capsys,
+    provider="openai",
+    cli_model=None,
+    config_model=None,
+    default_model=None,
+):
+    """Run handle_show_config with patched config lookups and capture output."""
+    with (
+        patch(
+            "janito.cli.handlers.info.load_provider_from_config",
+            return_value=provider,
+        ),
+        patch(
+            "janito.cli.handlers.info.load_model_from_config",
+            return_value=config_model,
+        ),
+        patch(
+            "janito.cli.handlers.info.get_default_model_from_provider",
+            return_value=default_model,
+        ),
+        patch(
+            "janito.cli.handlers.info.get_api_key",
+            return_value=None,
+        ),
+        patch(
+            "janito.cli.handlers.info.get_masked_api_key",
+            return_value="(not set)",
+        ),
+        patch(
+            "janito.cli.handlers.info.load_endpoint_from_config",
+            return_value=None,
+        ),
+        patch(
+            "janito.cli.handlers.info.resolve_api_type",
+            side_effect=_fake_resolve_api_type,
+        ),
+        patch(
+            "janito.cli.handlers.info.is_custom_provider",
+            return_value=False,
+        ),
+        patch(
+            "janito.cli.handlers.info.get_endpoint_for_api_type",
+            return_value=None,
+        ),
+        patch(
+            "janito.cli.handlers.info.get_default_thinking_from_provider",
+            return_value=False,
+        ),
+    ):
+        args = SimpleNamespace(provider=None, model=cli_model, api_type=None)
+        handle_show_config(args)
+    return capsys.readouterr().out
+
+
+def test_show_config_uses_provider_default_model_when_unset(capsys):
+    """No explicit model -> the provider's built-in default model is shown."""
+    out = _run_show_config(
+        capsys, provider="deepseek", default_model="deepseek-v4-flash"
+    )
+    assert "Model:     deepseek-v4-flash (deepseek default)" in out
+
+
+def test_show_config_uses_configured_model(capsys):
+    """A model set in config.json takes precedence over the provider default."""
+    out = _run_show_config(
+        capsys,
+        provider="deepseek",
+        config_model="my-model",
+        default_model="deepseek-v4-flash",
+    )
+    assert "Model:     my-model (deepseek.model)" in out
+
+
+def test_show_config_cli_model_overrides_config(capsys):
+    """--model takes precedence over both config and the provider default."""
+    out = _run_show_config(
+        capsys,
+        provider="deepseek",
+        cli_model="gpt-x",
+        config_model="my-model",
+        default_model="deepseek-v4-flash",
+    )
+    assert "Model:     gpt-x (CLI argument)" in out
+
+
+def test_show_config_no_default_model(capsys):
+    """A provider without a default model still reports (not configured)."""
+    out = _run_show_config(capsys, provider="custom", default_model=None)
+    assert "Model:     (not configured)" in out

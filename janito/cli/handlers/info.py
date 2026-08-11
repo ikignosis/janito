@@ -11,6 +11,7 @@ from ...general_config import (
 )
 from ...provider_config import (
     CUSTOM_ENDPOINT_MARKER,
+    get_default_model_from_provider,
     get_default_thinking_from_provider,
     get_endpoint_for_api_type,
     get_responses_in_server_from_provider,
@@ -62,6 +63,24 @@ def _resolve_endpoint_source(provider: str, api_type: str) -> tuple[str | None, 
     if provider_default is None:
         return None, "default OpenAI"
     return None, "not set"
+
+
+def _resolve_effective_model(
+    provider: str | None, cli_model: str | None
+) -> tuple[str | None, str]:
+    """Resolve the effective model, mirroring ``resolve_runtime_config``.
+
+    Priority: ``--model``, then the provider's configured model in
+    config.json, and finally the provider's built-in default model.
+
+    Returns:
+        Tuple of (model, source). ``model`` is ``None`` when neither the
+        provider nor its built-in defaults define one (e.g. ``custom``).
+    """
+    model = cli_model or load_model_from_config(provider)
+    if model:
+        return model, "CLI argument" if cli_model else f"{provider}.model"
+    return get_default_model_from_provider(provider), f"{provider} default"
 
 
 def handle_info(args) -> int:
@@ -135,12 +154,13 @@ def handle_show_config(args=None) -> int:
     """Handle --show-config command.
 
     Displays the currently configured provider, model, and API key (truncated
-    for security) from config files. The model shown is the one configured for
-    the active provider.
+    for security) from config files. The model shown is the effective model
+    for the active provider: ``--model``, then ``<provider>.model`` from
+    config.json, and finally the provider's built-in default model.
 
     Args:
         args: Parsed command line arguments (optional). Used to honor
-            ``--provider`` when displaying the model.
+            ``--provider`` and ``--model`` when displaying the model.
 
     Returns:
         int: Exit code (0 for success)
@@ -148,7 +168,11 @@ def handle_show_config(args=None) -> int:
     # Load configured values from config.json
     cli_provider = getattr(args, "provider", None) if args is not None else None
     provider = cli_provider or load_provider_from_config()
-    model = load_model_from_config(provider)
+
+    # Resolve the effective model, mirroring the runtime resolution in
+    # resolve_runtime_config (see _resolve_effective_model).
+    cli_model = getattr(args, "model", None) if args is not None else None
+    model, model_source = _resolve_effective_model(provider, cli_model)
 
     # Resolve API key from the auth store and determine its source
     api_key = get_api_key(provider) if provider else None
@@ -192,7 +216,7 @@ def handle_show_config(args=None) -> int:
     print("=" * 40)
     print(f"Provider:  {provider or '(not configured)'}")
     if model:
-        print(f"Model:     {model} ({provider}.model)")
+        print(f"Model:     {model} ({model_source})")
     else:
         print("Model:     (not configured)")
     print(f"API Type:  {api_type}")
