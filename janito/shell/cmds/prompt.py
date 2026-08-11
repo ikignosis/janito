@@ -22,6 +22,12 @@ class PromptCmdHandler(CmdHandler):
 
     def _print_prompt(self, shell) -> None:
         """Print the current system prompt."""
+        from janito.system_prompt import (
+            get_system_prompt_sections,
+            get_system_prompt_with_skills,
+            render_system_prompt_sections,
+        )
+
         # Get the actual system prompt from the shell
         effective_prompt = shell.get_system_prompt()
 
@@ -30,14 +36,18 @@ class PromptCmdHandler(CmdHandler):
 
         if effective_prompt is None:
             print("No system prompt is active (--no-system-prompt)")
+        elif effective_prompt == get_system_prompt_with_skills():
+            # Default prompt: show each section with its header and line count.
+            print("System Prompt - Default (with Skills)")
+            print("=" * 60)
+            print(render_system_prompt_sections(get_system_prompt_sections()))
+            print("=" * 60)
         else:
             # Detect which prompt type is active
             if "Gmail" in effective_prompt:
                 prompt_type = "Gmail Mode"
             elif "OneDrive" in effective_prompt:
                 prompt_type = "OneDrive Mode"
-            elif "Available Skills" in effective_prompt:
-                prompt_type = "Default (with Skills)"
             else:
                 prompt_type = "Default"
 

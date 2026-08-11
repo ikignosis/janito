@@ -267,6 +267,11 @@ Key modules:
 
 The system prompt (`janito/system_prompt.py`) composes the base prompt, the
 skills advertisement section, and the current project's `AGENTS.md` content.
+The composition is built from ordered sections (`base`, `skills`, `agents.md`)
+whose text and line counts are tracked (`get_system_prompt_sections` /
+`render_system_prompt_sections`); the shell `/prompt` command and
+`janito --show-system-prompt` display each section under a
+`---- <name> (<n> lines)` header.
 
 ---
 

@@ -247,7 +247,10 @@ def handle_show_system_prompt(args) -> int:
     Returns:
         int: Exit code (0 for success)
     """
-    from ...system_prompt import get_system_prompt_with_skills
+    from ...system_prompt import (
+        get_system_prompt_sections,
+        render_system_prompt_sections,
+    )
     from ...tools.gmail import GMAIL_SYSTEM_PROMPT
     from ...tools.onedrive import ONEDRIVE_SYSTEM_PROMPT
 
@@ -264,7 +267,7 @@ def handle_show_system_prompt(args) -> int:
         prompt = GMAIL_SYSTEM_PROMPT
         source = "Gmail mode (--gmail)"
     else:
-        prompt = get_system_prompt_with_skills()
+        prompt = render_system_prompt_sections(get_system_prompt_sections())
         source = "default (with skills)"
 
     print(f"System prompt ({source}):")

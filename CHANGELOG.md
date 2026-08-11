@@ -11,6 +11,17 @@ Changes since `v4.22.0` (2026-08-10).
 
 ### Added
 
+- **System prompt sections with line counts** (`janito/system_prompt.py`,
+  `janito/shell/cmds/prompt.py`, `janito/cli/handlers/info.py`): the default
+  system prompt is now built as ordered sections (`base`, `skills`,
+  `agents.md`) whose text and line counts are tracked by the new
+  `get_system_prompt_sections` / `render_system_prompt_sections` helpers
+  (concatenating the section texts still reproduces the previous prompt byte
+  for byte). The shell `/prompt` command and `janito --show-system-prompt`
+  display each section under a `---- <name> (<n> lines)` header, making it
+  easy to see how much of the prompt each source contributes and to slice it.
+  Tests in `tests/test_system_prompt.py` and `tests/test_shell_prompt_cmd.py`.
+
 - **`janito --show-providers`** (`janito/cli/parser.py`,
   `janito/cli/handlers/providers.py`, `janito/__main__.py`): new flag that
   lists every supported provider from `PROVIDER_INFO` — default model, API
