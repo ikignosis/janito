@@ -557,6 +557,16 @@ return {
 - Keep values JSON-serialisable (strings, numbers, bools, lists, dicts).
 - For large outputs consider truncation parameters (see `ReadFile.max_lines`,
   `GetUrl.max_length`).
+- The system exec tools (`RunBashCode`, `RunPythonCode`, `RunPythonFile`,
+  `RunPowerShellCode`, `RunGitHubCLI`) cap `stdout`/`stderr` in the result at
+  `MAX_OUTPUT_LINES` (50) lines. While the command runs, the full output is
+  still streamed to the screen; the moment a stream exceeds the cap, a kept
+  temp file is created and the *complete* output is mirrored to it. The
+  result then appends `Full stdout available at <path>` (resp. stderr) to the
+  capped text and exposes `stdout_file` / `stderr_file` keys pointing at the
+  full output, so the model can read more if needed. `report_result` /
+  `report_error` append `Full stdout stored at <tmp>, stderr at <tmp>`. The
+  temp files are removed automatically when the janito process exits.
 
 ---
 

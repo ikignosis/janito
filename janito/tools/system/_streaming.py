@@ -18,6 +18,7 @@ def stream_execute(
     *,
     report_blank_first: bool = False,
     popen_kwargs: dict[str, Any] | None = None,
+    tee: Callable[[str, str], None] | None = None,
 ) -> tuple[int, list[str], list[str], int]:
     """Run ``command`` with real-time output streaming.
 
@@ -34,6 +35,12 @@ def stream_execute(
             output line (matches the shell tools' behaviour).
         popen_kwargs: Extra keyword arguments forwarded to
             :class:`subprocess.Popen` (e.g. ``encoding``, ``env``).
+        tee: Optional ``(stream_name, line)`` callback invoked for every
+            real stdout/stderr line as it is delivered to ``report_output``
+            (in parallel to the screen).  ``line`` has no trailing newline;
+            ``stream_name`` is ``"stdout"`` or ``"stderr"``.  Used by the
+            exec tools to mirror the full output to a temp file while the
+            inline result is capped (issue #49).
 
     Returns:
         ``(exit_code, captured_stdout, captured_stderr, execution_time_ms)``.
@@ -60,6 +67,7 @@ def stream_execute(
         start_time,
         report_output,
         report_blank_first,
+        tee,
     )
 
     for t in threads:
@@ -71,6 +79,7 @@ def stream_execute(
         report_output,
         report_blank_first=report_blank_first,
         report_stream_errors=False,
+        tee=tee,
     )
 
     execution_time_ms = int((time.time() - start_time) * 1000)
@@ -166,6 +175,7 @@ def _monitor(
     start_time: float,
     report_output: Callable[[str], None],
     report_blank_first: bool,
+    tee: Callable[[str, str], None] | None = None,
 ) -> tuple[int, bool]:
     """Poll the process, streaming output, until it exits or times out."""
     exit_code: int | None = None
@@ -181,6 +191,7 @@ def _monitor(
             report_output,
             report_blank_first=report_blank_first,
             report_stream_errors=True,
+            tee=tee,
         )
         if process_finished:
             break
@@ -202,6 +213,7 @@ def _drain(
     *,
     report_blank_first: bool,
     report_stream_errors: bool,
+    tee: Callable[[str, str], None] | None = None,
 ) -> bool:
     """Deliver all queued lines to ``report_output``; return the new flag value."""
     try:
@@ -213,6 +225,8 @@ def _drain(
                         report_output("")
                     displayed_any_output = True
                 report_output(line)
+                if tee is not None:
+                    tee(stream_name, line)
             elif report_stream_errors and stream_name == "error":
                 report_output(f"STREAM ERROR: {line}")
     except queue.Empty:

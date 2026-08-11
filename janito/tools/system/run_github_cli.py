@@ -24,6 +24,7 @@ from typing import Any
 
 from ...tooling import BaseTool, format_duration_ms
 from ...tooling.decorator import tool
+from ._output_capture import OutputCapture, build_report_message, print_stored_files
 from ._streaming import stream_execute
 
 # Candidate executable names for the GitHub CLI.
@@ -177,8 +178,7 @@ class RunGitHubCLI(BaseTool):
             return {
                 "success": False,
                 "error": (
-                    "GitHub CLI ('gh') not found. Install it from "
-                    "https://cli.github.com/ and ensure it is on PATH."
+                    "GitHub CLI ('gh') not found. Install it from https://cli.github.com/ and ensure it is on PATH."
                 ),
                 "exit_code": -1,
                 "command": cmdline,
@@ -190,6 +190,15 @@ class RunGitHubCLI(BaseTool):
             self._report_exec_start(cmdline)
             shell_command = self._build_shell_command(full_command)
 
+            stdout_capture = OutputCapture("stdout")
+            stderr_capture = OutputCapture("stderr")
+
+            def _tee(stream_name: str, line: str) -> None:
+                if stream_name == "stdout":
+                    stdout_capture.add(line)
+                elif stream_name == "stderr":
+                    stderr_capture.add(line)
+
             exit_code, stdout_lines, stderr_lines, execution_time_ms = stream_execute(
                 shell_command,
                 os.getcwd(),
@@ -199,6 +208,7 @@ class RunGitHubCLI(BaseTool):
                 start_time,
                 self.report_output,
                 report_blank_first=True,
+                tee=_tee,
                 popen_kwargs={
                     "encoding": "utf-8",
                     "errors": "replace",
@@ -210,8 +220,8 @@ class RunGitHubCLI(BaseTool):
                 exit_code,
                 cmdline,
                 gh_path,
-                stdout_lines,
-                stderr_lines,
+                stdout_capture,
+                stderr_capture,
                 execution_time_ms,
             )
         except FileNotFoundError:
@@ -253,13 +263,18 @@ class RunGitHubCLI(BaseTool):
         exit_code: int,
         cmdline: str,
         gh_path: str,
-        stdout_lines: list[str],
-        stderr_lines: list[str],
+        stdout_capture: OutputCapture,
+        stderr_capture: OutputCapture,
         execution_time_ms: int,
     ) -> dict[str, Any]:
-        """Assemble the result dict and report the outcome."""
-        stdout_str = "".join(stdout_lines)
-        stderr_str = "".join(stderr_lines)
+        """Assemble the result dict and report the outcome.
+
+        stdout/stderr are capped at ``MAX_OUTPUT_LINES``; when a stream is
+        longer, the full output lives in a kept temp file referenced by the
+        ``stdout_file`` / ``stderr_file`` keys (issue #49).
+        """
+        stdout_str, stdout_file = stdout_capture.finalize()
+        stderr_str, stderr_file = stderr_capture.finalize()
         success = exit_code == 0
 
         result: dict[str, Any] = {
@@ -271,30 +286,51 @@ class RunGitHubCLI(BaseTool):
             "stdout": stdout_str,
             "stderr": stderr_str,
         }
+        if stdout_file:
+            result["stdout_file"] = stdout_file
+        if stderr_file:
+            result["stderr_file"] = stderr_file
 
         if success:
-            self._report_success(execution_time_ms, stdout_str)
+            self._report_success(execution_time_ms, stdout_capture, stderr_capture)
         else:
-            self._report_failure(exit_code, stderr_str)
+            self._report_failure(exit_code, stderr_capture, stdout_capture)
             result["error"] = f"gh exited with code {exit_code}"
         return result
 
-    def _report_success(self, execution_time_ms: int, stdout_str: str) -> None:
+    def _report_success(
+        self,
+        execution_time_ms: int,
+        stdout_capture: OutputCapture,
+        stderr_capture: OutputCapture,
+    ) -> None:
         """Report a successful execution summary."""
         summary = f"Completed in {format_duration_ms(execution_time_ms)}"
-        if stdout_str:
-            n_lines = len(stdout_str.strip().split("\n"))
-            summary += f" ({n_lines} lines output)"
+        if stdout_capture.line_count():
+            summary += f" ({stdout_capture.line_count()} lines output)"
+        stored = build_report_message(
+            stdout_capture.file_path, stderr_capture.file_path
+        )
+        if stored:
+            summary += f" — {stored}"
         self.report_result(summary)
 
-    def _report_failure(self, exit_code: int, stderr_str: str) -> None:
+    def _report_failure(
+        self,
+        exit_code: int,
+        stderr_capture: OutputCapture,
+        stdout_capture: OutputCapture,
+    ) -> None:
         """Report a failed execution, truncating long stderr previews."""
         error_msg = f"Exit code {exit_code}"
-        if stderr_str:
-            stderr_preview = stderr_str[:200].replace("\n", " ")
-            if len(stderr_str) > 200:
-                stderr_preview += "..."
+        if stderr_capture.line_count():
+            stderr_preview = stderr_capture.preview(200)
             error_msg += f": {stderr_preview}"
+        stored = build_report_message(
+            stdout_capture.file_path, stderr_capture.file_path
+        )
+        if stored:
+            error_msg += f" — {stored}"
         self.report_error(error_msg)
 
 
@@ -347,6 +383,7 @@ Examples:
             if result.get("stderr"):
                 print("\nStderr:")
                 print(result["stderr"])
+            print_stored_files(result)
         else:
             print("✗ gh execution failed")
             print(f"  Error: {result.get('error', 'Unknown error')}")
@@ -357,6 +394,7 @@ Examples:
             if result.get("stderr"):
                 print("\nStderr:")
                 print(result["stderr"])
+            print_stored_files(result)
 
     return 0 if result["success"] else 1
 

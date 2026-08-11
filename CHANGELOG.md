@@ -67,6 +67,21 @@ Changes since `v4.22.0` (2026-08-10).
 
 ### Changed
 
+- **System exec tools cap `stdout`/`stderr` at 50 lines and store the full
+  output in kept temp files** (`janito/tools/system/run_bash_code.py`,
+  `run_python_code.py`, `run_python_file.py`, `run_powershell_code.py`,
+  `run_github_cli.py`, `_streaming.py`, new `_output_capture.py`): a command
+  that produces more than `MAX_OUTPUT_LINES` (50) lines no longer floods the
+  model context / tool result. The output is still streamed to the screen in
+  full; in parallel, a kept temp file (created lazily the moment the cap is
+  exceeded) receives the *complete* output. The result dict caps `stdout` /
+  `stderr` at 50 lines, appends `Full stdout available at <path>` (resp.
+  stderr), and exposes `stdout_file` / `stderr_file` keys pointing at the
+  full output. `report_result` / `report_error` append
+  `Full stdout stored at <tmp>, stderr at <tmp>`. The temp files are removed
+  automatically when the janito process exits (`atexit`, same pattern as
+  `GetUrl`). Tests in `tests/test_run_bash_code.py`. Closes #49.
+
 - **`ReadFile` arguments improved** (`janito/tools/files/read_file.py`): renamed
   `from_line` → `start_line` and replaced the end-line `to_line` parameter with
   `max_lines` (the maximum number of lines to read from `start_line`, clamped at
