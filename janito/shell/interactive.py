@@ -2,9 +2,12 @@
 Interactive shell implementation using prompt_toolkit.
 """
 
+import contextlib
 import os
+import signal
 import subprocess
-from collections.abc import Callable
+import sys
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -305,28 +308,64 @@ class InteractiveShell:
             return True
         return False
 
-    def _run_shell_command(self, user_input: str) -> None:
-        """Execute a ``!cmd`` shell command."""
-        import sys
+    @contextlib.contextmanager
+    def _cooked_terminal(self) -> Iterator[None]:
+        """Temporarily restore the terminal to cooked mode (POSIX only).
 
+        prompt_toolkit drives the terminal in raw mode while the prompt app
+        is running; by the time a ``!cmd`` is dispatched the terminal is
+        already back to cooked mode, but forcing it here guarantees that
+        full-screen programs (vim, less, ...) start from a sane state and
+        that a command that crashes mid-way doesn't leave the shell with a
+        raw / no-echo terminal. On Windows and when stdin is not a TTY
+        (e.g. tests) there is nothing to restore.
+        """
+        if os.name == "nt" or not sys.stdin.isatty():
+            yield
+            return
+
+        import termios
+
+        fd = sys.stdin.fileno()
+        saved = termios.tcgetattr(fd)
+        cooked = termios.tcgetattr(fd)
+        cooked[3] |= termios.ICANON | termios.ECHO
+        try:
+            termios.tcsetattr(fd, termios.TCSANOW, cooked)
+            yield
+        finally:
+            termios.tcsetattr(fd, termios.TCSANOW, saved)
+
+    def _run_shell_command(self, user_input: str) -> None:
+        """Execute a ``!cmd`` shell command.
+
+        The command inherits the real terminal (stdin/stdout/stderr are not
+        captured) so interactive, full-screen programs such as vim or less
+        work; plain commands print directly to the terminal. While the
+        command runs, SIGINT is ignored in the parent (the child keeps the
+        default handler unless it installs its own, e.g. vim) so Ctrl+C is
+        handled by the running program instead of aborting the wait and
+        leaving it orphaned. There is no timeout: interactive commands can
+        legitimately run for as long as the user needs, and a command that
+        hangs can be interrupted the usual way.
+        """
         cmd = user_input[1:].strip()
         if not cmd:
             return
         print(f"[Shell] Executing: {cmd}")
         try:
-            result = subprocess.run(
-                cmd, shell=True, capture_output=True, text=True, timeout=60
-            )
-            if result.stdout:
-                print(result.stdout)
-            if result.stderr:
-                print(result.stderr, file=sys.stderr)
+            with self._cooked_terminal():
+                # Mirror os.system()'s SIGINT handling: block it in the
+                # parent while the child runs so the child (which inherits
+                # the default disposition) can deal with Ctrl+C itself.
+                old_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
+                try:
+                    result = subprocess.run(cmd, shell=True)
+                finally:
+                    signal.signal(signal.SIGINT, old_handler)
             print(f"[Shell] Exit code: {result.returncode}")
-        except subprocess.TimeoutExpired:
-            print(
-                "[Shell] Command timed out after 60 seconds",
-                file=sys.stderr,
-            )
+        except KeyboardInterrupt:
+            print("\n[Shell] Command interrupted", file=sys.stderr)
         except Exception as e:
             print(f"[Shell] Error: {e}", file=sys.stderr)
 

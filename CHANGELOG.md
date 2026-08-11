@@ -38,6 +38,22 @@ Changes since `v4.22.0` (2026-08-10).
   `POST /api/config/variants` and `DELETE /api/config/variants/{name}`. Docs in
   `docs/configuration/variants.md`. Closes #47.
 
+### Fixed
+
+- **`!<command>` shell execution now works with interactive, full-screen
+  programs (vim, less, ...)** (`janito/shell/interactive.py`): the command
+  previously ran with `capture_output=True`, which gave the child a pipe
+  instead of the real terminal and broke TUI programs (“Vim: Warning: Output
+  is not to a terminal”). The command now inherits the terminal directly
+  (stdin/stdout/stderr) and runs without a timeout, so `!vim` and friends
+  work like in a normal shell; the exit code is still reported after the
+  command finishes. While the command runs, SIGINT is ignored in the parent
+  (mirroring `os.system`) so Ctrl+C is handled by the running program (e.g.
+  vim) instead of aborting the wait and orphaning it. On POSIX the terminal
+  is forced to cooked mode around the command and restored afterwards, so a
+  command that crashes mid-way can't leave the shell with a raw/no-echo
+  terminal. Tests in `tests/test_shell_cmd.py`. Closes #48.
+
 ### Changed
 
 - **`ReadFile` arguments improved** (`janito/tools/files/read_file.py`): renamed
