@@ -88,10 +88,9 @@ window.ChatFormatMixin = {
                 } else if (args.tail) {
                     sum += ' (last 10 lines)';
                 } else if (args.max_lines !== undefined && args.max_lines !== null) {
-                    const start = args.start_line || 1;
-                    sum += ` (lines ${start}-${start + args.max_lines - 1})`;
-                } else if (args.start_line > 1) {
-                    sum += ` (from line ${args.start_line})`;
+                    sum += ` (start at line ${args.start_line || 1}, max ${args.max_lines} lines)`;
+                } else {
+                    sum += ` (start at line ${args.start_line || 1}, until EOF)`;
                 }
                 return sum;
             }

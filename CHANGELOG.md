@@ -16,8 +16,10 @@ Changes since `v4.22.0` (2026-08-10).
   `max_lines` (the maximum number of lines to read from `start_line`, clamped at
   EOF), and added `head`/`tail` boolean flags that return only the first/last 10
   lines of the file (they take precedence over the range arguments and cannot be
-  combined). Updated the CLI harness, tests, docs, and the web tool-card summary
-  to the new arguments. Closes #46.
+  combined). The `report_start` announcement now reads `(start at line X, max Y
+  lines)` / `(start at line X, until EOF)` (head/tail show `(first 10 lines)` /
+  `(last 10 lines)`). Updated the CLI harness, tests, docs, and the web
+  tool-card summary to the new arguments. Closes #46.
 
 - **The web chat's tool card for code-execution tools (`RunBashCode`,
   `RunPythonCode`, `RunPowerShellCode`) now shows the submitted `code`

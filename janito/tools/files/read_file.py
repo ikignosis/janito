@@ -79,9 +79,9 @@ class ReadFile(BaseTool):
             elif tail:
                 range_info = f" (last {_HEAD_TAIL_LINES} lines)"
             elif max_lines is not None:
-                range_info = f" (lines {start_line}-{start_line + max_lines - 1})"
-            elif start_line > 1:
-                range_info = f" (from line {start_line})"
+                range_info = f" (start at line {start_line}, max {max_lines} lines)"
+            else:
+                range_info = f" (start at line {start_line}, until EOF)"
 
             self.report_start(
                 f"\U0001f4d6 Reading file {norm_path_str}{range_info}", end=""
