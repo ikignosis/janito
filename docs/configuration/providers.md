@@ -38,6 +38,38 @@ The API type is selected per provider with `--set api-type=...` (see the
     that it is a supported provider — one that maps to an API base URL — and
     rejects unknown names with an error enumerating the supported providers.
 
+## Listing providers
+
+`janito --show-providers` prints every supported provider with its built-in
+defaults — default model, API types (the first one is the default), effective
+endpoint, masked API key, thinking/reasoning defaults and token limits —
+followed by the registered [provider variants](variants.md), each marked with
+its base provider. The configured default provider is flagged `[active]`:
+
+```bash
+janito --show-providers
+```
+
+```
+Supported Providers (10):
+============================================================
+  openai [active]
+    Model:         gpt-5.6-luna (default)
+    API types:     Responses (default), Completions
+    Endpoint:      default OpenAI (no custom base URL)
+    API key:       (not set)
+    Thinking:      disabled
+    Max tokens:    1,050,000 in / 128,000 out
+  ...
+  alibaba-tokenplan (variant of alibaba)
+    Model:         qwen-plus (configured; default qwen3.8-max)
+    ...
+```
+
+Configured per-provider overrides (e.g. a variant's model or endpoint) are
+shown where set, so you can see at a glance which providers are configured
+and which still need a key or an endpoint.
+
 ## OpenAI
 
 ### Configuration

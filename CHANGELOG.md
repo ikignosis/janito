@@ -11,6 +11,16 @@ Changes since `v4.22.0` (2026-08-10).
 
 ### Added
 
+- **`janito --show-providers`** (`janito/cli/parser.py`,
+  `janito/cli/handlers/providers.py`, `janito/__main__.py`): new flag that
+  lists every supported provider from `PROVIDER_INFO` — default model, API
+  types (the first one is the default), effective endpoint, masked API key,
+  thinking/reasoning defaults and token limits — followed by the registered
+  provider variants (marked with their base provider); the configured default
+  provider is flagged `[active]`. Docs in
+  `docs/configuration/providers.md` ("Listing providers") and
+  `docs/reference/cli-options.md`. Tests in `tests/test_show_providers.py`.
+
 - **Provider variants** (`janito/general_config.py`, `janito/provider_config.py`,
   `janito/cli/parser.py`, `janito/cli/handlers/variants.py`, web backend +
   frontend): multiple configurations for the same provider, named

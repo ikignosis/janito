@@ -17,6 +17,8 @@ its own:
 After creation the variant name behaves like any provider: it is accepted by
 `-p`/`--provider`, `--set provider=`, `--set-api-key` and every other
 command, and it shows up in the web UI's provider combo and Settings drawer.
+`janito --show-providers` lists it alongside the built-in providers, marked
+with its base provider (e.g. `alibaba-tokenplan (variant of alibaba)`).
 
 ## Creating a variant
 

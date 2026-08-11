@@ -33,6 +33,7 @@ If no prompt is given, janito starts an interactive chat shell.
 | `--provider <name>` | Provider name (e.g., `openai`, `custom`). Always validated against the supported providers; unknown names are rejected. |
 | `--model <name>` | Model name (overrides the provider's configured model) |
 | `--list-keys` | List configured providers and keys (with `-l`/`--local`, shows both the local and the global auth files) |
+| `--show-providers` | List all supported providers and their built-in defaults (model, API types, endpoint, token limits, thinking/reasoning), followed by the registered provider variants |
 
 > **Note:** `--set` and `--set-api-key` must be used in **separate commands**, not together on the same line.
 
@@ -125,6 +126,7 @@ If none of `-r`, `-w`, `-x` are given, janito runs with full privileges and prin
 janito --config
 janito --show-config
 janito --info
+janito --show-providers   # list every provider and variant with its defaults
 janito --set provider=openai --set model=gpt-4
 janito --set-api-key sk-your-key --provider openai
 janito --set-api-key sk-your-key   # uses the configured default provider

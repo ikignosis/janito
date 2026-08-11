@@ -9,6 +9,7 @@ from .config import (
     handle_unset_config,
 )
 from .info import handle_info, handle_show_config, handle_show_system_prompt
+from .providers import handle_show_providers
 from .secrets import (
     handle_delete_secret,
     handle_get_secret,
@@ -38,6 +39,7 @@ __all__ = [
     "handle_set_config",
     "handle_set_secret",
     "handle_show_config",
+    "handle_show_providers",
     "handle_show_system_prompt",
     "handle_uninstall_skill",
     "handle_unset_config",

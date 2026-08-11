@@ -38,6 +38,7 @@ Options:
   --model NAME       Model name to use (overrides the provider's configured model)
   --log LEVELS       Enable logging (e.g., --log=info,debug or --log=warning)
   --list-keys        List configured providers and keys
+  --show-providers   List all supported providers and variants
   --list-tools       List all available built-in tools
   --list-mcp         List all MCP services and their tools
   -Z, --no-system-prompt  Do not set a system prompt or pass any tools to the CLI
@@ -49,6 +50,7 @@ Examples:
   janito --set-api-key sk-xxx --provider openai             # Store OpenAI API key
   janito --set-api-key sk-xxx                               # Store key for the configured provider
   janito --list-keys                                        # Show configured providers
+  janito --show-providers                                   # List all providers and variants
   janito --list-tools                                       # List available built-in tools
   janito --list-mcp                                         # List MCP services and tools
   janito --info                                             # Show resolved config info
@@ -242,6 +244,13 @@ Note: --set and --set-api-key must be used in separate commands.
 
     parser.add_argument(
         "--list-keys", action="store_true", help="List configured providers and keys"
+    )
+
+    parser.add_argument(
+        "--show-providers",
+        action="store_true",
+        help="List all supported providers and their built-in defaults, "
+        "followed by the registered provider variants",
     )
 
     parser.add_argument(
