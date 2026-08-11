@@ -3,12 +3,13 @@ Tests for provider variants (issue #47).
 
 A provider variant is a second configuration for an already-supported
 provider, named ``<provider>-<word>`` (e.g. ``alibaba-tokenplan``).  It is
-registered with ``janito --create-variant <name>`` (web: ``POST
-/api/config/variants``), stored under the ``variants`` key in config.json,
-and afterwards the name behaves like any provider: it is accepted by
-``--provider`` / ``--set provider=``, inherits the base provider's built-in
-defaults, keeps its own per-variant model/endpoint/API key, and is removed
-with ``janito --delete-variant`` (web: ``DELETE /api/config/variants/{name}``).
+registered with ``janito --create-variant <name>``, stored under the
+``variants`` key in config.json, and afterwards the name behaves like any
+provider: it is accepted by ``--provider`` / ``--set provider=``, inherits
+the base provider's built-in defaults, keeps its own per-variant
+model/endpoint/API key, and is removed with ``janito --delete-variant``.
+(The web UI lists registered variants in the provider combos but does not
+create or delete them -- those operations are CLI-only.)
 
 These tests cover:
 1. variant name parsing / shape validation;
@@ -17,7 +18,7 @@ These tests cover:
 4. variant-aware provider validation (``validate_provider_name`` and friends);
 5. per-variant config via the CLI helpers (``--set provider=<variant>``);
 6. runtime resolution (``resolve_runtime_config``) with a variant;
-7. the web endpoints (providers list includes variants; create/delete).
+7. the web providers list (includes registered variants).
 """
 
 import json
@@ -33,7 +34,7 @@ import pytest
 import janito.config_dir as config_dir_mod
 import janito.general_config as gc
 import janito.provider_config as pc
-from janito.auth_config import delete_api_key, get_api_key, set_api_key
+from janito.auth_config import get_api_key, set_api_key
 
 
 def _use_temp_config(monkeypatch, tmp_path):
@@ -367,54 +368,3 @@ def test_web_providers_list_includes_variant(web_client):
 
     # Base providers do not carry the variant markers.
     assert "variant" not in entries["openai"]
-
-
-@requires_fastapi
-def test_web_create_variant_endpoint(web_client):
-    resp = web_client.post("/api/config/variants", json={"name": "deepseek-tokenplan"})
-    assert resp.status_code == 200
-    assert resp.json()["name"] == "deepseek-tokenplan"
-    assert gc.is_registered_variant("deepseek-tokenplan") is True
-
-    # Duplicate -> 400.
-    resp = web_client.post("/api/config/variants", json={"name": "deepseek-tokenplan"})
-    assert resp.status_code == 400
-
-    # Invalid -> 400.
-    resp = web_client.post("/api/config/variants", json={"name": "bogus-x"})
-    assert resp.status_code == 400
-    resp = web_client.post("/api/config/variants", json={})
-    assert resp.status_code == 400
-
-
-@requires_fastapi
-def test_web_delete_variant_endpoint(web_client):
-    gc.create_variant("minimax-test")
-    gc.set_config_value("minimax-test.model", "abab6.5")
-    set_api_key("minimax-test", "sk-minimax")  # pragma: allowlist secret
-
-    resp = web_client.delete("/api/config/variants/minimax-test")
-    assert resp.status_code == 200
-    assert resp.json()["removed"] is True
-    assert resp.json()["api_key_removed"] is True
-    assert gc.is_registered_variant("minimax-test") is False
-    assert get_api_key("minimax-test") is None
-
-    # Unknown variant -> 404.
-    resp = web_client.delete("/api/config/variants/minimax-test")
-    assert resp.status_code == 404
-
-    # Deleting the default provider -> 409.
-    gc.create_variant("openai-main")
-    gc.set_config_value("provider", "openai-main")
-    resp = web_client.delete("/api/config/variants/openai-main")
-    assert resp.status_code == 409
-
-
-# ---------------------------------------------------------------------------
-# Cleanup helpers referenced above (delete_api_key re-exported for clarity)
-# ---------------------------------------------------------------------------
-
-# delete_api_key is imported at module top; reference it to keep lint happy
-# when the web tests are skipped.
-_ = delete_api_key

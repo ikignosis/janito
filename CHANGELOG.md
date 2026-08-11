@@ -97,3 +97,19 @@ Changes since `v4.22.0` (2026-08-10).
   (`clearActive` in `chatStore.js`) clears the stale draft so it doesn't
   resurface when a new conversation is opened. Added contract tests in
   `tests/web/test_web_send_reliability.py`.
+
+### Removed
+
+- **The web UI can no longer create or delete provider variants**: the
+  Settings drawer's "Variants" section (create/delete UI), the
+  `createVariant` / `deleteVariant` API-client methods, and the
+  `POST /api/config/variants` / `DELETE /api/config/variants/{name}` backend
+  endpoints are gone (`janito/web/backend/routers/config.py`,
+  `janito/web/frontend/js/api.js`, `janito/web/frontend/js/settings.js`,
+  `janito/web/backend/templates/partials/settings_drawer.html`, and the
+  variant CSS in `janito/web/frontend/css/drawers.css`). Variants are now
+  managed exclusively via the CLI (`--create-variant` / `--delete-variant`);
+  the web still lists registered variants in the provider combos and lets
+  them be configured like any provider. Updated
+  `docs/configuration/variants.md` and the web tests in
+  `tests/test_variants.py`.

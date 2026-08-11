@@ -48,51 +48,6 @@
                     </template>
                 </div>
 
-                <!-- Provider variants (issue #47): create a new
-                     <provider>-<word> variant or delete the one selected in
-                     the combo above.  A variant reuses a provider with its
-                     own model, endpoint and API key. -->
-                <details class="advanced-section">
-                    <summary>Variants</summary>
-                    <div class="field-hint">
-                        A variant reuses a provider with its own model, endpoint
-                        and API key (e.g. <code>alibaba-tokenplan</code>).
-                    </div>
-                    <div class="form-group">
-                        <label for="variant-name-input">New variant</label>
-                        <div class="variant-create-row">
-                            <input id="variant-name-input" type="text"
-                                   class="flex-1"
-                                   x-model="variantName"
-                                   placeholder="alibaba-tokenplan"
-                                   autocomplete="off" spellcheck="false"
-                                   @keydown.enter="createVariant()">
-                            <button class="btn" @click="createVariant()"
-                                    :disabled="!variantName.trim()">Create</button>
-                        </div>
-                        <template x-if="variantError">
-                            <div class="modal-error" x-text="variantError"></div>
-                        </template>
-                    </div>
-                    <template x-if="selectedIsVariant">
-                        <div class="form-group">
-                            <label>Selected variant</label>
-                            <div class="variant-delete-row">
-                                <span class="hint-muted"
-                                      x-text="'base: ' + (selectedProviderDetail.base_provider || '')"></span>
-                                <button class="btn delete-variant-btn"
-                                        @click="deleteVariant()"
-                                        :disabled="selectedVariantInUse"
-                                        :title="selectedVariantInUse
-                                            ? 'This variant is in use by the current session'
-                                            : 'Delete this variant and its configuration'">
-                                    Delete
-                                </button>
-                            </div>
-                        </div>
-                    </template>
-                </details>
-
                 <!-- Model override -->
                 <div class="form-group">
                     <label>Model</label>

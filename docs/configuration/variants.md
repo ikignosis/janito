@@ -113,11 +113,11 @@ default provider — switch the default first (`janito --set provider=<name>`).
 
 ## Web UI
 
-The web UI (alpha) surfaces variants in the Settings drawer's **Variants**
-section: create a new `<provider>-<word>` variant, configure it like any
-provider (model, endpoint, API key), and delete it (except while it is the
-provider in use). Registered variants also appear in the chat page's
-provider combo and in the Settings drawer's provider list.
+The web UI (alpha) does not create or delete variants — those operations are
+CLI-only (`--create-variant` / `--delete-variant`). Registered variants
+appear in the chat page's provider combo and in the Settings drawer's
+provider list, where they can be configured (model, endpoint, API key) like
+any other provider.
 
 ## Resolution order
 

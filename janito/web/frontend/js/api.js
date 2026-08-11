@@ -60,13 +60,6 @@ const Api = {
     setApiKey(provider, apiKey) {
         return this.post('/api/config/api-key', { provider, api_key: apiKey });
     },
-    // Provider variants (<provider>-<word>, issue #47).
-    createVariant(name) {
-        return this.post('/api/config/variants', { name });
-    },
-    deleteVariant(name) {
-        return this.del(`/api/config/variants/${encodeURIComponent(name)}`);
-    },
     getTools() { return this.get('/api/tools'); },
     getSkippedTools() { return this.get('/api/tools/skipped'); },
     getMcpTools() { return this.get('/api/mcp/tools'); },
