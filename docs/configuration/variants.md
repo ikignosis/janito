@@ -29,11 +29,13 @@ janito --create-variant alibaba-tokenplan
 The name must follow the syntax `<provider>-<word>`: the part before the
 first `-` must be a supported provider (the *base*), and the word is
 user-defined (it may itself contain hyphens, e.g. `alibaba-token-plan`).
-The variant is registered in `config.json`:
+The variant is registered in `config.json` — as an entry of the `providers`
+map, where the dash in its name identifies it as a variant among the
+provider keys:
 
 ```json
 {
-  "variants": {
+  "providers": {
     "alibaba-tokenplan": {}
   }
 }
@@ -102,10 +104,10 @@ janito --delete-variant alibaba-tokenplan
 
 Deleting a variant removes:
 
-- its `variants` entry in `config.json`,
-- every per-variant config key (`providers.<name>.model`,
-  `providers.<name>.endpoint`, API type, tokens, reasoning level,
-  responses-in-server), and
+- its `providers` entry in `config.json` — the `providers.<name>`
+  registration marker plus every per-variant config key stored under it
+  (model, endpoint, API type, tokens, reasoning level, responses-in-server)
+  — and
 - its API key in `auth.json`.
 
 janito **refuses** to delete the variant that is currently the configured

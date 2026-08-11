@@ -25,7 +25,7 @@ Changes since `v4.22.0` (2026-08-10).
   `janito/cli/parser.py`, `janito/cli/handlers/variants.py`, web backend +
   frontend): multiple configurations for the same provider, named
   `<provider>-<word>` (e.g. `alibaba-tokenplan`). `--create-variant <name>`
-  registers a variant in `config.json` (a `"variants"` entry with `{}`), after
+  registers a variant in `config.json` (a `"providers"` entry with `{}`), after
   which the name is accepted anywhere a provider name is used (`-p`/`--provider`,
   `--set provider=`, `--set-api-key`, `--info`, shell `/status`, web combos). A
   variant inherits its base provider's built-in defaults (model, endpoint, API

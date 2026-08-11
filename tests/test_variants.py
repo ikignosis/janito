@@ -3,8 +3,8 @@ Tests for provider variants (issue #47).
 
 A provider variant is a second configuration for an already-supported
 provider, named ``<provider>-<word>`` (e.g. ``alibaba-tokenplan``).  It is
-registered with ``janito --create-variant <name>``, stored under the
-``variants`` key in config.json, and afterwards the name behaves like any
+registered with ``janito --create-variant <name>``, stored as a
+``providers`` entry in config.json, and afterwards the name behaves like any
 provider: it is accepted by ``--provider`` / ``--set provider=``, inherits
 the base provider's built-in defaults, keeps its own per-variant
 model/endpoint/API key, and is removed with ``janito --delete-variant``.
@@ -84,7 +84,7 @@ def test_create_variant_registers_entry(monkeypatch, tmp_path):
 
     created = gc.create_variant("alibaba-tokenplan")
     assert created == "alibaba-tokenplan"
-    assert _read_json(config_path) == {"variants": {"alibaba-tokenplan": {}}}
+    assert _read_json(config_path) == {"providers": {"alibaba-tokenplan": {}}}
     assert gc.is_registered_variant("alibaba-tokenplan") is True
 
 
@@ -93,7 +93,7 @@ def test_create_variant_normalizes_casing(monkeypatch, tmp_path):
 
     created = gc.create_variant("  Alibaba-TokenPlan  ")
     assert created == "alibaba-tokenplan"
-    assert _read_json(config_path) == {"variants": {"alibaba-tokenplan": {}}}
+    assert _read_json(config_path) == {"providers": {"alibaba-tokenplan": {}}}
     assert gc.is_registered_variant("ALIBABA-TOKENPLAN") is True
 
 
@@ -258,6 +258,22 @@ def test_per_variant_model_roundtrip(monkeypatch, tmp_path):
     assert key == "alibaba-tokenplan.model"
     assert value == "qwen-plus"
     assert gc.load_model_from_config("alibaba-tokenplan") == "qwen-plus"
+
+
+def test_unset_last_scoped_key_keeps_variant_registered(monkeypatch, tmp_path):
+    """Unsetting the last per-variant key must NOT deregister the variant.
+
+    The variant's registration marker is its (empty) ``providers`` entry, so
+    the unset cleanup keeps the ``{}`` dict instead of pruning the entry.
+    """
+    config_path = _use_temp_config(monkeypatch, tmp_path)
+
+    gc.create_variant("alibaba-tokenplan")
+    gc.set_config_value("alibaba-tokenplan.model", "qwen-plus")
+
+    assert gc.unset_config_value("alibaba-tokenplan.model") is True
+    assert gc.is_registered_variant("alibaba-tokenplan") is True
+    assert _read_json(config_path) == {"providers": {"alibaba-tokenplan": {}}}
 
 
 # ---------------------------------------------------------------------------

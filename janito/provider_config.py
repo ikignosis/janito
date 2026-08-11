@@ -212,7 +212,7 @@ class ProviderRegistry:
         """Return the canonical base provider of a registered variant.
 
         A variant is a ``<provider>-<word>`` name registered via
-        ``janito --create-variant`` (stored under the ``variants`` key in
+        ``janito --create-variant`` (stored as a ``providers`` entry in
         config.json).  The base is the provider prefix (before the first
         ``-``), which must be a supported provider (a ``PROVIDER_INFO``
         entry) and the variant itself must be registered.

@@ -43,11 +43,10 @@ INT_VALUED_KEYS = {"max-input-tokens", "max-output-tokens"}
 # Config keys whose values should be coerced to bool when set via CLI.
 BOOL_VALUED_KEYS = {"responses-in-server"}
 
-# Top-level config key holding the registered provider variants.  Each entry
-# maps a variant name (``<provider>-<word>``, e.g. ``alibaba-tokenplan``) to
-# ``{}``; the base provider is derived from the name prefix and the entry
-# values are reserved for future per-variant metadata.
-VARIANTS_KEY = "variants"
+# Provider variants are stored as entries of the ``providers`` map: a variant
+# name (``<provider>-<word>``, e.g. ``alibaba-tokenplan``) maps to a dict of
+# per-variant config keys (``{}`` right after registration).  The dash in the
+# name identifies the variants among the provider keys (see ``load_variants``).
 
 
 def get_config_path() -> Path:
@@ -247,9 +246,10 @@ class ConfigStore:
 
         Supports both flat keys and provider-scoped keys in the nested
         structure.  For provider-scoped keys (e.g., ``"openai.model"``), it
-        removes from the nested providers structure.  If the provider dict
-        becomes empty after removal, the provider entry itself is also
-        removed.
+        removes from the nested providers structure.  When a non-variant
+        provider dict becomes empty after removal, the provider entry itself
+        is also removed; an emptied variant entry is kept (``{}``) because it
+        is the variant's registration marker.
 
         Args:
             key: The config key to remove
@@ -260,31 +260,14 @@ class ConfigStore:
         # Writes target the primary config file only (see set).
         config = _load_config_file(get_config_path())
 
-        # Check if this is a provider-scoped key (e.g., "openai.model")
+        # Provider-scoped keys (e.g., "openai.model") live in the nested
+        # providers structure.
         if "." in key:
             parts = key.split(".", 1)
             if len(parts) == 2:
                 provider, subkey = parts
                 if subkey in PROVIDER_SCOPED_KEYS:
-                    providers = config.get("providers")
-                    if not isinstance(providers, dict):
-                        logger.debug(f"Config key not found for removal: {key}")
-                        return False
-                    provider_config = providers.get(provider)
-                    if not isinstance(provider_config, dict):
-                        logger.debug(f"Config key not found for removal: {key}")
-                        return False
-                    if subkey not in provider_config:
-                        logger.debug(f"Config key not found for removal: {key}")
-                        return False
-                    del provider_config[subkey]
-                    if not provider_config:
-                        del providers[provider]
-                    if not providers:
-                        del config["providers"]
-                    self.save(config)
-                    logger.info(f"Removed config key: {key}")
-                    return True
+                    return self._unset_provider_scoped(config, provider, subkey)
 
         # Fall back to flat key removal
         if key in config:
@@ -294,6 +277,49 @@ class ConfigStore:
             return True
         logger.debug(f"Config key not found for removal: {key}")
         return False
+
+    def _unset_provider_scoped(
+        self, config: dict[str, Any], provider: str, subkey: str
+    ) -> bool:
+        """Remove a provider-scoped key from the nested providers map.
+
+        When the provider's dict becomes empty, non-variant providers are
+        pruned entirely; an emptied variant entry is kept as ``{}`` because
+        that dict is the variant's registration marker (see ``load_variants``).
+
+        Args:
+            config: The primary config dict (mutated in place).
+            provider: The provider (or variant) name.
+            subkey: A provider-scoped config key (e.g. ``model``).
+
+        Returns:
+            bool: True if the key was removed, False if it didn't exist.
+        """
+        providers = config.get("providers")
+        if not isinstance(providers, dict):
+            logger.debug(f"Config key not found for removal: {provider}.{subkey}")
+            return False
+        provider_config = providers.get(provider)
+        if not isinstance(provider_config, dict):
+            logger.debug(f"Config key not found for removal: {provider}.{subkey}")
+            return False
+        if subkey not in provider_config:
+            logger.debug(f"Config key not found for removal: {provider}.{subkey}")
+            return False
+        del provider_config[subkey]
+        # A variant's registration marker lives in the providers map itself,
+        # so an emptied variant entry is kept as {} (only non-variant
+        # providers are pruned when empty).
+        if not provider_config:
+            from .provider_config import is_variant_style_name
+
+            if not is_variant_style_name(provider):
+                del providers[provider]
+        if not providers:
+            del config["providers"]
+        self.save(config)
+        logger.info(f"Removed config key: {provider}.{subkey}")
+        return True
 
 
 # Module-level singleton store backing the functions below.
@@ -377,8 +403,9 @@ def unset_config_value(key: str) -> bool:
 #
 # A provider variant is a second configuration for an already-supported
 # provider, named ``<provider>-<word>`` (e.g. ``alibaba-tokenplan``).  It is
-# registered with ``janito --create-variant <name>``, which writes a
-# ``variants`` entry to config.json; afterwards the variant name can be used
+# registered with ``janito --create-variant <name>``, which adds an empty
+# entry to the ``providers`` map in config.json; afterwards the variant name
+# can be used
 # anywhere a provider name is accepted (``--provider``, ``--set provider=``,
 # ``--set-api-key``).  The variant inherits the base provider's built-in
 # defaults (model, endpoint, API types, token limits, reasoning, thinking)
@@ -390,18 +417,26 @@ def unset_config_value(key: str) -> bool:
 def load_variants() -> dict[str, dict]:
     """Load the registered provider variants from config.json.
 
-    Variants are stored under the top-level ``variants`` key as
-    ``{"<provider>-<word>": {}}``.  The dict values are reserved for future
-    per-variant metadata; the base provider is derived from the variant
+    Variants are stored as entries of the ``providers`` map,
+    ``{"<provider>-<word>": {...}}``: the dash in the name identifies the
+    variants among the provider keys, and the entry dicts hold the per-variant
+    config keys (``{}`` right after registration, reserved for future
+    per-variant metadata).  The base provider is derived from the variant
     name's prefix (the part before the first ``-``).
 
     Returns:
-        Dict mapping variant names to their (currently empty) entries.
+        Dict mapping variant names to their config entries.
     """
-    value = get_config_value(VARIANTS_KEY)
-    if isinstance(value, dict):
-        return dict(value)
-    return {}
+    from .provider_config import is_variant_style_name
+
+    providers = get_config_value("providers")
+    if not isinstance(providers, dict):
+        return {}
+    return {
+        name: entry
+        for name, entry in providers.items()
+        if is_variant_style_name(name) and isinstance(entry, dict)
+    }
 
 
 def is_registered_variant(name: str) -> bool:
@@ -413,7 +448,7 @@ def is_registered_variant(name: str) -> bool:
         name: The name to check.
 
     Returns:
-        True if the name is registered in the ``variants`` config key.
+        True if the name is registered in the ``providers`` config key.
     """
     normalized = normalize_provider(name)
     if not normalized:
@@ -427,9 +462,10 @@ def create_variant(name: str) -> str:
     A variant is named ``<provider>-<word>``, where ``<provider>`` is a
     supported provider and ``<word>`` is a user-defined word (which may
     itself contain hyphens, e.g. ``alibaba-token-plan``).  Registration
-    writes a ``variants`` entry to the primary config file::
+    adds an empty ``providers`` entry to the primary config file (the dash
+    in the name identifies it as a variant among the provider keys)::
 
-        {"variants": {"alibaba-tokenplan": {}}}
+        {"providers": {"alibaba-tokenplan": {}}}
 
     The base provider is derived from the name prefix; the variant inherits
     the base provider's built-in defaults while keeping its own per-variant
@@ -475,13 +511,14 @@ def create_variant(name: str) -> str:
         raise ValueError(f"Provider variant '{normalized}' already exists.")
 
     # Write to the primary config file only (never the merged view), the same
-    # write target --set / --unset use.
+    # write target --set / --unset use.  The variant is registered as an
+    # entry of the ``providers`` map.
     config = _load_config_file(get_config_path())
-    variants = config.get(VARIANTS_KEY)
-    if not isinstance(variants, dict):
-        variants = {}
-        config[VARIANTS_KEY] = variants
-    variants[normalized] = {}
+    providers = config.get("providers")
+    if not isinstance(providers, dict):
+        providers = {}
+        config["providers"] = providers
+    providers[normalized] = {}
     _store.save(config)
     logger.info(f"Created provider variant '{normalized}'")
     return normalized
@@ -490,10 +527,10 @@ def create_variant(name: str) -> str:
 def delete_variant(name: str) -> bool:
     """Delete a provider variant and its per-variant configuration.
 
-    Removes the ``variants`` entry, every provider-scoped config key under
-    ``providers.<name>.*`` (model, endpoint, api-type, max-input-tokens,
-    max-output-tokens, reasoning-level, responses-in-server) and the
-    variant's API key in ``auth.json``.
+    Removes the variant's ``providers`` entry (the registration marker plus
+    every provider-scoped config key under ``providers.<name>.*``: model,
+    endpoint, api-type, max-input-tokens, max-output-tokens, reasoning-level,
+    responses-in-server) and the variant's API key in ``auth.json``.
 
     Args:
         name: The variant name to delete.
@@ -522,19 +559,15 @@ def delete_variant(name: str) -> bool:
             "Switch the default first with: janito --set provider=<name>"
         )
 
-    # Remove the variants entry from the primary config file.
+    # Remove the variant's providers entry (its registration marker and any
+    # per-variant config keys) from the primary config file.
     config = _load_config_file(get_config_path())
-    variants = config.get(VARIANTS_KEY)
-    if isinstance(variants, dict) and normalized in variants:
-        del variants[normalized]
-        if not variants:
-            del config[VARIANTS_KEY]
+    providers = config.get("providers")
+    if isinstance(providers, dict) and normalized in providers:
+        del providers[normalized]
+        if not providers:
+            del config["providers"]
         _store.save(config)
-
-    # Remove per-variant provider-scoped config keys.  Each unset also
-    # cleans up an emptied provider dict in the nested providers structure.
-    for key in PROVIDER_SCOPED_KEYS:
-        unset_config_value(f"{normalized}.{key}")
 
     # Remove the variant's API key from auth.json (best-effort; a missing
     # key is not an error).
