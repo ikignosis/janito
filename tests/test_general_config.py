@@ -24,6 +24,19 @@ import janito.config_dir as config_dir_mod
 import janito.general_config as gc
 from janito.general_config import ProviderRequiredError
 
+try:
+    import anthropic  # noqa: F401
+
+    _HAS_ANTHROPIC = True
+except ModuleNotFoundError:
+    _HAS_ANTHROPIC = False
+
+# The "aborts without the package" guard test only applies when the optional
+# `anthropic` package is missing; skip it when it is installed.
+requires_no_anthropic = pytest.mark.skipif(
+    _HAS_ANTHROPIC, reason="anthropic package is installed (guard not exercised)"
+)
+
 
 def _use_temp_config(monkeypatch, tmp_path):
     """Point the config directory at a temporary directory."""
@@ -381,6 +394,7 @@ if pytest is not None:
         # Nothing should have been written
         assert _read_config(config_path) == {}
 
+    @requires_no_anthropic
     def test_set_api_type_anthropic_aborts_without_package(monkeypatch, tmp_path):
         """Setting the native Anthropic SDK API type without the optional
         `anthropic` package aborts the change (nothing is written) with a

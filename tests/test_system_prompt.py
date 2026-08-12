@@ -61,7 +61,7 @@ def test_prompt_with_agents_md(monkeypatch, tmp_path):
 
     assert prompt.startswith(SYSTEM_PROMPT + SKILLS_SECTION)
     assert agents_content in prompt
-    assert "Project-Specific Instructions (from AGENTS.md)" in prompt
+    assert "Project-Specific Instructions" in prompt
 
 
 def test_prompt_with_empty_agents_md(monkeypatch, tmp_path):
@@ -165,7 +165,7 @@ def test_render_system_prompt_sections_with_agents_md(monkeypatch, tmp_path):
 
     # agents.md section: "## Project-Specific..." header + blank + 2 content lines
     agents_idx = lines.index("---- agents.md (4 lines)")
-    assert lines[agents_idx + 1] == "## Project-Specific Instructions (from AGENTS.md)"
+    assert lines[agents_idx + 1] == "## Project-Specific Instructions"
     assert lines[agents_idx + 3 : agents_idx + 5] == ["line one", "line two"]
 
 

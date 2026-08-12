@@ -1,10 +1,12 @@
 """
 Tests for the native Anthropic SDK client (``janito.openai_client.anthropic_api``).
 
-The ``anthropic`` package is **not** installed in the test environment, so the
-stream-assembly logic is tested with fake SDK event objects (``SimpleNamespace``)
-and the package guard is pinned down: ``send_prompt`` / ``_create_client`` must
-refuse to run with an actionable install message when the package is missing.
+The stream-assembly logic is tested with fake SDK event objects
+(``SimpleNamespace``) and the package guard is pinned down: ``send_prompt`` /
+``_create_client`` must refuse to run with an actionable install message when
+the ``anthropic`` package is missing. The guard tests are skipped when the
+optional ``anthropic`` package *is* installed (the guard can't be exercised),
+and run when it is not.
 """
 
 import sys
@@ -17,6 +19,19 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import pytest
 
 from janito.openai_client import anthropic_api
+
+try:
+    import anthropic  # noqa: F401
+
+    _HAS_ANTHROPIC = True
+except ModuleNotFoundError:
+    _HAS_ANTHROPIC = False
+
+# The "aborts without the package" guard tests only apply when the optional
+# `anthropic` package is missing; skip them when it is installed.
+requires_no_anthropic = pytest.mark.skipif(
+    _HAS_ANTHROPIC, reason="anthropic package is installed (guard not exercised)"
+)
 
 
 def _event(type_, **attrs):
@@ -169,12 +184,14 @@ if pytest is not None:
         with pytest.raises(RuntimeError, match="boom"):
             anthropic_api._consume_stream(events)
 
+    @requires_no_anthropic
     def test_create_client_aborts_without_anthropic_package():
         """The optional `anthropic` package is guarded with an actionable error."""
         with pytest.raises(RuntimeError) as exc:
             anthropic_api._create_client("https://api.anthropic.com", "sk-test")
         assert "pip install anthropic" in str(exc.value)
 
+    @requires_no_anthropic
     def test_send_prompt_aborts_without_anthropic_package(monkeypatch):
         """send_prompt refuses to run when the `anthropic` package is missing,
         even when the rest of the runtime config resolves."""

@@ -67,6 +67,19 @@ requires_fastapi = pytest.mark.skipif(
     not _HAS_FASTAPI, reason="fastapi (web extra) is not installed"
 )
 
+try:
+    import anthropic  # noqa: F401
+
+    _HAS_ANTHROPIC = True
+except ModuleNotFoundError:
+    _HAS_ANTHROPIC = False
+
+# The "aborts without the package" guard test only applies when the optional
+# `anthropic` package is missing; skip it when it is installed.
+requires_no_anthropic = pytest.mark.skipif(
+    _HAS_ANTHROPIC, reason="anthropic package is installed (guard not exercised)"
+)
+
 FRONTEND = Path(__file__).parent.parent.parent / "janito" / "web" / "frontend"
 
 
@@ -177,6 +190,7 @@ def test_patch_api_type_rejects_unknown_value(client):
 
 
 @requires_fastapi
+@requires_no_anthropic
 def test_patch_api_type_anthropic_aborts_without_package(client):
     """The native Anthropic SDK API type is rejected with 400 (nothing is
     written) when the optional `anthropic` package is not installed, with a

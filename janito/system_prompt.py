@@ -58,9 +58,7 @@ def get_system_prompt_sections() -> list[tuple[str, str]]:
         sections.append(
             (
                 SECTION_AGENTS_MD,
-                "\n\n## Project-Specific Instructions (from AGENTS.md)\n\n"
-                + agents_content
-                + "\n",
+                "\n\n## Project-Specific Instructions\n\n" + agents_content + "\n",
             )
         )
 

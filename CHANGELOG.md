@@ -124,6 +124,22 @@ Changes since `v4.22.0` (2026-08-10).
   resurface when a new conversation is opened. Added contract tests in
   `tests/web/test_web_send_reliability.py`.
 
+- **The AGENTS.md prompt section header no longer says `(from AGENTS.md)`**
+  (`janito/system_prompt.py`): the section is titled `## Project-Specific
+  Instructions` only, matching the name used elsewhere (e.g. in
+  `docs/TOOL.md`); the section name/label (`agents.md`) and the prompt
+  content are unchanged. Tests updated in `tests/test_system_prompt.py`.
+
+- **The "aborts without the `anthropic` package" guard tests are now skipped
+  when the optional `anthropic` package is installed**
+  (`tests/test_anthropic_api.py`, `tests/test_general_config.py`,
+  `tests/web/test_web_settings_advanced.py`): those tests verify the guard
+  path that only exists when the package is missing, so they failed on
+  machines where `anthropic` is present. Each file now detects the package
+  at import time and applies a `requires_no_anthropic` skip marker, so the
+  tests run only when the package is not installed (matching the existing
+  `requires_fastapi` / `requires_dashscope` pattern).
+
 ### Removed
 
 - **`ReadFile` `head`/`tail` flags removed** (`janito/tools/files/read_file.py`):
