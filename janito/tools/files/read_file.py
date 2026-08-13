@@ -63,9 +63,9 @@ class ReadFile(BaseTool):
 
             # Report start
             if max_lines is not None:
-                range_info = f" (start at line {start_line}, max {max_lines} lines)"
+                range_info = f" (line {start_line}, max {max_lines} lines)"
             else:
-                range_info = f" (start at line {start_line}, until EOF)"
+                range_info = f" (line {start_line}, until EOF)"
 
             self.report_start(
                 f"\U0001f4d6 Reading file {norm_path_str}{range_info}", end=""

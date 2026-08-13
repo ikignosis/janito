@@ -1,7 +1,7 @@
 """Contract tests for the tool-card header operation summary.
 
 The tool-card header shows a short summary of a tool call's arguments right
-after the tool name (e.g. ``ReadFile /etc/hosts (start at line 1, until EOF)``,
+after the tool name (e.g. ``ReadFile /etc/hosts (line 1, until EOF)``,
 ``SearchText 'foo' in ./src``). The summary mirrors the parameters each tool
 prints via ``report_start`` (the operation target shown in the CLI), so the
 header shows the same information the tool announces when it starts.

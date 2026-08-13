@@ -54,7 +54,7 @@
 .tool-name { font-weight: 600; font-family: var(--font-mono); }
 
 /* Operation summary shown next to the tool name (e.g. ReadFile
-   /etc/hosts (start at line 1, until EOF), SearchText 'foo' in ./src).
+   /etc/hosts (line 1, until EOF), SearchText 'foo' in ./src).
    Mirrors the args the tool prints via report_start. Rendered as a subtle
    chip that is visually distinct from the bold tool name; long summaries
    are ellipsized. */
