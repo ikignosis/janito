@@ -5,6 +5,9 @@ Tests for .janitoignore support in the file tools.
 that ``respect_gitignore`` does not apply to it: .janitoignore patterns are
 always respected, even when ``respect_gitignore=False`` (or the
 ``--no-gitignore`` CLI flag is used).
+
+The .janitoignore file itself is automatically added to the ignore list, so
+it never appears in listings, finds or search results.
 """
 
 import sys
@@ -51,9 +54,10 @@ def test_list_files_always_respects_janitoignore(project_dir):
     assert "visible.txt" in names
     assert "ignored.txt" not in names  # .janitoignore always respected
     assert "gitignored.txt" in names  # .gitignore NOT respected
+    assert ".janitoignore" not in names  # the file itself is auto-ignored
     assert result["janitoignore_applied"] is True
     assert result["gitignore_applied"] is False
-    assert result["stats"]["janitoignore_ignored"] == 1
+    assert result["stats"]["janitoignore_ignored"] == 2  # .janitoignore + ignored.txt
     assert result["stats"]["gitignore_ignored"] == 0
 
 
@@ -66,9 +70,10 @@ def test_list_files_respects_both_when_gitignore_enabled(project_dir):
     assert "visible.txt" in names
     assert "ignored.txt" not in names
     assert "gitignored.txt" not in names
+    assert ".janitoignore" not in names  # the file itself is auto-ignored
     assert result["janitoignore_applied"] is True
     assert result["gitignore_applied"] is True
-    assert result["stats"]["janitoignore_ignored"] == 1
+    assert result["stats"]["janitoignore_ignored"] == 2  # .janitoignore + ignored.txt
     assert result["stats"]["gitignore_ignored"] == 1
 
 
@@ -84,7 +89,8 @@ def test_list_files_recursive_prunes_janitoignored_directory(project_dir):
     names = _basenames(result["files"])
     assert "hidden.txt" not in names
     assert "secret" not in names
-    assert result["stats"]["janitoignore_ignored"] == 1
+    assert ".janitoignore" not in names  # the file itself is auto-ignored
+    assert result["stats"]["janitoignore_ignored"] == 2  # .janitoignore + secret/
 
 
 # ── FindFiles ──────────────────────────────────────────────────────────
@@ -99,7 +105,8 @@ def test_find_files_always_respects_janitoignore(project_dir):
     assert "visible.txt" in names
     assert "ignored.txt" not in names
     assert "gitignored.txt" in names
-    assert result["stats"]["janitoignore_ignored"] == 1
+    assert ".janitoignore" not in names  # the file itself is auto-ignored
+    assert result["stats"]["janitoignore_ignored"] == 2  # .janitoignore + ignored.txt
     assert result["stats"]["gitignore_ignored"] == 0
 
 
@@ -112,7 +119,8 @@ def test_find_files_respects_both_when_gitignore_enabled(project_dir):
     assert "visible.txt" in names
     assert "ignored.txt" not in names
     assert "gitignored.txt" not in names
-    assert result["stats"]["janitoignore_ignored"] == 1
+    assert ".janitoignore" not in names  # the file itself is auto-ignored
+    assert result["stats"]["janitoignore_ignored"] == 2  # .janitoignore + ignored.txt
     assert result["stats"]["gitignore_ignored"] == 1
 
 
@@ -128,7 +136,7 @@ def test_search_text_skips_janitoignore_files(project_dir):
     assert "visible.txt" in names
     assert "ignored.txt" not in names
     assert "gitignored.txt" in names
-    assert result["files_ignored_by_janitoignore"] == 1
+    assert result["files_ignored_by_janitoignore"] == 2  # .janitoignore + ignored.txt
     assert result["files_ignored_by_gitignore"] == 0
 
 
@@ -157,7 +165,7 @@ def test_search_regex_skips_janitoignore_files(project_dir):
     assert "visible.txt" in names
     assert "ignored.txt" not in names
     assert "gitignored.txt" in names
-    assert result["files_ignored_by_janitoignore"] == 1
+    assert result["files_ignored_by_janitoignore"] == 2  # .janitoignore + ignored.txt
     assert result["files_ignored_by_gitignore"] == 0
 
 
@@ -174,3 +182,35 @@ def test_search_regex_skips_janitoignored_directory(project_dir):
     assert "visible.txt" in names
     assert "hidden.txt" not in names
     assert "secret" not in names
+
+
+# ---------------------------------------------------------------------------
+# The .janitoignore file itself is always ignored
+# ---------------------------------------------------------------------------
+
+
+def test_janitoignore_file_itself_auto_ignored(project_dir):
+    """The .janitoignore file never appears, even with no matching patterns."""
+    # Content matches the search query below, so any result would show it.
+    (project_dir / ".janitoignore").write_text("needle\n", encoding="utf-8")
+
+    listed = _basenames(
+        ListFiles().run(directory=".", respect_gitignore=False)["files"]
+    )
+    assert ".janitoignore" not in listed
+
+    found = _basenames(
+        FindFiles().run(paths=".", pattern=".janitoignore", respect_gitignore=False)[
+            "files"
+        ]
+    )
+    assert ".janitoignore" not in found
+
+    searched = _basenames(
+        m.split(":")[0]
+        for m in SearchText().run(paths=".", query="needle", respect_gitignore=False)[
+            "matches"
+        ]
+    )
+    assert "visible.txt" in searched
+    assert ".janitoignore" not in searched

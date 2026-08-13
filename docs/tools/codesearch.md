@@ -29,7 +29,8 @@ janito --init-codesearch
     are excluded from the index, so search results never surface
     gitignored files (build artifacts, vendored dependencies, secrets,
     ...). `.janitoignore` is **always** respected, matching the behaviour
-    of the other file tools. When a file becomes gitignored after the
+    of the other file tools, and the `.janitoignore` file itself is always
+    ignored. When a file becomes gitignored after the
     index was built, the next `Update()` drops it from the index.
 
 ## CodeSearch

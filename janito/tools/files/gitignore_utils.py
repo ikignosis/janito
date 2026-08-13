@@ -13,7 +13,7 @@ from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 
 
-def load_ignore_spec(directory: str, filename: str):
+def load_ignore_spec(directory: str, filename: str, extra_patterns=None):
     """
     Load ignore patterns from the specified file in the given directory.
 
@@ -22,6 +22,8 @@ def load_ignore_spec(directory: str, filename: str):
     Args:
         directory (str): The directory to look for the ignore file
         filename (str): The ignore file name (e.g. ".gitignore", ".janitoignore")
+        extra_patterns (list[str], optional): Additional pattern lines to
+            always include in the spec, after the file contents.
 
     Returns:
         A PathSpec object, or None if the ignore file does not exist.
@@ -33,6 +35,9 @@ def load_ignore_spec(directory: str, filename: str):
 
     with open(ignore_path, "r") as f:
         patterns = f.readlines()
+
+    if extra_patterns:
+        patterns.extend(extra_patterns)
 
     return PathSpec.from_lines(GitWildMatchPattern, patterns)
 
@@ -55,7 +60,9 @@ def load_janitoignore_spec(directory: str):
     Load .janitoignore patterns from the specified directory.
 
     .janitoignore is always respected by the file tools, regardless of the
-    respect_gitignore setting.
+    respect_gitignore setting. The .janitoignore file itself is automatically
+    added to the ignore list, so it never appears in listings or search
+    results.
 
     Args:
         directory (str): The directory to look for .janitoignore
@@ -63,7 +70,9 @@ def load_janitoignore_spec(directory: str):
     Returns:
         A PathSpec object, or None if no .janitoignore file exists.
     """
-    return load_ignore_spec(directory, ".janitoignore")
+    return load_ignore_spec(
+        directory, ".janitoignore", extra_patterns=[".janitoignore\n"]
+    )
 
 
 def is_ignored_by_gitignore(

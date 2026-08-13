@@ -77,7 +77,7 @@ List files and directories in a path.
 | `pattern` | str | `None` | Glob filter, e.g. `"*.py"` |
 | `recursive` | bool | `False` | Recurse into subdirectories |
 | `max_depth` | int | `None` | Max recursion depth (unlimited if `None`) |
-| `respect_gitignore` | bool | `True` | Skip paths matched by `.gitignore` (`.janitoignore` is always respected) |
+| `respect_gitignore` | bool | `True` | Skip paths matched by `.gitignore` (`.janitoignore` is always respected; the `.janitoignore` file itself is always ignored) |
 
 ### ReadFile
 
@@ -108,7 +108,7 @@ Search for exact text matches.
 | `max_depth` | int | `None` | Max directory depth |
 | `max_results` | int | `100` | Max results returned |
 | `count_only` | bool | `False` | Return counts instead of lines |
-| `respect_gitignore` | bool | `True` | Skip `.gitignore` paths (`.janitoignore` is always respected) |
+| `respect_gitignore` | bool | `True` | Skip `.gitignore` paths (`.janitoignore` is always respected; the `.janitoignore` file itself is always ignored) |
 | `exclude` | str | `None` | Space-separated glob patterns to exclude, e.g. `"*/node_modules/* */__pycache__/*"` |
 
 ### SearchRegex
@@ -177,7 +177,9 @@ Move or rename a file or directory.
 
 1. **Use `respect_gitignore=True`** (the default) when listing or searching to skip
    build artifacts and dependencies. A `.janitoignore` file in the working directory
-   is **always** respected, even when `respect_gitignore=False`.
+   is **always** respected, even when `respect_gitignore=False`, and the
+   `.janitoignore` file itself is automatically ignored so it never shows up in
+   listings or search results.
 2. **Use `ReadFile`** with `start_line`/`max_lines` for large files to limit
    output.
 3. **Use `count_only=True`** with the search tools to gauge how many matches exist
