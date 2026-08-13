@@ -69,15 +69,15 @@ uv run python scripts/promote_changelog.py v4.19.0 --dry-run
 The script rewrites:
 
 ```markdown
-## [Unreleased](https://github.com/joaopinto/janito/compare/v4.18.1...HEAD)
+## [Unreleased](https://github.com/ikignosis/janito/compare/v4.18.1...HEAD)
 ```
 
 into a release heading plus a new empty `[Unreleased]`:
 
 ```markdown
-## [Unreleased](https://github.com/joaopinto/janito/compare/v4.19.0...HEAD)
+## [Unreleased](https://github.com/ikignosis/janito/compare/v4.19.0...HEAD)
 
-## [v4.19.0](https://github.com/joaopinto/janito/compare/v4.18.1...v4.19.0) - 2026-08-05
+## [v4.19.0](https://github.com/ikignosis/janito/compare/v4.18.1...v4.19.0) - 2026-08-05
 ```
 
 Review `CHANGELOG.md` — make sure the promoted section reads well and the
@@ -144,7 +144,7 @@ text = path.read_text(encoding="utf-8")
 header, _, _ = text.partition("## [Unreleased]")
 path.write_text(
     header
-    + f"## [Unreleased](https://github.com/joaopinto/janito/compare/{version}...HEAD)\n\n"
+    + f"## [Unreleased](https://github.com/ikignosis/janito/compare/{version}...HEAD)\n\n"
     + f"Changes since `{version}` ({date.today().isoformat()}).\n",
     encoding="utf-8",
 )
