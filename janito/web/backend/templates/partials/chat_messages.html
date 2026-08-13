@@ -118,6 +118,47 @@
                                         </div>
                                     </template>
 
+                                    <!-- In-chat question card (AskUser tool) -->
+                                    <template x-if="part.kind === 'prompt'">
+                                        <div class="prompt-card" :class="part.state">
+                                            <div class="prompt-card-head">
+                                                <span aria-hidden="true">&#128587;</span>
+                                                <span>Question from the assistant</span>
+                                                <span class="prompt-card-state"
+                                                      x-show="part.state === 'answered'">Answered</span>
+                                                <span class="prompt-card-state"
+                                                      x-show="part.state === 'dismissed'">Skipped</span>
+                                            </div>
+                                            <div class="prompt-card-question"
+                                                 x-html="renderMarkdown(part.question)"></div>
+
+                                            <template x-if="part.state === 'pending'">
+                                                <div>
+                                                    <textarea class="prompt-card-input" rows="2"
+                                                              x-model="part.answerDraft"
+                                                              @keydown.enter.prevent="submitPromptCard(part)"
+                                                              placeholder="Type your answer&#8230;"></textarea>
+                                                    <div class="prompt-card-buttons">
+                                                        <button class="btn" type="button"
+                                                                @click="dismissPromptCard(part)">Skip</button>
+                                                        <button class="btn btn-primary" type="button"
+                                                                :disabled="!part.answerDraft.trim()"
+                                                                @click="submitPromptCard(part)">Submit</button>
+                                                    </div>
+                                                </div>
+                                            </template>
+
+                                            <template x-if="part.state !== 'pending'">
+                                                <div class="prompt-card-answer">
+                                                    <span class="prompt-card-answer-label"
+                                                          x-text="part.state === 'answered' ? 'Your answer' : 'Skipped'"></span>
+                                                    <span x-show="part.state === 'answered'"
+                                                          class="pre-wrap" x-text="part.answer"></span>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+
                                     <!-- /tools listing panel -->
                                     <template x-if="part.kind === 'tools'">
                                         <div class="tools-panel">

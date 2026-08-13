@@ -117,31 +117,32 @@ const CHAT_EVENT_HANDLERS = {
     },
 
     // The assistant raised an in-browser question (AskUser tool): the
-    // backend blocked the turn until the user answers. Record the pending
-    // question on the session store and surface the panel through the root
-    // app component (janito-prompt) so it appears even when this session is
-    // in the background.
+    // backend blocked the turn until the user answers. Add a question card
+    // to the in-flight assistant message so the answer can be typed inline
+    // in the chat stream. For a background session we fire a toast so the
+    // question isn't silently waiting in another tab.
     prompt(c) {
-        c.store.pendingPrompt = {
+        c.msg.parts.push({
+            kind: 'prompt',
             prompt_id: c.event.prompt_id,
             question: c.event.question,
-        };
+            answerDraft: '',
+            answer: '',
+            state: 'pending',
+        });
         if (c.isActive) {
-            c.comp.pendingPrompt = c.store.pendingPrompt;
             c.comp._scrollToBottom();
+        } else {
+            window.dispatchEvent(new CustomEvent('janito-toast', {
+                detail: {
+                    kind: 'ok',
+                    text: `The assistant asked a question in \u201c${c.store.title || 'a conversation'}\u201d.`,
+                },
+            }));
         }
-        window.dispatchEvent(new CustomEvent('janito-prompt', {
-            detail: {
-                sessionId: c.store.id,
-                prompt_id: c.event.prompt_id,
-                question: c.event.question,
-                title: c.store.title || null,
-            },
-        }));
     },
 
     done(c) {
-        c.comp._clearPendingPrompt(c);
         c.msg.streaming = false;
         c.msg.done = true;
         c.comp._setStatus(c.store, 'idle');
@@ -153,7 +154,6 @@ const CHAT_EVENT_HANDLERS = {
     },
 
     cancelled(c) {
-        c.comp._clearPendingPrompt(c);
         // Server confirmed the abort and rolled back the history to the
         // checkpoint. Remove the in-flight assistant message and the user
         // message that started this turn to stay in sync with the server.
@@ -167,7 +167,6 @@ const CHAT_EVENT_HANDLERS = {
     },
 
     error(c) {
-        c.comp._clearPendingPrompt(c);
         c.store.error = c.event.message;
         // Server rolled back the history to the checkpoint on error.
         c.comp._rollbackTurn(c.store);
@@ -189,21 +188,7 @@ const CHAT_EVENT_HANDLERS = {
     },
 };
 
-// Close the in-browser question panel (root app component) whenever the
-// turn that raised it ends without an answer (cancelled / error). The
-// backend resolves the pending question as empty in those cases, so the
-// panel would otherwise stay open with no way to answer. The dismiss is
-// scoped to the raising session so another session's open panel is not
-// closed by a background turn finishing.
 window.ChatEventsMixin = {
-    _clearPendingPrompt(c) {
-        if (!c.store.pendingPrompt) return;
-        c.store.pendingPrompt = null;
-        if (c.isActive) c.comp.pendingPrompt = null;
-        window.dispatchEvent(new CustomEvent('janito-prompt-dismiss', {
-            detail: { sessionId: c.store.id },
-        }));
-    },
     // Apply a streamed event to a specific session's store. Only mutates
     // the visible projection when that session is the active tab.
     _handleEvent(event, store) {

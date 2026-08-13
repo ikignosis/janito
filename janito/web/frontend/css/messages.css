@@ -144,3 +144,93 @@
     /* No max-height cap (issue #33): the card grows vertically to fit the
        entire thinking content instead of clipping it behind a scrollbar. */
 }
+
+/* In-chat question card (AskUser tool). Amber accent is intentionally
+   loud: unlike a normal message, this card requires the user's input. */
+.prompt-card {
+    margin: 4px 0 12px;
+    padding: 12px 14px;
+    border: 1px solid color-mix(in srgb, var(--yellow) 55%, transparent);
+    border-left: 4px solid var(--yellow);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--yellow) 9%, var(--bg-tertiary));
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--yellow) 10%, transparent);
+}
+
+.prompt-card-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--yellow);
+}
+
+.prompt-card-state {
+    margin-left: auto;
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    background: color-mix(in srgb, var(--yellow) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--yellow) 40%, transparent);
+}
+
+.prompt-card-question {
+    margin: 10px 0 12px;
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.prompt-card-question p:first-child { margin-top: 0; }
+.prompt-card-question p:last-child { margin-bottom: 0; }
+
+.prompt-card-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 9px 12px;
+    border: 1px solid color-mix(in srgb, var(--yellow) 45%, var(--border));
+    border-radius: var(--radius);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    resize: vertical;
+}
+.prompt-card-input:focus {
+    outline: none;
+    border-color: var(--yellow);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--yellow) 20%, transparent);
+}
+
+.prompt-card-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.prompt-card-answer {
+    margin-top: 10px;
+    padding: 9px 12px;
+    border: 1px dashed color-mix(in srgb, var(--yellow) 45%, transparent);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--yellow) 8%, transparent);
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.prompt-card-answer-label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--yellow);
+}

@@ -1,11 +1,11 @@
-"""Contract tests for the in-browser question panel (AskUser tool in web mode).
+"""Contract tests for the in-chat question card (AskUser tool in web mode).
 
 The AskUser tool's ``prompt_user`` normally reads from stdin; in web mode
 there is no console. The backend instead installs a ``WebPromptHandler``
-(context variable in ``janito/tooling/prompting``) that presents the
-question in a non-blocking browser panel and blocks the tool's worker
-thread until the browser posts the answer back as a ``prompt_answer``
-WebSocket frame.
+(context variable in ``janito/tooling/prompting``) that adds the question
+to the chat stream as an inline card and blocks the tool's worker thread
+until the browser posts the answer back as a ``prompt_answer`` WebSocket
+frame.
 
 These tests pin down:
 
@@ -17,7 +17,8 @@ These tests pin down:
    ``prompt`` frame is sent to the "browser", the registry resolves it, and
    the tool returns the answer;
 4. frontend wiring: the ``prompt`` event handler, the ``prompt_answer``
-   socket helper, the app-level panel state, and the rendered panel markup.
+   socket helper, the inline question-card state, and the rendered card
+   markup.
 """
 
 import asyncio
@@ -359,28 +360,28 @@ def test_run_turn_in_browser_prompt_round_trip(monkeypatch):
 
 
 def test_chat_events_handles_prompt_event():
-    """chatEvents.js records the pending question and surfaces the panel."""
+    """chatEvents.js adds an inline question card to the assistant message."""
     js = (FRONTEND / "js" / "chatEvents.js").read_text(encoding="utf-8")
     assert "prompt(c) {" in js
-    assert "pendingPrompt" in js
-    assert "janito-prompt" in js
+    assert "kind: 'prompt'" in js
     # The event carries the ids the backend expects.
     assert "prompt_id: c.event.prompt_id" in js
     assert "question: c.event.question" in js
-    # ...and the session title, so the panel can name the asking
-    # conversation (useful for background sessions).
-    assert "title: c.store.title || null" in js
+    assert "state: 'pending'" in js
+    # Background-session questions surface a toast naming the conversation.
+    assert "janito-toast" in js
+    assert "c.store.title || 'a conversation'" in js
 
 
 def test_chat_component_routes_prompt_answer():
-    """chat.js projects pendingPrompt and routes the answer to the socket."""
+    """chat.js submits/skips the card and routes the answer to the socket."""
     js = (FRONTEND / "js" / "chat.js").read_text(encoding="utf-8")
-    assert "pendingPrompt: null" in js
-    assert "this.pendingPrompt = store.pendingPrompt;" in js
+    assert "submitPromptCard" in js
+    assert "dismissPromptCard" in js
     assert "_submitPromptAnswer" in js
-    assert "janito-prompt-answer" in js
+    assert "_resolvePromptCard" in js
     assert "sendPromptAnswer(prompt_id, answer)" in js
-    # The store remembers the session title for the question panel.
+    # The store still remembers the session title (used by the toast).
     assert "store.title" in js
 
 
@@ -392,30 +393,33 @@ def test_websocket_has_send_prompt_answer():
     assert "prompt_id: promptId" in js
 
 
-def test_app_component_renders_panel_state():
-    """app.js owns the panel state and submit/dismiss actions."""
+def test_app_component_no_longer_renders_prompt_panel():
+    """app.js no longer owns modal state; it only shows toasts."""
     js = (FRONTEND / "js" / "app.js").read_text(encoding="utf-8")
-    assert "promptModal: null" in js
-    assert "promptAnswer: ''" in js
-    assert "submitPromptAnswer()" in js
-    assert "dismissPrompt()" in js
-    assert "'janito-prompt'" in js
-    assert "janito-prompt-dismiss" in js
+    assert "promptModal" not in js
+    assert "promptAnswer" not in js
+    assert "submitPromptAnswer" not in js
+    assert "dismissPrompt" not in js
+    assert "janito-prompt" not in js
+    assert "janito-toast" in js
 
 
-def test_index_html_renders_prompt_panel():
-    """The composed page renders the question panel in the root scope."""
+def test_index_html_renders_prompt_card():
+    """The composed page renders the question card inline in the chat."""
     html = render_index_html()
-    assert 'x-if="promptModal"' in html
-    assert 'class="prompt-panel"' in html
-    assert 'id="prompt-panel-input"' in html
-    assert "renderPromptQuestion(promptModal.question)" in html
-    assert '@keydown.enter.prevent="submitPromptAnswer()"' in html
+    assert "part.kind === 'prompt'" in html
+    assert 'class="prompt-card"' in html
+    assert "renderMarkdown(part.question)" in html
+    assert '@keydown.enter.prevent="submitPromptCard(part)"' in html
+    # The old root-scope modal is gone.
+    assert 'x-if="promptModal"' not in html
+    assert 'class="prompt-panel"' not in html
 
 
-def test_drawers_css_styles_prompt_panel():
-    """drawers.css styles the question panel as a non-modal bottom sheet."""
-    css = (FRONTEND / "css" / "drawers.css").read_text(encoding="utf-8")
-    assert ".prompt-panel {" in css
-    assert ".prompt-question {" in css
-    assert ".prompt-input {" in css
+def test_messages_css_styles_prompt_card():
+    """messages.css styles the question card with a high-attention accent."""
+    css = (FRONTEND / "css" / "messages.css").read_text(encoding="utf-8")
+    assert ".prompt-card {" in css
+    assert ".prompt-card-question {" in css
+    assert ".prompt-card-input {" in css
+    assert ".prompt-card-answer {" in css

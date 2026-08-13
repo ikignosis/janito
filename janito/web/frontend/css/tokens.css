@@ -120,6 +120,7 @@ html, body {
    transitioned here so transform/opacity animations are never disturbed. */
 body, .sidebar, .topbar, .input-area, .status-bar, .message-body, .avatar,
 .tool-card, .tool-card-header, .reasoning-panel, .reasoning-header,
+.prompt-card, .prompt-card-state, .prompt-card-input, .prompt-card-answer,
 .drawer, .btn, textarea, .usage-chip, .flag-badge, .session-item,
 .mcp-service, .form-group input, .form-group select, .provider-combo,
 .theme-toggle,

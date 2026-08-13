@@ -84,7 +84,6 @@ window.ChatStoreMixin = {
         this.error = null;
         this._current = null;
         this.toolsSummary = null;
-        this.pendingPrompt = null;
         // The draft belonged to the closed conversation; clear it so a stale
         // message doesn't resurface when a new session is opened.
         this.input = '';

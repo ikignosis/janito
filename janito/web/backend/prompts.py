@@ -3,8 +3,8 @@
 The AskUser tool's ``prompt_user`` normally reads from stdin; in web mode
 there is no console. The web backend instead installs a
 :class:`WebPromptHandler` (via :func:`janito.tooling.prompting.set_prompt_handler`)
-that presents the question in a non-blocking panel in the browser and
-waits for the answer:
+that presents the question in a non-blocking inline card in the browser
+chat and waits for the answer:
 
 1. the tool runs in a worker thread (``asyncio.to_thread``) and calls
    ``prompt_user``, which invokes the installed handler synchronously;
@@ -95,11 +95,11 @@ class PromptRegistry:
 
 
 class WebPromptHandler:
-    """Synchronous prompt callback that shows a non-blocking browser panel.
+    """Synchronous prompt callback that shows an inline browser question card.
 
     Runs inside the worker thread that executes the tool. It registers a
     :class:`PendingPrompt`, asks the event loop to push the question to the
-    browser and blocks the thread until the receive loop resolves it. A
+    browser chat and blocks the thread until the receive loop resolves it. A
     failed send (socket died) or a cancelled turn resolves as an empty
     answer so the worker thread never hangs.
     """

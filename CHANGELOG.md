@@ -45,3 +45,11 @@ Changes since `v4.23.0` (2026-08-12).
   never appears in `ListFiles`/`FindFiles` listings or `SearchText`/`SearchRegex`
   results (the codesearch indexer skips it too). Other ignore patterns keep
   working as before. Tests updated in `tests/test_janitoignore.py`.
+
+- **Web chat: AskUser questions render inline instead of in a bottom sheet**:
+  the in-browser question panel (`prompt_modal.html` and the root-scope modal
+  wiring in `app.js`) was removed. When the assistant raises an AskUser
+  question, the chat stream now shows a high-attention amber card with the
+  question, an answer input and Submit/Skip buttons. Answers are still routed
+  back over the raising session's WebSocket; questions raised in background
+  sessions surface a toast so they aren't silently waiting in another tab.

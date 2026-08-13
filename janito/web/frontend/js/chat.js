@@ -65,12 +65,6 @@ function chatComponent() {
         toolsDialog: null,       // { builtin, mcp, skipped, total } or null
         toolsDialogLoading: false,
         toolsDialogError: null,
-        // In-browser question from the assistant (AskUser tool) for the
-        // ACTIVE session: { prompt_id, question, title } or null. The panel
-        // itself lives in the root app component (works for background
-        // sessions); this projection mirrors the active session's
-        // store.pendingPrompt.
-        pendingPrompt: null,
         _followBottom: true,     // auto-follow the scroll bottom? false = user "locked" the scroll
         _scrollThreshold: 80,    // px tolerance for "at the bottom" (avoids scrollbar jitter)
 
@@ -103,12 +97,6 @@ function chatComponent() {
             window.addEventListener('janito-clear-session', () => {
                 this.clearActive();
             });
-            // The user answered the in-browser question modal (root app
-            // component): route the answer back over the raising session's
-            // socket so the blocked tool turn can resume.
-            window.addEventListener('janito-prompt-answer', (e) => {
-                this._submitPromptAnswer(e.detail);
-            });
         },
 
         // ---------------------------------------------------------------
@@ -126,8 +114,7 @@ function chatComponent() {
                     connection: 'disconnected',
                     current: null,
                     toolsSummary: null, // { active, skipped, skippedList } from session_start
-                    pendingPrompt: null, // in-browser question (AskUser) awaiting an answer
-                    title: null,         // session title (shown on the question panel)
+                    title: null,         // session title
                     loaded: false,     // history fetched from the server yet?
                     loading: false,    // a history fetch is in flight
                     dirty: false,      // user already sent a message locally
@@ -156,7 +143,6 @@ function chatComponent() {
             this.connection = store.connection;
             this._current = store.current;
             this.toolsSummary = store.toolsSummary;
-            this.pendingPrompt = store.pendingPrompt;
             this._broadcastConn();
             this._forceScrollToBottom();
 
@@ -214,8 +200,8 @@ function chatComponent() {
             store.loading = true;
             try {
                 const session = await Api.getSession(id);
-                // Remember the title so the question panel can show which
-                // conversation asked (background sessions in particular).
+                // Remember the title so a background-session question toast
+                // can name the conversation that asked.
                 store.title = session.title || null;
                 // If the user already started chatting in this session while
                 // the fetch was in flight, don't clobber their live messages.
@@ -335,23 +321,60 @@ function chatComponent() {
             );
         },
 
-        // Route an answer typed in the in-browser question modal (AskUser
-        // tool) back to the session that raised the question. The backend
-        // blocked the agent turn on this answer, so sending it lets the
-        // tool resume. Runs for active AND background sessions (the modal
-        // lives in the root app component).
+        // Send an answer typed in an in-chat question card (AskUser tool)
+        // back to the session that raised the question, then collapse the
+        // card's input into a read-only record of the answer. The backend
+        // blocked the agent turn on this answer, so sending it lets the tool
+        // resume.
         _submitPromptAnswer({ sessionId, prompt_id, answer }) {
-            const store = this._store(sessionId);
             const socket = this._socket(sessionId);
             if (socket && prompt_id) {
                 socket.sendPromptAnswer(prompt_id, answer);
             } else {
                 console.warn('[chat] prompt answer dropped: no socket or id', { sessionId, prompt_id });
             }
-            // The modal is closed by the root app component; just clear the
-            // local pending state for this session.
-            store.pendingPrompt = null;
-            if (this.sessionId === sessionId) this.pendingPrompt = null;
+            this._resolvePromptCard(sessionId, prompt_id, answer);
+        },
+
+        // Mark an in-chat question card as answered/skipped once its answer
+        // has been sent, so its input collapses into a read-only record.
+        _resolvePromptCard(sessionId, prompt_id, answer) {
+            const store = this._store(sessionId);
+            const resolved = (answer || '').trim();
+            for (const msg of store.messages) {
+                if (!Array.isArray(msg.parts)) continue;
+                for (const part of msg.parts) {
+                    if (part.kind === 'prompt' && part.prompt_id === prompt_id && part.state === 'pending') {
+                        part.answer = resolved;
+                        part.answerDraft = resolved;
+                        part.state = resolved ? 'answered' : 'dismissed';
+                        return;
+                    }
+                }
+            }
+        },
+
+        // Submit the answer typed into an in-chat question card.
+        submitPromptCard(part) {
+            if (!this.sessionId || !part || part.state !== 'pending') return;
+            const answer = (part.answerDraft || '').trim();
+            if (!answer) return;
+            this._submitPromptAnswer({
+                sessionId: this.sessionId,
+                prompt_id: part.prompt_id,
+                answer,
+            });
+        },
+
+        // Skip an in-chat question card without answering: the tool receives
+        // an empty answer (mirrors the old modal's Dismiss button).
+        dismissPromptCard(part) {
+            if (!this.sessionId || !part || part.state !== 'pending') return;
+            this._submitPromptAnswer({
+                sessionId: this.sessionId,
+                prompt_id: part.prompt_id,
+                answer: '',
+            });
         },
 
         // Name a new conversation from the start of its first message (the
@@ -362,7 +385,7 @@ function chatComponent() {
         // like a flicker. Best-effort: a failed rename just logs.
         _autoTitle(id, content) {
             const title = content.slice(0, 60);
-            this._store(id).title = title;   // keep the question panel's chip fresh
+            this._store(id).title = title;   // keep the store title fresh
             Api.renameSession(id, title)
                 .then(() => {
                     window.dispatchEvent(new CustomEvent('janito-session-title', {

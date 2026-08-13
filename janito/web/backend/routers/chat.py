@@ -131,8 +131,8 @@ async def _stream_to_websocket(
 
     When a ``prompt_registry`` is provided (web mode), an in-browser prompt
     handler is installed for the duration of the turn: interactive tools
-    (the AskUser tool) present their question in a non-blocking browser
-    panel instead of reading stdin. The handler is installed through a
+    (the AskUser tool) present their question as a non-blocking inline card
+    in the chat instead of reading stdin. The handler is installed through a
     context variable so the worker thread that executes the tool
     (``asyncio.to_thread``) sees it, and it is scoped to this turn's task.
     """
