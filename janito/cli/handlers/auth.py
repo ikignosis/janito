@@ -27,8 +27,7 @@ def _confirm_overwrite(provider: str, existing_key: str) -> bool:
         True if the user explicitly approved the overwrite, False otherwise.
     """
     print(
-        f"Warning: an API key is already configured for provider '{provider}' "
-        f"({get_masked_api_key(existing_key)}).",
+        f"Warning: an API key is already configured for provider '{provider}' ({get_masked_api_key(existing_key)}).",
         file=sys.stderr,
     )
     while True:
@@ -72,8 +71,7 @@ def handle_set_api_key(args) -> int:
                 file=sys.stderr,
             )
             print(
-                "Pass --provider <name>, or set a default provider first "
-                "(janito --set provider=<name>).",
+                "Pass --provider <name>, or set a default provider first (janito --set provider=<name>).",
                 file=sys.stderr,
             )
             return 1
@@ -121,10 +119,12 @@ def handle_list_keys(args) -> int:
     Returns:
         int: Exit code (0 for success)
     """
+    from rich.console import Console
+    from rich.table import Table
+
     auth_paths = [p for p in get_auth_file_paths() if p.exists()]
 
-    print("Configured Authentication Providers:")
-    print("=" * 40)
+    console = Console(markup=False)
 
     if not auth_paths:
         print("No providers configured.")
@@ -135,15 +135,26 @@ def handle_list_keys(args) -> int:
         return 0
 
     for auth_file in auth_paths:
+        print(f"Config file: {auth_file}")
         with open(auth_file, "r", encoding="utf-8") as f:
             config = json.load(f)
         providers = [key for key in config if key != "provider"]
-        print(f"Config file: {auth_file}")
         if not providers:
             print("  (no providers configured)")
-        else:
-            for provider in providers:
-                print(f"  {provider}: ***")
+            print()
+            continue
+
+        table = Table(
+            header_style="bold cyan",
+            show_header=False,
+            box=None,
+            pad_edge=False,
+        )
+        table.add_column("Provider", style="green", no_wrap=True)
+        table.add_column("Status", no_wrap=True)
+        for provider in providers:
+            table.add_row(provider, "***")
+        console.print(table)
         print()
 
     return 0

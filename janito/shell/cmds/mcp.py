@@ -196,43 +196,62 @@ class McpCmdHandler(CmdHandler):
             print(f"  Headers:   {len(headers)} header(s) set")
 
     def _handle_list(self) -> None:
-        """List all configured MCP services."""
+        """List all configured MCP services as a rich table."""
+        from rich.console import Console
+        from rich.table import Table
+
         services = list_services()
 
-        print()
-        print("=" * 60)
-        print("Configured MCP Services")
-        print("=" * 60)
+        console = Console(markup=False)
 
         if not services:
-            print("  No MCP services configured.")
-            print()
-            print("  Use /mcp add <name> stdio <command> to add a stdio service")
-            print("  Use /mcp add <name> http <url> to add an HTTP service")
-        else:
-            for name, service_config in services.items():
-                transport = service_config.get("transport", "unknown")
+            table = Table(
+                title="Configured MCP Services",
+                title_style="bold",
+                header_style="bold cyan",
+                show_header=False,
+                box=None,
+                pad_edge=False,
+            )
+            table.add_column("Key", style="green", no_wrap=True)
+            table.add_column("Value", overflow="fold")
+            table.add_row("Status", "No MCP services configured.")
+            table.add_row(
+                "Add stdio", "/mcp add <name> stdio <command> to add a stdio service"
+            )
+            table.add_row(
+                "Add http", "/mcp add <name> http <url> to add an HTTP service"
+            )
+            table.add_row("Config file", str(get_mcp_config_path()))
+            console.print(table)
+            return
 
-                print(f"  {name}")
-                print(f"    Transport: {transport}")
+        table = Table(
+            title="Configured MCP Services",
+            title_style="bold",
+            header_style="bold cyan",
+        )
+        table.add_column("Service", style="green", no_wrap=True)
+        table.add_column("Transport", no_wrap=True)
+        table.add_column("Details", overflow="fold")
 
-                if transport == "stdio":
-                    command = service_config.get("command", "")
-                    print(f"    Command:   {command}")
-                elif transport == "http":
-                    url = service_config.get("url", "")
-                    print(f"    URL:       {url}")
-                    headers = service_config.get("headers", {})
-                    if headers:
-                        header_count = len(headers)
-                        print(f"    Headers:  {header_count} header(s)")
-                else:
-                    print(f"    Config:   {json.dumps(service_config)}")
-                print()
+        for name, service_config in services.items():
+            transport = service_config.get("transport", "unknown")
 
-        print(f"  Config file: {get_mcp_config_path()}")
-        print("=" * 60)
-        print()
+            if transport == "stdio":
+                details = f"Command: {service_config.get('command', '')}"
+            elif transport == "http":
+                details = f"URL: {service_config.get('url', '')}"
+                headers = service_config.get("headers", {})
+                if headers:
+                    details += f"; {len(headers)} header(s)"
+            else:
+                details = json.dumps(service_config)
+
+            table.add_row(name, transport, details)
+
+        console.print(table)
+        print(f"Config file: {get_mcp_config_path()}")
 
     def _handle_remove(self, name: str) -> None:
         """Remove an MCP service.
@@ -246,45 +265,89 @@ class McpCmdHandler(CmdHandler):
             print(f"Error: MCP service '{name}' not found")
 
     def _print_help(self) -> None:
-        """Print help information for the /mcp command."""
-        print()
-        print("=" * 60)
-        print("/mcp - MCP (Model Context Protocol) Service Manager")
-        print("=" * 60)
-        print()
-        print("Usage:")
-        print("  /mcp add <name> stdio <command> [args...]")
-        print("                      Add a stdio transport service")
-        print()
-        print("  /mcp add <name> http <url> [--header KEY:VALUE]")
-        print("                      Add an HTTP transport service")
-        print()
-        print("  /mcp list           List all configured MCP services")
-        print()
-        print("  /mcp remove <name>  Remove an MCP service")
-        print()
-        print("Transports:")
-        print("  stdio   - Local process via stdin/stdout (default for local servers)")
-        print("  http    - HTTP/SSE endpoint (for remote MCP servers)")
-        print()
-        print("Options:")
-        print("  --header KEY:VALUE  Add HTTP header (can be used multiple times)")
-        print()
-        print("Examples:")
-        print("  /mcp add myserver stdio python -m mcp.server")
-        print('  /mcp add myserver stdio "python -m mcp.server --port 5000"')
-        print()
-        print("  /mcp add remote http https://api.example.com/mcp")
-        print(
-            "  /mcp add remote http https://api.example.com/mcp --header Authorization:Bearer xxx"
+        """Print help information for the /mcp command as rich tables."""
+        from rich.console import Console
+        from rich.table import Table
+
+        console = Console(markup=False)
+
+        usage = Table(
+            title="/mcp - MCP (Model Context Protocol) Service Manager",
+            title_style="bold",
+            header_style="bold cyan",
+            show_header=False,
+            box=None,
+            pad_edge=False,
         )
-        print()
-        print("  /mcp list")
-        print("  /mcp remove myserver")
-        print()
-        print(f"  Config file: {get_mcp_config_path()}")
-        print("=" * 60)
-        print()
+        usage.add_column("Command", style="green", no_wrap=True)
+        usage.add_column("Description", overflow="fold")
+        usage.add_row(
+            "/mcp add <name> stdio <command> [args...]",
+            "Add a stdio transport service",
+        )
+        usage.add_row(
+            "/mcp add <name> http <url> [--header KEY:VALUE]",
+            "Add an HTTP transport service",
+        )
+        usage.add_row("/mcp list", "List all configured MCP services")
+        usage.add_row("/mcp remove <name>", "Remove an MCP service")
+        console.print(usage)
+
+        transports = Table(
+            title="Transports",
+            title_style="bold",
+            header_style="bold cyan",
+            show_header=False,
+            box=None,
+            pad_edge=False,
+        )
+        transports.add_column("Transport", style="green", no_wrap=True)
+        transports.add_column("Description", overflow="fold")
+        transports.add_row(
+            "stdio", "Local process via stdin/stdout (default for local servers)"
+        )
+        transports.add_row("http", "HTTP/SSE endpoint (for remote MCP servers)")
+        console.print(transports)
+
+        options = Table(
+            title="Options",
+            title_style="bold",
+            header_style="bold cyan",
+            show_header=False,
+            box=None,
+            pad_edge=False,
+        )
+        options.add_column("Option", style="green", no_wrap=True)
+        options.add_column("Description", overflow="fold")
+        options.add_row(
+            "--header KEY:VALUE", "Add HTTP header (can be used multiple times)"
+        )
+        console.print(options)
+
+        examples = Table(
+            title="Examples",
+            title_style="bold",
+            header_style="bold cyan",
+            show_header=False,
+            box=None,
+            pad_edge=False,
+        )
+        examples.add_column("Command", style="green", no_wrap=True)
+        examples.add_column("Description", overflow="fold")
+        examples.add_row("/mcp add myserver stdio python -m mcp.server", "")
+        examples.add_row(
+            '/mcp add myserver stdio "python -m mcp.server --port 5000"', ""
+        )
+        examples.add_row("/mcp add remote http https://api.example.com/mcp", "")
+        examples.add_row(
+            "/mcp add remote http https://api.example.com/mcp --header Authorization:Bearer xxx",
+            "",
+        )
+        examples.add_row("/mcp list", "")
+        examples.add_row("/mcp remove myserver", "")
+        console.print(examples)
+
+        print(f"Config file: {get_mcp_config_path()}")
 
 
 # Register this handler

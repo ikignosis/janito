@@ -106,21 +106,29 @@ def _print_config_info(provider: str | None = None, thinking: bool = False) -> N
         else:
             responses_in_server_display = "stateless (client re-sends history)"
 
-    print()
-    print("=" * 50)
-    print("Configuration Info")
-    print("=" * 50)
-    print(f"  Provider:           {provider}")
-    print(f"  API Type:           {api_type}")
+    from rich.console import Console
+    from rich.table import Table
+
+    table = Table(
+        title="Configuration Info",
+        title_style="bold",
+        header_style="bold cyan",
+        show_header=False,
+        box=None,
+        pad_edge=False,
+    )
+    table.add_column("Key", style="green", no_wrap=True)
+    table.add_column("Value", overflow="fold")
+    table.add_row("Provider", provider)
+    table.add_row("API Type", api_type)
     if responses_in_server_display:
-        print(f"  Responses In Server: {responses_in_server_display}")
-    print(f"  Base URL:           {base_url_display}")
-    print(f"  API Key:            {masked_key}")
-    print(f"  Max Output Tokens:  {max_output_tokens_display}")
-    print(f"  Reasoning Level:    {reasoning_level_display}")
-    print(f"  Thinking:           {thinking_display}")
-    print("=" * 50)
-    print()
+        table.add_row("Responses In Server", responses_in_server_display)
+    table.add_row("Base URL", base_url_display)
+    table.add_row("API Key", masked_key)
+    table.add_row("Max Output Tokens", max_output_tokens_display)
+    table.add_row("Reasoning Level", reasoning_level_display)
+    table.add_row("Thinking", thinking_display)
+    Console(markup=False).print(table)
 
 
 class StatusCmdHandler(CmdHandler):

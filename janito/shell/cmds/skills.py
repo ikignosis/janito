@@ -2,6 +2,9 @@
 /skills command handler - displays all available skills.
 """
 
+from rich.console import Console
+from rich.table import Table
+
 from .base import CmdHandler
 from .registry import register_command
 
@@ -25,6 +28,20 @@ def _truncate(description: str, length: int = 60) -> str:
     return description
 
 
+def _skills_table(title: str, skills: list[dict]) -> None:
+    """Print a Name/Description table for a group of skills."""
+    table = Table(
+        title=title,
+        title_style="bold",
+        header_style="bold cyan",
+    )
+    table.add_column("Name", style="green", no_wrap=True)
+    table.add_column("Description", overflow="fold")
+    for skill in skills:
+        table.add_row(skill["name"], _truncate(skill["description"]))
+    Console(markup=False).print(table)
+
+
 class SkillsCmdHandler(CmdHandler):
     """Command handler for /skills command."""
 
@@ -40,53 +57,57 @@ class SkillsCmdHandler(CmdHandler):
         return False
 
     def _print_skills(self) -> None:
-        """Print information about all available skills."""
+        """Print information about all available skills as rich tables."""
         skills = _load_skills()
 
-        print()
-        print("=" * 60)
-        print("Available Skills")
-        print("=" * 60)
-
         if not skills:
-            print("  No skills installed.")
-            print()
-            print("  Home skills:  <config_dir>/skills")
-            print("  Local skills: .janito/skills (in the current directory)")
-            print()
-            print("  Use `janito --install-skill <github-url>` to install a skill.")
-            print("=" * 60)
-            print()
+            console = Console(markup=False)
+            table = Table(
+                title="Available Skills",
+                title_style="bold",
+                header_style="bold cyan",
+                show_header=False,
+                box=None,
+                pad_edge=False,
+            )
+            table.add_column("Key", style="green", no_wrap=True)
+            table.add_column("Value", overflow="fold")
+            table.add_row("Status", "No skills installed.")
+            table.add_row("Home skills", "<config_dir>/skills")
+            table.add_row("Local skills", ".janito/skills (in the current directory)")
+            table.add_row(
+                "Install",
+                "Use `janito --install-skill <github-url>` to install a skill.",
+            )
+            console.print(table)
             return
 
         home_skills = [s for s in skills if s["source"] == "home"]
         local_skills = [s for s in skills if s["source"] == "local"]
 
         if home_skills:
-            print("\n[Home Skills]")
-            print("-" * 40)
-            for skill in home_skills:
-                name = skill["name"]
-                description = _truncate(skill["description"])
-                print(f"  {name:<25} {description}")
+            _skills_table("Home Skills", home_skills)
 
         if local_skills:
-            print("\n[Local Skills]")
-            print("-" * 40)
-            for skill in local_skills:
-                name = skill["name"]
-                description = _truncate(skill["description"])
-                print(f"  {name:<25} {description}")
+            _skills_table("Local Skills", local_skills)
 
         # Summary
         total = len(skills)
-        print()
-        print(
-            f"Total: {total} skill(s) "
-            f"({len(home_skills)} home, {len(local_skills)} local)"
+        summary = Table(
+            title="Summary",
+            title_style="bold",
+            header_style="bold cyan",
+            show_header=False,
+            box=None,
+            pad_edge=False,
         )
-        print("=" * 60)
-        print()
+        summary.add_column("Key", style="green", no_wrap=True)
+        summary.add_column("Value")
+        summary.add_row(
+            "Total",
+            f"{total} skill(s) ({len(home_skills)} home, {len(local_skills)} local)",
+        )
+        Console(markup=False).print(summary)
 
 
 # Register this handler

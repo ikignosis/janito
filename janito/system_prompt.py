@@ -40,10 +40,9 @@ def get_system_prompt_sections() -> list[tuple[str, str]]:
     - ``skills`` — the skills advertisement (only when non-empty);
     - ``agents.md`` — the cwd ``AGENTS.md`` content (only when present).
 
-    Consumers can slice the prompt per section using these boundaries (e.g.
-    the ``/prompt`` shell command and ``--show-system-prompt`` render each
-    section with a ``---- <name> (<n> lines)`` header via
-    :func:`render_system_prompt_sections`).
+    Consumers can slice the prompt per section using these boundaries; the
+    shell ``/prompt`` command and ``janito --show-system-prompt`` display each
+    section as a row of a rich table (Section, Lines, Content).
     """
     from .tooling.tools_registry import get_skills_section
 
@@ -68,35 +67,3 @@ def get_system_prompt_sections() -> list[tuple[str, str]]:
 def get_system_prompt_with_skills() -> str:
     """Get the base system prompt with skills advertisement appended."""
     return "".join(text for _, text in get_system_prompt_sections())
-
-
-def render_system_prompt_sections(sections: list[tuple[str, str]]) -> str:
-    """Render prompt sections with per-section headers and line counts.
-
-    Every section is prefixed with a ``---- <name> (<n> lines)`` header, where
-    ``<n>`` is the number of lines displayed for that section (trailing blank
-    lines are not counted).  This makes it easy to see how much of the prompt
-    each source contributes and to slice the output.
-
-    Example::
-
-        ---- base (1 lines)
-        - Explore the current directory for potential content related to the question
-        ---- skills (12 lines)
-        ## Available Skills
-        ...
-        ---- agents.md (3 lines)
-        - When creating tools read docs/TOOL.md
-        ...
-    """
-    rendered: list[str] = []
-    for name, text in sections:
-        body = text.strip()
-        line_count = len(body.splitlines()) if body else 0
-        rendered.append(f"---- {name} ({line_count} lines)")
-        rendered.append(body)
-    return "\n".join(rendered)
-
-
-# - Before answering, explore the content related to the question
-# - Use the namespace functions to deliver the code changes instead of showing the code.

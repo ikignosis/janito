@@ -64,20 +64,29 @@ def _categorize_tools(schemas, permissions) -> dict[str, list[dict]]:
 
 
 def _print_categories(categories: dict[str, list[dict]]) -> None:
-    """Display tools grouped by category."""
-    for category, tools_list in categories.items():
-        if tools_list:
-            print(f"\n{category}:")
-            print("-" * 40)
+    """Display tools grouped by category as a rich table."""
+    from rich.console import Console
+    from rich.table import Table
 
-            for tool in sorted(tools_list, key=lambda x: x["name"]):
-                perms_str = f" [{tool['permissions']}]" if tool["permissions"] else ""
-                params_str = (
-                    f" ({', '.join(tool['params'])})"
-                    if tool["params"]
-                    else " (no params)"
-                )
-                print(f"  {tool['name']}{perms_str}{params_str}")
+    console = Console(markup=False)
+    for category, tools_list in categories.items():
+        if not tools_list:
+            continue
+        table = Table(
+            title=category,
+            title_style="bold",
+            header_style="bold cyan",
+        )
+        table.add_column("Tool", style="green", no_wrap=True)
+        table.add_column("Permissions", no_wrap=True)
+        table.add_column("Parameters", overflow="fold")
+
+        for tool in sorted(tools_list, key=lambda x: x["name"]):
+            perms_str = tool["permissions"] or "-"
+            params_str = ", ".join(tool["params"]) if tool["params"] else "(no params)"
+            table.add_row(tool["name"], perms_str, params_str)
+
+        console.print(table)
 
 
 def handle_list_tools(args) -> int:
@@ -89,6 +98,9 @@ def handle_list_tools(args) -> int:
     Returns:
         int: Exit code (0 for success)
     """
+    from rich.console import Console
+    from rich.table import Table
+
     # Add gmail toolset if --gmail flag is set
     if getattr(args, "gmail", False):
         add_toolset("gmail")
@@ -100,16 +112,70 @@ def handle_list_tools(args) -> int:
     schemas = get_all_tool_schemas()
     permissions = get_all_tool_permissions()
 
-    print("Available Tools:")
-    print("=" * 60)
-
     categories = _categorize_tools(schemas, permissions)
     _print_categories(categories)
 
-    print(f"\nTotal: {len(schemas)} tools")
-    print("\nPermission codes: r=read, w=write, x=execute")
+    table = Table(
+        title="Available Tools",
+        title_style="bold",
+        header_style="bold cyan",
+        show_header=False,
+        box=None,
+        pad_edge=False,
+    )
+    table.add_column("Key", style="green", no_wrap=True)
+    table.add_column("Value")
+    table.add_row("Total", str(len(schemas)))
+    table.add_row("Permission codes", "r=read, w=write, x=execute")
+    Console(markup=False).print(table)
 
     return 0
+
+
+def _mcp_service_rows(
+    manager, name: str, config: dict
+) -> tuple[str, str, str, str, str]:
+    """Build the (name, transport, status, config, tools) row for one MCP service."""
+    transport = config.get("transport", "unknown")
+    connected = name in manager.connected_services
+    status = "[connected]" if connected else "[not connected]"
+
+    if transport == "stdio":
+        config_display = f"Command: {config.get('command', '')}"
+    elif transport == "http":
+        config_display = f"URL: {config.get('url', '')}"
+        headers = config.get("headers", {})
+        if headers:
+            config_display += f"; {len(headers)} header(s)"
+    else:
+        import json
+
+        config_display = json.dumps(config)
+
+    tools_display = ""
+    if connected:
+        # Get tools for this service
+        try:
+            # Refresh tools to get updated list
+            tools = manager.get_all_tools(force_refresh=True)
+            service_tools = [
+                t
+                for t in tools
+                if t.get("function", {}).get("name", "").startswith(f"{name}_")
+            ]
+            tool_names = []
+            for tool in service_tools:
+                func = tool.get("function", {})
+                tool_name = func.get("name", "")
+                # Remove prefix for display
+                display_name = tool_name[len(name) + 1 :] if tool_name else tool_name
+                tool_names.append(display_name)
+            if tool_names:
+                tools_display = ", ".join(tool_names)
+        except Exception as e:
+            tools_display = f"Error loading tools: {e}"
+
+    return name, transport, status, config_display, tools_display
 
 
 def handle_list_mcp(args) -> int:
@@ -121,57 +187,43 @@ def handle_list_mcp(args) -> int:
     Returns:
         int: Exit code (0 for success)
     """
+    from rich.console import Console
+    from rich.table import Table
+
     services = list_services()
 
-    print("MCP Services:")
-    print("=" * 60)
-    print(f"Config file: {get_mcp_config_path()}")
-    print()
+    console = Console(markup=False)
 
     if not services:
-        print("  No MCP services configured.")
+        print("MCP Services: none configured")
+        print(f"Config file: {get_mcp_config_path()}")
         print()
         print("  Use /mcp add to configure MCP services in interactive mode")
-    else:
-        # Load MCP manager to get tools
-        manager = get_mcp_manager()
-        manager.load_services()
+        return 0
 
-        for name, config in services.items():
-            transport = config.get("transport", "unknown")
-            connected = name in manager.connected_services
-            status = "[connected]" if connected else "[not connected]"
+    # Load MCP manager to get tools
+    manager = get_mcp_manager()
+    manager.load_services()
 
-            print(f"  {name} ({transport}) {status}")
+    table = Table(
+        title="MCP Services",
+        title_style="bold",
+        header_style="bold cyan",
+    )
+    table.add_column("Service", style="green", no_wrap=True)
+    table.add_column("Transport", no_wrap=True)
+    table.add_column("Status", no_wrap=True)
+    table.add_column("Config", overflow="fold")
 
-            if connected:
-                # Get tools for this service
-                try:
-                    # Refresh tools to get updated list
-                    tools = manager.get_all_tools(force_refresh=True)
-                    service_tools = [
-                        t
-                        for t in tools
-                        if t.get("function", {}).get("name", "").startswith(f"{name}_")
-                    ]
+    for name, config in services.items():
+        row = _mcp_service_rows(manager, name, config)
+        table.add_row(*row[:4])
+        if row[4]:
+            table.add_row("", "", "", f"Tools: {row[4]}")
 
-                    for tool in service_tools:
-                        func = tool.get("function", {})
-                        tool_name = func.get("name", "")
-                        # Remove prefix for display
-                        display_name = (
-                            tool_name[len(name) + 1 :] if tool_name else tool_name
-                        )
-                        desc = func.get("description", "")[:50]
-                        print(f"    - {display_name}")
-                        if desc:
-                            print(f"      {desc}...")
-                except Exception as e:
-                    print(f"    Error loading tools: {e}")
-            print()
+    manager.unload_all()
 
-        manager.unload_all()
-
-    print("=" * 60)
+    console.print(table)
+    print(f"Config file: {get_mcp_config_path()}")
 
     return 0

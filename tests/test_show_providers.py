@@ -65,20 +65,21 @@ def test_lists_all_builtin_providers(monkeypatch, tmp_path, capsys):
     rc, out = _run(monkeypatch, tmp_path, capsys)
 
     assert rc == 0
-    assert f"Supported Providers ({len(PROVIDER_INFO)}):" in out
+    assert f"Supported Providers ({len(PROVIDER_INFO)})" in out
     for name in PROVIDER_INFO:
-        assert f"  {name}" in out
+        assert name in out
 
     # Spot-check fields of a built-in provider.
-    assert "    Model:         gpt-5.6-luna (default)" in out  # openai
-    assert "    API types:     Responses (default), Completions" in out  # openai
-    assert "    Thinking:      enabled" in out  # deepseek / alibaba
+    assert "gpt-5.6-luna (default)" in out  # openai
+    assert "Responses (default), Completions" in out  # openai
+    assert "enabled" in out  # deepseek / alibaba
 
 
 def test_custom_provider_shows_endpoint_hint(monkeypatch, tmp_path, capsys):
     _, out = _run(monkeypatch, tmp_path, capsys)
-    assert "  custom" in out
-    assert "custom (set endpoint with --set endpoint=URL)" in out
+    assert "custom" in out
+    assert "custom (set endpoint with --set" in out
+    assert "endpoint=URL)" in out
 
 
 # ---------------------------------------------------------------------------
@@ -94,12 +95,12 @@ def test_lists_registered_variants(monkeypatch, tmp_path, capsys):
     rc, out = _run(monkeypatch, tmp_path, capsys)
 
     assert rc == 0
-    assert "  alibaba-tokenplan (variant of alibaba)" in out
-    assert "  custom-local (variant of custom)" in out
+    assert "alibaba-tokenplan (variant of alibaba)" in out
+    assert "custom-local (variant of custom)" in out
 
     # The variant inherits the base provider's built-in defaults.
-    assert "    Model:         qwen3.8-max (default)" in out  # alibaba default
-    assert "    API types:     Completions (default), Responses, DashScope" in out
+    assert "qwen3.8-max (default)" in out  # alibaba default
+    assert "Completions (default), Responses, DashScope" in out
 
 
 # ---------------------------------------------------------------------------
@@ -115,19 +116,20 @@ def test_shows_configured_overrides_and_masked_key(monkeypatch, tmp_path, capsys
         "endpoint=https://variant.example.com/v1", "alibaba-tokenplan"
     )
     set_api_key(
-        "alibaba-tokenplan", "sk-abcdef1234567890wxyz"  # pragma: allowlist secret
+        "alibaba-tokenplan",
+        "sk-abcdef1234567890wxyz",  # pragma: allowlist secret
     )
 
     _, out = _run(monkeypatch, tmp_path, capsys)
 
-    assert "    Model:         qwen-plus (configured; default qwen3.8-max)" in out
-    assert "    Endpoint:      https://variant.example.com/v1" in out
-    assert "    API key:       sk-abc.............wxyz (set)" in out
+    assert "qwen-plus (configured; default qwen3.8-max)" in out
+    assert "https://variant.example.com/v1" in out
+    assert "sk-abc.............wxyz (set)" in out
 
 
 def test_api_key_hidden_for_unset_providers(monkeypatch, tmp_path, capsys):
     _, out = _run(monkeypatch, tmp_path, capsys)
-    assert "    API key:       (not set)" in out
+    assert "(not set)" in out
 
 
 # ---------------------------------------------------------------------------
@@ -141,8 +143,8 @@ def test_active_marker_follows_configured_provider(monkeypatch, tmp_path, capsys
 
     _, out = _run(monkeypatch, tmp_path, capsys)
 
-    assert "  openai" in out
-    assert "  deepseek [active]" in out
+    assert "openai" in out
+    assert "deepseek [active]" in out
 
 
 def test_active_marker_for_variant(monkeypatch, tmp_path, capsys):
@@ -152,7 +154,7 @@ def test_active_marker_for_variant(monkeypatch, tmp_path, capsys):
 
     _, out = _run(monkeypatch, tmp_path, capsys)
 
-    assert "  alibaba-tokenplan (variant of alibaba) [active]" in out
+    assert "alibaba-tokenplan (variant of alibaba) [active]" in out
 
 
 # ---------------------------------------------------------------------------

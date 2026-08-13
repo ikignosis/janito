@@ -53,20 +53,13 @@ def _resolve_endpoint_display(provider: str) -> tuple[str, str]:
     return built_in, "built-in"
 
 
-def _print_provider_block(
+def _provider_rows(
     name: str,
     *,
-    active: bool,
     variant_of: str | None = None,
-) -> None:
-    """Print one provider (or variant) block to stdout."""
-    is_variant = variant_of is not None
-    header = f"  {name}"
-    if is_variant:
-        header += f" (variant of {variant_of})"
-    if active:
-        header += " [active]"
-    print(header)
+) -> list[tuple[str, str]]:
+    """Build the (key, value) rows describing one provider or variant."""
+    rows: list[tuple[str, str]] = []
 
     # Model: configured override first, otherwise the built-in default
     # (resolved through the base provider for variants).
@@ -82,7 +75,7 @@ def _print_provider_block(
         model_display = f"{default_model} (default)"
     else:
         model_display = "(not set)"
-    print(f"    Model:         {model_display}")
+    rows.append(("Model", model_display))
 
     # API types: the first entry is the built-in default.
     api_types = get_supported_api_types_from_provider(name) or []
@@ -94,35 +87,38 @@ def _print_provider_block(
         )
     else:
         api_types_display = "(none)"
-    print(f"    API types:     {api_types_display}")
+    rows.append(("API types", api_types_display))
 
     # Effective endpoint (configured override or built-in default).
     endpoint, endpoint_source = _resolve_endpoint_display(name)
-    print(f"    Endpoint:      {endpoint or endpoint_source}")
+    rows.append(("Endpoint", endpoint or endpoint_source))
 
     # API key (masked for display).
     api_key = get_api_key(name)
     api_key_display = f"{get_masked_api_key(api_key)} (set)" if api_key else "(not set)"
-    print(f"    API key:       {api_key_display}")
+    rows.append(("API key", api_key_display))
 
     # Thinking mode default.
     thinking = get_default_thinking_from_provider(name)
-    print(f"    Thinking:      {'enabled' if thinking else 'disabled'}")
+    rows.append(("Thinking", "enabled" if thinking else "disabled"))
 
     # Reasoning level default, when the provider declares one.
     reasoning = get_default_reasoning_level_from_provider(name)
     if reasoning:
-        print(f"    Reasoning:     {reasoning} (default)")
+        rows.append(("Reasoning", f"{reasoning} (default)"))
 
     # Token limits.
     max_input = get_default_max_input_tokens_from_provider(name)
     max_output = get_default_max_output_tokens_from_provider(name)
     if max_input is not None or max_output is not None:
-        print(
-            f"    Max tokens:    {_format_token_limit(max_input)} in / {_format_token_limit(max_output)} out"
+        rows.append(
+            (
+                "Max tokens",
+                f"{_format_token_limit(max_input)} in / {_format_token_limit(max_output)} out",
+            )
         )
 
-    print()
+    return rows
 
 
 def handle_show_providers(args) -> int:
@@ -131,8 +127,9 @@ def handle_show_providers(args) -> int:
     Lists every supported provider from ``PROVIDER_INFO`` (with its built-in
     default model, API types, endpoint, token limits, thinking/reasoning
     defaults and API-key status) followed by the registered provider variants
-    (``<provider>-<word>``, marked with their base provider). The configured
-    default provider is flagged ``[active]``.
+    (``<provider>-<word>``, marked with their base provider). Each provider is
+    rendered as a rich two-column table. The configured default provider is
+    flagged ``[active]``.
 
     Args:
         args: Parsed command line arguments
@@ -140,6 +137,9 @@ def handle_show_providers(args) -> int:
     Returns:
         int: Exit code (0 for success)
     """
+    from rich.console import Console
+    from rich.table import Table
+
     active_provider = get_active_provider()
 
     # Built-in providers, in registry order; variants appended afterwards
@@ -151,16 +151,30 @@ def handle_show_providers(args) -> int:
 
     total = len(entries)
     print(f"Supported Providers ({total}):")
-    print("=" * 60)
+    print()
 
+    console = Console(markup=False)
     for name, variant_of in entries:
-        _print_provider_block(
-            name,
-            active=(name.lower() == (active_provider or "").lower()),
-            variant_of=variant_of,
-        )
+        header = name
+        if variant_of is not None:
+            header += f" (variant of {variant_of})"
+        if name.lower() == (active_provider or "").lower():
+            header += " [active]"
 
-    print("=" * 60)
+        table = Table(
+            title=header,
+            title_style="bold",
+            header_style="bold cyan",
+            show_header=False,
+            box=None,
+            pad_edge=False,
+        )
+        table.add_column("Key", style="green", no_wrap=True)
+        table.add_column("Value", overflow="fold")
+        for key, value in _provider_rows(name, variant_of=variant_of):
+            table.add_row(key, value)
+        console.print(table)
+
     print(f"Config file:  {get_config_path()}")
     auth_path = get_auth_file_path()
     if auth_path.exists():

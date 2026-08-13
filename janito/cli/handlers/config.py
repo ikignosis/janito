@@ -176,10 +176,17 @@ def _prompt_with_default(
             sys.exit(0)
 
 
+def _prompt_section(title: str) -> None:
+    """Print a section header for the interactive configuration wizard."""
+    from rich.console import Console
+    from rich.panel import Panel
+
+    Console(markup=False).print(Panel(title, border_style="cyan"))
+
+
 def _prompt_provider(existing_provider: str | None) -> str | None:
     """Prompt for the provider via a questionary select; returns None to abort."""
-    print("Provider Configuration")
-    print("-" * 30)
+    _prompt_section("Provider Configuration")
     supported = sorted(list_supported_providers())
     # Pre-select the currently configured provider when it is one of the
     # supported choices (a hand-edited config may contain an unknown name).
@@ -214,8 +221,7 @@ def _prompt_api_key(provider: str) -> str | None:
         print(f"  No API key found for '{provider}' in auth config")
     print()
 
-    print("Authentication")
-    print("-" * 30)
+    _prompt_section("Authentication")
     api_key = _prompt_with_default(
         "Enter API key", default=existing_api_key, is_password=True
     )
@@ -230,8 +236,7 @@ def _prompt_api_key(provider: str) -> str | None:
 
 def _prompt_model(provider: str, existing_model: str | None) -> str | None:
     """Prompt for the model name; returns None to abort."""
-    print("Model")
-    print("-" * 30)
+    _prompt_section("Model")
     # Default to the model already configured for the selected provider.
     default_model = load_model_from_config(provider) or existing_model
     model = _prompt_with_default("Enter model name", default=default_model)
@@ -246,8 +251,7 @@ def _prompt_model(provider: str, existing_model: str | None) -> str | None:
 
 def _prompt_max_output_tokens(existing_max_output_tokens: int | None) -> int | None:
     """Prompt for the max output tokens; returns None to abort."""
-    print("Max Output Tokens")
-    print("-" * 30)
+    _prompt_section("Max Output Tokens")
     default_max_tokens = (
         existing_max_output_tokens if existing_max_output_tokens else 65536
     )
@@ -270,8 +274,7 @@ def _prompt_max_input_tokens(
     provider: str, existing_max_input_tokens: int | None
 ) -> int | None:
     """Prompt for the max input tokens (context window); None to abort."""
-    print("Max Input Tokens")
-    print("-" * 30)
+    _prompt_section("Max Input Tokens")
     # Default to the value already configured for the provider, otherwise the
     # provider's built-in context window, otherwise a generic 128k fallback.
     default_max_input = existing_max_input_tokens
@@ -296,8 +299,7 @@ def _prompt_max_input_tokens(
 
 def _prompt_custom_endpoint(provider: str, existing_endpoint: str | None) -> str | None:
     """Prompt for the endpoint (required for 'custom' provider); None to abort."""
-    print("Endpoint (required for 'custom' provider)")
-    print("-" * 30)
+    _prompt_section("Endpoint (required for 'custom' provider)")
     # Default to the endpoint already configured for the selected provider.
     default_endpoint = load_endpoint_from_config(provider) or existing_endpoint
     endpoint = _prompt_with_default("Enter API endpoint URL", default=default_endpoint)
@@ -387,9 +389,16 @@ def handle_config_interactive() -> int:
     existing_max_output_tokens = load_max_output_tokens(existing_provider)
     existing_endpoint = load_endpoint_from_config()
 
-    print("\n" + "=" * 50)
-    print("  janito Interactive Configuration")
-    print("=" * 50)
+    from rich.console import Console
+    from rich.panel import Panel
+
+    print()
+    Console(markup=False).print(
+        Panel(
+            "[bold]janito Interactive Configuration[/bold]",
+            border_style="cyan",
+        )
+    )
     print()
 
     provider = _prompt_provider(existing_provider)
@@ -424,17 +433,27 @@ def handle_config_interactive() -> int:
             return 1
 
     # Confirm changes
-    print("=" * 50)
-    print("Configuration Summary:")
-    print("-" * 30)
-    print(f"  Provider:          {provider}")
-    print(f"  Model:             {model}")
-    print(f"  API Key:           {get_masked_api_key(api_key)}")
-    print(f"  Max Output Tokens:    {max_output_tokens}")
-    print(f"  Max Input Tokens:     {max_input_tokens}")
+    from rich.console import Console
+    from rich.table import Table
+
+    table = Table(
+        title="Configuration Summary",
+        title_style="bold",
+        header_style="bold cyan",
+        show_header=False,
+        box=None,
+        pad_edge=False,
+    )
+    table.add_column("Key", style="green", no_wrap=True)
+    table.add_column("Value", overflow="fold")
+    table.add_row("Provider", provider)
+    table.add_row("Model", model)
+    table.add_row("API Key", get_masked_api_key(api_key))
+    table.add_row("Max Output Tokens", str(max_output_tokens))
+    table.add_row("Max Input Tokens", str(max_input_tokens))
     if endpoint:
-        print(f"  Endpoint:          {endpoint}")
-    print("=" * 50)
+        table.add_row("Endpoint", endpoint)
+    Console(markup=False).print(table)
     print()
 
     confirm = input("Save these settings? [Y/n]: ").strip().lower()

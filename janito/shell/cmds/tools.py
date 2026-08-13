@@ -2,6 +2,9 @@
 /tools command handler - displays all loaded tools.
 """
 
+from rich.console import Console
+from rich.table import Table
+
 from .base import CmdHandler
 from .registry import register_command
 
@@ -44,48 +47,22 @@ def _truncate(description: str) -> str:
     return description
 
 
-def _print_builtin_tools(builtin_tools, builtin_schemas) -> None:
-    """Print the built-in tools section."""
-    print("\n[Built-in Tools]")
-    print("-" * 40)
-    if builtin_tools:
-        for name in sorted(builtin_tools.keys()):
-            schema = builtin_schemas.get(name, {})
-            description = _truncate(schema.get("description", "No description"))
-            print(f"  {name:<25} {description}")
-    else:
-        print("  (none loaded)")
-
-
-def _print_skipped_tools() -> None:
-    """Print tools skipped during discovery (failed should_load() validation)."""
-    try:
-        from janito.tools import get_skipped_tools
-
-        skipped_tools = get_skipped_tools()
-    except Exception:
-        skipped_tools = {}
-    if skipped_tools:
-        print("\n[Skipped Tools]")
-        print("-" * 40)
-        for name, reason in sorted(skipped_tools.items()):
-            print(f"  {name:<25} {reason}")
-
-
-def _print_mcp_tools(mcp_tools) -> None:
-    """Print the MCP tools section."""
-    print("\n[MCP Tools]")
-    print("-" * 40)
-    if mcp_tools:
-        for tool in sorted(mcp_tools, key=lambda x: x["name"]):
-            name = tool["name"]
-            description = tool.get("description", "No description")
-            # Remove the [service] prefix from description for cleaner display
-            if description.startswith("[") and "] " in description:
-                description = description.split("] ", 1)[1]
-            print(f"  {name:<25} {_truncate(description)}")
-    else:
-        print("  (no MCP services connected)")
+def _tools_table(title: str, rows: list[tuple[str, str]]) -> None:
+    """Print a Tool/Description table (or a friendly message when empty)."""
+    console = Console(markup=False)
+    if not rows:
+        print(f"{title}: (none)")
+        return
+    table = Table(
+        title=title,
+        title_style="bold",
+        header_style="bold cyan",
+    )
+    table.add_column("Tool", style="green", no_wrap=True)
+    table.add_column("Description", overflow="fold")
+    for name, description in rows:
+        table.add_row(name, description)
+    console.print(table)
 
 
 class ToolsCmdHandler(CmdHandler):
@@ -103,12 +80,7 @@ class ToolsCmdHandler(CmdHandler):
         return False
 
     def _print_tools(self) -> None:
-        """Print information about all available tools."""
-        print()
-        print("=" * 60)
-        print("Available Tools")
-        print("=" * 60)
-
+        """Print information about all available tools as rich tables."""
         # Get built-in tools from tools_registry
         builtin_tools, builtin_schemas = _load_builtin_tools()
 
@@ -116,18 +88,52 @@ class ToolsCmdHandler(CmdHandler):
         mcp_tools = _load_mcp_tools()
 
         # Print sections
-        _print_builtin_tools(builtin_tools, builtin_schemas)
-        _print_skipped_tools()
-        _print_mcp_tools(mcp_tools)
+        builtin_rows = []
+        if builtin_tools:
+            for name in sorted(builtin_tools.keys()):
+                schema = builtin_schemas.get(name, {})
+                description = _truncate(schema.get("description", "No description"))
+                builtin_rows.append((name, description))
+        _tools_table("Built-in Tools", builtin_rows)
+
+        skipped_rows = []
+        try:
+            from janito.tools import get_skipped_tools
+
+            skipped_tools = get_skipped_tools()
+        except Exception:
+            skipped_tools = {}
+        for name, reason in sorted(skipped_tools.items()):
+            skipped_rows.append((name, reason))
+        _tools_table("Skipped Tools", skipped_rows)
+
+        mcp_rows = []
+        for tool in sorted(mcp_tools, key=lambda x: x["name"]):
+            name = tool["name"]
+            description = tool.get("description", "No description")
+            # Remove the [service] prefix from description for cleaner display
+            if description.startswith("[") and "] " in description:
+                description = description.split("] ", 1)[1]
+            mcp_rows.append((name, _truncate(description)))
+        _tools_table("MCP Tools", mcp_rows)
 
         # Summary
         total_tools = len(builtin_tools) + len(mcp_tools)
-        print()
-        print(
-            f"Total: {total_tools} tools ({len(builtin_tools)} built-in, {len(mcp_tools)} MCP)"
+        summary = Table(
+            title="Summary",
+            title_style="bold",
+            header_style="bold cyan",
+            show_header=False,
+            box=None,
+            pad_edge=False,
         )
-        print("=" * 60)
-        print()
+        summary.add_column("Key", style="green", no_wrap=True)
+        summary.add_column("Value")
+        summary.add_row(
+            "Total",
+            f"{total_tools} tools ({len(builtin_tools)} built-in, {len(mcp_tools)} MCP)",
+        )
+        Console(markup=False).print(summary)
 
 
 # Register this handler

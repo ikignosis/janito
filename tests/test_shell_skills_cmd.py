@@ -95,14 +95,13 @@ if pytest is not None:
         handled, output = _run_handler(provider)
 
         assert handled is True
-        assert "Available Skills" in output
-        assert "[Home Skills]" in output
-        assert "[Local Skills]" in output
+        assert "Home Skills" in output
+        assert "Local Skills" in output
         assert "git-commit" in output
         assert "Commit with conventional commits" in output
         assert "code-review" in output
         assert "Review code for security issues" in output
-        assert "Total: 2 skill(s) (1 home, 1 local)" in output
+        assert "2 skill(s) (1 home, 1 local)" in output
 
     def test_empty_output_shows_helpful_message(tmp_path):
         provider = _provider_with(tmp_path / "does_not_exist")

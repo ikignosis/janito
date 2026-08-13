@@ -22,37 +22,43 @@ class HistoryCmdHandler(CmdHandler):
         return False
 
     def _print_history(self, shell) -> None:
-        """Print the contents of the message history."""
-        print()
-        print("=" * 50)
-        print("Message History")
-        print("=" * 50)
+        """Print the contents of the message history as a rich table."""
+        from rich.console import Console
+        from rich.table import Table
 
         if not shell.messages_history:
-            print("  (empty)")
-        else:
-            for i, msg in enumerate(shell.messages_history):
-                if isinstance(msg, dict):
-                    role = msg.get("role", "unknown")
-                    content = msg.get("content") or ""
-                else:
-                    print(msg)
-                    role = msg.role
-                    content = msg.content or ""
+            Console(markup=False).print("(empty)")
+            return
 
-                # Truncate long content for display
-                if len(content) > 200:
-                    content_preview = content[:200] + "..."
-                else:
-                    content_preview = content
+        table = Table(
+            title="Message History",
+            title_style="bold",
+            header_style="bold cyan",
+        )
+        table.add_column("#", justify="right", style="dim", no_wrap=True)
+        table.add_column("Role", style="green", no_wrap=True)
+        table.add_column("Content", overflow="fold")
 
-                # Replace newlines for cleaner display
-                content_preview = content_preview.replace("\n", "\\n")
+        for i, msg in enumerate(shell.messages_history):
+            if isinstance(msg, dict):
+                role = msg.get("role", "unknown")
+                content = msg.get("content") or ""
+            else:
+                role = msg.role
+                content = msg.content or ""
 
-                print(f"  [{i}] {role}: {content_preview}")
+            # Truncate long content for display
+            if len(content) > 200:
+                content_preview = content[:200] + "..."
+            else:
+                content_preview = content
 
-        print("=" * 50)
-        print()
+            # Replace newlines for cleaner display
+            content_preview = content_preview.replace("\n", "\\n")
+
+            table.add_row(str(i), role, content_preview)
+
+        Console(markup=False).print(table)
 
 
 # Register this handler

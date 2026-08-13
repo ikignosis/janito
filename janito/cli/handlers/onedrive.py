@@ -33,22 +33,32 @@ def handle_onedrive_auth():
         print("6. Copy the 'Application (client) ID'", file=sys.stderr)
         return 1
 
-    print("\n" + "=" * 60)
-    print("  MICROSOFT ONEDRIVE AUTHENTICATION")
-    print("=" * 60 + "\n")
+    print()
 
     try:
         # Get device code
         auth = DeviceCodeAuth(client_id)
         user_code, verification_url = auth.get_device_code()
 
-        print("  Step 1: Open this URL in your browser:")
-        print(f"     {verification_url}")
-        print("\n  Step 2: Enter this code:")
-        print(f"     {user_code}")
-        print("\n  Step 3: Sign in with your Microsoft account")
-        print("  Step 4: Click 'Continue' to grant permissions")
-        print("\n  Waiting for authentication...")
+        from rich.console import Console
+        from rich.panel import Panel
+
+        Console(markup=False).print(
+            Panel(
+                "[bold]MICROSOFT ONEDRIVE AUTHENTICATION[/bold]\n\n"
+                "  Step 1: Open this URL in your browser:\n"
+                f"     {verification_url}\n"
+                "\n"
+                "  Step 2: Enter this code:\n"
+                f"     {user_code}\n"
+                "\n"
+                "  Step 3: Sign in with your Microsoft account\n"
+                "  Step 4: Click 'Continue' to grant permissions\n"
+                "\n"
+                "  Waiting for authentication...",
+                border_style="cyan",
+            )
+        )
 
         # Poll for token
         token_data = auth.poll_for_token()
@@ -85,20 +95,33 @@ def handle_onedrive_logout():
 
 def handle_onedrive_status():
     """Handle OneDrive status check - show authentication status."""
+    from rich.console import Console
+    from rich.table import Table
+
     client_id = get_secret("azure_client_id")
     access_token = get_secret("azure_access_token")
     refresh_token = get_secret("azure_refresh_token")
 
-    print("OneDrive Authentication Status")
-    print("=" * 40)
+    console = Console(markup=False)
 
     if not client_id:
+        print("OneDrive Authentication Status")
         print("Client ID: Not configured")
         print("\nSet your client ID with:")
         print("  janito --set-secret azure_client_id=your-client-id")
         return 1
 
-    print(f"Client ID: {client_id[:8]}...{client_id[-8:]}")
+    table = Table(
+        title="OneDrive Authentication Status",
+        title_style="bold",
+        header_style="bold cyan",
+        show_header=False,
+        box=None,
+        pad_edge=False,
+    )
+    table.add_column("Key", style="green", no_wrap=True)
+    table.add_column("Value", overflow="fold")
+    table.add_row("Client ID", f"{client_id[:8]}...{client_id[-8:]}")
 
     if access_token and refresh_token:
         expires_at_str = get_secret("azure_token_expires_at")
@@ -106,16 +129,20 @@ def handle_onedrive_status():
             expires_at = float(expires_at_str)
             remaining = expires_at - time.time()
             if remaining > 0:
-                print(f"Access Token: [OK] Valid (expires in {int(remaining)}s)")
+                table.add_row(
+                    "Access Token", f"[OK] Valid (expires in {int(remaining)}s)"
+                )
             else:
-                print("Access Token: [EXPIRED] Will refresh automatically")
+                table.add_row("Access Token", "[EXPIRED] Will refresh automatically")
         else:
-            print("Access Token: [OK] Stored")
-        print("Refresh Token: [OK] Stored")
+            table.add_row("Access Token", "[OK] Stored")
+        table.add_row("Refresh Token", "[OK] Stored")
+        console.print(table)
         print("\n[OK] Authenticated and ready to use!")
     else:
-        print("Access Token: [MISSING] Not found")
-        print("Refresh Token: [MISSING] Not found")
+        table.add_row("Access Token", "[MISSING] Not found")
+        table.add_row("Refresh Token", "[MISSING] Not found")
+        console.print(table)
         print("\nRun authentication with:")
         print("  janito --onedrive-auth")
         return 1

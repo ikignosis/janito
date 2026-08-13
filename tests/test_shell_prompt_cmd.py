@@ -3,9 +3,9 @@ Tests for the ``/prompt`` shell command display.
 
 ``/prompt`` shows the effective system prompt; when it is the default
 skills-advertising prompt, each section (``base``, ``skills``, ``agents.md``)
-is displayed under a ``---- <name> (<n> lines)`` header so the user can see
-how much of the prompt each source contributes and slice it.  Custom prompts
-(``-S``) fall back to the plain full-text display.
+is displayed as a row of a rich table so the user can see how much of the
+prompt each source contributes.  Custom prompts (``-S``) fall back to a
+plain single-column table with the full text.
 """
 
 import sys
@@ -29,8 +29,8 @@ def _patch_skills_section(monkeypatch):
     )
 
 
-def test_prompt_cmd_shows_section_headers(monkeypatch, tmp_path, capfd):
-    """The default prompt is displayed section by section with line counts."""
+def test_prompt_cmd_shows_section_table(monkeypatch, tmp_path, capfd):
+    """The default prompt is displayed as a rich table with per-section rows."""
     from janito.system_prompt import get_system_prompt_with_skills
 
     _patch_skills_section(monkeypatch)
@@ -44,12 +44,16 @@ def test_prompt_cmd_shows_section_headers(monkeypatch, tmp_path, capfd):
 
     out = capfd.readouterr().out
     assert "System Prompt - Default (with Skills)" in out
-    assert "---- base (1 lines)" in out
-    assert "---- skills (2 lines)" in out
+    assert "base" in out
+    assert "skills" in out
+    assert "Available Skills" in out
+    assert "(fake skills section)" in out
+    # No more plain-text ==== / ---- headers.
+    assert "----" not in out
 
 
 def test_prompt_cmd_includes_agents_md_section(monkeypatch, tmp_path, capfd):
-    """An AGENTS.md in cwd appears as its own section with a line count."""
+    """An AGENTS.md in cwd appears as its own row in the table."""
     from janito.system_prompt import get_system_prompt_with_skills
 
     _patch_skills_section(monkeypatch)
@@ -63,12 +67,12 @@ def test_prompt_cmd_includes_agents_md_section(monkeypatch, tmp_path, capfd):
     assert handler.handle(shell, "/prompt") is True
 
     out = capfd.readouterr().out
-    assert "---- agents.md (3 lines)" in out
+    assert "agents.md" in out
     assert "agent line" in out
 
 
 def test_prompt_cmd_custom_prompt_falls_back_to_plain(monkeypatch, tmp_path, capfd):
-    """A custom (-S) prompt is shown in full without section headers."""
+    """A custom (-S) prompt is shown in full inside a single-column table."""
     _patch_skills_section(monkeypatch)
     monkeypatch.chdir(tmp_path)
 
@@ -79,8 +83,9 @@ def test_prompt_cmd_custom_prompt_falls_back_to_plain(monkeypatch, tmp_path, cap
     assert handler.handle(shell, "/prompt") is True
 
     out = capfd.readouterr().out
-    assert "---- base" not in out
+    assert "System Prompt - Default" in out
     assert "custom system prompt" in out
+    assert "----" not in out
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -310,8 +310,8 @@ OUT_PART_RE = re.compile(
     r"Out:\s*([0-9]+(?:\.[0-9]+)?[km]?)(?:\s*/\s*[0-9]+(?:\.[0-9]+)?[km]?)?"
 )
 
-# Provider lines from `janito --list-keys`, e.g. "  openai: ***".
-LIST_KEYS_PROVIDER_RE = re.compile(r"^\s{2}([^\s:]+):\s*\*+\s*$", re.MULTILINE)
+# Provider lines from `janito --list-keys`, e.g. "openai  ***" (rich table row).
+LIST_KEYS_PROVIDER_RE = re.compile(r"^(\S+)\s+\*{3}\s*$", re.MULTILINE)
 
 ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-9;]*m")
 
@@ -471,8 +471,7 @@ def discover_providers(janito_cmd: str, timeout: int = 60) -> list[str]:
     )
     if proc.returncode != 0:
         raise RuntimeError(
-            f"`{janito_cmd} --list-keys` failed (exit {proc.returncode}): "
-            f"{_first_error(proc.stdout, proc.stderr)}"
+            f"`{janito_cmd} --list-keys` failed (exit {proc.returncode}): {_first_error(proc.stdout, proc.stderr)}"
         )
     return parse_list_keys(proc.stdout)
 
@@ -817,8 +816,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if not providers:
         print(
-            "Error: no providers with a configured API key found; "
-            "use --providers to pick some explicitly.",
+            "Error: no providers with a configured API key found; use --providers to pick some explicitly.",
             file=sys.stderr,
         )
         return 1

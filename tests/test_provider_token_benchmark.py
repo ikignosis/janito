@@ -109,10 +109,7 @@ def test_build_result_ok_from_log():
         "answer\n"
         "=== Total: 1.2k | In: 1k | Out: 234 | Messages: 1 ===\n"
     )
-    stderr = (
-        "INFO: Request completed: total=1234 tokens (in=1000, out=234, "
-        "cached=None, max=128000), 1 messages\n"
-    )
+    stderr = "INFO: Request completed: total=1234 tokens (in=1000, out=234, cached=None, max=128000), 1 messages\n"
     result = pbm.build_result("openai", 0, stdout, stderr)
     assert result["provider"] == "openai"
     assert result["model"] == "gpt-5.6-luna"
@@ -141,10 +138,7 @@ def test_build_result_ok_sums_multi_round():
 
 
 def test_build_result_ok_falls_back_to_display():
-    stdout = (
-        "----- Model: glm-5.2 | Backend: https://api.z.ai\n"
-        "=== Total: 1.5k | Out: 1.5k | Messages: 1 ===\n"
-    )
+    stdout = "----- Model: glm-5.2 | Backend: https://api.z.ai\n=== Total: 1.5k | Out: 1.5k | Messages: 1 ===\n"
     result = pbm.build_result("zai", 0, stdout, "")
     assert result["status"] == "ok"
     assert result["out_tokens"] == 1500
@@ -187,26 +181,14 @@ def test_build_result_no_usage():
 
 
 def test_parse_list_keys():
-    output = (
-        "Configured Authentication Providers:\n"
-        "====================================\n"
-        "Config file: /home/user/.janito/auth.json\n"
-        "  openai: ***\n"
-        "  deepseek: ***\n"
-        "  alibaba_tp: ***\n\n"
-    )
+    output = "Config file: /home/user/.janito/auth.json\nopenai  ***\ndeepseek  ***\nalibaba_tp  ***\n\n"
     assert pbm.parse_list_keys(output) == ["alibaba_tp", "deepseek", "openai"]
 
 
 def test_discover_providers(tmp_path):
     fake = tmp_path / "fake-janito"
     fake.write_text(
-        "#!/bin/sh\n"
-        'echo "Configured Authentication Providers:"\n'
-        'echo "======================================"\n'
-        'echo "Config file: /tmp/auth.json"\n'
-        'echo "  openai: ***"\n'
-        'echo "  deepseek: ***"\n',
+        '#!/bin/sh\necho "Config file: /tmp/auth.json"\necho "openai  ***"\necho "deepseek  ***"\n',
         encoding="utf-8",
     )
     fake.chmod(0o755)
@@ -363,7 +345,7 @@ def test_resolve_artifact_path(tmp_path):
 def test_main_list_providers(tmp_path, capsys):
     fake = tmp_path / "fake-janito"
     fake.write_text(
-        "#!/bin/sh\n" 'echo "  openai: ***"\n' 'echo "  zai: ***"\n',
+        '#!/bin/sh\necho "openai  ***"\necho "zai  ***"\n',
         encoding="utf-8",
     )
     fake.chmod(0o755)

@@ -109,12 +109,14 @@ def handle_info(args) -> int:
 
     endpoint, endpoint_source = _resolve_endpoint_source(provider, api_type)
 
-    # Print the info
-    print("Resolved Configuration:")
-    print("=" * 40)
-    print(f"Provider:     {provider} ({provider_source})")
-    print(f"Model:        {model or '(not set)'} ({model_source})")
-    print(f"API Type:     {api_type}")
+    from rich.console import Console
+    from rich.table import Table
+
+    rows = [
+        ("Provider", f"{provider} ({provider_source})"),
+        ("Model", f"{model or '(not set)'} ({model_source})"),
+        ("API Type", api_type),
+    ]
     if api_type == "Responses":
         responses_in_server = get_responses_in_server_from_provider(provider)
         responses_display = (
@@ -122,10 +124,24 @@ def handle_info(args) -> int:
             if responses_in_server
             else "stateless (client re-sends history)"
         )
-        print(f"Responses In Server: {responses_display}")
-    print(f"API Key:      {get_masked_api_key(api_key)} ({api_key_source})")
-    print(f"Endpoint:     {endpoint or '(not set)'} ({endpoint_source})")
-    print("=" * 40)
+        rows.append(("Responses In Server", responses_display))
+    rows.append(("API Key", f"{get_masked_api_key(api_key)} ({api_key_source})"))
+    rows.append(("Endpoint", f"{endpoint or '(not set)'} ({endpoint_source})"))
+
+    table = Table(
+        title="Resolved Configuration",
+        title_style="bold",
+        header_style="bold cyan",
+        show_header=False,
+        box=None,
+        pad_edge=False,
+    )
+    table.add_column("Key", style="green", no_wrap=True)
+    table.add_column("Value", overflow="fold")
+    for key, value in rows:
+        table.add_row(key, value)
+    Console(markup=False).print(table)
+
     print(f"Config file:  {get_config_path()}")
 
     # Try to show auth file path too
@@ -212,25 +228,36 @@ def handle_show_config(args=None) -> int:
     if thinking and not getattr(args, "thinking", False):
         thinking_display += " (provider default)"
 
-    print("Current Configuration:")
-    print("=" * 40)
-    print(f"Provider:  {provider or '(not configured)'}")
+    from rich.console import Console
+    from rich.table import Table
+
+    table = Table(
+        title="Current Configuration",
+        title_style="bold",
+        header_style="bold cyan",
+        show_header=False,
+        box=None,
+        pad_edge=False,
+    )
+    table.add_column("Key", style="green", no_wrap=True)
+    table.add_column("Value", overflow="fold")
+    table.add_row("Provider", provider or "(not configured)")
     if model:
-        print(f"Model:     {model} ({model_source})")
+        table.add_row("Model", f"{model} ({model_source})")
     else:
-        print("Model:     (not configured)")
-    print(f"API Type:  {api_type}")
+        table.add_row("Model", "(not configured)")
+    table.add_row("API Type", api_type)
     masked = get_masked_api_key(api_key)
     if api_key:
-        print(f"API Key:   {masked} ({api_key_source})")
+        table.add_row("API Key", f"{masked} ({api_key_source})")
     else:
-        print("API Key:   (not set)")
+        table.add_row("API Key", "(not set)")
     if endpoint:
-        print(f"Endpoint:  {endpoint} ({endpoint_source})")
+        table.add_row("Endpoint", f"{endpoint} ({endpoint_source})")
     else:
-        print(f"Endpoint:  (default OpenAI) ({endpoint_source})")
-    print(f"Thinking:  {thinking_display}")
-    print("=" * 40)
+        table.add_row("Endpoint", f"(default OpenAI) ({endpoint_source})")
+    table.add_row("Thinking", thinking_display)
+    Console(markup=False).print(table)
 
     return 0
 
@@ -247,32 +274,75 @@ def handle_show_system_prompt(args) -> int:
     Returns:
         int: Exit code (0 for success)
     """
-    from ...system_prompt import (
-        get_system_prompt_sections,
-        render_system_prompt_sections,
-    )
+    from rich.console import Console
+    from rich.table import Table
+
+    from ...system_prompt import get_system_prompt_sections
     from ...tools.gmail import GMAIL_SYSTEM_PROMPT
     from ...tools.onedrive import ONEDRIVE_SYSTEM_PROMPT
+
+    console = Console(markup=False)
 
     if args.system_prompt:
         prompt = args.system_prompt
         source = "CLI override (-S)"
-    elif args.no_system_prompt:
+        table = Table(
+            title=f"System prompt ({source})",
+            title_style="bold",
+            header_style="bold cyan",
+            show_header=False,
+        )
+        table.add_column("Content", overflow="fold")
+        table.add_row(prompt.strip())
+        console.print(table)
+        return 0
+
+    if args.no_system_prompt:
         print("System prompt: (disabled via -Z / --no-system-prompt)")
         return 0
-    elif args.onedrive:
+
+    if args.onedrive:
         prompt = ONEDRIVE_SYSTEM_PROMPT
         source = "OneDrive mode (--onedrive)"
-    elif args.gmail:
+        table = Table(
+            title=f"System prompt ({source})",
+            title_style="bold",
+            header_style="bold cyan",
+            show_header=False,
+        )
+        table.add_column("Content", overflow="fold")
+        table.add_row(prompt.strip())
+        console.print(table)
+        return 0
+
+    if args.gmail:
         prompt = GMAIL_SYSTEM_PROMPT
         source = "Gmail mode (--gmail)"
-    else:
-        prompt = render_system_prompt_sections(get_system_prompt_sections())
-        source = "default (with skills)"
+        table = Table(
+            title=f"System prompt ({source})",
+            title_style="bold",
+            header_style="bold cyan",
+            show_header=False,
+        )
+        table.add_column("Content", overflow="fold")
+        table.add_row(prompt.strip())
+        console.print(table)
+        return 0
 
-    print(f"System prompt ({source}):")
-    print("=" * 40)
-    print(prompt)
-    print("=" * 40)
+    # Default prompt: render each section as a rich table row (Section, Lines,
+    # Content), matching the shell /prompt command.
+    table = Table(
+        title="System prompt (default (with skills))",
+        title_style="bold",
+        header_style="bold cyan",
+    )
+    table.add_column("Section", style="green", no_wrap=True)
+    table.add_column("Lines", justify="right")
+    table.add_column("Content", overflow="fold")
+    for name, text in get_system_prompt_sections():
+        body = text.strip()
+        line_count = len(body.splitlines()) if body else 0
+        table.add_row(name, str(line_count), body)
+    console.print(table)
 
     return 0

@@ -166,10 +166,12 @@ def handle_list_secrets(args) -> int:
     Returns:
         int: Exit code (0 for success)
     """
+    from rich.console import Console
+    from rich.table import Table
+
     secrets_paths = [p for p in get_secrets_file_paths() if p.exists()]
 
-    print("Configured Secrets:")
-    print("=" * 40)
+    console = Console(markup=False)
 
     if not secrets_paths:
         print("No secrets configured.")
@@ -180,14 +182,24 @@ def handle_list_secrets(args) -> int:
         return 0
 
     for secrets_file in secrets_paths:
+        print(f"Config file: {secrets_file}")
         with open(secrets_file, "r", encoding="utf-8") as f:
             config = json.load(f)
-        print(f"Config file: {secrets_file}")
         if not config:
             print("  (no secrets configured)")
-        else:
-            for key in config:
-                print(f"  {key}")
+            print()
+            continue
+
+        table = Table(
+            header_style="bold cyan",
+            show_header=False,
+            box=None,
+            pad_edge=False,
+        )
+        table.add_column("Key", style="green", no_wrap=True)
+        for key in config:
+            table.add_row(key)
+        console.print(table)
         print()
 
     return 0

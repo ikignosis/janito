@@ -22,41 +22,58 @@ class PromptCmdHandler(CmdHandler):
 
     def _print_prompt(self, shell) -> None:
         """Print the current system prompt."""
+        from rich.console import Console
+        from rich.table import Table
+
         from janito.system_prompt import (
             get_system_prompt_sections,
             get_system_prompt_with_skills,
-            render_system_prompt_sections,
         )
 
         # Get the actual system prompt from the shell
         effective_prompt = shell.get_system_prompt()
 
-        print()
-        print("=" * 60)
-
         if effective_prompt is None:
-            print("No system prompt is active (--no-system-prompt)")
-        elif effective_prompt == get_system_prompt_with_skills():
-            # Default prompt: show each section with its header and line count.
-            print("System Prompt - Default (with Skills)")
-            print("=" * 60)
-            print(render_system_prompt_sections(get_system_prompt_sections()))
-            print("=" * 60)
+            Console(markup=False).print(
+                "No system prompt is active (--no-system-prompt)"
+            )
+            return
+
+        if effective_prompt == get_system_prompt_with_skills():
+            # Default prompt: show each section as a rich table row with its
+            # name, line count and content.
+            table = Table(
+                title="System Prompt - Default (with Skills)",
+                title_style="bold",
+                header_style="bold cyan",
+            )
+            table.add_column("Section", style="green", no_wrap=True)
+            table.add_column("Lines", justify="right")
+            table.add_column("Content", overflow="fold")
+            for name, text in get_system_prompt_sections():
+                body = text.strip()
+                line_count = len(body.splitlines()) if body else 0
+                table.add_row(name, str(line_count), body)
+            Console(markup=False).print(table)
+            return
+
+        # Custom prompt (-S): detect which prompt type is active.
+        if "Gmail" in effective_prompt:
+            prompt_type = "Gmail Mode"
+        elif "OneDrive" in effective_prompt:
+            prompt_type = "OneDrive Mode"
         else:
-            # Detect which prompt type is active
-            if "Gmail" in effective_prompt:
-                prompt_type = "Gmail Mode"
-            elif "OneDrive" in effective_prompt:
-                prompt_type = "OneDrive Mode"
-            else:
-                prompt_type = "Default"
+            prompt_type = "Default"
 
-            print(f"System Prompt - {prompt_type}")
-            print("=" * 60)
-            print(effective_prompt.strip())
-            print("=" * 60)
-
-        print()
+        table = Table(
+            title=f"System Prompt - {prompt_type}",
+            title_style="bold",
+            header_style="bold cyan",
+            show_header=False,
+        )
+        table.add_column("Content", overflow="fold")
+        table.add_row(effective_prompt.strip())
+        Console(markup=False).print(table)
 
 
 # Register this handler
