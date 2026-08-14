@@ -126,13 +126,10 @@ class ReadFile(BaseTool):
             content = "".join(selected_lines)
             lines_read = len(selected_lines)
 
-            # Determine actual line range read
-            actual_from_line = actual_from + 1  # Convert back to 1-based
-            actual_to_line = actual_from + lines_read  # 1-based end line
+            # Convert back to 1-based
+            actual_from_line = actual_from + 1
 
-            self.report_result(
-                f"Read {lines_read} lines (lines {actual_from_line}-{actual_to_line})"
-            )
+            self.report_result(f"Read {lines_read} lines")
 
             return {
                 "success": True,
