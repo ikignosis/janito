@@ -187,6 +187,7 @@ def report_search_start(
     tool,
     valid_paths: list[str],
     pattern: str | None,
+    exclude_patterns: list[str],
     file_type: str | None,
     min_bytes: int | None,
     max_bytes: int | None,
@@ -199,6 +200,7 @@ def report_search_start(
         tool: The ``FindFiles`` instance (for ``report_start``).
         valid_paths: The resolved root paths being searched.
         pattern: The include glob (if any).
+        exclude_patterns: Glob patterns to exclude (if any).
         file_type: The type filter (if any).
         min_bytes: Minimum file size in bytes (if any).
         max_bytes: Maximum file size in bytes (if any).
@@ -211,6 +213,8 @@ def report_search_start(
     criteria: list[str] = []
     if pattern:
         criteria.append(f"pattern='{pattern}'")
+    if exclude_patterns:
+        criteria.append(f"exclude '{' '.join(exclude_patterns)}'")
     if file_type:
         criteria.append(f"type={file_type}")
     if min_bytes is not None or max_bytes is not None:

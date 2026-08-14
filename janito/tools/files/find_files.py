@@ -132,6 +132,7 @@ class FindFiles(BaseTool):
             self,
             valid_paths,
             pattern,
+            exclude_patterns,
             file_type,
             min_bytes,
             max_bytes,

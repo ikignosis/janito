@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Changes since `v4.24.0` (2026-08-13).
 
+### Changed
+
+- **File tools report exclude patterns**: `SearchText`, `SearchRegex`, and
+  `FindFiles` now include the `exclude` glob patterns in their `report_start`
+  announcement when defined.
+
 ### Fixed
 
 - **Docs point to the correct repository**: fixed `github.com/joaopinto/janito`

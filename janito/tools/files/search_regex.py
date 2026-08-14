@@ -42,9 +42,14 @@ class SearchRegex(SearchRunner):
     term_key = "pattern"
     error_label = "regex search"
 
-    def start_message(self, term: str, paths_str: str) -> str:
+    def start_message(
+        self, term: str, paths_str: str, exclude_str: str | None = None
+    ) -> str:
         """Return the report_start message for this tool."""
-        return f"\U0001f50d Searching regex pattern '{term}' in {paths_str}"
+        message = f"\U0001f50d Searching regex pattern '{term}' in {paths_str}"
+        if exclude_str:
+            message += f" exclude '{exclude_str}'"
+        return message
 
     def run(
         self,

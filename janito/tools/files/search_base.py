@@ -109,7 +109,9 @@ class SearchRunner(BaseTool):
     #: Label used in error messages (e.g. "regex search").
     error_label: str = "search"
 
-    def start_message(self, term: str, paths_str: str) -> str:
+    def start_message(
+        self, term: str, paths_str: str, exclude_str: str | None = None
+    ) -> str:
         """Return the report_start message for this tool."""
         raise NotImplementedError
 
@@ -174,7 +176,8 @@ class SearchRunner(BaseTool):
             paths_str = ", ".join([norm_path(p) for p in valid_paths[:3]])
             if len(valid_paths) > 3:
                 paths_str += f" (+{len(valid_paths) - 3} more)"
-            self.report_start(self.start_message(term, paths_str), end="")
+            exclude_str = " ".join(exclude_patterns) if exclude_patterns else None
+            self.report_start(self.start_message(term, paths_str, exclude_str), end="")
 
             # Perform search
             if count_only:
