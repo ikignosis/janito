@@ -36,11 +36,11 @@ These keys are stored in `~/.janito/config.json` (set them with `--set`):
 |--------|-------------|---------|
 | `provider` | Provider name (`openai`, `custom`, `alibaba`, `minimax`, `xiaomi`, `moonshot`, `zai`, `xai`) | `openai` |
 | `model` | Model name | - |
-| `max-input-tokens` | Maximum input tokens (context window) | provider built-in / `128000` |
-| `max-output-tokens` | Maximum output tokens | `65536` |
+| `max-input-tokens` | Maximum input tokens (context window) | model built-in / `128000` |
+| `max-output-tokens` | Maximum output tokens | model built-in / `100000` |
 | `endpoint` | API endpoint URL (required for `custom` providers) | - |
 
-> Provider base URLs are built in for known providers, so you normally only need `endpoint` for the `custom` provider. At runtime the endpoint is used directly as the API base URL.
+> Provider base URLs are built in for known providers, so you normally only need `endpoint` for the `custom` provider. At runtime the endpoint is used directly as the API base URL. The model-level keys (`max-input-tokens`, `max-output-tokens`, `reasoning-level`, `api-type`, `responses-in-server`) are stored per provider **and** model, under `providers.<provider>.models.<model>.<key>` in `config.json`.
 
 ## Configuration Priority
 

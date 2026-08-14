@@ -34,6 +34,7 @@ from _frontend import render_index_html
 
 import janito.auth_config as ac
 import janito.config_dir as config_dir_mod
+import janito.config_store as cs
 import janito.general_config as gc
 
 # The web routes need the optional `web` extra (fastapi). Skip gracefully
@@ -160,7 +161,7 @@ def test_session_provider_switch_does_not_persist(client):
     """The combo's switch is in-memory only — config.json stays untouched."""
     # Establish a persisted default so we can prove it is unchanged.
     assert ac.set_api_key("openai", "sk-openai-test") is True
-    assert gc.set_config_value("provider", "openai") is None
+    assert cs.set_config_value("provider", "openai") is None
     assert ac.set_api_key("alibaba", "sk-alibaba-test") is True
 
     before = gc.load_provider_from_config()
@@ -196,7 +197,7 @@ def test_session_provider_switch_does_not_persist(client):
 @requires_fastapi
 def test_session_provider_without_key_is_rejected(client):
     """A session switch to a keyless provider is rejected (400), no change."""
-    assert gc.set_config_value("provider", "openai") is None
+    assert cs.set_config_value("provider", "openai") is None
 
     resp = client.post("/api/config/session-provider", json={"provider": "xai"})
     assert resp.status_code == 400

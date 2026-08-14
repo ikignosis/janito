@@ -5,26 +5,23 @@ import sys
 import questionary
 
 from ...auth_config import get_api_key, set_api_key
-from ...general_config import (
+from ...config_cli import (
     ProviderRequiredError,
     get_config_from_cli,
-    get_config_path,
-    get_config_paths,
-    get_masked_api_key,
-    load_config,
+    set_config_from_cli,
+    unset_config_key_from_cli,
+)
+from ...config_keys import get_masked_api_key
+from ...config_loaders import (
     load_endpoint_from_config,
     load_max_input_tokens,
     load_max_output_tokens,
     load_model_from_config,
-    load_provider_from_config,
-    set_config_from_cli,
-    unset_config_key_from_cli,
 )
-from ...provider_config import (
-    get_default_max_input_tokens_from_provider,
-    is_custom_provider,
-    list_supported_providers,
-)
+from ...config_store import get_config_path, get_config_paths, load_config
+from ...general_config import load_provider_from_config
+from ...provider_accessors import get_default_max_input_tokens_from_provider
+from ...provider_validation import is_custom_provider, list_supported_providers
 
 
 def handle_get_config(keys: list[str], cli_provider: str = None) -> int:
@@ -271,15 +268,16 @@ def _prompt_max_output_tokens(existing_max_output_tokens: int | None) -> int | N
 
 
 def _prompt_max_input_tokens(
-    provider: str, existing_max_input_tokens: int | None
+    provider: str, model: str | None, existing_max_input_tokens: int | None
 ) -> int | None:
     """Prompt for the max input tokens (context window); None to abort."""
     _prompt_section("Max Input Tokens")
-    # Default to the value already configured for the provider, otherwise the
-    # provider's built-in context window, otherwise a generic 128k fallback.
+    # Default to the value already configured for the provider's model,
+    # otherwise the effective model's built-in context window, otherwise a
+    # generic 128k fallback.
     default_max_input = existing_max_input_tokens
     if default_max_input is None:
-        default_max_input = get_default_max_input_tokens_from_provider(provider)
+        default_max_input = get_default_max_input_tokens_from_provider(provider, model)
     if default_max_input is None:
         default_max_input = 128000
     max_input_str = _prompt_with_default(
@@ -331,21 +329,17 @@ def _save_configuration(
         set_config_from_cli(f"model={model}", provider)
         print(f"[OK] Saved model '{model}' to config ({provider}.model)")
 
-        # Save max output tokens to config.json under the provider-scoped key
-        # (e.g. "openai.max-output-tokens") so each provider has its own limit.
-        set_config_from_cli(f"max-output-tokens={max_output_tokens}", provider)
-        print(
-            f"[OK] Saved max output tokens {max_output_tokens} to config "
-            f"({provider}.max-output-tokens)"
-        )
+        # Save max output tokens to config.json under the model-scoped key
+        # (e.g. "openai.models.gpt-5.6-luna.max-output-tokens") so each
+        # provider/model pair has its own limit.
+        key, _ = set_config_from_cli(f"max-output-tokens={max_output_tokens}", provider)
+        print(f"[OK] Saved max output tokens {max_output_tokens} to config ({key})")
 
-        # Save max input tokens to config.json under the provider-scoped key
-        # (e.g. "openai.max-input-tokens") so each provider has its own limit.
-        set_config_from_cli(f"max-input-tokens={max_input_tokens}", provider)
-        print(
-            f"[OK] Saved max input tokens {max_input_tokens} to config "
-            f"({provider}.max-input-tokens)"
-        )
+        # Save max input tokens to config.json under the model-scoped key
+        # (e.g. "openai.models.gpt-5.6-luna.max-input-tokens") so each
+        # provider/model pair has its own limit.
+        key, _ = set_config_from_cli(f"max-input-tokens={max_input_tokens}", provider)
+        print(f"[OK] Saved max input tokens {max_input_tokens} to config ({key})")
 
         # Save endpoint to config.json under the provider-scoped key
         # (e.g. "custom.endpoint") so each provider has its own endpoint.
@@ -386,7 +380,6 @@ def handle_config_interactive() -> int:
     # Load existing values
     existing_provider = load_provider_from_config()
     existing_model = load_model_from_config(existing_provider)
-    existing_max_output_tokens = load_max_output_tokens(existing_provider)
     existing_endpoint = load_endpoint_from_config()
 
     from rich.console import Console
@@ -413,15 +406,18 @@ def handle_config_interactive() -> int:
     if model is None:
         return 1
 
+    # Existing token limits are loaded for the selected provider/model pair
+    # (so switching providers never inherits another provider's limits).
+    existing_max_output_tokens = load_max_output_tokens(provider, model)
     max_output_tokens = _prompt_max_output_tokens(existing_max_output_tokens)
     if max_output_tokens is None:
         return 1
 
-    # Default to the value already configured for the newly selected provider
-    # (so switching providers never inherits another provider's limit),
-    # otherwise the provider's built-in context window, otherwise 128k.
+    # Default to the value already configured for the newly selected
+    # provider/model, otherwise the effective model's built-in context
+    # window, otherwise 128k.
     max_input_tokens = _prompt_max_input_tokens(
-        provider, load_max_input_tokens(provider)
+        provider, model, load_max_input_tokens(provider, model)
     )
     if max_input_tokens is None:
         return 1

@@ -41,7 +41,7 @@ def test_schema_exposes_optional_integer_size_params():
     Because both parameters have default values, they must NOT be listed in
     the schema's ``required`` list, so the model can omit them.
     """
-    from janito.tooling.tools_registry import get_function_schema
+    from janito.tooling.schema import get_function_schema
     from janito.tools import discover_toolsets
 
     tools = discover_toolsets(["janitoweb"])

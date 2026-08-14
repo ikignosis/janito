@@ -10,7 +10,8 @@ from ...auth_config import (
     get_default_provider,
     set_api_key,
 )
-from ...general_config import get_masked_api_key, load_provider_from_config
+from ...config_keys import get_masked_api_key
+from ...general_config import load_provider_from_config
 
 
 def _confirm_overwrite(provider: str, existing_key: str) -> bool:

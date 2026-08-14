@@ -59,7 +59,7 @@ from .cli.logging_config import setup_logging
 from .cli.setup import validate_runtime_config
 from .config_dir import set_config_dir, set_local_config_mode
 from .privileges import Privileges
-from .provider_config import validate_provider_name
+from .provider_validation import validate_provider_name
 
 
 def _flatten(values):

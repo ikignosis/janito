@@ -71,7 +71,7 @@ class _FakeWebSocket:
 @requires_fastapi
 def test_await_cancel_queues_mid_turn_prompts():
     """Prompts arriving during a turn are queued, then cancel returns True."""
-    from janito.web.backend.routers.chat import _await_cancel
+    from janito.web.backend.routers.chat_helpers import _await_cancel
 
     ws = _FakeWebSocket(
         [
@@ -91,7 +91,7 @@ def test_await_cancel_queues_mid_turn_prompts():
 @requires_fastapi
 def test_await_cancel_skips_empty_prompts():
     """Blank prompts are not queued (they would be rejected anyway)."""
-    from janito.web.backend.routers.chat import _await_cancel
+    from janito.web.backend.routers.chat_helpers import _await_cancel
 
     ws = _FakeWebSocket(
         [
@@ -110,7 +110,7 @@ def test_await_cancel_skips_empty_prompts():
 @requires_fastapi
 def test_await_cancel_returns_false_on_disconnect():
     """A disconnect (no cancel) reports False so the caller stops."""
-    from janito.web.backend.routers.chat import _await_cancel
+    from janito.web.backend.routers.chat_helpers import _await_cancel
 
     ws = _FakeWebSocket([])
     result = asyncio.run(_await_cancel(ws, []))
@@ -120,7 +120,7 @@ def test_await_cancel_returns_false_on_disconnect():
 @requires_fastapi
 def test_await_cancel_ignores_unknown_message_types():
     """Pings/unknown frames are ignored without losing queued prompts."""
-    from janito.web.backend.routers.chat import _await_cancel
+    from janito.web.backend.routers.chat_helpers import _await_cancel
 
     ws = _FakeWebSocket(
         [

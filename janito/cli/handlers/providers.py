@@ -1,16 +1,11 @@
 """Provider listing CLI handler (--show-providers)."""
 
 from ...auth_config import get_api_key, get_auth_file_path
-from ...general_config import (
-    get_active_provider,
-    get_config_path,
-    get_masked_api_key,
-    load_endpoint_from_config,
-    load_model_from_config,
-)
-from ...provider_config import (
-    CUSTOM_ENDPOINT_MARKER,
-    PROVIDER_INFO,
+from ...config_keys import get_masked_api_key
+from ...config_loaders import load_endpoint_from_config, load_model_from_config
+from ...config_store import get_config_path
+from ...general_config import get_active_provider
+from ...provider_accessors import (
     get_default_api_type_from_provider,
     get_default_max_input_tokens_from_provider,
     get_default_max_output_tokens_from_provider,
@@ -19,9 +14,12 @@ from ...provider_config import (
     get_default_thinking_from_provider,
     get_endpoint_for_api_type,
     get_supported_api_types_from_provider,
-    list_variants,
-    parse_variant_name,
 )
+from ...provider_data import CUSTOM_ENDPOINT_MARKER, PROVIDER_INFO
+from ...provider_registry import ProviderRegistry, parse_variant_name
+from ...provider_validation import list_variants
+
+_registry = ProviderRegistry()
 
 
 def _format_token_limit(value: int | None) -> str:
@@ -53,6 +51,45 @@ def _resolve_endpoint_display(provider: str) -> tuple[str, str]:
     return built_in, "built-in"
 
 
+def _model_rows(
+    provider: str, model: str, *, default_model: str | None
+) -> list[tuple[str, str]]:
+    """Build the (key, value) rows describing one built-in model entry."""
+    rows: list[tuple[str, str]] = []
+    label = model
+    if default_model and model == default_model:
+        label += " (default)"
+
+    api_types = get_supported_api_types_from_provider(provider, model) or []
+    default_api_type = get_default_api_type_from_provider(provider, model)
+    if api_types:
+        api_types_display = ", ".join(
+            f"{api_type} (default)" if api_type == default_api_type else api_type
+            for api_type in api_types
+        )
+    else:
+        api_types_display = "(none)"
+    rows.append((f"{label} API types", api_types_display))
+
+    thinking = get_default_thinking_from_provider(provider, model)
+    rows.append((f"{label} thinking", "enabled" if thinking else "disabled"))
+
+    reasoning = get_default_reasoning_level_from_provider(provider, model)
+    if reasoning:
+        rows.append((f"{label} reasoning", f"{reasoning} (default)"))
+
+    max_input = get_default_max_input_tokens_from_provider(provider, model)
+    max_output = get_default_max_output_tokens_from_provider(provider, model)
+    if max_input is not None or max_output is not None:
+        rows.append(
+            (
+                f"{label} max tokens",
+                f"{_format_token_limit(max_input)} in / {_format_token_limit(max_output)} out",
+            )
+        )
+    return rows
+
+
 def _provider_rows(
     name: str,
     *,
@@ -77,18 +114,6 @@ def _provider_rows(
         model_display = "(not set)"
     rows.append(("Model", model_display))
 
-    # API types: the first entry is the built-in default.
-    api_types = get_supported_api_types_from_provider(name) or []
-    default_api_type = get_default_api_type_from_provider(name)
-    if api_types:
-        api_types_display = ", ".join(
-            f"{api_type} (default)" if api_type == default_api_type else api_type
-            for api_type in api_types
-        )
-    else:
-        api_types_display = "(none)"
-    rows.append(("API types", api_types_display))
-
     # Effective endpoint (configured override or built-in default).
     endpoint, endpoint_source = _resolve_endpoint_display(name)
     rows.append(("Endpoint", endpoint or endpoint_source))
@@ -98,25 +123,12 @@ def _provider_rows(
     api_key_display = f"{get_masked_api_key(api_key)} (set)" if api_key else "(not set)"
     rows.append(("API key", api_key_display))
 
-    # Thinking mode default.
-    thinking = get_default_thinking_from_provider(name)
-    rows.append(("Thinking", "enabled" if thinking else "disabled"))
-
-    # Reasoning level default, when the provider declares one.
-    reasoning = get_default_reasoning_level_from_provider(name)
-    if reasoning:
-        rows.append(("Reasoning", f"{reasoning} (default)"))
-
-    # Token limits.
-    max_input = get_default_max_input_tokens_from_provider(name)
-    max_output = get_default_max_output_tokens_from_provider(name)
-    if max_input is not None or max_output is not None:
-        rows.append(
-            (
-                "Max tokens",
-                f"{_format_token_limit(max_input)} in / {_format_token_limit(max_output)} out",
-            )
-        )
+    # Per-model rows: every built-in model entry with its capabilities and
+    # defaults (the default model is marked).  Variants inherit the base
+    # provider's ``models`` dict, so they list the same models.
+    provider = _registry.get(name)
+    for model in provider.model_names() if provider is not None else []:
+        rows.extend(_model_rows(name, model, default_model=default_model))
 
     return rows
 
@@ -125,11 +137,11 @@ def handle_show_providers(args) -> int:
     """Handle --show-providers command.
 
     Lists every supported provider from ``PROVIDER_INFO`` (with its built-in
-    default model, API types, endpoint, token limits, thinking/reasoning
-    defaults and API-key status) followed by the registered provider variants
-    (``<provider>-<word>``, marked with their base provider). Each provider is
-    rendered as a rich two-column table. The configured default provider is
-    flagged ``[active]``.
+    default model, endpoint, API-key status and a per-model breakdown of API
+    types, thinking/reasoning defaults and token limits) followed by the
+    registered provider variants (``<provider>-<word>``, marked with their
+    base provider). Each provider is rendered as a rich two-column table.
+    The configured default provider is flagged ``[active]``.
 
     Args:
         args: Parsed command line arguments

@@ -12,11 +12,12 @@ build that per-round state and the call parameters; they were extracted from
 
 from typing import Any
 
-from janito.provider_config import get_responses_in_server_from_provider
+from janito.provider_accessors import get_responses_in_server_from_provider
 
 
 def _init_conversation_state(
     provider: str,
+    model: str | None,
     previous_response_id: str | None,
     previous_items: list[dict[str, Any]] | None,
     instructions: str | None,
@@ -37,8 +38,11 @@ def _init_conversation_state(
     that must survive the cancel).  The caller keeps them across cancelled
     turns and re-sends them (chained from the last completed response id)
     until a turn completes; ``None`` for stateless conversations.
+
+    The ``responses_in_server`` flag is resolved for the effective ``model``
+    (a per-provider/model config override wins over the built-in default).
     """
-    responses_in_server = get_responses_in_server_from_provider(provider)
+    responses_in_server = get_responses_in_server_from_provider(provider, model)
     if responses_in_server:
         response_id = previous_response_id
         conversation_items: list[dict[str, Any]] | None = None

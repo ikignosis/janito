@@ -23,11 +23,13 @@ from types import SimpleNamespace
 # Add the repo root to sys.path to allow importing the package directly.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import janito.config_cli as cc
 import janito.config_dir as config_dir_mod
-import janito.general_config as gc
+import janito.config_store as cs
+import janito.config_variants as cv
 from janito.auth_config import set_api_key
 from janito.cli.handlers.providers import handle_show_providers
-from janito.provider_config import PROVIDER_INFO
+from janito.provider_data import PROVIDER_INFO
 
 
 def _use_temp_config(monkeypatch, tmp_path):
@@ -89,8 +91,8 @@ def test_custom_provider_shows_endpoint_hint(monkeypatch, tmp_path, capsys):
 
 def test_lists_registered_variants(monkeypatch, tmp_path, capsys):
     _use_temp_config(monkeypatch, tmp_path)
-    gc.create_variant("alibaba-tokenplan")
-    gc.create_variant("custom-local")
+    cv.create_variant("alibaba-tokenplan")
+    cv.create_variant("custom-local")
 
     rc, out = _run(monkeypatch, tmp_path, capsys)
 
@@ -110,9 +112,9 @@ def test_lists_registered_variants(monkeypatch, tmp_path, capsys):
 
 def test_shows_configured_overrides_and_masked_key(monkeypatch, tmp_path, capsys):
     _use_temp_config(monkeypatch, tmp_path)
-    gc.create_variant("alibaba-tokenplan")
-    gc.set_config_from_cli("model=qwen-plus", "alibaba-tokenplan")
-    gc.set_config_from_cli(
+    cv.create_variant("alibaba-tokenplan")
+    cc.set_config_from_cli("model=qwen-plus", "alibaba-tokenplan")
+    cc.set_config_from_cli(
         "endpoint=https://variant.example.com/v1", "alibaba-tokenplan"
     )
     set_api_key(
@@ -139,7 +141,7 @@ def test_api_key_hidden_for_unset_providers(monkeypatch, tmp_path, capsys):
 
 def test_active_marker_follows_configured_provider(monkeypatch, tmp_path, capsys):
     _use_temp_config(monkeypatch, tmp_path)
-    gc.set_config_value("provider", "deepseek")
+    cs.set_config_value("provider", "deepseek")
 
     _, out = _run(monkeypatch, tmp_path, capsys)
 
@@ -149,8 +151,8 @@ def test_active_marker_follows_configured_provider(monkeypatch, tmp_path, capsys
 
 def test_active_marker_for_variant(monkeypatch, tmp_path, capsys):
     _use_temp_config(monkeypatch, tmp_path)
-    gc.create_variant("alibaba-tokenplan")
-    gc.set_config_value("provider", "alibaba-tokenplan")
+    cv.create_variant("alibaba-tokenplan")
+    cs.set_config_value("provider", "alibaba-tokenplan")
 
     _, out = _run(monkeypatch, tmp_path, capsys)
 

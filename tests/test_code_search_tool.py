@@ -163,7 +163,7 @@ def test_discovery_loads_with_index(project_with_index):
 
 def test_schema(project_with_index):
     """The generated schema exposes keywords (required array) and match."""
-    from janito.tooling.tools_registry import get_function_schema
+    from janito.tooling.schema import get_function_schema
     from janito.tools import discover_toolsets
 
     tools = discover_toolsets(["codesearch"])

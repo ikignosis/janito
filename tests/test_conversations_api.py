@@ -279,8 +279,7 @@ def _mock_send_prompt(monkeypatch, create_side_effect):
         lambda *a, **k: ("https://api.example.com", "sk-test", "gpt-4o"),
     )
     monkeypatch.setattr(
-        api,
-        "get_all_tool_schemas",
+        "janito.openai_client.responses_helpers.get_all_tool_schemas",
         lambda: [{"type": "function", "function": {"name": "list_files"}}],
     )
     executor_inst = mock.Mock()
@@ -300,7 +299,7 @@ def test_send_prompt_stateless_replays_full_history(monkeypatch):
     as input items on every request and never chains with an id."""
     monkeypatch.setattr(
         "janito.openai_client.responses_state.get_responses_in_server_from_provider",
-        lambda p: False,
+        lambda p, m=None: False,
     )
     seen = []
 
@@ -401,7 +400,7 @@ def test_send_prompt_stateless_continues_with_previous_items(monkeypatch):
     """The next turn re-sends the previous turn's items plus the new prompt."""
     monkeypatch.setattr(
         "janito.openai_client.responses_state.get_responses_in_server_from_provider",
-        lambda p: False,
+        lambda p, m=None: False,
     )
     seen = []
 

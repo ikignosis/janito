@@ -3,7 +3,7 @@
 import sys
 
 from ...auth_config import get_api_key
-from ...general_config import create_variant, delete_variant
+from ...config_variants import create_variant, delete_variant
 
 
 def handle_create_variant(name: str) -> int:

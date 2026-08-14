@@ -10,7 +10,7 @@ official ``anthropic`` package instead of an OpenAI-compatible endpoint.
 
 The ``anthropic`` package is **optional**: the API type is only accepted by
 ``--set api-type=Anthropic`` when the package is installed
-(``provider_config.REQUIRES_BY_API_TYPE``), and this module refuses to run
+(``provider_data.REQUIRES_BY_API_TYPE``), and this module refuses to run
 without it, with an actionable install message.  Because the package may be
 absent, the import happens lazily inside :func:`_create_client` (checked with
 ``importlib.util.find_spec``, mirroring the web-mode extra check) rather than
@@ -42,10 +42,10 @@ from typing import Any
 from rich.console import Console
 
 # Import general configuration handling
-from janito.general_config import load_max_input_tokens, load_max_output_tokens
+from janito.config_loaders import load_max_input_tokens, load_max_output_tokens
 
 # Import provider configuration for built-in defaults
-from janito.provider_config import (
+from janito.provider_accessors import (
     get_default_max_input_tokens_from_provider,
     get_default_max_output_tokens_from_provider,
 )
@@ -94,7 +94,7 @@ def _create_client(base_url: str | None, api_key: str) -> Any:
     """Create the native Anthropic SDK client, guarding the optional package.
 
     The ``anthropic`` package is optional (see
-    ``provider_config.REQUIRES_BY_API_TYPE``), so its availability is checked
+    ``provider_data.REQUIRES_BY_API_TYPE``), so its availability is checked
     explicitly with ``importlib.util.find_spec`` (mirroring the web-mode extra
     check) and the import happens lazily -- importing ``janito`` never
     requires ``anthropic``.
@@ -215,19 +215,19 @@ class AnthropicClient(Client):
     def _resolve_tools(self, tools, mcp_tools):
         return _resolve_tools(tools, mcp_tools)
 
-    def _resolve_model_settings(self, provider, thinking, reasoning_level):
+    def _resolve_model_settings(self, provider, model, thinking, reasoning_level):
         # The Anthropic Messages API requires max_tokens, so the resolved
-        # value (config > provider built-in default > 100k) is always passed.
+        # value (config > model built-in default > 100k) is always passed.
         # thinking / reasoning_level are accepted for signature parity but the
         # native extended-thinking mode is not wired yet.
         return (
             thinking,
-            _resolve_max_output_tokens(provider),
-            _resolve_max_input_tokens(provider),
+            _resolve_max_output_tokens(provider, model),
+            _resolve_max_input_tokens(provider, model),
             None,
         )
 
-    def _init_conversation_state(self, prompt, provider, **kwargs):
+    def _init_conversation_state(self, prompt, provider, model, **kwargs):
         # Build the conversation. The Anthropic Messages API takes the system
         # prompt as a top-level `system` parameter (not a "system"-role
         # message), so system-role messages are extracted from the history and
@@ -334,25 +334,25 @@ def _resolve_tools(
     return _convert_tools_to_anthropic_format(tools_schemas)
 
 
-def _resolve_max_output_tokens(provider: str) -> int:
-    """Resolve max_tokens (config > provider built-in default > 100k)."""
-    max_output_tokens = load_max_output_tokens(provider)
+def _resolve_max_output_tokens(provider: str, model: str | None = None) -> int:
+    """Resolve max_tokens (config > model built-in default > 100k)."""
+    max_output_tokens = load_max_output_tokens(provider, model)
     if max_output_tokens is None:
-        max_output_tokens = get_default_max_output_tokens_from_provider(provider)
+        max_output_tokens = get_default_max_output_tokens_from_provider(provider, model)
     if max_output_tokens is None:
         max_output_tokens = 100000  # default to 100k tokens if not set in config
     return max_output_tokens
 
 
-def _resolve_max_input_tokens(provider: str) -> int | None:
-    """Resolve max input tokens (config override > provider built-in default).
+def _resolve_max_input_tokens(provider: str, model: str | None = None) -> int | None:
+    """Resolve max input tokens (config override > model built-in default).
 
     Used for the usage summary display only; ``None`` means the context window
     is unknown, in which case the display omits the total.
     """
-    max_input_tokens = load_max_input_tokens(provider)
+    max_input_tokens = load_max_input_tokens(provider, model)
     if max_input_tokens is None:
-        max_input_tokens = get_default_max_input_tokens_from_provider(provider)
+        max_input_tokens = get_default_max_input_tokens_from_provider(provider, model)
     return max_input_tokens
 
 

@@ -254,16 +254,44 @@ Key modules:
 
 - **`config_dir.py`** — config-dir resolution and local-mode flag.
 - **`json_store.py`** — thread-safe read/write primitives for the JSON stores.
-- **`general_config.py`** — read/write helpers, key scoping, `resolve_api_type()`;
-  re-exports the per-provider loaders from **`config_loaders.py`**.
-- **`provider_data.py`** — static `PROVIDER_INFO` registry (providers, default
-  models, endpoints, supported API types, server- vs client-side Responses
-  state, token limits, reasoning levels).
-- **`provider_config.py`** — accessors over `PROVIDER_INFO`
-  (endpoints, defaults, api-type validation).
+- **`general_config.py`** — config-resolution helpers (`load_provider_from_config`,
+  `determine_provider`, `get_active_provider`, `resolve_api_type()`).
+  Config keys are scoped: flat keys (e.g. `provider`), **provider-scoped** keys
+  (`model`, `endpoint` under `providers.<name>.<key>`) and **model-scoped**
+  keys (`max-input-tokens`, `max-output-tokens`, `reasoning-level`, `api-type`,
+  `responses-in-server` under `providers.<name>.models.<model>.<key>`).  The
+  storage and per-key logic live in the focused modules below.
+- **`config_keys.py`** — key constants (`PROVIDER_SCOPED_KEYS`,
+  `MODEL_SCOPED_KEYS`) and the helpers that build/parse dotted keys
+  (`model_config_key`, `model_scoped_config_key`, `normalize_api_type`,
+  `get_masked_api_key`, ...).
+- **`config_store.py`** — `ConfigStore` read/write primitives plus the
+  `load_config` / `get_config_value` / `set_config_value` ... delegators.
+- **`config_loaders.py`** — per-provider loaders (`load_model_from_config`,
+  `load_max_output_tokens`, ...).
+- **`config_cli.py`** — CLI helpers for the `--set/--get/--unset` family
+  (provider-scoped and model-scoped key resolution).
+- **`config_variants.py`** — provider variant management (`load_variants`,
+  `create_variant`, `delete_variant`, ...).
+- **`provider_data.py`** — static `PROVIDER_INFO` registry. Each provider entry
+  carries provider-level fields (`default_model`, `endpoint`,
+  `endpoint_by_api_type`) plus a per-provider **`models`** dict with the
+  model-level fields (`supported_api_types`, token limits, reasoning levels,
+  `thinking`, `responses_in_server`). The `custom` provider ships no models
+  (`default_model: None`, `models: {}`).
+- **`provider_models.py`** — the typed accessors: `Provider` (with
+  `model_config(model)` and per-model accessors defaulting to the provider's
+  default model) and `ModelConfig` (typed accessors over one model entry).
+- **`provider_registry.py`** — `ProviderRegistry` (case-insensitive lookup
+  over `PROVIDER_INFO`, including registered variants) and the
+  `parse_variant_name` / `is_variant_style_name` helpers.
+- **`provider_accessors.py`** — the module-level `get_*_from_provider`
+  helpers (defaults, endpoints, API-type validation, ...) that accept an
+  optional `model` argument.
+- **`provider_validation.py`** — provider name validation / listing helpers
+  (`validate_provider_name`, `is_supported_provider`, `list_variants`, ...).
 - **`auth_config.py`, `secrets_config.py`, `mcp_config.py`** — auth, secrets
   and MCP service stores.
-- **`config_cli.py`** — CLI helpers for the `--set/--get/--unset` family.
 
 The system prompt (`janito/system_prompt.py`) composes the base prompt, the
 skills advertisement section, and the current project's `AGENTS.md` content.

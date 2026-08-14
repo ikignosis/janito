@@ -31,9 +31,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pytest
 
+import janito.config_cli as cc
 import janito.config_dir as config_dir_mod
-import janito.general_config as gc
-import janito.provider_config as pc
+import janito.config_loaders as cl
+import janito.config_store as cs
+import janito.config_variants as cv
+import janito.provider_accessors as pa
+import janito.provider_registry as pr
+import janito.provider_validation as pv
 from janito.auth_config import get_api_key, set_api_key
 
 
@@ -57,21 +62,21 @@ def _read_json(path):
 
 
 def test_parse_variant_name_shapes():
-    assert pc.parse_variant_name("alibaba-tokenplan") == ("alibaba", "tokenplan")
+    assert pr.parse_variant_name("alibaba-tokenplan") == ("alibaba", "tokenplan")
     # The word may itself contain hyphens (split on the FIRST hyphen).
-    assert pc.parse_variant_name("alibaba-token-plan") == ("alibaba", "token-plan")
-    assert pc.parse_variant_name("custom-local") == ("custom", "local")
+    assert pr.parse_variant_name("alibaba-token-plan") == ("alibaba", "token-plan")
+    assert pr.parse_variant_name("custom-local") == ("custom", "local")
     # Not in <provider>-<word> form.
-    assert pc.parse_variant_name("openai") is None
-    assert pc.parse_variant_name("-foo") is None
-    assert pc.parse_variant_name("openai-") is None
-    assert pc.parse_variant_name("") is None
-    assert pc.parse_variant_name(None) is None
+    assert pr.parse_variant_name("openai") is None
+    assert pr.parse_variant_name("-foo") is None
+    assert pr.parse_variant_name("openai-") is None
+    assert pr.parse_variant_name("") is None
+    assert pr.parse_variant_name(None) is None
 
 
 def test_is_variant_style_name():
-    assert pc.is_variant_style_name("alibaba-tokenplan") is True
-    assert pc.is_variant_style_name("openai") is False
+    assert pr.is_variant_style_name("alibaba-tokenplan") is True
+    assert pr.is_variant_style_name("openai") is False
 
 
 # ---------------------------------------------------------------------------
@@ -82,19 +87,19 @@ def test_is_variant_style_name():
 def test_create_variant_registers_entry(monkeypatch, tmp_path):
     config_path = _use_temp_config(monkeypatch, tmp_path)
 
-    created = gc.create_variant("alibaba-tokenplan")
+    created = cv.create_variant("alibaba-tokenplan")
     assert created == "alibaba-tokenplan"
     assert _read_json(config_path) == {"providers": {"alibaba-tokenplan": {}}}
-    assert gc.is_registered_variant("alibaba-tokenplan") is True
+    assert cv.is_registered_variant("alibaba-tokenplan") is True
 
 
 def test_create_variant_normalizes_casing(monkeypatch, tmp_path):
     config_path = _use_temp_config(monkeypatch, tmp_path)
 
-    created = gc.create_variant("  Alibaba-TokenPlan  ")
+    created = cv.create_variant("  Alibaba-TokenPlan  ")
     assert created == "alibaba-tokenplan"
     assert _read_json(config_path) == {"providers": {"alibaba-tokenplan": {}}}
-    assert gc.is_registered_variant("ALIBABA-TOKENPLAN") is True
+    assert cv.is_registered_variant("ALIBABA-TOKENPLAN") is True
 
 
 def test_create_variant_rejects_invalid_names(monkeypatch, tmp_path):
@@ -102,29 +107,29 @@ def test_create_variant_rejects_invalid_names(monkeypatch, tmp_path):
 
     # Empty name.
     with pytest.raises(ValueError, match="A variant name is required"):
-        gc.create_variant("")
+        cv.create_variant("")
     with pytest.raises(ValueError, match="A variant name is required"):
-        gc.create_variant("   ")
+        cv.create_variant("   ")
 
     # Not in <provider>-<word> form.
     for bad in ("-foo", "openai-", "openai"):
         with pytest.raises(ValueError, match="Invalid provider variant"):
-            gc.create_variant(bad)
+            cv.create_variant(bad)
 
     # Unknown base provider.
     with pytest.raises(ValueError, match="Unknown base provider 'bogus'"):
-        gc.create_variant("bogus-x")
+        cv.create_variant("bogus-x")
 
 
 def test_create_variant_rejects_duplicate(monkeypatch, tmp_path):
     _use_temp_config(monkeypatch, tmp_path)
 
-    gc.create_variant("alibaba-tokenplan")
+    cv.create_variant("alibaba-tokenplan")
     with pytest.raises(ValueError, match="already exists"):
-        gc.create_variant("alibaba-tokenplan")
+        cv.create_variant("alibaba-tokenplan")
     # Case-insensitive duplicate.
     with pytest.raises(ValueError, match="already exists"):
-        gc.create_variant("Alibaba-Tokenplan")
+        cv.create_variant("Alibaba-Tokenplan")
 
 
 # ---------------------------------------------------------------------------
@@ -135,38 +140,38 @@ def test_create_variant_rejects_duplicate(monkeypatch, tmp_path):
 def test_delete_variant_removes_entry_config_and_key(monkeypatch, tmp_path):
     config_path = _use_temp_config(monkeypatch, tmp_path)
 
-    gc.create_variant("alibaba-tokenplan")
-    gc.set_config_value("alibaba-tokenplan.model", "qwen-plus")
-    gc.set_config_value("alibaba-tokenplan.endpoint", "https://variant.example.com/v1")
+    cv.create_variant("alibaba-tokenplan")
+    cs.set_config_value("alibaba-tokenplan.model", "qwen-plus")
+    cs.set_config_value("alibaba-tokenplan.endpoint", "https://variant.example.com/v1")
     set_api_key("alibaba-tokenplan", "sk-variant")  # pragma: allowlist secret
 
-    removed = gc.delete_variant("alibaba-tokenplan")
+    removed = cv.delete_variant("alibaba-tokenplan")
     assert removed is True
     # Entry gone, scoped keys gone, auth key gone.
     assert _read_json(config_path) == {}
     assert get_api_key("alibaba-tokenplan") is None
-    assert gc.is_registered_variant("alibaba-tokenplan") is False
+    assert cv.is_registered_variant("alibaba-tokenplan") is False
 
 
 def test_delete_variant_unregistered_returns_false(monkeypatch, tmp_path):
     _use_temp_config(monkeypatch, tmp_path)
 
-    assert gc.delete_variant("bogus-x") is False
-    assert gc.delete_variant("") is False
+    assert cv.delete_variant("bogus-x") is False
+    assert cv.delete_variant("") is False
 
 
 def test_delete_variant_refuses_default_provider(monkeypatch, tmp_path):
     config_path = _use_temp_config(monkeypatch, tmp_path)
 
-    gc.create_variant("alibaba-tokenplan")
-    gc.set_config_value("provider", "alibaba-tokenplan")
+    cv.create_variant("alibaba-tokenplan")
+    cs.set_config_value("provider", "alibaba-tokenplan")
 
     with pytest.raises(ValueError, match="default provider"):
-        gc.delete_variant("alibaba-tokenplan")
+        cv.delete_variant("alibaba-tokenplan")
 
     # After switching the default away, deletion succeeds.
-    gc.set_config_value("provider", "openai")
-    assert gc.delete_variant("alibaba-tokenplan") is True
+    cs.set_config_value("provider", "openai")
+    assert cv.delete_variant("alibaba-tokenplan") is True
     assert _read_json(config_path) == {"provider": "openai"}
 
 
@@ -178,46 +183,73 @@ def test_delete_variant_refuses_default_provider(monkeypatch, tmp_path):
 def test_validate_provider_name_accepts_registered_variant(monkeypatch, tmp_path):
     _use_temp_config(monkeypatch, tmp_path)
 
-    gc.create_variant("alibaba-tokenplan")
-    assert pc.validate_provider_name("alibaba-tokenplan") == "alibaba-tokenplan"
-    assert pc.validate_provider_name("ALIBABA-TOKENPLAN") == "alibaba-tokenplan"
-    assert pc.is_supported_provider("alibaba-tokenplan") is True
-    assert pc.canonical_provider_name("ALIBABA-TOKENPLAN") == "alibaba-tokenplan"
-    assert pc.is_registered_provider_variant("alibaba-tokenplan") is True
-    assert pc.list_variants() == ["alibaba-tokenplan"]
+    cv.create_variant("alibaba-tokenplan")
+    assert pv.validate_provider_name("alibaba-tokenplan") == "alibaba-tokenplan"
+    assert pv.validate_provider_name("ALIBABA-TOKENPLAN") == "alibaba-tokenplan"
+    assert pv.is_supported_provider("alibaba-tokenplan") is True
+    assert pv.canonical_provider_name("ALIBABA-TOKENPLAN") == "alibaba-tokenplan"
+    assert pv.is_registered_provider_variant("alibaba-tokenplan") is True
+    assert pv.list_variants() == ["alibaba-tokenplan"]
 
 
 def test_validate_provider_name_rejects_unregistered_variant(monkeypatch, tmp_path):
     _use_temp_config(monkeypatch, tmp_path)
 
     with pytest.raises(ValueError, match="--create-variant"):
-        pc.validate_provider_name("alibaba-tokenplan")
-    assert pc.is_supported_provider("alibaba-tokenplan") is False
-    assert pc.is_registered_provider_variant("alibaba-tokenplan") is False
+        pv.validate_provider_name("alibaba-tokenplan")
+    assert pv.is_supported_provider("alibaba-tokenplan") is False
+    assert pv.is_registered_provider_variant("alibaba-tokenplan") is False
 
 
 def test_variant_inherits_base_defaults(monkeypatch, tmp_path):
     _use_temp_config(monkeypatch, tmp_path)
 
-    gc.create_variant("alibaba-tokenplan")
+    cv.create_variant("alibaba-tokenplan")
     # The base provider's built-in defaults apply to the variant.
-    assert pc.get_default_model_from_provider("alibaba-tokenplan") == "qwen3.8-max"
-    assert pc.get_default_api_type_from_provider("alibaba-tokenplan") == "Completions"
-    assert pc.get_default_thinking_from_provider("alibaba-tokenplan") is True
-    assert pc.get_endpoint_for_api_type(
+    assert pa.get_default_model_from_provider("alibaba-tokenplan") == "qwen3.8-max"
+    assert pa.get_default_api_type_from_provider("alibaba-tokenplan") == "Completions"
+    assert pa.get_default_thinking_from_provider("alibaba-tokenplan") is True
+    assert pa.get_endpoint_for_api_type(
         "alibaba-tokenplan", "Completions"
-    ) == pc.get_endpoint_for_api_type("alibaba", "Completions")
+    ) == pa.get_endpoint_for_api_type("alibaba", "Completions")
 
     # A registered variant of "custom" counts as custom.
-    gc.create_variant("custom-local")
-    assert pc.is_custom_provider("custom-local") is True
+    cv.create_variant("custom-local")
+    assert pv.is_custom_provider("custom-local") is True
+
+
+def test_variant_inherits_base_models_dict(monkeypatch, tmp_path):
+    """A variant inherits the base provider's ``models`` dict: its model
+    names, per-model token limits, reasoning and thinking defaults all come
+    from the base provider's built-in entries."""
+    _use_temp_config(monkeypatch, tmp_path)
+
+    cv.create_variant("openai-tokenplan")
+    registry = pr.ProviderRegistry()
+    provider = registry.get("openai-tokenplan")
+    assert provider is not None
+    # Same model_names as the base provider.
+    assert provider.model_names() == ["gpt-5.6-luna"]
+    # Per-model accessors resolve through the inherited models dict.
+    assert provider.default_model() == "gpt-5.6-luna"
+    assert provider.max_input_tokens() == 1050000
+    assert provider.max_output_tokens() == 128000
+    assert provider.supported_api_types() == ["Responses", "Completions"]
+    assert provider.default_api_type() == "Responses"
+    # A per-model override lands under the VARIANT name (providers.<variant>.
+    # models.<model>.<key>), not the base provider's.
+    key, value = cc.set_config_from_cli("max-output-tokens=32000", "openai-tokenplan")
+    assert key == "openai-tokenplan.models.gpt-5.6-luna.max-output-tokens"
+    assert cl.load_max_output_tokens("openai-tokenplan") == 32000
+    # The base provider is unaffected.
+    assert cl.load_max_output_tokens("openai") is None
 
 
 def test_variant_provider_object(monkeypatch, tmp_path):
     _use_temp_config(monkeypatch, tmp_path)
 
-    gc.create_variant("custom-local")
-    registry = pc.ProviderRegistry()
+    cv.create_variant("custom-local")
+    registry = pr.ProviderRegistry()
     provider = registry.get("custom-local")
     assert provider is not None
     assert provider.name == "custom-local"
@@ -236,8 +268,8 @@ def test_variant_provider_object(monkeypatch, tmp_path):
 def test_set_provider_to_variant(monkeypatch, tmp_path):
     config_path = _use_temp_config(monkeypatch, tmp_path)
 
-    gc.create_variant("alibaba-tokenplan")
-    key, value = gc.set_config_from_cli("provider=alibaba-tokenplan")
+    cv.create_variant("alibaba-tokenplan")
+    key, value = cc.set_config_from_cli("provider=alibaba-tokenplan")
     assert key == "provider"
     assert value == "alibaba-tokenplan"
     assert _read_json(config_path)["provider"] == "alibaba-tokenplan"
@@ -247,17 +279,17 @@ def test_set_provider_to_unregistered_variant_rejected(monkeypatch, tmp_path):
     _use_temp_config(monkeypatch, tmp_path)
 
     with pytest.raises(ValueError, match="--create-variant"):
-        gc.set_config_from_cli("provider=alibaba-bogus")
+        cc.set_config_from_cli("provider=alibaba-bogus")
 
 
 def test_per_variant_model_roundtrip(monkeypatch, tmp_path):
     _use_temp_config(monkeypatch, tmp_path)
 
-    gc.create_variant("alibaba-tokenplan")
-    key, value = gc.set_config_from_cli("model=qwen-plus", "alibaba-tokenplan")
+    cv.create_variant("alibaba-tokenplan")
+    key, value = cc.set_config_from_cli("model=qwen-plus", "alibaba-tokenplan")
     assert key == "alibaba-tokenplan.model"
     assert value == "qwen-plus"
-    assert gc.load_model_from_config("alibaba-tokenplan") == "qwen-plus"
+    assert cl.load_model_from_config("alibaba-tokenplan") == "qwen-plus"
 
 
 def test_unset_last_scoped_key_keeps_variant_registered(monkeypatch, tmp_path):
@@ -268,11 +300,11 @@ def test_unset_last_scoped_key_keeps_variant_registered(monkeypatch, tmp_path):
     """
     config_path = _use_temp_config(monkeypatch, tmp_path)
 
-    gc.create_variant("alibaba-tokenplan")
-    gc.set_config_value("alibaba-tokenplan.model", "qwen-plus")
+    cv.create_variant("alibaba-tokenplan")
+    cs.set_config_value("alibaba-tokenplan.model", "qwen-plus")
 
-    assert gc.unset_config_value("alibaba-tokenplan.model") is True
-    assert gc.is_registered_variant("alibaba-tokenplan") is True
+    assert cs.unset_config_value("alibaba-tokenplan.model") is True
+    assert cv.is_registered_variant("alibaba-tokenplan") is True
     assert _read_json(config_path) == {"providers": {"alibaba-tokenplan": {}}}
 
 
@@ -286,10 +318,10 @@ def test_resolve_runtime_config_variant_overrides(monkeypatch, tmp_path):
 
     _use_temp_config(monkeypatch, tmp_path)
 
-    gc.create_variant("alibaba-tokenplan")
+    cv.create_variant("alibaba-tokenplan")
     set_api_key("alibaba-tokenplan", "sk-variant")  # pragma: allowlist secret
-    gc.set_config_from_cli("model=qwen-plus", "alibaba-tokenplan")
-    gc.set_config_from_cli(
+    cc.set_config_from_cli("model=qwen-plus", "alibaba-tokenplan")
+    cc.set_config_from_cli(
         "endpoint=https://variant.example.com/v1", "alibaba-tokenplan"
     )
 
@@ -304,14 +336,14 @@ def test_resolve_runtime_config_variant_base_fallback(monkeypatch, tmp_path):
 
     _use_temp_config(monkeypatch, tmp_path)
 
-    gc.create_variant("alibaba-tokenplan")
+    cv.create_variant("alibaba-tokenplan")
     set_api_key("alibaba-tokenplan", "sk-variant")  # pragma: allowlist secret
 
     # No per-variant overrides: the base provider's defaults apply.
     base_url, api_key, model = resolve_runtime_config(None, "alibaba-tokenplan")
-    assert base_url == pc.get_endpoint_for_api_type("alibaba", "Completions")
+    assert base_url == pa.get_endpoint_for_api_type("alibaba", "Completions")
     assert api_key == "sk-variant"  # pragma: allowlist secret
-    assert model == pc.get_default_model_from_provider("alibaba")
+    assert model == pa.get_default_model_from_provider("alibaba")
 
 
 def test_resolve_runtime_config_variant_no_key_error(monkeypatch, tmp_path):
@@ -319,7 +351,7 @@ def test_resolve_runtime_config_variant_no_key_error(monkeypatch, tmp_path):
 
     _use_temp_config(monkeypatch, tmp_path)
 
-    gc.create_variant("alibaba-tokenplan")
+    cv.create_variant("alibaba-tokenplan")
     with pytest.raises(ValueError, match="alibaba-tokenplan"):
         resolve_runtime_config(None, "alibaba-tokenplan")
 
@@ -366,7 +398,7 @@ def web_client():
 
 @requires_fastapi
 def test_web_providers_list_includes_variant(web_client):
-    gc.create_variant("alibaba-tokenplan")
+    cv.create_variant("alibaba-tokenplan")
     set_api_key("alibaba-tokenplan", "sk-variant")  # pragma: allowlist secret
 
     resp = web_client.get("/api/config/providers")

@@ -6,6 +6,8 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
 from .config_helpers import (
+    _base_info_for,
+    _build_provider_entry,
     _patch_api_type,
     _patch_endpoint,
     _patch_model,
@@ -173,159 +175,18 @@ async def set_thinking(request: Request):
     }
 
 
-def _base_info_for(variant: str):
-    """Resolve a registered variant to its ``(canonical_base, base_info)``.
-
-    The base is the variant name's prefix (before the first ``-``) matched
-    case-insensitively against :data:`PROVIDER_INFO`.
-
-    Args:
-        variant: A registered variant name (e.g. ``alibaba-tokenplan``).
-
-    Returns:
-        A ``(base_name, base_info)`` tuple; ``base_info`` is ``None`` when the
-        prefix does not map to a supported provider.
-    """
-    from janito.provider_config import PROVIDER_INFO, parse_variant_name
-
-    base_name = parse_variant_name(variant)[0]
-    for key, info in PROVIDER_INFO.items():
-        if key.lower() == base_name.lower():
-            return key, info
-    return base_name, None
-
-
-def _build_provider_entry(
-    name,
-    info,
-    *,
-    active_provider,
-    effective_provider,
-    is_variant=False,
-    base_provider=None,
-):
-    """Build one provider entry for the Settings drawer / topbar combo.
-
-    The entry shape is shared by base providers and registered variants; for
-    a variant ``info`` is the *base* provider's info entry, so the variant
-    inherits the base's built-in defaults while its own per-variant config
-    (``providers.<name>.<key>``) and API key are read off the variant name.
-
-    Args:
-        name: The provider (or variant) name.
-        info: The provider info dict (the base provider's for a variant).
-        active_provider: The persisted default provider (``active: true``).
-        effective_provider: The provider the next prompt resolves to
-            (``effective: true``).
-        is_variant: Whether this entry is a registered variant.
-        base_provider: The canonical base provider name for a variant.
-    """
-    from janito.auth_config import get_api_key
-    from janito.general_config import (
-        load_api_type,
-        load_endpoint_from_config,
-        load_model_from_config,
-        load_responses_in_server_from_config,
-    )
-    from janito.provider_config import (
-        CUSTOM_ENDPOINT_MARKER,
-        get_default_api_type_from_provider,
-        get_endpoint_for_api_type,
-        get_required_package_for_api_type,
-        get_responses_in_server_from_provider,
-        is_api_type_available,
-    )
-
-    # Resolve the effective base URL: a configured endpoint override
-    # takes priority, otherwise the provider's built-in default resolved
-    # for its default API type (honors the provider's
-    # ``endpoint_by_api_type`` map, e.g. Anthropic's native-SDK URL).
-    # ``get_endpoint_for_api_type`` / ``get_default_api_type_from_provider``
-    # resolve variants to their base provider automatically.
-    endpoint_override = load_endpoint_from_config(name)
-    if endpoint_override:
-        base_url = endpoint_override
-    else:
-        built_in_url = get_endpoint_for_api_type(
-            name, get_default_api_type_from_provider(name)
-        )
-        if built_in_url and built_in_url != CUSTOM_ENDPOINT_MARKER:
-            base_url = built_in_url
-        else:
-            base_url = None
-
-    api_key = get_api_key(name)
-
-    # Advanced per-provider settings (Settings drawer's Advanced section):
-    # the configured ``api_type`` override (``None`` when the provider's
-    # built-in default applies) and the effective ``responses_in_server``
-    # flag (configured override first, else the built-in default).
-    api_type_override = load_api_type(name)
-    responses_in_server = get_responses_in_server_from_provider(name)
-
-    # Per-API-type availability for the Settings drawer's API Type
-    # combobox.  The OpenAI-SDK types (Responses / Completions) are
-    # always available (the `openai` package is a hard dependency);
-    # native-SDK types (e.g. ``Anthropic``) are only available while
-    # their optional package is installed.  The web UI keeps the
-    # unavailable types OUT of the combobox and shows this info instead,
-    # so the user sees why a type is missing and how to enable it.
-    api_types = []
-    for api_type in info.get("supported_api_types") or []:
-        package = get_required_package_for_api_type(api_type)
-        available = is_api_type_available(api_type)
-        entry = {"type": api_type, "available": available}
-        if package is not None:
-            entry["required_package"] = package
-        if not available:
-            entry["reason"] = (
-                f"The {api_type} API requires the optional '{package}' "
-                f"package, which is not installed. Install it with: "
-                f"pip install {package}"
-            )
-        api_types.append(entry)
-
-    entry = {
-        "name": name,
-        "base_url": base_url,
-        "model": load_model_from_config(name),
-        "default_model": info.get("model"),
-        "api_type": api_type_override,
-        "default_api_type": get_default_api_type_from_provider(name),
-        "supported_api_types": info.get("supported_api_types"),
-        "api_types": api_types,
-        "endpoint_by_api_type": info.get("endpoint_by_api_type"),
-        "responses_in_server": responses_in_server,
-        "default_responses_in_server": info.get("responses_in_server", True),
-        "responses_in_server_override": load_responses_in_server_from_config(name),
-        "default_max_input_tokens": info.get("max_input_tokens"),
-        "default_max_output_tokens": info.get("max_output_tokens"),
-        "default_reasoning_level": info.get("reasoning_level"),
-        "supported_reasoning_levels": info.get("supported_reasoning_levels"),
-        "default_thinking": info.get("thinking"),
-        "endpoint": endpoint_override,
-        "api_key_set": bool(api_key),
-        "active": name == active_provider,
-        "effective": name == effective_provider,
-    }
-    if is_variant:
-        entry["variant"] = True
-        entry["base_provider"] = base_provider
-    return entry
-
-
 @router.get("/providers")
 async def list_providers(request: Request):
     """List all supported providers with their per-provider configuration.
 
     Each entry aggregates data from the existing janito modules:
 
-    * ``provider_config.PROVIDER_INFO`` -- the built-in per-provider defaults
+    * ``provider_data.PROVIDER_INFO`` -- the built-in per-provider defaults
       (``endpoint``, ``model``, ``max_input_tokens``, ``max_output_tokens``,
       ``reasoning_level``, ``supported_reasoning_levels`` and ``thinking``).
       ``endpoint`` is ``None`` for standard OpenAI and the ``CUSTOM_ENDPOINT``
       marker for "custom".
-    * ``general_config`` -- the per-provider ``model`` and ``endpoint``
+    * ``config_store`` -- the per-provider ``model`` and ``endpoint``
       overrides stored in ``~/.janito/config.json`` under
       ``providers.<name>.{model,endpoint}``.
     * ``auth_config.get_api_key()`` -- whether an API key exists for the
@@ -343,7 +204,8 @@ async def list_providers(request: Request):
       kept out of the combobox and surfaced as info instead.
     """
     from janito.general_config import get_active_provider
-    from janito.provider_config import PROVIDER_INFO, list_variants
+    from janito.provider_data import PROVIDER_INFO
+    from janito.provider_validation import list_variants
 
     config = _get_config(request)
     active_provider = get_active_provider()
@@ -401,8 +263,8 @@ async def set_session_provider(request: Request):
     lists exactly the providers with a key set).
     """
     from janito.auth_config import get_api_key
-    from janito.general_config import load_model_from_config
-    from janito.provider_config import validate_provider_name
+    from janito.config_loaders import load_model_from_config
+    from janito.provider_validation import validate_provider_name
 
     try:
         body = await request.json()
@@ -461,8 +323,9 @@ async def set_default_provider(request: Request):
     guard (they list exactly the providers with a key set).
     """
     from janito.auth_config import get_api_key
-    from janito.general_config import load_model_from_config, set_config_value
-    from janito.provider_config import validate_provider_name
+    from janito.config_loaders import load_model_from_config
+    from janito.config_store import set_config_value
+    from janito.provider_validation import validate_provider_name
 
     try:
         body = await request.json()
@@ -523,8 +386,8 @@ async def set_provider_api_key(request: Request):
     echoed back; only the masked form (same as ``/status``) is returned.
     """
     from janito.auth_config import set_api_key
-    from janito.general_config import get_masked_api_key
-    from janito.provider_config import validate_provider_name
+    from janito.config_keys import get_masked_api_key
+    from janito.provider_validation import validate_provider_name
 
     try:
         body = await request.json()
@@ -565,17 +428,15 @@ async def get_status(request: Request, provider: str | None = None):
     ``active_provider`` keeps reporting the true default either way.
     """
     from janito.auth_config import get_api_key
-    from janito.general_config import (
-        get_active_provider,
-        get_masked_api_key,
-        load_endpoint_from_config,
-    )
-    from janito.provider_config import (
-        CUSTOM_ENDPOINT_MARKER,
+    from janito.config_keys import get_masked_api_key
+    from janito.config_loaders import load_endpoint_from_config
+    from janito.general_config import get_active_provider
+    from janito.provider_accessors import (
         get_default_api_type_from_provider,
         get_endpoint_for_api_type,
-        validate_provider_name,
     )
+    from janito.provider_data import CUSTOM_ENDPOINT_MARKER
+    from janito.provider_validation import validate_provider_name
 
     config = _get_config(request)
     active = get_active_provider()

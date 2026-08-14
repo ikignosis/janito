@@ -106,8 +106,9 @@ Deleting a variant removes:
 
 - its `providers` entry in `config.json` — the `providers.<name>`
   registration marker plus every per-variant config key stored under it
-  (model, endpoint, API type, tokens, reasoning level, responses-in-server)
-  — and
+  (provider-scoped keys `model`, `endpoint`, and model-scoped keys `api-type`,
+  tokens, reasoning level, responses-in-server under
+  `providers.<name>.models.<model>.<key>`) — and
 - its API key in `auth.json`.
 
 janito **refuses** to delete the variant that is currently the configured
@@ -127,8 +128,11 @@ For a variant `<base>-<word>`, values resolve as follows (later overrides
 earlier):
 
 1. Base provider's built-in defaults (from `PROVIDER_INFO`, e.g. the
-   `alibaba` entry)
-2. Per-variant configuration file values (`providers.<base>-<word>.<key>`)
+   `alibaba` entry: its `default_model` and the per-model `models` dict)
+2. Per-variant configuration file values — provider-scoped
+   (`providers.<base>-<word>.model` / `.endpoint`) and model-scoped
+   (`providers.<base>-<word>.models.<model>.{api-type, max-output-tokens,
+   max-input-tokens, reasoning-level, responses-in-server}`)
 3. Command-line arguments (`--model`, `--provider`, `--set endpoint=...`)
 
 The API key comes from `auth.json` under the variant name. See

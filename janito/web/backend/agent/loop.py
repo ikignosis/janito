@@ -22,15 +22,11 @@ from collections.abc import AsyncGenerator
 
 from openai import AsyncOpenAI
 
-from janito.general_config import (
-    get_active_provider,
-    get_config_value,
-    load_max_output_tokens,
-    load_reasoning_level,
-    resolve_api_type,
-)
+from janito.config_loaders import load_max_output_tokens, load_reasoning_level
+from janito.config_store import get_config_value
+from janito.general_config import get_active_provider, resolve_api_type
 from janito.openai_client.completions_api import resolve_runtime_config
-from janito.provider_config import (
+from janito.provider_accessors import (
     get_default_max_output_tokens_from_provider,
     get_default_reasoning_level_from_provider,
 )
@@ -54,21 +50,30 @@ from .turn import run_tool_turn
 logger = logging.getLogger(__name__)
 
 
-def _resolve_turn_config(config, effective_provider):
-    """Resolve max tokens / preserve_thinking / reasoning level for the turn."""
-    max_output_tokens = load_max_output_tokens(effective_provider)
+def _resolve_turn_config(config, effective_provider, model):
+    """Resolve max tokens / preserve_thinking / reasoning level for the turn.
+
+    The max-tokens and reasoning-level defaults are resolved for the
+    **effective model** (the one returned by ``resolve_runtime_config``):
+    a model-scoped config override wins, then the model's built-in default
+    from ``PROVIDER_INFO`` (falling back to the default model's entry for
+    models without a built-in entry).
+    """
+    max_output_tokens = load_max_output_tokens(effective_provider, model)
     if max_output_tokens is None:
         # Fall back to the provider's built-in default (PROVIDER_INFO).
         max_output_tokens = get_default_max_output_tokens_from_provider(
-            effective_provider
+            effective_provider, model
         )
     preserve_thinking = get_config_value("preserve_thinking")
 
-    # Reasoning level (reasoning_effort): per-provider config value first,
-    # then the provider's built-in default (e.g. "xhigh" for qwen3.8-max).
-    reasoning_level = load_reasoning_level(effective_provider)
+    # Reasoning level (reasoning_effort): model-scoped config value first,
+    # then the model's built-in default (e.g. "xhigh" for qwen3.8-max).
+    reasoning_level = load_reasoning_level(effective_provider, model)
     if reasoning_level is None:
-        reasoning_level = get_default_reasoning_level_from_provider(effective_provider)
+        reasoning_level = get_default_reasoning_level_from_provider(
+            effective_provider, model
+        )
 
     return max_output_tokens, preserve_thinking, reasoning_level
 
@@ -252,7 +257,7 @@ async def stream_prompt(
     tools_schemas = await resolve_tools(config, tools, use_mcp)
 
     max_output_tokens, preserve_thinking, reasoning_level = _resolve_turn_config(
-        config, effective_provider
+        config, effective_provider, model
     )
 
     messages.append({"role": "user", "content": prompt})

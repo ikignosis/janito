@@ -32,7 +32,8 @@ from typing import Any
 
 from rich.console import Console
 
-from janito.general_config import get_active_provider, get_config_value
+from janito.config_store import get_config_value
+from janito.general_config import get_active_provider
 from janito.tooling.changes import clear_changes
 from janito.tooling.used_files import reset_used_files
 
@@ -134,7 +135,9 @@ class Client:
             max_output_tokens,
             max_input_tokens,
             reasoning_level,
-        ) = self._resolve_model_settings(provider, thinking, self.reasoning_level)
+        ) = self._resolve_model_settings(
+            provider, model, thinking, self.reasoning_level
+        )
         preserve_thinking = self._get_config("preserve_thinking")
         if preserve_thinking is not None:
             logger.debug(f"Using preserve_thinking from config: {preserve_thinking}")
@@ -147,7 +150,7 @@ class Client:
 
         # Conversation-state model depends on the client (client-owned
         # messages list vs server-side response id vs client-side items).
-        state = self._init_conversation_state(prompt, provider, **kwargs)
+        state = self._init_conversation_state(prompt, provider, model, **kwargs)
 
         while True:
             # Build the base call parameters for one round.
@@ -242,11 +245,12 @@ class Client:
         """Resolve the tool schemas (built-in + MCP), API-specific format."""
         raise NotImplementedError
 
-    def _resolve_model_settings(self, provider, thinking, reasoning_level):
-        """Resolve ``(thinking, max_output_tokens, max_input_tokens, reasoning_level)``."""
+    def _resolve_model_settings(self, provider, model, thinking, reasoning_level):
+        """Resolve ``(thinking, max_output_tokens, max_input_tokens, reasoning_level)``
+        for the resolved ``model``."""
         raise NotImplementedError
 
-    def _init_conversation_state(self, prompt, provider, **kwargs):
+    def _init_conversation_state(self, prompt, provider, model, **kwargs):
         """Build the per-turn conversation state from ``**kwargs``."""
         raise NotImplementedError
 

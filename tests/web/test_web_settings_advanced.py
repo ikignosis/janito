@@ -50,8 +50,9 @@ import pytest
 from _frontend import render_index_html
 
 import janito.config_dir as config_dir_mod
-import janito.general_config as gc
-from janito.provider_config import is_api_type_available
+import janito.config_loaders as cl
+import janito.config_store as cs
+from janito.provider_accessors import is_api_type_available
 
 # The web routes need the optional `web` extra (fastapi). Skip gracefully
 # when fastapi is not installed (e.g. minimal tox envs).
@@ -121,7 +122,7 @@ def _providers_by_name(client):
 @requires_fastapi
 def test_patch_endpoint_persists_per_provider(client):
     """{endpoint, provider} writes providers.<provider>.endpoint to config.json."""
-    gc.unset_config_value("minimax.endpoint")
+    cs.unset_config_value("minimax.endpoint")
 
     resp = client.patch(
         "/api/config",
@@ -131,7 +132,7 @@ def test_patch_endpoint_persists_per_provider(client):
     assert resp.json()["updated"]["endpoint"] == "https://minimax.example/v1"
 
     assert (
-        gc.load_config().get("providers", {}).get("minimax", {}).get("endpoint")
+        cs.load_config().get("providers", {}).get("minimax", {}).get("endpoint")
         == "https://minimax.example/v1"
     )
     # ...and the providers endpoint reflects the override (base_url wins).
@@ -143,15 +144,15 @@ def test_patch_endpoint_persists_per_provider(client):
 @requires_fastapi
 def test_patch_empty_endpoint_clears_override(client):
     """An empty endpoint removes the per-provider override (built-in returns)."""
-    gc.set_config_value("minimax.endpoint", "https://minimax.example/v1")
-    assert gc.load_endpoint_from_config("minimax") == "https://minimax.example/v1"
+    cs.set_config_value("minimax.endpoint", "https://minimax.example/v1")
+    assert cl.load_endpoint_from_config("minimax") == "https://minimax.example/v1"
 
     resp = client.patch("/api/config", json={"endpoint": "", "provider": "minimax"})
     assert resp.status_code == 200
     assert resp.json()["updated"]["endpoint"] == ""
 
     assert (
-        gc.load_config().get("providers", {}).get("minimax", {}).get("endpoint") is None
+        cs.load_config().get("providers", {}).get("minimax", {}).get("endpoint") is None
     )
     # Falls back to the built-in endpoint.
     assert (
@@ -162,7 +163,7 @@ def test_patch_empty_endpoint_clears_override(client):
 @requires_fastapi
 def test_patch_api_type_persists_and_normalizes(client):
     """api_type is canonicalized (Responses/Completions) and stored per provider."""
-    gc.unset_config_value("openai.api-type")
+    cs.unset_config_value("openai.api-type")
 
     resp = client.patch(
         "/api/config", json={"api_type": "completions", "provider": "openai"}
@@ -170,7 +171,7 @@ def test_patch_api_type_persists_and_normalizes(client):
     assert resp.status_code == 200
     assert resp.json()["updated"]["api_type"] == "Completions"
 
-    assert gc.load_api_type("openai") == "Completions"
+    assert cl.load_api_type("openai") == "Completions"
     entry = _providers_by_name(client)["openai"]
     assert entry["api_type"] == "Completions"
     # The built-in default is still exposed separately.
@@ -180,13 +181,13 @@ def test_patch_api_type_persists_and_normalizes(client):
 @requires_fastapi
 def test_patch_api_type_rejects_unknown_value(client):
     """A bogus API type is rejected with 400 and nothing is written."""
-    gc.unset_config_value("openai.api-type")
-    before = gc.load_config()
+    cs.unset_config_value("openai.api-type")
+    before = cs.load_config()
 
     resp = client.patch("/api/config", json={"api_type": "Bogus", "provider": "openai"})
     assert resp.status_code == 400
     assert "Unsupported API type" in resp.json()["detail"]
-    assert gc.load_config() == before
+    assert cs.load_config() == before
 
 
 @requires_fastapi
@@ -195,8 +196,8 @@ def test_patch_api_type_anthropic_aborts_without_package(client):
     """The native Anthropic SDK API type is rejected with 400 (nothing is
     written) when the optional `anthropic` package is not installed, with a
     message naming the package."""
-    gc.unset_config_value("anthropic.api-type")
-    before = gc.load_config()
+    cs.unset_config_value("anthropic.api-type")
+    before = cs.load_config()
 
     resp = client.patch(
         "/api/config", json={"api_type": "Anthropic", "provider": "anthropic"}
@@ -206,27 +207,27 @@ def test_patch_api_type_anthropic_aborts_without_package(client):
     assert "Anthropic" in detail
     assert "anthropic" in detail
     assert "pip install anthropic" in detail
-    assert gc.load_config() == before
+    assert cs.load_config() == before
 
 
 @requires_fastapi
 def test_patch_api_type_empty_clears_override(client):
     """An empty api_type removes the per-provider override."""
-    gc.set_config_value("openai.api-type", "Completions")
-    assert gc.load_api_type("openai") == "Completions"
+    cs.set_config_value("openai.api-type", "Completions")
+    assert cl.load_api_type("openai") == "Completions"
 
     resp = client.patch("/api/config", json={"api_type": "", "provider": "openai"})
     assert resp.status_code == 200
     assert resp.json()["updated"]["api_type"] == ""
 
-    assert gc.load_api_type("openai") is None
+    assert cl.load_api_type("openai") is None
     assert _providers_by_name(client)["openai"]["api_type"] is None
 
 
 @requires_fastapi
 def test_patch_responses_in_server_persists(client):
-    """responses_in_server is stored per provider and exposed effectively."""
-    gc.unset_config_value("openai.responses-in-server")
+    """responses_in_server is stored per provider/model and exposed effectively."""
+    cs.unset_config_value("openai.models.gpt-5.6-luna.responses-in-server")
 
     resp = client.patch(
         "/api/config",
@@ -235,7 +236,7 @@ def test_patch_responses_in_server_persists(client):
     assert resp.status_code == 200
     assert resp.json()["updated"]["responses_in_server"] is False
 
-    assert gc.load_responses_in_server_from_config("openai") is False
+    assert cl.load_responses_in_server_from_config("openai") is False
     entry = _providers_by_name(client)["openai"]
     assert entry["responses_in_server"] is False  # override wins
     assert entry["default_responses_in_server"] is True  # built-in unchanged
@@ -251,7 +252,7 @@ def test_patch_responses_in_server_accepts_string_bool(client):
     )
     assert resp.status_code == 200
     assert resp.json()["updated"]["responses_in_server"] is True
-    assert gc.load_responses_in_server_from_config("deepseek") is True
+    assert cl.load_responses_in_server_from_config("deepseek") is True
 
     resp = client.patch(
         "/api/config",
@@ -264,8 +265,8 @@ def test_patch_responses_in_server_accepts_string_bool(client):
 @requires_fastapi
 def test_patch_responses_in_server_rejects_invalid(client):
     """A non-boolean responses_in_server is rejected with 400."""
-    gc.unset_config_value("openai.responses-in-server")
-    before = gc.load_config()
+    cs.unset_config_value("openai.responses-in-server")
+    before = cs.load_config()
 
     resp = client.patch(
         "/api/config",
@@ -273,20 +274,20 @@ def test_patch_responses_in_server_rejects_invalid(client):
     )
     assert resp.status_code == 400
     assert "must be a boolean" in resp.json()["detail"]
-    assert gc.load_config() == before
+    assert cs.load_config() == before
 
 
 @requires_fastapi
 def test_patch_advanced_unknown_provider_rejected(client):
     """An unknown provider name is rejected with 400 and nothing is written."""
-    before = gc.load_config()
+    before = cs.load_config()
     resp = client.patch(
         "/api/config",
         json={"endpoint": "https://x/v1", "provider": "not-a-provider"},
     )
     assert resp.status_code == 400
     assert resp.json()["detail"]
-    assert gc.load_config() == before
+    assert cs.load_config() == before
 
 
 # ---------------------------------------------------------------------------
@@ -297,6 +298,10 @@ def test_patch_advanced_unknown_provider_rejected(client):
 @requires_fastapi
 def test_providers_endpoint_exposes_advanced_fields(client):
     """Each provider entry carries the Advanced fields the drawer reads."""
+    # Clear any model-scoped responses-in-server override left by earlier
+    # tests in this module (they share the module-scoped config dir).
+    cs.unset_config_value("openai.models.gpt-5.6-luna.responses-in-server")
+    cs.unset_config_value("deepseek.models.deepseek-v4-flash.responses-in-server")
     entries = _providers_by_name(client)
 
     openai = entries["openai"]
@@ -351,6 +356,11 @@ def test_providers_endpoint_exposes_advanced_fields(client):
     # Every provider exposes per-type availability alongside the plain list.
     for entry in entries.values():
         by_type = {t["type"]: t for t in entry["api_types"]}
+        # The "custom" provider has no built-in models, so it exposes no
+        # supported API types (both lists are empty/None).
+        if not entry["supported_api_types"]:
+            assert by_type == {}
+            continue
         assert list(by_type) == entry["supported_api_types"]
         for api_type, detail in by_type.items():
             assert "available" in detail

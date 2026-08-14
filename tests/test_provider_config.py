@@ -15,10 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import pytest
 
 import janito.config_dir as config_dir_mod
-from janito.provider_config import (
-    PROVIDER_INFO,
-    REQUIRES_BY_API_TYPE,
-    canonical_provider_name,
+from janito.provider_accessors import (
     ensure_api_type_available,
     get_all_api_types,
     get_base_url_from_provider,
@@ -36,6 +33,10 @@ from janito.provider_config import (
     get_supported_api_types_from_provider,
     get_supported_reasoning_levels_from_provider,
     is_api_type_available,
+)
+from janito.provider_data import PROVIDER_INFO, REQUIRES_BY_API_TYPE
+from janito.provider_validation import (
+    canonical_provider_name,
     is_supported_provider,
     list_supported_providers,
     validate_provider_name,
@@ -51,13 +52,17 @@ if pytest is not None:
         for name in providers:
             assert name in PROVIDER_INFO
             info = PROVIDER_INFO[name]
-            # Every entry carries the full set of keys.
-            assert "model" in info
-            assert "max_input_tokens" in info
-            assert "max_output_tokens" in info
+            # Every entry carries the provider-level keys (default_model,
+            # endpoint) and the model-level keys live under ``models``.
+            assert "default_model" in info
             assert "endpoint" in info
-            assert "supported_api_types" in info
-            assert info["supported_api_types"]
+            models = info.get("models", {})
+            # The default model (when one exists) has a full built-in entry.
+            if info["default_model"] is not None:
+                assert info["default_model"] in models
+                model_entry = models[info["default_model"]]
+                assert "supported_api_types" in model_entry
+                assert model_entry["supported_api_types"]
 
     def test_get_provider_info_and_base_url():
         info = get_provider_info("minimax")
@@ -76,13 +81,18 @@ if pytest is not None:
     def test_deepseek_provider():
         info = get_provider_info("deepseek")
         assert info is not None
-        assert info["model"] == "deepseek-v4-flash"
-        assert info["max_input_tokens"] == 1048576  # 1M (2**20)
-        assert info["max_output_tokens"] == 393216
+        assert info["default_model"] == "deepseek-v4-flash"
+        model_entry = info["models"]["deepseek-v4-flash"]
+        assert model_entry["max_input_tokens"] == 1048576  # 1M (2**20)
+        assert model_entry["max_output_tokens"] == 393216
         assert info["endpoint"] == "https://api.deepseek.com"
         # OpenAI-compatible base URL for the OpenAI-SDK API types and the
         # Anthropic-compatible base URL for the native Anthropic SDK API type.
-        assert info["supported_api_types"] == ["Responses", "Completions", "Anthropic"]
+        assert model_entry["supported_api_types"] == [
+            "Responses",
+            "Completions",
+            "Anthropic",
+        ]
         assert info["endpoint_by_api_type"] == {
             "Completions": "https://api.deepseek.com",
             "Responses": "https://api.deepseek.com",
@@ -98,13 +108,14 @@ if pytest is not None:
     def test_anthropic_provider():
         info = get_provider_info("anthropic")
         assert info is not None
-        assert info["model"] == "claude-sonnet-5"
-        assert info["max_input_tokens"] == 200000
-        assert info["max_output_tokens"] == 64000
+        assert info["default_model"] == "claude-sonnet-5"
+        model_entry = info["models"]["claude-sonnet-5"]
+        assert model_entry["max_input_tokens"] == 200000
+        assert model_entry["max_output_tokens"] == 64000
         assert info["endpoint"] == "https://api.anthropic.com/v1/"
         # Completions (OpenAI-compatible) is the built-in default; the native
         # Anthropic SDK API type is the second supported type.
-        assert info["supported_api_types"] == ["Completions", "Anthropic"]
+        assert model_entry["supported_api_types"] == ["Completions", "Anthropic"]
         # Per-API-type endpoints: the OpenAI-compatible Chat Completions URL
         # and the native Anthropic SDK base URL.
         assert info["endpoint_by_api_type"] == {
@@ -183,9 +194,11 @@ if pytest is not None:
         assert get_default_thinking_from_provider("alibaba") is True
         assert get_default_thinking_from_provider("DeepSeek") is True
         assert get_default_thinking_from_provider("Alibaba") is True
-        # The provider info entries carry the flag.
-        assert PROVIDER_INFO["deepseek"]["thinking"] is True
-        assert PROVIDER_INFO["alibaba"]["thinking"] is True
+        # The model info entries carry the flag.
+        assert (
+            PROVIDER_INFO["deepseek"]["models"]["deepseek-v4-flash"]["thinking"] is True
+        )
+        assert PROVIDER_INFO["alibaba"]["models"]["qwen3.8-max"]["thinking"] is True
         # Everyone else defaults to False (explicit or absent).
         for name in (
             "openai",
@@ -203,13 +216,15 @@ if pytest is not None:
 
     def test_supported_and_default_api_types():
         # OpenAI supports both APIs and defaults to the Responses API (the
-        # first entry of its supported_api_types list).
+        # first entry of its default model's supported_api_types list).
         assert get_supported_api_types_from_provider("openai") == [
             "Responses",
             "Completions",
         ]
         assert get_default_api_type_from_provider("openai") == "Responses"
-        assert PROVIDER_INFO["openai"]["supported_api_types"] == [
+        assert PROVIDER_INFO["openai"]["models"]["gpt-5.6-luna"][
+            "supported_api_types"
+        ] == [
             "Responses",
             "Completions",
         ]
@@ -226,7 +241,9 @@ if pytest is not None:
             "DashScope",
         ]
         assert get_default_api_type_from_provider("alibaba") == "Completions"
-        assert PROVIDER_INFO["alibaba"]["supported_api_types"] == [
+        assert PROVIDER_INFO["alibaba"]["models"]["qwen3.8-max"][
+            "supported_api_types"
+        ] == [
             "Completions",
             "Responses",
             "DashScope",
@@ -247,17 +264,19 @@ if pytest is not None:
             "Anthropic",
         ]
         assert get_default_api_type_from_provider("anthropic") == "Completions"
-        # Every other provider is Completions-only for now.
+        # Every other provider is Completions-only for now.  The "custom"
+        # provider has no built-in models, so it exposes no defaults.
         for name in (
             "minimax",
             "xiaomi",
             "moonshot",
             "zai",
             "xai",
-            "custom",
         ):
             assert get_supported_api_types_from_provider(name) == ["Completions"]
             assert get_default_api_type_from_provider(name) == "Completions"
+        assert get_supported_api_types_from_provider("custom") is None
+        assert get_default_api_type_from_provider("custom") is None
         # Unknown provider returns None.
         assert get_supported_api_types_from_provider("bogus") is None
         assert get_default_api_type_from_provider("bogus") is None
@@ -347,38 +366,43 @@ if pytest is not None:
     def test_get_endpoint_for_api_type_single_entry_fallback():
         """A single-entry endpoint_by_api_type dict is the default for ANY
         API type (the issue's requirement), unless a config endpoint is set."""
-        import janito.provider_config as pc
+        import janito.provider_accessors as pa
+        import janito.provider_data as pd
 
         # Inject a fake provider with a single-entry map to pin the rule.
         fake = {
-            "model": "fake-model",
-            "supported_api_types": ["Completions", "Anthropic"],
+            "default_model": "fake-model",
             "endpoint": "https://fallback.example/v1",
             "endpoint_by_api_type": {"Anthropic": "https://native.example"},
+            "models": {
+                "fake-model": {
+                    "supported_api_types": ["Completions", "Anthropic"],
+                }
+            },
         }
-        original = dict(pc.PROVIDER_INFO)
-        pc.PROVIDER_INFO["fake-provider"] = fake
+        original = dict(pd.PROVIDER_INFO)
+        pd.PROVIDER_INFO["fake-provider"] = fake
         try:
             # The single entry is used for any API type...
             assert (
-                pc.get_endpoint_for_api_type("fake-provider", "Anthropic")
+                pa.get_endpoint_for_api_type("fake-provider", "Anthropic")
                 == "https://native.example"
             )
             assert (
-                pc.get_endpoint_for_api_type("fake-provider", "Completions")
+                pa.get_endpoint_for_api_type("fake-provider", "Completions")
                 == "https://native.example"
             )
             assert (
-                pc.get_endpoint_for_api_type("fake-provider", "Responses")
+                pa.get_endpoint_for_api_type("fake-provider", "Responses")
                 == "https://native.example"
             )
             assert (
-                pc.get_endpoint_for_api_type("fake-provider")
+                pa.get_endpoint_for_api_type("fake-provider")
                 == "https://native.example"
             )
         finally:
-            pc.PROVIDER_INFO.clear()
-            pc.PROVIDER_INFO.update(original)
+            pd.PROVIDER_INFO.clear()
+            pd.PROVIDER_INFO.update(original)
 
     def test_get_endpoint_for_api_type_no_map_falls_back_to_endpoint():
         """Providers without the map keep their single built-in endpoint."""
@@ -465,10 +489,18 @@ if pytest is not None:
         with previous_response_id; stateless endpoints (DeepSeek) do not."""
         # OpenAI keeps the conversation server-side.
         assert get_responses_in_server_from_provider("openai") is True
-        assert PROVIDER_INFO["openai"]["responses_in_server"] is True
+        assert (
+            PROVIDER_INFO["openai"]["models"]["gpt-5.6-luna"]["responses_in_server"]
+            is True
+        )
         # DeepSeek's /responses endpoint is stateless.
         assert get_responses_in_server_from_provider("deepseek") is False
-        assert PROVIDER_INFO["deepseek"]["responses_in_server"] is False
+        assert (
+            PROVIDER_INFO["deepseek"]["models"]["deepseek-v4-flash"][
+                "responses_in_server"
+            ]
+            is False
+        )
         # Case-insensitive lookups work.
         assert get_responses_in_server_from_provider("DeepSeek") is False
         # Providers that do not declare the flag default to True (the
@@ -478,27 +510,121 @@ if pytest is not None:
         assert get_responses_in_server_from_provider("bogus") is True
 
     def test_responses_in_server_flag_honors_config_override(monkeypatch, tmp_path):
-        """A per-provider responses-in-server override in config.json wins
-        over the built-in default (e.g. set from the web Settings drawer's
-        Advanced section or ``--set responses-in-server=...``)."""
-        import janito.general_config as gc
+        """A per-provider/model responses-in-server override in config.json
+        wins over the built-in default (e.g. set from the web Settings
+        drawer's Advanced section or ``--set responses-in-server=...``)."""
+        import janito.config_store as gc
 
         monkeypatch.setattr(config_dir_mod, "_config_dir", tmp_path)
 
-        # OpenAI's built-in default is True; force it off via config.
-        gc.set_config_value("openai.responses-in-server", False)
+        # OpenAI's built-in default is True; force it off via a model-scoped
+        # config override (stored under providers.openai.models.<model>.
+        # responses-in-server).
+        gc.set_config_value("openai.models.gpt-5.6-luna.responses-in-server", False)
         assert get_responses_in_server_from_provider("openai") is False
 
         # Clearing the override falls back to the built-in default.
-        gc.unset_config_value("openai.responses-in-server")
+        gc.unset_config_value("openai.models.gpt-5.6-luna.responses-in-server")
         assert get_responses_in_server_from_provider("openai") is True
 
         # DeepSeek's built-in default is False; force it on via config.
-        gc.set_config_value("deepseek.responses-in-server", True)
+        gc.set_config_value(
+            "deepseek.models.deepseek-v4-flash.responses-in-server", True
+        )
         assert get_responses_in_server_from_provider("deepseek") is True
 
         # Unknown providers still default to True regardless of config.
         assert get_responses_in_server_from_provider("bogus") is True
+
+    # ---- Model-level fallback chain --------------------------------------
+
+    def test_fallback_chain_unknown_model_uses_default_model_entry():
+        """A model without its own built-in entry falls back to the default
+        model's entry for its defaults."""
+        # OpenAI has only one built-in model (gpt-5.6-luna); an unknown model
+        # inherits its defaults (token limits, API types).
+        assert get_default_max_output_tokens_from_provider("openai", "my-model") == (
+            get_default_max_output_tokens_from_provider("openai")
+        )
+        assert get_default_max_input_tokens_from_provider("openai", "my-model") == (
+            get_default_max_input_tokens_from_provider("openai")
+        )
+        assert get_supported_api_types_from_provider("openai", "my-model") == [
+            "Responses",
+            "Completions",
+        ]
+        assert get_default_api_type_from_provider("openai", "my-model") == "Responses"
+        # An unknown provider still returns None.
+        assert get_default_max_output_tokens_from_provider("bogus", "m") is None
+        assert get_supported_api_types_from_provider("bogus", "m") is None
+
+    def test_fallback_chain_explicit_model_beats_default_model():
+        """When a provider ships multiple models, an explicitly requested
+        model's built-in entry wins over the default model's entry."""
+        import janito.provider_data as pd
+
+        # Inject a provider with two models (default + a smaller one) to pin
+        # the per-model resolution rule.
+        original = dict(pd.PROVIDER_INFO)
+        pd.PROVIDER_INFO["multi-model"] = {
+            "default_model": "big-model",
+            "endpoint": None,
+            "models": {
+                "big-model": {
+                    "supported_api_types": ["Responses"],
+                    "max_output_tokens": 128000,
+                },
+                "small-model": {
+                    "supported_api_types": ["Completions"],
+                    "max_output_tokens": 16000,
+                },
+            },
+        }
+        try:
+            # Explicit model -> its own entry wins.
+            assert (
+                get_default_max_output_tokens_from_provider(
+                    "multi-model", "small-model"
+                )
+                == 16000
+            )
+            assert get_supported_api_types_from_provider(
+                "multi-model", "small-model"
+            ) == ["Completions"]
+            # Default model (None) -> the default model's entry.
+            assert get_default_max_output_tokens_from_provider("multi-model") == 128000
+            assert get_supported_api_types_from_provider("multi-model") == ["Responses"]
+            # Unknown model -> falls back to the default model's entry.
+            assert (
+                get_default_max_output_tokens_from_provider(
+                    "multi-model", "unknown-model"
+                )
+                == 128000
+            )
+        finally:
+            pd.PROVIDER_INFO.clear()
+            pd.PROVIDER_INFO.update(original)
+
+    def test_custom_provider_empty_models():
+        """The 'custom' provider has no built-in models: model-level accessors
+        return None/empty, and there is no default model."""
+        import janito.provider_models as pm
+
+        assert PROVIDER_INFO["custom"]["default_model"] is None
+        assert PROVIDER_INFO["custom"]["models"] == {}
+        assert get_default_model_from_provider("custom") is None
+        assert get_default_max_output_tokens_from_provider("custom") is None
+        assert get_default_max_input_tokens_from_provider("custom") is None
+        assert get_supported_api_types_from_provider("custom") is None
+        assert get_default_api_type_from_provider("custom") is None
+        assert get_default_reasoning_level_from_provider("custom") is None
+        assert get_supported_reasoning_levels_from_provider("custom") is None
+        assert get_default_thinking_from_provider("custom") is False
+        # The Provider class exposes the same empties.
+        provider = pm.Provider("custom")
+        assert provider.model_names() == []
+        assert provider.model_config("any-model").max_output_tokens() is None
+        assert provider.model_config("any-model").supported_api_types() is None
 
     def test_canonical_provider_name_exact_and_case_insensitive():
         assert canonical_provider_name("openai") == "openai"

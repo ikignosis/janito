@@ -109,7 +109,7 @@ def test_prompt_max_input_tokens_uses_existing_value_as_default(monkeypatch, cap
         "janito.cli.handlers.config._prompt_with_default",
         lambda prompt, default=None, is_password=False: default,
     )
-    result = _prompt_max_input_tokens("openai", 256000)
+    result = _prompt_max_input_tokens("openai", "gpt-5.6-luna", 256000)
     assert result == 256000
     out = capsys.readouterr().out
     assert "Max Input Tokens" in out
@@ -123,9 +123,9 @@ def test_prompt_max_input_tokens_defaults_to_provider_builtin(monkeypatch):
     )
     monkeypatch.setattr(
         "janito.cli.handlers.config.get_default_max_input_tokens_from_provider",
-        lambda provider: 200000,
+        lambda provider, model=None: 200000,
     )
-    result = _prompt_max_input_tokens("openai", None)
+    result = _prompt_max_input_tokens("openai", "gpt-5.6-luna", None)
     assert result == 200000
 
 
@@ -137,9 +137,9 @@ def test_prompt_max_input_tokens_falls_back_to_128k(monkeypatch):
     # No existing value and no provider built-in (e.g. 'custom').
     monkeypatch.setattr(
         "janito.cli.handlers.config.get_default_max_input_tokens_from_provider",
-        lambda provider: None,
+        lambda provider, model=None: None,
     )
-    result = _prompt_max_input_tokens("custom", None)
+    result = _prompt_max_input_tokens("custom", None, None)
     assert result == 128000
 
 
@@ -148,7 +148,7 @@ def test_prompt_max_input_tokens_parses_input(monkeypatch, capsys):
         "janito.cli.handlers.config._prompt_with_default",
         lambda prompt, default=None, is_password=False: "1048576",
     )
-    result = _prompt_max_input_tokens("openai", None)
+    result = _prompt_max_input_tokens("openai", "gpt-5.6-luna", None)
     assert result == 1048576
     assert "Using max input tokens: 1048576" in capsys.readouterr().out
 
@@ -158,6 +158,6 @@ def test_prompt_max_input_tokens_rejects_non_numeric(monkeypatch, capsys):
         "janito.cli.handlers.config._prompt_with_default",
         lambda prompt, default=None, is_password=False: "many",
     )
-    result = _prompt_max_input_tokens("openai", None)
+    result = _prompt_max_input_tokens("openai", "gpt-5.6-luna", None)
     assert result is None
     assert "Max input tokens must be a number." in capsys.readouterr().err

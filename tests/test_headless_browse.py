@@ -22,13 +22,13 @@ import os
 
 import pytest
 
-from janito.tools.net import headless_browse as hb_module
-from janito.tools.net.headless_browse import (
+from janito.tools.net import _chrome_utils as chrome_utils_mod
+from janito.tools.net._chrome_utils import (
     BIG_CONTENT_THRESHOLD,
-    HeadlessBrowse,
     _cleanup_temp_files,
     _find_chrome,
 )
+from janito.tools.net.headless_browse import HeadlessBrowse
 
 CHROME = _find_chrome()
 requires_chrome = pytest.mark.skipif(
@@ -197,7 +197,7 @@ def test_big_content_stored_to_temp_file(server):
 
     assert tmp_filename in result["message"]
     assert "content" not in result
-    assert tmp_filename in hb_module._TEMP_FILES
+    assert tmp_filename in chrome_utils_mod._TEMP_FILES
 
 
 @requires_chrome
@@ -223,7 +223,7 @@ def test_cleanup_removes_temp_files(server):
     assert os.path.isfile(tmp_filename)
     _cleanup_temp_files()
     assert not os.path.exists(tmp_filename)
-    assert tmp_filename not in hb_module._TEMP_FILES
+    assert tmp_filename not in chrome_utils_mod._TEMP_FILES
 
 
 if __name__ == "__main__":

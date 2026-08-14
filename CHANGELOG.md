@@ -16,9 +16,17 @@ Changes since `v4.24.0` (2026-08-13).
   announcement when defined.
 - **Simpler ReadFile result message**: `ReadFile` now reports only the number
   of lines read, dropping the explicit line range from the result message.
+- **Per-model configuration**: per-model settings (max input/output tokens,
+  reasoning level, API type, responses-in-server, thinking) moved out of the
+  provider level of `PROVIDER_INFO` into a per-provider `models` dict, with a
+  `default_model` per provider. `config.json` stores these keys under
+  `providers.<provider>.models.<model>.<key>`; the legacy provider-scoped
+  locations are no longer read or written ([#50]).
 
 ### Fixed
 
 - **Docs point to the correct repository**: fixed `github.com/joaopinto/janito`
   links in `CHANGELOG.md`, `README_DEV.md` and `RELEASE.md` to reference
   `github.com/ikignosis/janito`.
+
+[#50]: https://github.com/ikignosis/janito/issues/50

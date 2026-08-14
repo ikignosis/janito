@@ -33,7 +33,8 @@ import pytest
 
 import janito.auth_config as ac
 import janito.config_dir as config_dir_mod
-import janito.general_config as gc
+import janito.config_loaders as cl
+import janito.config_store as cs
 
 # The web routes need the optional `web` extra (fastapi). Skip gracefully
 # when fastapi is not installed (e.g. minimal tox envs).
@@ -107,7 +108,7 @@ def client(clean_config):
 def test_patch_model_with_provider_persists_per_provider(client):
     """{model, provider} writes providers.<provider>.model to config.json."""
     # Make sure the config.json has no stale model for the target provider.
-    gc.unset_config_value("minimax.model")
+    cs.unset_config_value("minimax.model")
 
     resp = client.patch(
         "/api/config", json={"model": "MiniMax-M3", "provider": "minimax"}
@@ -117,19 +118,19 @@ def test_patch_model_with_provider_persists_per_provider(client):
 
     # Persisted per-provider on disk (the core of the fix).
     assert (
-        gc.load_config().get("providers", {}).get("minimax", {}).get("model")
+        cs.load_config().get("providers", {}).get("minimax", {}).get("model")
         == "MiniMax-M3"
     )
     # ...and readable through the per-provider loader too.
-    assert gc.load_model_from_config("minimax") == "MiniMax-M3"
+    assert cl.load_model_from_config("minimax") == "MiniMax-M3"
 
 
 @requires_fastapi
 def test_patch_model_without_provider_targets_active_provider(client):
     """Without an explicit provider, the model lands on the active one."""
     assert ac.set_api_key("openai", "sk-openai-test") is True
-    assert gc.set_config_value("provider", "openai") is None
-    gc.unset_config_value("openai.model")
+    assert cs.set_config_value("provider", "openai") is None
+    cs.unset_config_value("openai.model")
     client.app.state.config.session_provider = None
 
     resp = client.patch("/api/config", json={"model": "gpt-4o"})
@@ -137,16 +138,16 @@ def test_patch_model_without_provider_targets_active_provider(client):
 
     # Applied to the persisted default (openai), not any other provider.
     assert (
-        gc.load_config().get("providers", {}).get("openai", {}).get("model") == "gpt-4o"
+        cs.load_config().get("providers", {}).get("openai", {}).get("model") == "gpt-4o"
     )
-    assert gc.load_model_from_config("minimax") in (None, "MiniMax-M3")
+    assert cl.load_model_from_config("minimax") in (None, "MiniMax-M3")
 
 
 @requires_fastapi
 def test_patch_model_mirrored_into_running_server_when_effective(client):
     """When the change affects the provider in use, the server model updates."""
     assert ac.set_api_key("openai", "sk-openai-test") is True
-    assert gc.set_config_value("provider", "openai") is None
+    assert cs.set_config_value("provider", "openai") is None
     client.app.state.config.session_provider = None
     client.app.state.config.provider = "openai"
 
@@ -161,7 +162,7 @@ def test_patch_model_mirrored_into_running_server_when_effective(client):
 def test_patch_model_for_other_provider_keeps_server_model(client):
     """A model set for a non-effective provider is persisted but does not
     change the running server's current model."""
-    assert gc.set_config_value("provider", "openai") is None
+    assert cs.set_config_value("provider", "openai") is None
     client.app.state.config.session_provider = None
     client.app.state.config.provider = "openai"
     client.app.state.config.model = "gpt-4o-mini"
@@ -174,7 +175,7 @@ def test_patch_model_for_other_provider_keeps_server_model(client):
 
     # On disk for deepseek...
     assert (
-        gc.load_config().get("providers", {}).get("deepseek", {}).get("model")
+        cs.load_config().get("providers", {}).get("deepseek", {}).get("model")
         == "deepseek-v4-flash"
     )
     # ...but the running server (openai) keeps its current model.
@@ -184,26 +185,26 @@ def test_patch_model_for_other_provider_keeps_server_model(client):
 @requires_fastapi
 def test_patch_empty_model_clears_override(client):
     """An empty model removes the per-provider override from config.json."""
-    assert gc.set_config_value("xai.model", "grok-4") is None
-    assert gc.load_model_from_config("xai") == "grok-4"
+    assert cs.set_config_value("xai.model", "grok-4") is None
+    assert cl.load_model_from_config("xai") == "grok-4"
 
     resp = client.patch("/api/config", json={"model": "", "provider": "xai"})
     assert resp.status_code == 200
 
     # The override is gone from disk (falls back to the built-in default).
-    assert gc.load_config().get("providers", {}).get("xai", {}).get("model") is None
+    assert cs.load_config().get("providers", {}).get("xai", {}).get("model") is None
 
 
 @requires_fastapi
 def test_patch_model_unknown_provider_rejected(client):
     """An unknown provider name is rejected with 400 and nothing is written."""
-    before = gc.load_config()
+    before = cs.load_config()
     resp = client.patch(
         "/api/config", json={"model": "whatever", "provider": "not-a-provider"}
     )
     assert resp.status_code == 400
     assert resp.json()["detail"]
-    assert gc.load_config() == before
+    assert cs.load_config() == before
 
 
 @requires_fastapi

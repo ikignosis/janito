@@ -18,7 +18,8 @@ from typing import Any
 
 from ...tooling import norm_path
 from ...tooling.decorator import tool
-from .search_base import SearchRunner, print_search_result
+from .search_base import SearchRunner
+from .search_walk import print_search_result
 
 
 @tool(permissions="r")

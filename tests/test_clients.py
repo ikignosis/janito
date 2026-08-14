@@ -40,8 +40,8 @@ if pytest is not None:
             "_create_sdk_client": ("http://example.test", "dummy-key"),
             "_create_tool_executor": (None,),
             "_resolve_tools": (None, []),
-            "_resolve_model_settings": ("openai", False, None),
-            "_init_conversation_state": ("hi", "openai"),
+            "_resolve_model_settings": ("openai", "gpt-4", False, None),
+            "_init_conversation_state": ("hi", "openai", "gpt-4"),
             "_build_call_kwargs": ("m", {}, 1000, None, None, False),
             "_run_stream_round": (
                 None,
@@ -114,7 +114,9 @@ if pytest is not None:
 
         c = CompletionsClient()
         history: list = []
-        state = c._init_conversation_state("hi", "openai", previous_messages=history)
+        state = c._init_conversation_state(
+            "hi", "openai", "gpt-4", previous_messages=history
+        )
         # The same list object is used and the user turn is appended to it.
         assert state is history
         assert state == [{"role": "user", "content": "hi"}]
@@ -123,7 +125,9 @@ if pytest is not None:
         from janito.openai_client.completions_api import CompletionsClient
 
         c = CompletionsClient()
-        state = c._init_conversation_state("hi", "openai", previous_messages=None)
+        state = c._init_conversation_state(
+            "hi", "openai", "gpt-4", previous_messages=None
+        )
         assert state == [{"role": "user", "content": "hi"}]
 
     def test_anthropic_state_keeps_system_parameter():
@@ -134,7 +138,11 @@ if pytest is not None:
         c = AnthropicClient()
         history = [{"role": "system", "content": "Be helpful"}]
         state = c._init_conversation_state(
-            "hi", "anthropic", previous_messages=history, instructions=None
+            "hi",
+            "anthropic",
+            "claude-sonnet-5",
+            previous_messages=history,
+            instructions=None,
         )
         assert state["messages"] is history
         assert state["messages"][-1] == {"role": "user", "content": "hi"}
@@ -150,6 +158,7 @@ if pytest is not None:
         state = c._init_conversation_state(
             "hi",
             "openai",
+            "gpt-5.6-luna",
             previous_response_id=None,
             previous_items=None,
             instructions="Be helpful",
@@ -166,7 +175,11 @@ if pytest is not None:
 
         c = DashScopeClient()
         state = c._init_conversation_state(
-            "hi", "alibaba", previous_messages=None, instructions="be terse"
+            "hi",
+            "alibaba",
+            "qwen3.8-max",
+            previous_messages=None,
+            instructions="be terse",
         )
         assert state == [
             {"role": "system", "content": "be terse"},
@@ -179,20 +192,22 @@ if pytest is not None:
         from janito.openai_client import anthropic_api
 
         monkeypatch.setattr(
-            anthropic_api, "_resolve_max_output_tokens", lambda provider: 64000
+            anthropic_api,
+            "_resolve_max_output_tokens",
+            lambda provider, model=None: 64000,
         )
         # No config override: the provider's built-in default applies.
         monkeypatch.setattr(
-            anthropic_api, "load_max_input_tokens", lambda provider: None
+            anthropic_api, "load_max_input_tokens", lambda provider, model=None: None
         )
         monkeypatch.setattr(
             anthropic_api,
             "get_default_max_input_tokens_from_provider",
-            lambda provider: 200000,
+            lambda provider, model=None: 200000,
         )
         c = anthropic_api.AnthropicClient()
         thinking, max_out, max_in, reasoning = c._resolve_model_settings(
-            "anthropic", False, "high"
+            "anthropic", "claude-sonnet-5", False, "high"
         )
         assert thinking is False
         assert max_out == 64000
@@ -204,19 +219,23 @@ if pytest is not None:
         from janito.openai_client import anthropic_api
 
         monkeypatch.setattr(
-            anthropic_api, "_resolve_max_output_tokens", lambda provider: 64000
+            anthropic_api,
+            "_resolve_max_output_tokens",
+            lambda provider, model=None: 64000,
         )
         # A configured max-input-tokens override beats the built-in default.
         monkeypatch.setattr(
-            anthropic_api, "load_max_input_tokens", lambda provider: 4096
+            anthropic_api, "load_max_input_tokens", lambda provider, model=None: 4096
         )
         monkeypatch.setattr(
             anthropic_api,
             "get_default_max_input_tokens_from_provider",
-            lambda provider: 200000,
+            lambda provider, model=None: 200000,
         )
         c = anthropic_api.AnthropicClient()
-        _, _, max_in, _ = c._resolve_model_settings("anthropic", False, "high")
+        _, _, max_in, _ = c._resolve_model_settings(
+            "anthropic", "claude-sonnet-5", False, "high"
+        )
         assert max_in == 4096
 
     def test_dashscope_model_settings_returns_4_tuple(monkeypatch):
@@ -225,11 +244,11 @@ if pytest is not None:
         monkeypatch.setattr(
             dsa,
             "_resolve_model_settings",
-            lambda provider, thinking: (True, 8192, 128000),
+            lambda provider, model, thinking: (True, 8192, 128000),
         )
         c = dsa.DashScopeClient()
         thinking, max_out, max_in, reasoning = c._resolve_model_settings(
-            "alibaba", True, "xhigh"
+            "alibaba", "qwen3.8-max", True, "xhigh"
         )
         assert (thinking, max_out, max_in) == (True, 8192, 128000)
         # reasoning_level is dropped (not used by the native SDK).

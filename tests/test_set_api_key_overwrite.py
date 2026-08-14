@@ -142,7 +142,7 @@ if pytest is not None:
     def test_falls_back_to_config_provider(monkeypatch, tmp_path, capsys):
         _use_temp_config(monkeypatch, tmp_path)
         # A default provider configured via --set provider=<name> (config.json).
-        import janito.general_config as gc
+        import janito.config_store as gc
 
         gc.set_config_value("provider", "alibaba")
         monkeypatch.setattr(sys, "stdin", _FakeStdin(tty=True))

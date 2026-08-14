@@ -1,22 +1,18 @@
 """Info and configuration display CLI handlers."""
 
 from ...auth_config import get_api_key, get_auth_file_path, get_default_provider
-from ...general_config import (
-    get_config_path,
-    get_masked_api_key,
-    load_endpoint_from_config,
-    load_model_from_config,
-    load_provider_from_config,
-    resolve_api_type,
-)
-from ...provider_config import (
-    CUSTOM_ENDPOINT_MARKER,
+from ...config_keys import get_masked_api_key
+from ...config_loaders import load_endpoint_from_config, load_model_from_config
+from ...config_store import get_config_path
+from ...general_config import load_provider_from_config, resolve_api_type
+from ...provider_accessors import (
     get_default_model_from_provider,
     get_default_thinking_from_provider,
     get_endpoint_for_api_type,
     get_responses_in_server_from_provider,
-    is_custom_provider,
 )
+from ...provider_data import CUSTOM_ENDPOINT_MARKER
+from ...provider_validation import is_custom_provider
 
 
 def _resolve_provider_source(args) -> tuple[str, str]:
@@ -102,10 +98,13 @@ def handle_info(args) -> int:
     api_key = get_api_key(provider)
     api_key_source = f"auth.json (provider: {provider})" if api_key else "not set"
 
-    # Determine the effective API type first (--api-type, then the provider's
-    # configured api-type, then its built-in default) so the built-in endpoint
-    # can be resolved per API type (endpoint_by_api_type).
-    api_type = resolve_api_type(getattr(args, "api_type", None), provider)
+    # Determine the effective API type first (--api-type, then the
+    # model-scoped configured api-type, then the effective model's built-in
+    # default) so the built-in endpoint can be resolved per API type
+    # (endpoint_by_api_type).
+    api_type = resolve_api_type(
+        getattr(args, "api_type", None), provider, getattr(args, "model", None)
+    )
 
     endpoint, endpoint_source = _resolve_endpoint_source(provider, api_type)
 
@@ -118,7 +117,7 @@ def handle_info(args) -> int:
         ("API Type", api_type),
     ]
     if api_type == "Responses":
-        responses_in_server = get_responses_in_server_from_provider(provider)
+        responses_in_server = get_responses_in_server_from_provider(provider, model)
         responses_display = (
             "server-side (previous_response_id)"
             if responses_in_server
@@ -202,7 +201,9 @@ def handle_show_config(args=None) -> int:
     endpoint = None
     endpoint_source = "not set"
     api_type = resolve_api_type(
-        getattr(args, "api_type", None) if args is not None else None, provider
+        getattr(args, "api_type", None) if args is not None else None,
+        provider,
+        model,
     )
     config_endpoint = load_endpoint_from_config(provider)
     if config_endpoint:
@@ -219,14 +220,14 @@ def handle_show_config(args=None) -> int:
         endpoint_source = "required but not set (set endpoint in config.json)"
 
     # Resolve the effective thinking mode: the CLI --thinking flag first,
-    # otherwise the provider's built-in default (True for DeepSeek and
-    # Alibaba/Qwen).
+    # otherwise the effective model's built-in default (True for DeepSeek
+    # and Alibaba/Qwen).
     thinking = getattr(args, "thinking", False) or get_default_thinking_from_provider(
-        provider
+        provider, model
     )
     thinking_display = "enabled" if thinking else "disabled"
     if thinking and not getattr(args, "thinking", False):
-        thinking_display += " (provider default)"
+        thinking_display += " (model default)"
 
     from rich.console import Console
     from rich.table import Table

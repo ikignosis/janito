@@ -12,7 +12,7 @@ def _resolve_model_from_config(provider: str | None) -> str | None:
     ``~/.janito/config.json``. No ``OPENAI_*`` environment variables are used.
     """
     try:
-        from janito.general_config import load_model_from_config
+        from janito.config_loaders import load_model_from_config
 
         return load_model_from_config(provider)
     except Exception:
@@ -65,20 +65,22 @@ class WebServerConfig:
 
         Resolution order: the runtime ``thinking_override`` (status-bar
         toggle) first, then the explicit ``--thinking`` CLI flag, then the
-        effective provider's built-in ``thinking`` (True for DeepSeek
-        and Alibaba/Qwen, whose models reason by default). The effective
-        provider is the session-only combo override, else the CLI ``--provider``,
-        else the persisted default.
+        effective provider's built-in ``thinking`` resolved for the
+        **effective model** (``self.model``: the CLI ``--model``, else the
+        provider's configured model, else its built-in default model) --
+        True for DeepSeek and Alibaba/Qwen, whose models reason by default.
+        The effective provider is the session-only combo override, else the
+        CLI ``--provider``, else the persisted default.
         """
         if self.thinking_override is not None:
             return self.thinking_override
         if self.thinking:
             return True
         from janito.general_config import get_active_provider
-        from janito.provider_config import get_default_thinking_from_provider
+        from janito.provider_accessors import get_default_thinking_from_provider
 
         provider = self.session_provider or self.provider or get_active_provider()
-        return bool(get_default_thinking_from_provider(provider))
+        return bool(get_default_thinking_from_provider(provider, self.model))
 
     # --- Toolset enablement ---
     gmail: bool = False  # --gmail

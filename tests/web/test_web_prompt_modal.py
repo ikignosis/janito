@@ -121,7 +121,7 @@ class _FakeWebSocket:
 def test_await_cancel_resolves_prompt_answer():
     """A prompt_answer frame during a turn resolves the pending prompt."""
     from janito.web.backend.prompts import PromptRegistry
-    from janito.web.backend.routers.chat import _await_cancel
+    from janito.web.backend.routers.chat_helpers import _await_cancel
 
     registry = PromptRegistry()
     pending = registry.register("abc123", "Meaning of life?")
@@ -147,7 +147,7 @@ def test_await_cancel_continues_after_prompt_answer():
     """Resolving an answer does not end the receive loop: prompts queued
     afterwards are still collected and cancel still works."""
     from janito.web.backend.prompts import PromptRegistry
-    from janito.web.backend.routers.chat import _await_cancel
+    from janito.web.backend.routers.chat_helpers import _await_cancel
 
     registry = PromptRegistry()
     ws = _FakeWebSocket(
@@ -170,7 +170,7 @@ def test_await_cancel_continues_after_prompt_answer():
 def test_await_cancel_without_registry_ignores_prompt_answer():
     """Backwards compat: the 2-arg call (no registry) keeps ignoring
     prompt_answer frames and reading until cancel/disconnect."""
-    from janito.web.backend.routers.chat import _await_cancel
+    from janito.web.backend.routers.chat_helpers import _await_cancel
 
     ws = _FakeWebSocket(
         [
@@ -308,6 +308,7 @@ def test_run_turn_in_browser_prompt_round_trip(monkeypatch):
     import janito.web.backend.routers.chat as chat_mod
     from janito.agent.events import DoneEvent, ToolResultEvent
     from janito.web.backend.prompts import PromptRegistry
+    from janito.web.backend.routers.chat_helpers import _run_turn
     from janito.web.backend.session import ConversationSession
 
     async def fake_stream_prompt(prompt, messages, config, tools=None, use_mcp=True):
@@ -327,7 +328,7 @@ def test_run_turn_in_browser_prompt_round_trip(monkeypatch):
         session = ConversationSession(session_id="s1")
 
         turn = asyncio.ensure_future(
-            chat_mod._run_turn(session, ws, "hi", object(), [], registry)
+            _run_turn(session, ws, "hi", object(), [], registry)
         )
         # The "browser" receives the question…
         await ws.wait_for_prompt(timeout=2.0)

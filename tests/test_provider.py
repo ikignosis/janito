@@ -1,5 +1,6 @@
 """
-Tests for the Provider / ProviderRegistry classes (janito.provider_config).
+Tests for the Provider / ProviderRegistry classes (janito.provider_models /
+janito.provider_registry).
 
 Covers typed accessors, case-insensitive lookup, the whitespace distinction
 between ``get`` (no strip, mirrors get_provider_info) and ``canonical_name``
@@ -15,8 +16,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import pytest
 
 import janito.config_dir as config_dir_mod
-import janito.provider_config as pc
-from janito.provider_config import PROVIDER_INFO, Provider, ProviderRegistry
+import janito.provider_accessors as pa
+import janito.provider_data as pd
+import janito.provider_validation as pv
+from janito.provider_data import PROVIDER_INFO
+from janito.provider_models import Provider
+from janito.provider_registry import ProviderRegistry
 
 if pytest is not None:
 
@@ -81,11 +86,15 @@ if pytest is not None:
         reg = ProviderRegistry()
         original = dict(PROVIDER_INFO)
         PROVIDER_INFO["fake-provider"] = {
-            "model": "fake-model",
-            "supported_api_types": ["Completions"],
-            "max_input_tokens": None,
-            "max_output_tokens": None,
+            "default_model": "fake-model",
             "endpoint": None,
+            "models": {
+                "fake-model": {
+                    "supported_api_types": ["Completions"],
+                    "max_input_tokens": None,
+                    "max_output_tokens": None,
+                }
+            },
         }
         try:
             assert reg.get("fake-provider") is not None
@@ -99,43 +108,43 @@ if pytest is not None:
 
     def test_registry_requires_reference():
         reg = ProviderRegistry()
-        assert reg.requires is pc.REQUIRES_BY_API_TYPE
+        assert reg.requires is pd.REQUIRES_BY_API_TYPE
 
     def test_module_functions_agree_with_registry():
         """The module-level accessors behave identically to the class API."""
         reg = ProviderRegistry()
-        assert pc.get_provider_info("minimax") == reg.get("minimax").info
+        assert pa.get_provider_info("minimax") == reg.get("minimax").info
         assert (
-            pc.get_base_url_from_provider("minimax")
+            pa.get_base_url_from_provider("minimax")
             == reg.get("minimax").info["endpoint"]
         )
         assert (
-            pc.get_default_model_from_provider("openai")
+            pa.get_default_model_from_provider("openai")
             == reg.get("openai").default_model()
         )
         assert (
-            pc.get_default_thinking_from_provider("deepseek")
+            pa.get_default_thinking_from_provider("deepseek")
             == reg.get("deepseek").default_thinking()
         )
         assert (
-            pc.get_default_api_type_from_provider("anthropic")
+            pa.get_default_api_type_from_provider("anthropic")
             == reg.get("anthropic").default_api_type()
         )
-        assert pc.list_supported_providers() == reg.names()
-        assert pc.validate_provider_name("OpenAI") == reg.require("OpenAI").name
-        assert pc.canonical_provider_name("  MiniMax ") == reg.canonical_name(
+        assert pv.list_supported_providers() == reg.names()
+        assert pv.validate_provider_name("OpenAI") == reg.require("OpenAI").name
+        assert pv.canonical_provider_name("  MiniMax ") == reg.canonical_name(
             "  MiniMax "
         )
 
     def test_responses_in_server_override_honored(monkeypatch, tmp_path):
-        """Provider.responses_in_server() honors a config override (and the
-        module function delegates to it)."""
-        import janito.general_config as gc
+        """Provider.responses_in_server() honors a model-scoped config override
+        (and the module function delegates to it)."""
+        import janito.config_store as gc
 
         monkeypatch.setattr(config_dir_mod, "_config_dir", tmp_path)
-        gc.set_config_value("openai.responses-in-server", False)
+        gc.set_config_value("openai.models.gpt-5.6-luna.responses-in-server", False)
         assert Provider("openai").responses_in_server() is False
-        assert pc.get_responses_in_server_from_provider("openai") is False
+        assert pa.get_responses_in_server_from_provider("openai") is False
 
 else:  # pragma: no cover - fallback runner without pytest
 

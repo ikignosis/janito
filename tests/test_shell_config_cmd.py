@@ -92,9 +92,9 @@ class TestPrintConfigInfo:
         assert "openai" not in out
 
     def test_thinking_enabled_by_provider_default(self, capsys):
-        """DeepSeek reasons by default: thinking shows 'enabled (provider default)'."""
+        """DeepSeek reasons by default: thinking shows 'enabled (model default)'."""
         out = self._run(capsys, provider="deepseek")
-        assert "enabled (provider default)" in out
+        assert "enabled (model default)" in out
 
     def test_thinking_disabled_by_default(self, capsys):
         """OpenAI has no default thinking: thinking shows 'disabled'."""
@@ -102,10 +102,10 @@ class TestPrintConfigInfo:
         assert "disabled" in out
 
     def test_thinking_flag_overrides_provider_default(self, capsys):
-        """The --thinking flag forces thinking on without the '(provider default)' note."""
+        """The --thinking flag forces thinking on without the '(model default)' note."""
         out = self._run(capsys, provider="openai", thinking=True)
         assert "enabled" in out
-        assert "(provider default)" not in out
+        assert "(model default)" not in out
 
     def test_responses_in_server_shown_for_server_side_provider(self, capsys):
         """Responses API + server-side state reports previous_response_id chaining."""

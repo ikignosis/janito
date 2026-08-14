@@ -9,7 +9,7 @@ the **sync** DashScope SDK stream chunk-by-chunk through
 ``asyncio.to_thread``.
 
 The ``dashscope`` package is **optional** (see
-``janito.provider_config.REQUIRES_BY_API_TYPE``); importing it happens lazily
+``janito.provider_data.REQUIRES_BY_API_TYPE``); importing it happens lazily
 inside :func:`create_client` (kept in the web shim), so importing this
 module never requires it.
 

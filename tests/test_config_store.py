@@ -16,7 +16,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import pytest
 
 import janito.config_dir as config_dir_mod
-from janito.general_config import PROVIDER_SCOPED_KEYS, ConfigStore
+from janito.config_keys import PROVIDER_SCOPED_KEYS
+from janito.config_store import ConfigStore
 
 
 @pytest.fixture(autouse=True)
@@ -137,7 +138,7 @@ if pytest is not None:
     def test_module_functions_delegate(monkeypatch, tmp_path):
         """Module-level config functions agree with the ConfigStore class."""
         _point_at(monkeypatch, tmp_path)
-        import janito.general_config as gc
+        import janito.config_store as gc
 
         store = ConfigStore()
         gc.set_config_value("theme", "dark")

@@ -16,11 +16,12 @@ from unittest.mock import MagicMock, patch
 from janito.cli.handlers.info import handle_info, handle_show_config
 
 
-def _fake_resolve_api_type(cli_api_type, provider):
+def _fake_resolve_api_type(cli_api_type, provider, model=None):
     """Deterministic stand-in for resolve_api_type.
 
     ``--api-type`` is honored; otherwise the API type defaults to Responses
-    (matching OpenAI's built-in default).
+    (matching OpenAI's built-in default).  ``model`` is accepted (ignored)
+    for signature parity with the model-aware resolve_api_type.
     """
     if cli_api_type:
         normalized = str(cli_api_type).strip().capitalize()

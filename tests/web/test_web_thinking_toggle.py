@@ -35,7 +35,7 @@ import pytest
 from _frontend import render_index_html
 
 import janito.config_dir as config_dir_mod
-import janito.general_config as gc
+import janito.config_store as gc
 
 # The web routes need the optional `web` extra (fastapi). Skip gracefully
 # when fastapi is not installed (e.g. minimal tox envs).

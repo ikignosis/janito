@@ -16,8 +16,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import pytest
 
 import janito.config_dir as config_dir_mod
+from janito.config_cli import set_config_from_cli
 from janito.config_loaders import ProviderConfigLoader
-from janito.general_config import set_config_from_cli, set_config_value
+from janito.config_store import set_config_value
 
 
 def _use_temp_config(monkeypatch, tmp_path):
@@ -37,7 +38,7 @@ if pytest is not None:
         assert loader.load_model("unknown") is None
         assert loader.load_model() is None  # no configured provider
 
-    def test_load_max_output_tokens_legacy_key_chain(monkeypatch, tmp_path):
+    def test_load_max_output_tokens_legacy_keys_ignored(monkeypatch, tmp_path):
         config_path = _use_temp_config(monkeypatch, tmp_path)
         loader = ProviderConfigLoader()
         config_path.parent.mkdir(parents=True, exist_ok=True)
@@ -52,11 +53,11 @@ if pytest is not None:
                 }
             )
         )
-        # New key wins when present; legacy hyphenated and underscore keys
-        # are honored as fallbacks; int coercion applies in all cases.
-        assert loader.load_max_output_tokens("alibaba") == 8192
-        assert loader.load_max_output_tokens("openai") == 65536
-        assert loader.load_max_output_tokens("minimax") == 4096
+        # Legacy provider-scoped keys are NO LONGER read: the loaders only
+        # look at the model-scoped path (providers.<p>.models.<m>.<key>).
+        assert loader.load_max_output_tokens("alibaba") is None
+        assert loader.load_max_output_tokens("openai") is None
+        assert loader.load_max_output_tokens("minimax") is None
         assert loader.load_max_output_tokens("missing") is None
         assert loader.load_max_output_tokens() is None
 
@@ -68,16 +69,20 @@ if pytest is not None:
             json.dumps(
                 {
                     "providers": {
-                        "openai": {"max-input-tokens": 128000},
-                        "minimax": {"max_input_tokens": 4096},
+                        "openai": {
+                            "models": {"gpt-5.6-luna": {"max-input-tokens": 128000}}
+                        },
+                        "minimax": {
+                            "models": {"MiniMax-M3": {"max_input_tokens": 4096}}
+                        },
                     }
                 }
             )
         )
-        # Hyphenated and underscore keys are both honored; int coercion
-        # applies in all cases.
+        # The model-scoped path is read; the underscore variant is NOT
+        # honored (no backward compatibility for legacy key variants).
         assert loader.load_max_input_tokens("openai") == 128000
-        assert loader.load_max_input_tokens("minimax") == 4096
+        assert loader.load_max_input_tokens("minimax") is None
         assert loader.load_max_input_tokens("missing") is None
         assert loader.load_max_input_tokens() is None
 
@@ -98,15 +103,21 @@ if pytest is not None:
         config_path = _use_temp_config(monkeypatch, tmp_path)
         loader = ProviderConfigLoader()
         config_path.parent.mkdir(parents=True, exist_ok=True)
-        # Hand-written string forms are tolerated.
+        # Hand-written string forms are tolerated (model-scoped path).
         config_path.write_text(
             json.dumps(
                 {
                     "providers": {
-                        "openai": {"responses-in-server": "true"},
-                        "deepseek": {"responses-in-server": "FALSE"},
-                        "xai": {"responses-in-server": True},
-                        "zai": {"responses-in-server": False},
+                        "openai": {
+                            "models": {"gpt-5.6-luna": {"responses-in-server": "true"}}
+                        },
+                        "deepseek": {
+                            "models": {
+                                "deepseek-v4-flash": {"responses-in-server": "FALSE"}
+                            }
+                        },
+                        "xai": {"models": {"grok-4": {"responses-in-server": True}}},
+                        "zai": {"models": {"glm-5.2": {"responses-in-server": False}}},
                     }
                 }
             )

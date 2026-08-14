@@ -13,7 +13,6 @@ WARNING: This tool executes system commands and should be used with caution.
 Only execute trusted code and be aware of security implications.
 """
 
-import json
 import os
 import shutil
 import subprocess
@@ -22,7 +21,7 @@ from typing import Any
 
 from ...tooling import BaseTool, format_duration_ms, norm_path
 from ...tooling.decorator import tool
-from ._output_capture import OutputCapture, build_report_message, print_stored_files
+from ._output_capture import OutputCapture, build_report_message
 from ._streaming import stream_execute
 
 # Candidate executable names, in order of preference.
@@ -440,135 +439,28 @@ class RunBashCode(BaseTool):
         self.report_error(error_msg)
 
 
-# CLI interface for testing
-def main():
+# CLI interface for testing (shared harness)
+def main() -> int:
     """Command line interface for testing the RunBashCode tool."""
-    parser = _build_parser()
-    args = parser.parse_args()
-    code = _read_code(args, parser)
-    if code is None:
-        return 1
+    from ._exec_cli import run_cli
 
-    tool_instance = RunBashCode()
-    result = tool_instance.run(
-        code=code,
-        working_directory=args.directory,
-        timeout=args.timeout,
-        capture_output=not args.no_capture_output,
-        capture_errors=not args.no_capture_errors,
-        bash_executable=args.shell,
-    )
-
-    if args.json:
-        print(json.dumps(result, indent=2))
-    else:
-        _print_result(result, args)
-    return 0 if result["success"] else 1
-
-
-def _build_parser():
-    """Build the CLI argument parser."""
-    import argparse
-
-    parser = argparse.ArgumentParser(
+    return run_cli(
+        RunBashCode,
+        tool_name="Bash",
         description="Execute Bash code for AI function calling",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
+        epilog="""\
 Examples:
   %(prog)s -c "ls -la | head -5"
   %(prog)s -c "for i in 1 2 3; do echo $i; done" -d "/tmp"
   %(prog)s -c "echo 'Hello World'" --json
   %(prog)s -f script.sh
         """,
+        code_help="Bash code to execute",
+        file_help="File containing Bash code",
+        result_key="bash_executable",
+        add_shell_arg=True,
+        shell_help="Shell executable to use (default: auto-detected bash, falling back to sh)",
     )
-
-    parser.add_argument("-c", "--code", help="Bash code to execute")
-    parser.add_argument("-f", "--file", help="File containing Bash code")
-    parser.add_argument("-d", "--directory", help="Working directory for execution")
-    parser.add_argument(
-        "-s",
-        "--shell",
-        help="Shell executable to use (default: auto-detected bash, falling back to sh)",
-    )
-    parser.add_argument(
-        "-t", "--timeout", type=int, default=60, help="Timeout in seconds (default: 60)"
-    )
-    parser.add_argument(
-        "--no-capture-output", action="store_true", help="Don't capture standard output"
-    )
-    parser.add_argument(
-        "--no-capture-errors", action="store_true", help="Don't capture standard error"
-    )
-    parser.add_argument(
-        "--json", "-j", action="store_true", help="Output in JSON format"
-    )
-    parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Show verbose output"
-    )
-    return parser
-
-
-def _read_code(args, parser) -> str | None:
-    """Resolve the code from --code/--file; return None on file errors."""
-    if not args.code and not args.file:
-        parser.error("Either --code or --file must be specified")
-
-    if args.code and args.file:
-        parser.error("Cannot specify both --code and --file")
-
-    code = args.code
-    if args.file:
-        if not os.path.exists(args.file):
-            print(f"Error: File not found: {args.file}")
-            return None
-        try:
-            with open(args.file, "r", encoding="utf-8") as f:
-                code = f.read()
-        except Exception as e:
-            print(f"Error reading file: {e}")
-            return None
-    return code
-
-
-def _print_result(result: dict[str, Any], args) -> None:
-    """Pretty-print the tool result."""
-    if result["success"]:
-        print(f"✓ Bash execution successful (exit code {result['exit_code']})")
-        print(f"  Working directory: {norm_path(result['working_directory'])}")
-        print(f"  Execution time: {format_duration_ms(result['execution_time_ms'])}")
-
-        if args.verbose:
-            print(f"  Executable: {result.get('bash_executable', 'unknown')}")
-            print("\nCommand:")
-            print(f"  {result['command']}")
-
-        if result.get("stdout"):
-            print("\nOutput:")
-            print(result["stdout"])
-
-        if result.get("stderr"):
-            print("\nStderr:")
-            print(result["stderr"])
-
-        print_stored_files(result)
-    else:
-        print("✗ Bash execution failed")
-        print(f"  Error: {result.get('error', 'Unknown error')}")
-        print(f"  Exit code: {result['exit_code']}")
-
-        if args.verbose:
-            print("\nCommand:")
-            print(f"  {result['command']}")
-
-        if result.get("stdout"):
-            print("\nOutput:")
-            print(result["stdout"])
-
-        if result.get("stderr"):
-            print("\nStderr:")
-            print(result["stderr"])
-
-        print_stored_files(result)
 
 
 if __name__ == "__main__":

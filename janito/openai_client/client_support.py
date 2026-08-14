@@ -185,7 +185,8 @@ def _handle_auth_error(
     not look like an auth failure (e.g. a different HTTP error from a native
     SDK), nothing is printed and the caller re-raises as usual.
     """
-    from janito.general_config import get_active_provider, get_masked_api_key
+    from janito.config_keys import get_masked_api_key
+    from janito.general_config import get_active_provider
 
     status_code = getattr(e, "status_code", None)
     code = getattr(e, "code", None)

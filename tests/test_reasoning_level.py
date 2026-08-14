@@ -75,7 +75,7 @@ if pytest is not None:
 
     def test_send_prompt_config_reasoning_level_used(monkeypatch, tmp_path):
         """A per-provider config value is used when no CLI arg is given."""
-        from janito.general_config import set_config_from_cli
+        from janito.config_cli import set_config_from_cli
 
         set_config_from_cli("reasoning-level=medium", "alibaba")
         fake_run = _fake_run_returns("hi")

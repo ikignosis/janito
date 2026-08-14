@@ -19,7 +19,7 @@ import pytest
 
 import janito.auth_config as ac
 import janito.config_dir as config_dir_mod
-import janito.general_config as gc
+import janito.config_store as gc
 import janito.mcp_config as mc
 import janito.secrets_config as sc
 

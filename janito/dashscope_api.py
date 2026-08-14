@@ -10,7 +10,7 @@ official ``dashscope`` package instead of an OpenAI-compatible endpoint.
 
 The ``dashscope`` package is **optional**: the API type is only accepted by
 ``--set api-type=DashScope`` when the package is installed
-(``provider_config.REQUIRES_BY_API_TYPE``), and this module refuses to run
+(``provider_data.REQUIRES_BY_API_TYPE``), and this module refuses to run
 without it, with an actionable install message.  Because the package may be
 absent, the import happens lazily inside :func:`_create_client` (checked with
 ``importlib.util.find_spec``, mirroring the web-mode extra check) rather than
@@ -45,17 +45,12 @@ import logging
 from types import SimpleNamespace
 from typing import Any
 
-from rich.console import Console
-
-# Import general configuration handling
-from janito.general_config import load_max_input_tokens, load_max_output_tokens
-
 # Shared agent-loop pipeline (see Client.send) implemented by DashScopeClient.
 from janito.openai_client.base_client import Client
 
 # Shared client helpers (Rich console output, auth-error explainer) used by
 # the module's remaining functions (finalize / error handling).
-from janito.openai_client.client_support import _display_usage, _handle_auth_error
+from janito.openai_client.client_support import _handle_auth_error
 
 # Shared helpers reused from the Chat Completions implementation so all
 # client modules stay in sync: runtime config resolution and the progress
@@ -79,23 +74,16 @@ from janito.openai_client.dashscope_stream import (  # noqa: F401 (re-exported f
     _stream_response,
     _to_multimodal_messages,
 )
-
-# Import provider configuration for built-in defaults
-from janito.provider_config import (
-    get_default_max_input_tokens_from_provider,
-    get_default_max_output_tokens_from_provider,
-    get_default_thinking_from_provider,
-)
-
-# Import the tool executor (routes tool calls to the MCP manager or the
-# built-in registry and tracks usage/used-files/changes around each call)
 from janito.tooling.executor import ToolExecutor
 
-# Import tools
-from janito.tooling.tools_registry import get_all_tool_schemas
-
-# Import used-files tracking (best-effort, never fails)
-from janito.tooling.used_files import format_used_files
+from .dashscope_helpers import (
+    _build_call_kwargs,
+    _finalize_response,
+    _handle_tool_blocks,
+    _init_messages,
+    _resolve_model_settings,
+    _resolve_tools,
+)
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
@@ -105,7 +93,7 @@ def _create_client(base_url: str | None, api_key: str) -> SimpleNamespace:
     """Prepare the native DashScope SDK client, guarding the optional package.
 
     The ``dashscope`` package is optional (see
-    ``provider_config.REQUIRES_BY_API_TYPE``), so its availability is checked
+    ``provider_data.REQUIRES_BY_API_TYPE``), so its availability is checked
     explicitly with ``importlib.util.find_spec`` (mirroring the web-mode extra
     check) and the import happens lazily -- importing ``janito`` never
     requires ``dashscope``.
@@ -241,15 +229,15 @@ class DashScopeClient(Client):
     def _resolve_tools(self, tools, mcp_tools):
         return _resolve_tools(tools, mcp_tools)
 
-    def _resolve_model_settings(self, provider, thinking, reasoning_level):
+    def _resolve_model_settings(self, provider, model, thinking, reasoning_level):
         # The native DashScope SDK does not use reasoning_effort, so the
         # reasoning level is dropped (accepted for signature parity).
         thinking, max_output_tokens, max_input_tokens = _resolve_model_settings(
-            provider, thinking
+            provider, model, thinking
         )
         return thinking, max_output_tokens, max_input_tokens, None
 
-    def _init_conversation_state(self, prompt, provider, **kwargs):
+    def _init_conversation_state(self, prompt, provider, model, **kwargs):
         # Build the conversation.  Unlike the Anthropic Messages API, DashScope
         # accepts ``system``-role messages directly, so the history is sent
         # as-is; a string ``instructions`` value is prepended as a system
@@ -326,185 +314,6 @@ class DashScopeClient(Client):
             max_output_tokens,
             console,
         )
-
-
-def _resolve_tools(
-    tools: list[dict[str, Any]] | None, mcp_tools: list[dict[str, Any]]
-) -> list[dict[str, Any]]:
-    """Resolve the tool schemas (built-in + MCP)."""
-    if tools is None:
-        # Merge built-in tools with MCP tools
-        built_in_tools = get_all_tool_schemas()
-        tools_schemas = built_in_tools + mcp_tools
-        logger.debug(
-            f"Using {len(built_in_tools)} built-in tools + {len(mcp_tools)} MCP tools"
-        )
-    else:
-        tools_schemas = tools
-        logger.debug(f"Using {len(tools_schemas)} provided tools")
-    return tools_schemas
-
-
-def _resolve_model_settings(
-    provider: str, thinking: bool
-) -> tuple[bool, int, int | None]:
-    """Resolve thinking mode and token limits."""
-    # Thinking mode: the explicit --thinking flag wins, otherwise the
-    # provider's built-in default applies (True for Alibaba/Qwen, which
-    # reason by default). See provider_config.PROVIDER_INFO.
-    if not thinking:
-        thinking = get_default_thinking_from_provider(provider)
-
-    # Max output tokens: the resolved value (config > provider built-in
-    # default > 100k) is sent as the DashScope ``max_tokens`` parameter.
-    max_output_tokens = load_max_output_tokens(provider)
-    if max_output_tokens is None:
-        max_output_tokens = get_default_max_output_tokens_from_provider(provider)
-    if max_output_tokens is None:
-        max_output_tokens = 100000  # default to 100k tokens if not set in config
-
-    # Load the provider's max input tokens (context window) for the usage
-    # summary display: a config override (--set max-input-tokens=... or the
-    # interactive --config wizard) wins, otherwise the provider's built-in
-    # default applies.
-    max_input_tokens = load_max_input_tokens(provider)
-    if max_input_tokens is None:
-        max_input_tokens = get_default_max_input_tokens_from_provider(provider)
-    return thinking, max_output_tokens, max_input_tokens
-
-
-def _init_messages(
-    instructions: str | None,
-    previous_messages: list[dict[str, Any]] | None,
-    prompt: str,
-) -> list[dict[str, Any]]:
-    """Build the conversation, prepending instructions as a system message."""
-    messages = previous_messages if previous_messages is not None else []
-    if instructions and not any(
-        m.get("role") == "system" and m.get("content") for m in messages
-    ):
-        messages.insert(0, {"role": "system", "content": instructions})
-
-    # NOTE: check `is not None` (not truthiness). An empty list is a valid,
-    # caller-owned history (e.g. after a restart or with --no-system-prompt);
-    # using a truthy check would replace it with a new local list and the
-    # appended messages would never propagate back to the caller.
-    messages.append({"role": "user", "content": prompt})
-    return messages
-
-
-def _build_call_kwargs(
-    model: str,
-    messages: list[dict[str, Any]],
-    max_output_tokens: int,
-    thinking: bool,
-) -> dict[str, Any]:
-    """Build the DashScope call parameters for one round."""
-    call_kwargs: dict[str, Any] = {
-        "model": model,
-        "messages": messages,
-        "max_tokens": max_output_tokens,
-        "result_format": "message",
-        "stream": True,
-        "incremental_output": True,
-    }
-    # Enable thinking mode for Qwen models that support it (Alibaba/Qwen
-    # reason by default).  Only set when True so models that always
-    # reason keep their own default.
-    if thinking:
-        call_kwargs["enable_thinking"] = True
-    return call_kwargs
-
-
-def _handle_tool_blocks(
-    tool_use_blocks: list[dict[str, str]],
-    full_content: str,
-    reasoning_content: str | None,
-    messages: list[dict[str, Any]],
-    tool_executor: ToolExecutor,
-) -> None:
-    """Record assistant tool_calls, execute them and append tool results."""
-    # Record the assistant's message with its content and tool_calls in the
-    # client-side history.
-    assistant_tool_calls = []
-    for tc in tool_use_blocks:
-        assistant_tool_calls.append(
-            {
-                "id": tc["id"],
-                "type": "function",
-                "function": {
-                    "name": tc["name"],
-                    "arguments": tc["arguments"],
-                },
-            }
-        )
-    assistant_message = {
-        "role": "assistant",
-        "content": full_content,
-        "tool_calls": assistant_tool_calls,
-    }
-    if reasoning_content:
-        assistant_message["reasoning_content"] = reasoning_content
-    messages.append(assistant_message)
-
-    # Execute every call and send the results back as tool-role messages.
-    for tc in tool_use_blocks:
-        # Adapt the DashScope tool-use shape to what the executor expects
-        # (id + function{name, arguments}).
-        adapted_call = {
-            "id": tc["id"],
-            "function": {
-                "name": tc["name"],
-                "arguments": tc["arguments"],
-            },
-        }
-        tool_message = tool_executor.execute_tool_call(adapted_call)
-        messages.append(
-            {
-                "role": "tool",
-                "content": tool_message["content"],
-                "tool_call_id": tc["id"],
-            }
-        )
-
-
-def _finalize_response(
-    full_content: str,
-    reasoning_content: str | None,
-    messages: list[dict[str, Any]],
-    usage_info: Any,
-    max_input_tokens: int | None,
-    max_output_tokens: int,
-    console: Console,
-) -> str:
-    """Record the final assistant message, print reports and return."""
-    # No more tool calls, return the final response. Record the final
-    # assistant text in the client-side history.
-    assistant_message = {"role": "assistant", "content": full_content}
-    if reasoning_content:
-        assistant_message["reasoning_content"] = reasoning_content
-    messages.append(assistant_message)
-
-    # Display the tracked used files before the token usage summary.
-    # Nothing is printed when no files were tracked (empty Text).
-    used_files_report = format_used_files()
-    if used_files_report:
-        console.print(used_files_report, highlight=False)
-
-    # Display token usage with magenta background
-    if usage_info:
-        _display_usage(
-            usage_info,
-            max_input_tokens,
-            max_output_tokens,
-            len(messages),
-            console,
-            label="Messages",
-            input_attr="input_tokens",
-            output_attr="output_tokens",
-            cached_details_attr=None,
-        )
-    return full_content
 
 
 __all__ = [

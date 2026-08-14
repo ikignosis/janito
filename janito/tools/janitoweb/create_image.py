@@ -58,7 +58,7 @@ def _alibaba_base_url() -> str | None:
         The base URL string, or ``None`` when it cannot be determined.
     """
     try:
-        from ...general_config import load_endpoint_from_config
+        from ...config_loaders import load_endpoint_from_config
 
         override = load_endpoint_from_config("alibaba")
         if override:
@@ -67,7 +67,7 @@ def _alibaba_base_url() -> str | None:
         pass
 
     try:
-        from ...provider_config import get_base_url_from_provider
+        from ...provider_accessors import get_base_url_from_provider
 
         return get_base_url_from_provider("alibaba")
     except Exception:
