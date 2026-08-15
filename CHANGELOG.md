@@ -11,6 +11,10 @@ Changes since `v4.25.0` (2026-08-15).
 
 ### Changed
 
+- Added `janito/providers/deepseek/cost.py` with a `get_cost(model, input,
+  output, cached)` helper that estimates the monetary cost of a request
+  (currently a placeholder returning `"1$"`).
+  (`janito/providers/deepseek/cost.py`)
 - The token-usage summary line printed at the end of each turn now appends a
   `Cost: <cost>` part; it shows `Cost: N/A` unless a cost is passed to
   `_display_usage` (`janito/openai_client/client_support.py`,
