@@ -92,8 +92,8 @@ def _resolve_model_scoped_key(
 
     The value belongs to ``--model`` (``cli_model``) when given, else the
     provider's configured model (its ``<provider>.model`` value), else the
-    provider's built-in default model
-    (``PROVIDER_INFO[<provider>]["default_model"]``).
+    provider's built-in default model (the provider config's
+    ``default_model``).
 
     Args:
         key: The config key requested (e.g. ``max-output-tokens``)

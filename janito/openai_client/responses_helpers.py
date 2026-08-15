@@ -112,13 +112,13 @@ def _resolve_model_settings(
     # Thinking mode: the explicit --thinking flag wins, otherwise the
     # model's built-in default applies (True for DeepSeek and Alibaba/Qwen,
     # a dict for MiniMax-M3, which reason by default). See
-    # provider_data.PROVIDER_INFO.
+    # janito.providers.get_provider_config.
     if not thinking:
         thinking = get_default_thinking_from_provider(provider, model)
     max_output_tokens = load_max_output_tokens(provider, model)
     if max_output_tokens is None:
-        # Fall back to the model's built-in default (from PROVIDER_INFO),
-        # then to a global default of 100k tokens.
+        # Fall back to the model's built-in default (from the provider
+        # config), then to a global default of 100k tokens.
         max_output_tokens = get_default_max_output_tokens_from_provider(provider, model)
     if max_output_tokens is None:
         max_output_tokens = 100000  # default to 100k tokens if not set in config
@@ -133,8 +133,8 @@ def _resolve_model_settings(
 
     # Reasoning level (reasoning_effort): --reasoning-level CLI arg, then the
     # model-scoped configured value (--set reasoning-level=...), and finally
-    # the model's built-in default (from PROVIDER_INFO). None means the API's
-    # own default applies.
+    # the model's built-in default (from the provider config). None means the
+    # API's own default applies.
     reasoning_level = reasoning_level or load_reasoning_level(provider, model)
     if reasoning_level is None:
         reasoning_level = get_default_reasoning_level_from_provider(provider, model)

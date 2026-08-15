@@ -91,8 +91,8 @@ def create_variant(name: str) -> str:
         ValueError: If the name is not ``<provider>-<word>``, the provider
             prefix is unsupported, or the variant is already registered.
     """
-    from .provider_data import PROVIDER_INFO
     from .provider_registry import parse_variant_name
+    from .provider_validation import is_supported_provider, list_supported_providers
 
     normalized = normalize_provider(name)
     if not normalized:
@@ -109,10 +109,10 @@ def create_variant(name: str) -> str:
         )
     base, _ = parsed
 
-    # The base must be a *supported provider* (a PROVIDER_INFO entry), not
-    # another variant, so variants cannot be nested.
-    if not any(key.lower() == base for key in PROVIDER_INFO):
-        supported = ", ".join(sorted(PROVIDER_INFO.keys()))
+    # The base must be a *supported provider* (one of the built-in provider
+    # configs), not another variant, so variants cannot be nested.
+    if not is_supported_provider(base):
+        supported = ", ".join(sorted(list_supported_providers()))
         raise ValueError(
             f"Unknown base provider '{base}' for variant '{name}'. "
             f"Supported providers: {supported}"

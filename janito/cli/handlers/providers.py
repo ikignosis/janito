@@ -16,9 +16,9 @@ from ...provider_accessors import (
     get_endpoint_for_api_type,
     get_supported_api_types_from_provider,
 )
-from ...provider_data import CUSTOM_ENDPOINT_MARKER, PROVIDER_INFO
 from ...provider_registry import ProviderRegistry, parse_variant_name
 from ...provider_validation import list_variants
+from ...providers import CUSTOM_ENDPOINT_MARKER
 
 _registry = ProviderRegistry()
 
@@ -137,9 +137,9 @@ def _provider_rows(
 def handle_show_providers(args) -> int:
     """Handle --show-providers command.
 
-    Lists every supported provider from ``PROVIDER_INFO`` (with its built-in
-    default model, endpoint, API-key status and a per-model breakdown of API
-    types, thinking/reasoning defaults and token limits) followed by the
+    Lists every supported provider (with its built-in default model,
+    endpoint, API-key status and a per-model breakdown of API types,
+    thinking/reasoning defaults and token limits) followed by the
     registered provider variants (``<provider>-<word>``, marked with their
     base provider). Each provider is rendered as a rich two-column table.
     The configured default provider is flagged ``[active]``.
@@ -157,7 +157,7 @@ def handle_show_providers(args) -> int:
 
     # Built-in providers, in registry order; variants appended afterwards
     # (sorted), matching the web UI's provider list.
-    entries = [(name, None) for name in PROVIDER_INFO]
+    entries = [(name, None) for name in _registry.names()]
     entries += [
         (variant, parse_variant_name(variant)[0]) for variant in list_variants()
     ]

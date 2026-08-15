@@ -2,8 +2,9 @@
 Tests for the shell /provider command handler.
 
 ``/provider`` switches the active provider for the shell session: it validates
-the name against the supported providers (built-in ``PROVIDER_INFO`` entries
-plus registered variants) and updates the shell's displayed provider/model
+the name against the supported providers (built-in ``janito.providers``
+entries plus registered variants) and updates the shell's displayed
+provider/model
 **without** changing the configured default ``provider`` in config.json
 (that requires ``janito --set provider=<name>``).  ``/provider`` with no
 argument lists the current provider and every available one.  The command
@@ -25,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import janito.config_dir as config_dir_mod
 from janito.config_store import get_config_value
-from janito.provider_data import PROVIDER_INFO
+from janito.provider_validation import list_supported_providers
 from janito.shell import InteractiveShell
 from janito.shell.cmds.provider import available_provider_names
 from janito.shell.cmds.registry import get_registered_commands
@@ -62,7 +63,7 @@ def test_no_argument_lists_current_and_available(monkeypatch, tmp_path, capsys):
 
     out = capsys.readouterr().out
     assert "Current provider: openai" in out
-    for name in PROVIDER_INFO:
+    for name in list_supported_providers():
         assert name in out
     assert "Switch with: /provider <name>" in out
 
@@ -168,7 +169,7 @@ def test_available_provider_names_lists_builtin_and_variants(monkeypatch, tmp_pa
     cv.create_variant("custom-local")
 
     names = list(available_provider_names())
-    for name in PROVIDER_INFO:
+    for name in list_supported_providers():
         assert name in names
     assert "custom-local" in names
 
@@ -205,7 +206,7 @@ def test_available_provider_names_default_ignores_api_key(monkeypatch, tmp_path)
     set_api_key("deepseek", "sk-deepseek")  # pragma: allowlist secret
 
     names = list(available_provider_names())
-    for name in PROVIDER_INFO:
+    for name in list_supported_providers():
         assert name in names
     assert "deepseek" in names
 

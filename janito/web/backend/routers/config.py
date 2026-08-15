@@ -187,7 +187,8 @@ async def list_providers(request: Request):
 
     Each entry aggregates data from the existing janito modules:
 
-    * ``provider_data.PROVIDER_INFO`` -- the built-in per-provider defaults
+    * ``janito.providers.get_provider_config`` -- the built-in per-provider
+      defaults
       (``endpoint``, ``model``, ``max_input_tokens``, ``max_output_tokens``,
       ``reasoning_level``, ``supported_reasoning_levels`` and ``thinking``).
       ``endpoint`` is ``None`` for standard OpenAI and the ``CUSTOM_ENDPOINT``
@@ -210,8 +211,8 @@ async def list_providers(request: Request):
       kept out of the combobox and surfaced as info instead.
     """
     from janito.general_config import get_active_provider
-    from janito.provider_data import PROVIDER_INFO
-    from janito.provider_validation import list_variants
+    from janito.provider_validation import list_supported_providers, list_variants
+    from janito.providers import get_provider_config
 
     config = _get_config(request)
     active_provider = get_active_provider()
@@ -223,11 +224,11 @@ async def list_providers(request: Request):
     providers = [
         _build_provider_entry(
             name,
-            info,
+            get_provider_config(name),
             active_provider=active_provider,
             effective_provider=effective_provider,
         )
-        for name, info in PROVIDER_INFO.items()
+        for name in list_supported_providers()
     ]
 
     # Registered provider variants (<provider>-<word>): each inherits its
@@ -454,8 +455,8 @@ async def get_status(request: Request, provider: str | None = None):
         get_default_api_type_from_provider,
         get_endpoint_for_api_type,
     )
-    from janito.provider_data import CUSTOM_ENDPOINT_MARKER
     from janito.provider_validation import validate_provider_name
+    from janito.providers import CUSTOM_ENDPOINT_MARKER
 
     config = _get_config(request)
     active = get_active_provider()

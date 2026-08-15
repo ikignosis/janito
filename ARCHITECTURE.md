@@ -273,18 +273,28 @@ Key modules:
   (provider-scoped and model-scoped key resolution).
 - **`config_variants.py`** — provider variant management (`load_variants`,
   `create_variant`, `delete_variant`, ...).
-- **`provider_data.py`** — static `PROVIDER_INFO` registry. Each provider entry
-  carries provider-level fields (`default_model`, `endpoint`,
-  `endpoint_by_api_type`) plus a per-provider **`models`** dict with the
-  model-level fields (`supported_api_types`, token limits, reasoning levels,
-  `thinking`, `responses_in_server`). The `custom` provider ships no models
-  (`default_model: None`, `models: {}`).
+- **`providers/`** — per-provider configuration package. The static
+  provider registry is split into one `config.py` module per provider
+  (`janito/providers/<name>/config.py`, each exporting that provider's
+  `PROVIDER_CONFIG` entry); the package `__init__.py` assembles them into
+  the internal `_PROVIDER_CONFIGS` dict, keeps the `REQUIRES_BY_API_TYPE`
+  optional-package map and the `CUSTOM_ENDPOINT` marker, and exposes
+  `get_provider_config(provider, model=None)` for direct (model-scoped)
+  lookups. Each provider entry carries provider-level fields
+  (`default_model`, `endpoint`, `endpoint_by_api_type`) plus a per-provider
+  **`models`** dict with the model-level fields (`supported_api_types`, token
+  limits, reasoning levels, `thinking`, `responses_in_server`). The `custom`
+  provider ships no models (`default_model: None`, `models: {}`).
+  `janito/providers/template/config.py` is the documentation template for
+  these entries: it is not a real provider (never registered in
+  `_PROVIDER_CONFIGS`) and comments every possible CONFIG option, so new
+  providers are written by copying it and filling in the values.
 - **`provider_models.py`** — the typed accessors: `Provider` (with
   `model_config(model)` and per-model accessors defaulting to the provider's
   default model) and `ModelConfig` (typed accessors over one model entry).
 - **`provider_registry.py`** — `ProviderRegistry` (case-insensitive lookup
-  over `PROVIDER_INFO`, including registered variants) and the
-  `parse_variant_name` / `is_variant_style_name` helpers.
+  over `janito.providers._PROVIDER_CONFIGS`, including registered variants)
+  and the `parse_variant_name` / `is_variant_style_name` helpers.
 - **`provider_accessors.py`** — the module-level `get_*_from_provider`
   helpers (defaults, endpoints, API-type validation, ...) that accept an
   optional `model` argument.

@@ -10,7 +10,7 @@ official ``anthropic`` package instead of an OpenAI-compatible endpoint.
 
 The ``anthropic`` package is **optional**: the API type is only accepted by
 ``--set api-type=Anthropic`` when the package is installed
-(``provider_data.REQUIRES_BY_API_TYPE``), and this module refuses to run
+(``janito.providers.REQUIRES_BY_API_TYPE``), and this module refuses to run
 without it, with an actionable install message.  Because the package may be
 absent, the import happens lazily inside :func:`_create_client` (checked with
 ``importlib.util.find_spec``, mirroring the web-mode extra check) rather than
@@ -94,7 +94,7 @@ def _create_client(base_url: str | None, api_key: str) -> Any:
     """Create the native Anthropic SDK client, guarding the optional package.
 
     The ``anthropic`` package is optional (see
-    ``provider_data.REQUIRES_BY_API_TYPE``), so its availability is checked
+    ``janito.providers.REQUIRES_BY_API_TYPE``), so its availability is checked
     explicitly with ``importlib.util.find_spec`` (mirroring the web-mode extra
     check) and the import happens lazily -- importing ``janito`` never
     requires ``anthropic``.

@@ -96,7 +96,7 @@ def _setup_runtime(args) -> int | None:
         disable_tools_loading()
 
     # Whenever --provider <name> is used, verify it is a supported provider
-    # (i.e. one that maps to an entry in PROVIDER_INFO). Normalize it to
+    # (i.e. one that maps to a built-in provider config). Normalize it to
     # its canonical casing so every downstream consumer (config scoping,
     # runtime resolution, auth store) uses a consistent provider name.
     if getattr(args, "provider", None):

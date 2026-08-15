@@ -17,8 +17,9 @@ def canonical_provider_name(provider: str) -> str | None:
         provider: The provider name (case-insensitive)
 
     Returns:
-        The canonical provider name as used in ``PROVIDER_INFO`` if the
-        provider is supported, otherwise ``None``.
+        The canonical provider name as used in the provider registry
+        (``janito.providers._PROVIDER_CONFIGS``) if the provider is supported,
+        otherwise ``None``.
     """
     return _registry.canonical_name(provider)
 
@@ -26,7 +27,7 @@ def canonical_provider_name(provider: str) -> str | None:
 def is_supported_provider(provider: str) -> bool:
     """
     Check if a provider name is a supported provider (i.e. it maps to an entry
-    in :data:`PROVIDER_INFO`).
+    in :data:`janito.providers._PROVIDER_CONFIGS`).
 
     Args:
         provider: The provider name (case-insensitive)
@@ -91,7 +92,7 @@ def validate_provider_name(provider: str) -> str:
     canonical form.
 
     A provider is considered valid only if it maps to an entry in
-    :data:`PROVIDER_INFO`.
+    :data:`janito.providers._PROVIDER_CONFIGS`.
 
     Args:
         provider: The provider name to validate (case-insensitive)

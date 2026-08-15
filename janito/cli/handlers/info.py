@@ -12,8 +12,8 @@ from ...provider_accessors import (
     get_endpoint_for_api_type,
     get_responses_in_server_from_provider,
 )
-from ...provider_data import CUSTOM_ENDPOINT_MARKER
 from ...provider_validation import is_custom_provider
+from ...providers import CUSTOM_ENDPOINT_MARKER
 
 
 def _resolve_provider_source(args) -> tuple[str, str]:

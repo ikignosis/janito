@@ -3,7 +3,7 @@ Tests for reasoning-level support in the OpenAI-compatible API calls.
 
 Covers:
 - ``send_prompt`` resolving the reasoning level (CLI arg > per-provider config
-  > built-in ``PROVIDER_INFO`` default) and sending it as ``reasoning_effort``.
+  > built-in provider-config default) and sending it as ``reasoning_effort``.
 - The web agent's ``build_call_kwargs`` forwarding ``reasoning_effort``.
 - The CLI ``--reasoning-level`` flag parsing.
 """

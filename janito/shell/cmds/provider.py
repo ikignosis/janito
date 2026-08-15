@@ -5,8 +5,8 @@ Usage:
     /provider            - Show the current provider and the available providers
     /provider <name>     - Switch the session's provider (and model)
 
-The provider name is validated against the built-in providers
-(``PROVIDER_INFO``) and the registered provider variants
+The provider name is validated against the built-in providers (the
+``janito.providers`` registry) and the registered provider variants
 (``janito --create-variant``).  The switch is **runtime-only**: it updates
 the shell's displayed provider (bottom toolbar) and model and rebinds the
 send function to the new provider (its API type re-resolved), but it does

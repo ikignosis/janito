@@ -2,15 +2,18 @@
 Typed provider/model accessors.
 
 Defines :class:`ModelConfig` and :class:`Provider` -- the typed accessors
-over the static ``PROVIDER_INFO`` registry.  Part of the split
-provider-config module family (see :mod:`janito.provider_accessors`).
+over the static provider registry
+(:data:`janito.providers._PROVIDER_CONFIGS`).
+Part of the split provider-config module family (see
+:mod:`janito.provider_accessors`).
 """
 
-from .provider_data import PROVIDER_INFO
+from .providers import _PROVIDER_CONFIGS
 
 
 class ModelConfig:
-    """Typed accessors over one model entry of ``PROVIDER_INFO[...][\"models\"]``.
+    """Typed accessors over one model entry of
+    ``_PROVIDER_CONFIGS[...]["models"]``.
 
     Wraps a raw model entry dict (e.g. ``{"supported_api_types": [...],
     "max_output_tokens": 128000, ...}``); an empty dict (unknown model /
@@ -75,14 +78,14 @@ class ModelConfig:
 
 
 class Provider:
-    """A supported provider from :data:`PROVIDER_INFO` with typed accessors.
+    """A supported provider from :data:`janito.providers._PROVIDER_CONFIGS` with typed accessors.
 
-    A provider may be a built-in provider (``name`` in ``PROVIDER_INFO``) or
-    a registered *variant* (``<provider>-<word>``): in that case the variant
-    name is kept as :attr:`name`, ``variant_of`` names the base provider and
-    every typed accessor reads the **base provider's** info entry, so the
-    variant inherits the base's built-in defaults (including its ``models``
-    dict) while keeping its own per-variant config overrides.
+    A provider may be a built-in provider (``name`` in ``_PROVIDER_CONFIGS``)
+    or a registered *variant* (``<provider>-<word>``): in that case the
+    variant name is kept as :attr:`name`, ``variant_of`` names the base
+    provider and every typed accessor reads the **base provider's** info
+    entry, so the variant inherits the base's built-in defaults (including
+    its ``models`` dict) while keeping its own per-variant config overrides.
 
     The model-level accessors (``max_output_tokens``, ``reasoning_level``,
     ...) accept an optional ``model`` argument; ``None`` (the default)
@@ -91,11 +94,11 @@ class Provider:
     exists (e.g. the ``custom`` provider), an empty config applies.
 
     Args:
-        name: The provider name (a ``PROVIDER_INFO`` key, or a registered
+        name: The provider name (a ``_PROVIDER_CONFIGS`` key, or a registered
             variant name).
         data: The provider registry dict to read from. Defaults to the
-            module-level :data:`PROVIDER_INFO` (held by reference, so
-            mutations to the registry are reflected).
+            module-level :data:`janito.providers._PROVIDER_CONFIGS` (held by
+            reference, so mutations to the registry are reflected).
         variant_of: The base provider name when ``name`` is a variant.
             Defaults to ``None`` (``name`` is a built-in provider).
     """
@@ -103,7 +106,7 @@ class Provider:
     def __init__(
         self, name: str, data: dict | None = None, variant_of: str | None = None
     ):
-        data = PROVIDER_INFO if data is None else data
+        data = _PROVIDER_CONFIGS if data is None else data
         if name not in data and variant_of is None:
             supported = ", ".join(sorted(data.keys()))
             raise ValueError(

@@ -9,18 +9,33 @@ family.
 from .provider_registry import _registry
 
 
-def get_provider_info(provider: str) -> dict | None:
+def get_provider_config(provider: str, model: str | None = None) -> dict | None:
     """
-    Get the full ``PROVIDER_INFO`` entry for a given provider name.
+    Get the config entry for a given provider, or for one of its models.
+
+    Without ``model`` this returns the provider's full entry (provider-level
+    fields plus its ``models`` dict); with ``model`` it returns just that
+    model's entry *within* the provider.  Registered provider variants resolve
+    to their base provider's entry.
 
     Args:
         provider: The provider name (case-insensitive)
+        model: The model name. ``None`` returns the whole provider entry.
 
     Returns:
-        The provider info dict if found, ``None`` otherwise.
+        The provider config dict if found, the model entry if ``model`` is
+        given and has a built-in entry, ``None`` otherwise.
     """
     found = _registry.get(provider)
-    return found.info if found is not None else None
+    if found is None:
+        return None
+    info = found.info
+    if model is None:
+        return info
+    models = info.get("models", {})
+    if not isinstance(models, dict):
+        return None
+    return models.get(model)
 
 
 def get_base_url_from_provider(provider: str) -> str | None:

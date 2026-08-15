@@ -127,7 +127,7 @@ def resolve_runtime_config(
         )
 
     # Model: --model, then the provider's configured model, and finally the
-    # provider's built-in default model (from PROVIDER_INFO).
+    # provider's built-in default model (from the provider config).
     model = cli_model or load_model_from_config(provider)
     if not model:
         model = get_default_model_from_provider(provider)

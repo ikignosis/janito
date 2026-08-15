@@ -50,7 +50,7 @@ def _resolve_model_settings(
     # model's built-in default applies (True for Alibaba/Qwen, which reason
     # by default; the resolved value may be a dict for other providers, in
     # which case its truthiness enables thinking here). See
-    # provider_config.PROVIDER_INFO.
+    # janito.providers.get_provider_config.
     if not thinking:
         thinking = get_default_thinking_from_provider(provider, model)
 

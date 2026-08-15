@@ -52,9 +52,9 @@ def _entry_model(provider: str) -> str | None:
     """Resolve the model a model-scoped value belongs to for ``provider``.
 
     The provider's configured model (``providers.<name>.model``) wins, else
-    the built-in default model (``PROVIDER_INFO``'s ``default_model``).
-    ``None`` means the provider has no usable model (e.g. ``custom`` before
-    a model is set).
+    the built-in default model (from the provider's config entry, its
+    ``default_model``).  ``None`` means the provider has no usable model
+    (e.g. ``custom`` before a model is set).
     """
     from janito.config_loaders import load_model_from_config
     from janito.provider_accessors import get_default_model_from_provider
@@ -217,7 +217,7 @@ def _base_info_for(variant: str):
     """Resolve a registered variant to its ``(canonical_base, base_info)``.
 
     The base is the variant name's prefix (before the first ``-``) matched
-    case-insensitively against :data:`PROVIDER_INFO`.
+    case-insensitively against the supported providers.
 
     Args:
         variant: A registered variant name (e.g. ``alibaba-tokenplan``).
@@ -226,14 +226,15 @@ def _base_info_for(variant: str):
         A ``(base_name, base_info)`` tuple; ``base_info`` is ``None`` when the
         prefix does not map to a supported provider.
     """
-    from janito.provider_data import PROVIDER_INFO
     from janito.provider_registry import parse_variant_name
+    from janito.provider_validation import canonical_provider_name
+    from janito.providers import get_provider_config
 
     base_name = parse_variant_name(variant)[0]
-    for key, info in PROVIDER_INFO.items():
-        if key.lower() == base_name.lower():
-            return key, info
-    return base_name, None
+    canonical = canonical_provider_name(base_name)
+    if canonical is None:
+        return base_name, None
+    return canonical, get_provider_config(canonical)
 
 
 def _build_provider_entry(
@@ -288,8 +289,8 @@ def _build_provider_entry(
         get_supported_reasoning_levels_from_provider,
         is_api_type_available,
     )
-    from janito.provider_data import CUSTOM_ENDPOINT_MARKER
     from janito.provider_registry import ProviderRegistry
+    from janito.providers import CUSTOM_ENDPOINT_MARKER
 
     configured_model = load_model_from_config(name)
     # The entry's model: the configured override, else the built-in default

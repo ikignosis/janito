@@ -2,14 +2,14 @@
 Provider registry and variant-name helpers.
 
 Defines :class:`ProviderRegistry` (case-insensitive lookup over
-``PROVIDER_INFO``, including registered provider variants) plus the
-``parse_variant_name`` / ``is_variant_style_name`` helpers it relies on.
-Part of the split provider-config module family (see
+:data:`janito.providers._PROVIDER_CONFIGS`, including registered provider
+variants) plus the ``parse_variant_name`` / ``is_variant_style_name``
+helpers it relies on.  Part of the split provider-config module family (see
 :mod:`janito.provider_accessors`).
 """
 
-from .provider_data import PROVIDER_INFO, REQUIRES_BY_API_TYPE
 from .provider_models import Provider
+from .providers import _PROVIDER_CONFIGS, REQUIRES_BY_API_TYPE
 
 
 def parse_variant_name(name: str) -> tuple[str, str] | None:
@@ -53,12 +53,12 @@ def is_variant_style_name(name: str) -> bool:
 
 
 class ProviderRegistry:
-    """Registry over :data:`PROVIDER_INFO` with case-insensitive lookup.
+    """Registry over :data:`janito.providers._PROVIDER_CONFIGS` with case-insensitive lookup.
 
     The registry holds a *reference* to the data dict (never a copy), and
     constructs :class:`Provider` instances on demand, so runtime mutations to
-    ``PROVIDER_INFO`` (e.g. tests injecting a fake provider) are reflected in
-    every lookup.
+    the config registry (e.g. tests injecting a fake provider) are reflected
+    in every lookup.
 
     Besides the built-in providers, the registry also resolves **registered
     provider variants** (``<provider>-<word>``, created with
@@ -68,15 +68,15 @@ class ProviderRegistry:
     """
 
     def __init__(self, data: dict | None = None, requires: dict | None = None):
-        """Create a registry over ``data`` (defaults to ``PROVIDER_INFO``).
+        """Create a registry over ``data`` (defaults to ``_PROVIDER_CONFIGS``).
 
         Args:
-            data: The provider info dict to read from. Defaults to the
-                module-level :data:`PROVIDER_INFO`.
+            data: The provider config dict to read from. Defaults to the
+                module-level :data:`janito.providers._PROVIDER_CONFIGS`.
             requires: The optional-package map keyed by API type. Defaults to
-                :data:`REQUIRES_BY_API_TYPE`.
+                :data:`janito.providers.REQUIRES_BY_API_TYPE`.
         """
-        self._data = PROVIDER_INFO if data is None else data
+        self._data = _PROVIDER_CONFIGS if data is None else data
         self._requires = REQUIRES_BY_API_TYPE if requires is None else requires
 
     @property
@@ -91,8 +91,9 @@ class ProviderRegistry:
         A variant is a ``<provider>-<word>`` name registered via
         ``janito --create-variant`` (stored as a ``providers`` entry in
         config.json).  The base is the provider prefix (before the first
-        ``-``), which must be a supported provider (a ``PROVIDER_INFO``
-        entry) and the variant itself must be registered.
+        ``-``), which must be a supported provider (a config entry in
+        :data:`janito.providers._PROVIDER_CONFIGS`) and the variant
+        itself must be registered.
 
         Args:
             name: The provider name to check.
@@ -110,7 +111,7 @@ class ProviderRegistry:
         base_lower = base.strip().lower()
         if not base_lower:
             return None
-        for key in PROVIDER_INFO:
+        for key in _PROVIDER_CONFIGS:
             if key.lower() == base_lower:
                 return key if is_registered_variant(name) else None
         return None
@@ -118,18 +119,18 @@ class ProviderRegistry:
     def canonical_name(self, provider: str) -> str | None:
         """Return the canonical (correctly cased) name for a provider.
 
-        Supports both the built-in providers in ``PROVIDER_INFO`` and
-        registered provider variants (``<provider>-<word>``).  Variants are
-        matched case-insensitively and returned in their canonical
-        (lowercased) form.
+        Supports both the built-in providers in
+        :data:`janito.providers._PROVIDER_CONFIGS` and registered provider
+        variants (``<provider>-<word>``).  Variants are matched
+        case-insensitively and returned in their canonical (lowercased) form.
 
         Args:
             provider: The provider name (case-insensitive, surrounding
                 whitespace ignored).
 
         Returns:
-            The canonical provider name as used in ``PROVIDER_INFO`` if the
-            provider is supported, the lowercased variant name if it is a
+            The canonical provider name as used in ``_PROVIDER_CONFIGS`` if
+            the provider is supported, the lowercased variant name if it is a
             registered variant, otherwise ``None``.
         """
         if not provider:
@@ -152,7 +153,7 @@ class ProviderRegistry:
     def get(self, name: str) -> Provider | None:
         """Look up a provider by name (case-insensitive, no whitespace strip).
 
-        Mirrors the historical :func:`get_provider_info` semantics: an exact
+        Mirrors the historical :func:`get_provider_config` semantics: an exact
         match wins, then a case-insensitive match.  Registered provider
         variants resolve to a :class:`Provider` over the base provider's info.
         Surrounding whitespace is *not* stripped here (use

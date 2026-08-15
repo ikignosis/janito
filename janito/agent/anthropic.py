@@ -7,7 +7,7 @@ agent loops share them.  The web shim keeps the async glue
 (:func:`create_client` and :func:`stream_turn_events`).
 
 The ``anthropic`` package is **optional** (see
-``janito.provider_data.REQUIRES_BY_API_TYPE``); importing it happens lazily
+``janito.providers.REQUIRES_BY_API_TYPE``); importing it happens lazily
 inside :func:`create_client` (kept in the web shim), so importing this
 module never requires it.
 

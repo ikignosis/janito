@@ -23,7 +23,8 @@ emits a final text answer. Only the final ``response_id`` needs to be kept by
 the caller.
 
 **Stateless endpoints.** Some providers' ``/responses`` endpoint is stateless
-(``responses_in_server`` is ``False`` in ``PROVIDER_INFO``, e.g. DeepSeek):
+(``responses_in_server`` is ``False`` in the provider's model config, e.g.
+DeepSeek):
 it cannot resolve a ``previous_response_id`` and rejects tool outputs that
 reference it. For those providers the client falls back to the Completions
 model of ownership: the full conversation is tracked as Responses input items

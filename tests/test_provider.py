@@ -3,8 +3,9 @@ Tests for the Provider / ProviderRegistry classes (janito.provider_models /
 janito.provider_registry).
 
 Covers typed accessors, case-insensitive lookup, the whitespace distinction
-between ``get`` (no strip, mirrors get_provider_info) and ``canonical_name``
-(strips), runtime mutation of PROVIDER_INFO, and validation errors.
+between ``get`` (no strip, mirrors get_provider_config) and ``canonical_name``
+(strips), runtime mutation of ``janito.providers._PROVIDER_CONFIGS``, and
+validation errors.
 """
 
 import sys
@@ -17,9 +18,8 @@ import pytest
 
 import janito.config_dir as config_dir_mod
 import janito.provider_accessors as pa
-import janito.provider_data as pd
 import janito.provider_validation as pv
-from janito.provider_data import PROVIDER_INFO
+import janito.providers as pvd
 from janito.provider_models import Provider
 from janito.provider_registry import ProviderRegistry
 
@@ -56,7 +56,7 @@ if pytest is not None:
         reg = ProviderRegistry()
         assert reg.get("openai").name == "openai"
         assert reg.get("OpenAI").name == "openai"
-        # get() does NOT strip whitespace (mirrors get_provider_info).
+        # get() does NOT strip whitespace (mirrors get_provider_config).
         assert reg.get("  MiniMax ") is None
         assert reg.get("bogus") is None
         assert reg.get("") is None
@@ -73,19 +73,19 @@ if pytest is not None:
         with pytest.raises(ValueError) as exc:
             reg.require("bogus")
         assert "Supported providers" in str(exc.value)
-        for name in PROVIDER_INFO:
+        for name in pv.list_supported_providers():
             assert name in str(exc.value)
 
     def test_registry_names():
         reg = ProviderRegistry()
-        assert reg.names() == list(PROVIDER_INFO.keys())
+        assert reg.names() == pv.list_supported_providers()
 
     def test_registry_reflects_runtime_mutations():
-        """The registry holds a reference (never a copy) to PROVIDER_INFO, so
-        injecting/restoring a provider is visible to every lookup."""
+        """The registry holds a reference (never a copy) to _PROVIDER_CONFIGS,
+        so injecting/restoring a provider is visible to every lookup."""
         reg = ProviderRegistry()
-        original = dict(PROVIDER_INFO)
-        PROVIDER_INFO["fake-provider"] = {
+        original = dict(pvd._PROVIDER_CONFIGS)
+        pvd._PROVIDER_CONFIGS["fake-provider"] = {
             "default_model": "fake-model",
             "endpoint": None,
             "models": {
@@ -102,18 +102,18 @@ if pytest is not None:
             assert reg.canonical_name("Fake-Provider") == "fake-provider"
             assert "fake-provider" in reg.names()
         finally:
-            PROVIDER_INFO.clear()
-            PROVIDER_INFO.update(original)
+            pvd._PROVIDER_CONFIGS.clear()
+            pvd._PROVIDER_CONFIGS.update(original)
         assert reg.get("fake-provider") is None
 
     def test_registry_requires_reference():
         reg = ProviderRegistry()
-        assert reg.requires is pd.REQUIRES_BY_API_TYPE
+        assert reg.requires is pvd.REQUIRES_BY_API_TYPE
 
     def test_module_functions_agree_with_registry():
         """The module-level accessors behave identically to the class API."""
         reg = ProviderRegistry()
-        assert pa.get_provider_info("minimax") == reg.get("minimax").info
+        assert pa.get_provider_config("minimax") == reg.get("minimax").info
         assert (
             pa.get_base_url_from_provider("minimax")
             == reg.get("minimax").info["endpoint"]

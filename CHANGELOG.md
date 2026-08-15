@@ -11,6 +11,53 @@ Changes since `v4.25.0` (2026-08-15).
 
 ### Changed
 
+- Added `janito/providers/template/config.py`: the documentation template
+  for writing a new provider's config entry, commenting every possible
+  CONFIG option (provider-level `default_model` / `endpoint` /
+  `endpoint_by_api_type`, and model-level `supported_api_types` /
+  `responses_in_server` / `max_input_tokens` / `max_output_tokens` /
+  `reasoning_level` / `supported_reasoning_levels` / `thinking`). It is not
+  a real provider (never registered in `_PROVIDER_CONFIGS`). The per-provider
+  `config.py` docstrings dropped their duplicated entry-schema descriptions
+  and now point to the template for details (as does the
+  `janito/providers/__init__.py` package docstring and `ARCHITECTURE.md`).
+  (`janito/providers/template/config.py`,
+  `janito/providers/template/__init__.py`, `janito/providers/*/config.py`,
+  `janito/providers/__init__.py`, `ARCHITECTURE.md`)
+- The module-level `PROVIDER_INFO` dict was removed: code now reads provider
+  configs through `get_provider_config(provider, model=None)` (renamed from
+  `get_provider_info`) instead of indexing the registry directly, and lists
+  providers via `list_supported_providers()`. The backing registry is now
+  internal (`janito.providers._PROVIDER_CONFIGS`).
+  (`janito/providers/__init__.py`, `janito/provider_accessors.py`,
+  `janito/provider_registry.py`, `janito/provider_models.py`,
+  `janito/provider_validation.py`,
+  `janito/web/backend/routers/config.py`,
+  `janito/web/backend/routers/config_helpers.py`,
+  `janito/dashscope_helpers.py`,
+  `janito/openai_client/completions_helpers.py`,
+  `janito/openai_client/responses_helpers.py`, `tests/test_provider.py`,
+  `tests/test_provider_config.py`, `tests/test_show_providers.py`,
+  `tests/test_shell_provider_cmd.py`, `ARCHITECTURE.md`,
+  `docs/configuration/variants.md`)
+- The static `PROVIDER_INFO` registry was split into one `config.py` module
+  per provider under `janito/providers/<name>/` (each exporting that
+  provider's `PROVIDER_CONFIG` entry); the package `__init__.py` assembles
+  them into the internal `_PROVIDER_CONFIGS` dict, keeps the
+  `REQUIRES_BY_API_TYPE` optional-package map and the `CUSTOM_ENDPOINT`
+  marker, and exposes `get_provider_config(provider, model=None)` — with
+  `model` given it returns that model's config *within* the provider.
+  `janito.provider_data` was removed and all its consumers now read from
+  `janito.providers` (the accessors' `get_provider_config` also accepts the
+  new `model` argument).
+  (`janito/providers/*`, `janito/provider_accessors.py`,
+  `janito/provider_registry.py`, `janito/provider_models.py`,
+  `janito/provider_validation.py`, `janito/config_variants.py`,
+  `janito/cli/handlers/providers.py`, `janito/cli/handlers/info.py`,
+  `janito/web/backend/routers/config.py`,
+  `janito/web/backend/routers/config_helpers.py`,
+  `tests/test_provider.py`, `tests/test_provider_config.py`,
+  `tests/test_show_providers.py`, `tests/test_shell_provider_cmd.py`)
 - `ReadFile` and `ReadMultipleFiles` no longer check `.janitoignore`: files
   matched by `.janitoignore` are read like any other file (the matching /
   blocking logic and its tests were removed, and the now-unused

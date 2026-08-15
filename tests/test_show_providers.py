@@ -1,7 +1,8 @@
 """
 Tests for ``janito --show-providers``.
 
-The command lists every supported provider from ``PROVIDER_INFO`` (with its
+The command lists every supported provider from the provider config registry
+(read via ``janito.providers.get_provider_config``; with its
 built-in default model, API types, endpoint, token limits, thinking/reasoning
 defaults and API-key status) followed by the registered provider variants
 (``<provider>-<word>``, marked with their base provider). The configured
@@ -29,7 +30,7 @@ import janito.config_store as cs
 import janito.config_variants as cv
 from janito.auth_config import set_api_key
 from janito.cli.handlers.providers import handle_show_providers
-from janito.provider_data import PROVIDER_INFO
+from janito.provider_validation import list_supported_providers
 
 
 def _use_temp_config(monkeypatch, tmp_path):
@@ -67,8 +68,8 @@ def test_lists_all_builtin_providers(monkeypatch, tmp_path, capsys):
     rc, out = _run(monkeypatch, tmp_path, capsys)
 
     assert rc == 0
-    assert f"Supported Providers ({len(PROVIDER_INFO)})" in out
-    for name in PROVIDER_INFO:
+    assert f"Supported Providers ({len(list_supported_providers())})" in out
+    for name in list_supported_providers():
         assert name in out
 
     # Spot-check fields of a built-in provider.

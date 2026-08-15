@@ -56,12 +56,13 @@ def _resolve_turn_config(config, effective_provider, model):
     The max-tokens and reasoning-level defaults are resolved for the
     **effective model** (the one returned by ``resolve_runtime_config``):
     a model-scoped config override wins, then the model's built-in default
-    from ``PROVIDER_INFO`` (falling back to the default model's entry for
+    from the provider config (falling back to the default model's entry for
     models without a built-in entry).
     """
     max_output_tokens = load_max_output_tokens(effective_provider, model)
     if max_output_tokens is None:
-        # Fall back to the provider's built-in default (PROVIDER_INFO).
+        # Fall back to the provider's built-in default (from the provider
+        # config).
         max_output_tokens = get_default_max_output_tokens_from_provider(
             effective_provider, model
         )

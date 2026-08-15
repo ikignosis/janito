@@ -127,7 +127,8 @@ any other provider.
 For a variant `<base>-<word>`, values resolve as follows (later overrides
 earlier):
 
-1. Base provider's built-in defaults (from `PROVIDER_INFO`, e.g. the
+1. Base provider's built-in defaults (from the provider's config entry read
+   via `janito.providers.get_provider_config`, e.g. the
    `alibaba` entry: its `default_model` and the per-model `models` dict)
 2. Per-variant configuration file values — provider-scoped
    (`providers.<base>-<word>.model` / `.endpoint`) and model-scoped

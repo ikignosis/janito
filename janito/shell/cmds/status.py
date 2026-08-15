@@ -76,7 +76,7 @@ def _print_config_info(provider: str | None = None, thinking: bool = False) -> N
 
     # Resolve the effective max output tokens: an explicit configuration
     # value first, otherwise the effective model's built-in default from
-    # PROVIDER_INFO.
+    # the provider config.
     if max_output_tokens:
         max_output_tokens_display = str(max_output_tokens)
     else:
@@ -91,7 +91,7 @@ def _print_config_info(provider: str | None = None, thinking: bool = False) -> N
 
     # Resolve the effective reasoning level: an explicit configuration value
     # first, otherwise the effective model's built-in default from
-    # PROVIDER_INFO.
+    # the provider config.
     reasoning_level = load_reasoning_level(provider, model)
     if reasoning_level:
         reasoning_level_display = reasoning_level
@@ -106,7 +106,8 @@ def _print_config_info(provider: str | None = None, thinking: bool = False) -> N
         )
 
     # Resolve the effective thinking mode: the --thinking flag first,
-    # otherwise the effective model's built-in default from PROVIDER_INFO
+    # otherwise the effective model's built-in default from the provider
+    # config
     # (True for DeepSeek/Alibaba-Qwen; a pass-through dict such as
     # {'type': 'adaptive'} for MiniMax-M3).
     effective_thinking = thinking or get_default_thinking_from_provider(provider, model)

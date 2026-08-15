@@ -1,0 +1,1 @@
+"""MiniMax provider configuration package."""
