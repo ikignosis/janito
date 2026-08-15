@@ -303,6 +303,8 @@ class DashScopeClient(Client):
         max_input_tokens,
         max_output_tokens,
         console,
+        provider=None,
+        model=None,
     ):
         # No more tool calls, return the final response.
         return _finalize_response(
@@ -313,6 +315,8 @@ class DashScopeClient(Client):
             max_input_tokens,
             max_output_tokens,
             console,
+            provider=provider,
+            model=model,
         )
 
 

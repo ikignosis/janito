@@ -172,6 +172,9 @@ def _finalize_response(
     max_input_tokens: int | None,
     max_output_tokens: int | None,
     console: Console,
+    *,
+    provider: str | None = None,
+    model: str | None = None,
 ) -> str:
     """Record the assistant message, print the end-of-turn reports and return."""
     # Build the assistant message with reasoning_content if available
@@ -200,5 +203,7 @@ def _finalize_response(
             input_attr="prompt_tokens",
             output_attr="completion_tokens",
             cached_details_attr="prompt_tokens_details",
+            provider=provider,
+            model=model,
         )
     return full_content

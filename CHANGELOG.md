@@ -18,12 +18,31 @@ Changes since `v4.25.0` (2026-08-15).
   provider is unknown or ships no cost module.
   (`janito/provider_accessors.py`, `tests/test_provider.py`)
 - Added `janito/providers/deepseek/cost.py` with a `get_cost(model, input,
-  output, cached)` helper that estimates the monetary cost of a request
-  (currently a placeholder returning `"1$"`).
-  (`janito/providers/deepseek/cost.py`)
-- The token-usage summary line printed at the end of each turn now appends a
-  `Cost: <cost>` part; it shows `Cost: N/A` unless a cost is passed to
-  `_display_usage` (`janito/openai_client/client_support.py`,
+  output, cached)` helper that estimates the monetary cost of a request from
+  the per-1M-token rates for `deepseek-v4-flash` ($0.14 / $0.0028 cache hit /
+  $0.28 output) and `deepseek-v4-pro` ($0.435 / $0.003625 / $0.87), billing
+  cached input tokens at the automatic cache-hit rate and formatting the
+  result as `NN.DDDDDD$` (e.g. `"0.420000$"`); unknown models fall back to `"N/A"`.
+  There is no peak-hour surcharge.  The module docstring documents the rates
+  source (https://deepseek.ai/pricing, verified 2026-07-25) and points at the
+  official DeepSeek rate card (https://api-docs.deepseek.com/quick_start/pricing).
+  (`janito/providers/deepseek/cost.py`, `janito/provider_accessors.py`,
+  `tests/test_provider.py`)
+- The token-usage summary line printed at the end of each turn now computes
+  its `Cost: <cost>` part through
+  `get_provider_cost(provider, model, input, output, cached)` instead of a
+  never-passed `cost` argument: the provider/model are threaded from
+  `Client.send()` down to `_display_usage`, cached input tokens are billed
+  at the provider's cache-hit rate, and it falls back to `N/A` when the
+  provider/model is unknown or ships no cost module (e.g. non-DeepSeek
+  providers). (`janito/openai_client/client_support.py`,
+  `janito/openai_client/base_client.py`,
+  `janito/openai_client/completions_api.py`,
+  `janito/openai_client/conversations_api.py`,
+  `janito/openai_client/anthropic_api.py`,
+  `janito/openai_client/completions_helpers.py`,
+  `janito/openai_client/responses_helpers.py`,
+  `janito/dashscope_api.py`, `janito/dashscope_helpers.py`,
   `scripts/provider_token_benchmark.py`, `tests/test_provider_token_benchmark.py`)
 - Added `janito/providers/template/config.py`: the documentation template
   for writing a new provider's config entry, commenting every possible

@@ -396,6 +396,8 @@ class ResponsesClient(Client):
         max_input_tokens,
         max_output_tokens,
         console,
+        provider=None,
+        model=None,
     ):
         # Server-side: the assistant message lives on the server and the
         # caller only needs the response id to chain the next turn. Stateless:
@@ -411,6 +413,8 @@ class ResponsesClient(Client):
             console,
             state["response_id"],
             state["responses_in_server"],
+            provider=provider,
+            model=model,
         )
 
 

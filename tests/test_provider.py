@@ -148,16 +148,28 @@ if pytest is not None:
 
     def test_get_provider_cost():
         """get_provider_cost() delegates to the provider's cost module."""
-        # DeepSeek ships a cost module returning a placeholder "1$".
+        # DeepSeek ships a cost module: V4-Flash at $0.14 / $0.0028 (cache
+        # hit) / $0.28 output per 1M tokens, formatted as NN.DDDDDD$.
         assert (
-            pa.get_provider_cost("deepseek", "deepseek-v4-flash", 1000, 500, 100)
-            == "1$"
+            pa.get_provider_cost(
+                "deepseek", "deepseek-v4-flash", 1_000_000, 1_000_000, 0
+            )
+            == "0.420000$"
         )
-        # Case-insensitive provider lookup.
+        # Cached input tokens are billed at the cache-hit rate.
         assert (
-            pa.get_provider_cost("DeepSeek", "deepseek-v4-flash", 1000, 500, 100)
-            == "1$"
+            pa.get_provider_cost(
+                "deepseek", "deepseek-v4-flash", 1_000_000, 1_000_000, 500_000
+            )
+            == "0.351400$"
         )
+        # Case-insensitive provider lookup (V4-Pro at $0.435 / $0.87).
+        assert (
+            pa.get_provider_cost("DeepSeek", "deepseek-v4-pro", 1_000_000, 1_000_000, 0)
+            == "1.305000$"
+        )
+        # Unknown models within the provider fall back to "N/A".
+        assert pa.get_provider_cost("deepseek", "bogus-model", 1000, 500, 100) == "N/A"
         # Providers without a cost module fall back to "N/A".
         assert pa.get_provider_cost("openai", "gpt-5.6-luna", 1000, 500, 100) == "N/A"
         # Unknown providers fall back to "N/A".

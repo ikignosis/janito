@@ -207,6 +207,8 @@ class Client:
                 max_input_tokens,
                 max_output_tokens,
                 console,
+                provider=provider,
+                model=model,
             )
 
     # ------------------------------------------------------------------
@@ -300,6 +302,8 @@ class Client:
         max_input_tokens,
         max_output_tokens,
         console,
+        provider=None,
+        model=None,
     ):
         """Record the final assistant message, print reports and return the result."""
         raise NotImplementedError

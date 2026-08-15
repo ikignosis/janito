@@ -302,6 +302,8 @@ class AnthropicClient(Client):
         max_input_tokens,
         max_output_tokens,
         console,
+        provider=None,
+        model=None,
     ):
         # No more tool calls, return the final response.
         return _finalize_response(
@@ -311,6 +313,8 @@ class AnthropicClient(Client):
             max_input_tokens,
             max_output_tokens,
             console,
+            provider=provider,
+            model=model,
         )
 
 
@@ -442,6 +446,9 @@ def _finalize_response(
     max_input_tokens: int | None,
     max_output_tokens: int,
     console: Console,
+    *,
+    provider: str | None = None,
+    model: str | None = None,
 ) -> str:
     """Record the final assistant message, print reports and return."""
     # No more tool calls, return the final response. Record the final
@@ -466,6 +473,8 @@ def _finalize_response(
             input_attr="input_tokens",
             output_attr="output_tokens",
             cached_details_attr=None,
+            provider=provider,
+            model=model,
         )
     return full_content
 

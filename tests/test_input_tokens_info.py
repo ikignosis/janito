@@ -105,6 +105,70 @@ if pytest is not None:
         assert "In: 1.2k" in parts
         assert "Out: 50/65.5k" in parts
 
+    # ---- Cost in the CLI usage line ----------------------------------
+
+    def _display_usage_text(
+        provider, model, usage, cached_details_attr="prompt_tokens_details"
+    ):
+        """Render the usage summary line through _display_usage."""
+        from io import StringIO
+
+        from rich.console import Console
+
+        from janito.openai_client.client_support import _display_usage
+
+        buf = StringIO()
+        console = Console(file=buf, force_terminal=False, width=120)
+        _display_usage(
+            usage,
+            None,
+            None,
+            1,
+            console,
+            provider=provider,
+            model=model,
+            cached_details_attr=cached_details_attr,
+        )
+        return buf.getvalue().strip()
+
+    def _usage(input_tokens, output_tokens, cached_tokens):
+        from types import SimpleNamespace
+
+        return SimpleNamespace(
+            prompt_tokens=input_tokens,
+            completion_tokens=output_tokens,
+            total_tokens=input_tokens + output_tokens,
+            prompt_tokens_details=SimpleNamespace(cached_tokens=cached_tokens),
+        )
+
+    def test_usage_line_cost_from_provider_cost_module():
+        """The Cost part is computed via get_provider_cost for the provider."""
+        # DeepSeek V4-Flash: $0.14 in (miss) + $0.28 out per 1M tokens.
+        text = _display_usage_text(
+            "deepseek", "deepseek-v4-flash", _usage(1_000_000, 1_000_000, 0)
+        )
+        assert "Cost: 0.420000$" in text
+
+    def test_usage_line_cost_bills_cached_input_at_cache_hit():
+        """Cached input tokens are billed at the provider's cache-hit rate."""
+        # 500k of the 1M input tokens are cache hits ($0.0028 vs $0.14/1M).
+        text = _display_usage_text(
+            "deepseek", "deepseek-v4-flash", _usage(1_000_000, 1_000_000, 500_000)
+        )
+        assert "Cost: 0.351400$" in text
+
+    def test_usage_line_cost_provider_without_cost_module_is_na():
+        """Providers without a cost module fall back to Cost: N/A."""
+        text = _display_usage_text(
+            "openai", "gpt-5.6-luna", _usage(1_000_000, 1_000_000, 0)
+        )
+        assert "Cost: N/A" in text
+
+    def test_usage_line_cost_without_provider_model_is_na():
+        """No provider/model falls back to Cost: N/A."""
+        text = _display_usage_text(None, None, _usage(1_000_000, 1_000_000, 0))
+        assert "Cost: N/A" in text
+
     # ---- Web UsageEvent serialization --------------------------------
 
     def test_usage_event_to_dict_without_max():

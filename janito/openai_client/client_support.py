@@ -26,6 +26,7 @@ from janito.agent.usage import format_tokens, normalize_usage
 
 # Import MCP manager
 from janito.mcp_manager import get_mcp_manager
+from janito.provider_accessors import get_provider_cost
 from janito.tooling.tools_registry import tools_loading_enabled
 
 # Configure logger for this module
@@ -119,7 +120,8 @@ def _display_usage(
     input_attr: str = "prompt_tokens",
     output_attr: str = "completion_tokens",
     cached_details_attr: str | None = "prompt_tokens_details",
-    cost: float | None = None,
+    provider: str | None = None,
+    model: str | None = None,
 ) -> None:
     """Print the token usage summary line.
 
@@ -132,8 +134,14 @@ def _display_usage(
     display no longer needs per-API attribute plumbing.  ``input_attr`` /
     ``output_attr`` are retained for signature compatibility; pass
     ``cached_details_attr=None`` to skip the cached-token read for APIs that
-    do not report it.  ``cost`` is appended as ``Cost: <cost>`` and defaults
-    to ``N/A`` when no cost is available.
+    do not report it.
+
+    ``Cost: <cost>`` is computed through
+    :func:`janito.provider_accessors.get_provider_cost` from the provider /
+    model and the normalized token counts (cached input tokens are billed at
+    the provider's cache-hit rate); it falls back to ``N/A`` when the
+    provider or model is unknown, or when no cost module exists for the
+    provider.
     """
     stats = normalize_usage(usage_info)
     if stats is None:
@@ -163,7 +171,17 @@ def _display_usage(
     if cached_tokens is not None:
         parts.append(f"Cached: {format_tokens(cached_tokens)}")
     parts.append(f"{label}: {message_count}")
-    parts.append(f"Cost: {cost if cost is not None else 'N/A'}")
+    if provider is not None and model is not None:
+        cost = get_provider_cost(
+            provider,
+            model,
+            input_tokens if input_tokens is not None else 0,
+            output_tokens if output_tokens is not None else 0,
+            cached_tokens if cached_tokens is not None else 0,
+        )
+    else:
+        cost = "N/A"
+    parts.append(f"Cost: {cost}")
 
     token_text = Text(f"=== {' | '.join(parts)} ===")
     token_text.stylize("white on magenta")

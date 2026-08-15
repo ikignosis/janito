@@ -452,7 +452,8 @@ def get_provider_cost(
     The cost is computed by the provider's ``cost.py`` module
     (``janito.providers.<name>.cost``), which exports a
     ``get_cost(model, input, output, cached)`` function returning a
-    dollar-formatted string (e.g. ``"1$"``).  Providers without a cost
+    dollar-formatted string with six decimal digits (e.g. ``"0.420000$"``).
+    Providers without a cost
     module fall back to ``"N/A"``.
 
     Args:
@@ -465,7 +466,8 @@ def get_provider_cost(
         cached: The number of cached input tokens.
 
     Returns:
-        The estimated cost formatted as a dollar string (e.g. ``"1$"``), or
+        The estimated cost formatted as a dollar string with six decimal
+        digits (e.g. ``"0.420000$"``), or
         ``"N/A"`` when the provider is unknown or has no cost module.
     """
     found = _registry.get(provider)

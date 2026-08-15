@@ -433,6 +433,8 @@ class CompletionsClient(Client):
         max_input_tokens,
         max_output_tokens,
         console,
+        provider=None,
+        model=None,
     ):
         return _finalize_response(
             full_content,
@@ -442,4 +444,6 @@ class CompletionsClient(Client):
             max_input_tokens,
             max_output_tokens,
             console,
+            provider=provider,
+            model=model,
         )

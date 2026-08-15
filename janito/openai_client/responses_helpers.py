@@ -263,6 +263,9 @@ def _finalize_conversation(
     console: Console,
     response_id: str | None,
     responses_in_server: bool,
+    *,
+    provider: str | None = None,
+    model: str | None = None,
 ) -> Any:
     """Assemble the final ConversationResult and print the end-of-turn reports."""
     from .conversations_api import ConversationResult
@@ -295,6 +298,8 @@ def _finalize_conversation(
             input_attr="input_tokens",
             output_attr="output_tokens",
             cached_details_attr="input_tokens_details",
+            provider=provider,
+            model=model,
         )
     return ConversationResult(
         content=full_content,
