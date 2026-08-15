@@ -40,8 +40,9 @@ class InteractiveShell(_SessionMixin):
             commands: List of command handlers (auto-loaded if not provided)
             no_history: If True, use in-memory history only (no file persistence)
             provider: The provider name in effect for this session (e.g. from
-                ``--provider``). When set, the status bar reports it; otherwise
-                it falls back to the configured default provider.
+                ``--provider``, updated by ``/provider``). When set, the
+                status bar reports it; otherwise it falls back to the
+                configured default provider.
         """
         self.model = model
         self.provider = provider

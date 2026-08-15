@@ -3,6 +3,7 @@ CLI chat execution modes: interactive and single prompt.
 """
 
 import os
+from collections.abc import Callable
 
 from .. import __version__
 from ..general_config import resolve_api_type
@@ -160,6 +161,58 @@ def _make_send_prompt_func(
     return send
 
 
+def _make_send_factory(
+    cli_api_type: str | None,
+    cli_model: str | None,
+    cli_provider: str | None,
+    cli_reasoning_level: str | None,
+) -> Callable[[str | None], Callable]:
+    """Return a factory that builds the send function for a provider.
+
+    The interactive shell stores the returned factory as ``send_factory`` and
+    ``/provider`` calls it with the new provider, so a provider switch takes
+    effect in real time.  For the target provider the factory re-resolves:
+
+      - **model**: ``--model`` only applies to the provider it was given for
+        (the session's startup provider).  After a switch the new provider's
+        configured model, else its built-in default, is used (matching the
+        toolbar display updated by ``/provider``).
+      - **API type**: ``--api-type``, then the model-scoped configured
+        value for that provider/model, then the built-in default.
+
+    Args:
+        cli_api_type: API type passed via ``--api-type`` (may be None).
+        cli_model: Model passed via ``--model`` (may be None).
+        cli_provider: Provider passed via ``--provider`` (may be None).
+        cli_reasoning_level: Reasoning depth passed via ``--reasoning-level``
+            (may be None).
+
+    Returns:
+        A callable ``factory(provider) -> send_prompt_func``.
+    """
+
+    def send_factory(provider: str | None) -> Callable:
+        from janito.config_loaders import load_model_from_config
+        from janito.provider_accessors import get_default_model_from_provider
+
+        # --model applies to the startup provider only; a switched-to provider
+        # gets its own effective model (configured, else built-in default).
+        if (provider or "").lower() == (cli_provider or "").lower():
+            model = cli_model
+        else:
+            model = load_model_from_config(provider) or get_default_model_from_provider(
+                provider
+            )
+        return _make_send_prompt_func(
+            resolve_api_type(cli_api_type, provider, model),
+            cli_model=model,
+            cli_provider=provider,
+            reasoning_level=cli_reasoning_level,
+        )
+
+    return send_factory
+
+
 def print_version_banner(console=None):
     """Print a banner with the version and the current working directory."""
     from rich.console import Console
@@ -250,16 +303,6 @@ def run_interactive_chat(args):
         _, _, model = resolve_runtime_config(cli_model, cli_provider)
     except ValueError:
         model = cli_model or "(not configured)"
-    # Select the API type for the provider: --api-type, then the provider's
-    # configured api-type (--set api-type=...), then the provider's built-in
-    # default (the first entry of its supported_api_types list).
-    api_type = resolve_api_type(cli_api_type, cli_provider)
-    send_prompt_func = _make_send_prompt_func(
-        api_type,
-        cli_model=cli_model,
-        cli_provider=cli_provider,
-        reasoning_level=cli_reasoning_level,
-    )
     print(
         "Starting interactive chat session. Type '/exit' or CTRL-D to end the session"
     )
@@ -272,9 +315,15 @@ def run_interactive_chat(args):
         no_history=args.no_history,
         provider=cli_provider,
     )
+    # Factory to (re)build the send function per provider: ``/provider`` calls
+    # it with the new provider so the switch takes effect in real time
+    # (provider, model and API type are re-resolved, see _make_send_factory).
+    shell.send_factory = _make_send_factory(
+        cli_api_type, cli_model, cli_provider, cli_reasoning_level
+    )
     shell.initialize_history(system_prompt=effective_system_prompt)
     shell.run(
-        send_prompt_func=send_prompt_func,
+        send_prompt_func=shell.send_factory(cli_provider),
         verbose=args.verbose,
         no_tools=no_tools,
         thinking=args.thinking,

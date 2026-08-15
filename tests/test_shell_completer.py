@@ -115,6 +115,7 @@ if pytest is not None:
         assert "/help" in names
         assert "/tools" in names
         assert "/exit" in names
+        assert "/provider" in names
 
     def test_session_has_completer_and_complete_while_typing():
         # Building an InteractiveShell wires the completer into its session.
@@ -123,6 +124,79 @@ if pytest is not None:
         shell = InteractiveShell(model="test-model", no_history=True)
         assert isinstance(shell.session.completer, CommandCompleter)
         assert shell.session.complete_while_typing is True
+
+    # ------------------------------------------------------------------
+    # Argument autocompletion (/provider <name>)
+    # ------------------------------------------------------------------
+
+    def _arg_completer_completions_for(text):
+        """Completions offered by the real shell completer for the given input."""
+        from janito.shell import InteractiveShell
+
+        shell = InteractiveShell(model="test-model", no_history=True)
+        return _completions_for(shell.session.completer, text)
+
+    def test_provider_argument_completes_all():
+        text = "/provider "
+        names = _arg_completer_completions_for(text)
+        assert "openai" in names
+        assert "deepseek" in names
+        assert "custom" in names
+
+    def test_provider_argument_completes_prefix():
+        names = _arg_completer_completions_for("/provider op")
+        assert names == ["openai"]
+
+    def test_provider_argument_complete_prefix_case_insensitive():
+        names = _arg_completer_completions_for("/provider DEEP")
+        assert names == ["deepseek"]
+
+    def test_provider_argument_command_case_insensitive():
+        names = _arg_completer_completions_for("/PROVIDER ali")
+        assert "alibaba" in names
+
+    def test_provider_argument_no_completion_after_second_space():
+        # Only the first argument is completed; a second space means the user
+        # has moved past it.
+        assert _arg_completer_completions_for("/provider openai ") == []
+
+    def test_provider_argument_no_completion_without_command_prefix():
+        # A plain chat line mentioning the word must not offer providers.
+        assert _arg_completer_completions_for("op") == []
+        assert _arg_completer_completions_for("hello /provider op") == []
+
+    def test_provider_argument_leading_whitespace_still_completes():
+        names = _arg_completer_completions_for("  /provider op")
+        assert names == ["openai"]
+
+    def test_provider_argument_includes_registered_variants(monkeypatch, tmp_path):
+        import janito.config_dir as config_dir_mod
+        import janito.config_variants as cv
+
+        config_path = tmp_path / ".janito" / "config.json"
+        monkeypatch.setattr(config_dir_mod, "_config_dir", config_path.parent)
+        cv.create_variant("custom-local")
+
+        names = _arg_completer_completions_for("/provider custom-")
+        assert "custom-local" in names
+
+    def test_provider_argument_completion_meta():
+        from janito.shell import InteractiveShell
+
+        shell = InteractiveShell(model="test-model", no_history=True)
+        doc = Document("/provider op", cursor_position=len("/provider op"))
+        completions = list(
+            shell.session.completer.get_completions(doc, CompleteEvent())
+        )
+        assert len(completions) == 1
+        assert completions[0].start_position == -len("op")
+        meta = completions[0].display_meta
+        assert "argument" in "".join(part[1] for part in meta)
+
+    def test_provider_command_still_completes_as_command():
+        # Typing just "/provider" (no trailing space) still offers the command.
+        names = _arg_completer_completions_for("/provider")
+        assert "/provider" in names
 
 else:  # pragma: no cover - fallback runner without pytest
 

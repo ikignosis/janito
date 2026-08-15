@@ -157,13 +157,19 @@ PROVIDER_INFO: dict[str, dict] = {
     },
     "alibaba": {
         "default_model": "qwen3.8-max",
-        "endpoint": "https://dashscope-intl.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1",
+        "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
         # Per-API-type endpoints: the OpenAI-compatible Chat Completions /
-        # Responses URL and the native DashScope SDK base URL (the SDK talks
-        # to the DashScope native API, not the compatible-mode gateway).
+        # Responses base URL (DashScope's plain compatible-mode gateway, the
+        # same URL the OpenAI SDK appends /chat/completions and /responses
+        # to) and the native DashScope SDK base URL (the SDK talks to the
+        # DashScope native API, not the compatible-mode gateway). The
+        # "apps-protocol" compatible-mode URL
+        # (dashscope-intl.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1)
+        # only serves Model Studio *applications* and rejects ordinary
+        # DashScope API keys with "Not support", so it must not be used here.
         "endpoint_by_api_type": {
-            "Completions": "https://dashscope-intl.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1",
-            "Responses": "https://dashscope-intl.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1",
+            "Completions": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+            "Responses": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
             "DashScope": "https://dashscope-intl.aliyuncs.com/api/v1",
         },
         "models": {

@@ -292,8 +292,8 @@ if pytest is not None:
         # Alibaba maps the OpenAI-compatible types to the compatible-mode
         # gateway and the native DashScope SDK to the native API base URL.
         assert get_endpoint_by_api_type("alibaba") == {
-            "Completions": "https://dashscope-intl.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1",
-            "Responses": "https://dashscope-intl.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1",
+            "Completions": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+            "Responses": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
             "DashScope": "https://dashscope-intl.aliyuncs.com/api/v1",
         }
         # DeepSeek maps the OpenAI-compatible types to api.deepseek.com and
@@ -331,11 +331,11 @@ if pytest is not None:
         # and the native DashScope SDK type uses the native API base URL.
         assert (
             get_endpoint_for_api_type("alibaba", "Completions")
-            == "https://dashscope-intl.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1"
+            == "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
         )
         assert (
             get_endpoint_for_api_type("alibaba", "Responses")
-            == "https://dashscope-intl.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1"
+            == "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
         )
         assert (
             get_endpoint_for_api_type("alibaba", "DashScope")
@@ -344,7 +344,7 @@ if pytest is not None:
         # Without an API type the provider's single built-in endpoint applies.
         assert (
             get_endpoint_for_api_type("alibaba")
-            == "https://dashscope-intl.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1"
+            == "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
         )
         # DeepSeek: the OpenAI-compatible types share api.deepseek.com and the
         # native Anthropic SDK type uses the Anthropic-compatible base URL.

@@ -147,6 +147,39 @@ if pytest is not None:
         )
         assert c.usage_info.total == 5
 
+    def test_completions_consumer_surfaces_api_error_chunks():
+        """A chunk with no choices but code/message must raise, not be silent.
+
+        Some OpenAI-compatible providers (e.g. Alibaba DashScope) reject a
+        request in-band: a single ChatCompletionChunk with empty ``choices``
+        carrying ``code``/``message`` instead of an HTTP error.  Without the
+        guard the turn would end with an empty response and no error output.
+        """
+        from janito.openai_client.completions_stream import CompletionsStreamConsumer
+
+        class _ErrorChunk:
+            choices = []
+            usage = None
+            code = "Not Found"
+            message = "Not support"
+
+        c = CompletionsStreamConsumer()
+        with pytest.raises(RuntimeError, match="Not Found: Not support"):
+            c.handle(_ErrorChunk())
+
+    def test_completions_consumer_skips_usage_only_chunks():
+        """A usage-only final chunk (no choices, no error) is not an error."""
+        from janito.openai_client.completions_stream import CompletionsStreamConsumer
+
+        class _UsageChunk:
+            choices = []
+            usage = SimpleNamespace(total_tokens=42)
+
+        c = CompletionsStreamConsumer()
+        c.handle(_UsageChunk())
+        assert c.usage_info.total_tokens == 42
+        assert c.full_content == ""
+
     def test_completions_consumer_accumulates_tool_call_deltas():
         from janito.openai_client.completions_stream import CompletionsStreamConsumer
 

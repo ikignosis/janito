@@ -70,6 +70,23 @@ def build_call_kwargs(
     return call_kwargs
 
 
+def _raise_chunk_error(chunk) -> None:
+    """Raise when a stream chunk carries an API error the SDK could not type.
+
+    Some OpenAI-compatible providers reject a request *in-band*: instead of
+    an HTTP error status they stream a single ``ChatCompletionChunk`` with no
+    ``choices`` that carries the failure as ``code``/``message`` fields (e.g.
+    Alibaba DashScope returns ``code='Not Found', message='Not support'``
+    when a model is sent to the wrong gateway).  The OpenAI SDK cannot type
+    these, so without this guard the turn would silently produce an empty
+    response.  Mirrors ``responses_stream._handle_untyped_error``.
+    """
+    code = getattr(chunk, "code", None)
+    message = getattr(chunk, "message", None)
+    if code or message:
+        raise RuntimeError(f"{code}: {message}" if code else message)
+
+
 @dataclass
 class CompletionsAccumulator:
     """Fold streamed completion chunks into one turn's collected state.
@@ -124,6 +141,7 @@ class CompletionsAccumulator:
             self.usage = chunk.usage
 
         if not chunk.choices:
+            _raise_chunk_error(chunk)
             return None, None
 
         delta = chunk.choices[0].delta

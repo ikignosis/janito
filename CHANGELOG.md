@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Changes since `v4.24.0` (2026-08-13).
 
+### Added
+
+- **Shell `/provider` command**: switch the active provider from the
+  interactive shell with `/provider <name>` (validated against the supported
+  providers and registered variants, persisted as the `provider` config key,
+  same as `--set provider=<name>`). The provider name is autocompleted in the
+  shell: after `/provider `, the available provider names are suggested as you
+  type. `/provider` with no argument lists the current provider and every
+  available one. Switching the provider takes effect immediately for the
+  running session (the API client is rebound to the new provider, re-resolving
+  the model and API type) and clears the LLM conversation history (system
+  prompt preserved) so the new provider/model starts fresh — including when
+  the session was started with `--provider`.
+
 ### Changed
 
 - **File tools report exclude patterns**: `SearchText`, `SearchRegex`, and
@@ -25,6 +39,19 @@ Changes since `v4.24.0` (2026-08-13).
 
 ### Fixed
 
+- **Alibaba provider endpoint**: the `alibaba` provider's OpenAI-compatible
+  base URL (Chat Completions and Responses API types) pointed at the DashScope
+  "apps-protocol" gateway
+  (`dashscope-intl.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1`),
+  which rejects ordinary DashScope API keys with `Not support` — every prompt
+  after `/provider alibaba` (or `--provider alibaba`) returned an empty
+  response. The endpoint now uses the plain compatible-mode base URL
+  (`dashscope-intl.aliyuncs.com/compatible-mode/v1`).
+- **Chat Completions stream surfaces API errors**: when an OpenAI-compatible
+  provider (e.g. Alibaba DashScope) rejects a request in-band — a single
+  stream chunk with no `choices` carrying `code`/`message` instead of an HTTP
+  error — the turn now raises with the provider's message instead of silently
+  finishing with an empty response (CLI and web).
 - **Docs point to the correct repository**: fixed `github.com/joaopinto/janito`
   links in `CHANGELOG.md`, `README_DEV.md` and `RELEASE.md` to reference
   `github.com/ikignosis/janito`.

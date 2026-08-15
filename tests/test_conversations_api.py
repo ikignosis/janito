@@ -820,6 +820,129 @@ def test_make_send_prompt_func_completions_dispatch(monkeypatch):
     assert captured["cli_provider"] == "openai"
 
 
+# ---- send_factory (real-time /provider switch) -----------------------------
+
+
+def test_send_factory_honors_cli_model_for_startup_provider(monkeypatch):
+    """The factory keeps ``--model`` for the provider it was given for."""
+    import janito.cli.chat as chat_mod
+    import janito.openai_client.conversations_api as conv_api
+
+    captured = {}
+
+    def capturer(*a, **kw):
+        captured.update(kw)
+        return "ok"
+
+    # openai/gpt-5.6-luna resolves to Responses -> the wrapper calls the
+    # conversations client; patch it (Completions path patched for safety).
+    monkeypatch.setattr(conv_api, "send_prompt", capturer)
+    monkeypatch.setattr(chat_mod, "send_prompt", capturer)
+
+    factory = chat_mod._make_send_factory(
+        cli_api_type=None,
+        cli_model="gpt-5.6-luna",
+        cli_provider="openai",
+        cli_reasoning_level=None,
+    )
+    send = factory("openai")
+    send("hello", previous_messages=[])
+    assert captured["cli_model"] == "gpt-5.6-luna"
+    assert captured["cli_provider"] == "openai"
+
+
+def test_send_factory_resolves_new_provider_model_and_api_type(monkeypatch):
+    """After a /provider switch the new provider's own model and API type are
+    resolved (the startup ``--model`` does not leak into it)."""
+    import janito.cli.chat as chat_mod
+
+    factory = chat_mod._make_send_factory(
+        cli_api_type=None,
+        cli_model="gpt-5.6-luna",  # startup --model, belongs to openai
+        cli_provider="openai",
+        cli_reasoning_level=None,
+    )
+    send = factory("moonshot")  # switched provider
+
+    captured = {}
+    monkeypatch.setattr(
+        chat_mod,
+        "send_prompt",
+        lambda *a, **kw: captured.update(kw) or "ok",
+    )
+    send("hello", previous_messages=[])
+    # The new provider's built-in default model is used, not the startup one.
+    assert captured["cli_model"] == "kimi-k3-256k"
+    assert captured["cli_provider"] == "moonshot"
+
+
+def test_send_factory_resolves_configured_model_for_new_provider(monkeypatch, tmp_path):
+    """A configured model for the switched-to provider is picked up."""
+    import janito.cli.chat as chat_mod
+    import janito.config_dir as config_dir_mod
+    import janito.openai_client.conversations_api as conv_api
+
+    # Point the config directory at a temp dir and set a provider model.
+    config_path = tmp_path / ".janito" / "config.json"
+    monkeypatch.setattr(config_dir_mod, "_config_dir", config_path.parent)
+    from janito.config_store import set_config_value
+
+    set_config_value("deepseek.model", "deepseek-v4-pro")
+
+    captured = {}
+
+    def capturer(*a, **kw):
+        captured.update(kw)
+        return "ok"
+
+    # deepseek/deepseek-v4-pro resolves to Responses -> conversations client.
+    monkeypatch.setattr(conv_api, "send_prompt", capturer)
+    monkeypatch.setattr(chat_mod, "send_prompt", capturer)
+
+    factory = chat_mod._make_send_factory(
+        cli_api_type=None,
+        cli_model=None,
+        cli_provider="openai",
+        cli_reasoning_level=None,
+    )
+    send = factory("deepseek")
+    send("hello", previous_messages=[])
+    assert captured["cli_model"] == "deepseek-v4-pro"
+    assert captured["cli_provider"] == "deepseek"
+
+
+def test_send_factory_resolves_api_type_per_new_provider(monkeypatch):
+    """The API type is re-resolved for the switched-to provider: moonshot's
+    only supported type is Completions, openai's default is Responses."""
+    import janito.cli.chat as chat_mod
+
+    # Capture the api_type passed to _make_send_prompt_func.
+    captured = {}
+
+    def fake_make(api_type, **kwargs):
+        captured["api_type"] = api_type
+        captured["cli_model"] = kwargs["cli_model"]
+        captured["cli_provider"] = kwargs["cli_provider"]
+        return lambda **kw: "ok"
+
+    monkeypatch.setattr(chat_mod, "_make_send_prompt_func", fake_make)
+
+    factory = chat_mod._make_send_factory(
+        cli_api_type=None,
+        cli_model=None,
+        cli_provider="openai",
+        cli_reasoning_level=None,
+    )
+    factory("moonshot")
+    assert captured["api_type"] == "Completions"
+    assert captured["cli_model"] == "kimi-k3-256k"
+    assert captured["cli_provider"] == "moonshot"
+
+    factory("openai")
+    assert captured["api_type"] == "Responses"
+    assert captured["cli_model"] is None  # openai default model resolved in-client
+
+
 def test_shell_tracks_and_resets_previous_response_id():
     """The interactive shell keeps the server-side response id and resets it
     on a fresh conversation (initialize_history), so a restart never chains to

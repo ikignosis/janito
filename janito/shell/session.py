@@ -19,6 +19,17 @@ from .completer import CommandCompleter
 HISTORY_FILE = Path.cwd() / ".janito" / "history.log"
 
 
+def _provider_arg_completer(prefix: str) -> list[str]:
+    """Return the provider names matching ``prefix`` for ``/provider`` autocompletion.
+
+    Delegates to the ``/provider`` command's helper so the completions always
+    match the providers the command accepts (built-in + registered variants).
+    """
+    from .cmds.provider import available_provider_names
+
+    return list(available_provider_names(prefix))
+
+
 class _SessionMixin:
     """Mixin providing prompt_toolkit session and history management."""
 
@@ -106,7 +117,12 @@ class _SessionMixin:
             style=chat_shell_style,
             bottom_toolbar=lambda: self._get_bottom_toolbar(),
             multiline=multiline,
-            completer=CommandCompleter(lambda: self.commands),
+            completer=CommandCompleter(
+                lambda: self.commands,
+                # Argument completion: ``/provider <name>`` suggests the
+                # available provider names (built-in + registered variants).
+                arg_completers={"/provider": _provider_arg_completer},
+            ),
             complete_while_typing=True,
         )
 
