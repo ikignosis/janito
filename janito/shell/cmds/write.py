@@ -1,14 +1,14 @@
 """
-/read command handler - sends a prompt to the LLM using the main conversation
-history but restricted to read-only tools.
+/write command handler - sends a prompt to the LLM using the main conversation
+history but restricted to write-only tools.
 
-Unlike ``/ask`` (which starts a fresh, isolated chat history), ``/read`` sends
+Unlike ``/ask`` (which starts a fresh, isolated chat history), ``/write`` sends
 the prompt through the main conversation: the model sees the ongoing history
 and the exchange is appended to it (rollback/cancel behaviour matches a normal
 prompt). The only difference is that ``tools=`` is filtered down to the
-read-only tools -- the built-in tools whose ``@tool(permissions="r")``
-declares read access and nothing else, so the model can inspect, search and
-fetch but cannot write or execute.
+write-only tools -- the built-in tools whose ``@tool(permissions="w")``
+declares write access and nothing else, so the model can create, modify or
+delete but cannot read, search or execute.
 """
 
 from ._tool_filters import get_tool_schemas_by_permission
@@ -16,43 +16,43 @@ from .base import CmdHandler
 from .registry import register_command
 
 
-def get_read_only_tool_schemas() -> list[dict]:
-    """Return the function-calling schemas of the read-only (``"r"``) tools.
+def get_write_only_tool_schemas() -> list[dict]:
+    """Return the function-calling schemas of the write-only (``"w"``) tools.
 
-    A tool is considered read-only when its ``_tool_permissions`` is exactly
-    ``"r"`` (the value set by ``@tool(permissions="r")``): read access and
+    A tool is considered write-only when its ``_tool_permissions`` is exactly
+    ``"w"`` (the value set by ``@tool(permissions="w")``): write access and
     nothing else. Tools declaring no permissions (e.g. the skill tools) and
-    tools that can write or execute (``"w"``/``"x"``/combinations) are
+    tools that can also read or execute (``"r"``/``"x"``/combinations) are
     excluded. MCP tools carry no permission metadata here, so they are
-    excluded too -- only the built-in read-only tools are offered.
+    excluded too -- only the built-in write-only tools are offered.
     """
-    return get_tool_schemas_by_permission("r")
+    return get_tool_schemas_by_permission("w")
 
 
-class ReadCmdHandler(CmdHandler):
-    """Command handler for /read - asks the LLM with read-only tools."""
+class WriteCmdHandler(CmdHandler):
+    """Command handler for /write - asks the LLM with write-only tools."""
 
     @property
     def name(self) -> str:
-        return "/read"
+        return "/write"
 
     def handle(self, shell, user_input: str) -> bool:
-        """Handle the /read command."""
-        # Match '/read' exactly or '/read <question>' (not '/reads', etc.)
+        """Handle the /write command."""
+        # Match '/write' exactly or '/write <question>' (not '/writes', etc.)
         if (
             user_input.lower() != self.name.lower()
             and not user_input.lower().startswith(self.name.lower() + " ")
         ):
             return False
 
-        # Extract the question (everything after '/read ')
+        # Extract the question (everything after '/write ')
         question = user_input[len(self.name) :].strip()
 
         if not question:
-            print("\nUsage: /read <your question>")
+            print("\nUsage: /write <your question>")
             print(
                 "  Sends the prompt to the LLM using the main conversation"
-                " history, but restricted to read-only tools."
+                " history, but restricted to write-only tools."
             )
             print(
                 "  The exchange stays in the main conversation history"
@@ -60,11 +60,11 @@ class ReadCmdHandler(CmdHandler):
             )
             return True
 
-        self._read(shell, question)
+        self._write(shell, question)
         return True
 
-    def _read(self, shell, question: str) -> None:
-        """Send the prompt with the main history, using only read-only tools."""
+    def _write(self, shell, question: str) -> None:
+        """Send the prompt with the main history, using only write-only tools."""
         send_prompt_func = getattr(shell, "send_prompt_func", None)
         if send_prompt_func is None:
             print(
@@ -72,14 +72,14 @@ class ReadCmdHandler(CmdHandler):
             )
             return
 
-        read_only_schemas = get_read_only_tool_schemas()
+        write_only_schemas = get_write_only_tool_schemas()
         print()  # blank line before the streamed response, like /ask
         # Reuse the shell's main-prompt path: same history, checkpoints,
         # Responses state sync and cancel/rollback handling -- only the tool
-        # set is restricted to the read-only tools.
-        shell._send_prompt(question, tools=read_only_schemas)
+        # set is restricted to the write-only tools.
+        shell._send_prompt(question, tools=write_only_schemas)
 
 
 # Register this handler
-_handler = ReadCmdHandler()
+_handler = WriteCmdHandler()
 register_command(_handler)
