@@ -30,6 +30,11 @@ Changes since `v4.24.0` (2026-08-13).
   announcement when defined.
 - **Simpler ReadFile result message**: `ReadFile` now reports only the number
   of lines read, dropping the explicit line range from the result message.
+- **First API key sets the default provider**: when an API key is stored via
+  `--set-api-key` (or `set_api_key`/`AuthConfigStore.set_api_key`) and no
+  default provider (the `provider` metadata key in `auth.json`) is configured
+  yet, the default is set to the provider for which the new key was stored.
+  An already-configured default provider is left untouched.
 - **Per-model configuration**: per-model settings (max input/output tokens,
   reasoning level, API type, responses-in-server, thinking) moved out of the
   provider level of `PROVIDER_INFO` into a per-provider `models` dict, with a

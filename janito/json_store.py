@@ -185,10 +185,17 @@ class AuthConfigStore(JsonFileStore):
         super().__init__("auth.json")
 
     def set_api_key(self, provider: str, api_key: str) -> bool:
-        """Store an API key for a provider; returns success."""
+        """Store an API key for a provider; returns success.
+
+        When no default provider (the ``provider`` metadata key) is
+        configured yet, it is set to the provider for which the new key was
+        stored, so the newly-keyed provider becomes the default.
+        """
         logger.debug(f"Setting API key for provider: {provider}")
         config = self.load()
         config[provider] = api_key
+        if not config.get("provider"):
+            config["provider"] = provider
         result = self.save(config)
         if result:
             logger.info(f"API key saved for provider: {provider}")

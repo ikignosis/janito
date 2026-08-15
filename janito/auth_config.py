@@ -68,6 +68,10 @@ def set_api_key(provider: str, api_key: str) -> bool:
     """
     Set an API key for a specific provider.
 
+    When no default provider (the ``provider`` metadata key) is configured
+    yet, it is set to ``provider`` so the newly-keyed provider becomes the
+    default.
+
     Args:
         provider: The provider name (e.g., 'openai')
         api_key: The actual API key value
