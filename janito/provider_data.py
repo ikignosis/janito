@@ -209,9 +209,14 @@ PROVIDER_INFO: dict[str, dict] = {
         },
     },
     "zai": {
-        "default_model": "glm-5.2",
+        "default_model": "glm-5.3",
         "endpoint": "https://api.z.ai/api/paas/v4/",
         "models": {
+            "glm-5.3": {
+                "supported_api_types": ["Completions"],
+                "max_input_tokens": 128000,
+                "max_output_tokens": 1000000,  # 1M
+            },
             "glm-5.2": {
                 "supported_api_types": ["Completions"],
                 "max_input_tokens": 128000,
