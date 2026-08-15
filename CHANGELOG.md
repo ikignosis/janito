@@ -30,6 +30,11 @@ Changes since `v4.24.0` (2026-08-13).
 
 ### Changed
 
+- **`zai` provider endpoint points to the GLM Coding Plan API**: the built-in
+  endpoint for the `zai` provider is now
+  `https://api.z.ai/api/coding/paas/v4` (the GLM Coding Plan OpenAI Chat
+  Completions endpoint). Users on the standard Z.AI platform can override it
+  with `--set endpoint=https://api.z.ai/api/paas/v4/`.
 - **`/provider` autocomplete offers only usable providers**: the shell
   autocompletion for `/provider <name>` now suggests only providers that
   have an API key stored in `~/.janito/auth.json` (switching to a key-less

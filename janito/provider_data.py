@@ -210,7 +210,11 @@ PROVIDER_INFO: dict[str, dict] = {
     },
     "zai": {
         "default_model": "glm-5.3",
-        "endpoint": "https://api.z.ai/api/paas/v4/",
+        # GLM Coding Plan endpoint (https://api.z.ai/api/coding/paas/v4) for
+        # OpenAI Chat Completions. The standard Z.AI platform endpoint is
+        # https://api.z.ai/api/paas/v4/ -- use a config override
+        # (--set endpoint=...) if you are not on the Coding Plan.
+        "endpoint": "https://api.z.ai/api/coding/paas/v4",
         "models": {
             "glm-5.3": {
                 "supported_api_types": ["Completions"],
