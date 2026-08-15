@@ -100,10 +100,19 @@ def _resolve_model_settings(
     thinking: bool,
     reasoning_level: str | None,
 ) -> tuple[bool, int | None, int | None, str | None]:
-    """Resolve thinking mode, token limits and reasoning level for ``model``."""
+    """Resolve thinking mode, token limits and reasoning level for ``model``.
+
+    Returns ``(thinking, max_output_tokens, max_input_tokens,
+    reasoning_level)`` where ``thinking`` is the resolved value: the
+    explicit ``--thinking`` flag (``True``) when given, otherwise the
+    model's built-in default (a ``True`` flag or a pass-through dict such as
+    MiniMax-M3's ``{'type': 'adaptive'}``).  See
+    :func:`apply_thinking_to_extra_body`.
+    """
     # Thinking mode: the explicit --thinking flag wins, otherwise the
     # model's built-in default applies (True for DeepSeek and Alibaba/Qwen,
-    # which reason by default). See provider_data.PROVIDER_INFO.
+    # a dict for MiniMax-M3, which reason by default). See
+    # provider_data.PROVIDER_INFO.
     if not thinking:
         thinking = get_default_thinking_from_provider(provider, model)
     max_output_tokens = load_max_output_tokens(provider, model)

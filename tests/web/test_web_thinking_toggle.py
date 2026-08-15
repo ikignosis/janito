@@ -194,6 +194,23 @@ def test_build_call_kwargs_honors_runtime_override(client):
     assert kwargs["extra_body"]["enable_thinking"] is True
 
 
+@requires_fastapi
+def test_build_call_kwargs_passes_structured_thinking_dict(client):
+    """A provider-default thinking dict (e.g. MiniMax-M3 {'type': 'adaptive'})
+    is sent through as extra_body thinking, not enable_thinking."""
+    from janito.web.backend.agent.call import build_call_kwargs
+
+    cfg = client.app.state.config
+    _reset(cfg)
+    cfg.provider = "minimax"
+    cfg.model = "MiniMax-M3"
+
+    assert cfg.effective_thinking == {"type": "adaptive"}
+    kwargs = build_call_kwargs("MiniMax-M3", cfg, 1000, None, None)
+    assert kwargs["extra_body"]["thinking"] == {"type": "adaptive"}
+    assert "enable_thinking" not in kwargs["extra_body"]
+
+
 # ---------------------------------------------------------------------------
 # Frontend wiring (static checks, no server needed)
 # ---------------------------------------------------------------------------

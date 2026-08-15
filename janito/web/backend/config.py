@@ -60,17 +60,20 @@ class WebServerConfig:
     thinking_override: bool | None = None
 
     @property
-    def effective_thinking(self) -> bool:
-        """Whether thinking mode is active for the next prompt.
+    def effective_thinking(self):
+        """The thinking mode in effect for the next prompt.
 
         Resolution order: the runtime ``thinking_override`` (status-bar
         toggle) first, then the explicit ``--thinking`` CLI flag, then the
         effective provider's built-in ``thinking`` resolved for the
         **effective model** (``self.model``: the CLI ``--model``, else the
-        provider's configured model, else its built-in default model) --
-        True for DeepSeek and Alibaba/Qwen, whose models reason by default.
-        The effective provider is the session-only combo override, else the
-        CLI ``--provider``, else the persisted default.
+        provider's configured model, else its built-in default model).  The
+        value may be a plain ``True`` flag (DeepSeek / Alibaba-Qwen, which
+        reason by default) or a pass-through dict for providers with a
+        structured thinking parameter (MiniMax-M3: ``{'type':
+        'adaptive'}``); falsy means thinking is off.  The effective provider
+        is the session-only combo override, else the CLI ``--provider``,
+        else the persisted default.
         """
         if self.thinking_override is not None:
             return self.thinking_override
@@ -80,7 +83,7 @@ class WebServerConfig:
         from janito.provider_accessors import get_default_thinking_from_provider
 
         provider = self.session_provider or self.provider or get_active_provider()
-        return bool(get_default_thinking_from_provider(provider, self.model))
+        return get_default_thinking_from_provider(provider, self.model)
 
     # --- Toolset enablement ---
     gmail: bool = False  # --gmail

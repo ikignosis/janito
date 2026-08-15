@@ -53,9 +53,18 @@ class ModelConfig:
         """The list of supported reasoning levels, or ``None``."""
         return self._data.get("supported_reasoning_levels")
 
-    def default_thinking(self) -> bool:
-        """Whether the model reasons by default (``thinking`` flag)."""
-        return bool(self._data.get("thinking", False))
+    def default_thinking(self):
+        """The model's built-in thinking default, or ``False`` when none.
+
+        Returns the raw ``thinking`` value from the model entry: a plain
+        ``True`` flag for flag-style providers (DeepSeek, Alibaba/Qwen) or a
+        pass-through dict for providers whose API takes a structured
+        thinking parameter (MiniMax-M3: ``{'type': 'adaptive'}``).  Callers
+        must not coerce the dict to a bool -- use
+        :func:`~janito.provider_accessors.apply_thinking_to_extra_body` to
+        turn the value into the API's ``extra_body`` payload.
+        """
+        return self._data.get("thinking", False)
 
     def responses_in_server(self) -> bool:
         """Whether the model's Responses API keeps state server-side.
@@ -194,8 +203,13 @@ class Provider:
         """The list of supported reasoning levels, or ``None``."""
         return self.model_config(model).supported_reasoning_levels()
 
-    def default_thinking(self, model: str | None = None) -> bool:
-        """Whether the model reasons by default."""
+    def default_thinking(self, model: str | None = None):
+        """The model's built-in thinking default, or ``False`` when none.
+
+        See :meth:`ModelConfig.default_thinking` for the value shape (a
+        ``True`` flag or a pass-through dict such as MiniMax-M3's
+        ``{'type': 'adaptive'}``).
+        """
         return self.model_config(model).default_thinking()
 
     def supported_api_types(self, model: str | None = None) -> list | None:

@@ -119,6 +119,24 @@ def test_responses_build_call_kwargs_omits_optional_fields():
     assert "tools" not in kwargs
 
 
+def test_responses_build_call_kwargs_passes_structured_thinking_dict():
+    """A structured thinking default (MiniMax-M3 {'type': 'adaptive'}) is sent
+    through as extra_body thinking instead of enable_thinking."""
+    from janito.web.backend.agent import responses
+
+    kwargs = responses.build_call_kwargs(
+        "MiniMax-M3",
+        [{"role": "user", "content": "hi"}],
+        None,
+        _cfg(thinking={"type": "adaptive"}),
+        1000,
+        None,
+        None,
+    )
+    assert kwargs["extra_body"]["thinking"] == {"type": "adaptive"}
+    assert "enable_thinking" not in kwargs["extra_body"]
+
+
 def test_responses_build_call_kwargs_appends_image_generation_tool_for_gpt5():
     """Mainline gpt-5 models get the native ``image_generation`` tool."""
     from janito.web.backend.agent import responses

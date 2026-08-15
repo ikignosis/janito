@@ -16,6 +16,8 @@ loop under a progress spinner).
 
 from dataclasses import dataclass, field
 
+from janito.provider_accessors import apply_thinking_to_extra_body
+
 from .usage import usage_event_from_usage
 
 
@@ -31,7 +33,8 @@ def build_call_kwargs(
     Config-driven behaviour (from CLI args):
       - ``config.effective_thinking`` (runtime toggle, else the ``--thinking``
         flag, else the provider's built-in ``thinking``) -> add
-        extra_body enable_thinking
+        extra_body enable_thinking, or the raw thinking dict for providers
+        with a structured thinking parameter (e.g. MiniMax-M3)
       - max output tokens from ``janito.general_config`` -> max_tokens
         (``max_completion_tokens`` for gpt-5 models)
       - ``preserve_thinking`` config value -> extra_body
@@ -61,9 +64,10 @@ def build_call_kwargs(
             "preserve_thinking"
         ] = preserve_thinking
 
-    thinking = config.effective_thinking
-    if thinking:
-        call_kwargs.setdefault("extra_body", {})["enable_thinking"] = True
+    # Pass the thinking mode in extra_body: enable_thinking for flag-style
+    # defaults, or the raw dict for providers with a structured thinking
+    # parameter (e.g. MiniMax-M3's {"type": "adaptive"}).
+    apply_thinking_to_extra_body(call_kwargs, config.effective_thinking)
 
     call_kwargs["stream"] = True
     call_kwargs["stream_options"] = {"include_usage": True}

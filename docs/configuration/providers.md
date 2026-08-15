@@ -329,6 +329,37 @@ janito --set provider=minimax --set model=abab6.5s-chat
 janito --set-api-key="your-minimax-api-key" --provider minimax
 ```
 
+### API Types and Base URLs
+
+The `minimax` provider supports the OpenAI-compatible **Completions** API type
+(the built-in default) against the OpenAI-compatible base URL
+`https://api.minimax.io/v1`, plus a native **Anthropic** SDK API type against
+MiniMax's Anthropic-compatible base URL `https://api.minimax.io/anthropic`
+(per-API-type endpoint, see `endpoint_by_api_type`).
+
+The `anthropic` package is **optional**; janito aborts the change (with a
+message naming the package) if you try to select the `Anthropic` API type
+without it:
+
+```bash
+# Install the optional package first
+pip install anthropic
+
+# Then select the native Anthropic SDK API type
+janito --provider minimax --set api-type=Anthropic
+
+# Per call
+janito --provider minimax --api-type Anthropic "Explain quantum computing"
+```
+
+### Thinking Mode
+
+The default model `MiniMax-M3` reasons by default. Its OpenAI-compatible API
+controls thinking with a structured `thinking` parameter
+(`type` can be `disabled` or `adaptive`; `adaptive` is equivalent to thinking
+on), so janito sends `extra_body={'thinking': {'type': 'adaptive'}}` out of
+the box. Pass `-t` / `--thinking` to force thinking on for any provider.
+
 ### Popular Models
 
 | Model | Description |

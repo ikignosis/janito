@@ -14,6 +14,7 @@ from janito.config_loaders import (
 )
 from janito.general_config import get_active_provider, resolve_api_type
 from janito.provider_accessors import (
+    format_thinking_display,
     get_default_max_output_tokens_from_provider,
     get_default_model_from_provider,
     get_default_reasoning_level_from_provider,
@@ -105,9 +106,11 @@ def _print_config_info(provider: str | None = None, thinking: bool = False) -> N
         )
 
     # Resolve the effective thinking mode: the --thinking flag first,
-    # otherwise the effective model's built-in default from PROVIDER_INFO.
+    # otherwise the effective model's built-in default from PROVIDER_INFO
+    # (True for DeepSeek/Alibaba-Qwen; a pass-through dict such as
+    # {'type': 'adaptive'} for MiniMax-M3).
     effective_thinking = thinking or get_default_thinking_from_provider(provider, model)
-    thinking_display = "enabled" if effective_thinking else "disabled"
+    thinking_display = format_thinking_display(effective_thinking)
     if effective_thinking and not thinking:
         thinking_display += " (model default)"
 

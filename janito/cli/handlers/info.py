@@ -6,6 +6,7 @@ from ...config_loaders import load_endpoint_from_config, load_model_from_config
 from ...config_store import get_config_path
 from ...general_config import load_provider_from_config, resolve_api_type
 from ...provider_accessors import (
+    format_thinking_display,
     get_default_model_from_provider,
     get_default_thinking_from_provider,
     get_endpoint_for_api_type,
@@ -217,11 +218,12 @@ def handle_show_config(args=None) -> int:
 
     # Resolve the effective thinking mode: the CLI --thinking flag first,
     # otherwise the effective model's built-in default (True for DeepSeek
-    # and Alibaba/Qwen).
+    # and Alibaba/Qwen; a pass-through dict such as {'type': 'adaptive'}
+    # for MiniMax-M3).
     thinking = getattr(args, "thinking", False) or get_default_thinking_from_provider(
         provider, model
     )
-    thinking_display = "enabled" if thinking else "disabled"
+    thinking_display = format_thinking_display(thinking)
     if thinking and not getattr(args, "thinking", False):
         thinking_display += " (model default)"
 

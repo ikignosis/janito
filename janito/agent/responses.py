@@ -24,6 +24,8 @@ import json
 import logging
 import tempfile
 
+from janito.provider_accessors import apply_thinking_to_extra_body
+
 from .usage import usage_event_from_usage
 
 logger = logging.getLogger(__name__)
@@ -175,8 +177,10 @@ def build_call_kwargs(
             "preserve_thinking"
         ] = preserve_thinking
 
-    if config.effective_thinking:
-        call_kwargs.setdefault("extra_body", {})["enable_thinking"] = True
+    # Pass the thinking mode in extra_body: enable_thinking for flag-style
+    # defaults, or the raw dict for providers with a structured thinking
+    # parameter (e.g. MiniMax-M3's {"type": "adaptive"}).
+    apply_thinking_to_extra_body(call_kwargs, config.effective_thinking)
 
     # Native image generation: mainline models (gpt-5+) can generate images
     # through the Responses API's built-in ``image_generation`` tool.  It is

@@ -122,10 +122,12 @@ def test_providers_endpoint_shape(client):
     names = {entry["name"] for entry in data["providers"]}
     assert "openai" in names
 
-    # DeepSeek and Alibaba/Qwen advertise thinking by default; openai does not.
+    # DeepSeek and Alibaba/Qwen advertise thinking by default (flag-style);
+    # MiniMax-M3 advertises its structured thinking default; openai does not.
     by_name = {entry["name"]: entry for entry in data["providers"]}
     assert by_name["deepseek"]["default_thinking"] is True
     assert by_name["alibaba"]["default_thinking"] is True
+    assert by_name["minimax"]["default_thinking"] == {"type": "adaptive"}
     assert by_name["openai"]["default_thinking"] in (None, False)
 
     # Exactly one provider is the effective one the next prompt uses.

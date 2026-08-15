@@ -16,6 +16,7 @@ import pytest
 
 import janito.config_dir as config_dir_mod
 from janito.provider_accessors import (
+    apply_thinking_to_extra_body,
     ensure_api_type_available,
     get_all_api_types,
     get_base_url_from_provider,
@@ -189,20 +190,25 @@ if pytest is not None:
         assert get_supported_reasoning_levels_from_provider("bogus") is None
 
     def test_default_thinking():
-        # DeepSeek and Alibaba/Qwen reason by default.
+        # DeepSeek and Alibaba/Qwen reason by default (flag-style); MiniMax-M3
+        # reasons by default with a structured thinking dict (adaptive).
         assert get_default_thinking_from_provider("deepseek") is True
         assert get_default_thinking_from_provider("alibaba") is True
+        assert get_default_thinking_from_provider("minimax") == {"type": "adaptive"}
         assert get_default_thinking_from_provider("DeepSeek") is True
         assert get_default_thinking_from_provider("Alibaba") is True
+        assert get_default_thinking_from_provider("MiniMax") == {"type": "adaptive"}
         # The model info entries carry the flag.
         assert (
             PROVIDER_INFO["deepseek"]["models"]["deepseek-v4-flash"]["thinking"] is True
         )
         assert PROVIDER_INFO["alibaba"]["models"]["qwen3.8-max"]["thinking"] is True
+        assert PROVIDER_INFO["minimax"]["models"]["MiniMax-M3"]["thinking"] == {
+            "type": "adaptive"
+        }
         # Everyone else defaults to False (explicit or absent).
         for name in (
             "openai",
-            "minimax",
             "xiaomi",
             "moonshot",
             "zai",
@@ -213,6 +219,37 @@ if pytest is not None:
             assert get_default_thinking_from_provider(name) is False
         # Unknown provider returns False.
         assert get_default_thinking_from_provider("bogus") is False
+
+    def test_apply_thinking_to_extra_body():
+        # A plain True flag -> extra_body enable_thinking.
+        kwargs = {}
+        apply_thinking_to_extra_body(kwargs, True)
+        assert kwargs["extra_body"]["enable_thinking"] is True
+
+        # A structured dict is passed through verbatim as extra_body thinking
+        # (e.g. MiniMax-M3's {"type": "adaptive"}).
+        kwargs = {}
+        apply_thinking_to_extra_body(kwargs, {"type": "adaptive"})
+        assert kwargs["extra_body"]["thinking"] == {"type": "adaptive"}
+        # The dict is copied, not held by reference.
+        thinking = {"type": "adaptive"}
+        apply_thinking_to_extra_body(kwargs, thinking)
+        thinking["type"] = "disabled"
+        assert kwargs["extra_body"]["thinking"] == {"type": "adaptive"}
+
+        # Falsy values send nothing (extra_body is not even created).
+        for falsy in (False, None):
+            kwargs = {}
+            apply_thinking_to_extra_body(kwargs, falsy)
+            assert kwargs == {}
+
+        # extra_body already holding a key is preserved.
+        kwargs = {"extra_body": {"preserve_thinking": True}}
+        apply_thinking_to_extra_body(kwargs, True)
+        assert kwargs["extra_body"] == {
+            "preserve_thinking": True,
+            "enable_thinking": True,
+        }
 
     def test_supported_and_default_api_types():
         # OpenAI supports both APIs and defaults to the Responses API (the
@@ -264,10 +301,17 @@ if pytest is not None:
             "Anthropic",
         ]
         assert get_default_api_type_from_provider("anthropic") == "Completions"
+        # MiniMax supports Completions (the built-in default) plus the
+        # Anthropic-compatible API (native Anthropic SDK at
+        # https://api.minimax.io/anthropic).
+        assert get_supported_api_types_from_provider("minimax") == [
+            "Completions",
+            "Anthropic",
+        ]
+        assert get_default_api_type_from_provider("minimax") == "Completions"
         # Every other provider is Completions-only for now.  The "custom"
         # provider has no built-in models, so it exposes no defaults.
         for name in (
-            "minimax",
             "xiaomi",
             "moonshot",
             "zai",
@@ -303,9 +347,15 @@ if pytest is not None:
             "Responses": "https://api.deepseek.com",
             "Anthropic": "https://api.deepseek.com/anthropic",
         }
+        # MiniMax maps the OpenAI-compatible types to api.minimax.io/v1 and
+        # the native Anthropic SDK API type to the Anthropic-compatible URL.
+        assert get_endpoint_by_api_type("minimax") == {
+            "Completions": "https://api.minimax.io/v1",
+            "Responses": "https://api.minimax.io/v1",
+            "Anthropic": "https://api.minimax.io/anthropic",
+        }
         # Providers without the map return None (single shared endpoint).
         assert get_endpoint_by_api_type("openai") is None
-        assert get_endpoint_by_api_type("minimax") is None
         # Unknown provider returns None.
         assert get_endpoint_by_api_type("bogus") is None
 
@@ -362,6 +412,22 @@ if pytest is not None:
         )
         # Without an API type the single built-in endpoint applies.
         assert get_endpoint_for_api_type("deepseek") == "https://api.deepseek.com"
+        # MiniMax: the OpenAI-compatible types share api.minimax.io/v1 and the
+        # native Anthropic SDK type uses the Anthropic-compatible base URL.
+        assert (
+            get_endpoint_for_api_type("minimax", "Completions")
+            == "https://api.minimax.io/v1"
+        )
+        assert (
+            get_endpoint_for_api_type("minimax", "Responses")
+            == "https://api.minimax.io/v1"
+        )
+        assert (
+            get_endpoint_for_api_type("minimax", "Anthropic")
+            == "https://api.minimax.io/anthropic"
+        )
+        # Without an API type the single built-in endpoint applies.
+        assert get_endpoint_for_api_type("minimax") == "https://api.minimax.io/v1"
 
     def test_get_endpoint_for_api_type_single_entry_fallback():
         """A single-entry endpoint_by_api_type dict is the default for ANY
@@ -409,8 +475,8 @@ if pytest is not None:
         assert get_endpoint_for_api_type("openai") is None
         assert get_endpoint_for_api_type("openai", "Responses") is None
         assert (
-            get_endpoint_for_api_type("minimax", "Completions")
-            == "https://api.minimax.io/v1"
+            get_endpoint_for_api_type("xiaomi", "Completions")
+            == "https://api.xiaomimimo.com/v1"
         )
         # Unknown provider returns None.
         assert get_endpoint_for_api_type("bogus", "Completions") is None

@@ -288,24 +288,61 @@ def get_supported_reasoning_levels_from_provider(
     return found.supported_reasoning_levels(model) if found is not None else None
 
 
-def get_default_thinking_from_provider(provider: str, model: str | None = None) -> bool:
+def get_default_thinking_from_provider(provider: str, model: str | None = None):
     """
     Get the built-in default for thinking mode for a provider's model.
 
-    Models that reason by default (DeepSeek, Alibaba/Qwen) declare
-    ``thinking: True``; everyone else falls back to ``False``. The CLI
-    ``--thinking`` flag still forces thinking on explicitly.
+    Returns the raw ``thinking`` value from the model entry: a plain
+    ``True`` flag for models that reason by default (DeepSeek, Alibaba/Qwen),
+    a pass-through dict for models whose API takes a structured thinking
+    parameter (MiniMax-M3: ``{'type': 'adaptive'}``), or ``False`` when no
+    default exists.  The CLI ``--thinking`` flag still forces thinking on
+    explicitly.  Use :func:`apply_thinking_to_extra_body` to turn the value
+    into the API call's ``extra_body`` payload.
 
     Args:
         provider: The provider name (case-insensitive)
         model: The model name. ``None`` means the provider's default model.
 
     Returns:
-        True if the model uses thinking mode by default, False otherwise
-        (including unknown providers).
+        The model's built-in thinking default (``True``, a dict, or ``False``),
+        or ``False`` for unknown providers.
     """
     found = _registry.get(provider)
     return found.default_thinking(model) if found is not None else False
+
+
+def apply_thinking_to_extra_body(call_kwargs: dict, thinking) -> None:
+    """Add the resolved thinking mode to ``call_kwargs``' ``extra_body``.
+
+    Thinking values may be:
+
+    - ``True`` -- the flag-style providers (DeepSeek, Alibaba/Qwen) send
+      ``extra_body={'enable_thinking': True}``;
+    - a **dict** -- passed through verbatim as ``extra_body['thinking']``
+      (e.g. MiniMax-M3's ``{'type': 'adaptive'}``, which its
+      OpenAI-compatible API accepts with ``type`` ``disabled``/``adaptive``);
+    - falsy (``False`` / ``None``) -- nothing is sent.
+
+    The ``call_kwargs`` dict is mutated in place; ``extra_body`` is created
+    when needed.
+    """
+    if thinking is True:
+        call_kwargs.setdefault("extra_body", {})["enable_thinking"] = True
+    elif isinstance(thinking, dict):
+        call_kwargs.setdefault("extra_body", {})["thinking"] = dict(thinking)
+
+
+def format_thinking_display(thinking) -> str:
+    """Render a thinking value for human-readable display.
+
+    ``True`` (or any truthy non-dict) renders as ``"enabled"``; a structured
+    dict (e.g. MiniMax-M3's ``{'type': 'adaptive'}``) renders as
+    ``"enabled (<type>)"``; falsy values render as ``"disabled"``.
+    """
+    if isinstance(thinking, dict) and thinking.get("type"):
+        return f"enabled ({thinking['type']})"
+    return "enabled" if thinking else "disabled"
 
 
 def get_supported_api_types_from_provider(

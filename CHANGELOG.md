@@ -11,6 +11,31 @@ Changes since `v4.25.0` (2026-08-15).
 
 ### Changed
 
+- `MiniMax-M3` (minimax provider) now has thinking enabled by default. Its
+  OpenAI-compatible API takes a structured `thinking` parameter (`type` can be
+  `disabled` or `adaptive`; `adaptive` == thinking on), so the built-in default
+  is `thinking: {'type': 'adaptive'}` and is sent through as
+  `extra_body={'thinking': {'type': 'adaptive'}}` instead of the flag-style
+  `enable_thinking`. Thinking values may now be a plain `True` flag or a
+  pass-through dict (`apply_thinking_to_extra_body`). (`janito/provider_data.py`,
+  `janito/provider_accessors.py`, `janito/provider_models.py`,
+  `janito/openai_client/completions_helpers.py`,
+  `janito/openai_client/responses_helpers.py`,
+  `janito/openai_client/responses_state.py`, `janito/agent/completions.py`,
+  `janito/agent/responses.py`, `janito/web/backend/config.py`,
+  `janito/web/backend/routers/config.py`, `janito/cli/handlers/*.py`,
+  `janito/shell/cmds/status.py`, `docs/configuration/providers.md`,
+  `docs/reference/cli-options.md`, `docs/usage/web-ui.md`)
+- The built-in `MiniMax-M3` (minimax provider) context window is now 1M input
+  tokens (`max_input_tokens: 1000000`), up from 128k.
+  (`janito/provider_data.py`)
+- The `minimax` provider now uses per-API-type endpoints: the OpenAI-compatible
+  base URL `https://api.minimax.io/v1` (Completions/Responses) and the
+  Anthropic-compatible base URL `https://api.minimax.io/anthropic` for the
+  native Anthropic SDK API type, which is now selectable with
+  `--set api-type=Anthropic` / `--api-type Anthropic`.
+  (`janito/provider_data.py`, `docs/configuration/providers.md`,
+  `tests/test_provider_config.py`)
 - The `zai` provider default model is back to `glm-5.2` (the `glm-5.3`
   entry was removed) and its built-in endpoint is back to the standard Z.AI
   platform URL `https://api.z.ai/api/paas/v4/` (the GLM Coding Plan endpoint

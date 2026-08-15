@@ -6,6 +6,7 @@ from ...config_loaders import load_endpoint_from_config, load_model_from_config
 from ...config_store import get_config_path
 from ...general_config import get_active_provider
 from ...provider_accessors import (
+    format_thinking_display,
     get_default_api_type_from_provider,
     get_default_max_input_tokens_from_provider,
     get_default_max_output_tokens_from_provider,
@@ -72,7 +73,7 @@ def _model_rows(
     rows.append((f"{label} API types", api_types_display))
 
     thinking = get_default_thinking_from_provider(provider, model)
-    rows.append((f"{label} thinking", "enabled" if thinking else "disabled"))
+    rows.append((f"{label} thinking", format_thinking_display(thinking)))
 
     reasoning = get_default_reasoning_level_from_provider(provider, model)
     if reasoning:

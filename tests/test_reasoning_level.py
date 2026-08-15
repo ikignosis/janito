@@ -124,6 +124,21 @@ if pytest is not None:
         client_mod.send_prompt("hello", use_mcp=False, cli_provider="alibaba")
         assert fake_run.captured_kwargs["extra_body"]["enable_thinking"] is True
 
+    def test_send_prompt_thinking_defaults_on_for_minimax(monkeypatch):
+        """MiniMax-M3 reasons by default: the structured thinking dict is
+        passed through (extra_body thinking {'type': 'adaptive'}) without -t."""
+        fake_run = _fake_run_returns("hi")
+        monkeypatch.setattr(
+            client_mod,
+            "resolve_runtime_config",
+            lambda *a, **k: (None, "sk-test", "MiniMax-M3"),
+        )
+        monkeypatch.setattr(client_mod, "_run_with_progress_bar", fake_run)
+        client_mod.send_prompt("hello", use_mcp=False, cli_provider="minimax")
+        assert fake_run.captured_kwargs["extra_body"]["thinking"] == {
+            "type": "adaptive"
+        }
+
     def test_send_prompt_thinking_off_by_default_for_openai(monkeypatch):
         """OpenAI has no default thinking: enable_thinking is not sent."""
         fake_run = _fake_run_returns("hi")

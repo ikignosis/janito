@@ -12,7 +12,10 @@ build that per-round state and the call parameters; they were extracted from
 
 from typing import Any
 
-from janito.provider_accessors import get_responses_in_server_from_provider
+from janito.provider_accessors import (
+    apply_thinking_to_extra_body,
+    get_responses_in_server_from_provider,
+)
 
 
 def _init_conversation_state(
@@ -109,7 +112,7 @@ def _build_call_kwargs(
     max_output_tokens: int | None,
     reasoning_level: str | None,
     preserve_thinking: Any,
-    thinking: bool,
+    thinking,
     response_id: str | None,
     responses_in_server: bool,
     instructions: str | None,
@@ -135,9 +138,10 @@ def _build_call_kwargs(
             "preserve_thinking"
         ] = preserve_thinking
 
-    # Pass enable_thinking in extra_body if thinking flag is set
-    if thinking:
-        call_kwargs.setdefault("extra_body", {})["enable_thinking"] = True
+    # Pass the thinking mode in extra_body: enable_thinking for flag-style
+    # defaults, or the raw dict for providers with a structured thinking
+    # parameter (e.g. MiniMax-M3's {"type": "adaptive"}).
+    apply_thinking_to_extra_body(call_kwargs, thinking)
 
     # Stream the response. Token usage arrives on the final
     # response.completed event by default (part of the Response object);

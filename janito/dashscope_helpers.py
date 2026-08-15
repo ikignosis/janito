@@ -47,8 +47,10 @@ def _resolve_model_settings(
 ) -> tuple[bool, int, int | None]:
     """Resolve thinking mode and token limits for ``model``."""
     # Thinking mode: the explicit --thinking flag wins, otherwise the
-    # model's built-in default applies (True for Alibaba/Qwen, which
-    # reason by default). See provider_config.PROVIDER_INFO.
+    # model's built-in default applies (True for Alibaba/Qwen, which reason
+    # by default; the resolved value may be a dict for other providers, in
+    # which case its truthiness enables thinking here). See
+    # provider_config.PROVIDER_INFO.
     if not thinking:
         thinking = get_default_thinking_from_provider(provider, model)
 

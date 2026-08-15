@@ -21,6 +21,7 @@ from janito.config_loaders import (
 
 # Import provider configuration for base URLs and built-in defaults
 from janito.provider_accessors import (
+    apply_thinking_to_extra_body,
     get_default_max_input_tokens_from_provider,
     get_default_max_output_tokens_from_provider,
     get_default_reasoning_level_from_provider,
@@ -63,10 +64,19 @@ def _resolve_model_settings(
     thinking: bool,
     reasoning_level: str | None,
 ) -> tuple[bool, int | None, int | None, str | None]:
-    """Resolve thinking mode, token limits and reasoning level for ``model``."""
+    """Resolve thinking mode, token limits and reasoning level for ``model``.
+
+    Returns ``(thinking, max_output_tokens, max_input_tokens,
+    reasoning_level)`` where ``thinking`` is the resolved value: the
+    explicit ``--thinking`` flag (``True``) when given, otherwise the
+    model's built-in default (a ``True`` flag or a pass-through dict such as
+    MiniMax-M3's ``{'type': 'adaptive'}``).  See
+    :func:`apply_thinking_to_extra_body`.
+    """
     # Thinking mode: the explicit --thinking flag wins, otherwise the
     # model's built-in default applies (True for DeepSeek and Alibaba/Qwen,
-    # which reason by default). See provider_data.PROVIDER_INFO.
+    # a dict for MiniMax-M3, which reason by default). See
+    # provider_data.PROVIDER_INFO.
     if not thinking:
         thinking = get_default_thinking_from_provider(provider, model)
     max_output_tokens = load_max_output_tokens(provider, model)
@@ -101,7 +111,7 @@ def _build_call_kwargs(
     max_output_tokens: int | None,
     reasoning_level: str | None,
     preserve_thinking: Any,
-    thinking: bool,
+    thinking,
 ) -> dict[str, Any]:
     """Build the Chat Completions call parameters for one round."""
     call_kwargs = {
@@ -124,9 +134,10 @@ def _build_call_kwargs(
             "preserve_thinking"
         ] = preserve_thinking
 
-    # Pass enable_thinking in extra_body if thinking flag is set
-    if thinking:
-        call_kwargs.setdefault("extra_body", {})["enable_thinking"] = True
+    # Pass the thinking mode in extra_body: enable_thinking for flag-style
+    # defaults, or the raw dict for providers with a structured thinking
+    # parameter (e.g. MiniMax-M3's {"type": "adaptive"}).
+    apply_thinking_to_extra_body(call_kwargs, thinking)
 
     call_kwargs["stream"] = True
     call_kwargs["stream_options"] = {"include_usage": True}

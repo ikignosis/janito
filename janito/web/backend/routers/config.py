@@ -49,7 +49,10 @@ async def get_config(request: Request):
     return {
         "provider": config.provider,
         "model": config.model,
-        "thinking": config.effective_thinking,
+        # The frontend treats thinking as an on/off boolean; the raw
+        # effective value may be a provider-default dict (e.g. MiniMax-M3's
+        # {'type': 'adaptive'}), which is truthy => thinking on.
+        "thinking": bool(config.effective_thinking),
         "gmail": config.gmail,
         "onedrive": config.onedrive,
         "no_tools": config.no_tools,
@@ -165,7 +168,9 @@ async def set_thinking(request: Request):
     if isinstance(body, dict) and "thinking" in body:
         value = bool(body["thinking"])
     else:
-        value = not config.effective_thinking
+        # The effective value may be a provider-default dict (e.g. MiniMax-M3's
+        # {'type': 'adaptive'}); coerce to a plain bool before flipping.
+        value = not bool(config.effective_thinking)
     config.thinking_override = value
 
     logger.info(f"Runtime thinking set to {value} (in-memory, not persisted)")

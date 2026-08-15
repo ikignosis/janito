@@ -83,11 +83,14 @@ CUSTOM_ENDPOINT_MARKER = "CUSTOM_ENDPOINT"
 #   - "supported_reasoning_levels": the list of reasoning levels supported by
 #     the model, each with an ``effort`` key and a human-readable
 #     ``description``. Absent when the model has no configurable reasoning.
-#   - "thinking": whether thinking mode (``extra_body=
-#     {'enable_thinking': True}``) is enabled by default for the model.
-#     ``True`` for models that reason by default (DeepSeek, Alibaba/Qwen);
-#     absent (or ``False``) for the rest. The CLI ``--thinking`` flag still
-#     forces it on explicitly.
+#   - "thinking": the built-in default for thinking mode. May be a plain
+#     ``True`` flag -- sent as ``extra_body={'enable_thinking': True}`` --
+#     for models that reason by default (DeepSeek, Alibaba/Qwen), or a
+#     pass-through **dict** for models whose API takes a structured
+#     thinking parameter (MiniMax-M3: ``{'type': 'adaptive'}``, sent as
+#     ``extra_body={'thinking': {...}}``). Absent (or ``False``) means no
+#     built-in default. The CLI ``--thinking`` flag still forces it on
+#     explicitly. See :func:`apply_thinking_to_extra_body`.
 PROVIDER_INFO: dict[str, dict] = {
     # AI Providers with OpenAI-compatible APIs
     "openai": {
@@ -108,11 +111,29 @@ PROVIDER_INFO: dict[str, dict] = {
     "minimax": {
         "default_model": "MiniMax-M3",
         "endpoint": "https://api.minimax.io/v1",
+        # Per-API-type endpoints: the OpenAI-compatible base URL (Chat
+        # Completions / Responses) and the Anthropic-compatible base URL for
+        # the native Anthropic SDK API type. MiniMax's Anthropic-compatible
+        # API lives at https://api.minimax.io/anthropic, so the native-SDK
+        # API type is selectable with --set api-type=Anthropic /
+        # --api-type Anthropic (it requires the optional `anthropic` package;
+        # see REQUIRES_BY_API_TYPE).
+        "endpoint_by_api_type": {
+            "Completions": "https://api.minimax.io/v1",
+            "Responses": "https://api.minimax.io/v1",
+            "Anthropic": "https://api.minimax.io/anthropic",
+        },
         "models": {
             "MiniMax-M3": {
-                "supported_api_types": ["Completions"],
-                "max_input_tokens": 128000,
+                "supported_api_types": ["Completions", "Anthropic"],
+                "max_input_tokens": 1000000,  # 1M
                 "max_output_tokens": 511000,  # 512k
+                # MiniMax-M3 reasons by default. Its OpenAI-compatible API
+                # controls thinking with a `thinking` object (type can be
+                # "disabled" or "adaptive"; adaptive == thinking on), so the
+                # built-in default is a pass-through dict instead of a plain
+                # True flag (see apply_thinking_to_extra_body).
+                "thinking": {"type": "adaptive"},
             },
         },
     },
