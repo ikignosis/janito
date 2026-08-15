@@ -1,6 +1,6 @@
 """Info and configuration display CLI handlers."""
 
-from ...auth_config import get_api_key, get_auth_file_path, get_default_provider
+from ...auth_config import get_api_key, get_auth_file_path
 from ...config_keys import get_masked_api_key
 from ...config_loaders import load_endpoint_from_config, load_model_from_config
 from ...config_store import get_config_path
@@ -16,7 +16,7 @@ from ...provider_validation import is_custom_provider
 
 
 def _resolve_provider_source(args) -> tuple[str, str]:
-    """Resolve the provider, with priority CLI > config.json > auth.json > fallback."""
+    """Resolve the provider, with priority CLI > config.json > fallback."""
     cli_provider = getattr(args, "provider", None)
 
     # 1. Check CLI argument directly
@@ -26,11 +26,7 @@ def _resolve_provider_source(args) -> tuple[str, str]:
     config_provider = load_provider_from_config()
     if config_provider:
         return config_provider, "config.json"
-    # 3. Check auth.json for default provider
-    default_provider = get_default_provider()
-    if default_provider:
-        return default_provider, "auth.json (default)"
-    # 4. Fall back to 'openai'
+    # 3. Fall back to 'openai'
     return "openai", "fallback"
 
 

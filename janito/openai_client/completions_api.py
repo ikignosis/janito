@@ -12,7 +12,7 @@ from openai import AuthenticationError, NotFoundError, OpenAI
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
 # Import auth handling (API keys come from the auth store, not the environment)
-from janito.auth_config import get_api_key, get_default_provider
+from janito.auth_config import get_api_key
 
 # Import general configuration handling
 from janito.config_loaders import load_endpoint_from_config, load_model_from_config
@@ -103,10 +103,11 @@ def resolve_runtime_config(
         ValueError: If the API key or model cannot be resolved, or if a custom
             provider has no endpoint configured.
     """
-    # Provider: --provider CLI arg, then config.json, then auth.json default.
-    # If none of these is set, report that no provider is configured rather
-    # than silently assuming "openai".
-    provider = cli_provider or load_provider_from_config() or get_default_provider()
+    # Provider: --provider CLI arg, then config.json.  The default provider
+    # is stored under the ``provider`` key in config.json -- never in
+    # auth.json.  If none of these is set, report that no provider is
+    # configured rather than silently assuming "openai".
+    provider = cli_provider or load_provider_from_config()
     if not provider:
         logger.error("No provider configured")
         raise ValueError(

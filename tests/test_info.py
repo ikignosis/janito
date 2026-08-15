@@ -39,10 +39,6 @@ def _run(capsys, provider="openai", api_type=None):
             return_value=None,
         ),
         patch(
-            "janito.cli.handlers.info.get_default_provider",
-            return_value=None,
-        ),
-        patch(
             "janito.cli.handlers.info.load_model_from_config",
             return_value=None,
         ),

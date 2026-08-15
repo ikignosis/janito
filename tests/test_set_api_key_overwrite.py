@@ -61,26 +61,18 @@ if pytest is not None:
         assert ac.get_api_key("openai") == "sk-first"
         assert called["input"] is False
 
-    def test_set_api_key_sets_default_provider_when_missing(monkeypatch, tmp_path):
+    def test_set_api_key_does_not_write_default_provider(monkeypatch, tmp_path):
         _use_temp_config(monkeypatch, tmp_path)
         monkeypatch.setattr(sys, "stdin", _FakeStdin(tty=True))
 
-        assert ac.get_default_provider() is None
         rc = handle_set_api_key(_args(key="sk-first"))
         assert rc == 0
-        # With no default provider configured, the keyed provider becomes it.
-        assert ac.get_default_provider() == "openai"
-
-    def test_set_api_key_keeps_existing_default_provider(monkeypatch, tmp_path):
-        _use_temp_config(monkeypatch, tmp_path)
-        monkeypatch.setattr(sys, "stdin", _FakeStdin(tty=True))
-
-        ac.set_default_provider("moonshot")
-        rc = handle_set_api_key(_args(key="sk-new"))
-        assert rc == 0
-        # An existing default provider is never overwritten.
-        assert ac.get_default_provider() == "moonshot"
-        assert ac.get_api_key("openai") == "sk-new"
+        # The default provider belongs in config.json; auth.json only holds
+        # provider -> API key pairs, never a "provider" metadata key.
+        assert ac.get_api_key("openai") == "sk-first"
+        config = ac.load_auth_config()
+        assert "provider" not in config
+        assert config == {"openai": "sk-first"}
 
     def test_existing_key_confirmed_overwrites(monkeypatch, tmp_path, capsys):
         _use_temp_config(monkeypatch, tmp_path)
@@ -174,17 +166,6 @@ if pytest is not None:
         assert ac.get_api_key("alibaba") == "sk-cfg"
         assert ac.get_api_key("openai") is None
         assert "Using configured provider 'alibaba'" in capsys.readouterr().out
-
-    def test_falls_back_to_auth_default_provider(monkeypatch, tmp_path, capsys):
-        _use_temp_config(monkeypatch, tmp_path)
-        # A default provider stored in auth.json (the "provider" key).
-        ac.set_default_provider("moonshot")
-        monkeypatch.setattr(sys, "stdin", _FakeStdin(tty=True))
-
-        rc = handle_set_api_key(_args(provider=None, key="sk-auth"))
-        assert rc == 0
-        assert ac.get_api_key("moonshot") == "sk-auth"
-        assert "Using configured provider 'moonshot'" in capsys.readouterr().out
 
 else:  # pragma: no cover - fallback runner without pytest
 

@@ -31,7 +31,6 @@ Config keys come in three scopes:
 
 import logging
 
-from .auth_config import get_default_provider
 from .config_keys import normalize_provider
 from .config_loaders import load_api_type, load_model_from_config
 from .config_store import get_config_value
@@ -78,8 +77,7 @@ def get_active_provider() -> str:
 
     Priority:
     1. Provider from config.json
-    2. Default provider from auth.json
-    3. Fallback to 'openai'
+    2. Fallback to 'openai'
 
     Returns:
         str: The active provider name
@@ -90,13 +88,7 @@ def get_active_provider() -> str:
         logger.debug(f"Active provider from config: {config_provider}")
         return config_provider
 
-    # 3. Check auth.json for default provider
-    default_provider = get_default_provider()
-    if default_provider:
-        logger.debug(f"Active provider from auth defaults: {default_provider}")
-        return default_provider
-
-    # 4. Fall back to 'openai'
+    # 2. Fall back to 'openai'
     logger.debug("No provider found, using fallback: openai")
     return "openai"
 
@@ -124,7 +116,7 @@ def resolve_api_type(
         model's entry (falling back to the default model's entry for models
         without a built-in entry).
       - provider: ``--provider`` (``cli_provider``), then the configured
-        provider (config.json), then auth.json's default, then ``"openai"``.
+        provider (config.json), then ``"openai"``.
 
     Args:
         cli_api_type: API type passed via ``--api-type`` (highest priority).

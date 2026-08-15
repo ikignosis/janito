@@ -11,6 +11,9 @@ Changes since `v4.24.0` (2026-08-13).
 
 ### Added
 
+- **`glm-5.3` model for the `zai` provider**: registered as a built-in model
+  and made the new default for Z.AI (`PROVIDER_INFO["zai"]["default_model"]`).
+  `glm-5.2` remains available.
 - **Shell `/provider` command**: switch the active provider from the
   interactive shell with `/provider <name>` (validated against the supported
   providers and registered variants, persisted as the `provider` config key,
@@ -30,11 +33,12 @@ Changes since `v4.24.0` (2026-08-13).
   announcement when defined.
 - **Simpler ReadFile result message**: `ReadFile` now reports only the number
   of lines read, dropping the explicit line range from the result message.
-- **First API key sets the default provider**: when an API key is stored via
-  `--set-api-key` (or `set_api_key`/`AuthConfigStore.set_api_key`) and no
-  default provider (the `provider` metadata key in `auth.json`) is configured
-  yet, the default is set to the provider for which the new key was stored.
-  An already-configured default provider is left untouched.
+- **Default provider stored in `config.json`, not `auth.json`**: the
+  `provider` default (set with `--set provider=<name>` or the web Settings
+  drawer) lives only in `~/.janito/config.json`; `auth.json` now holds
+  nothing but provider -> API key pairs. Storing an API key no longer
+  auto-promotes that provider to the default (the `provider` metadata key
+  is no longer written to or read from `auth.json`).
 - **Per-model configuration**: per-model settings (max input/output tokens,
   reasoning level, API type, responses-in-server, thinking) moved out of the
   provider level of `PROVIDER_INFO` into a per-provider `models` dict, with a

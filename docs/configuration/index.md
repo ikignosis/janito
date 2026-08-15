@@ -63,7 +63,7 @@ precedence over `~/.janito/auth.json`.
 
 > **Note:** If an API key is already stored for a provider, `--set-api-key` warns you and asks for confirmation before overwriting it. Pass `-f`/`--force` to overwrite without prompting (useful for scripts and non-interactive use).
 
-> **Note:** `--set-api-key` targets the provider given with `--provider`. When `--provider` is omitted, the configured default provider is used (the `provider` value from `config.json`, or the auth default); if none is configured, janito exits with an error.
+> **Note:** `--set-api-key` targets the provider given with `--provider`. When `--provider` is omitted, the configured default provider is used (the `provider` value from `config.json`); if none is configured, janito exits with an error.
 
 ## Next Steps
 

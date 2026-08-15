@@ -187,15 +187,13 @@ class AuthConfigStore(JsonFileStore):
     def set_api_key(self, provider: str, api_key: str) -> bool:
         """Store an API key for a provider; returns success.
 
-        When no default provider (the ``provider`` metadata key) is
-        configured yet, it is set to the provider for which the new key was
-        stored, so the newly-keyed provider becomes the default.
+        The default provider lives in ``config.json`` (the ``provider``
+        key), never in ``auth.json``: storing a key does not change which
+        provider is the default.
         """
         logger.debug(f"Setting API key for provider: {provider}")
         config = self.load()
         config[provider] = api_key
-        if not config.get("provider"):
-            config["provider"] = provider
         result = self.save(config)
         if result:
             logger.info(f"API key saved for provider: {provider}")
@@ -212,8 +210,8 @@ class AuthConfigStore(JsonFileStore):
         return api_key
 
     def list_providers(self) -> list:
-        """List all configured providers (excludes the ``provider`` default)."""
-        return self.list_keys(exclude={"provider"})
+        """List all configured providers (auth.json only holds API keys)."""
+        return self.list_keys()
 
     def delete_api_key(self, provider: str) -> bool:
         """Delete the API key for a provider; returns ``True`` if removed."""
@@ -222,23 +220,6 @@ class AuthConfigStore(JsonFileStore):
             del config[provider]
             return self.save(config)
         return False
-
-    def set_default_provider(self, provider: str) -> bool:
-        """Store the default provider under the ``provider`` metadata key."""
-        config = self.load()
-        config["provider"] = provider
-        return self.save(config)
-
-    def get_default_provider(self) -> str | None:
-        """Get the default provider name from the ``provider`` key."""
-        return self.get("provider")
-
-    def get_default_provider_api_key(self) -> str | None:
-        """Get the API key of the default provider, if one is set."""
-        provider = self.get_default_provider()
-        if provider:
-            return self.get_api_key(provider)
-        return None
 
 
 class SecretsConfigStore(JsonFileStore):

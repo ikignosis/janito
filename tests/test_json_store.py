@@ -147,35 +147,25 @@ if pytest is not None:
         assert store.get_api_key("openai") == "sk-1"
         assert store.get_api_key("missing") is None
         assert store.list_providers() == ["openai"]
-        assert store.set_default_provider("openai") is True
-        assert store.get_default_provider() == "openai"
-        # list_providers excludes the metadata key.
-        assert store.list_providers() == ["openai"]
-        assert store.get_default_provider_api_key() == "sk-1"
         assert store.delete_api_key("openai") is True
         assert store.delete_api_key("openai") is False
-        assert store.get_default_provider_api_key() is None
         # The auth file got restrictive permissions.
         mode = (base / "auth.json").stat().st_mode & 0o777
         assert mode == 0o600
 
-    def test_auth_store_sets_default_provider_when_missing(monkeypatch, tmp_path):
-        """Storing the first API key also sets the default provider."""
-        _point_at(monkeypatch, tmp_path)
-        store = AuthConfigStore()
-        assert store.get_default_provider() is None
-        assert store.set_api_key("openai", "sk-1") is True
-        assert store.get_default_provider() == "openai"
-        assert store.get_default_provider_api_key() == "sk-1"
+    def test_auth_store_does_not_write_provider_key(monkeypatch, tmp_path):
+        """Storing an API key never writes the ``provider`` default into auth.json.
 
-    def test_auth_store_keeps_existing_default_provider(monkeypatch, tmp_path):
-        """A configured default provider is never overwritten by set_api_key."""
+        The default provider belongs in config.json; auth.json only holds
+        provider -> API key pairs.
+        """
         _point_at(monkeypatch, tmp_path)
         store = AuthConfigStore()
-        assert store.set_default_provider("moonshot") is True
         assert store.set_api_key("openai", "sk-1") is True
-        assert store.get_default_provider() == "moonshot"
-        assert store.get_default_provider_api_key() == store.get_api_key("moonshot")
+        config = store.load()
+        assert config == {"openai": "sk-1"}
+        assert "provider" not in config
+        assert store.list_providers() == ["openai"]
 
     def test_auth_store_local_merge(monkeypatch, tmp_path):
         _point_at(monkeypatch, tmp_path)

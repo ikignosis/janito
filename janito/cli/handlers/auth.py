@@ -7,7 +7,6 @@ from ...auth_config import (
     get_api_key,
     get_auth_file_path,
     get_auth_file_paths,
-    get_default_provider,
     set_api_key,
 )
 from ...config_keys import get_masked_api_key
@@ -49,8 +48,8 @@ def handle_set_api_key(args) -> int:
 
     The target provider is taken from ``--provider``; when it is not given,
     the configured default provider is used (the ``provider`` value from
-    config.json, or the default provider stored in auth.json). If no default
-    provider is configured either, the command fails with an error.
+    config.json). If no default provider is configured either, the command
+    fails with an error.
 
     If an API key is already stored for the provider, the user is warned and
     prompted to approve the overwrite unless ``--force`` was given. When stdin
@@ -65,7 +64,7 @@ def handle_set_api_key(args) -> int:
     """
     provider = args.provider
     if not provider:
-        provider = load_provider_from_config() or get_default_provider()
+        provider = load_provider_from_config()
         if not provider:
             print(
                 "Error: no provider given and no default provider is configured",
@@ -139,7 +138,7 @@ def handle_list_keys(args) -> int:
         print(f"Config file: {auth_file}")
         with open(auth_file, "r", encoding="utf-8") as f:
             config = json.load(f)
-        providers = [key for key in config if key != "provider"]
+        providers = list(config.keys())
         if not providers:
             print("  (no providers configured)")
             print()

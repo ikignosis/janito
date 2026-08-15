@@ -5,9 +5,12 @@ Handles storage and retrieval of API keys in ~/.janito/auth.json
 
 Structure:
 {
-    "provider": "openai",  # Optional: default provider to use
     "openai": "sk-xxxxx..."
 }
+
+The default provider is a configuration concern: it is stored under the
+``provider`` key in ~/.janito/config.json (see janito.general_config),
+never in auth.json.
 """
 
 import logging
@@ -54,7 +57,7 @@ def load_auth_config() -> dict[str, str]:
     entries take precedence; otherwise only the base file is read.
 
     Returns:
-        Dict of provider -> API key (plus the optional ``provider`` default).
+        Dict of provider -> API key.
     """
     return _store.load()
 
@@ -68,9 +71,8 @@ def set_api_key(provider: str, api_key: str) -> bool:
     """
     Set an API key for a specific provider.
 
-    When no default provider (the ``provider`` metadata key) is configured
-    yet, it is set to ``provider`` so the newly-keyed provider becomes the
-    default.
+    The default provider is not touched: it is stored in config.json (the
+    ``provider`` key), never in auth.json.
 
     Args:
         provider: The provider name (e.g., 'openai')
@@ -99,8 +101,6 @@ def list_providers() -> list:
     """
     List all configured providers (API keys).
 
-    Note: This excludes the 'provider' key which is metadata for the default provider.
-
     Returns:
         List of provider names
     """
@@ -118,39 +118,3 @@ def delete_api_key(provider: str) -> bool:
         True if deleted, False if not found
     """
     return _store.delete_api_key(provider)
-
-
-def set_default_provider(provider: str) -> bool:
-    """
-    Set the default provider to use.
-
-    Args:
-        provider: The provider name (e.g., 'openai')
-
-    Returns:
-        True if successful, False otherwise
-    """
-    return _store.set_default_provider(provider)
-
-
-def get_default_provider() -> str | None:
-    """
-    Get the default provider from configuration.
-
-    Returns:
-        The default provider name if set, None otherwise
-    """
-    return _store.get_default_provider()
-
-
-def get_default_provider_api_key() -> str | None:
-    """
-    Get the API key for the default provider.
-
-    This function reads the 'provider' key from the config to determine
-    which provider to use, then retrieves the corresponding API key.
-
-    Returns:
-        The API key for the default provider if found, None otherwise
-    """
-    return _store.get_default_provider_api_key()
