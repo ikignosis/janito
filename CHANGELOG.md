@@ -11,6 +11,12 @@ Changes since `v4.25.0` (2026-08-15).
 
 ### Changed
 
+- The `zai` provider default model is back to `glm-5.2` (the `glm-5.3`
+  entry was removed) and its built-in endpoint is back to the standard Z.AI
+  platform URL `https://api.z.ai/api/paas/v4/` (the GLM Coding Plan endpoint
+  `https://api.z.ai/api/coding/paas/v4` is no longer used).
+  (`janito/provider_data.py`, `README.md`,
+  `docs/configuration/providers.md`, `tests/test_config_loaders.py`)
 - `-S`/`--system-prompt` no longer disables tools; only `-Z`/`--no-system-prompt`
   suppresses them, so a custom system prompt can still use the built-in, Gmail,
   OneDrive and MCP tools. (`janito/cli/session_setup.py`,
