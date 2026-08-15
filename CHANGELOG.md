@@ -11,6 +11,20 @@ Changes since `v4.25.0` (2026-08-15).
 
 ### Changed
 
+- The system exec tools (`RunBashCode`, `RunPythonCode`, `RunPythonFile`,
+  `RunPowerShellCode`, `RunGitHubCLI`) no longer cap `stdout`/`stderr` at 50
+  lines nor mirror the overflow to a kept temp file.  The full captured output
+  is now returned inline in the result dict (still streamed to the screen in
+  real-time), and the `stdout_file` / `stderr_file` keys, the
+  `Full stdout/stderr available at ...` pointers and the
+  `Full stdout stored at <tmp>...` report tails are gone.
+  (`janito/tools/system/_streaming.py`, `janito/tools/system/run_bash_code.py`,
+  `janito/tools/system/run_python_code.py`,
+  `janito/tools/system/run_python_file.py`,
+  `janito/tools/system/run_powershell_code.py`,
+  `janito/tools/system/run_github_cli.py`,
+  `janito/tools/system/_exec_cli.py`, `tests/test_run_bash_code.py`,
+  `docs/TOOL.md`)
 - `MiniMax-M3` (minimax provider) now has thinking enabled by default. Its
   OpenAI-compatible API takes a structured `thinking` parameter (`type` can be
   `disabled` or `adaptive`; `adaptive` == thinking on), so the built-in default

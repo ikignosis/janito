@@ -21,8 +21,7 @@ from typing import Any
 
 from ...tooling import BaseTool, format_duration_ms, norm_path
 from ...tooling.decorator import tool
-from ._output_capture import OutputCapture, build_report_message, print_stored_files
-from ._streaming import stream_execute
+from ._streaming import lines_to_text, preview_lines, stream_execute
 
 
 @tool(permissions="x")
@@ -116,15 +115,6 @@ class RunPythonFile(BaseTool):
                 norm_path(abs_working_dir),
             )
 
-            stdout_capture = OutputCapture("stdout")
-            stderr_capture = OutputCapture("stderr")
-
-            def _tee(stream_name: str, line: str) -> None:
-                if stream_name == "stdout":
-                    stdout_capture.add(line)
-                elif stream_name == "stderr":
-                    stderr_capture.add(line)
-
             exit_code, stdout_lines, stderr_lines, execution_time_ms = stream_execute(
                 python_command,
                 abs_working_dir,
@@ -133,7 +123,6 @@ class RunPythonFile(BaseTool):
                 timeout,
                 start_time,
                 self.report_output,
-                tee=_tee,
             )
 
             return self._build_result(
@@ -142,8 +131,8 @@ class RunPythonFile(BaseTool):
                 file_path,
                 working_directory,
                 abs_working_dir,
-                stdout_capture,
-                stderr_capture,
+                stdout_lines,
+                stderr_lines,
                 capture_output,
                 capture_errors,
                 execution_time_ms,
@@ -237,25 +226,19 @@ class RunPythonFile(BaseTool):
         file_path: str,
         working_directory: str | None,
         abs_working_dir: str,
-        stdout_capture: OutputCapture,
-        stderr_capture: OutputCapture,
+        stdout_lines: list[str],
+        stderr_lines: list[str],
         capture_output: bool,
         capture_errors: bool,
         execution_time_ms: int,
     ) -> dict[str, Any]:
         """Assemble the result dict and report the outcome.
 
-        stdout/stderr are capped at ``MAX_OUTPUT_LINES``; when a stream is
-        longer, the full output lives in a kept temp file referenced by the
-        ``stdout_file`` / ``stderr_file`` keys (issue #49).
+        stdout/stderr carry the full captured output inline.
         """
         success = exit_code == 0
-        stdout_text, stdout_file = (
-            stdout_capture.finalize() if capture_output else ("", None)
-        )
-        stderr_text, stderr_file = (
-            stderr_capture.finalize() if capture_errors else ("", None)
-        )
+        stdout_text = lines_to_text(stdout_lines) if capture_output else ""
+        stderr_text = lines_to_text(stderr_lines) if capture_errors else ""
         output_result = {
             "success": success,
             "exit_code": exit_code,
@@ -266,20 +249,14 @@ class RunPythonFile(BaseTool):
         }
         if capture_output:
             output_result["stdout"] = stdout_text
-            if stdout_file:
-                output_result["stdout_file"] = stdout_file
         if capture_errors:
             output_result["stderr"] = stderr_text
-            if stderr_file:
-                output_result["stderr_file"] = stderr_file
         if success:
             self._report_success(
-                execution_time_ms, capture_output, stdout_capture, stderr_capture
+                execution_time_ms, capture_output, stdout_lines, stderr_lines
             )
         else:
-            self._report_failure(
-                exit_code, capture_errors, stderr_capture, stdout_capture
-            )
+            self._report_failure(exit_code, capture_errors, stderr_lines, stdout_lines)
             output_result[
                 "error"
             ] = f"Python file execution failed with exit code {exit_code}"
@@ -289,37 +266,27 @@ class RunPythonFile(BaseTool):
         self,
         execution_time_ms: int,
         capture_output: bool,
-        stdout_capture: OutputCapture,
-        stderr_capture: OutputCapture,
+        stdout_lines: list[str],
+        stderr_lines: list[str],
     ) -> None:
         """Report a successful execution summary."""
         output_summary = f"Completed in {format_duration_ms(execution_time_ms)}"
-        if capture_output and stdout_capture.line_count():
-            output_summary += f" ({stdout_capture.line_count()} lines output)"
-        stored = build_report_message(
-            stdout_capture.file_path, stderr_capture.file_path
-        )
-        if stored:
-            output_summary += f" — {stored}"
+        if capture_output and stdout_lines:
+            output_summary += f" ({len(stdout_lines)} lines output)"
         self.report_result(output_summary)
 
     def _report_failure(
         self,
         exit_code: int,
         capture_errors: bool,
-        stderr_capture: OutputCapture,
-        stdout_capture: OutputCapture,
+        stderr_lines: list[str],
+        stdout_lines: list[str],
     ) -> None:
         """Report a failed execution, truncating long stderr previews."""
         error_msg = f"Exit code {exit_code}"
-        if capture_errors and stderr_capture.line_count():
-            stderr_preview = stderr_capture.preview(100)
+        if capture_errors and stderr_lines:
+            stderr_preview = preview_lines(stderr_lines, 100)
             error_msg += f": {stderr_preview}"
-        stored = build_report_message(
-            stdout_capture.file_path, stderr_capture.file_path
-        )
-        if stored:
-            error_msg += f" — {stored}"
         self.report_error(error_msg)
 
 
@@ -406,7 +373,6 @@ Examples:
                 print("\nStderr:")
                 print(result["stderr"])
 
-            print_stored_files(result)
         else:
             print("? Python file execution failed")
             print(f"  Error: {result.get('error', 'Unknown error')}")
@@ -424,8 +390,6 @@ Examples:
             if result.get("stderr"):
                 print("\nStderr:")
                 print(result["stderr"])
-
-            print_stored_files(result)
 
     return 0 if result["success"] else 1
 

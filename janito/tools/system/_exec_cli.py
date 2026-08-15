@@ -12,7 +12,6 @@ import os
 from typing import Any
 
 from ...tooling import format_duration_ms, norm_path
-from ._output_capture import print_stored_files
 
 
 def run_cli(
@@ -165,7 +164,6 @@ def _print_result(
             print("\nStderr:")
             print(result["stderr"])
 
-        print_stored_files(result)
     else:
         print(f"\u2717 {tool_name} execution failed")
         print(f"  Error: {result.get('error', 'Unknown error')}")
@@ -182,5 +180,3 @@ def _print_result(
         if result.get("stderr"):
             print("\nStderr:")
             print(result["stderr"])
-
-        print_stored_files(result)
