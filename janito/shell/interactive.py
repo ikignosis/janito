@@ -160,15 +160,10 @@ class InteractiveShell(_SessionMixin):
         """Handle the F2 restart keybinding; True when the loop continues."""
         if not self.restart_requested:
             return False
-        # Reset to a fresh conversation while preserving the system prompt
-        # (matches startup behaviour). A plain .clear() would drop the
-        # system prompt and leave an empty history.
-        self.initialize_history(system_prompt=self._system_prompt)
         # Clear screen before printing the message
         os.system("cls" if os.name == "nt" else "clear")
-        _rich_console.print(
-            "[Keybinding F2] Conversation history cleared. Starting fresh conversation.",
-            style="bold white on green",
+        self._reset_conversation(
+            "[Keybinding F2] Conversation history cleared. Starting fresh conversation."
         )
         return True
 

@@ -133,7 +133,7 @@ def _read_code(args, parser) -> str | None:
             print(f"Error: File not found: {args.file}")
             return None
         try:
-            with open(args.file, "r", encoding="utf-8") as f:
+            with open(args.file, encoding="utf-8") as f:
                 code = f.read()
         except Exception as e:
             print(f"Error reading file: {e}")

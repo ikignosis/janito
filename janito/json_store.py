@@ -99,7 +99,7 @@ class JsonFileStore:
                 if not path.exists():
                     continue
                 try:
-                    with open(path, "r", encoding="utf-8") as f:
+                    with open(path, encoding="utf-8") as f:
                         content = f.read()
                     logger.debug(f"Loaded config from {path}")
                     merged.update(json.loads(content))
@@ -111,7 +111,7 @@ class JsonFileStore:
         # Single-file mode (no local merge): read the base file only.
         path = self.file_path()
         try:
-            with open(path, "r", encoding="utf-8") as f:
+            with open(path, encoding="utf-8") as f:
                 return json.load(f)
         except FileNotFoundError:
             logger.debug(f"Config file '{self.filename}' not found: {path}")

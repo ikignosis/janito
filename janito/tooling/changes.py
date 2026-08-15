@@ -205,7 +205,7 @@ class ChangesTracker:
             if not changes_path.exists():
                 return records
             with self._lock:
-                with open(changes_path, "r", encoding="utf-8") as f:
+                with open(changes_path, encoding="utf-8") as f:
                     for line in f:
                         line = line.strip()
                         if not line:

@@ -12,7 +12,7 @@ event types.  The web path re-exports these names unchanged.
 """
 
 from dataclasses import dataclass
-from typing import Any, ClassVar, Union
+from typing import Any, ClassVar
 
 
 def _safe_result(result: Any) -> Any:
@@ -209,18 +209,18 @@ class ErrorEvent:
         return {"type": self.type, "message": self.message}
 
 
-AgentEvent = Union[
-    TokenEvent,
-    ReasoningEvent,
-    ToolCallEvent,
-    ToolResultEvent,
-    WaitingEvent,
-    ToolProgressEvent,
-    ImageEvent,
-    UsageEvent,
-    DoneEvent,
-    ErrorEvent,
-]
+AgentEvent = (
+    TokenEvent
+    | ReasoningEvent
+    | ToolCallEvent
+    | ToolResultEvent
+    | WaitingEvent
+    | ToolProgressEvent
+    | ImageEvent
+    | UsageEvent
+    | DoneEvent
+    | ErrorEvent
+)
 
 
 def event_to_dict(event: AgentEvent) -> dict[str, Any]:

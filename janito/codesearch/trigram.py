@@ -11,10 +11,8 @@ For keyword search we extract all trigrams from each keyword and
 construct an AND/OR query over the posting lists.
 """
 
-from typing import Set
 
-
-def extract_trigrams(text: str) -> Set[str]:
+def extract_trigrams(text: str) -> set[str]:
     """
     Extract all trigrams from a text string.
 
@@ -31,7 +29,7 @@ def extract_trigrams(text: str) -> Set[str]:
     return {text[i : i + 3] for i in range(len(text) - 2)}
 
 
-def trigrams_for_keyword(keyword: str) -> Set[str]:
+def trigrams_for_keyword(keyword: str) -> set[str]:
     """
     Return the set of trigrams that must ALL be present in a document
     for the keyword to appear.
@@ -53,7 +51,7 @@ def trigrams_for_keyword(keyword: str) -> Set[str]:
     return extract_trigrams(keyword)
 
 
-def build_trigram_query(keywords: list[str]) -> dict[str, Set[str]]:
+def build_trigram_query(keywords: list[str]) -> dict[str, set[str]]:
     """
     Build a trigram query from a list of keywords.
 
@@ -68,7 +66,7 @@ def build_trigram_query(keywords: list[str]) -> dict[str, Set[str]]:
         A dict mapping each keyword to its trigram set.
         Keywords shorter than 3 characters map to an empty set.
     """
-    result: dict[str, Set[str]] = {}
+    result: dict[str, set[str]] = {}
     for kw in keywords:
         result[kw] = trigrams_for_keyword(kw)
     return result

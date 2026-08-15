@@ -87,7 +87,7 @@ class ReplaceTextInFile(BaseTool):
             self.report_progress(f" {size_str}", end="\n")
 
             # Read the file content
-            with open(abs_filepath, "r", encoding="utf-8") as f:
+            with open(abs_filepath, encoding="utf-8") as f:
                 content = f.read()
 
             # Count occurrences of old_str

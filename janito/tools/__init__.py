@@ -7,11 +7,14 @@ dynamically based on the AUTOLOAD_TOOLSETS configuration.
 
 import importlib
 import inspect
+import logging
 import os
 from collections.abc import Callable
 from typing import get_type_hints
 
 from ..tooling.decorator import is_tool
+
+logger = logging.getLogger(__name__)
 
 # Tools that were skipped during discovery because their should_load()
 # validation failed, mapped to a human-readable reason.
@@ -49,7 +52,8 @@ def _check_should_load(cls: type) -> bool:
             return True
         reason = getattr(cls, "_load_skip_reason", "") or "should_load() returned False"
         _skipped_tools[cls.__name__] = reason
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - discovery must never break the agent loop
+        logger.warning("Tool %s should_load() raised: %s", cls.__name__, e)
         _skipped_tools[cls.__name__] = f"should_load() raised {type(e).__name__}: {e}"
     return False
 
@@ -185,9 +189,11 @@ def _load_module_tools(toolset_name: str, module_name: str, tools: dict) -> None
     try:
         # Import the module
         module = importlib.import_module(full_module_name)
-    except Exception:
-        # Silently skip modules that can't be imported
-        # In a real system, you might want to log this
+    except Exception as e:  # noqa: BLE001 - discovery must never break the agent loop
+        # Skip modules that can't be imported (missing optional dependency,
+        # platform-specific tool, broken toolset) but surface the cause so a
+        # tool that silently fails to load can be diagnosed.
+        logger.warning("Skipping tool module %s: %s", full_module_name, e)
         return
 
     _collect_module_tools(module, full_module_name, tools)

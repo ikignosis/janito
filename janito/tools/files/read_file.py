@@ -93,7 +93,7 @@ class ReadFile(BaseTool):
             self.report_progress(f" {size_str}", end="")
 
             # Read the file and determine total lines
-            with open(abs_filepath, "r", encoding="utf-8") as f:
+            with open(abs_filepath, encoding="utf-8") as f:
                 all_lines = f.readlines()
 
             total_lines = len(all_lines)

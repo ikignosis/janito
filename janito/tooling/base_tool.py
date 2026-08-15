@@ -215,22 +215,3 @@ class BaseTool(ABC):
         except (EOFError, KeyboardInterrupt):
             answer = ""
         return answer
-
-    def _get_permission_color(self) -> str:
-        """
-        Get rich style name based on tool permissions.
-
-        Returns:
-            str: Rich style name
-        """
-        permissions = getattr(self, "_tool_permissions", "")
-        if not permissions:
-            return "cyan"  # Cyan for no permissions (default)
-        elif "x" in permissions:
-            return "red"  # Red for execute (dangerous)
-        elif "w" in permissions:
-            return "yellow"  # Yellow for write
-        elif "r" in permissions:
-            return "green"  # Green for read-only (safe)
-        else:
-            return "cyan"  # Cyan as fallback

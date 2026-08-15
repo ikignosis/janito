@@ -13,17 +13,15 @@ from ...secrets_config import (
 )
 
 
-def handle_set_secret(args) -> int:
+def handle_set_secret(values: list[str]) -> int:
     """Handle --set-secret command.
 
     Args:
-        args: Parsed command line arguments
+        values: List of ``KEY=VALUE`` strings to store (already flattened).
 
     Returns:
         int: Exit code (0 for success, non-zero for error)
     """
-    values = getattr(args, "_set_secret_vals", None) or args.set_secret
-
     if not values:
         print("[ERROR] At least one KEY=VALUE pair required.", file=sys.stderr)
         print(
@@ -70,14 +68,6 @@ def handle_get_secret(args) -> int:
     Returns:
         int: Exit code (0 for success, non-zero for error)
     """
-    # Handle both batch (from __main__ with flattened values) and standalone usage
-    if (
-        getattr(args, "_set_secret_vals", None) is not None
-        or getattr(args, "_delete_secret_keys", None) is not None
-    ):
-        # Called via batch mode but this handler was invoked — should not happen normally
-        pass
-
     keys = args.get_secret
     if keys is None:
         keys_flat = []
@@ -118,17 +108,15 @@ def handle_get_secret(args) -> int:
     return 1 if errors else 0
 
 
-def handle_delete_secret(args) -> int:
+def handle_delete_secret(values: list[str]) -> int:
     """Handle --delete-secret command.
 
     Args:
-        args: Parsed command line arguments
+        values: List of secret keys to delete (already flattened).
 
     Returns:
         int: Exit code (0 for success, non-zero for error)
     """
-    values = getattr(args, "_delete_secret_keys", None) or args.delete_secret
-
     if not values:
         print("[ERROR] At least one key required.", file=sys.stderr)
         print("Usage: janito --delete-secret key1 key2", file=sys.stderr)
@@ -183,7 +171,7 @@ def handle_list_secrets(args) -> int:
 
     for secrets_file in secrets_paths:
         print(f"Config file: {secrets_file}")
-        with open(secrets_file, "r", encoding="utf-8") as f:
+        with open(secrets_file, encoding="utf-8") as f:
             config = json.load(f)
         if not config:
             print("  (no secrets configured)")

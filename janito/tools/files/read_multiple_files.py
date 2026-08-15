@@ -64,7 +64,7 @@ def _read_one_file(
     if file_size > 0:
         tool.report_progress(f" ({file_size} bytes)", end="")
 
-    with open(abs_filepath, "r", encoding="utf-8") as f:
+    with open(abs_filepath, encoding="utf-8") as f:
         content, lines_read = _read_lines(f, max_lines)
 
     return {

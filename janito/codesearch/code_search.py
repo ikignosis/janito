@@ -21,9 +21,9 @@ and ``CodeSearchMatch`` dataclass) live in
 """
 
 import os
+from collections.abc import Iterator
 from datetime import datetime
 from pathlib import Path
-from typing import Iterator, List, Optional, Set
 
 from ..tools.files.gitignore_utils import (
     is_ignored_by_gitignore,
@@ -42,7 +42,7 @@ from .trigram import extract_trigrams
 
 # File extensions that are typically source code / text and worth indexing.
 # Files with these extensions are indexed; others are skipped.
-DEFAULT_INDEXABLE_EXTENSIONS: Set[str] = {
+DEFAULT_INDEXABLE_EXTENSIONS: set[str] = {
     # Programming languages
     ".py",
     ".js",
@@ -136,7 +136,7 @@ class CodeSearch:
     def __init__(self, source_path: str, index_db_path: str):
         self.source_path = Path(source_path).resolve()
         self.index_db_path = index_db_path
-        self._index: Optional[Index] = None
+        self._index: Index | None = None
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -279,7 +279,7 @@ class CodeSearch:
             mtime = stat.st_mtime
             size = stat.st_size
 
-            with open(filepath, "r", encoding="utf-8", errors="ignore") as fh:
+            with open(filepath, encoding="utf-8", errors="ignore") as fh:
                 content = fh.read()
 
             trigrams = extract_trigrams(content)
@@ -331,7 +331,7 @@ class CodeSearch:
         indexed_files = {f["path"]: f for f in index.get_all_files()}
 
         # Track which indexed files we have seen on disk
-        seen_paths: Set[str] = set()
+        seen_paths: set[str] = set()
 
         for filepath in self._iter_source_files():
             rel_path = self._relative_path(filepath)
@@ -356,7 +356,7 @@ class CodeSearch:
         self._record_last_update("update")
 
     def Find(
-        self, keywords: List[str], match: MATCH = MATCH.AND
+        self, keywords: list[str], match: MATCH = MATCH.AND
     ) -> Iterator[CodeSearchMatch]:
         """
         Find lines containing the given keywords, using whole-word matching.
@@ -436,7 +436,7 @@ class CodeSearch:
             "index_db_path": self.index_db_path,
         }
 
-    def last_update(self) -> Optional[dict]:
+    def last_update(self) -> dict | None:
         """
         Return info about the last Create()/Update() operation.
 
@@ -452,7 +452,7 @@ class CodeSearch:
         """
         return self._get_index().get_last_update()
 
-    def last_modified(self) -> Optional[float]:
+    def last_modified(self) -> float | None:
         """
         Return the time the index was last created or updated.
 

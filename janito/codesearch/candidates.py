@@ -9,10 +9,10 @@ lifecycle (create/update/close) while the matching logic lives here.
 """
 
 import re
+from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import Enum, auto
 from pathlib import Path
-from typing import Iterator, List, Optional, Set
 
 from .trigram import build_trigram_query
 
@@ -61,16 +61,16 @@ def compile_matchers(keywords: list[str]):
     return compiled, keywords_with_trigrams, keywords_without_trigrams
 
 
-def and_candidates(index, keywords_with_trigrams) -> Optional[List[int]]:
+def and_candidates(index, keywords_with_trigrams) -> list[int] | None:
     """Intersect the trigram posting lists for MATCH.AND."""
-    all_trigrams: Set[str] = set()
+    all_trigrams: set[str] = set()
     for tgs in keywords_with_trigrams.values():
         all_trigrams.update(tgs)
 
     if not all_trigrams:
         return None
 
-    candidate_ids: Optional[Set[int]] = None
+    candidate_ids: set[int] | None = None
     for trigram in all_trigrams:
         posting = set(index.get_posting_list(trigram))
         if candidate_ids is None:
@@ -84,11 +84,11 @@ def and_candidates(index, keywords_with_trigrams) -> Optional[List[int]]:
     return sorted(candidate_ids)
 
 
-def or_candidates(index, keywords_with_trigrams) -> Optional[List[int]]:
+def or_candidates(index, keywords_with_trigrams) -> list[int] | None:
     """Union the trigram posting lists for MATCH.OR."""
     candidate_ids = set()
     for tgs in keywords_with_trigrams.values():
-        keyword_ids: Optional[Set[int]] = None
+        keyword_ids: set[int] | None = None
         for trigram in tgs:
             posting = set(index.get_posting_list(trigram))
             if keyword_ids is None:
@@ -148,7 +148,7 @@ def scan_candidates(
             # Indexed file no longer exists on disk -> skip it.
             continue
         try:
-            with open(filepath, "r", encoding="utf-8", errors="ignore") as fh:
+            with open(filepath, encoding="utf-8", errors="ignore") as fh:
                 for lineno, line in enumerate(fh, 1):
                     content = line.rstrip("\n")
                     if match == MATCH.AND:

@@ -158,7 +158,8 @@ async def set_thinking(request: Request):
     config = _get_config(request)
     try:
         body = await request.json()
-    except Exception:
+    except Exception:  # noqa: BLE001 - treat an unreadable body as empty
+        logger.debug("Failed to read request body", exc_info=True)
         body = None
 
     if isinstance(body, dict) and "thinking" in body:
@@ -268,7 +269,8 @@ async def set_session_provider(request: Request):
 
     try:
         body = await request.json()
-    except Exception:
+    except Exception:  # noqa: BLE001 - unreadable body is a client error
+        logger.debug("Failed to read request body", exc_info=True)
         return JSONResponse({"detail": "Invalid JSON"}, status_code=400)
 
     raw = str(body.get("provider") or "").strip()
@@ -299,7 +301,12 @@ async def set_session_provider(request: Request):
     config.session_provider = provider
     try:
         config.model = load_model_from_config(provider)
-    except Exception:
+    except Exception:  # noqa: BLE001 - provider may simply have no configured model
+        logger.debug(
+            "Could not load a configured model for provider '%s'",
+            provider,
+            exc_info=True,
+        )
         config.model = None
 
     logger.info(
@@ -329,7 +336,8 @@ async def set_default_provider(request: Request):
 
     try:
         body = await request.json()
-    except Exception:
+    except Exception:  # noqa: BLE001 - unreadable body is a client error
+        logger.debug("Failed to read request body", exc_info=True)
         return JSONResponse({"detail": "Invalid JSON"}, status_code=400)
 
     raw = str(body.get("provider") or "").strip()
@@ -368,7 +376,12 @@ async def set_default_provider(request: Request):
     config.provider = provider
     try:
         config.model = load_model_from_config(provider)
-    except Exception:
+    except Exception:  # noqa: BLE001 - provider may simply have no configured model
+        logger.debug(
+            "Could not load a configured model for provider '%s'",
+            provider,
+            exc_info=True,
+        )
         config.model = None
 
     logger.info(f"Default provider set to '{provider}' (model: {config.model})")
@@ -391,7 +404,8 @@ async def set_provider_api_key(request: Request):
 
     try:
         body = await request.json()
-    except Exception:
+    except Exception:  # noqa: BLE001 - unreadable body is a client error
+        logger.debug("Failed to read request body", exc_info=True)
         return JSONResponse({"detail": "Invalid JSON"}, status_code=400)
 
     raw_provider = str(body.get("provider") or "").strip()

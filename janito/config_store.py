@@ -76,7 +76,7 @@ def _load_config_file(config_path: Path) -> dict[str, Any]:
         The parsed config, or an empty dict when the file is missing or invalid.
     """
     try:
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             return json.load(f)
     except FileNotFoundError:
         return {}
@@ -116,7 +116,7 @@ class ConfigStore:
         for config_path in reversed(paths):
             if not config_path.exists():
                 continue
-            with open(config_path, "r") as f:
+            with open(config_path) as f:
                 data = json.load(f)
             logger.debug(f"Loaded config from {config_path}: {list(data.keys())}")
             merged = _deep_merge(merged, data)

@@ -24,6 +24,24 @@ Changes since `v4.25.0` (2026-08-15).
   `janito/web/backend/templates/partials/tools_dialog.html`,
   `janito/web/frontend/css/tools.css`)
 
+- Modernized type annotations: replaced the deprecated `typing` aliases
+  (`List`, `Dict`, `Set`, `Optional`, `Iterator`, `Union`, `Callable`) with
+  built-in generics (`list[...]`, `dict[...]`, ...), the `X | Y` union syntax
+  and `collections.abc`, and dropped the redundant `"r"` mode from `open()`
+  calls. The `pyupgrade` (UP) rule set is now enabled in the ruff lint
+  configuration. (`janito/agent/events.py`, `janito/codesearch/*`,
+  `janito/shell/*`, `janito/tooling/*`, `janito/tools/*`,
+  `janito/config_store.py`, `janito/json_store.py`, `pyproject.toml`)
+- Replaced silent exception swallowing with debug-level logging in tool
+  discovery (`janito/tools/__init__.py`), the shell toolbar
+  (`janito/shell/session.py`) and the web config endpoints
+  (`janito/web/backend/routers/config.py`); the unused
+  `BaseTool._get_permission_color` helper was removed.
+- Internal refactors: `--set-secret`/`--delete-secret` handlers now receive the
+  flattened values directly instead of ad-hoc `args` attributes
+  (`janito/__main__.py`, `janito/cli/handlers/secrets.py`), and the F2 restart
+  keybinding reuses `_reset_conversation` (`janito/shell/interactive.py`).
+
 ### Added
 
 - New `/read <question>` shell command: sends the prompt to the LLM using the

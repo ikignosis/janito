@@ -117,7 +117,7 @@ class SearchText(SearchRunner):
     ) -> list[str]:
         """Search a single file and return matching lines."""
         try:
-            with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
+            with open(filepath, encoding="utf-8", errors="ignore") as f:
                 matches = []
                 display_path = norm_path(filepath)
                 for lineno, line in enumerate(f, 1):
@@ -138,7 +138,7 @@ class SearchText(SearchRunner):
     ) -> int:
         """Count matches in a single file."""
         try:
-            with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
+            with open(filepath, encoding="utf-8", errors="ignore") as f:
                 count = 0
                 for line in f:
                     line_content = line.rstrip("\n")

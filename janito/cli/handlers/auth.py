@@ -136,7 +136,7 @@ def handle_list_keys(args) -> int:
 
     for auth_file in auth_paths:
         print(f"Config file: {auth_file}")
-        with open(auth_file, "r", encoding="utf-8") as f:
+        with open(auth_file, encoding="utf-8") as f:
             config = json.load(f)
         providers = list(config.keys())
         if not providers:

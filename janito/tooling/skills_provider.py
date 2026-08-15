@@ -82,7 +82,7 @@ class Skill:
         """Load the full SKILL.md content."""
         skill_md = self.path / "SKILL.md"
         if skill_md.exists():
-            with open(skill_md, "r", encoding="utf-8") as f:
+            with open(skill_md, encoding="utf-8") as f:
                 self.content = f.read()
         return self.content
 
@@ -98,7 +98,7 @@ class Skill:
         resource_path = self.path / resource_name
         if resource_path.exists() and resource_path.is_file():
             try:
-                with open(resource_path, "r", encoding="utf-8") as f:
+                with open(resource_path, encoding="utf-8") as f:
                     return f.read()
             except Exception:
                 return None
@@ -196,7 +196,7 @@ class SkillsProvider:
         skill_md = path / "SKILL.md"
         if skill_md.exists():
             try:
-                with open(skill_md, "r", encoding="utf-8") as f:
+                with open(skill_md, encoding="utf-8") as f:
                     content = f.read()
                     # Extract description from first paragraph
                     description = self._extract_description(content)

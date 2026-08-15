@@ -17,7 +17,6 @@ for moderate-sized projects and keeps the implementation readable.
 
 import json
 import sqlite3
-from typing import Dict, List, Optional, Set
 
 # Schema version for forward compatibility. Version 2 dropped the
 # per-file SHA-1 content hash: Update() now detects changed files by
@@ -62,7 +61,7 @@ class Index:
 
     def __init__(self, db_path: str):
         self.db_path = db_path
-        self._conn: Optional[sqlite3.Connection] = None
+        self._conn: sqlite3.Connection | None = None
 
     # ------------------------------------------------------------------
     # Connection management
@@ -141,7 +140,7 @@ class Index:
         )
         conn.commit()
 
-    def get_meta(self, key: str) -> Optional[str]:
+    def get_meta(self, key: str) -> str | None:
         """
         Retrieve a metadata value by key.
 
@@ -178,7 +177,7 @@ class Index:
         """
         self.set_meta(LAST_UPDATE_META_KEY, json.dumps(info))
 
-    def get_last_update(self) -> Optional[dict]:
+    def get_last_update(self) -> dict | None:
         """
         Retrieve the info of the last Create()/Update() operation.
 
@@ -226,7 +225,7 @@ class Index:
         row = conn.execute("SELECT id FROM files WHERE path = ?", (path,)).fetchone()
         return row[0]
 
-    def get_file(self, path: str) -> Optional[dict]:
+    def get_file(self, path: str) -> dict | None:
         """
         Retrieve a file record by path.
 
@@ -247,7 +246,7 @@ class Index:
             "size": row[3],
         }
 
-    def get_all_files(self) -> List[dict]:
+    def get_all_files(self) -> list[dict]:
         """
         Retrieve all file records.
 
@@ -281,7 +280,7 @@ class Index:
     # Trigram posting lists
     # ------------------------------------------------------------------
 
-    def add_trigrams(self, file_id: int, trigrams: Set[str]) -> None:
+    def add_trigrams(self, file_id: int, trigrams: set[str]) -> None:
         """
         Add trigrams for a file.
 
@@ -296,7 +295,7 @@ class Index:
         )
         conn.commit()
 
-    def get_posting_list(self, trigram: str) -> List[int]:
+    def get_posting_list(self, trigram: str) -> list[int]:
         """
         Get the posting list (file IDs) for a trigram.
 
@@ -310,19 +309,19 @@ class Index:
         ).fetchall()
         return [r[0] for r in rows]
 
-    def get_posting_lists(self, trigrams: Set[str]) -> Dict[str, List[int]]:
+    def get_posting_lists(self, trigrams: set[str]) -> dict[str, list[int]]:
         """
         Get posting lists for multiple trigrams.
 
         Returns:
             A dict mapping each trigram to its sorted list of file IDs.
         """
-        result: Dict[str, List[int]] = {}
+        result: dict[str, list[int]] = {}
         for t in trigrams:
             result[t] = self.get_posting_list(t)
         return result
 
-    def get_file_paths(self, file_ids: List[int]) -> Dict[int, str]:
+    def get_file_paths(self, file_ids: list[int]) -> dict[int, str]:
         """
         Resolve file IDs to paths.
 

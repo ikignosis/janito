@@ -52,13 +52,13 @@ class CommandCompleter(Completer):
 
     def __init__(
         self,
-        commands: Callable[[], list["CmdHandler"]],
+        commands: Callable[[], list[CmdHandler]],
         arg_completers: dict[str, Callable[[str], Iterable[str]]] | None = None,
     ) -> None:
         self._commands = commands
         self._arg_completers = arg_completers or {}
 
-    def get_completions(self, document: "Document", complete_event: "CompleteEvent"):
+    def get_completions(self, document: Document, complete_event: CompleteEvent):
         """Yield completions for the command token before the cursor."""
         # Use WORD (vim-style) tokenisation so the leading ``/`` is kept as
         # part of the word, giving us the full command prefix (``/t``).

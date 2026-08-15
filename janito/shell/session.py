@@ -5,6 +5,7 @@ Extracted from :mod:`janito.shell.interactive` so the shell module stays
 focused on the conversation loop, input dispatch and command handling.
 """
 
+import logging
 from pathlib import Path
 
 from prompt_toolkit import PromptSession
@@ -14,6 +15,8 @@ from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.styles import Style
 
 from .completer import CommandCompleter
+
+logger = logging.getLogger(__name__)
 
 # History file path
 HISTORY_FILE = Path.cwd() / ".janito" / "history.log"
@@ -51,8 +54,8 @@ class _SessionMixin:
             if provider:
                 tokens.append(("", " \u2502 "))
                 tokens.append(("class:provider", f" provider: {provider} "))
-        except Exception:
-            pass
+        except Exception:  # noqa: BLE001 - toolbar is cosmetic; never break the shell
+            logger.debug("Could not resolve provider for the toolbar", exc_info=True)
 
         # Keyboard shortcuts
         tokens.append(("", " \u2502 "))

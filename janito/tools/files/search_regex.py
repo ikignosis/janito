@@ -112,7 +112,7 @@ class SearchRegex(SearchRunner):
         try:
             flags = 0 if case_sensitive else re.IGNORECASE
             compiled_pattern = re.compile(pattern, flags)
-            with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
+            with open(filepath, encoding="utf-8", errors="ignore") as f:
                 matches = []
                 display_path = norm_path(filepath)
                 for lineno, line in enumerate(f, 1):
@@ -138,7 +138,7 @@ class SearchRegex(SearchRunner):
         try:
             flags = 0 if case_sensitive else re.IGNORECASE
             compiled_pattern = re.compile(pattern, flags)
-            with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
+            with open(filepath, encoding="utf-8", errors="ignore") as f:
                 count = 0
                 for line in f:
                     line_content = line.rstrip("\n")

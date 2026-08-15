@@ -163,11 +163,11 @@ def _handle_batch_config(args) -> int | None:
             exit_code, handle_get_config(_flatten(args.get), cli_provider)
         )
     if args.set_secret is not None:
-        args._set_secret_vals = _flatten(args.set_secret)
-        exit_code = _track_rc(exit_code, handle_set_secret(args))
+        exit_code = _track_rc(exit_code, handle_set_secret(_flatten(args.set_secret)))
     if args.delete_secret is not None:
-        args._delete_secret_keys = _flatten(args.delete_secret)
-        exit_code = _track_rc(exit_code, handle_delete_secret(args))
+        exit_code = _track_rc(
+            exit_code, handle_delete_secret(_flatten(args.delete_secret))
+        )
 
     return exit_code
 

@@ -33,7 +33,7 @@ def load_ignore_spec(directory: str, filename: str, extra_patterns=None):
     if not os.path.exists(ignore_path):
         return None
 
-    with open(ignore_path, "r") as f:
+    with open(ignore_path) as f:
         patterns = f.readlines()
 
     if extra_patterns:
