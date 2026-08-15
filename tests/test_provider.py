@@ -146,6 +146,23 @@ if pytest is not None:
         assert Provider("openai").responses_in_server() is False
         assert pa.get_responses_in_server_from_provider("openai") is False
 
+    def test_get_provider_cost():
+        """get_provider_cost() delegates to the provider's cost module."""
+        # DeepSeek ships a cost module returning a placeholder "1$".
+        assert (
+            pa.get_provider_cost("deepseek", "deepseek-v4-flash", 1000, 500, 100)
+            == "1$"
+        )
+        # Case-insensitive provider lookup.
+        assert (
+            pa.get_provider_cost("DeepSeek", "deepseek-v4-flash", 1000, 500, 100)
+            == "1$"
+        )
+        # Providers without a cost module fall back to "N/A".
+        assert pa.get_provider_cost("openai", "gpt-5.6-luna", 1000, 500, 100) == "N/A"
+        # Unknown providers fall back to "N/A".
+        assert pa.get_provider_cost("bogus", "model", 1000, 500, 100) == "N/A"
+
 else:  # pragma: no cover - fallback runner without pytest
 
     def _main():

@@ -11,6 +11,12 @@ Changes since `v4.25.0` (2026-08-15).
 
 ### Changed
 
+- Added `get_provider_cost(provider, model, input, output, cached)` in
+  `janito/provider_accessors.py`: resolves a provider (case-insensitive,
+  variant-aware) and delegates to its `cost.py` module's `get_cost`
+  (e.g. `janito.providers.deepseek.cost`); falls back to `"N/A"` when the
+  provider is unknown or ships no cost module.
+  (`janito/provider_accessors.py`, `tests/test_provider.py`)
 - Added `janito/providers/deepseek/cost.py` with a `get_cost(model, input,
   output, cached)` helper that estimates the monetary cost of a request
   (currently a placeholder returning `"1$"`).

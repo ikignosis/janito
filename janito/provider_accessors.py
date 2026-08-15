@@ -441,3 +441,42 @@ def get_responses_in_server_from_provider(
     if found is None:
         return True
     return found.responses_in_server(model)
+
+
+def get_provider_cost(
+    provider: str, model: str, input: int, output: int, cached: int
+) -> str:
+    """
+    Get the estimated monetary cost of a request for a provider's model.
+
+    The cost is computed by the provider's ``cost.py`` module
+    (``janito.providers.<name>.cost``), which exports a
+    ``get_cost(model, input, output, cached)`` function returning a
+    dollar-formatted string (e.g. ``"1$"``).  Providers without a cost
+    module fall back to ``"N/A"``.
+
+    Args:
+        provider: The provider name (case-insensitive).  Registered provider
+            variants (``<provider>-<word>``) resolve to their base
+            provider's cost module.
+        model: The model name.
+        input: The number of input tokens.
+        output: The number of output tokens.
+        cached: The number of cached input tokens.
+
+    Returns:
+        The estimated cost formatted as a dollar string (e.g. ``"1$"``), or
+        ``"N/A"`` when the provider is unknown or has no cost module.
+    """
+    found = _registry.get(provider)
+    if found is None:
+        return "N/A"
+    base = found.base_name or found.name
+    try:
+        from importlib import import_module
+
+        cost_module = import_module(f"janito.providers.{base}.cost")
+        get_cost = getattr(cost_module, "get_cost")
+        return get_cost(model, input, output, cached)
+    except (ImportError, AttributeError, TypeError):
+        return "N/A"
