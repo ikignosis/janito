@@ -49,7 +49,7 @@ Additional commands available in the terminal shell:
 | `/show_tools_stats` | Show tool usage statistics (from the SQLite `tools_use.db`) |
 | `/changes` | Show the file-changing tool executions recorded for the current prompt |
 | `/provider` | Show the current provider and the available providers |
-| `/provider <name>` | Switch the active provider (persisted in `config.json`, like `--set provider=<name>`; autocompleted). The LLM conversation history is cleared so the new provider/model starts fresh |
+| `/provider <name>` | Switch the session's provider (and model) for this shell session only — the configured default in `config.json` is left unchanged (use `janito --set provider=<name>` to persist a new default; autocompleted). The LLM conversation history is cleared so the new provider/model starts fresh |
 | `/mcp add <name> stdio <cmd>` | Add MCP stdio service |
 | `/mcp add <name> http <url>` | Add MCP HTTP service |
 | `/mcp list` | List MCP services |
@@ -65,9 +65,11 @@ the arrow keys to browse the list. Regular chat input (anything not starting
 with `/`) is never autocompleted.
 
 Commands that take an argument also autocomplete that argument: after
-`/provider `, the available provider names (built-in providers plus
-registered variants) are suggested as you type them, e.g. `/provider op`
-suggests `openai`.
+`/provider `, the provider names are suggested as you type them, e.g.
+`/provider op` suggests `openai`. Only providers with an API key stored in
+`~/.janito/auth.json` are offered (switching to a key-less provider would
+only make the next prompt fail with an authentication error); the full list
+is still shown by `/provider` with no argument.
 
 ## Examples
 

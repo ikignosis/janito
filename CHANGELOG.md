@@ -14,20 +14,29 @@ Changes since `v4.24.0` (2026-08-13).
 - **`glm-5.3` model for the `zai` provider**: registered as a built-in model
   and made the new default for Z.AI (`PROVIDER_INFO["zai"]["default_model"]`).
   `glm-5.2` remains available.
-- **Shell `/provider` command**: switch the active provider from the
-  interactive shell with `/provider <name>` (validated against the supported
-  providers and registered variants, persisted as the `provider` config key,
-  same as `--set provider=<name>`). The provider name is autocompleted in the
-  shell: after `/provider `, the available provider names are suggested as you
-  type. `/provider` with no argument lists the current provider and every
-  available one. Switching the provider takes effect immediately for the
-  running session (the API client is rebound to the new provider, re-resolving
-  the model and API type) and clears the LLM conversation history (system
-  prompt preserved) so the new provider/model starts fresh — including when
-  the session was started with `--provider`.
+- **Shell `/provider` command**: switch the provider for the running shell
+  session with `/provider <name>` (validated against the supported providers
+  and registered variants). The switch is runtime-only: it updates the shell's
+  displayed provider/model and rebinds the API client (re-resolving the model
+  and API type) without changing the configured default `provider` in
+  `config.json` (persist a new default with `--set provider=<name>`). The
+  provider name is autocompleted in the shell: after `/provider `, the
+  available provider names are suggested as you type. `/provider` with no
+  argument lists the current provider and every available one. Switching the
+  provider takes effect immediately for the running session and clears the
+  LLM conversation history (system prompt preserved) so the new
+  provider/model starts fresh — including when the session was started with
+  `--provider`.
 
 ### Changed
 
+- **`/provider` autocomplete offers only usable providers**: the shell
+  autocompletion for `/provider <name>` now suggests only providers that
+  have an API key stored in `~/.janito/auth.json` (switching to a key-less
+  provider would only make the next prompt fail with an authentication
+  error). `/provider` with no argument still lists every available
+  provider, and `/provider <name>` still accepts any supported provider
+  explicitly.
 - **File tools report exclude patterns**: `SearchText`, `SearchRegex`, and
   `FindFiles` now include the `exclude` glob patterns in their `report_start`
   announcement when defined.

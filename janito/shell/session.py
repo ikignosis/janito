@@ -24,10 +24,13 @@ def _provider_arg_completer(prefix: str) -> list[str]:
 
     Delegates to the ``/provider`` command's helper so the completions always
     match the providers the command accepts (built-in + registered variants).
+    Only providers with an API key set are suggested: switching to a provider
+    without a key would only make the next prompt fail with an authentication
+    error.
     """
     from .cmds.provider import available_provider_names
 
-    return list(available_provider_names(prefix))
+    return list(available_provider_names(prefix, only_with_api_key=True))
 
 
 class _SessionMixin:

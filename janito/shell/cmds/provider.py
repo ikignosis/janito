@@ -1,18 +1,19 @@
 """
-/provider command handler - switches the active provider.
+/provider command handler - switches the active provider for the shell session.
 
 Usage:
     /provider            - Show the current provider and the available providers
-    /provider <name>     - Set the active provider
+    /provider <name>     - Switch the session's provider (and model)
 
 The provider name is validated against the built-in providers
 (``PROVIDER_INFO``) and the registered provider variants
-(``janito --create-variant``), then stored as the ``provider`` value in
-config.json (the same operation as ``janito --set provider=<name>``). The
-switch takes effect immediately for the running session: the shell's
-displayed provider (bottom toolbar) and model are updated and the send
-function is rebound to the new provider (its API type re-resolved), whether
-or not the session was started with ``--provider``.
+(``janito --create-variant``).  The switch is **runtime-only**: it updates
+the shell's displayed provider (bottom toolbar) and model and rebinds the
+send function to the new provider (its API type re-resolved), but it does
+**not** change the configured default ``provider`` in config.json -- use
+``janito --set provider=<name>`` to persist a new default.  The switch takes
+effect immediately for the running session, whether or not the session was
+started with ``--provider``.
 
 Switching the provider clears the LLM conversation history (system prompt
 preserved) so the previous provider's/model's context does not leak into the
@@ -25,7 +26,9 @@ from .base import CmdHandler
 from .registry import register_command
 
 
-def available_provider_names(prefix: str = "") -> Iterable[str]:
+def available_provider_names(
+    prefix: str = "", *, only_with_api_key: bool = False
+) -> Iterable[str]:
     """Return provider names (built-in + registered variants) matching ``prefix``.
 
     Matching is case-insensitive and the result is sorted
@@ -35,13 +38,22 @@ def available_provider_names(prefix: str = "") -> Iterable[str]:
 
     Args:
         prefix: The partial provider name typed so far.
+        only_with_api_key: When True, only providers that have an API key
+            stored in ``~/.janito/auth.json`` are returned.  The shell's
+            ``/provider`` argument autocompletion passes True so that only
+            providers the user can actually switch to are suggested; the
+            ``/provider`` display (no argument) keeps listing every provider
+            regardless of key.
 
     Returns:
         The matching provider names in their canonical casing.
     """
+    from janito.auth_config import get_api_key
     from janito.provider_validation import list_supported_providers, list_variants
 
     names = list_supported_providers() + list_variants()
+    if only_with_api_key:
+        names = [name for name in names if get_api_key(name)]
     lowered = prefix.lower()
     return sorted(
         (name for name in names if name.lower().startswith(lowered)),
@@ -82,9 +94,8 @@ class ProviderCmdHandler(CmdHandler):
 
     @staticmethod
     def _switch_provider(shell, provider_name: str) -> None:
-        """Validate, persist and apply the new provider."""
+        """Validate and apply the new provider for this shell session only."""
         from janito.config_loaders import load_model_from_config
-        from janito.config_store import get_config_path, set_config_value
         from janito.general_config import get_active_provider
         from janito.provider_accessors import get_default_model_from_provider
         from janito.provider_validation import validate_provider_name
@@ -98,10 +109,12 @@ class ProviderCmdHandler(CmdHandler):
         # The provider in effect before the switch: the session's displayed
         # provider (set from --provider at startup, or updated by an earlier
         # /provider switch), else the configured default.  Captured before the
-        # config write below so it reflects the *old* state.
+        # runtime update below so it reflects the *old* state.
         previous = getattr(shell, "provider", None) or get_active_provider()
 
-        set_config_value("provider", canonical)
+        # Runtime-only switch: the shell's provider changes for this session,
+        # but the configured default in config.json is left untouched (use
+        # ``janito --set provider=<name>`` to persist a new default).
         shell.provider = canonical
 
         # Keep the toolbar's model display truthful: re-resolve the effective
@@ -112,7 +125,10 @@ class ProviderCmdHandler(CmdHandler):
         if model:
             shell.model = model
 
-        print(f"[OK] Provider set to '{canonical}' (config: {get_config_path()})")
+        print(
+            f"[OK] Provider switched to '{canonical}' for this session "
+            "(config default unchanged)."
+        )
 
         # The switch takes effect in real time: rebind the shell's send
         # function to the new provider (its API type re-resolved), so

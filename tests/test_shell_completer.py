@@ -129,6 +129,20 @@ if pytest is not None:
     # Argument autocompletion (/provider <name>)
     # ------------------------------------------------------------------
 
+    def _use_temp_config(monkeypatch, tmp_path):
+        """Point the config directory at a temporary directory."""
+        import janito.config_dir as config_dir_mod
+
+        config_path = tmp_path / ".janito" / "config.json"
+        monkeypatch.setattr(config_dir_mod, "_config_dir", config_path.parent)
+        return config_path
+
+    def _set_api_key(provider: str):
+        """Store an API key for ``provider`` in the (temp) auth store."""
+        from janito.auth_config import set_api_key
+
+        set_api_key(provider, f"sk-{provider}")  # pragma: allowlist secret
+
     def _arg_completer_completions_for(text):
         """Completions offered by the real shell completer for the given input."""
         from janito.shell import InteractiveShell
@@ -136,24 +150,47 @@ if pytest is not None:
         shell = InteractiveShell(model="test-model", no_history=True)
         return _completions_for(shell.session.completer, text)
 
-    def test_provider_argument_completes_all():
+    def test_provider_argument_completes_all(monkeypatch, tmp_path):
+        _use_temp_config(monkeypatch, tmp_path)
+        for name in ("openai", "deepseek", "custom"):
+            _set_api_key(name)
+
         text = "/provider "
         names = _arg_completer_completions_for(text)
         assert "openai" in names
         assert "deepseek" in names
         assert "custom" in names
 
-    def test_provider_argument_completes_prefix():
+    def test_provider_argument_completes_prefix(monkeypatch, tmp_path):
+        _use_temp_config(monkeypatch, tmp_path)
+        _set_api_key("openai")
+
         names = _arg_completer_completions_for("/provider op")
         assert names == ["openai"]
 
-    def test_provider_argument_complete_prefix_case_insensitive():
+    def test_provider_argument_complete_prefix_case_insensitive(monkeypatch, tmp_path):
+        _use_temp_config(monkeypatch, tmp_path)
+        _set_api_key("deepseek")
+
         names = _arg_completer_completions_for("/provider DEEP")
         assert names == ["deepseek"]
 
-    def test_provider_argument_command_case_insensitive():
+    def test_provider_argument_command_case_insensitive(monkeypatch, tmp_path):
+        _use_temp_config(monkeypatch, tmp_path)
+        _set_api_key("alibaba")
+
         names = _arg_completer_completions_for("/PROVIDER ali")
         assert "alibaba" in names
+
+    def test_provider_argument_excludes_providers_without_key(monkeypatch, tmp_path):
+        # Only providers with an API key set are offered for autocompletion.
+        _use_temp_config(monkeypatch, tmp_path)
+        _set_api_key("deepseek")
+
+        names = _arg_completer_completions_for("/provider ")
+        assert "deepseek" in names
+        assert "openai" not in names
+        assert "custom" not in names
 
     def test_provider_argument_no_completion_after_second_space():
         # Only the first argument is completed; a second space means the user
@@ -165,7 +202,12 @@ if pytest is not None:
         assert _arg_completer_completions_for("op") == []
         assert _arg_completer_completions_for("hello /provider op") == []
 
-    def test_provider_argument_leading_whitespace_still_completes():
+    def test_provider_argument_leading_whitespace_still_completes(
+        monkeypatch, tmp_path
+    ):
+        _use_temp_config(monkeypatch, tmp_path)
+        _set_api_key("openai")
+
         names = _arg_completer_completions_for("  /provider op")
         assert names == ["openai"]
 
@@ -176,12 +218,16 @@ if pytest is not None:
         config_path = tmp_path / ".janito" / "config.json"
         monkeypatch.setattr(config_dir_mod, "_config_dir", config_path.parent)
         cv.create_variant("custom-local")
+        _set_api_key("custom-local")
 
         names = _arg_completer_completions_for("/provider custom-")
         assert "custom-local" in names
 
-    def test_provider_argument_completion_meta():
+    def test_provider_argument_completion_meta(monkeypatch, tmp_path):
         from janito.shell import InteractiveShell
+
+        _use_temp_config(monkeypatch, tmp_path)
+        _set_api_key("openai")
 
         shell = InteractiveShell(model="test-model", no_history=True)
         doc = Document("/provider op", cursor_position=len("/provider op"))

@@ -1,14 +1,14 @@
 """
 Tests for the shell /provider command handler.
 
-``/provider`` switches the active provider: it validates the name against the
-supported providers (built-in ``PROVIDER_INFO`` entries plus registered
-variants), persists it as the ``provider`` value in config.json (the same
-operation as ``janito --set provider=<name>``) and updates the shell's
-displayed provider/model.  ``/provider`` with no argument lists the current
-provider and every available one.  The command must not match non-``/provider``
-input (e.g. ``/providers``) and must report unknown providers without touching
-the config.
+``/provider`` switches the active provider for the shell session: it validates
+the name against the supported providers (built-in ``PROVIDER_INFO`` entries
+plus registered variants) and updates the shell's displayed provider/model
+**without** changing the configured default ``provider`` in config.json
+(that requires ``janito --set provider=<name>``).  ``/provider`` with no
+argument lists the current provider and every available one.  The command
+must not match non-``/provider`` input (e.g. ``/providers``) and must report
+unknown providers without touching the config.
 
 The switch takes effect in real time: the shell's send function is rebound to
 the new provider (via ``send_factory``) and the LLM conversation history is
@@ -76,15 +76,17 @@ def test_no_argument_respects_session_provider(monkeypatch, tmp_path, capsys):
     assert "Current provider: deepseek" in out
 
 
-def test_switch_provider_persists_and_updates_shell(monkeypatch, tmp_path, capsys):
-    """``/provider deepseek`` persists the default and updates the shell display."""
+def test_switch_provider_updates_shell_without_changing_config(
+    monkeypatch, tmp_path, capsys
+):
+    """``/provider deepseek`` updates the shell display but not the config default."""
     _use_temp_config(monkeypatch, tmp_path)
     shell = _shell()
     assert _provider_handler().handle(shell, "/provider deepseek") is True
 
-    assert get_config_value("provider") == "deepseek"
+    assert get_config_value("provider") is None
     assert shell.provider == "deepseek"
-    assert "Provider set to 'deepseek'" in capsys.readouterr().out
+    assert "Provider switched to 'deepseek'" in capsys.readouterr().out
 
 
 def test_switch_provider_is_case_insensitive(monkeypatch, tmp_path, capsys):
@@ -93,7 +95,7 @@ def test_switch_provider_is_case_insensitive(monkeypatch, tmp_path, capsys):
     shell = _shell()
     assert _provider_handler().handle(shell, "/provider DEEPSEEK") is True
 
-    assert get_config_value("provider") == "deepseek"
+    assert get_config_value("provider") is None
     assert shell.provider == "deepseek"
 
 
@@ -106,7 +108,7 @@ def test_switch_to_registered_variant(monkeypatch, tmp_path, capsys):
     shell = _shell()
     assert _provider_handler().handle(shell, "/provider alibaba-tokenplan") is True
 
-    assert get_config_value("provider") == "alibaba-tokenplan"
+    assert get_config_value("provider") is None
     assert shell.provider == "alibaba-tokenplan"
 
 
@@ -124,20 +126,20 @@ def test_unknown_provider_is_rejected_without_changes(monkeypatch, tmp_path, cap
 
 
 def test_cli_bound_session_switch_applies_immediately(monkeypatch, tmp_path, capsys):
-    """With --provider the switch still takes effect in real time: the stored
-    default changes, the conversation is cleared and no 'stays in effect' note
-    is printed."""
+    """With --provider the switch still takes effect in real time: the session
+    provider changes, the conversation is cleared and no 'stays in effect' note
+    is printed, while the config default is left untouched."""
     _use_temp_config(monkeypatch, tmp_path)
     shell = _shell_with_history(provider="openai")
     assert _provider_handler().handle(shell, "/provider deepseek") is True
 
     out = capsys.readouterr().out
-    assert "Provider set to 'deepseek'" in out
+    assert "Provider switched to 'deepseek'" in out
     assert "started with --provider" not in out
     assert "Conversation history cleared (provider changed)." in out
     # History is reset to just the preserved system prompt.
     assert shell.messages_history == [{"role": "system", "content": "sys"}]
-    assert get_config_value("provider") == "deepseek"
+    assert get_config_value("provider") is None
 
 
 def test_switch_updates_shell_model_display(monkeypatch, tmp_path, capsys):
@@ -176,6 +178,36 @@ def test_available_provider_names_filters_by_prefix_case_insensitively():
     names = list(available_provider_names("DEEP"))
     assert names == ["deepseek"]
     assert available_provider_names("zzz") == []
+
+
+def test_available_provider_names_filters_by_api_key(monkeypatch, tmp_path):
+    """With only_with_api_key=True, providers without an API key are excluded."""
+    from janito.auth_config import set_api_key
+
+    _use_temp_config(monkeypatch, tmp_path)
+    set_api_key("deepseek", "sk-deepseek")  # pragma: allowlist secret
+
+    names = list(available_provider_names(only_with_api_key=True))
+    assert names == ["deepseek"]
+
+    # The typed prefix is still applied on top of the key filter.
+    assert list(available_provider_names("al", only_with_api_key=True)) == []
+    assert list(available_provider_names("DEEP", only_with_api_key=True)) == [
+        "deepseek"
+    ]
+
+
+def test_available_provider_names_default_ignores_api_key(monkeypatch, tmp_path):
+    """The default (used by the /provider display) lists every provider."""
+    from janito.auth_config import set_api_key
+
+    _use_temp_config(monkeypatch, tmp_path)
+    set_api_key("deepseek", "sk-deepseek")  # pragma: allowlist secret
+
+    names = list(available_provider_names())
+    for name in PROVIDER_INFO:
+        assert name in names
+    assert "deepseek" in names
 
 
 # ---------------------------------------------------------------------------
@@ -246,8 +278,8 @@ def test_cli_bound_session_switch_to_other_provider_clears_history(
     assert "Conversation history cleared (provider changed)." in capsys.readouterr().out
     # History is reset to just the preserved system prompt.
     assert shell.messages_history == [{"role": "system", "content": "sys"}]
-    # The stored default still changes for future sessions.
-    assert get_config_value("provider") == "deepseek"
+    # The configured default is not changed for future sessions.
+    assert get_config_value("provider") is None
 
 
 def test_switch_to_same_provider_keeps_send_function(monkeypatch, tmp_path, capsys):
