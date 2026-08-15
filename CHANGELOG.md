@@ -26,6 +26,15 @@ Changes since `v4.25.0` (2026-08-15).
 
 ### Added
 
+- New `/read <question>` shell command: sends the prompt to the LLM using the
+  main conversation history (unlike `/ask`, which starts a fresh history), but
+  with `tools=` filtered to the read-only (`"r"` permission) tools, so the
+  model can read/search/fetch but not write or execute.
+  (`janito/shell/cmds/read.py`, `janito/shell/cmds/__init__.py`,
+  `janito/shell/interactive.py`, `janito/shell/cmds/help.py`,
+  `docs/usage/interactive-mode.md`, `docs/usage/cli-vs-web.md`,
+  `tests/test_shell_read_cmd.py`)
+
 - New `--no-tools` flag disables loading of non-skill tools (built-in toolsets,
   Gmail, OneDrive, MCP) while keeping the skill tools (`load_skill`,
   `read_skill_resource`) enabled, so installed skills remain usable without

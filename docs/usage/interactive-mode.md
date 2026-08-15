@@ -46,6 +46,7 @@ Additional commands available in the terminal shell:
 | `/help` | Show help information |
 | `/skills` | List all available skills (home + local) |
 | `/tools` | List all available tools |
+| `/read <question>` | Send the question to the LLM using the **main** conversation history, but with `tools=` filtered to the read-only (`"r"` permission) tools — the model can read/search/fetch but cannot write or execute. The exchange stays in the main history and rolls back like a normal prompt on cancel |
 | `/show_tools_stats` | Show tool usage statistics (from the SQLite `tools_use.db`) |
 | `/changes` | Show the file-changing tool executions recorded for the current prompt |
 | `/provider` | Show the current provider and the available providers |

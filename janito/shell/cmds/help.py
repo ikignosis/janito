@@ -56,6 +56,9 @@ class HelpCmdHandler(CmdHandler):
         features.add_row("/prompt", "Show the system prompt")
         features.add_row("/skills", "List all available skills")
         features.add_row("/tools", "List all available tools")
+        features.add_row(
+            "/read", "Ask the LLM using the main history but read-only tools"
+        )
         features.add_row("/show_tools_stats", "Show tool usage statistics")
         features.add_row(
             "/changes", "Show the file-changing tool executions for this prompt"

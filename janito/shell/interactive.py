@@ -280,9 +280,23 @@ class InteractiveShell(_SessionMixin):
 
         return False
 
-    def _send_prompt(self, user_input: str) -> None:
-        """Send a prompt to the AI and update the conversation state."""
-        tools_to_use = [] if self.no_tools else None
+    def _send_prompt(
+        self, user_input: str, tools: list[dict[str, Any]] | None = None
+    ) -> None:
+        """Send a prompt to the AI and update the conversation state.
+
+        Args:
+            user_input: The user's prompt text.
+            tools: Optional explicit tool schemas to offer the model. When
+                ``None`` (default) the session default applies (all tools, or
+                none when ``no_tools`` is set); pass a list to restrict the
+                model to a subset of tools (e.g. the read-only tools used by
+                ``/read``).
+        """
+        if tools is None:
+            tools_to_use = [] if self.no_tools else None
+        else:
+            tools_to_use = tools
         # Save checkpoint so we can rollback history on cancel/error
         self.history_checkpoint = len(self.messages_history)
         self.conversation_checkpoint = (
