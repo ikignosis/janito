@@ -11,6 +11,15 @@ Changes since `v4.25.0` (2026-08-15).
 
 ### Changed
 
+- `ReadFile` and `ReadMultipleFiles` no longer check `.janitoignore`: files
+  matched by `.janitoignore` are read like any other file (the matching /
+  blocking logic and its tests were removed, and the now-unused
+  `is_janitoignored` helper was dropped). The listing, search and find tools
+  still always respect `.janitoignore`.
+  (`janito/tools/files/read_file.py`,
+  `janito/tools/files/read_multiple_files.py`,
+  `janito/tools/files/gitignore_utils.py`, `tests/test_janitoignore.py`,
+  `docs/tools/files.md`)
 - The system exec tools (`RunBashCode`, `RunPythonCode`, `RunPythonFile`,
   `RunPowerShellCode`, `RunGitHubCLI`) no longer cap `stdout`/`stderr` at 50
   lines nor mirror the overflow to a kept temp file.  The full captured output
@@ -86,6 +95,15 @@ Changes since `v4.25.0` (2026-08-15).
   flattened values directly instead of ad-hoc `args` attributes
   (`janito/__main__.py`, `janito/cli/handlers/secrets.py`), and the F2 restart
   keybinding reuses `_reset_conversation` (`janito/shell/interactive.py`).
+- `docs/TOOL.md` updated to match the current implementation: schema
+  generation now documented as living in `janito/tooling/schema.py` (plus the
+  `executor.py` try/except safety net), the `AUTOLOAD_TOOLSETS` list is now
+  `["files", "system", "net", "codesearch"]` with `net`, `codesearch` and the
+  web-only `janitoweb` toolsets added to the architecture tree, the
+  `report_output()` / `build_diff()` helpers are documented, and the
+  `Optional[T]`-requiredness note, the execute-colour claim (yellow, not
+  red-ish) and the "framework does not wrap `run()`" claim were corrected.
+  (`docs/TOOL.md`)
 
 ### Added
 

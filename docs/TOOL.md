@@ -31,7 +31,9 @@ janito/
 ├── tooling/                    # Framework / infrastructure
 │   ├── base_tool.py            # BaseTool ABC — every tool inherits this
 │   ├── decorator.py            # @tool(permissions="…") decorator
-│   ├── tools_registry.py       # Registry: discovery, schema gen, lookup
+│   ├── schema.py               # get_function_schema() — OpenAI-compatible schema gen
+│   ├── executor.py             # run_tool() — shared tool-execution core (try/except safety net)
+│   ├── tools_registry.py       # Registry: discovery, toolset management, lookup
 │   ├── reporter.py             # Standalone progress-report helpers
 │   └── path_utils.py           # norm_path() helper
 │
@@ -44,8 +46,14 @@ janito/
 │   │   ├── run_python_code.py
 │   │   ├── run_bash_code.py
 │   │   └── …
+│   ├── net/                    # "net" toolset  (autoloaded)
+│   │   ├── get_url.py
+│   │   └── headless_browse.py
+│   ├── codesearch/             # "codesearch" toolset (autoloaded)
+│   │   └── code_search.py
 │   ├── gmail/                  # "gmail" toolset  (loaded on demand)
-│   └── onedrive/               # "onedrive" toolset (loaded on demand)
+│   ├── onedrive/               # "onedrive" toolset (loaded on demand)
+│   └── janitoweb/              # "janitoweb" toolset (web-only, loaded on demand)
 │
 └── privileges.py               # Runtime privilege flags (-r / -w / -x)
 ```
@@ -73,8 +81,10 @@ janito/
 | `janito/tooling/base_tool.py` | `BaseTool` abstract base class with `run()` and progress-reporting methods |
 | `janito/tooling/decorator.py` | `@tool(permissions="…")` decorator — marks a class as a discoverable tool |
 | `janito/tools/__init__.py` | `discover_toolsets()` — auto-discovery engine |
-| `janito/tooling/tools_registry.py` | Registry, `get_function_schema()`, lazy init, toolset management |
-| `janito/tooling/reporter.py` | Standalone `report_start / report_result / report_error` functions |
+| `janito/tooling/schema.py` | `get_function_schema()` — OpenAI-compatible schema generation |
+| `janito/tooling/executor.py` | `run_tool()` — shared tool-execution core; converts a raising tool into a structured `success: False` result |
+| `janito/tooling/tools_registry.py` | Registry, `AUTOLOAD_TOOLSETS`, lazy init, toolset management, lookups |
+| `janito/tooling/reporter.py` | Standalone `report_start / report_progress / report_output / report_result / report_error / report_warning / report_info / report_diff` functions |
 | `janito/tooling/path_utils.py` | `norm_path()` — normalises paths relative to CWD for display |
 | `janito/privileges.py` | `Privileges` dataclass and `running_privileges` global |
 
@@ -273,13 +283,15 @@ from janito.tooling.tools_registry import add_toolset
 add_toolset("mytoolset")
 ```
 
-That is how `gmail` and `onedrive` work — they are loaded on demand.
+That is how `gmail`, `onedrive`, and `janitoweb` work — they are loaded on
+demand (`janitoweb` is web-only and enabled by the web backend via
+`extra=["janitoweb"]`).
 
 ---
 
 ## Schema Generation (How the LLM Sees Your Tool)
 
-`get_function_schema()` in `tools_registry.py` auto-generates an
+`get_function_schema()` in `schema.py` auto-generates an
 OpenAI function-calling schema from the wrapper's metadata:
 
 | Schema field | Source |
@@ -289,7 +301,7 @@ OpenAI function-calling schema from the wrapper's metadata:
 | `parameters.properties.<p>.type` | Type hint on `run()` parameter: `str→string`, `int→integer`, `float→number`, `bool→boolean`, `List[T]→array` |
 | `parameters.properties.<p>.description` | Parsed from the `Args:` block of the docstring on the **wrapper** (which is the class docstring, *not* the `run()` docstring) — see note below |
 | `parameters.required` | Parameters that have **no default value** |
-| `Optional[T]` | Unwrapped; the inner type is used and the parameter is *not* required (it has a default of `None`) |
+| `Optional[T]` / `T \| None` | Unwrapped; the inner type is used. Required-ness is decided solely by whether the parameter has a default value (no default → required), so declare `T \| None = None` for optional parameters |
 
 > **Important note on parameter descriptions.**
 > The discovery wrapper copies `cls.__doc__` (the class docstring) onto the
@@ -343,7 +355,7 @@ Flags can be combined: `"rw"`, `"rx"`, `"rwx"`.
    flags (`janito/privileges.py`), only tools whose permission characters are
    all satisfied are loaded. If no flags are passed, *all* tools load.
 2. **Colour-coded reporting** — `report_start()` picks an ANSI colour based
-   on the permission string: green for read-only, yellow for write, red-ish
+   on the permission string: green for read-only, yellow for write, yellow
    for execute.
 3. **Introspection** — `get_all_tool_permissions()` / `get_tool_permissions()`
    expose permissions at runtime (used by the `/tools` shell command).
@@ -408,6 +420,7 @@ execute (yellow).
 ```python
 def report_start(self, message: str, end: str = "\n") -> None
 def report_progress(self, message: str, end: str = "\n") -> None
+def report_output(self, message: str, end: str = "\n") -> None
 def report_diff(self, old_str: str, new_str: str, end: str = "\n") -> None
 def report_result(self, message: str, end: str = "\n") -> None
 def report_error(self, message: str, end: str = "\n") -> None
@@ -418,6 +431,7 @@ def report_warning(self, message: str, end: str = "\n") -> None
 |---|---|---|
 | `self.report_start(msg, end="\n")` | Colour by permissions: 🟢 `r`, 🟡 `w`/`x`, 🔵 none | Announce the operation is beginning |
 | `self.report_progress(msg, end="\n")` | Plain text (no colour) | Intermediate progress updates |
+| `self.report_output(msg, end="\n")` | Raw text (no emoji, no colour) | Stream subprocess stdout/stderr lines (used by `RunBashCode`, `RunPythonCode`, `RunGitHubCLI`) |
 | `self.report_diff(old_str, new_str, end="\n")` | Unified diff, syntax-highlighted (`diff` lexer) | Show what a change does (e.g. `ReplaceTextInFile` before `report_result`) |
 | `self.report_result(msg, end="\n")` | White + ✅ prefix | Final success summary |
 | `self.report_error(msg, end="\n")` | ❌ prefix | Errors |
@@ -431,18 +445,22 @@ For code **outside** `BaseTool` subclasses — e.g. `mcp_manager.py`,
 
 ```python
 from janito.tooling.reporter import (
-    report_start, report_progress, report_result,
-    report_error, report_warning, report_info,
+    report_start, report_progress, report_output,
+    report_result, report_error, report_warning,
+    report_info, report_diff, build_diff,
 )
 ```
 
 ```python
 def report_start(message: str, end: str = "\n", color: str = Colors.CYAN) -> None
 def report_progress(message: str, end: str = "\n") -> None
+def report_output(message: str, end: str = "\n") -> None
+def report_diff(old_str: str, new_str: str, end: str = "\n") -> None
 def report_result(message: str, end: str = "\n") -> None
 def report_error(message: str, end: str = "\n") -> None
 def report_warning(message: str, end: str = "\n") -> None
 def report_info(message: str, end: str = "\n") -> None      # ← only here, not on BaseTool
+def build_diff(old_str: str, new_str: str) -> str           # ← raw diff text, no printing
 ```
 
 Key differences from the BaseTool methods:
@@ -451,7 +469,7 @@ Key differences from the BaseTool methods:
 |---|---|---|
 | Colour | Auto from `_tool_permissions` | Explicit `color` param (default `CYAN`) |
 | Prefix | Leading space (to separate from LLM output) | Leading space + 🔄 emoji |
-| Extra functions | — | `report_info()` (ℹ️ prefix, cyan) |
+| Extra functions | `prompt_user()` (interactive Q&A) | `report_info()` (ℹ️ prefix, cyan), `build_diff()` (raw diff text) |
 
 A `Colors` helper class is also available:
 
@@ -502,10 +520,11 @@ janito/tools/<toolset_name>/
 ### Auto-loading vs. on-demand
 
 - **Auto-loaded** toolsets are listed in `AUTOLOAD_TOOLSETS` in
-  `janito/tooling/tools_registry.py` (currently `["files", "system"]`).
-  They are discovered lazily on first registry access.
-- **On-demand** toolsets (e.g. `gmail`, `onedrive`) are loaded by calling
-  `add_toolset("gmail")` at runtime.
+  `janito/tooling/tools_registry.py` (currently `["files", "system", "net",
+  "codesearch"]`). They are discovered lazily on first registry access.
+- **On-demand** toolsets (e.g. `gmail`, `onedrive`, `janitoweb`) are loaded
+  by calling `add_toolset("gmail")` at runtime (`janitoweb` is enabled only
+  in web mode via the backend's `extra=["janitoweb"]`).
 
 ### Naming conventions
 
@@ -550,8 +569,11 @@ return {
 ### Guidelines
 
 - **Never raise** from `run()`. Catch all exceptions and return a
-  `success: False` dict. The framework does *not* wrap your `run()` in a
-  try/except.
+  `success: False` dict. (The framework's tool executor also wraps every call
+  in a try/except — see `janito/tooling/executor.py` — so a raising tool
+  never aborts the agent loop; the exception is turned into a generic
+  `{"success": False, "error": ...}` result. Handling errors inside `run()`
+  still yields richer, more accurate error dicts.)
 - Echo back input parameters so the LLM can correlate the result with the
   call.
 - Keep values JSON-serialisable (strings, numbers, bools, lists, dicts).
@@ -560,7 +582,7 @@ return {
 - The system exec tools (`RunBashCode`, `RunPythonCode`, `RunPythonFile`,
   `RunPowerShellCode`, `RunGitHubCLI`) return the full captured
   `stdout`/`stderr` inline in the result dict (in addition to streaming it to
-  the screen in real-time).
+  the screen in real-time via `report_output()`).
 
 ---
 
