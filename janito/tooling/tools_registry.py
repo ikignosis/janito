@@ -11,13 +11,14 @@ singleton (:data:`_registry`), so existing import sites keep working.
 State location note
 -------------------
 The registry's state intentionally lives at **module level** (``AVAILABLE_TOOLS``,
-``_tools_initialized``, ``_loaded_toolsets``, ``_skills_enabled``): tests
+``_tools_initialized``, ``_loaded_toolsets``, ``_skills_enabled``,
+``_tools_loading_enabled``): tests
 (``test_used_files.py``, ``test_tool_executor.py``) monkeypatch
 ``tools_registry.AVAILABLE_TOOLS`` and ``tools_registry._tools_initialized``
 directly to inject stub tools without triggering the slow filesystem
 discovery.  ``ToolsRegistry`` methods therefore read the module globals and
 declare ``global`` only where they rebind a name (``_tools_initialized``,
-``_skills_enabled``).
+``_skills_enabled``, ``_tools_loading_enabled``).
 """
 
 from collections.abc import Callable
@@ -36,6 +37,12 @@ _loaded_toolsets = set(AUTOLOAD_TOOLSETS.copy())
 # Flag to enable skills support
 _skills_enabled = True
 
+# Whether non-skill tools (the autoload toolsets and any toolset added via
+# ``add_toolset``, e.g. gmail/onedrive/janitoweb) are loaded at all.
+# ``--no-tools`` sets this to False; skill tools are never affected, so they
+# stay available even when every other tool is disabled.
+_tools_loading_enabled = True
+
 
 # Lazily-initialized registry of available tools.
 # Discovery is deferred until first access so that CLI flags (e.g. -r, -w, -x)
@@ -53,7 +60,8 @@ class ToolsRegistry:
     the tool lookups (:meth:`all_tools`, :meth:`get`, :meth:`permissions`, ...).
 
     The underlying state lives at module level (``AVAILABLE_TOOLS``,
-    ``_tools_initialized``, ``_loaded_toolsets``, ``_skills_enabled``) so the
+    ``_tools_initialized``, ``_loaded_toolsets``, ``_skills_enabled``,
+    ``_tools_loading_enabled``) so the
     test monkeypatches of ``tools_registry.AVAILABLE_TOOLS`` /
     ``_tools_initialized`` keep working; methods read the module globals and
     declare ``global`` only where they rebind a name.
@@ -65,15 +73,21 @@ class ToolsRegistry:
 
         This ensures ``running_privileges`` is already set by the time
         ``discover_toolsets`` applies its privilege-based filtering.
+
+        When tool loading is disabled (``--no-tools``), the autoload
+        toolsets are skipped but the skill tools are still registered, so
+        ``load_skill`` / ``read_skill_resource`` stay available.
         """
         global _tools_initialized
         if _tools_initialized:
             return
         _tools_initialized = True
 
-        AVAILABLE_TOOLS.update(discover_toolsets(AUTOLOAD_TOOLSETS))
+        if _tools_loading_enabled:
+            AVAILABLE_TOOLS.update(discover_toolsets(AUTOLOAD_TOOLSETS))
 
-        # Add skill tools if enabled
+        # Add skill tools if enabled. Never gated by _tools_loading_enabled:
+        # --no-tools disables the other tools but leaves skills enabled.
         if _skills_enabled:
             AVAILABLE_TOOLS.update(get_skills_tools())
 
@@ -87,6 +101,10 @@ class ToolsRegistry:
         Returns:
             bool: True if the toolset was added, False if already loaded or invalid
         """
+        # --no-tools: no toolset is loaded (skill tools stay available).
+        if not _tools_loading_enabled:
+            return False
+
         self.ensure_initialized()
 
         if toolset_name in _loaded_toolsets:
@@ -232,6 +250,20 @@ You should load a skill when the user's request matches its description or you n
         for tool_name in ["load_skill", "read_skill_resource"]:
             AVAILABLE_TOOLS.pop(tool_name, None)
 
+    def disable_tools_loading(self) -> None:
+        """Disable loading of non-skill tools (``--no-tools``).
+
+        Must be called before the first :meth:`ensure_initialized` to take
+        effect: afterwards the autoload toolsets are never discovered and
+        :meth:`add_toolset` becomes a no-op.  Skill tools are not affected.
+        """
+        global _tools_loading_enabled
+        _tools_loading_enabled = False
+
+    def tools_loading_enabled(self) -> bool:
+        """Whether non-skill tools are loaded (False after ``--no-tools``)."""
+        return _tools_loading_enabled
+
 
 # Module-level singleton backing the functions below.
 _registry = ToolsRegistry()
@@ -356,6 +388,19 @@ def enable_skills() -> None:
 def disable_skills() -> None:
     """Disable skills support."""
     _registry.disable_skills()
+
+
+def disable_tools_loading() -> None:
+    """Disable loading of non-skill tools (``--no-tools``).
+
+    Skill tools (``load_skill`` / ``read_skill_resource``) stay enabled.
+    """
+    _registry.disable_tools_loading()
+
+
+def tools_loading_enabled() -> bool:
+    """Whether non-skill tools are loaded (False after ``--no-tools``)."""
+    return _registry.tools_loading_enabled()
 
 
 if __name__ == "__main__":

@@ -73,6 +73,23 @@ def test_index_html_renders_dialog_template():
     assert "permLabel(t.permissions)" in html
 
 
+def test_tools_disabled_warning_rendered_in_panel_and_dialog():
+    """Both /tools panel and dialog render a warning when tools are disabled."""
+    html = render_index_html()
+    # The banner is shown when the API reports tools_enabled=False (--no-tools).
+    assert "part.tools.toolsEnabled === false" in html
+    assert "toolsDialog.toolsEnabled === false" in html
+    assert 'class="tools-warning"' in html
+    assert "--no-tools" in html
+
+
+def test_tools_css_styles_warning_banner():
+    """tools.css styles the disabled-tools warning banner."""
+    css = (FRONTEND / "css" / "tools.css").read_text(encoding="utf-8")
+    assert ".tools-warning {" in css
+    assert "var(--yellow)" in css
+
+
 def test_tools_css_styles_link_and_dialog():
     """tools.css gives the banner link and dialog their own styles."""
     css = (FRONTEND / "css" / "tools.css").read_text(encoding="utf-8")

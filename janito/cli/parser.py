@@ -42,6 +42,7 @@ Options:
   --list-tools       List all available built-in tools
   --list-mcp         List all MCP services and their tools
   -Z, --no-system-prompt  Do not set a system prompt or pass any tools to the CLI
+  --no-tools              Do not load tools (skill tools stay enabled)
 
 Examples:
   janito "What is the capital of France?"                    # Single prompt mode
@@ -83,6 +84,7 @@ Examples:
   janito -r -w                                                   # Grant READ and WRITE privileges
   janito -r -w -x                                                # Grant READ, WRITE, and EXEC privileges
   janito -S "You are a cow"                                   # Override system prompt (tools stay enabled)
+  janito --no-tools "Your prompt"                             # No tools loaded (skill tools stay enabled)
   janito --install-skill https://github.com/user/repo/tree/main/skills/git-commit  # Install a skill
   janito --list-skills                                        # List installed skills
   janito --uninstall-skill git-commit                         # Uninstall a skill
@@ -158,6 +160,12 @@ Note: --set and --set-api-key must be used in separate commands.
         "--system-prompt",
         metavar="PROMPT",
         help="Override the system prompt (tools stay enabled)",
+    )
+
+    parser.add_argument(
+        "--no-tools",
+        action="store_true",
+        help="Do not load tools (skill tools stay enabled)",
     )
 
     parser.add_argument(

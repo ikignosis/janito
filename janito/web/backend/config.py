@@ -133,6 +133,7 @@ class WebServerConfig:
                 "exec",
                 "system_prompt",
                 "no_system_prompt",
+                "no_tools",
                 "log",
                 "web_host",
                 "web_port",
@@ -140,6 +141,16 @@ class WebServerConfig:
                 "web",
             )
         }
+
+        # --no-tools: stop loading non-skill tools (skill tools stay enabled).
+        # The registry is module-global, so applying it here keeps direct
+        # WebServerConfig.from_args(...) constructions consistent with the
+        # CLI path (__main__._setup_runtime already applied it before the
+        # server starts).
+        if getattr(args, "no_tools", False):
+            from janito.tooling.tools_registry import disable_tools_loading
+
+            disable_tools_loading()
 
         # System prompt resolution (mirrors cli/chat.py logic)
         if getattr(args, "system_prompt", None):

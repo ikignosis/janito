@@ -162,19 +162,25 @@ Control how the system prompt is handled:
 # Use default system prompt (with tools enabled)
 janito "What can you do?"
 
-# Disable system prompt entirely (no tools)
+# Disable system prompt entirely (no tools at all)
 janito -Z "Simple prompt without system context"
 
 # Override with a custom system prompt (tools stay enabled)
 janito -S "You are a concise coding assistant" "Explain recursion"
+
+# Keep the system prompt but skip tool loading (skill tools stay enabled)
+janito --no-tools "Explain recursion"
 ```
 
 | Flag | Description |
 |------|-------------|
 | `-Z`, `--no-system-prompt` | Skip system prompt and disable tools |
 | `-S`, `--system-prompt` | Custom system prompt |
+| `--no-tools` | Do not load tools (skill tools stay enabled) |
 
 > **Note:** When using `-Z`, built-in tools (file operations, Gmail, OneDrive, MCP) are disabled. Use the default mode or `-S`/`--gmail`/`--onedrive` flags when you need tool access.
+>
+> **Note:** `--no-tools` disables loading of all non-skill tools (file operations, Gmail, OneDrive, MCP) while keeping the skill tools (`load_skill`, `read_skill_resource`) available, so the model can still load installed skills on demand.
 
 ### Logging
 

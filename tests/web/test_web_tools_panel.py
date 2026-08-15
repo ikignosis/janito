@@ -21,6 +21,18 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 import pytest
 from _frontend import render_index_html
 
+import janito.tooling.tools_registry as tools_registry
+
+
+def _fake_tool(name, permissions=""):
+    def fake(**kwargs):
+        return {"success": True}
+
+    fake.__name__ = name
+    fake._tool_permissions = permissions
+    return fake
+
+
 # The web routes need the optional `web` extra (fastapi). Skip gracefully
 # when fastapi is not installed (e.g. minimal tox envs).
 try:
@@ -57,8 +69,11 @@ def test_tools_endpoint_shape(client):
     data = resp.json()
     assert "tools" in data
     assert "count" in data
+    assert "tools_enabled" in data
     assert isinstance(data["tools"], list)
     assert data["count"] == len(data["tools"])
+    # Tools are enabled by default; the frontend renders a warning when False.
+    assert data["tools_enabled"] is True
 
     # The frontend reads name / description / permissions off each entry.
     for entry in data["tools"]:
@@ -71,6 +86,37 @@ def test_tools_endpoint_shape(client):
     # At least the always-loaded built-in tools should be present.
     names = {entry["name"] for entry in data["tools"]}
     assert "ReadFile" in names
+
+
+@requires_fastapi
+def test_tools_endpoint_reports_no_tools_disabled(monkeypatch):
+    """GET /api/tools reports tools_enabled=False and only skill tools under --no-tools."""
+    from janito.web.backend.app import create_app
+    from janito.web.backend.config import WebServerConfig
+
+    skill_tools = {
+        "load_skill": _fake_tool("load_skill"),
+        "read_skill_resource": _fake_tool("read_skill_resource"),
+    }
+    monkeypatch.setattr(tools_registry, "AVAILABLE_TOOLS", {})
+    monkeypatch.setattr(tools_registry, "_tools_initialized", False)
+    monkeypatch.setattr(
+        tools_registry,
+        "_loaded_toolsets",
+        set(tools_registry.AUTOLOAD_TOOLSETS),
+    )
+    monkeypatch.setattr(tools_registry, "_skills_enabled", True)
+    monkeypatch.setattr(tools_registry, "_tools_loading_enabled", False)
+    monkeypatch.setattr(tools_registry, "get_skills_tools", lambda: skill_tools)
+
+    config = WebServerConfig(web_host="127.0.0.1", web_port=0, no_web_open=True)
+    app = create_app(config)
+    with TestClient(app) as c:
+        data = c.get("/api/tools").json()
+
+    assert data["tools_enabled"] is False
+    names = {entry["name"] for entry in data["tools"]}
+    assert names == {"load_skill", "read_skill_resource"}
 
 
 @requires_fastapi
@@ -142,3 +188,19 @@ def test_chat_commands_mixin_intercepts_tools():
     assert "'/tools'" in src
     assert "_runToolsCommand" in src
     assert "getMcpTools" in src
+
+
+@requires_fastapi
+def test_chat_commands_mixin_reads_tools_enabled():
+    """The listing builder surfaces the API's tools_enabled flag for the banner."""
+    js = (
+        Path(__file__).parent.parent.parent
+        / "janito"
+        / "web"
+        / "frontend"
+        / "js"
+        / "chatCommands.js"
+    )
+    src = js.read_text(encoding="utf-8")
+    assert "data.tools_enabled" in src
+    assert "toolsEnabled" in src

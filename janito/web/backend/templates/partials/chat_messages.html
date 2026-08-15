@@ -180,6 +180,14 @@
                                                               x-text="part.tools.total + ' tool' + (part.tools.total === 1 ? '' : 's')"></span>
                                                     </div>
 
+                                                    <!-- Tools disabled banner (--no-tools) -->
+                                                    <template x-if="part.tools.toolsEnabled === false">
+                                                        <div class="tools-warning" role="note">
+                                                            ⚠ Tool loading is disabled (--no-tools). Only the skill
+                                                            tools are available (load_skill, read_skill_resource).
+                                                        </div>
+                                                    </template>
+
                                                     <!-- Built-in tools -->
                                                     <div class="tools-section">
                                                         <div class="tools-section-title">Built-in Tools</div>

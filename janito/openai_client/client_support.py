@@ -26,15 +26,20 @@ from janito.agent.usage import format_tokens, normalize_usage
 
 # Import MCP manager
 from janito.mcp_manager import get_mcp_manager
+from janito.tooling.tools_registry import tools_loading_enabled
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
 
 
 def _load_mcp(use_mcp: bool) -> tuple[Any, list[dict[str, Any]]]:
-    """Load MCP services/tools when enabled; return ``(manager, tools)``."""
+    """Load MCP services/tools when enabled; return ``(manager, tools)``.
+
+    MCP tools are never loaded when tool loading is disabled (``--no-tools``):
+    that flag suppresses every non-skill tool, MCP included.
+    """
     mcp_manager = None
-    if use_mcp:
+    if use_mcp and tools_loading_enabled():
         mcp_manager = get_mcp_manager()
         try:
             mcp_manager.load_services()

@@ -15,6 +15,7 @@ async def list_tools(request: Request):
     from janito.tooling.tools_registry import (
         get_all_tool_permissions,
         get_all_tool_schemas,
+        tools_loading_enabled,
     )
 
     schemas = get_all_tool_schemas()
@@ -33,7 +34,11 @@ async def list_tools(request: Request):
             }
         )
 
-    return {"tools": tools, "count": len(tools)}
+    return {
+        "tools": tools,
+        "count": len(tools),
+        "tools_enabled": tools_loading_enabled(),
+    }
 
 
 @router.get("/skipped")

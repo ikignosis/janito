@@ -23,6 +23,7 @@ from janito.tooling.tools_registry import get_all_tool_schemas
 from janito.tooling.tools_registry import (
     get_tool_permissions as get_tool_permissions,  # re-exported for turn.py
 )
+from janito.tooling.tools_registry import tools_loading_enabled
 from janito.tooling.used_files import (
     reset_used_files as reset_used_files,  # re-exported for loop.py
 )
@@ -38,6 +39,8 @@ async def resolve_tools(config, tools: list[dict] | None, use_mcp: bool) -> list
     - ``config.no_tools`` -> empty list.
     - ``tools`` explicitly provided -> use as-is.
     - Otherwise auto-discover built-in tools plus (optionally) MCP tools.
+      With ``--no-tools`` the registry holds only the skill tools and MCP
+      tools are not loaded.
     """
     if config.no_tools:
         return []
@@ -46,7 +49,7 @@ async def resolve_tools(config, tools: list[dict] | None, use_mcp: bool) -> list
         return tools
 
     mcp_tools: list[dict] = []
-    if use_mcp:
+    if use_mcp and tools_loading_enabled():
         mcp_manager = get_mcp_manager()
         try:
             await asyncio.to_thread(mcp_manager.load_services)

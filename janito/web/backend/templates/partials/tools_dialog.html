@@ -29,6 +29,14 @@
 
                     <template x-if="!toolsDialogLoading && !toolsDialogError && toolsDialog">
                         <div class="tools-dialog-body">
+                            <!-- Tools disabled banner (--no-tools) -->
+                            <template x-if="toolsDialog.toolsEnabled === false">
+                                <div class="tools-warning" role="note">
+                                    ⚠ Tool loading is disabled (--no-tools). Only the skill
+                                    tools are available (load_skill, read_skill_resource).
+                                </div>
+                            </template>
+
                             <!-- Built-in tools -->
                             <div class="tools-section">
                                 <div class="tools-section-title">Built-in Tools</div>

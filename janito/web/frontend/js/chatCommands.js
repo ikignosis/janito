@@ -20,11 +20,14 @@
 
 // Fetch the tool data from the backend and shape it for the template.
 async function _fetchToolsListing() {
-    // Built-in tools and skipped-tools reasons.
+    // Built-in tools and skipped-tools reasons. The API also reports whether
+    // non-skill tools are enabled at all (False after `--no-tools`).
     let builtin = [];
     let skipped = {};
+    let toolsEnabled = true;
     try {
         const data = await Api.getTools();
+        toolsEnabled = data.tools_enabled !== false;
         builtin = (data.tools || []).map(t => ({
             name: t.name,
             description: t.description || '',
@@ -59,6 +62,7 @@ async function _fetchToolsListing() {
         mcp: mcp.sort(byName),
         skipped: skipped,
         total: builtin.length + mcp.length,
+        toolsEnabled: toolsEnabled,
     };
 }
 

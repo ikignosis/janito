@@ -118,6 +118,7 @@ The server prints the URL it's listening on, then opens your default browser
 | `-t, --thinking` | Enable thinking/reasoning mode for all sessions (DeepSeek and Alibaba/Qwen have it on by default) |
 | `-S "prompt"` | Override system prompt (tools stay enabled) |
 | `-Z, --no-system-prompt` | No system prompt, no tools |
+| `--no-tools` | Do not load tools (skill tools stay enabled) |
 | `-v, --verbose` | Verbose backend logging |
 | `--no-history` | Don't persist session history to disk (`./.janito/sessions/` is neither written nor read) |
 

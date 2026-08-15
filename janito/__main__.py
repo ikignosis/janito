@@ -86,6 +86,15 @@ def _setup_runtime(args) -> int | None:
     set_local_config_mode(getattr(args, "local", False))
     setup_logging(args.log)
 
+    # --no-tools: stop loading non-skill tools (skill tools stay enabled).
+    # Applied before any registry access so the lazy discovery in
+    # tools_registry.ensure_initialized() never runs discover_toolsets()
+    # for the autoload toolsets.
+    if getattr(args, "no_tools", False):
+        from .tooling.tools_registry import disable_tools_loading
+
+        disable_tools_loading()
+
     # Whenever --provider <name> is used, verify it is a supported provider
     # (i.e. one that maps to an entry in PROVIDER_INFO). Normalize it to
     # its canonical casing so every downstream consumer (config scoping,

@@ -313,6 +313,21 @@
     padding: 6px 0;
 }
 
+/* Tools disabled banner — shown by /tools and the tools dialog when the
+   server was started with --no-tools (non-skill tools disabled). */
+.tools-warning {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin: 0 0 12px;
+    padding: 8px 12px;
+    border: 1px solid var(--yellow);
+    border-radius: var(--radius);
+    background: rgba(224, 175, 104, 0.08);
+    color: var(--yellow);
+    font-size: 13px;
+}
+
 /* ─────────────────────────────────────────────────────────────────────────
    Tools info dialog (opened from the session-start banner link)
    The "N tool(s) active" text in the session-start banner is a link that

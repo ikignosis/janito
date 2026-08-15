@@ -15,3 +15,20 @@ Changes since `v4.25.0` (2026-08-15).
   suppresses them, so a custom system prompt can still use the built-in, Gmail,
   OneDrive and MCP tools. (`janito/cli/session_setup.py`,
   `janito/web/backend/config.py`)
+- The `/tools` command (CLI shell and web chat) now shows a warning when tool
+  loading is disabled via `--no-tools`, noting that only the skill tools
+  (`load_skill`, `read_skill_resource`) remain available.
+  (`janito/shell/cmds/tools.py`, `janito/web/backend/routers/tools.py`,
+  `janito/web/frontend/js/chatCommands.js`,
+  `janito/web/backend/templates/partials/chat_messages.html`,
+  `janito/web/backend/templates/partials/tools_dialog.html`,
+  `janito/web/frontend/css/tools.css`)
+
+### Added
+
+- New `--no-tools` flag disables loading of non-skill tools (built-in toolsets,
+  Gmail, OneDrive, MCP) while keeping the skill tools (`load_skill`,
+  `read_skill_resource`) enabled, so installed skills remain usable without
+  any other tool access. (`janito/cli/parser.py`, `janito/__main__.py`,
+  `janito/tooling/tools_registry.py`, `janito/openai_client/client_support.py`,
+  `janito/web/backend/config.py`, `janito/web/backend/agent/tooling.py`)

@@ -40,6 +40,7 @@ def _fresh_registry(monkeypatch, tools=None, skills_enabled=True):
         set(tools_registry.AUTOLOAD_TOOLSETS),
     )
     monkeypatch.setattr(tools_registry, "_skills_enabled", skills_enabled)
+    monkeypatch.setattr(tools_registry, "_tools_loading_enabled", True)
     monkeypatch.setattr(tools_registry, "discover_toolsets", lambda names: {})
     monkeypatch.setattr(tools_registry, "get_skills_tools", lambda: {})
     monkeypatch.setattr(tools_registry, "get_skills_advertisement", lambda: "")
@@ -142,6 +143,55 @@ if pytest is not None:
 
         registry.enable_skills()
         assert "load_skill" in registry.all_tools()
+
+    def test_disable_tools_loading_skips_autoload_keeps_skills(monkeypatch):
+        """--no-tools: autoload toolsets are skipped, skill tools stay loaded."""
+        skill_tools = {
+            "load_skill": _fake_tool("load_skill"),
+            "read_skill_resource": _fake_tool("read_skill_resource"),
+        }
+        calls = {"n": 0}
+        registry = _fresh_registry(monkeypatch, {}, skills_enabled=True)
+        monkeypatch.setattr(tools_registry, "get_skills_tools", lambda: skill_tools)
+
+        def fake_discover(names):
+            calls["n"] += 1
+            return {"ReadFile": _fake_tool("ReadFile", "r")}
+
+        monkeypatch.setattr(tools_registry, "discover_toolsets", fake_discover)
+        monkeypatch.setattr(tools_registry, "_tools_loading_enabled", False)
+
+        registry.ensure_initialized()
+
+        # Autoload discovery never ran; only the skill tools are available.
+        assert calls["n"] == 0
+        assert set(registry.all_tools()) == {"load_skill", "read_skill_resource"}
+
+    def test_disable_tools_loading_makes_add_toolset_noop(monkeypatch):
+        calls = {"n": 0}
+        registry = _fresh_registry(monkeypatch, {}, skills_enabled=False)
+
+        def fake_discover(names):
+            calls["n"] += 1
+            return {"GmailTool": _fake_tool("GmailTool", "r")}
+
+        monkeypatch.setattr(tools_registry, "discover_toolsets", fake_discover)
+        monkeypatch.setattr(tools_registry, "get_skills_tools", lambda: {})
+        monkeypatch.setattr(tools_registry, "_tools_loading_enabled", False)
+
+        # add_toolset is a no-op when loading is disabled...
+        assert registry.add_toolset("gmail") is False
+        # ...and it must not have triggered discovery for the autoload
+        # toolsets either (the early return skips ensure_initialized).
+        assert calls["n"] == 0
+        assert "GmailTool" not in registry.all_tools()
+
+    def test_tools_loading_flag_module_delegators(monkeypatch):
+        """Module-level disable_tools_loading / tools_loading_enabled."""
+        _fresh_registry(monkeypatch, {})
+        assert tools_registry.tools_loading_enabled() is True
+        tools_registry.disable_tools_loading()
+        assert tools_registry.tools_loading_enabled() is False
 
     def test_skills_section_empty_when_disabled(monkeypatch):
         registry = _fresh_registry(monkeypatch, {}, skills_enabled=False)

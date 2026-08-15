@@ -74,13 +74,23 @@ class ToolsCmdHandler(CmdHandler):
 
     def handle(self, shell, user_input: str) -> bool:
         """Handle the /tools command."""
-        if user_input.lower() == self.name.lower():
+        if user_input.strip().lower() == self.name.lower():
             self._print_tools()
             return True
         return False
 
     def _print_tools(self) -> None:
         """Print information about all available tools as rich tables."""
+        # Warn when tool loading is disabled via --no-tools.
+        from janito.tooling.tools_registry import tools_loading_enabled
+
+        if not tools_loading_enabled():
+            Console().print(
+                "[bold yellow]Warning:[/bold yellow] tool loading is disabled "
+                "(--no-tools). Only the skill tools are available "
+                "(load_skill, read_skill_resource)."
+            )
+
         # Get built-in tools from tools_registry
         builtin_tools, builtin_schemas = _load_builtin_tools()
 
