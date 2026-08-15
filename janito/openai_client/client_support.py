@@ -119,6 +119,7 @@ def _display_usage(
     input_attr: str = "prompt_tokens",
     output_attr: str = "completion_tokens",
     cached_details_attr: str | None = "prompt_tokens_details",
+    cost: float | None = None,
 ) -> None:
     """Print the token usage summary line.
 
@@ -131,7 +132,8 @@ def _display_usage(
     display no longer needs per-API attribute plumbing.  ``input_attr`` /
     ``output_attr`` are retained for signature compatibility; pass
     ``cached_details_attr=None`` to skip the cached-token read for APIs that
-    do not report it.
+    do not report it.  ``cost`` is appended as ``Cost: <cost>`` and defaults
+    to ``N/A`` when no cost is available.
     """
     stats = normalize_usage(usage_info)
     if stats is None:
@@ -161,6 +163,7 @@ def _display_usage(
     if cached_tokens is not None:
         parts.append(f"Cached: {format_tokens(cached_tokens)}")
     parts.append(f"{label}: {message_count}")
+    parts.append(f"Cost: {cost if cost is not None else 'N/A'}")
 
     token_text = Text(f"=== {' | '.join(parts)} ===")
     token_text.stylize("white on magenta")

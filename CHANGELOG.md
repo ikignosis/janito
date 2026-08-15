@@ -11,6 +11,10 @@ Changes since `v4.25.0` (2026-08-15).
 
 ### Changed
 
+- The token-usage summary line printed at the end of each turn now appends a
+  `Cost: <cost>` part; it shows `Cost: N/A` unless a cost is passed to
+  `_display_usage` (`janito/openai_client/client_support.py`,
+  `scripts/provider_token_benchmark.py`, `tests/test_provider_token_benchmark.py`)
 - Added `janito/providers/template/config.py`: the documentation template
   for writing a new provider's config entry, commenting every possible
   CONFIG option (provider-level `default_model` / `endpoint` /

@@ -91,9 +91,9 @@ def test_parse_usage_log_multi_round():
 
 def test_parse_usage_summary():
     stdout = (
-        "=== Total: 1.2k | In: 1k | Out: 234 | Messages: 1 ===\n"
+        "=== Total: 1.2k | In: 1k | Out: 234 | Messages: 1 | Cost: N/A ===\n"
         "some answer text\n"
-        "=== Total: 2k | In: 1.5k | Out: 1.5k/128k | Cached: 100 | Messages: 2 ===\n"
+        "=== Total: 2k | In: 1.5k | Out: 1.5k/128k | Cached: 100 | Messages: 2 | Cost: N/A ===\n"
     )
     assert pbm.parse_usage_summary(stdout) == ["234", "1.5k"]
 
@@ -107,7 +107,7 @@ def test_build_result_ok_from_log():
     stdout = (
         "----- Model: gpt-5.6-luna | Backend: api.openai.com\n"
         "answer\n"
-        "=== Total: 1.2k | In: 1k | Out: 234 | Messages: 1 ===\n"
+        "=== Total: 1.2k | In: 1k | Out: 234 | Messages: 1 | Cost: N/A ===\n"
     )
     stderr = "INFO: Request completed: total=1234 tokens (in=1000, out=234, cached=None, max=128000), 1 messages\n"
     result = pbm.build_result("openai", 0, stdout, stderr)
@@ -138,7 +138,10 @@ def test_build_result_ok_sums_multi_round():
 
 
 def test_build_result_ok_falls_back_to_display():
-    stdout = "----- Model: glm-5.2 | Backend: https://api.z.ai\n=== Total: 1.5k | Out: 1.5k | Messages: 1 ===\n"
+    stdout = (
+        "----- Model: glm-5.2 | Backend: https://api.z.ai\n"
+        "=== Total: 1.5k | Out: 1.5k | Messages: 1 | Cost: N/A ===\n"
+    )
     result = pbm.build_result("zai", 0, stdout, "")
     assert result["status"] == "ok"
     assert result["out_tokens"] == 1500

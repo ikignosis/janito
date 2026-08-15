@@ -304,7 +304,7 @@ USAGE_LOG_RE = re.compile(
 )
 
 # The human-readable summary line, e.g.:
-#   === Total: 1.2k | In: 1k | Out: 234 | Messages: 1 ===
+#   === Total: 1.2k | In: 1k | Out: 234 | Messages: 1 | Cost: N/A ===
 SUMMARY_LINE_RE = re.compile(r"^=== .* ===\s*$", re.MULTILINE)
 OUT_PART_RE = re.compile(
     r"Out:\s*([0-9]+(?:\.[0-9]+)?[km]?)(?:\s*/\s*[0-9]+(?:\.[0-9]+)?[km]?)?"
