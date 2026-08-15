@@ -20,7 +20,7 @@ class SessionSetup:
 
     Args:
         system_prompt: A custom system prompt (``-S``). When set, it wins over
-            every other mode and implies ``no_tools``.
+            every other mode; tools stay enabled.
         no_system_prompt: ``-Z``: send no system prompt at all (implies
             ``no_tools``).
         gmail: ``--gmail``: use the Gmail-specific system prompt and enable
@@ -46,10 +46,11 @@ class SessionSetup:
     def no_tools(self) -> bool:
         """Whether tools must be suppressed for this session.
 
-        A custom ``-S`` prompt or ``-Z`` implies no tools; the default and the
-        Gmail/OneDrive modes pass tools (``None`` = use all available).
+        Only ``-Z`` (no system prompt) suppresses tools; a custom ``-S``
+        prompt, the default, and the Gmail/OneDrive modes pass tools
+        (``None`` = use all available).
         """
-        return bool(self.system_prompt or self.no_system_prompt)
+        return bool(self.no_system_prompt)
 
     def effective_system_prompt(self) -> str | None:
         """Resolve the system prompt for the enabled modes.
@@ -98,8 +99,8 @@ class SessionSetup:
         """Build the ``tools`` argument for a single-prompt run.
 
         Returns:
-            ``[]`` when tools must be suppressed (custom ``-S`` / ``-Z``),
-            otherwise ``None`` (the caller uses all available tools).
+            ``[]`` when tools must be suppressed (``-Z``), otherwise ``None``
+            (the caller uses all available tools).
         """
         return [] if self.no_tools else None
 

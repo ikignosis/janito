@@ -82,7 +82,7 @@ Examples:
   janito --onedrive                                           # Enable OneDrive tools and file system prompt
   janito -r -w                                                   # Grant READ and WRITE privileges
   janito -r -w -x                                                # Grant READ, WRITE, and EXEC privileges
-  janito -S "You are a cow"                                   # Override system prompt (no tools)
+  janito -S "You are a cow"                                   # Override system prompt (tools stay enabled)
   janito --install-skill https://github.com/user/repo/tree/main/skills/git-commit  # Install a skill
   janito --list-skills                                        # List installed skills
   janito --uninstall-skill git-commit                         # Uninstall a skill
@@ -157,7 +157,7 @@ Note: --set and --set-api-key must be used in separate commands.
         "-S",
         "--system-prompt",
         metavar="PROMPT",
-        help="Override the system prompt (implies --no-system-prompt / no tools)",
+        help="Override the system prompt (tools stay enabled)",
     )
 
     parser.add_argument(

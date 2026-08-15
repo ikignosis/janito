@@ -44,7 +44,7 @@ if pytest is not None:
     def test_custom_system_prompt_wins():
         setup = SessionSetup(system_prompt="You are a cow")
         assert setup.effective_system_prompt() == "You are a cow"
-        assert setup.no_tools is True
+        assert setup.no_tools is False
 
     def test_no_system_prompt_yields_none():
         setup = SessionSetup(no_system_prompt=True)
@@ -84,10 +84,10 @@ if pytest is not None:
         assert len(messages) == 1 and messages[0]["role"] == "system"
         assert tools is None
 
-        # Custom prompt: seeded message, tools=[] (no tools).
+        # Custom prompt: seeded message, tools=None (use all).
         setup = SessionSetup(system_prompt="custom")
         assert setup.messages_context() == [{"role": "system", "content": "custom"}]
-        assert setup.tools_arg() == []
+        assert setup.tools_arg() is None
 
         # No system prompt: no seed, tools=[].
         setup = SessionSetup(no_system_prompt=True)

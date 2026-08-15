@@ -165,16 +165,16 @@ janito "What can you do?"
 # Disable system prompt entirely (no tools)
 janito -Z "Simple prompt without system context"
 
-# Override with a custom system prompt (no tools)
+# Override with a custom system prompt (tools stay enabled)
 janito -S "You are a concise coding assistant" "Explain recursion"
 ```
 
 | Flag | Description |
 |------|-------------|
 | `-Z`, `--no-system-prompt` | Skip system prompt and disable tools |
-| `-S`, `--system-prompt` | Custom system prompt (also disables tools) |
+| `-S`, `--system-prompt` | Custom system prompt |
 
-> **Note:** When using `-S` or `-Z`, built-in tools (file operations, Gmail, OneDrive, MCP) are disabled. Use the default mode or `--gmail`/`--onedrive` flags when you need tool access.
+> **Note:** When using `-Z`, built-in tools (file operations, Gmail, OneDrive, MCP) are disabled. Use the default mode or `-S`/`--gmail`/`--onedrive` flags when you need tool access.
 
 ### Logging
 

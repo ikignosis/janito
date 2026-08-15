@@ -89,7 +89,7 @@ class WebServerConfig:
     # --- System prompt ---
     system_prompt: str | None = None  # -S "custom prompt"
     no_system_prompt: bool = False  # -Z
-    no_tools: bool = False  # implied by -Z or -S
+    no_tools: bool = False  # implied by -Z
 
     # --- Security ---
     auth_token: str | None = None  # from JANITO_WEB_TOKEN env
@@ -144,7 +144,6 @@ class WebServerConfig:
         # System prompt resolution (mirrors cli/chat.py logic)
         if getattr(args, "system_prompt", None):
             config.system_prompt = args.system_prompt
-            config.no_tools = True
         elif getattr(args, "no_system_prompt", False):
             config.no_system_prompt = True
             config.no_tools = True

@@ -116,7 +116,7 @@ The server prints the URL it's listening on, then opens your default browser
 | `--gmail` | Enable Gmail toolset + email system prompt |
 | `--onedrive` | Enable OneDrive toolset + file system prompt |
 | `-t, --thinking` | Enable thinking/reasoning mode for all sessions (DeepSeek and Alibaba/Qwen have it on by default) |
-| `-S "prompt"` | Override system prompt (implies no tools) |
+| `-S "prompt"` | Override system prompt (tools stay enabled) |
 | `-Z, --no-system-prompt` | No system prompt, no tools |
 | `-v, --verbose` | Verbose backend logging |
 | `--no-history` | Don't persist session history to disk (`./.janito/sessions/` is neither written nor read) |
