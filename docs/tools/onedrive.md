@@ -133,4 +133,4 @@ Run: `janito --onedrive-auth` to re-authenticate
 
 ## More Info
 
-For CLI access, see [janito/tools/README.onedrive.md](https://github.com/ikignosis/janito/blob/main/janito/tools/README.onedrive.md)
+For CLI access, see [janito/tools/README.onedrive.md](https://github.com/joaompinto/janito/blob/main/janito/tools/README.onedrive.md)

@@ -17,7 +17,7 @@ This section covers development setup and contribution guidelines.
 
 ```bash
 # Clone the repository
-git clone https://github.com/ikignosis/janito.git
+git clone https://github.com/joaompinto/janito.git
 cd janito
 
 # Create the virtual environment and install the project + dev dependencies

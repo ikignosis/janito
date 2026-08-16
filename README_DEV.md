@@ -12,7 +12,7 @@ This guide covers how to set up janito for development.
 ## Clone the Repository
 
 ```bash
-git clone https://github.com/ikignosis/janito.git
+git clone https://github.com/joaompinto/janito.git
 cd janito
 ```
 
@@ -50,15 +50,15 @@ not fail:
    It turns this:
 
    ```markdown
-   ## [Unreleased](https://github.com/ikignosis/janito/compare/v4.11.0...HEAD)
+   ## [Unreleased](https://github.com/joaompinto/janito/compare/v4.11.0...HEAD)
    ```
 
    into this (a concrete release heading plus a new empty `[Unreleased]`):
 
    ```markdown
-   ## [Unreleased](https://github.com/ikignosis/janito/compare/v4.12.0...HEAD)
+   ## [Unreleased](https://github.com/joaompinto/janito/compare/v4.12.0...HEAD)
 
-   ## [v4.12.0](https://github.com/ikignosis/janito/compare/v4.11.0...v4.12.0) - 2026-07-26
+   ## [v4.12.0](https://github.com/joaompinto/janito/compare/v4.11.0...v4.12.0) - 2026-07-26
    ```
 
    (You can also edit the heading by hand — just make sure it reads

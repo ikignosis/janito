@@ -81,7 +81,7 @@ A skill's SKILL.md should include:
 
 ```bash
 # Find a skills repository on GitHub
-janito --install-skill https://github.com/ikignosis/janito/tree/main/skills/git-commit
+janito --install-skill https://github.com/joaompinto/janito/tree/main/skills/git-commit
 ```
 
 ## Tips

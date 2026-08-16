@@ -147,5 +147,5 @@ plus the standard macOS and Windows install locations.
 
 ## More Info
 
-- Source: [`janito/tools/net/`](https://github.com/ikignosis/janito/tree/main/janito/tools/net)
+- Source: [`janito/tools/net/`](https://github.com/joaompinto/janito/tree/main/janito/tools/net)
 - [Secrets](../configuration/secrets.md) - Full secrets setup guide

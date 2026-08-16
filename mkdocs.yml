@@ -1,10 +1,10 @@
 site_name: Janito Documentation
 site_description: OpenAI CLI with Function Calling, MCP Support, and Extensible Tools
 site_author: Janito Developer
-site_url: https://github.com/ikignosis/janito
+site_url: https://github.com/joaompinto/janito
 
-repo_name: ikignosis/janito
-repo_url: https://github.com/ikignosis/janito
+repo_name: joaompinto/janito
+repo_url: https://github.com/joaompinto/janito
 
 theme:
   name: material
@@ -88,4 +88,4 @@ markdown_extensions:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/ikignosis/janito
+      link: https://github.com/joaompinto/janito

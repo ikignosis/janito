@@ -1,8 +1,8 @@
 # janito - a development agent with function calling, MCP and skills
 
-![Console vs Web](https://raw.githubusercontent.com/ikignosis/janito/main/docs/imgs/console_vs_web.png)
+![Console vs Web](https://raw.githubusercontent.com/joaompinto/janito/main/docs/imgs/console_vs_web.png)
 
-> 📖 **Full documentation available at [https://ikignosis.github.io/janito/](https://ikignosis.github.io/janito/)**
+> 📖 **Full documentation available at [https://joaompinto.github.io/janito/](https://joaompinto.github.io/janito/)**
 
 > ⚠️ **Disclaimer:** The code on this repo has been developed mostly using AI, more specifically the Qwen models.
 
@@ -152,7 +152,7 @@ janito --web --no-web-open                      # don't auto-open the browser
 
 The server binds to `127.0.0.1` by default (localhost only). For full details
 (features, security, API endpoints, architecture), see the
-[Web UI documentation](https://ikignosis.github.io/janito/usage/web-ui/).
+[Web UI documentation](https://joaompinto.github.io/janito/usage/web-ui/).
 
 ### System Prompt Options
 

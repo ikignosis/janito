@@ -39,8 +39,8 @@ web = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/ikignosis/janito"
-Repository = "https://github.com/ikignosis/janito"
+Homepage = "https://github.com/joaompinto/janito"
+Repository = "https://github.com/joaompinto/janito"
 
 [project.scripts]
 janito = "janito.__main__:main"
