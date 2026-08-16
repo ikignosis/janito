@@ -406,7 +406,7 @@ if pytest is not None:
 
     def test_supported_and_default_api_types():
         # OpenAI supports both APIs and defaults to the Responses API (the
-        # first entry of its default model's supported_api_types list).
+        # default_api_type of its default model, the first supported type).
         assert get_supported_api_types_from_provider("openai") == [
             "Responses",
             "Completions",

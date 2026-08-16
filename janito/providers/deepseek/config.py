@@ -24,6 +24,7 @@ PROVIDER_CONFIG: dict = {
     "models": {
         "deepseek-v4-flash": {
             "supported_api_types": ["Responses", "Completions", "Anthropic"],
+            "default_api_type": "Responses",  # built-in default (the first supported type)
             # DeepSeek's /responses endpoint is stateless: it cannot
             # resolve a previous_response_id, so the client must re-send
             # the full history.
@@ -51,6 +52,7 @@ PROVIDER_CONFIG: dict = {
         },
         "deepseek-v4-pro": {
             "supported_api_types": ["Responses", "Completions", "Anthropic"],
+            "default_api_type": "Responses",  # built-in default (the first supported type)
             # DeepSeek's /responses endpoint is stateless: it cannot
             # resolve a previous_response_id, so the client must re-send
             # the full history.

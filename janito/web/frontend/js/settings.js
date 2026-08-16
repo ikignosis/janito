@@ -129,17 +129,12 @@ function settingsComponent() {
 
         // The effective API type for the selected provider: the configured
         // override first (``api_type``), then the provider's built-in
-        // default (the first of its ``supported_api_types``) — mirrors the
-        // CLI's ``resolve_api_type`` resolution.
+        // default (its ``default_api_type``) — mirrors the CLI's
+        // ``resolve_api_type`` resolution.
         resolveApiType() {
             const p = this.selectedProviderDetail;
             if (!p) return '';
-            return (
-                p.api_type ||
-                p.default_api_type ||
-                (p.supported_api_types && p.supported_api_types[0]) ||
-                ''
-            );
+            return p.api_type || p.default_api_type || '';
         },
 
         // The API types the selected provider supports AND that can be used

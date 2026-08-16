@@ -62,12 +62,18 @@ PROVIDER_CONFIG: dict = {
             #: The API types the model supports: "Responses" and/or
             #: "Completions" (both served by the `openai` package), plus
             #: native-SDK types such as "Anthropic"/"DashScope".  The
-            #: **first** entry is the built-in default API type for the
-            #: model.  The effective type can be overridden per
-            #: provider/model with ``--set api-type=...`` or per-call with
-            #: ``--api-type``.  Native-SDK API types must also be declared
-            #: in ``REQUIRES_BY_API_TYPE`` (see :mod:`janito.providers`).
+            #: effective type can be overridden per provider/model with
+            #: ``--set api-type=...`` or per-call with ``--api-type``.
+            #: Native-SDK API types must also be declared in
+            #: ``REQUIRES_BY_API_TYPE`` (see :mod:`janito.providers`).
             "supported_api_types": ["Responses", "Completions"],
+            #: The built-in default API type -- the API type used when the
+            #: user has not configured one.  Must be one of the entries of
+            #: ``supported_api_types`` (usually its first entry, e.g.
+            #: ``"Responses"`` for OpenAI's default model).  The effective
+            #: type can be overridden per provider/model with
+            #: ``--set api-type=...`` or per-call with ``--api-type``.
+            "default_api_type": "Responses",
             #: Whether the model's Responses API endpoint keeps the
             #: conversation state server-side (so turns can be chained with
             #: ``previous_response_id``).  ``True`` for models that follow

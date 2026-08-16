@@ -38,6 +38,7 @@ PROVIDER_CONFIG: dict = {
             # requires the optional `dashscope` package; see
             # REQUIRES_BY_API_TYPE).
             "supported_api_types": ["Completions", "Responses", "DashScope"],
+            "default_api_type": "Completions",  # built-in default (the first supported type)
             "max_input_tokens": 1000000,  # 1M
             "max_output_tokens": 131072,
             "reasoning_level": "xhigh",

@@ -27,6 +27,7 @@ PROVIDER_CONFIG: dict = {
             # SDK API type is selectable with --set api-type=Anthropic /
             # --api-type Anthropic (it requires the optional `anthropic`
             # package; see REQUIRES_BY_API_TYPE).
+            "default_api_type": "Completions",  # built-in default (the first supported type)
             "max_input_tokens": 200000,
             "max_output_tokens": 64000,
         },

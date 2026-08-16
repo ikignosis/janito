@@ -14,7 +14,8 @@ PROVIDER_CONFIG: dict = {
             "supported_api_types": [
                 "Responses",
                 "Completions",
-            ],  # Responses is the default
+            ],
+            "default_api_type": "Responses",  # built-in default (Responses is the default)
             "responses_in_server": True,  # server-side conversation state (previous_response_id)
             "max_input_tokens": 1050000,
             "max_output_tokens": 128000,

@@ -108,9 +108,9 @@ def resolve_api_type(
       - api_type: ``--api-type`` CLI arg, then the model-scoped configured
         value (``--set api-type=...``, stored under
         ``providers.<provider>.models.<model>.api-type``), and finally the
-        effective model's built-in default from the provider config (the
-        **first** entry of its ``supported_api_types``, e.g. ``"Responses"``
-        for OpenAI's default model).
+        effective model's built-in default from the provider config (its
+        ``default_api_type`` entry, e.g. ``"Responses"`` for OpenAI's
+        default model).
       - model: ``--model`` (``cli_model``), then the provider's configured
         model (``<provider>.model``); the built-in default comes from that
         model's entry (falling back to the default model's entry for models

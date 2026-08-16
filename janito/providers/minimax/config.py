@@ -24,6 +24,7 @@ PROVIDER_CONFIG: dict = {
     "models": {
         "MiniMax-M3": {
             "supported_api_types": ["Completions", "Anthropic"],
+            "default_api_type": "Completions",  # built-in default (the first supported type)
             "max_input_tokens": 1000000,  # 1M
             "max_output_tokens": 511000,  # 512k
             # MiniMax-M3 reasons by default. Its OpenAI-compatible API

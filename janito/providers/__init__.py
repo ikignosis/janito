@@ -14,6 +14,7 @@ Provider Info:
         "models": {
             "gpt-5.6-luna": {
                 "supported_api_types": ["Responses", "Completions"],
+                "default_api_type": "Responses",
                 "max_input_tokens": 1050000,
                 "max_output_tokens": 128000,
                 "responses_in_server": True,
@@ -44,10 +45,14 @@ Model-level fields (each entry of the ``models`` dict):
 
   - "supported_api_types": the API types the model supports
     ("Responses" and/or "Completions", plus native-SDK types such as
-    "Anthropic"/"DashScope"). The **first** entry is the built-in default
-    API type for the model (e.g. OpenAI's default model uses the Responses
-    API). The effective type can be overridden per provider/model with
-    ``--set api-type=...`` or per-call with ``--api-type``.
+    "Anthropic"/"DashScope"). The effective type can be overridden per
+    provider/model with ``--set api-type=...`` or per-call with
+    ``--api-type``.
+  - "default_api_type": the built-in default API type for the model
+    (usually the first entry of its ``supported_api_types``, e.g.
+    "Responses" for OpenAI's default model, so it uses the Responses API
+    out of the box). The effective type can be overridden per provider/
+    model with ``--set api-type=...`` or per-call with ``--api-type``.
   - "responses_in_server": whether the model's Responses API endpoint keeps
     the conversation state server-side (so turns can be chained with
     ``previous_response_id``). ``True`` for models that follow the OpenAI

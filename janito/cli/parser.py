@@ -198,8 +198,8 @@ Note: --set and --set-api-key must be used in separate commands.
         "is installed) or 'DashScope' (the native DashScope SDK, only for "
         "the alibaba provider and when the optional 'dashscope' package is "
         "installed). Overrides the provider's configured value "
-        "(--set api-type=...) and built-in default (the first entry of its "
-        "supported_api_types list, e.g. 'Responses' for OpenAI).",
+        "(--set api-type=...) and built-in default (the model's "
+        "default_api_type entry, e.g. 'Responses' for OpenAI).",
     )
 
     parser.add_argument(

@@ -42,11 +42,14 @@ class ModelConfig:
         return self._data.get("supported_api_types")
 
     def default_api_type(self) -> str | None:
-        """The built-in default API type (the first supported entry)."""
-        supported = self.supported_api_types()
-        if not supported:
-            return None
-        return supported[0]
+        """The built-in default API type, from the model's ``default_api_type`` entry.
+
+        The model entry declares it explicitly (usually the first of its
+        ``supported_api_types``, e.g. ``"Responses"`` for OpenAI's default
+        model).  ``None`` when the model declares no default (unknown model /
+        provider without built-in models).
+        """
+        return self._data.get("default_api_type")
 
     def reasoning_level(self) -> str | None:
         """The built-in default reasoning level, or ``None``."""
@@ -251,7 +254,7 @@ class Provider:
         return self.model_config(model).supported_api_types()
 
     def default_api_type(self, model: str | None = None) -> str | None:
-        """The built-in default API type (the first supported entry)."""
+        """The built-in default API type, from the model's ``default_api_type`` entry."""
         return self.model_config(model).default_api_type()
 
     def responses_in_server(self, model: str | None = None) -> bool:

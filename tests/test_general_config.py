@@ -562,12 +562,12 @@ if pytest is not None:
         assert "openai" not in config_path.read_text()
         assert cc.unset_config_key_from_cli("api-type", "openai") is False
 
-    def test_resolve_api_type_defaults_to_provider_first_supported(
+    def test_resolve_api_type_defaults_to_provider_default_api_type(
         monkeypatch, tmp_path
     ):
         _use_temp_config(monkeypatch, tmp_path)
-        # OpenAI's supported_api_types is ["Responses", "Completions"], so the
-        # default (first entry) is the Responses API.
+        # OpenAI's model declares default_api_type "Responses" (the first of
+        # its supported_api_types), so the default is the Responses API.
         assert gc.resolve_api_type(None, "openai") == "Responses"
         # DeepSeek now ships Responses first too, so it resolves to Responses.
         assert gc.resolve_api_type(None, "deepseek") == "Responses"

@@ -55,9 +55,9 @@ def _print_config_info(provider: str | None = None, thinking: bool = False) -> N
     max_output_tokens = load_max_output_tokens(provider, model)
 
     # Resolve the effective API type first (--set api-type, otherwise the
-    # effective model's built-in default -- the first entry of its
-    # supported_api_types list) so the built-in base URL can be resolved per
-    # API type (endpoint_by_api_type, e.g. Anthropic's native-SDK URL).
+    # effective model's built-in default -- its default_api_type entry) so
+    # the built-in base URL can be resolved per API type
+    # (endpoint_by_api_type, e.g. Anthropic's native-SDK URL).
     api_type = resolve_api_type(None, provider, model)
 
     # Determine the actual base URL that will be used: a configured endpoint

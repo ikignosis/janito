@@ -491,18 +491,21 @@ def test_settings_js_advanced_state_and_baselines():
 
 def test_settings_js_resolves_api_type_from_provider():
     """resolveApiType mirrors the CLI: configured override first, then the
-    provider's built-in default (first supported type)."""
+    provider's built-in default (its ``default_api_type``)."""
     js = _settings_js()
     assert "resolveApiType()" in js
     assert "p.api_type ||" in js
     assert "p.default_api_type" in js
-    assert "p.supported_api_types && p.supported_api_types[0]" in js
+    # The resolution is based on ``default_api_type`` -- no first-supported
+    # fallback anymore.
+    assert "p.supported_api_types && p.supported_api_types[0]" not in js
     # The toggle gate follows the effective API type.
     assert "get apiTypeIsResponses()" in js
     assert "this.apiType === 'Responses'" in js
-    # The supported-types list drives the combobox options in the template.
+    # The supported-types list drives the combobox options in the template
+    # (via the per-type ``api_types`` entries).
     assert "get supportedApiTypes()" in js
-    assert "p.supported_api_types" in js
+    assert "p.api_types" in js
     # supportedApiTypes only yields AVAILABLE types (the combo never lists
     # an API type whose optional package is missing)...
     assert ".filter((t) => t.available)" in js

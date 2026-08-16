@@ -476,10 +476,11 @@ def get_default_api_type_from_provider(
     """
     Get the built-in default API type for a provider's model.
 
-    The default is the **first** entry of the model's
-    ``supported_api_types`` list (e.g. ``"Responses"`` for OpenAI's default
-    model). The effective API type can be overridden per provider/model with
-    ``--set api-type=...`` or per-call with ``--api-type``.
+    The default is the model's ``default_api_type`` entry (usually the
+    **first** entry of its ``supported_api_types`` list, e.g.
+    ``"Responses"`` for OpenAI's default model). The effective API type can
+    be overridden per provider/model with ``--set api-type=...`` or per-call
+    with ``--api-type``.
 
     Args:
         provider: The provider name (case-insensitive)
@@ -488,7 +489,7 @@ def get_default_api_type_from_provider(
     Returns:
         The default API type (e.g. ``"Responses"`` or ``"Completions"``), or
         ``None`` if the provider is unknown or the model declares no
-        supported types.
+        default type.
     """
     found = _registry.get(provider)
     return found.default_api_type(model) if found is not None else None

@@ -12,6 +12,7 @@ PROVIDER_CONFIG: dict = {
     "models": {
         "glm-5.2": {
             "supported_api_types": ["Completions"],
+            "default_api_type": "Completions",  # built-in default (the first supported type)
             "max_input_tokens": 128000,
             "max_output_tokens": 1000000,  # 1M
         },

@@ -41,10 +41,11 @@ The API type is selected per provider with `--set api-type=...` (see the
 ## Listing providers
 
 `janito --show-providers` prints every supported provider with its built-in
-defaults — default model, API types (the first one is the default), effective
-endpoint, masked API key, thinking/reasoning defaults and token limits —
-followed by the registered [provider variants](variants.md), each marked with
-its base provider. The configured default provider is flagged `[active]`:
+defaults — default model, API types (with the built-in default marked),
+effective endpoint, masked API key, thinking/reasoning defaults and token
+limits — followed by the registered [provider variants](variants.md), each
+marked with its base provider. The configured default provider is flagged
+`[active]`:
 
 ```bash
 janito --show-providers

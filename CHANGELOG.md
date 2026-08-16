@@ -11,6 +11,25 @@ Changes since `v4.25.0` (2026-08-15).
 
 ### Added
 
+- Every built-in model entry now declares its **default API type** via the
+  new `default_api_type` model-config field (the value is the model's first
+  `supported_api_types` entry, e.g. `"Responses"` for OpenAI's
+  `gpt-5.6-luna` and `"Completions"` for Alibaba's `qwen3.8-max`).
+  `ModelConfig.default_api_type()` / `Provider.default_api_type()` /
+  `get_default_api_type_from_provider()` now resolve the built-in default
+  from that field instead of taking the first `supported_api_types` entry,
+  and the web status bar / Settings drawer resolve the effective API type
+  from `default_api_type` (dropping the client-side first-supported
+  fallback).  The effective API type can still be overridden per
+  provider/model with `--set api-type=...` or per-call with `--api-type`.
+  (`janito/providers/*/config.py`,
+  `janito/providers/template/config.py`, `janito/providers/__init__.py`,
+  `janito/provider_models.py`, `janito/provider_accessors.py`,
+  `janito/general_config.py`, `janito/web/frontend/js/statusBar.js`,
+  `janito/web/frontend/js/settings.js`, `docs/configuration/providers.md`,
+  `ARCHITECTURE.md`, `tests/test_general_config.py`,
+  `tests/web/test_web_settings_advanced.py`)
+
 - Alibaba's `qwen3.8-max` declares its built-in (native) tools
   (`code_interpreter`, `web_search`, `web_extractor`) **per API type** via
   the new `tools_by_api_type` model-config field: they are enabled on the

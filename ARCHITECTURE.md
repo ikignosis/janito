@@ -282,8 +282,9 @@ Key modules:
   `get_provider_config(provider, model=None)` for direct (model-scoped)
   lookups. Each provider entry carries provider-level fields
   (`default_model`, `endpoint`, `endpoint_by_api_type`) plus a per-provider
-  **`models`** dict with the model-level fields (`supported_api_types`, token
-  limits, reasoning levels, `thinking`, `responses_in_server`). The `custom`
+  **`models`** dict with the model-level fields (`supported_api_types`,
+  `default_api_type`, token limits, reasoning levels, `thinking`,
+  `responses_in_server`). The `custom`
   provider ships no models (`default_model: None`, `models: {}`).
   `janito/providers/template/config.py` is the documentation template for
   these entries: it is not a real provider (never registered in

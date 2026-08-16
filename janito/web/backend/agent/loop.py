@@ -227,7 +227,7 @@ async def stream_prompt(
     # The API type for this turn: --api-type first, then the provider's
     # configured api-type (the web Settings drawer's per-provider combo, the
     # same value the CLI's --set api-type=... writes), then the provider's
-    # built-in default (the first of its supported_api_types).
+    # built-in default (its default_api_type entry).
     api_type = resolve_api_type(config.api_type, effective_provider)
     runner = _runner_for(api_type)
 

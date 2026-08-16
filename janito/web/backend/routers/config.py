@@ -96,7 +96,7 @@ async def patch_config(request: Request):
     * ``api_type`` -- per-provider API type (``providers.<name>.api-type``),
       ``"Responses"`` or ``"Completions"`` (case-insensitive, canonicalized).
       An empty value clears the override (falls back to the provider's
-      built-in default -- the first of its ``supported_api_types``).
+      built-in default -- its ``default_api_type`` entry).
     * ``responses_in_server`` -- per-provider override of whether the
       provider's Responses API keeps conversation state server-side
       (``providers.<name>.responses-in-server``).  Accepts ``true``/``false``
