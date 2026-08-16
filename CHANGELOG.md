@@ -71,7 +71,8 @@ Changes since `v4.25.0` (2026-08-15).
   `tests/test_reasoning_level.py`, `tests/test_show_providers.py`,
   `tests/test_dashscope_api.py`, `tests/web/test_web_api_types.py`,
   `tests/web/test_web_api_types_responses.py`,
-  `tests/web/test_web_api_types_dashscope.py`)
+  `tests/web/test_web_api_types_dashscope.py`, `docs/configuration/providers.md`,
+  `docs/reference/cli-options.md`)
 - New interactive-shell `/model` command: `/model` (no argument) shows the
   current model and the models available from the current provider;
   `/model <name>` switches the session's model at runtime (updates the

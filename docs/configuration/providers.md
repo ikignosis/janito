@@ -42,10 +42,10 @@ The API type is selected per provider with `--set api-type=...` (see the
 
 `janito --show-providers` prints every supported provider with its built-in
 defaults — default model, API types (with the built-in default marked),
-effective endpoint, masked API key, thinking/reasoning defaults and token
-limits — followed by the registered [provider variants](variants.md), each
-marked with its base provider. The configured default provider is flagged
-`[active]`:
+effective endpoint, masked API key, thinking/reasoning defaults, token limits
+and any built-in (native) tools per API type — followed by the registered
+[provider variants](variants.md), each marked with its base provider. The
+configured default provider is flagged `[active]`:
 
 ```bash
 janito --show-providers
@@ -62,6 +62,11 @@ Supported Providers (10):
     Thinking:      disabled
     Max tokens:    1,050,000 in / 128,000 out
   ...
+  alibaba
+    Model:         qwen3.8-max (default)
+    API types:     Completions (default), Responses, DashScope
+    Tools:         code_interpreter, web_search, web_extractor (Responses)
+    ...
   alibaba-tokenplan (variant of alibaba)
     Model:         qwen-plus (configured; default qwen3.8-max)
     ...
@@ -188,6 +193,39 @@ janito --provider alibaba --set api-type=Responses
 
 # Per call
 janito --provider alibaba --api-type responses --model qwen3.7-max "Your prompt"
+```
+
+### Built-in Tools
+
+The default model `qwen3.8-max` declares **built-in (native) tools** —
+`code_interpreter`, `web_search` and `web_extractor` — enabled **per API
+type** (the `tools_by_api_type` model-config field). These are *not* function
+tools: each `type` is a model capability enabled through request-body flags on
+the API call, so they are always on whenever the model declares them for an
+API type — even with `--no-tools` / an empty function-tools list (mirroring
+the Responses `image_generation` tool for gpt-5+).
+
+Currently they are declared for the **Responses API type only**: the CLI
+Responses client and the [web agent](../usage/web-ui.md) resolve them per
+model (`get_default_tools_from_provider(provider, model,
+api_type="Responses")`) and append them to the `tools` array after any
+converted function-tool schemas. Note that DashScope's `/responses` endpoint
+does not accept `qwen3.8-max` yet (see [API Type](#api-type) above), so the
+built-in tools are picked up automatically by the Responses client and the
+web agent as soon as the endpoint supports the model. They are left off the
+Completions API (the provider's default API type) and the native DashScope
+API because the qwen3.8-max deployment rejects `code_interpreter` there with
+`400 InternalError.Algo.InvalidParameter: The current model does not support
+the code_interpreter tool.`; API types not listed in `tools_by_api_type` send
+no built-in tools (the plain `tools` default still applies when present).
+
+`janito --show-providers` surfaces them per model, annotated with the API type
+that enables them:
+
+```
+  alibaba
+    Model:         qwen3.8-max (default)
+    Tools:         code_interpreter, web_search, web_extractor (Responses)
 ```
 
 ### Native DashScope SDK (optional)
