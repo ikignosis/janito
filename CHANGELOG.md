@@ -28,6 +28,16 @@ Changes since `v4.25.0` (2026-08-15).
   official DeepSeek rate card (https://api-docs.deepseek.com/quick_start/pricing).
   (`janito/providers/deepseek/cost.py`, `janito/provider_accessors.py`,
   `tests/test_provider.py`)
+- Added `janito/providers/alibaba/cost.py` with a `get_cost(model, input,
+  output, cached)` helper that estimates the monetary cost of a request from
+  the per-1M-token rates for `qwen3.8-max` ($2 / $0.25 implicit cache hit /
+  $6 output), billing cached input tokens at the implicit cache-hit rate and
+  formatting the result as `NN.DDDDDD$` (e.g. `"8.000000$"`); unknown models
+  fall back to `"N/A"`.  There is no peak-hour surcharge.  The module
+  docstring documents the rates source (https://www.qwencloud.com/models/qwen3.8-max,
+  verified 2026-08-15) and points at the official rate card
+  (https://www.qwencloud.com/pricing/token-plan).
+  (`janito/providers/alibaba/cost.py`, `tests/test_provider.py`)
 - The token-usage summary line printed at the end of each turn now computes
   its `Cost: <cost>` part through
   `get_provider_cost(provider, model, input, output, cached)` instead of a

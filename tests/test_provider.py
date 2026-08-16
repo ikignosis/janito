@@ -168,8 +168,22 @@ if pytest is not None:
             pa.get_provider_cost("DeepSeek", "deepseek-v4-pro", 1_000_000, 1_000_000, 0)
             == "1.305000$"
         )
+        # Alibaba ships a cost module: qwen3.8-max at $2 / $0.25 (implicit
+        # cache hit) / $6 output per 1M tokens, formatted as NN.DDDDDD$.
+        assert (
+            pa.get_provider_cost("alibaba", "qwen3.8-max", 1_000_000, 1_000_000, 0)
+            == "8.000000$"
+        )
+        # Cached input tokens are billed at the implicit cache-hit rate.
+        assert (
+            pa.get_provider_cost(
+                "alibaba", "qwen3.8-max", 1_000_000, 1_000_000, 500_000
+            )
+            == "7.125000$"
+        )
         # Unknown models within the provider fall back to "N/A".
         assert pa.get_provider_cost("deepseek", "bogus-model", 1000, 500, 100) == "N/A"
+        assert pa.get_provider_cost("alibaba", "bogus-model", 1000, 500, 100) == "N/A"
         # Providers without a cost module fall back to "N/A".
         assert pa.get_provider_cost("openai", "gpt-5.6-luna", 1000, 500, 100) == "N/A"
         # Unknown providers fall back to "N/A".
