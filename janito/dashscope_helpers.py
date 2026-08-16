@@ -13,6 +13,7 @@ from rich.console import Console
 from janito.config_loaders import load_max_input_tokens, load_max_output_tokens
 from janito.openai_client.client_support import _display_usage
 from janito.provider_accessors import (
+    builtin_tools_enable_flags,
     get_default_max_input_tokens_from_provider,
     get_default_max_output_tokens_from_provider,
     get_default_thinking_from_provider,
@@ -97,8 +98,16 @@ def _build_call_kwargs(
     messages: list[dict[str, Any]],
     max_output_tokens: int,
     thinking: bool,
+    tools=None,
 ) -> dict[str, Any]:
-    """Build the DashScope call parameters for one round."""
+    """Build the DashScope call parameters for one round.
+
+    ``tools`` is the effective model's built-in (native) tools list from the
+    provider config (e.g. Alibaba/Qwen's ``[{"type": "code_interpreter"},
+    ...]``); when declared, each ``type`` is sent as a request-body kwargs
+    ``enable_*`` flag (e.g. ``enable_code_interpreter`` / ``enable_search``,
+    see :func:`builtin_tools_enable_flags`).  ``None`` sends nothing.
+    """
     call_kwargs: dict[str, Any] = {
         "model": model,
         "messages": messages,
@@ -112,6 +121,14 @@ def _build_call_kwargs(
     # reason keep their own default.
     if thinking:
         call_kwargs["enable_thinking"] = True
+    # The effective model's built-in tools (e.g. code_interpreter /
+    # web_search / web_extractor) are native capabilities enabled through
+    # request-body kwargs (e.g. enable_code_interpreter / enable_search).
+    # They are set whenever the model declares them; models without built-in
+    # tools send nothing.
+    flags = builtin_tools_enable_flags(tools)
+    if flags:
+        call_kwargs.update(flags)
     return call_kwargs
 
 

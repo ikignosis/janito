@@ -78,6 +78,19 @@ def test_lists_all_builtin_providers(monkeypatch, tmp_path, capsys):
     assert "enabled" in out  # deepseek / alibaba
 
 
+def test_alibaba_shows_builtin_tools_per_api_type(monkeypatch, tmp_path, capsys):
+    """Alibaba's qwen3.8-max surfaces its built-in (native) tools, annotated
+    with the API type that enables them (Responses only)."""
+    _, out = _run(monkeypatch, tmp_path, capsys)
+
+    assert "qwen3.8-max (default) tools" in out
+    # The rich table folds long values, so check the two fragments appear.
+    assert "code_interpreter, web_search, web_extractor" in out
+    assert "(Responses)" in out
+    # The tools are not enabled for the other API types.
+    assert "(Completions)" not in out
+
+
 def test_custom_provider_shows_endpoint_hint(monkeypatch, tmp_path, capsys):
     _, out = _run(monkeypatch, tmp_path, capsys)
     assert "custom" in out

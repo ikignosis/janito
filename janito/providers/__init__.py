@@ -78,6 +78,26 @@ Model-level fields (each entry of the ``models`` dict):
     ``extra_body={'thinking': {...}}``). Absent (or ``False``) means no
     built-in default. The CLI ``--thinking`` flag still forces it on
     explicitly. See :func:`janito.provider_accessors.apply_thinking_to_extra_body`.
+  - "tools": the built-in (native) tools the model supports, e.g.
+    ``[{"type": "code_interpreter"}, {"type": "web_search"},
+    {"type": "web_extractor"}]`` for Alibaba/Qwen's flagship. These are
+    **not** function tools: each ``type`` is enabled through request-body
+    flags on the Completions API (``extra_body`` ``enable_code_interpreter``
+    / ``enable_search``), entries in the ``tools`` array on the Responses
+    API, and ``enable_code_interpreter`` / ``enable_search`` kwargs on the
+    native DashScope API. ``code_interpreter`` only supports calls in
+    thinking mode, so it also forces ``enable_thinking`` on. Absent (or
+    ``None``) means the model has no built-in tools. See
+    :func:`janito.provider_accessors.get_default_tools_from_provider`.
+  - "tools_by_api_type": per-API-type overrides for the built-in tools
+    (optional). When a model's endpoint does not accept every built-in tool
+    (e.g. Alibaba's qwen3.8-max rejects ``code_interpreter`` on the
+    Completions API with a 400 ``... does not support the code_interpreter
+    tool``), declare the tools per API type and drop the plain ``tools``
+    default: each API type in the map gets its own list, and API types
+    absent from the map send no built-in tools. When the plain ``tools``
+    default is present it applies to every API type not listed here. See
+    :func:`janito.provider_accessors.get_default_tools_from_provider`.
 
 For a fully commented reference of *every* CONFIG option (with example
 values), see :mod:`janito.providers.template.config`.

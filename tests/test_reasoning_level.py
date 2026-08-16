@@ -124,6 +124,37 @@ if pytest is not None:
         client_mod.send_prompt("hello", use_mcp=False, cli_provider="alibaba")
         assert fake_run.captured_kwargs["extra_body"]["enable_thinking"] is True
 
+    def test_send_prompt_omits_builtin_tools_for_alibaba_completions(monkeypatch):
+        """Alibaba's qwen3.8-max has its built-in tools disabled on the
+        Completions API (the deployment rejects code_interpreter with a 400),
+        so no enable_* tool flags are sent on the CLI Completions path."""
+        fake_run = _fake_run_returns("hi")
+        monkeypatch.setattr(
+            client_mod,
+            "resolve_runtime_config",
+            lambda *a, **k: (None, "sk-test", "qwen3.8-max"),
+        )
+        monkeypatch.setattr(client_mod, "_run_with_progress_bar", fake_run)
+        client_mod.send_prompt("hello", use_mcp=False, cli_provider="alibaba")
+        extra_body = fake_run.captured_kwargs.get("extra_body", {})
+        assert "enable_code_interpreter" not in extra_body
+        assert "enable_search" not in extra_body
+
+    def test_send_prompt_no_builtin_tools_for_openai(monkeypatch):
+        """Models without built-in tools send no tool enable flags."""
+        fake_run = _fake_run_returns("hi")
+        monkeypatch.setattr(
+            client_mod,
+            "resolve_runtime_config",
+            lambda *a, **k: (None, "sk-test", "gpt-4"),
+        )
+        monkeypatch.setattr(client_mod, "_run_with_progress_bar", fake_run)
+        client_mod.send_prompt("hello", use_mcp=False, cli_provider="openai")
+        assert "enable_code_interpreter" not in fake_run.captured_kwargs.get(
+            "extra_body", {}
+        )
+        assert "enable_search" not in fake_run.captured_kwargs.get("extra_body", {})
+
     def test_send_prompt_thinking_defaults_on_for_minimax(monkeypatch):
         """MiniMax-M3 reasons by default: the structured thinking dict is
         passed through (extra_body thinking {'type': 'adaptive'}) without -t."""
@@ -169,6 +200,9 @@ if pytest is not None:
         class _Cfg:
             effective_thinking = False
 
+            def effective_tools_for(self, api_type):
+                return None
+
         kwargs = build_call_kwargs("qwen3.8-max", _Cfg(), 1000, None, "xhigh")
         assert kwargs["reasoning_effort"] == "xhigh"
         assert kwargs["model"] == "qwen3.8-max"
@@ -177,6 +211,9 @@ if pytest is not None:
     def test_build_call_kwargs_omits_reasoning_effort_when_none():
         class _Cfg:
             effective_thinking = False
+
+            def effective_tools_for(self, api_type):
+                return None
 
         kwargs = build_call_kwargs("gpt-4", _Cfg(), 1000, None, None)
         assert "reasoning_effort" not in kwargs
@@ -188,6 +225,9 @@ if pytest is not None:
         class _Cfg:
             effective_thinking = True
 
+            def effective_tools_for(self, api_type):
+                return None
+
         kwargs = build_call_kwargs("deepseek-v4-flash", _Cfg(), 1000, None, None)
         assert kwargs["extra_body"]["enable_thinking"] is True
 
@@ -196,6 +236,46 @@ if pytest is not None:
 
         class _Cfg:
             effective_thinking = False
+
+            def effective_tools_for(self, api_type):
+                return None
+
+        kwargs = build_call_kwargs("gpt-4", _Cfg(), 1000, None, None)
+        assert "extra_body" not in kwargs
+
+    def test_build_call_kwargs_passes_builtin_tools_for_qwen_max():
+        """Web agent sends the model's built-in tools as extra_body enable_*
+        flags (e.g. Alibaba/Qwen's code_interpreter / web_search /
+        web_extractor on the Completions API)."""
+
+        class _Cfg:
+            effective_thinking = True
+
+            def effective_tools_for(self, api_type):
+                return [
+                    {"type": "code_interpreter"},
+                    {"type": "web_search"},
+                    {"type": "web_extractor"},
+                ]
+
+        kwargs = build_call_kwargs("qwen3.8-max", _Cfg(), 1000, None, None)
+        # code_interpreter only supports calls in thinking mode, so it also
+        # forces enable_thinking on; web_search / web_extractor share
+        # enable_search.
+        assert kwargs["extra_body"] == {
+            "enable_code_interpreter": True,
+            "enable_thinking": True,
+            "enable_search": True,
+        }
+
+    def test_build_call_kwargs_omits_builtin_tools_when_none():
+        """Models without built-in tools send no tool enable flags."""
+
+        class _Cfg:
+            effective_thinking = False
+
+            def effective_tools_for(self, api_type):
+                return None
 
         kwargs = build_call_kwargs("gpt-4", _Cfg(), 1000, None, None)
         assert "extra_body" not in kwargs

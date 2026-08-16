@@ -182,14 +182,26 @@ def build_call_kwargs(
     # parameter (e.g. MiniMax-M3's {"type": "adaptive"}).
     apply_thinking_to_extra_body(call_kwargs, config.effective_thinking)
 
-    # Native image generation: mainline models (gpt-5+) can generate images
-    # through the Responses API's built-in ``image_generation`` tool.  It is
-    # a model capability, not a permissioned function tool, so it is enabled
-    # whenever the model supports it -- even with ``no_tools`` / an empty
-    # function-tools list.
-    if _model_supports_image_generation(model):
+    # Native model capabilities enabled through the Responses ``tools`` array:
+    #
+    # - ``image_generation``: mainline models (gpt-5+) can generate images
+    #   through the Responses API's built-in ``image_generation`` tool;
+    # - the effective model's built-in tools (e.g. Alibaba/Qwen's
+    #   code_interpreter / web_search / web_extractor) are native
+    #   capabilities whose ``{"type": ...}`` shape is already the Responses
+    #   format.
+    #
+    # Both are model capabilities, not permissioned function tools, so they
+    # are enabled whenever the model supports/declares them -- even with
+    # ``no_tools`` / an empty function-tools list.  They are appended after
+    # any converted function tools; neither goes through the function-schema
+    # conversion.
+    builtin_tools = list(config.effective_tools_for("Responses") or [])
+    if builtin_tools or _model_supports_image_generation(model):
         converted_tools = _convert_tools(tools_schemas or [])
-        converted_tools.append({"type": "image_generation"})
+        if _model_supports_image_generation(model):
+            converted_tools.append({"type": "image_generation"})
+        converted_tools.extend(builtin_tools)
         call_kwargs["tools"] = converted_tools
         call_kwargs["tool_choice"] = "auto"
     elif tools_schemas:

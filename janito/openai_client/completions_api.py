@@ -383,6 +383,17 @@ class CompletionsClient(Client):
         preserve_thinking,
         thinking,
     ):
+        # The effective model's built-in tools (e.g. Alibaba/Qwen's
+        # code_interpreter / web_search / web_extractor) are resolved for
+        # the effective provider and sent as request-body enable_* flags in
+        # extra_body (see completions_helpers._build_call_kwargs).  They are
+        # resolved for the Completions API type, so API types without
+        # built-in tools (e.g. alibaba's qwen3.8-max) send nothing.
+        from janito.provider_accessors import get_default_tools_from_provider
+
+        tools = get_default_tools_from_provider(
+            self._active_provider(), model, api_type="Completions"
+        )
         return _build_call_kwargs(
             model,
             state,
@@ -390,6 +401,7 @@ class CompletionsClient(Client):
             reasoning_level,
             preserve_thinking,
             thinking,
+            tools,
         )
 
     def _run_stream_round(

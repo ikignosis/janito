@@ -127,6 +127,42 @@ if pytest is not None:
         assert dashscope_api._get(None, "a", "fallback") == "fallback"
         assert dashscope_api._get({"a": 1}, "missing") is None
 
+    def test_dashscope_helpers_build_call_kwargs_passes_builtin_tools():
+        """The CLI DashScope path sends the model's built-in tools as
+        request-body enable_* kwargs (enable_code_interpreter /
+        enable_search), forcing enable_thinking for code_interpreter."""
+        from janito.dashscope_helpers import _build_call_kwargs
+
+        tools = [
+            {"type": "code_interpreter"},
+            {"type": "web_search"},
+            {"type": "web_extractor"},
+        ]
+        kwargs = _build_call_kwargs(
+            "qwen3.8-max",
+            [{"role": "user", "content": "hi"}],
+            1000,
+            False,
+            tools,
+        )
+        assert kwargs["enable_code_interpreter"] is True
+        assert kwargs["enable_thinking"] is True
+        assert kwargs["enable_search"] is True
+
+    def test_dashscope_helpers_build_call_kwargs_omits_builtin_tools_when_none():
+        """No built-in tools -> no enable_* tool kwargs are sent."""
+        from janito.dashscope_helpers import _build_call_kwargs
+
+        kwargs = _build_call_kwargs(
+            "qwen3.8-max",
+            [{"role": "user", "content": "hi"}],
+            1000,
+            False,
+            None,
+        )
+        assert "enable_code_interpreter" not in kwargs
+        assert "enable_search" not in kwargs
+
     def test_create_client_aborts_without_dashscope_package(monkeypatch):
         """The optional `dashscope` package is guarded with an actionable error.
 

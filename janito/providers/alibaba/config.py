@@ -42,6 +42,28 @@ PROVIDER_CONFIG: dict = {
             "max_output_tokens": 131072,
             "reasoning_level": "xhigh",
             "thinking": True,  # Qwen models reason by default
+            # Built-in (native) tools, enabled per API type.  These are
+            # *not* function tools: on the Responses API they are entries in
+            # the ``tools`` array, on the Completions API they are extra_body
+            # ``enable_code_interpreter`` / ``enable_search`` flags, and on
+            # the native DashScope API they are ``enable_code_interpreter`` /
+            # ``enable_search`` kwargs.  ``code_interpreter`` only supports
+            # calls in thinking mode, so it also forces ``enable_thinking``
+            # on.
+            #
+            # Only the Responses API is enabled: the qwen3.8-max deployment
+            # rejects the built-in tools on the Completions API with ``400
+            # InternalError.Algo.InvalidParameter: The current model does not
+            # support the code_interpreter tool.``, and the DashScope native
+            # endpoint is left off for the same reason until confirmed.
+            # Re-enable per API type once the endpoint accepts them.
+            "tools_by_api_type": {
+                "Responses": [
+                    {"type": "code_interpreter"},
+                    {"type": "web_search"},
+                    {"type": "web_extractor"},
+                ],
+            },
             "supported_reasoning_levels": [
                 {
                     "effort": "low",

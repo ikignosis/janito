@@ -11,6 +11,48 @@ Changes since `v4.25.0` (2026-08-15).
 
 ### Added
 
+- Alibaba's `qwen3.8-max` declares its built-in (native) tools
+  (`code_interpreter`, `web_search`, `web_extractor`) **per API type** via
+  the new `tools_by_api_type` model-config field: they are enabled on the
+  Responses API only.  These are *not* function tools -- each `type` is a
+  model capability enabled through request-body flags on the API call: the
+  OpenAI-compatible Chat Completions API receives `extra_body`
+  `{"enable_code_interpreter": true, "enable_thinking": true, "enable_search":
+  true}` (code_interpreter only supports calls in thinking mode, so it also
+  forces `enable_thinking` on), the Responses API receives the entries in its
+  `tools` array, and the native DashScope API receives the
+  `enable_code_interpreter` / `enable_search` kwargs.  The tools are
+  disabled on the Completions API (and DashScope) because the qwen3.8-max
+  deployment rejects `code_interpreter` there with `400 InternalError.Algo.
+  InvalidParameter: The current model does not support the code_interpreter
+  tool.`; the plain `tools` config default still applies to every API type
+  not listed in `tools_by_api_type`.  When a model declares built-in tools
+  for an API type they are always enabled -- even with `no_tools` / an empty
+  function-tools list -- mirroring the Responses `image_generation` tool:
+  the CLI Responses client resolves them per model (via
+  `get_default_tools_from_provider(provider, model, api_type="Responses")`)
+  and merges them into the `tools` array after the converted function-tool
+  schemas, matching the web agent.
+  New accessors `get_default_tools_from_provider(provider, model,
+  api_type)` / `Provider.tools(model, api_type)` / `ModelConfig.tools(
+  api_type)` and the `builtin_tools_enable_flags` /
+  `apply_builtin_tools_to_extra_body` helpers resolve and send them; the web
+  agent resolves them per API type via the new
+  `WebServerConfig.effective_tools_for(api_type)` method, and
+  `--show-providers` surfaces them per model annotated with the API type.
+  (`janito/providers/alibaba/config.py`, `janito/providers/template/config.py`,
+  `janito/providers/__init__.py`, `janito/provider_models.py`,
+  `janito/provider_accessors.py`, `janito/web/backend/config.py`,
+  `janito/agent/completions.py`, `janito/agent/responses.py`,
+  `janito/agent/dashscope.py`, `janito/openai_client/completions_helpers.py`,
+  `janito/openai_client/completions_api.py`, `janito/openai_client/responses_state.py`,
+  `janito/openai_client/responses_stream.py`, `janito/dashscope_helpers.py`,
+  `janito/dashscope_api.py`, `janito/cli/handlers/providers.py`,
+  `tests/test_provider_config.py`, `tests/test_provider.py`,
+  `tests/test_reasoning_level.py`, `tests/test_show_providers.py`,
+  `tests/test_dashscope_api.py`, `tests/web/test_web_api_types.py`,
+  `tests/web/test_web_api_types_responses.py`,
+  `tests/web/test_web_api_types_dashscope.py`)
 - New interactive-shell `/model` command: `/model` (no argument) shows the
   current model and the models available from the current provider;
   `/model <name>` switches the session's model at runtime (updates the

@@ -69,6 +69,26 @@ class ModelConfig:
         """
         return self._data.get("thinking", False)
 
+    def tools(self, api_type: str | None = None) -> list | None:
+        """The model's built-in (native) tool entries, or ``None``.
+
+        Returns the raw ``tools`` value from the model entry (e.g. ``[
+        {"type": "code_interpreter"}, {"type": "web_search"},
+        {"type": "web_extractor"}]`` for Alibaba/Qwen's flagship).  These
+        are not function tools: each ``type`` is enabled through
+        request-body flags on the API call -- see
+        :func:`janito.provider_accessors.get_default_tools_from_provider`.
+
+        When ``api_type`` is given and the model declares a
+        ``tools_by_api_type`` map containing it, that API type's own list is
+        returned (API types absent from the map resolve to the plain
+        ``tools`` default, or ``None`` when no default exists).
+        """
+        by_type = self._data.get("tools_by_api_type")
+        if api_type and isinstance(by_type, dict) and api_type in by_type:
+            return by_type[api_type]
+        return self._data.get("tools")
+
     def responses_in_server(self) -> bool:
         """Whether the model's Responses API keeps state server-side.
 
@@ -214,6 +234,17 @@ class Provider:
         ``{'type': 'adaptive'}``).
         """
         return self.model_config(model).default_thinking()
+
+    def tools(
+        self, model: str | None = None, api_type: str | None = None
+    ) -> list | None:
+        """The model's built-in (native) tool entries, or ``None``.
+
+        See :meth:`ModelConfig.tools` for the value shape (e.g.
+        Alibaba/Qwen's ``[{"type": "code_interpreter"}, ...]``) and the
+        ``api_type`` per-API-type resolution.
+        """
+        return self.model_config(model).tools(api_type=api_type)
 
     def supported_api_types(self, model: str | None = None) -> list | None:
         """The API types the model supports (``"Responses"``/``"Completions"``/...)."""

@@ -293,6 +293,36 @@ def _mock_send_prompt(monkeypatch, create_side_effect):
     return client_inst
 
 
+def _mock_send_prompt_for_model(monkeypatch, model, builtin_tools, create_side_effect):
+    """Like ``_mock_send_prompt`` but for a specific model, with the model's
+    built-in (native) tools resolved via the provider accessor."""
+    client_inst = mock.Mock()
+    client_inst.responses.create.side_effect = create_side_effect
+    monkeypatch.setattr(api, "OpenAI", mock.Mock(return_value=client_inst))
+    monkeypatch.setattr(
+        api,
+        "resolve_runtime_config",
+        lambda *a, **k: ("https://api.example.com", "sk-test", model),
+    )
+    monkeypatch.setattr(
+        "janito.openai_client.responses_helpers.get_all_tool_schemas",
+        lambda: [{"type": "function", "function": {"name": "list_files"}}],
+    )
+    monkeypatch.setattr(
+        "janito.provider_accessors.get_default_tools_from_provider",
+        lambda p, m=None, api_type=None: builtin_tools,
+    )
+    executor_inst = mock.Mock()
+    executor_inst.execute_tool_call.return_value = {
+        "tool_call_id": "call_1",
+        "role": "tool",
+        "name": "list_files",
+        "content": json.dumps({"success": True}),
+    }
+    monkeypatch.setattr(api, "ToolExecutor", mock.Mock(return_value=executor_inst))
+    return client_inst
+
+
 def test_send_prompt_stateless_replays_full_history(monkeypatch):
     """Stateless providers (responses_in_server False, e.g. DeepSeek) cannot
     resolve a previous_response_id: the client re-sends the full conversation
@@ -703,6 +733,110 @@ def test_send_prompt_chains_tool_calls_without_client_history(monkeypatch):
     # The caller-owned history must be untouched: no client-side messages list
     # is created, appended to or updated by the Responses implementation.
     assert caller_history == [{"role": "system", "content": "seed"}]
+
+
+def test_send_prompt_appends_builtin_tools_without_function_tools(monkeypatch):
+    """An empty function-tools list (the ``--no-tools`` case): the effective
+    model's built-in (native) tools are still enabled on the CLI Responses
+    path.  They are model capabilities, not function tools -- mirroring the
+    web agent (and the Responses ``image_generation`` tool)."""
+    seen = []
+
+    def create(**kwargs):
+        seen.append(kwargs)
+        return _stream(
+            [
+                _Event("response.created", response=_Response("resp_a")),
+                _Event("response.output_text.delta", delta="done"),
+                _Event("response.completed", response=_Response("resp_a")),
+            ]
+        )
+
+    _mock_send_prompt_for_model(
+        monkeypatch,
+        "qwen3.8-max",
+        [
+            {"type": "code_interpreter"},
+            {"type": "web_search"},
+            {"type": "web_extractor"},
+        ],
+        create,
+    )
+    api.send_prompt("Hello", tools=[], use_mcp=False, cli_provider="alibaba")
+    assert seen[-1]["tools"] == [
+        {"type": "code_interpreter"},
+        {"type": "web_search"},
+        {"type": "web_extractor"},
+    ]
+    assert seen[-1]["tool_choice"] == "auto"
+
+
+def test_send_prompt_merges_builtin_tools_with_function_tools(monkeypatch):
+    """Function-tool schemas (converted to the Responses shape) come first,
+    followed by the model's built-in (native) tools."""
+    seen = []
+
+    def create(**kwargs):
+        seen.append(kwargs)
+        return _stream(
+            [
+                _Event("response.created", response=_Response("resp_a")),
+                _Event("response.output_text.delta", delta="done"),
+                _Event("response.completed", response=_Response("resp_a")),
+            ]
+        )
+
+    _mock_send_prompt_for_model(
+        monkeypatch,
+        "qwen3.8-max",
+        [
+            {"type": "code_interpreter"},
+            {"type": "web_search"},
+            {"type": "web_extractor"},
+        ],
+        create,
+    )
+    api.send_prompt("Hello", tools=None, use_mcp=False, cli_provider="alibaba")
+    assert seen[-1]["tools"] == [
+        {
+            "type": "function",
+            "name": "list_files",
+            "description": "",
+            "parameters": {},
+        },
+        {"type": "code_interpreter"},
+        {"type": "web_search"},
+        {"type": "web_extractor"},
+    ]
+    assert seen[-1]["tool_choice"] == "auto"
+
+
+def test_send_prompt_no_builtin_tools_for_openai_responses(monkeypatch):
+    """Models without built-in tools get no native entries appended."""
+    seen = []
+
+    def create(**kwargs):
+        seen.append(kwargs)
+        return _stream(
+            [
+                _Event("response.created", response=_Response("resp_a")),
+                _Event("response.output_text.delta", delta="done"),
+                _Event("response.completed", response=_Response("resp_a")),
+            ]
+        )
+
+    _mock_send_prompt_for_model(monkeypatch, "gpt-4o", None, create)
+    api.send_prompt("Hello", tools=None, use_mcp=False, cli_provider="openai")
+    # Only the converted function tools; no code_interpreter / web_search.
+    assert seen[-1]["tools"] == [
+        {
+            "type": "function",
+            "name": "list_files",
+            "description": "",
+            "parameters": {},
+        }
+    ]
+    assert seen[-1]["tool_choice"] == "auto"
 
 
 def test_conversation_result_defaults():

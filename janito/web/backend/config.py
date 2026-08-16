@@ -85,6 +85,27 @@ class WebServerConfig:
         provider = self.session_provider or self.provider or get_active_provider()
         return get_default_thinking_from_provider(provider, self.model)
 
+    def effective_tools_for(self, api_type: str):
+        """The effective model's built-in (native) tools for an API type.
+
+        Resolution order mirrors :attr:`effective_thinking`: the effective
+        provider (session-only combo override, else the CLI ``--provider``,
+        else the persisted default) resolved for the **effective model**
+        (``self.model``: the CLI ``--model``, else the provider's configured
+        model, else its built-in default model).  Returns the model's
+        built-in ``tools`` entry for ``api_type`` from the provider config
+        (e.g. alibaba's ``qwen3.8-max`` enables ``code_interpreter`` /
+        ``web_search`` / ``web_extractor`` on the Responses API only), or
+        ``None`` when the model declares no built-in tools for that API
+        type.  These are not function tools: each ``type`` is enabled
+        through request-body flags on the API call.
+        """
+        from janito.general_config import get_active_provider
+        from janito.provider_accessors import get_default_tools_from_provider
+
+        provider = self.session_provider or self.provider or get_active_provider()
+        return get_default_tools_from_provider(provider, self.model, api_type=api_type)
+
     # --- Toolset enablement ---
     gmail: bool = False  # --gmail
     onedrive: bool = False  # --onedrive

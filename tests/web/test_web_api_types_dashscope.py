@@ -50,6 +50,9 @@ def _cfg(thinking=False):
     class _Cfg:
         effective_thinking = thinking
 
+        def effective_tools_for(self, api_type):
+            return None
+
     return _Cfg()
 
 
@@ -72,6 +75,53 @@ def test_dashscope_build_call_kwargs_passes_history_and_thinking():
     assert kwargs["stream"] is True
     assert kwargs["incremental_output"] is True
     assert kwargs["enable_thinking"] is True
+
+
+def test_dashscope_build_call_kwargs_passes_builtin_tools():
+    """The effective model's built-in tools are sent as request-body enable_*
+    kwargs on the native DashScope API (e.g. enable_code_interpreter /
+    enable_search)."""
+    from janito.web.backend.agent import dashscope
+
+    class _Cfg:
+        effective_thinking = True
+
+        def effective_tools_for(self, api_type):
+            return [
+                {"type": "code_interpreter"},
+                {"type": "web_search"},
+                {"type": "web_extractor"},
+            ]
+
+    kwargs = dashscope.build_call_kwargs(
+        "qwen3.8-max",
+        [{"role": "user", "content": "Hello"}],
+        None,
+        _Cfg(),
+        None,
+        None,
+        None,
+    )
+    assert kwargs["enable_code_interpreter"] is True
+    assert kwargs["enable_thinking"] is True
+    assert kwargs["enable_search"] is True
+
+
+def test_dashscope_build_call_kwargs_omits_builtin_tools_when_none():
+    """Models without built-in tools send no enable_* tool kwargs."""
+    from janito.web.backend.agent import dashscope
+
+    kwargs = dashscope.build_call_kwargs(
+        "qwen3.8-max",
+        [{"role": "user", "content": "Hello"}],
+        None,
+        _cfg(thinking=False),
+        None,
+        None,
+        None,
+    )
+    assert "enable_code_interpreter" not in kwargs
+    assert "enable_search" not in kwargs
 
 
 def test_dashscope_accumulator_folds_chunks():

@@ -297,6 +297,18 @@ class ResponsesClient(Client):
         preserve_thinking,
         thinking,
     ):
+        # The effective model's built-in (native) tools (e.g. Alibaba/Qwen's
+        # code_interpreter / web_search / web_extractor) are resolved for
+        # the effective provider and appended to the Responses tools array
+        # (see responses_state._build_call_kwargs).  They are model
+        # capabilities, not function tools, so they are enabled whenever the
+        # model declares them for this API type -- even with no_tools / an
+        # empty function-tools list (mirroring the web agent).
+        from janito.provider_accessors import get_default_tools_from_provider
+
+        builtin_tools = get_default_tools_from_provider(
+            self._active_provider(), model, api_type="Responses"
+        )
         return _build_call_kwargs(
             model,
             state["input_items"],
@@ -307,6 +319,7 @@ class ResponsesClient(Client):
             state["response_id"],
             state["responses_in_server"],
             state["instructions"],
+            builtin_tools,
         )
 
     def _run_stream_round(

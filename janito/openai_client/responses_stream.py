@@ -321,16 +321,25 @@ def _stream_response(client, call_kwargs, tools_schemas, cancel_event=None):
     ``completions_api._stream_response``); the caller builds the remaining
     kwargs per round.
 
+    The effective model's built-in (native) tools (e.g. Alibaba/Qwen's
+    ``code_interpreter`` / ``web_search`` / ``web_extractor``) are resolved
+    per model in ``responses_state._build_call_kwargs`` and carried in
+    ``call_kwargs`` under the reserved ``_builtin_tools`` key as Responses
+    entries (``{"type": ...}``, already in the Responses format -- they must
+    not go through the function-schema conversion).  They are merged after
+    the converted function-tool schemas, mirroring the web agent; the key is
+    popped before the API call so it never reaches the server.
+
     When ``cancel_event`` is set (user pressed Enter while waiting), the
     stream is abandoned and the underlying connection is closed.
     """
-    if tools_schemas:
-        logger.debug(
-            f"Calling Responses API (streaming) with {len(tools_schemas)} tools"
-        )
+    builtin_tools = call_kwargs.pop("_builtin_tools", None) or []
+    tools = list(tools_schemas or []) + list(builtin_tools)
+    if tools:
+        logger.debug(f"Calling Responses API (streaming) with {len(tools)} tools")
         stream = client.responses.create(
             **call_kwargs,
-            tools=tools_schemas,
+            tools=tools,
             tool_choice="auto",
         )
     else:

@@ -120,6 +120,40 @@ PROVIDER_CONFIG: dict = {
             #: {...}}``).  Absent (or ``False``) means no built-in default.
             #: The CLI ``--thinking`` flag still forces it on explicitly.
             "thinking": True,
+            #: The built-in (native) tools the model supports, e.g. ``[
+            #: {"type": "code_interpreter"}, {"type": "web_search"},
+            #: {"type": "web_extractor"}]`` for Alibaba/Qwen's flagship.
+            #: These are **not** function tools (they take no user-defined
+            #: schema): each ``type`` is enabled through request-body flags
+            #: on the Completions API (``extra_body`` ``enable_code_interpreter``
+            #: / ``enable_search``), entries in the ``tools`` array on the
+            #: Responses API, and ``enable_code_interpreter`` /
+            #: ``enable_search`` kwargs on the native DashScope API.
+            #: ``code_interpreter`` only supports calls in thinking mode, so
+            #: it also forces ``enable_thinking`` on.  Absent (or ``None``)
+            #: means the model has no built-in tools.  See
+            #: :func:`janito.provider_accessors.get_default_tools_from_provider`.
+            "tools": [
+                {"type": "code_interpreter"},
+                {"type": "web_search"},
+                {"type": "web_extractor"},
+            ],
+            #: Per-API-type overrides for the built-in tools above (optional).
+            #: When a model's endpoint does not accept every built-in tool
+            #: (e.g. Alibaba's qwen3.8-max rejects ``code_interpreter`` on
+            #: the Completions API with a 400 ``... does not support the
+            #: code_interpreter tool``), declare the tools per API type and
+            #: drop the plain ``tools`` default: each API type in the map
+            #: gets its own list, and API types absent from the map send no
+            #: built-in tools.  When the plain ``tools`` default is present
+            #: it applies to every API type not listed here.
+            "tools_by_api_type": {
+                "Responses": [
+                    {"type": "code_interpreter"},
+                    {"type": "web_search"},
+                    {"type": "web_extractor"},
+                ],
+            },
         },
     },
 }

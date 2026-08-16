@@ -16,7 +16,9 @@ import pytest
 
 import janito.config_dir as config_dir_mod
 from janito.provider_accessors import (
+    apply_builtin_tools_to_extra_body,
     apply_thinking_to_extra_body,
+    builtin_tools_enable_flags,
     ensure_api_type_available,
     get_all_api_types,
     get_base_url_from_provider,
@@ -26,6 +28,7 @@ from janito.provider_accessors import (
     get_default_model_from_provider,
     get_default_reasoning_level_from_provider,
     get_default_thinking_from_provider,
+    get_default_tools_from_provider,
     get_endpoint_by_api_type,
     get_endpoint_for_api_type,
     get_provider_config,
@@ -305,6 +308,100 @@ if pytest is not None:
         assert kwargs["extra_body"] == {
             "preserve_thinking": True,
             "enable_thinking": True,
+        }
+
+    def test_default_tools_from_provider():
+        """Alibaba's qwen3.8-max enables its built-in tools per API type.
+
+        The tools (code_interpreter / web_search / web_extractor) are
+        declared under ``tools_by_api_type`` and enabled on the Responses
+        API only: the qwen3.8-max deployment rejects them on the Completions
+        API with ``400 ... The current model does not support the
+        code_interpreter tool.`` (and DashScope is left off for the same
+        reason).  The plain ``tools`` default is absent, so API types not in
+        the map resolve to None.
+        """
+        assert get_default_tools_from_provider("alibaba") is None
+        assert (
+            get_default_tools_from_provider("alibaba", api_type="Completions") is None
+        )
+        assert get_default_tools_from_provider("alibaba", api_type="DashScope") is None
+        assert get_default_tools_from_provider("alibaba", api_type="Responses") == [
+            {"type": "code_interpreter"},
+            {"type": "web_search"},
+            {"type": "web_extractor"},
+        ]
+        # The provider config entry carries the per-API-type map.
+        model_entry = get_provider_config("alibaba")["models"]["qwen3.8-max"]
+        assert "tools" not in model_entry
+        assert model_entry["tools_by_api_type"] == {
+            "Responses": [
+                {"type": "code_interpreter"},
+                {"type": "web_search"},
+                {"type": "web_extractor"},
+            ]
+        }
+        # Case-insensitive provider lookup works.
+        assert get_default_tools_from_provider("Alibaba", api_type="Responses") == [
+            {"type": "code_interpreter"},
+            {"type": "web_search"},
+            {"type": "web_extractor"},
+        ]
+        # Providers without built-in tools expose None.
+        for name in ("openai", "deepseek", "minimax", "anthropic", "custom"):
+            assert get_default_tools_from_provider(name) is None
+            assert get_default_tools_from_provider(name, api_type="Responses") is None
+        # Unknown provider returns None.
+        assert get_default_tools_from_provider("bogus") is None
+        assert get_default_tools_from_provider("bogus", api_type="Responses") is None
+
+    def test_builtin_tools_enable_flags():
+        """Each built-in tool type maps to its request-body enable_* flag."""
+        tools = [
+            {"type": "code_interpreter"},
+            {"type": "web_search"},
+            {"type": "web_extractor"},
+        ]
+        flags = builtin_tools_enable_flags(tools)
+        # code_interpreter only supports calls in thinking mode, so it also
+        # forces enable_thinking on.
+        assert flags == {
+            "enable_code_interpreter": True,
+            "enable_thinking": True,
+            "enable_search": True,
+        }
+        # No tools / None -> no flags.
+        assert builtin_tools_enable_flags(None) == {}
+        assert builtin_tools_enable_flags([]) == {}
+        # Plain string entries are accepted too.
+        assert builtin_tools_enable_flags(["code_interpreter"]) == {
+            "enable_code_interpreter": True,
+            "enable_thinking": True,
+        }
+
+    def test_apply_builtin_tools_to_extra_body():
+        # The flags land in extra_body (created when needed).
+        kwargs = {}
+        tools = [
+            {"type": "code_interpreter"},
+            {"type": "web_search"},
+        ]
+        apply_builtin_tools_to_extra_body(kwargs, tools)
+        assert kwargs["extra_body"] == {
+            "enable_code_interpreter": True,
+            "enable_thinking": True,
+            "enable_search": True,
+        }
+        # No built-in tools -> nothing is sent (extra_body not even created).
+        kwargs = {}
+        apply_builtin_tools_to_extra_body(kwargs, None)
+        assert kwargs == {}
+        # An existing extra_body is preserved and extended.
+        kwargs = {"extra_body": {"preserve_thinking": True}}
+        apply_builtin_tools_to_extra_body(kwargs, [{"type": "web_search"}])
+        assert kwargs["extra_body"] == {
+            "preserve_thinking": True,
+            "enable_search": True,
         }
 
     def test_supported_and_default_api_types():

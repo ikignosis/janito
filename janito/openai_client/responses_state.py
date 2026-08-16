@@ -116,8 +116,18 @@ def _build_call_kwargs(
     response_id: str | None,
     responses_in_server: bool,
     instructions: str | None,
+    builtin_tools=None,
 ) -> dict[str, Any]:
-    """Build the Responses API call parameters for one round."""
+    """Build the Responses API call parameters for one round.
+
+    ``builtin_tools`` is the effective model's built-in (native) tools list
+    from the provider config (e.g. Alibaba/Qwen's ``[{"type":
+    "code_interpreter"}, ...]`` for the Responses API).  Each entry is a
+    model capability, already in the Responses ``tools`` format; it is
+    carried in ``call_kwargs`` under the reserved ``_builtin_tools`` key and
+    merged into the final ``tools`` array by ``_stream_response`` (it must
+    not go through the function-schema conversion).  ``None`` sends nothing.
+    """
     call_kwargs: dict[str, Any] = {
         "model": model,
         "input": input_items,
@@ -158,4 +168,16 @@ def _build_call_kwargs(
         # are only sent here; the server folds them into the stored
         # conversation.
         call_kwargs["instructions"] = instructions
+
+    # The effective model's built-in (native) tools (e.g. Alibaba/Qwen's
+    # code_interpreter / web_search / web_extractor) are model
+    # capabilities enabled through the Responses ``tools`` array.  They
+    # are carried in call_kwargs under the reserved "_builtin_tools" key
+    # and merged with the converted function-tool schemas by
+    # ``_stream_response``, which pops the key before calling the API.
+    # Like the web agent, they are enabled whenever the model declares
+    # them for this API type -- even with no_tools / an empty
+    # function-tools list.
+    if builtin_tools:
+        call_kwargs["_builtin_tools"] = list(builtin_tools)
     return call_kwargs

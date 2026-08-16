@@ -99,6 +99,26 @@ def test_web_server_config_carries_api_type():
     assert config.api_type is None  # follow the provider's configured default
 
 
+def test_web_server_config_effective_tools_for_resolves_per_api_type():
+    """The effective built-in tools are resolved per API type: alibaba's
+    qwen3.8-max enables code_interpreter / web_search / web_extractor on the
+    Responses API only (the Completions deployment rejects code_interpreter
+    with a 400)."""
+    from janito.cli.parser import create_parser
+    from janito.web.backend.config import WebServerConfig
+
+    args = create_parser().parse_args(["--web", "--provider", "alibaba"])
+    config = WebServerConfig.from_args(args)
+
+    assert config.effective_tools_for("Responses") == [
+        {"type": "code_interpreter"},
+        {"type": "web_search"},
+        {"type": "web_extractor"},
+    ]
+    assert config.effective_tools_for("Completions") is None
+    assert config.effective_tools_for("DashScope") is None
+
+
 # ---------------------------------------------------------------------------
 # Shared usage helper
 # ---------------------------------------------------------------------------

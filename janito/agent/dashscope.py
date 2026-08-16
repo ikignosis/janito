@@ -23,6 +23,8 @@ stream opener (mirroring ``janito.openai_client.dashscope_stream``).
 import logging
 from types import SimpleNamespace
 
+from janito.provider_accessors import builtin_tools_enable_flags
+
 from .usage import usage_event_from_usage
 
 logger = logging.getLogger(__name__)
@@ -61,6 +63,15 @@ def build_call_kwargs(
     # keep their own default.
     if config.effective_thinking:
         call_kwargs["enable_thinking"] = True
+    # The effective model's built-in tools (e.g. code_interpreter /
+    # web_search / web_extractor) are native capabilities enabled through
+    # request-body kwargs on the DashScope generation API (e.g.
+    # enable_code_interpreter / enable_search).  They are set whenever the
+    # model declares them for this API type; models without built-in tools
+    # send nothing.
+    flags = builtin_tools_enable_flags(config.effective_tools_for("DashScope"))
+    if flags:
+        call_kwargs.update(flags)
     if tools_schemas:
         call_kwargs["tools"] = tools_schemas
     return call_kwargs

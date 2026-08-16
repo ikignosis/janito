@@ -21,6 +21,7 @@ from janito.config_loaders import (
 
 # Import provider configuration for base URLs and built-in defaults
 from janito.provider_accessors import (
+    apply_builtin_tools_to_extra_body,
     apply_thinking_to_extra_body,
     get_default_max_input_tokens_from_provider,
     get_default_max_output_tokens_from_provider,
@@ -112,8 +113,16 @@ def _build_call_kwargs(
     reasoning_level: str | None,
     preserve_thinking: Any,
     thinking,
+    tools=None,
 ) -> dict[str, Any]:
-    """Build the Chat Completions call parameters for one round."""
+    """Build the Chat Completions call parameters for one round.
+
+    ``tools`` is the effective model's built-in (native) tools list from the
+    provider config (e.g. Alibaba/Qwen's ``[{"type": "code_interpreter"},
+    ...]``); when declared, each ``type`` is sent as a request-body
+    ``enable_*`` flag in ``extra_body`` (see
+    :func:`apply_builtin_tools_to_extra_body`).  ``None`` sends nothing.
+    """
     call_kwargs = {
         "model": model,
         "messages": messages,
@@ -138,6 +147,13 @@ def _build_call_kwargs(
     # defaults, or the raw dict for providers with a structured thinking
     # parameter (e.g. MiniMax-M3's {"type": "adaptive"}).
     apply_thinking_to_extra_body(call_kwargs, thinking)
+
+    # Pass the effective model's built-in tools (e.g. Alibaba/Qwen's
+    # code_interpreter / web_search / web_extractor) as request-body
+    # enable_* flags in extra_body.  These are model capabilities, not
+    # function tools, so they are enabled whenever the model declares them
+    # (see apply_builtin_tools_to_extra_body).
+    apply_builtin_tools_to_extra_body(call_kwargs, tools)
 
     call_kwargs["stream"] = True
     call_kwargs["stream_options"] = {"include_usage": True}

@@ -13,6 +13,7 @@ from ...provider_accessors import (
     get_default_model_from_provider,
     get_default_reasoning_level_from_provider,
     get_default_thinking_from_provider,
+    get_default_tools_from_provider,
     get_endpoint_for_api_type,
     get_supported_api_types_from_provider,
 )
@@ -26,6 +27,26 @@ _registry = ProviderRegistry()
 def _format_token_limit(value: int | None) -> str:
     """Format a token limit for display (e.g. 1050000 -> '1050000')."""
     return f"{value:,}" if value is not None else "(none)"
+
+
+def _tools_display(provider: str, model: str) -> str | None:
+    """Format the model's built-in tools per API type for display.
+
+    Each supported API type that has built-in tools contributes a
+    ``"type1, type2 (API Type)"`` segment, e.g. ``"code_interpreter,
+    web_search, web_extractor (Responses)"``.  Returns ``None`` when no API
+    type has built-in tools.
+    """
+    segments = []
+    for api_type in get_supported_api_types_from_provider(provider, model) or []:
+        tools = get_default_tools_from_provider(provider, model, api_type=api_type)
+        if tools:
+            joined = ", ".join(
+                tool.get("type") if isinstance(tool, dict) else str(tool)
+                for tool in tools
+            )
+            segments.append(f"{joined} ({api_type})")
+    return "; ".join(segments) or None
 
 
 def _resolve_endpoint_display(provider: str) -> tuple[str, str]:
@@ -74,6 +95,14 @@ def _model_rows(
 
     thinking = get_default_thinking_from_provider(provider, model)
     rows.append((f"{label} thinking", format_thinking_display(thinking)))
+
+    # Built-in (native) tools are resolved per API type: each supported
+    # API type that declares tools is shown as "type1, type2 (API Type)".
+    # Models without built-in tools (or whose tools are disabled for every
+    # API type) get no row.
+    tools_display = _tools_display(provider, model)
+    if tools_display:
+        rows.append((f"{label} tools", tools_display))
 
     reasoning = get_default_reasoning_level_from_provider(provider, model)
     if reasoning:

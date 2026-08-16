@@ -329,6 +329,89 @@ def get_default_thinking_from_provider(provider: str, model: str | None = None):
     return found.default_thinking(model) if found is not None else False
 
 
+def get_default_tools_from_provider(
+    provider: str, model: str | None = None, api_type: str | None = None
+) -> list | None:
+    """
+    Get the built-in (native) tools declared for a provider's model.
+
+    Returns the raw ``tools`` list from the model entry (e.g. Alibaba/Qwen's
+    ``[{"type": "code_interpreter"}, {"type": "web_search"},
+    {"type": "web_extractor"}]``), or ``None`` when the model declares none.
+    These are **not** function tools: each ``type`` is a model capability
+    enabled through request-body flags on the API call.  Use
+    :func:`apply_builtin_tools_to_extra_body` (Completions) to turn the value
+    into the API call's ``extra_body`` payload, or append the entries to the
+    ``tools`` array directly for the Responses API.
+
+    When ``api_type`` is given and the model declares a ``tools_by_api_type``
+    map containing it, that API type's own list is returned (API types
+    absent from the map resolve to the plain ``tools`` default, or ``None``
+    when no default exists -- e.g. Alibaba's qwen3.8-max enables its
+    built-in tools only on the Responses API).
+
+    Args:
+        provider: The provider name (case-insensitive)
+        model: The model name. ``None`` means the provider's default model.
+        api_type: The canonical API type (e.g. ``"Responses"``,
+            ``"Completions"``, ``"DashScope"``) whose tools to resolve.
+            ``None`` resolves the plain ``tools`` default.
+
+    Returns:
+        The model's built-in tools list, or ``None`` for unknown providers,
+        for models without a built-in tools entry, or for API types without
+        built-in tools.
+    """
+    found = _registry.get(provider)
+    return found.tools(model, api_type=api_type) if found is not None else None
+
+
+def builtin_tools_enable_flags(tools) -> dict[str, bool]:
+    """Map a model's built-in tool types to their API ``enable_*`` flags.
+
+    Each built-in tool ``type`` maps to the request-body flag that turns it
+    on for the OpenAI-compatible Chat Completions / native DashScope APIs:
+
+    - ``code_interpreter`` -> ``enable_code_interpreter`` (which only
+      supports calls in thinking mode, so ``enable_thinking`` is forced on);
+    - ``web_search`` / ``web_extractor`` -> ``enable_search``.
+
+    ``tools`` may be ``None`` (no built-in tools declared), in which case an
+    empty dict is returned.  Entries may be dicts (``{"type": ...}``) or
+    plain strings.
+    """
+    flags: dict[str, bool] = {}
+    for tool in tools or []:
+        tool_type = tool.get("type") if isinstance(tool, dict) else tool
+        if tool_type == "code_interpreter":
+            flags["enable_code_interpreter"] = True
+            # The Code Interpreter feature only supports calls in thinking mode.
+            flags["enable_thinking"] = True
+        elif tool_type in ("web_search", "web_extractor"):
+            flags["enable_search"] = True
+    return flags
+
+
+def apply_builtin_tools_to_extra_body(call_kwargs: dict, tools) -> None:
+    """Add the model's built-in tool ``enable_*`` flags to ``call_kwargs``.
+
+    The built-in tools declared in a model's provider-config ``tools`` entry
+    are model capabilities enabled through request-body flags on the
+    OpenAI-compatible Chat Completions API, not function tools.  Each
+    ``type`` maps to an ``enable_<type>`` flag in ``extra_body`` (see
+    :func:`builtin_tools_enable_flags`); ``code_interpreter`` additionally
+    forces ``enable_thinking`` because it only supports calls in thinking
+    mode.
+
+    The ``call_kwargs`` dict is mutated in place; ``extra_body`` is created
+    when needed.  ``tools`` may be ``None`` (no built-in tools declared), in
+    which case nothing is sent.
+    """
+    flags = builtin_tools_enable_flags(tools)
+    if flags:
+        call_kwargs.setdefault("extra_body", {}).update(flags)
+
+
 def apply_thinking_to_extra_body(call_kwargs: dict, thinking) -> None:
     """Add the resolved thinking mode to ``call_kwargs``' ``extra_body``.
 

@@ -51,6 +51,9 @@ def _cfg(thinking=False):
     class _Cfg:
         effective_thinking = thinking
 
+        def effective_tools_for(self, api_type):
+            return None
+
     return _Cfg()
 
 
@@ -135,6 +138,76 @@ def test_responses_build_call_kwargs_passes_structured_thinking_dict():
     )
     assert kwargs["extra_body"]["thinking"] == {"type": "adaptive"}
     assert "enable_thinking" not in kwargs["extra_body"]
+
+
+def test_responses_build_call_kwargs_appends_builtin_tools():
+    """The effective model's built-in tools (e.g. Alibaba/Qwen's
+    code_interpreter / web_search / web_extractor) are appended to the
+    Responses tools array alongside any function tools."""
+    from janito.web.backend.agent import responses
+
+    tools = [
+        {
+            "type": "function",
+            "function": {"name": "ReadFile", "description": "read", "parameters": {}},
+        }
+    ]
+
+    class _Cfg:
+        effective_thinking = True
+
+        def effective_tools_for(self, api_type):
+            return [
+                {"type": "code_interpreter"},
+                {"type": "web_search"},
+                {"type": "web_extractor"},
+            ]
+
+    kwargs = responses.build_call_kwargs(
+        "qwen3.8-max",
+        [{"role": "user", "content": "hi"}],
+        tools,
+        _Cfg(),
+        1000,
+        None,
+        None,
+    )
+    assert kwargs["tools"] == [
+        {
+            "type": "function",
+            "name": "ReadFile",
+            "description": "read",
+            "parameters": {},
+        },
+        {"type": "code_interpreter"},
+        {"type": "web_search"},
+        {"type": "web_extractor"},
+    ]
+    assert kwargs["tool_choice"] == "auto"
+
+
+def test_responses_build_call_kwargs_appends_builtin_tools_without_function_tools():
+    """Built-in tools are still enabled with no function tools (like
+    image_generation for gpt-5)."""
+    from janito.web.backend.agent import responses
+
+    class _Cfg:
+        effective_thinking = True
+
+        def effective_tools_for(self, api_type):
+            return [{"type": "web_search"}]
+
+    kwargs = responses.build_call_kwargs(
+        "qwen3.8-max",
+        [{"role": "user", "content": "hi"}],
+        None,
+        _Cfg(),
+        1000,
+        None,
+        None,
+    )
+    assert kwargs["tools"] == [{"type": "web_search"}]
+    assert kwargs["tool_choice"] == "auto"
 
 
 def test_responses_build_call_kwargs_appends_image_generation_tool_for_gpt5():
