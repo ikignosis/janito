@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Changes since `v4.25.0` (2026-08-15).
 
+### Added
+
+- New interactive-shell `/model` command: `/model` (no argument) shows the
+  current model and the models available from the current provider;
+  `/model <name>` switches the session's model at runtime (updates the
+  prompt/toolbar display and rebinds the send function via the new
+  `model_override` parameter of `_make_send_factory`) without changing the
+  configured default `model` in config.json (use `janito --set model=<name>`
+  to persist).  Like `--model`, the name is open-ended (any name is passed
+  to the provider's API; a name matching an available model is canonicalized
+  to its casing).  The shell's argument autocompletion (`/model <name>`)
+  suggests the models available from the current provider (its built-in
+  `models` registry plus configured per-model entries in config.json).
+  Switching the model clears the LLM conversation history (system prompt
+  preserved); a `/provider` switch clears any session model override.
+  (`janito/shell/cmds/model.py`, `janito/shell/cmds/__init__.py`,
+  `janito/shell/cmds/provider.py`, `janito/shell/interactive.py`,
+  `janito/shell/session.py`, `janito/cli/chat.py`,
+  `tests/test_shell_model_cmd.py`, `tests/test_shell_completer.py`)
+
 ### Changed
 
 - Repository moved from the `ikignosis` GitHub org to `joaompinto`; updated

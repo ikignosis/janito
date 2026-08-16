@@ -9,7 +9,8 @@ is the first one on the line, so regular chat input is left untouched.
 Commands that take an argument can register an *argument completer*: a
 callable that receives the current word and returns the candidate argument
 values. When the line so far matches ``/cmd <word>`` the candidates are
-offered instead, e.g. ``/provider`` suggests the available provider names.
+offered instead, e.g. ``/provider`` suggests the available provider names
+and ``/model`` the models available from the current provider.
 """
 
 from __future__ import annotations

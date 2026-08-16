@@ -46,6 +46,12 @@ class InteractiveShell(_SessionMixin):
         """
         self.model = model
         self.provider = provider
+        # Set by /model for the current session: the explicit model override
+        # that the send factory (re)built by /provider and /model consults so
+        # the runtime model matches the displayed one.  Cleared when /provider
+        # switches to another provider (the new provider resolves its own
+        # model).
+        self.model_override = None
         self.no_history = no_history
         # Conversation messages (role/content dicts) passed to the AI as
         # context

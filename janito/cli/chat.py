@@ -166,14 +166,15 @@ def _make_send_factory(
     cli_model: str | None,
     cli_provider: str | None,
     cli_reasoning_level: str | None,
-) -> Callable[[str | None], Callable]:
+) -> Callable[[str | None, str | None], Callable]:
     """Return a factory that builds the send function for a provider.
 
     The interactive shell stores the returned factory as ``send_factory`` and
     ``/provider`` calls it with the new provider, so a provider switch takes
     effect in real time.  For the target provider the factory re-resolves:
 
-      - **model**: ``--model`` only applies to the provider it was given for
+      - **model**: an explicit ``/model`` switch (``model_override``) wins;
+        otherwise ``--model`` only applies to the provider it was given for
         (the session's startup provider).  After a switch the new provider's
         configured model, else its built-in default, is used (matching the
         toolbar display updated by ``/provider``).
@@ -188,16 +189,22 @@ def _make_send_factory(
             (may be None).
 
     Returns:
-        A callable ``factory(provider) -> send_prompt_func``.
+        A callable ``factory(provider, model_override=None) -> send_prompt_func``.
     """
 
-    def send_factory(provider: str | None) -> Callable:
+    def send_factory(
+        provider: str | None, model_override: str | None = None
+    ) -> Callable:
         from janito.config_loaders import load_model_from_config
         from janito.provider_accessors import get_default_model_from_provider
 
-        # --model applies to the startup provider only; a switched-to provider
-        # gets its own effective model (configured, else built-in default).
-        if (provider or "").lower() == (cli_provider or "").lower():
+        # An explicit /model switch (model_override) always wins.  Otherwise
+        # --model applies to the startup provider only; a switched-to
+        # provider gets its own effective model (configured, else built-in
+        # default).
+        if model_override:
+            model = model_override
+        elif (provider or "").lower() == (cli_provider or "").lower():
             model = cli_model
         else:
             model = load_model_from_config(provider) or get_default_model_from_provider(

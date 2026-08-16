@@ -143,11 +143,11 @@ if pytest is not None:
 
         set_api_key(provider, f"sk-{provider}")  # pragma: allowlist secret
 
-    def _arg_completer_completions_for(text):
+    def _arg_completer_completions_for(text, provider=None):
         """Completions offered by the real shell completer for the given input."""
         from janito.shell import InteractiveShell
 
-        shell = InteractiveShell(model="test-model", no_history=True)
+        shell = InteractiveShell(model="test-model", no_history=True, provider=provider)
         return _completions_for(shell.session.completer, text)
 
     def test_provider_argument_completes_all(monkeypatch, tmp_path):
@@ -243,6 +243,78 @@ if pytest is not None:
         # Typing just "/provider" (no trailing space) still offers the command.
         names = _arg_completer_completions_for("/provider")
         assert "/provider" in names
+
+    # ------------------------------------------------------------------
+    # Argument autocompletion (/model <name> from the current provider)
+    # ------------------------------------------------------------------
+
+    def test_model_argument_completes_from_current_provider():
+        # The models suggested come from the session's provider (openai here).
+        names = _arg_completer_completions_for("/model ", provider="openai")
+        assert "gpt-5.6-luna" in names
+
+    def test_model_argument_completes_deepseek_models():
+        names = _arg_completer_completions_for("/model ", provider="deepseek")
+        assert "deepseek-v4-flash" in names
+        assert "gpt-5.6-luna" not in names
+
+    def test_model_argument_completes_prefix():
+        names = _arg_completer_completions_for("/model gpt", provider="openai")
+        assert names == ["gpt-5.6-luna"]
+
+    def test_model_argument_complete_prefix_case_insensitive():
+        names = _arg_completer_completions_for("/model GPT", provider="openai")
+        assert names == ["gpt-5.6-luna"]
+
+    def test_model_argument_command_case_insensitive():
+        names = _arg_completer_completions_for("/MODEL deep", provider="deepseek")
+        assert "deepseek-v4-flash" in names
+
+    def test_model_argument_includes_configured_models(monkeypatch, tmp_path):
+        from janito.config_store import set_config_value
+
+        _use_temp_config(monkeypatch, tmp_path)
+        set_config_value("openai.models.gpt-future.max-output-tokens", 1000)
+
+        names = _arg_completer_completions_for("/model gpt-f", provider="openai")
+        assert names == ["gpt-future"]
+
+    def test_model_argument_no_completion_after_second_space():
+        # Only the first argument is completed; a second space means the user
+        # has moved past it.
+        assert (
+            _arg_completer_completions_for("/model gpt-5.6-luna ", provider="openai")
+            == []
+        )
+
+    def test_model_argument_no_completion_without_command_prefix():
+        # A plain chat line mentioning the word must not offer models.
+        assert _arg_completer_completions_for("gpt", provider="openai") == []
+        assert (
+            _arg_completer_completions_for("hello /model gpt", provider="openai") == []
+        )
+
+    def test_model_argument_leading_whitespace_still_completes():
+        names = _arg_completer_completions_for("  /model gpt", provider="openai")
+        assert names == ["gpt-5.6-luna"]
+
+    def test_model_argument_completion_meta():
+        from janito.shell import InteractiveShell
+
+        shell = InteractiveShell(model="test-model", no_history=True, provider="openai")
+        doc = Document("/model gpt", cursor_position=len("/model gpt"))
+        completions = list(
+            shell.session.completer.get_completions(doc, CompleteEvent())
+        )
+        assert len(completions) == 1
+        assert completions[0].start_position == -len("gpt")
+        meta = completions[0].display_meta
+        assert "argument" in "".join(part[1] for part in meta)
+
+    def test_model_command_still_completes_as_command():
+        # Typing just "/model" (no trailing space) still offers the command.
+        names = _arg_completer_completions_for("/model")
+        assert "/model" in names
 
 else:  # pragma: no cover - fallback runner without pytest
 

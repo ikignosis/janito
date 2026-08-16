@@ -141,6 +141,9 @@ class ProviderCmdHandler(CmdHandler):
             factory = getattr(shell, "send_factory", None)
             if factory is not None and hasattr(shell, "send_prompt_func"):
                 shell.send_prompt_func = factory(canonical)
+            # A session model switch (/model) was scoped to the previous
+            # provider: the new provider resolves its own effective model.
+            shell.model_override = None
             shell.initialize_history(
                 system_prompt=getattr(shell, "_system_prompt", None)
             )

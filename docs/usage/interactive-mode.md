@@ -52,6 +52,8 @@ Additional commands available in the terminal shell:
 | `/changes` | Show the file-changing tool executions recorded for the current prompt |
 | `/provider` | Show the current provider and the available providers |
 | `/provider <name>` | Switch the session's provider (and model) for this shell session only — the configured default in `config.json` is left unchanged (use `janito --set provider=<name>` to persist a new default; autocompleted). The LLM conversation history is cleared so the new provider/model starts fresh |
+| `/model` | Show the current model and the models available from the current provider |
+| `/model <name>` | Switch the session's model for this shell session only — the configured default in `config.json` is left unchanged (use `janito --set model=<name>` to persist a new default; autocompleted). Like `--model`, the name is open-ended; when it matches a model available from the current provider its canonical casing is used. The LLM conversation history is cleared so the new model starts fresh |
 | `/mcp add <name> stdio <cmd>` | Add MCP stdio service |
 | `/mcp add <name> http <url>` | Add MCP HTTP service |
 | `/mcp list` | List MCP services |
@@ -72,6 +74,12 @@ Commands that take an argument also autocomplete that argument: after
 `~/.janito/auth.json` are offered (switching to a key-less provider would
 only make the next prompt fail with an authentication error); the full list
 is still shown by `/provider` with no argument.
+
+After `/model `, the models available from the **current provider** are
+suggested as you type them, e.g. `/model gpt` suggests `gpt-5.6-luna`. The
+available set is the provider's built-in models plus any configured
+per-model entries in `config.json`; `/model` with no argument lists them
+all.
 
 ## Examples
 

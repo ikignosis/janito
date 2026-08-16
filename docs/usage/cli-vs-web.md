@@ -63,7 +63,7 @@ Legend: ✅ available · — not available
 | `/show_tools_stats` | ✅ | — |
 | `/changes` (replay file-changing tool executions) | ✅ | — |
 | `/mcp add` / `/mcp list` / `/mcp remove` | ✅ | — (use the MCP dashboard) |
-| `/ask`, `/history`, `/multi`, `/priv`, `/prompt`, `/provider`, `/read`, `/rollback`, `/status`, `/write` | ✅ | — |
+| `/ask`, `/history`, `/multi`, `/priv`, `/prompt`, `/provider`, `/model`, `/read`, `/rollback`, `/status`, `/write` | ✅ | — |
 | `!<shell command>` (run a command directly) | ✅ | — |
 | Command autocomplete for `/`-commands | ✅ | — |
 | Enter to send, `Shift+Enter` for newline | — | ✅ |

@@ -39,6 +39,23 @@ def _provider_arg_completer(prefix: str) -> list[str]:
 class _SessionMixin:
     """Mixin providing prompt_toolkit session and history management."""
 
+    def _model_arg_completer(self, prefix: str) -> list[str]:
+        """Return the model names matching ``prefix`` for ``/model`` autocompletion.
+
+        Delegates to the ``/model`` command's helper so the completions always
+        match the models the command accepts for the **current provider** (its
+        built-in models plus configured per-model entries).  The current
+        provider is the session's displayed provider (``--provider`` at
+        startup or an earlier ``/provider`` switch), else the configured
+        default -- the same provider ``/model`` itself switches within.
+        """
+        from janito.general_config import get_active_provider
+
+        from .cmds.model import available_model_names
+
+        provider = getattr(self, "provider", None) or get_active_provider()
+        return available_model_names(provider, prefix)
+
     def _get_bottom_toolbar(self) -> list:
         """Get the bottom toolbar content."""
         tokens = []
@@ -126,8 +143,13 @@ class _SessionMixin:
             completer=CommandCompleter(
                 lambda: self.commands,
                 # Argument completion: ``/provider <name>`` suggests the
-                # available provider names (built-in + registered variants).
-                arg_completers={"/provider": _provider_arg_completer},
+                # available provider names (built-in + registered variants)
+                # and ``/model <name>`` suggests the models available from the
+                # current provider (built-in + configured per-model entries).
+                arg_completers={
+                    "/provider": _provider_arg_completer,
+                    "/model": self._model_arg_completer,
+                },
             ),
             complete_while_typing=True,
         )
