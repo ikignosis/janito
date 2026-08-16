@@ -183,6 +183,51 @@ def _collect_module_tools(module, full_module_name: str, tools: dict) -> None:
                 tools[attr_name] = _make_class_tool(attr)
 
 
+def wrap_tool_class(cls: type) -> Callable | None:
+    """
+    Validate and wrap a single tool class into a callable.
+
+    Runs the same ``should_load()`` and privilege checks as toolset
+    discovery; returns ``None`` (and records the skip reason) when the tool
+    must not be loaded.  Used by the plugin manager to register tool classes
+    contributed by a plugin's ``TOOLS`` list.
+
+    Args:
+        cls: A ``BaseTool`` subclass decorated with ``@tool``.
+
+    Returns:
+        The wrapped callable (its ``__name__`` is the class name), or None
+        if the tool failed validation.
+    """
+    if not is_tool(cls):
+        logger.warning("Skipping %s: not a @tool class", getattr(cls, "__name__", cls))
+        return None
+    if not _check_should_load(cls):
+        return None
+    if not _check_tool_privileges(cls):
+        return None
+    return _make_class_tool(cls)
+
+
+def discover_module_tools(module) -> dict[str, Callable]:
+    """
+    Discover tool classes defined in an arbitrary module.
+
+    Unlike :func:`discover_toolsets` (which only scans ``janito.tools.*``
+    toolset directories), this works on any imported module, so the plugin
+    manager can collect tools from a plugin's ``tools`` subpackage.
+
+    Args:
+        module: An imported module object.
+
+    Returns:
+        Dict mapping tool names (class names) to wrapped callables.
+    """
+    tools: dict[str, Callable] = {}
+    _collect_module_tools(module, module.__name__, tools)
+    return tools
+
+
 def _load_module_tools(toolset_name: str, module_name: str, tools: dict) -> None:
     """Import one toolset module and register its tool classes."""
     full_module_name = f"janito.tools.{toolset_name}.{module_name}"

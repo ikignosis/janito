@@ -43,7 +43,8 @@ configuration — exists to feed or present this loop.
 | `janito/tools/` | Built-in tool implementations, organized in toolsets |
 | `janito/mcp_client/` + `mcp_manager.py` | MCP server connections and tool routing |
 | `janito/web/` | FastAPI web backend + plain HTML/JS/CSS frontend |
-| `janito/codesearch/` | SQLite trigram index backing the code-search tool |
+| `janito/plugin_manager.py` | Plugin loader: contract validation, scoped `sys.path`, registration |
+| `plugins/` | Optional plugins (e.g. `codesearch/`) loaded with `--plugin DIR` |
 | `janito/*config*.py`, `provider_*.py` | Configuration storage, loaders, provider registry |
 | `docs/`, `mkdocs.yml` | MkDocs documentation site |
 
@@ -60,12 +61,17 @@ the `janito` console script). Flow:
    the module-level `running_privileges` (used later by tool discovery).
 3. **Batch config ops** (`--set/--unset/--get/--set-secret/--delete-secret`)
    via `_handle_batch_config`.
-4. **Flag-driven commands** (`--info`, `--config`, `--list-*`,
-   `--set-api-key`, `--onedrive-*`, `--install-skill`, `--init-codesearch`,
-   ...) via `_dispatch_flag_command` → handlers in `janito/cli/handlers/`.
-5. **Validate runtime config** (`validate_runtime_config`) — API key, endpoint
+4. **Load plugins** (`--plugin DIR`, repeatable) via `janito/plugin_manager.py`:
+   each plugin's parent dir is temporarily added to `sys.path`, the package is
+   imported, the contract is validated, `on_start` is called, and its tools,
+   `/`-commands and system-prompt sections are registered — all before any
+   registry/shell access.
+5. **Flag-driven commands** (`--info`, `--config`, `--list-*`,
+   `--set-api-key`, `--onedrive-*`, `--install-skill`, ...) via
+   `_dispatch_flag_command` → handlers in `janito/cli/handlers/`.
+6. **Validate runtime config** (`validate_runtime_config`) — API key, endpoint
    and model must resolve before any session starts.
-6. **Dispatch to a mode**:
+7. **Dispatch to a mode**:
    - `--web` → `janito/web/backend/app.py:run_web` (checks the optional
      `[web]` extras first);
    - stdin pipe → single-prompt mode;
@@ -139,10 +145,12 @@ history conversion are implemented once.
 - **`tools_registry.py`** — lazy, module-level `ToolsRegistry` singleton:
   - `ensure_initialized()` runs discovery on first access so privilege flags
     are set before tools are filtered;
-  - autoloads the `files`, `system`, `net`, `codesearch` toolsets;
+  - autoloads the `files`, `system`, `net` toolsets;
   - `get_function_schema()` generates OpenAI-compatible JSON schemas from a
     tool's type hints and docstring;
   - `add_toolset()` enables on-demand toolsets (gmail, onedrive);
+  - `register_plugin_tools()` registers tool classes contributed by plugins
+    (gated by `--no-tools` like any other non-skill tool);
   - `enable_skills()/disable_skills()` toggle skill tools.
 
 - **`executor.py`** — `ToolExecutor` + shared `run_tool()` core (the
@@ -170,12 +178,24 @@ history conversion are implemented once.
 
 ### Toolsets (`janito/tools/`)
 
-Tools are grouped in directories (`files/`, `system/`, `net/`, `codesearch/`,
-`gmail/`, `onedrive/`, `janitoweb/`). `discover_toolsets()` in
+Tools are grouped in directories (`files/`, `system/`, `net/`, `gmail/`,
+`onedrive/`, `janitoweb/`). `discover_toolsets()` in
 `janito/tools/__init__.py` scans each toolset for `@tool`-marked classes,
 runs their `should_load()` gate (missing binaries, credentials, platform),
 checks `_tool_permissions` against `running_privileges`, and wraps each class
-as a callable with the `run()` signature.
+as a callable with the `run()` signature. `wrap_tool_class()` /
+`discover_module_tools()` expose the same pipeline for arbitrary modules so
+the plugin manager can register tools from `plugins/*/tools/`.
+
+### Plugins (`janito/plugin_manager.py`)
+
+`load_plugin()` temporarily adds the plugin's **parent directory** to
+`sys.path`, imports the package (enabling relative imports inside the
+plugin), validates the contract (`name`, `on_start`, `SYSTEM_PROMPT`,
+`TOOLS`, `CMD_HANDLERS`), calls `on_start`, and registers the contributed
+tools (`ToolsRegistry.register_plugin_tools`), commands
+(`shell/cmds/registry.register_command`) and system-prompt sections
+(`system_prompt.register_plugin_system_prompt`). See `docs/PLUGINS.md`.
 
 ### Privileges
 
@@ -226,7 +246,7 @@ recorded reason (`get_skipped_tools()`).
 
 ## Code search
 
-`janito/codesearch/` powers the `CodeSearch` tool with a **SQLite-based
+`plugins/codesearch/` powers the `CodeSearch` tool with a **SQLite-based
 inverted trigram index**:
 
 - `index.py` — schema (files, trigrams posting lists) and the `Index` class;
@@ -234,8 +254,10 @@ inverted trigram index**:
 - `candidates.py` — candidate file scoring/ranking;
 - `code_search.py` — the query layer (and the tool wraps it).
 
-The index is created/updated with `janito --init-codesearch` and stored under
-`.janito/` in the working directory.
+The plugin's `on_start()` creates the index at `.janito/codesearch.db`
+when it is missing; the `/codesearch` shell command maintains it
+(`/codesearch update` / `/codesearch recreate`). Load with
+`janito --plugin plugins/codesearch`.
 
 ---
 
@@ -305,11 +327,12 @@ Key modules:
   and MCP service stores.
 
 The system prompt (`janito/system_prompt.py`) composes the base prompt, the
-skills advertisement section, and the current project's `AGENTS.md` content.
-The composition is built from ordered sections (`base`, `skills`, `agents.md`)
-whose text and line counts are tracked (`get_system_prompt_sections`); the
-shell `/prompt` command and `janito --show-system-prompt` display each section
-as a row of a rich table (Section, Lines, Content).
+skills advertisement section, the current project's `AGENTS.md` content, and
+any loaded plugins' `SYSTEM_PROMPT` sections. The composition is built from
+ordered sections (`base`, `skills`, `agents.md`, `plugins:<name>`) whose text
+and line counts are tracked (`get_system_prompt_sections`); the shell
+`/prompt` command and `janito --show-system-prompt` display each section as a
+row of a rich table (Section, Lines, Content).
 
 ---
 
@@ -329,8 +352,9 @@ as a row of a rich table (Section, Lines, Content).
 
 ## Testing & quality
 
-- `tests/` — pytest suite (~50 files) covering clients, tooling, config,
-  shell commands, skills, codesearch and web (`tests/web/`).
+- `tests/` — pytest suite covering clients, tooling, config, shell commands,
+  skills, the plugin framework and web (`tests/web/`); the codesearch plugin
+  carries its own tests under `plugins/codesearch/tests/`.
 - `tox.ini` + `pyproject.toml` — tox environments, ruff linting/isort.
 - `.pre-commit-config.yaml` + `.secrets.baseline` — pre-commit hooks and
   detect-secrets baseline.

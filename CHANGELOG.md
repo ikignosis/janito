@@ -93,6 +93,10 @@ Changes since `v4.25.0` (2026-08-15).
 
 ### Changed
 
+- `janito.plugin_manager.load_plugin()` now prints `Loading plugin <name>`
+  (the plugin's directory name) before loading each plugin, so startup shows
+  which plugins are being loaded. (`janito/plugin_manager.py`,
+  `tests/test_plugin_manager.py`)
 - Repository moved from the `ikignosis` GitHub org to `joaompinto`; updated
   the git remote and all URLs across `README.md`, `README_DEV.md`,
   `RELEASE.md`, `mkdocs.yml`, `pyproject.toml`, the docs and the changelog
@@ -321,3 +325,41 @@ Changes since `v4.25.0` (2026-08-15).
   any other tool access. (`janito/cli/parser.py`, `janito/__main__.py`,
   `janito/tooling/tools_registry.py`, `janito/openai_client/client_support.py`,
   `janito/web/backend/config.py`, `janito/web/backend/agent/tooling.py`)
+
+- **Plugin system** — plugins are Python-package directories (e.g.
+  `plugins/codesearch/`) loaded with the new `--plugin DIR` flag (repeatable).
+  A plugin exports `name`, `on_start` (returns `None` or an error string),
+  `SYSTEM_PROMPT` (appended to the system prompt), `TOOLS` (tool classes per
+  `docs/TOOL.md`) and `CMD_HANDLERS` (`CmdHandler` subclasses registered with
+  the shell). Loading a plugin **temporarily** adds its parent directory to
+  `sys.path` (enabling relative imports inside the plugin) and restores it
+  afterwards. `janito --list-plugins` shows loaded plugins and their
+  `on_start` errors. (`janito/plugin_manager.py`, `janito/cli/parser.py`,
+  `janito/__main__.py`, `janito/cli/handlers/plugins.py`,
+  `janito/tooling/tools_registry.py`, `janito/tools/__init__.py`,
+  `janito/system_prompt.py`, `docs/PLUGINS.md`,
+  `tests/test_plugin_manager.py`)
+
+- **codesearch migrated to a plugin** — the trigram engine
+  (`code_search.py`, `index.py`, `trigram.py`, `candidates.py`), the
+  `CodeSearch` tool and a new `/codesearch` shell command
+  (`/codesearch update` / `/codesearch recreate`) now live in
+  `plugins/codesearch/`. Loading the plugin with
+  `janito --plugin plugins/codesearch` creates `.janito/codesearch.db`
+  automatically when it is missing (`on_start`). (`plugins/codesearch/`,
+  `docs/tools/codesearch.md`)
+
+- **codesearch plugin system prompt** — the plugin now contributes the
+  instruction "When searching text on files use the CodeSearch tool before
+  the other search tools" to the system prompt, so the model prefers
+  `CodeSearch` over the other search tools. (`plugins/codesearch/__init__.py`,
+  `tests/test_plugin_manager.py`, `plugins/codesearch/tests/test_plugin.py`)
+
+### Removed
+
+- **`--init-codesearch` flag and built-in codesearch** — the flag and the
+  `janito/codesearch/` / `janito/tools/codesearch/` packages are gone; code
+  search is now provided by the codesearch plugin (`janito/cli/parser.py`,
+  `janito/__main__.py`, `janito/cli/handlers/__init__.py`,
+  `janito/tooling/tools_registry.py`). The index is created automatically
+  when the plugin loads, or with `/codesearch recreate`.

@@ -1,19 +1,35 @@
-# Code Search Tools
+# Code Search
 
 The `CodeSearch` tool searches a **pre-built trigram index** of the current
-working directory instead of scanning files on every call. The index is
-stored at `./.janito/codesearch.db` and is built with:
+working directory instead of scanning files on every call. It is provided by
+the **codesearch plugin** (`plugins/codesearch/`), not the core package.
+
+The index is stored at `./.janito/codesearch.db` and is built automatically
+when the plugin loads. Load the plugin and use it:
 
 ```bash
-janito --init-codesearch
+janito --plugin plugins/codesearch
 ```
+
+!!! note "Automatic index creation"
+
+    When the codesearch plugin loads (`on_start`), if there is no
+    `./.janito/codesearch.db` in the current working directory, the index is
+    created automatically. No separate build step is needed.
+
+!!! note "Maintaining the index"
+
+    In the interactive shell the `/codesearch` command maintains the index:
+
+    - `/codesearch update` — incrementally update (added/deleted/changed files)
+    - `/codesearch recreate` — rebuild the index from scratch
 
 !!! note "Conditional loading"
 
     The `CodeSearch` tool is **only loaded when `./.janito/codesearch.db`
     exists** in the working directory. If you haven't built the index yet,
-    the tool is not advertised to the model — build it with
-    `janito --init-codesearch` first.
+    the tool is not advertised to the model — load the codesearch plugin
+    (creates it automatically) or run `/codesearch recreate`.
 
 !!! note "Automatic refresh (1 day TTL)"
 
@@ -60,4 +76,4 @@ exist on disk are skipped.
 
 The index uses the trigram algorithm described by Russ Cox in *Regular
 Expression Matching with a Trigram Index* (Google Code Search), with SQLite
-as the storage backend. See `janito/codesearch/` for the implementation.
+as the storage backend. See `plugins/codesearch/` for the implementation.

@@ -88,7 +88,8 @@ Examples:
   janito --install-skill https://github.com/user/repo/tree/main/skills/git-commit  # Install a skill
   janito --list-skills                                        # List installed skills
   janito --uninstall-skill git-commit                         # Uninstall a skill
-  janito --init-codesearch                                   # Build code search index at ./.janito/codesearch.db
+  janito --plugin plugins/codesearch                        # Load the codesearch plugin (tools, /codesearch command)
+  janito --list-plugins                                     # List loaded plugins and their on_start errors
   janito --create-variant alibaba-tokenplan                  # Register a provider variant (<provider>-<word>)
   janito --provider alibaba-tokenplan --set model=qwen-plus  # Configure the variant (per-variant model)
   janito --set-api-key sk-xxx --provider alibaba-tokenplan   # Store an API key for the variant
@@ -411,10 +412,21 @@ Note: --set and --set-api-key must be used in separate commands.
     )
 
     parser.add_argument(
-        "--init-codesearch",
+        "--plugin",
+        metavar="DIR",
+        action="append",
+        help="Load a plugin package from DIR (repeatable; e.g. "
+        "--plugin plugins/codesearch). DIR is a Python package directory; "
+        "its parent is temporarily added to sys.path so relative imports "
+        "inside the plugin work. Plugin tools, commands and system-prompt "
+        "sections are registered before the session starts.",
+    )
+
+    parser.add_argument(
+        "--list-plugins",
         action="store_true",
-        help="Build a code search index over the current directory and store "
-        "it at ./.janito/codesearch.db, then exit",
+        help="List loaded plugins (from --plugin) and their on_start errors, "
+        "then exit",
     )
 
     parser.add_argument(

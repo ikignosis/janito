@@ -29,7 +29,7 @@ from .schema import get_function_schema
 from .skills_provider import get_skills_advertisement, get_skills_tools
 
 # Configuration for auto-loading toolsets
-AUTOLOAD_TOOLSETS = ["files", "system", "net", "codesearch"]
+AUTOLOAD_TOOLSETS = ["files", "system", "net"]
 
 # Track loaded toolsets to avoid duplicates
 _loaded_toolsets = set(AUTOLOAD_TOOLSETS.copy())
@@ -120,6 +120,26 @@ class ToolsRegistry:
             return True
 
         return False
+
+    def register_plugin_tools(self, tools: dict[str, Callable]) -> None:
+        """
+        Register tools contributed by a plugin.
+
+        Plugin tools go through the same ``should_load()`` / privilege
+        gating as built-in tools (applied by ``wrap_tool_class`` /
+        ``discover_module_tools`` in the plugin manager), so only surviving
+        callables should be passed here.  Gated by ``_tools_loading_enabled``
+        (``--no-tools`` disables plugin tools like any other non-skill tool).
+
+        Args:
+            tools: Mapping of tool names to wrapped callables.
+        """
+        if not _tools_loading_enabled:
+            return
+        if not tools:
+            return
+        self.ensure_initialized()
+        AVAILABLE_TOOLS.update(tools)
 
     def all_tools(self) -> dict[str, Callable]:
         """
@@ -396,6 +416,17 @@ def disable_tools_loading() -> None:
     Skill tools (``load_skill`` / ``read_skill_resource``) stay enabled.
     """
     _registry.disable_tools_loading()
+
+
+def register_plugin_tools(tools: dict[str, Callable]) -> None:
+    """
+    Register tools contributed by a plugin.
+
+    Args:
+        tools: Mapping of tool names to wrapped callables (see
+            :meth:`ToolsRegistry.register_plugin_tools`).
+    """
+    _registry.register_plugin_tools(tools)
 
 
 def tools_loading_enabled() -> bool:

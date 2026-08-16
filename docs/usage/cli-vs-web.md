@@ -115,9 +115,10 @@ Legend: ✅ available · — not available
 ### Tools & Integrations
 
 The shared toolsets are auto-loaded in **both** interfaces: `files`, `system`,
-`net` (web search / URL fetch / headless browse), and `codesearch` (when the
-index exists). `gmail` and `onedrive` load with their flags, and skills and MCP
-tools work everywhere.
+and `net` (web search / URL fetch / headless browse). Plugins loaded with
+`--plugin DIR` (e.g. `plugins/codesearch`) contribute their tools in both
+interfaces too. `gmail` and `onedrive` load with their flags, and skills and
+MCP tools work everywhere.
 
 | Feature | CLI/shell | Web UI |
 |---------|:---------:|:------:|
@@ -137,8 +138,8 @@ tools work everywhere.
 | `--log=info,debug,...` | ✅ | — |
 | `-v` / `--verbose` | ✅ | ✅ (verbose backend logging) |
 | Exit codes (`0`, `1`, `130`) | ✅ | — |
-| `--list-tools`, `--list-mcp` | ✅ | — |
-| `--init-codesearch` (build the search index) | ✅ | — |
+| `--list-tools`, `--list-mcp`, `--list-plugins` | ✅ | — |
+| `--plugin DIR` (load plugins; plugin tools work in both interfaces) | ✅ | ✅ |
 | `--install-skill`, `--list-skills`, `--uninstall-skill` | ✅ | — |
 | `--version`, `--help` | ✅ | — |
 

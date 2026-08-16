@@ -1,0 +1,217 @@
+"""Plugin loading framework.
+
+A plugin is a directory with a Python package structure (e.g.
+``plugins/codesearch/``).  Loading a plugin **temporarily** adds the
+plugin's **parent directory** to the front of ``sys.path`` so the package
+can be imported by its directory name and **relative imports inside the
+plugin code** resolve.  The package and the modules it imports are loaded
+while the entry is active; afterwards ``sys.path`` is restored.
+
+A plugin package must export the following symbols from its ``__init__.py``
+(see ``docs/PLUGINS.md``):
+
+- ``name`` — the plugin name (``str``).
+- ``on_start`` — callable returning ``None`` on success or an error string.
+- ``SYSTEM_PROMPT`` — ``str`` appended to the system prompt (default ``""``).
+- ``TOOLS`` — list of tool classes (per ``docs/TOOL.md``) to register
+  (default ``[]``).
+- ``CMD_HANDLERS`` — list of ``CmdHandler`` subclasses to register with the
+  shell (default ``[]``).
+"""
+
+from __future__ import annotations
+
+import importlib
+import sys
+from collections.abc import Iterator
+from contextlib import contextmanager
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
+
+from .system_prompt import register_plugin_system_prompt
+from .tooling.tools_registry import register_plugin_tools
+from .tools import discover_module_tools, wrap_tool_class
+
+if TYPE_CHECKING:
+    from types import ModuleType
+
+# Plugins loaded by :func:`load_plugins` (used by ``janito --list-plugins``).
+LOADED_PLUGINS: list[Plugin] = []
+
+# Required contract symbols; the rest (SYSTEM_PROMPT/TOOLS/CMD_HANDLERS)
+# default to empty values when absent.
+REQUIRED_SYMBOLS = ("name", "on_start")
+
+
+@dataclass
+class Plugin:
+    """A loaded plugin and its contributed content.
+
+    Attributes:
+        name: The plugin name (from the plugin package).
+        path: The plugin directory.
+        module: The imported plugin package module (``None`` on load error).
+        system_prompt: The plugin's ``SYSTEM_PROMPT`` text.
+        tools: The tool classes contributed via ``TOOLS``.
+        cmd_handlers: The ``CmdHandler`` classes contributed via
+            ``CMD_HANDLERS``.
+        load_error: ``None`` on success, otherwise a human-readable error
+            string (missing contract symbols, ``on_start`` failure, ...).
+    """
+
+    name: str
+    path: Path
+    module: Any | None = None
+    system_prompt: str = ""
+    tools: list = field(default_factory=list)
+    cmd_handlers: list = field(default_factory=list)
+    load_error: str | None = None
+
+    @property
+    def loaded(self) -> bool:
+        """Whether the plugin loaded without errors."""
+        return self.load_error is None
+
+
+@contextmanager
+def _plugin_parent_on_sys_path(plugin_dir: Path) -> Iterator[None]:
+    """Temporarily put the plugin's parent directory on ``sys.path``.
+
+    The plugin directory itself is the package (it contains ``__init__.py``),
+    so its **parent** must be on ``sys.path`` for it to import by directory
+    name and for relative imports inside the package to resolve.  The entry
+    is removed on exit; plugin modules loaded while the entry is active stay
+    in ``sys.modules``.
+    """
+    parent = str(plugin_dir.resolve().parent)
+    sys.path.insert(0, parent)
+    try:
+        yield
+    finally:
+        try:
+            sys.path.remove(parent)
+        except ValueError:
+            pass
+
+
+def _validate_plugin_module(plugin_dir: Path, module: ModuleType) -> str | None:
+    """Validate the plugin contract; return an error string or ``None``."""
+    missing = [sym for sym in REQUIRED_SYMBOLS if not hasattr(module, sym)]
+    if missing:
+        return (
+            f"plugin at {plugin_dir} is missing required symbols: "
+            f"{', '.join(missing)}"
+        )
+    if not callable(getattr(module, "on_start")):
+        return f"plugin at {plugin_dir}: 'on_start' must be callable"
+    if not isinstance(getattr(module, "name"), str):
+        return f"plugin at {plugin_dir}: 'name' must be a string"
+    return None
+
+
+def _call_on_start(plugin: Plugin) -> None:
+    """Run the plugin's ``on_start``; record an error string on failure."""
+    assert plugin.module is not None
+    try:
+        error = plugin.module.on_start()
+        if error:
+            plugin.load_error = str(error)
+    except Exception as e:  # noqa: BLE001 - a plugin must never crash startup
+        plugin.load_error = f"on_start raised {type(e).__name__}: {e}"
+
+
+def _register_plugin_tools(plugin: Plugin) -> None:
+    """Register the plugin's tool classes into the tools registry."""
+    wrapped: dict[str, Any] = {}
+    for cls in plugin.tools:
+        callable_tool = wrap_tool_class(cls)
+        if callable_tool is not None:
+            wrapped[callable_tool.__name__] = callable_tool
+    # Fallback: if TOOLS is empty, discover tool classes from the plugin's
+    # ``tools`` subpackage (the issue requires tools live under tools/).
+    if not wrapped and plugin.module is not None:
+        tools_submodule = getattr(plugin.module, "tools", None)
+        if tools_submodule is not None:
+            wrapped.update(discover_module_tools(tools_submodule))
+    if wrapped:
+        register_plugin_tools(wrapped)
+
+
+def _register_plugin_commands(plugin: Plugin) -> None:
+    """Register the plugin's ``CMD_HANDLERS`` with the interactive shell."""
+    from .shell.cmds.registry import register_command
+
+    for handler_cls in plugin.cmd_handlers:
+        try:
+            register_command(handler_cls())
+        except Exception as e:  # noqa: BLE001 - never break startup
+            if plugin.load_error is None:
+                plugin.load_error = f"failed to register command: {e}"
+            else:
+                plugin.load_error += f"; failed to register command: {e}"
+
+
+def load_plugin(plugin_dir: str | Path) -> Plugin:
+    """Load a single plugin package from a directory.
+
+    The plugin's parent directory is temporarily added to ``sys.path``, the
+    package is imported, the contract is validated, ``on_start`` is called
+    and the plugin's tools / commands / system-prompt sections are
+    registered.  A failure never raises: it is recorded on the returned
+    :class:`Plugin` as ``load_error``.
+
+    Args:
+        plugin_dir: Path to the plugin directory (the package root).
+
+    Returns:
+        The loaded :class:`Plugin`.
+    """
+    plugin_path = Path(plugin_dir).resolve()
+    plugin_name = plugin_path.name
+    print(f"Loading plugin {plugin_name}")
+    plugin = Plugin(name=plugin_name, path=plugin_path)
+
+    with _plugin_parent_on_sys_path(plugin_path):
+        try:
+            module = importlib.import_module(plugin_name)
+        except Exception as e:  # noqa: BLE001 - never crash startup
+            plugin.load_error = f"failed to import plugin {plugin_name}: {e}"
+            return plugin
+
+        plugin.module = module
+
+        error = _validate_plugin_module(plugin_path, module)
+        if error is not None:
+            plugin.load_error = error
+            return plugin
+
+        plugin.name = getattr(module, "name", plugin_name)
+        plugin.system_prompt = getattr(module, "SYSTEM_PROMPT", "") or ""
+        plugin.tools = list(getattr(module, "TOOLS", []) or [])
+        plugin.cmd_handlers = list(getattr(module, "CMD_HANDLERS", []) or [])
+
+        _call_on_start(plugin)
+        _register_plugin_tools(plugin)
+        _register_plugin_commands(plugin)
+        if plugin.system_prompt:
+            register_plugin_system_prompt(plugin.name, plugin.system_prompt)
+
+    return plugin
+
+
+def load_plugins(plugin_dirs: list[str | Path] | None) -> list[Plugin]:
+    """Load a list of plugin directories.
+
+    Args:
+        plugin_dirs: Plugin directories (from ``--plugin DIR``, repeatable).
+            ``None`` or an empty list loads nothing.
+
+    Returns:
+        The list of loaded plugins (appended to :data:`LOADED_PLUGINS`).
+    """
+    if not plugin_dirs:
+        return []
+    plugins = [load_plugin(d) for d in plugin_dirs]
+    LOADED_PLUGINS.extend(plugins)
+    return plugins

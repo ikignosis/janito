@@ -3,9 +3,11 @@
 Code Search Tool - Searches a pre-built trigram code search index.
 
 This tool queries the SQLite trigram index at ``./.janito/codesearch.db``
-(built with ``janito --init-codesearch``) using the ``janito.codesearch``
-package. It is only loaded when that index database exists in the current
-working directory (see ``should_load``).
+using the ``codesearch`` plugin engine.  The index is created automatically
+when the codesearch plugin loads (``on_start``) or can be (re)built with
+the ``/codesearch recreate`` shell command.  The tool is only loaded when
+that index database exists in the current working directory (see
+``should_load``).
 
 For AI function calling, use through the tool registry (tooling.tools_registry).
 """
@@ -15,14 +17,15 @@ import time
 from pathlib import Path
 from typing import Any
 
-from ...codesearch import MATCH
-from ...codesearch import CodeSearch as CodeSearchEngine
-from ...tooling import BaseTool, norm_path
-from ...tooling.decorator import tool
-from ...tooling.reporter import report_progress
+from janito.tooling import BaseTool, norm_path
+from janito.tooling.decorator import tool
+from janito.tooling.reporter import report_progress
 
-# Per-project location of the code search index (same as the one created by
-# the ``--init-codesearch`` CLI flag).
+from ..code_search import MATCH
+from ..code_search import CodeSearch as CodeSearchEngine
+
+# Per-project location of the code search index (the same location created
+# automatically by the plugin's on_start()).
 INDEX_DB_RELPATH = Path(".janito") / "codesearch.db"
 
 # Time-to-live for the index: when the last recorded update is older than
@@ -37,7 +40,8 @@ class CodeSearch(BaseTool):
     Tool for searching a pre-built trigram code search index.
 
     Searches the SQLite trigram index at ./.janito/codesearch.db (created
-    with `janito --init-codesearch`) for lines whose contents contain the
+    automatically when the codesearch plugin loads, or with the
+    `/codesearch recreate` shell command) for lines whose contents contain the
     given keywords. Keywords are matched as whole words (so `foo` does not
     match `foobar` or `foo_bar`), and the results include the file path,
     line number and line content, in the same "path:lineno: content" format
@@ -71,8 +75,8 @@ class CodeSearch(BaseTool):
         index_db_path = Path.cwd() / INDEX_DB_RELPATH
         if not index_db_path.is_file():
             cls._load_skip_reason = (
-                "no code search index at ./.janito/codesearch.db (build it with "
-                "`janito --init-codesearch`)"
+                "no code search index at ./.janito/codesearch.db (load the "
+                "codesearch plugin or run `/codesearch recreate`)"
             )
             return False
         try:
@@ -159,7 +163,9 @@ class CodeSearch(BaseTool):
                 return {
                     "success": False,
                     "error": (
-                        f"Code search index not found at {index_db_path}. Build it with `janito --init-codesearch`."
+                        f"Code search index not found at {index_db_path}. "
+                        "Load the codesearch plugin (creates it automatically) "
+                        "or run `/codesearch recreate`."
                     ),
                     "keywords": keywords,
                     "match": match_mode_str,

@@ -1,10 +1,10 @@
 """
 Candidate selection and line scanning for trigram code search.
 
-The :class:`~janito.codesearch.code_search.CodeSearch` class narrows the
+The :class:`~codesearch.code_search.CodeSearch` class narrows the
 candidate files with the trigram index and then scans those candidates line
 by line for whole-word matches.  These helpers were extracted from
-``janito.codesearch.code_search`` so the class stays focused on index
+``codesearch.code_search`` so the class stays focused on index
 lifecycle (create/update/close) while the matching logic lives here.
 """
 

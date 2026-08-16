@@ -32,10 +32,10 @@ from .cli.handlers import (
     handle_get_config,
     handle_get_secret,
     handle_info,
-    handle_init_codesearch,
     handle_install_skill,
     handle_list_keys,
     handle_list_mcp,
+    handle_list_plugins,
     handle_list_secrets,
     handle_list_skills,
     handle_list_tools,
@@ -192,7 +192,7 @@ def _dispatch_flag_command(args) -> int | None:
         (args.uninstall_skill, lambda: handle_uninstall_skill(args.uninstall_skill)),
         (args.list_tools, lambda: handle_list_tools(args)),
         (args.list_mcp, lambda: handle_list_mcp(args)),
-        (args.init_codesearch, lambda: handle_init_codesearch(args)),
+        (args.list_plugins, lambda: handle_list_plugins(args)),
         (args.create_variant, lambda: handle_create_variant(args.create_variant)),
         (args.delete_variant, lambda: handle_delete_variant(args.delete_variant)),
     ]
@@ -240,6 +240,15 @@ def main():
     exit_code = _handle_batch_config(args)
     if exit_code is not None:
         return exit_code
+
+    # Load plugins (--plugin DIR, repeatable) before any registry/shell
+    # access so plugin tools, commands and system-prompt sections are
+    # registered for the session.  Runs after _setup_runtime so privileges
+    # and --no-tools are already applied.
+    if getattr(args, "plugin", None):
+        from .plugin_manager import load_plugins
+
+        load_plugins(args.plugin)
 
     # Handle single flag-driven commands (--info, --config, --list-*, ...)
     exit_code = _dispatch_flag_command(args)

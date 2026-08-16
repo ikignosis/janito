@@ -49,8 +49,6 @@ janito/
 │   ├── net/                    # "net" toolset  (autoloaded)
 │   │   ├── get_url.py
 │   │   └── headless_browse.py
-│   ├── codesearch/             # "codesearch" toolset (autoloaded)
-│   │   └── code_search.py
 │   ├── gmail/                  # "gmail" toolset  (loaded on demand)
 │   ├── onedrive/               # "onedrive" toolset (loaded on demand)
 │   └── janitoweb/              # "janitoweb" toolset (web-only, loaded on demand)
@@ -520,11 +518,15 @@ janito/tools/<toolset_name>/
 ### Auto-loading vs. on-demand
 
 - **Auto-loaded** toolsets are listed in `AUTOLOAD_TOOLSETS` in
-  `janito/tooling/tools_registry.py` (currently `["files", "system", "net",
-  "codesearch"]`). They are discovered lazily on first registry access.
+  `janito/tooling/tools_registry.py` (currently `["files", "system", "net"]`).
+  They are discovered lazily on first registry access.
 - **On-demand** toolsets (e.g. `gmail`, `onedrive`, `janitoweb`) are loaded
   by calling `add_toolset("gmail")` at runtime (`janitoweb` is enabled only
   in web mode via the backend's `extra=["janitoweb"]`).
+- **Plugin tools** are registered from a plugin's `TOOLS` list (or its
+  `tools/` subpackage) via `wrap_tool_class()` / `discover_module_tools()`
+  in `janito/tools/__init__.py`, using the same `should_load()` and
+  privilege checks as built-in tools. See `docs/PLUGINS.md`.
 
 ### Naming conventions
 

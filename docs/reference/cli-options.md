@@ -109,6 +109,13 @@ If none of `-r`, `-w`, `-x` are given, janito runs with full privileges and prin
 |--------|-------------|
 | `--list-mcp` | List all MCP services and their tools |
 
+## Plugins
+
+| Option | Description |
+|--------|-------------|
+| `--plugin <dir>` | Load a plugin package from `dir` (repeatable; its parent is temporarily added to `sys.path` so relative imports work). Plugin tools, commands and system-prompt sections are registered before the session starts |
+| `--list-plugins` | List loaded plugins (from `--plugin`) and their `on_start` errors, then exit |
+
 ## Logging & Output
 
 | Option | Description |

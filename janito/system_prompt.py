@@ -8,6 +8,23 @@ SYSTEM_PROMPT = """
 SECTION_BASE = "base"
 SECTION_SKILLS = "skills"
 SECTION_AGENTS_MD = "agents.md"
+SECTION_PLUGINS = "plugins"
+
+# Plugin-provided prompt sections ``(plugin_name, text)`` registered at load
+# time by ``janito.plugin_manager``.  Appended after the AGENTS.md section
+# (when plugins are loaded).
+_PLUGIN_SECTIONS: list[tuple[str, str]] = []
+
+
+def register_plugin_system_prompt(name: str, text: str) -> None:
+    """Register a plugin's ``SYSTEM_PROMPT`` text to append to the prompt.
+
+    Args:
+        name: The plugin name (used as the section label).
+        text: The prompt text contributed by the plugin.
+    """
+    if text:
+        _PLUGIN_SECTIONS.append((name, text))
 
 
 def _load_agents_md() -> str | None:
@@ -38,7 +55,9 @@ def get_system_prompt_sections() -> list[tuple[str, str]]:
 
     - ``base`` — the built-in base prompt;
     - ``skills`` — the skills advertisement (only when non-empty);
-    - ``agents.md`` — the cwd ``AGENTS.md`` content (only when present).
+    - ``agents.md`` — the cwd ``AGENTS.md`` content (only when present);
+    - ``plugins`` — each loaded plugin's ``SYSTEM_PROMPT`` (only when plugins
+      contribute prompt text).
 
     Consumers can slice the prompt per section using these boundaries; the
     shell ``/prompt`` command and ``janito --show-system-prompt`` display each
@@ -58,6 +77,14 @@ def get_system_prompt_sections() -> list[tuple[str, str]]:
             (
                 SECTION_AGENTS_MD,
                 "\n\n## Project-Specific Instructions\n\n" + agents_content + "\n",
+            )
+        )
+
+    for plugin_name, plugin_text in _PLUGIN_SECTIONS:
+        sections.append(
+            (
+                f"{SECTION_PLUGINS}:{plugin_name}",
+                "\n\n## Plugin: " + plugin_name + "\n\n" + plugin_text,
             )
         )
 

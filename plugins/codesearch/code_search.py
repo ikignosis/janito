@@ -16,8 +16,8 @@ as **whole words** on a line, and ``Find`` returns the matching lines
 
 The candidate-selection and line-scanning logic (and the ``MATCH`` enum
 and ``CodeSearchMatch`` dataclass) live in
-:mod:`janito.codesearch.candidates`; they are re-exported here so existing
-``janito.codesearch.code_search.<name>`` references keep working.
+:mod:`codesearch.candidates`; they are re-exported here so existing
+``codesearch.code_search.<name>`` references keep working.
 """
 
 import os
@@ -25,11 +25,12 @@ from collections.abc import Iterator
 from datetime import datetime
 from pathlib import Path
 
-from ..tools.files.gitignore_utils import (
+from janito.tools.files.gitignore_utils import (
     is_ignored_by_gitignore,
     load_gitignore_spec,
     load_janitoignore_spec,
 )
+
 from .candidates import (  # noqa: F401 (re-exported for backward compat)
     MATCH,
     CodeSearchMatch,

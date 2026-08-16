@@ -1,7 +1,6 @@
 """CLI command handlers."""
 
 from .auth import handle_list_keys, handle_set_api_key
-from .codesearch import handle_init_codesearch
 from .config import (
     handle_config_interactive,
     handle_get_config,
@@ -9,6 +8,7 @@ from .config import (
     handle_unset_config,
 )
 from .info import handle_info, handle_show_config, handle_show_system_prompt
+from .plugins import handle_list_plugins
 from .providers import handle_show_providers
 from .secrets import (
     handle_delete_secret,
@@ -28,10 +28,10 @@ __all__ = [
     "handle_get_config",
     "handle_get_secret",
     "handle_info",
-    "handle_init_codesearch",
     "handle_install_skill",
     "handle_list_keys",
     "handle_list_mcp",
+    "handle_list_plugins",
     "handle_list_secrets",
     "handle_list_skills",
     "handle_list_tools",
