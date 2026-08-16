@@ -11,6 +11,13 @@ Changes since `v4.25.0` (2026-08-15).
 
 ### Added
 
+- Added `plugins/codesearch/README.md` describing the codesearch plugin's
+  capabilities: the trigram-based `CodeSearch` tool (whole-word AND/OR
+  matching, `path:lineno: content` results), the `/codesearch update |
+  recreate` shell command, automatic index creation on plugin load and
+  auto-refresh with the 1-day TTL, `.gitignore`/`.janitoignore` handling,
+  what gets indexed, and the plugin structure. (`plugins/codesearch/README.md`)
+
 - Every built-in model entry now declares its **default API type** via the
   new `default_api_type` model-config field (the value is the model's first
   `supported_api_types` entry, e.g. `"Responses"` for OpenAI's
