@@ -6,6 +6,8 @@ Thin delegating functions over :class:`ProviderRegistry` for the historical
 family.
 """
 
+from datetime import datetime
+
 from .provider_registry import _registry
 
 
@@ -444,7 +446,12 @@ def get_responses_in_server_from_provider(
 
 
 def get_provider_cost(
-    provider: str, model: str, input: int, output: int, cached: int
+    provider: str,
+    model: str,
+    input: int,
+    output: int,
+    cached: int,
+    now: datetime | None = None,
 ) -> str:
     """
     Get the estimated monetary cost of a request for a provider's model.
@@ -452,7 +459,8 @@ def get_provider_cost(
     The cost is computed by the provider's ``cost.py`` module
     (``janito.providers.<name>.cost``), which exports a
     ``get_cost(model, input, output, cached)`` function returning a
-    dollar-formatted string with six decimal digits (e.g. ``"0.420000$"``).
+    dollar-formatted string with six decimal digits (e.g. ``"0.880000$ (off-peak)"``
+    when the provider annotates the applied rate band).
     Providers without a cost
     module fall back to ``"N/A"``.
 
@@ -464,10 +472,14 @@ def get_provider_cost(
         input: The number of input tokens.
         output: The number of output tokens.
         cached: The number of cached input tokens.
+        now: Optional request time forwarded to the provider's ``get_cost``
+            (when it accepts it) to pick peak/off-peak rates (e.g. DeepSeek);
+            when omitted the provider applies its default (current time).
 
     Returns:
         The estimated cost formatted as a dollar string with six decimal
-        digits (e.g. ``"0.420000$"``), or
+        digits, optionally annotated with the applied rate band
+        (e.g. ``"0.880000$ (off-peak)"``), or
         ``"N/A"`` when the provider is unknown or has no cost module.
     """
     found = _registry.get(provider)
@@ -479,6 +491,8 @@ def get_provider_cost(
 
         cost_module = import_module(f"janito.providers.{base}.cost")
         get_cost = getattr(cost_module, "get_cost")
-        return get_cost(model, input, output, cached)
+        if now is None:
+            return get_cost(model, input, output, cached)
+        return get_cost(model, input, output, cached, now=now)
     except (ImportError, AttributeError, TypeError):
         return "N/A"

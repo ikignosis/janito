@@ -33,14 +33,34 @@ PROVIDER_CONFIG: dict = {
             "thinking": True,  # DeepSeek models reason by default
             # Per the DeepSeek API reference, reasoning_effort accepts
             # low/high/max (default high; medium/xhigh map to high for
-            # compatibility). deepseek-v4-pro currently supports only
-            # high/max (low is treated as high, xhigh as max);
-            # deepseek-v4-flash supports all three levels.
+            # compatibility). deepseek-v4-flash supports all three levels.
             "supported_reasoning_levels": [
                 {
                     "effort": "low",
                     "description": "Lighter reasoning for fast responses",
                 },
+                {
+                    "effort": "high",
+                    "description": "Standard reasoning depth (the API default)",
+                },
+                {
+                    "effort": "max",
+                    "description": "Maximum reasoning depth for complex problems",
+                },
+            ],
+        },
+        "deepseek-v4-pro": {
+            "supported_api_types": ["Responses", "Completions", "Anthropic"],
+            # DeepSeek's /responses endpoint is stateless: it cannot
+            # resolve a previous_response_id, so the client must re-send
+            # the full history.
+            "responses_in_server": False,
+            "max_input_tokens": 1048576,  # 1M
+            "max_output_tokens": 393216,  # 384k
+            "thinking": True,  # DeepSeek models reason by default
+            # Per the DeepSeek API reference, deepseek-v4-pro supports only
+            # high/max (low is treated as high, xhigh as max).
+            "supported_reasoning_levels": [
                 {
                     "effort": "high",
                     "description": "Standard reasoning depth (the API default)",

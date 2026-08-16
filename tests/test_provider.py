@@ -148,25 +148,55 @@ if pytest is not None:
 
     def test_get_provider_cost():
         """get_provider_cost() delegates to the provider's cost module."""
-        # DeepSeek ships a cost module: V4-Flash at $0.14 / $0.0028 (cache
-        # hit) / $0.28 output per 1M tokens, formatted as NN.DDDDDD$.
+        from datetime import datetime, timezone
+
+        # Off-peak (e.g. 12:00 UTC) and peak (e.g. 08:00 UTC) request times.
+        off_peak = datetime(2026, 8, 16, 12, 0, tzinfo=timezone.utc)
+        peak = datetime(2026, 8, 16, 8, 0, tzinfo=timezone.utc)
+        # DeepSeek ships a cost module: V4-Flash at $0.22 / $0.007 (cache
+        # hit) / $0.66 output per 1M tokens (off-peak), formatted as
+        # NN.DDDDDD$ plus the applied rate band; peak hours double the rates.
         assert (
             pa.get_provider_cost(
-                "deepseek", "deepseek-v4-flash", 1_000_000, 1_000_000, 0
+                "deepseek",
+                "deepseek-v4-flash",
+                1_000_000,
+                1_000_000,
+                0,
+                now=off_peak,
             )
-            == "0.420000$"
+            == "0.880000$ (off-peak)"
         )
         # Cached input tokens are billed at the cache-hit rate.
         assert (
             pa.get_provider_cost(
-                "deepseek", "deepseek-v4-flash", 1_000_000, 1_000_000, 500_000
+                "deepseek",
+                "deepseek-v4-flash",
+                1_000_000,
+                1_000_000,
+                500_000,
+                now=off_peak,
             )
-            == "0.351400$"
+            == "0.773500$ (off-peak)"
         )
-        # Case-insensitive provider lookup (V4-Pro at $0.435 / $0.87).
+        # Case-insensitive provider lookup (V4-Pro at $0.66 / $1.98).
         assert (
-            pa.get_provider_cost("DeepSeek", "deepseek-v4-pro", 1_000_000, 1_000_000, 0)
-            == "1.305000$"
+            pa.get_provider_cost(
+                "DeepSeek", "deepseek-v4-pro", 1_000_000, 1_000_000, 0, now=off_peak
+            )
+            == "2.640000$ (off-peak)"
+        )
+        # Peak-hour requests are billed at exactly double the off-peak rates.
+        assert (
+            pa.get_provider_cost(
+                "deepseek",
+                "deepseek-v4-flash",
+                1_000_000,
+                1_000_000,
+                0,
+                now=peak,
+            )
+            == "1.760000$ (peak)"
         )
         # Alibaba ships a cost module: qwen3.8-max at $2 / $0.25 (implicit
         # cache hit) / $6 output per 1M tokens, formatted as NN.DDDDDD$.

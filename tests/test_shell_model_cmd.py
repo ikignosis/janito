@@ -109,12 +109,12 @@ def test_switch_model_accepts_open_ended_model_name(monkeypatch, tmp_path, capsy
     """Like --model, an unknown-but-plausible name is accepted as typed."""
     _use_temp_config(monkeypatch, tmp_path)
     shell = _shell(provider="deepseek")
-    # deepseek-v4-pro is served by DeepSeek but has no built-in registry entry.
-    assert _model_handler().handle(shell, "/model deepseek-v4-pro") is True
+    # deepseek-v4-ultra is not in the built-in registry: accepted as typed.
+    assert _model_handler().handle(shell, "/model deepseek-v4-ultra") is True
 
     assert get_config_value("deepseek.model") is None
-    assert shell.model == "deepseek-v4-pro"
-    assert "Model switched to 'deepseek-v4-pro'" in capsys.readouterr().out
+    assert shell.model == "deepseek-v4-ultra"
+    assert "Model switched to 'deepseek-v4-ultra'" in capsys.readouterr().out
 
 
 def test_non_model_input_is_not_handled(capsys):

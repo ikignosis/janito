@@ -16,6 +16,7 @@ These tests verify:
 """
 
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 # Add the repo root to sys.path to allow importing the package directly.
@@ -141,21 +142,32 @@ if pytest is not None:
             prompt_tokens_details=SimpleNamespace(cached_tokens=cached_tokens),
         )
 
-    def test_usage_line_cost_from_provider_cost_module():
+    def test_usage_line_cost_from_provider_cost_module(monkeypatch):
         """The Cost part is computed via get_provider_cost for the provider."""
-        # DeepSeek V4-Flash: $0.14 in (miss) + $0.28 out per 1M tokens.
+        # Pin the request time to off-peak (12:00 UTC) so the estimate is
+        # deterministic: DeepSeek V4-Flash is $0.22 in (miss) + $0.66 out per
+        # 1M tokens off-peak.
+        monkeypatch.setattr(
+            "janito.providers.deepseek.cost._utcnow",
+            lambda: datetime(2026, 8, 16, 12, 0, tzinfo=timezone.utc),
+        )
         text = _display_usage_text(
             "deepseek", "deepseek-v4-flash", _usage(1_000_000, 1_000_000, 0)
         )
-        assert "Cost: 0.420000$" in text
+        assert "Cost: 0.880000$ (off-peak)" in text
 
-    def test_usage_line_cost_bills_cached_input_at_cache_hit():
+    def test_usage_line_cost_bills_cached_input_at_cache_hit(monkeypatch):
         """Cached input tokens are billed at the provider's cache-hit rate."""
-        # 500k of the 1M input tokens are cache hits ($0.0028 vs $0.14/1M).
+        # Pin the request time to off-peak (12:00 UTC); 500k of the 1M input
+        # tokens are cache hits ($0.007 vs $0.22/1M).
+        monkeypatch.setattr(
+            "janito.providers.deepseek.cost._utcnow",
+            lambda: datetime(2026, 8, 16, 12, 0, tzinfo=timezone.utc),
+        )
         text = _display_usage_text(
             "deepseek", "deepseek-v4-flash", _usage(1_000_000, 1_000_000, 500_000)
         )
-        assert "Cost: 0.351400$" in text
+        assert "Cost: 0.773500$ (off-peak)" in text
 
     def test_usage_line_cost_provider_without_cost_module_is_na():
         """Providers without a cost module fall back to Cost: N/A."""

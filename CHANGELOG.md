@@ -35,23 +35,35 @@ Changes since `v4.25.0` (2026-08-15).
   the git remote and all URLs across `README.md`, `README_DEV.md`,
   `RELEASE.md`, `mkdocs.yml`, `pyproject.toml`, the docs and the changelog
   (repo, raw content and GitHub Pages links).
-- Added `get_provider_cost(provider, model, input, output, cached)` in
+- Added `get_provider_cost(provider, model, input, output, cached, now=None)` in
   `janito/provider_accessors.py`: resolves a provider (case-insensitive,
   variant-aware) and delegates to its `cost.py` module's `get_cost`
   (e.g. `janito.providers.deepseek.cost`); falls back to `"N/A"` when the
-  provider is unknown or ships no cost module.
+  provider is unknown or ships no cost module.  The optional `now` request
+  time is forwarded to `get_cost` (when it accepts it) so time-aware rate
+  cards (e.g. DeepSeek peak/off-peak) can be estimated deterministically.
   (`janito/provider_accessors.py`, `tests/test_provider.py`)
 - Added `janito/providers/deepseek/cost.py` with a `get_cost(model, input,
-  output, cached)` helper that estimates the monetary cost of a request from
-  the per-1M-token rates for `deepseek-v4-flash` ($0.14 / $0.0028 cache hit /
-  $0.28 output) and `deepseek-v4-pro` ($0.435 / $0.003625 / $0.87), billing
-  cached input tokens at the automatic cache-hit rate and formatting the
-  result as `NN.DDDDDD$` (e.g. `"0.420000$"`); unknown models fall back to `"N/A"`.
-  There is no peak-hour surcharge.  The module docstring documents the rates
-  source (https://deepseek.ai/pricing, verified 2026-07-25) and points at the
-  official DeepSeek rate card (https://api-docs.deepseek.com/quick_start/pricing).
+  output, cached, now=None)` helper that estimates the monetary cost of a
+  request from the official per-1M-token rates (verified 2026-08-16 at
+  https://api-docs.deepseek.com/quick_start/pricing) for `deepseek-v4-flash`
+  ($0.22 / $0.007 cache hit / $0.66 output) and `deepseek-v4-pro`
+  ($0.66 / $0.022 cache hit / $1.98 output), billing cached input tokens at
+  the automatic cache-hit rate and formatting the result as `NN.DDDDDD$`
+  followed by the applied rate band, e.g. `"0.880000$ (off-peak)"`; unknown
+  models fall back to `"N/A"`.  Peak-hour requests (01:00-04:00 and 06:00-10:00
+  UTC, where off-peak rates are half of the peak rates) are billed at exactly
+  double the off-peak rates and annotated `(peak)`; pass `now` to pick the
+  rate band, otherwise the current UTC time is used.
   (`janito/providers/deepseek/cost.py`, `janito/provider_accessors.py`,
-  `tests/test_provider.py`)
+  `tests/test_provider.py`, `tests/test_input_tokens_info.py`)
+- Added `deepseek-v4-pro` as a built-in supported model in the `deepseek`
+  provider config (`janito/providers/deepseek/config.py`): same
+  `supported_api_types` (Responses / Completions / Anthropic), 1M input / 384k
+  output limits and default thinking as `deepseek-v4-flash`, with
+  `supported_reasoning_levels` restricted to `high`/`max` (per the DeepSeek
+  API reference, `low` maps to `high` and `xhigh` to `max` for this model).
+  (`janito/providers/deepseek/config.py`, `tests/test_shell_model_cmd.py`)
 - Added `janito/providers/alibaba/cost.py` with a `get_cost(model, input,
   output, cached)` helper that estimates the monetary cost of a request from
   the per-1M-token rates for `qwen3.8-max` ($2 / $0.25 implicit cache hit /
