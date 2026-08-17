@@ -14,3 +14,7 @@ Changes since `v4.26.0` (2026-08-17).
 - The version banner (`Janito x.y.z - Working at <cwd>`) is now printed
   before any plugin loading messages at startup, instead of only with the
   full-privileges warning.
+- A plugin whose `on_start()` hook reports an error (e.g. the gmail plugin
+  when the required secrets are missing) now **fails to load**: its tools,
+  commands and system-prompt section are no longer registered.  Previously
+  the error was recorded but the plugin's content was still activated.

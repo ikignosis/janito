@@ -246,6 +246,45 @@ def test_load_plugin_captures_on_start_error(tmp_path):
     assert plugin.load_error == "index build failed"
 
 
+# Toy plugin with a failing on_start that still contributes content; none of
+# it may be registered (tools / commands / system prompt).
+FAILING_CONTENT_PLUGIN_SRC = TOY_PLUGIN_SRC.replace(
+    '    print("toy on_start ran")\n    return None\n',
+    '    return "missing required secret: gmail_username"\n',
+)
+
+
+def test_load_plugin_failing_on_start_registers_no_content(tmp_path, monkeypatch):
+    """A failing on_start prevents tools/commands/system-prompt registration."""
+    from janito.shell.cmds import get_registered_commands
+    from janito.system_prompt import get_system_prompt_with_skills
+
+    plugin_dir = tmp_path / "failing_content"
+    plugin_dir.mkdir()
+    (plugin_dir / "__init__.py").write_text(
+        FAILING_CONTENT_PLUGIN_SRC, encoding="utf-8"
+    )
+    _purge_module("failing_content")
+    monkeypatch.setattr(plugin_manager, "LOADED_PLUGINS", [])
+
+    plugin = plugin_manager.load_plugin(plugin_dir)
+
+    assert not plugin.loaded
+    assert plugin.load_error == "missing required secret: gmail_username"
+
+    # No tool registered from the failing plugin.
+    schemas = get_all_tool_schemas()
+    assert "ToyTool" not in {s["function"]["name"] for s in schemas}
+
+    # No command registered.
+    assert "/toy" not in [c.name for c in get_registered_commands()]
+
+    # No system-prompt section contributed.
+    assert "You have access to the toy plugin." not in get_system_prompt_with_skills()
+
+    _purge_module("failing_content")
+
+
 def test_load_plugin_missing_contract(tmp_path):
     """Missing required symbols produce a load error."""
     plugin_dir = tmp_path / "incomplete"

@@ -170,7 +170,9 @@ def load_plugin(plugin_dir: str | Path) -> Plugin:
     package is imported, the contract is validated, ``on_start`` is called
     and the plugin's tools / commands / system-prompt sections are
     registered.  A failure never raises: it is recorded on the returned
-    :class:`Plugin` as ``load_error``.
+    :class:`Plugin` as ``load_error``.  When ``on_start`` reports an error
+    (e.g. required secrets are missing) the plugin **fails to load**: its
+    tools, commands and system-prompt section are not registered.
 
     Args:
         plugin_dir: Path to the plugin directory (the package root).
@@ -203,6 +205,11 @@ def load_plugin(plugin_dir: str | Path) -> Plugin:
         plugin.cmd_handlers = list(getattr(module, "CMD_HANDLERS", []) or [])
 
         _call_on_start(plugin)
+        # A failed on_start (e.g. required secrets missing) means the plugin
+        # does not load: none of its tools, commands or system-prompt text
+        # are registered.
+        if plugin.load_error is not None:
+            return plugin
         _register_plugin_tools(plugin)
         _register_plugin_commands(plugin)
         if plugin.system_prompt:
