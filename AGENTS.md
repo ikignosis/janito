@@ -7,4 +7,5 @@
 - When adressing architecture related questions or changes review ARCHITECTURE.md
 - The web app/web mode is stored at janito/web
 - Avoid defensive try/except import fallbacks
-- Do not keep backwards compatibility unless explicitely asked for
+- Do not keep backwards compatibility unless explicitely asked by the user
+- Do not stage/commit changes unless explicitely asked by the user
