@@ -1,4 +1,4 @@
-"""Plugin listing and installation CLI handlers."""
+"""Plugin listing, installation and uninstallation CLI handlers."""
 
 import re
 import shutil
@@ -8,7 +8,11 @@ from pathlib import Path
 
 import requests
 
-from ...plugin_manager import LOADED_PLUGINS, get_default_plugins_dir
+from ...plugin_manager import (
+    LOADED_PLUGINS,
+    get_default_plugins_dir,
+    scan_installed_plugins,
+)
 
 
 def handle_list_plugins(args) -> int:
@@ -42,6 +46,7 @@ def handle_list_plugins(args) -> int:
         table.add_row("Status", "No plugins loaded.")
         table.add_row("Load a plugin", "janito --plugin <plugin_dir>")
         table.add_row("Install a plugin", "janito --install-plugin <github_url>")
+        table.add_row("Uninstall a plugin", "janito --uninstall-plugin <plugin_name>")
         console.print(table)
         return 0
 
@@ -116,6 +121,49 @@ def _extract_zip(zip_path: Path, dest_dir: Path) -> bool:
         print(f"Error extracting archive: {e}")
         return False
     return True
+
+
+def handle_uninstall_plugin(name: str) -> int:
+    """Uninstall a plugin by its plugin name.
+
+    Removes the installed plugin whose ``name`` (the ``name`` symbol
+    exported by the plugin's ``__init__.py``, as shown by
+    ``--list-plugins``) matches ``name``.  For example, the codesearch
+    plugin installs to ``~/.janito/plugins/janito-codesearch-plugin`` but
+    its plugin name is ``codesearch``, so ``--uninstall-plugin codesearch``
+    removes that directory.  Broken plugins that cannot be imported are
+    matched by their directory name as a fallback.
+
+    Args:
+        name: Plugin name to uninstall.
+
+    Returns:
+        Exit code (0 for success, non-zero for error)
+    """
+    print(f"Uninstalling plugin: {name}")
+    print()
+
+    installed = scan_installed_plugins()
+    matches = [path for plugin_name, path in installed if plugin_name == name]
+
+    if not matches:
+        print(f"Error: Plugin '{name}' not found.")
+        print("Use --list-plugins to see installed plugins.")
+        return 1
+
+    plugin_path = matches[0]
+
+    if plugin_path.exists():
+        print(f"Removing plugin files from {plugin_path}...")
+        shutil.rmtree(plugin_path)
+        print("[OK] Plugin files removed.")
+    else:
+        print(f"Warning: Plugin directory not found at {plugin_path}")
+
+    print()
+    print(f"[OK] Plugin '{name}' uninstalled successfully!")
+
+    return 0
 
 
 def handle_install_plugin(url: str) -> int:

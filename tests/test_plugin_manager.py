@@ -167,6 +167,18 @@ def test_parser_exposes_install_plugin_and_no_plugins_flags():
     assert args.no_plugins is False
 
 
+def test_parser_exposes_uninstall_plugin_flag():
+    from janito.cli.parser import create_parser
+
+    args = create_parser().parse_args(
+        ["--uninstall-plugin", "janito-codesearch-plugin"]
+    )
+    assert args.uninstall_plugin == "janito-codesearch-plugin"
+
+    args = create_parser().parse_args(["prompt"])
+    assert args.uninstall_plugin is None
+
+
 # ---------------------------------------------------------------------------
 # Loading and contract validation
 # ---------------------------------------------------------------------------
@@ -477,6 +489,106 @@ def test_parse_github_repo_url_rejects_invalid():
         _parse_github_repo_url("https://example.com/not-github")
     with pytest.raises(ValueError):
         _parse_github_repo_url("not a url")
+
+
+# ---------------------------------------------------------------------------
+# handle_uninstall_plugin
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture()
+def installed_plugin_dir(tmp_path, monkeypatch):
+    """Create a fake installed plugin and point the plugins dir at it.
+
+    The directory is ``janito-codesearch-plugin`` but the plugin's exported
+    ``name`` is ``codesearch`` (mirroring the real codesearch plugin).
+    """
+    plugins_dir = tmp_path / "plugins"
+    plugin_dir = plugins_dir / "janito-codesearch-plugin"
+    plugin_dir.mkdir(parents=True)
+    (plugin_dir / "__init__.py").write_text("name = 'codesearch'\n", encoding="utf-8")
+
+    monkeypatch.setattr(plugin_manager, "get_default_plugins_dir", lambda: plugins_dir)
+    yield plugin_dir
+    _purge_module("janito-codesearch-plugin")
+
+
+def test_uninstall_plugin_matches_plugin_name(installed_plugin_dir, capsys):
+    """--uninstall-plugin matches the plugin's exported name, not the dir."""
+    from janito.cli.handlers.plugins import handle_uninstall_plugin
+
+    rc = handle_uninstall_plugin("codesearch")
+
+    assert rc == 0
+    assert not installed_plugin_dir.exists()
+    out = capsys.readouterr().out
+    assert "Uninstalling plugin: codesearch" in out
+    assert "[OK] Plugin 'codesearch' uninstalled successfully!" in out
+
+
+def test_uninstall_plugin_ignores_directory_name(installed_plugin_dir, capsys):
+    """The directory name does not match when it differs from the plugin name."""
+    from janito.cli.handlers.plugins import handle_uninstall_plugin
+
+    rc = handle_uninstall_plugin("janito-codesearch-plugin")
+
+    assert rc == 1
+    assert installed_plugin_dir.exists()
+    out = capsys.readouterr().out
+    assert "Error: Plugin 'janito-codesearch-plugin' not found." in out
+
+
+def test_uninstall_plugin_not_found(tmp_path, monkeypatch, capsys):
+    from janito.cli.handlers.plugins import handle_uninstall_plugin
+
+    plugins_dir = tmp_path / "plugins"
+    plugins_dir.mkdir()
+    monkeypatch.setattr(plugin_manager, "get_default_plugins_dir", lambda: plugins_dir)
+
+    rc = handle_uninstall_plugin("codesearch")
+
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "Error: Plugin 'codesearch' not found." in out
+    assert "Use --list-plugins to see installed plugins." in out
+
+
+def test_uninstall_plugin_missing_dir_without_plugins_dir(
+    tmp_path, monkeypatch, capsys
+):
+    """A nonexistent plugins dir reports the plugin as not found."""
+    from janito.cli.handlers.plugins import handle_uninstall_plugin
+
+    monkeypatch.setattr(
+        plugin_manager, "get_default_plugins_dir", lambda: tmp_path / "nope"
+    )
+
+    rc = handle_uninstall_plugin("whatever")
+
+    assert rc == 1
+    assert "Error: Plugin 'whatever' not found." in capsys.readouterr().out
+
+
+def test_uninstall_plugin_broken_plugin_falls_back_to_dir_name(
+    tmp_path, monkeypatch, capsys
+):
+    """A plugin that cannot be imported is matched by its directory name."""
+    from janito.cli.handlers.plugins import handle_uninstall_plugin
+
+    plugins_dir = tmp_path / "plugins"
+    plugin_dir = plugins_dir / "broken-plugin"
+    plugin_dir.mkdir(parents=True)
+    # __init__.py raises at import time, so the plugin name is unreadable.
+    (plugin_dir / "__init__.py").write_text(
+        "raise RuntimeError('boom')\n", encoding="utf-8"
+    )
+    monkeypatch.setattr(plugin_manager, "get_default_plugins_dir", lambda: plugins_dir)
+
+    rc = handle_uninstall_plugin("broken-plugin")
+
+    assert rc == 0
+    assert not plugin_dir.exists()
+    _purge_module("broken-plugin")
 
 
 # ---------------------------------------------------------------------------

@@ -88,6 +88,7 @@ Examples:
   janito --list-skills                                        # List installed skills
   janito --uninstall-skill git-commit                         # Uninstall a skill
   janito --install-plugin https://github.com/user/janito-codesearch-plugin  # Install a plugin
+  janito --uninstall-plugin codesearch                  # Uninstall an installed plugin by name
   janito --plugin ../plugins/janito-codesearch-plugin  # Load the codesearch plugin (tools, /codesearch)
   janito --list-plugins                                     # List loaded plugins and their on_start errors
   janito --create-variant alibaba-tokenplan                  # Register a provider variant (<provider>-<word>)
@@ -407,6 +408,16 @@ Note: --set and --set-api-key must be used in separate commands.
         "https://github.com/joaompinto/janito-codesearch-plugin). "
         "Downloads the repository's master zip and extracts it to "
         "~/.janito/plugins/<repo-name>.",
+    )
+
+    parser.add_argument(
+        "--uninstall-plugin",
+        metavar="NAME",
+        help="Uninstall an installed plugin by its plugin name (the 'name' "
+        "the plugin exports, as shown by --list-plugins; e.g. 'codesearch' "
+        "for the janito-codesearch-plugin). Removes the plugin's directory "
+        "from the plugins dir. Broken plugins that cannot be imported are "
+        "matched by their directory name.",
     )
 
     parser.add_argument(

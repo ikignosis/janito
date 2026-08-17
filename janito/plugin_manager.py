@@ -295,3 +295,54 @@ def load_installed_plugins() -> list[Plugin]:
 
     LOADED_PLUGINS.extend(plugins)
     return plugins
+
+
+def _read_plugin_name(plugin_dir: Path) -> str:
+    """Return the plugin's ``name`` symbol without running its ``on_start``.
+
+    The package is imported (module-level code runs, exactly as during a
+    normal load) but ``on_start`` is NOT called and no tools, commands or
+    system-prompt sections are registered.  Plugins that cannot be imported
+    fall back to their directory name so a broken plugin can still be
+    identified (and uninstalled) by directory name.
+
+    Args:
+        plugin_dir: The plugin package directory.
+
+    Returns:
+        The plugin's ``name`` (or the directory name as a fallback).
+    """
+    plugin_name = plugin_dir.name
+    try:
+        with _plugin_parent_on_sys_path(plugin_dir):
+            module = importlib.import_module(plugin_name)
+        value = getattr(module, "name", plugin_name)
+        return value if isinstance(value, str) else plugin_name
+    except Exception:  # noqa: BLE001 - never break the scan on a bad plugin
+        return plugin_name
+
+
+def scan_installed_plugins() -> list[tuple[str, Path]]:
+    """Return ``(name, path)`` for every plugin installed in the plugins dir.
+
+    Each installed plugin's actual ``name`` (the ``name`` symbol exported by
+    its ``__init__.py``) is read without running its ``on_start`` hook, so
+    scanning is side-effect free beyond the module import itself.  Plugins
+    that cannot be imported fall back to their directory name.
+
+    Returns:
+        Sorted list of ``(name, path)`` pairs for the installed plugins
+        (empty when the plugins dir does not exist or has no plugins).
+    """
+    plugins_dir = get_default_plugins_dir()
+    if not plugins_dir.is_dir():
+        return []
+
+    results = []
+    for entry in sorted(plugins_dir.iterdir()):
+        if not entry.is_dir() or entry.name.startswith("."):
+            continue
+        if not (entry / "__init__.py").is_file():
+            continue
+        results.append((_read_plugin_name(entry), entry))
+    return results

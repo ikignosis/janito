@@ -170,6 +170,19 @@ This downloads the repository's `master` branch as a zip archive and
 extracts it to `~/.janito/plugins/<repo-name>` (honoring `-c/--config-dir`).
 The plugin is then **autoloaded** on every subsequent janito run.
 
+To uninstall a plugin (removes its directory from
+`~/.janito/plugins/<repo-name>`):
+
+```bash
+janito --uninstall-plugin codesearch
+```
+
+The name is the plugin's **plugin name** (the `name` symbol the plugin
+exports, as shown by `--list-plugins`) — for the codesearch plugin that is
+`codesearch`, even though it installs to the
+`janito-codesearch-plugin` directory.  A broken plugin that cannot be
+imported is matched by its directory name as a fallback.
+
 To temporarily disable autoloading without uninstalling:
 
 ```bash

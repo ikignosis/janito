@@ -19,6 +19,17 @@ Changes since `v4.26.0` (2026-08-17).
   server-side Responses providers (e.g. OpenAI) any pending Enter-cancelled
   messages are shown after the system prompt.
 
+### Added
+
+- New `--uninstall-plugin <name>` CLI flag removes an installed plugin's
+  directory from the plugins dir (honoring `-c/--config-dir`), mirroring
+  `--install-plugin`. The name is the plugin's actual **plugin name** (the
+  `name` symbol the plugin exports, as shown by `--list-plugins`) — e.g.
+  `janito --uninstall-plugin codesearch` removes the
+  `janito-codesearch-plugin` directory. A broken plugin that cannot be
+  imported is matched by its directory name as a fallback; a non-existent
+  plugin reports an error and exits non-zero.
+
 ### Changed
 
 - Pressing Ctrl+C while the `AskUser` tool is waiting for an answer now

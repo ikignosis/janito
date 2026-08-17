@@ -46,6 +46,7 @@ from .cli.handlers import (
     handle_show_config,
     handle_show_providers,
     handle_show_system_prompt,
+    handle_uninstall_plugin,
     handle_uninstall_skill,
     handle_unset_config,
 )
@@ -184,6 +185,7 @@ def _dispatch_flag_command(args) -> int | None:
         (args.list_skills, lambda: handle_list_skills(args)),
         (args.uninstall_skill, lambda: handle_uninstall_skill(args.uninstall_skill)),
         (args.install_plugin, lambda: handle_install_plugin(args.install_plugin)),
+        (args.uninstall_plugin, lambda: handle_uninstall_plugin(args.uninstall_plugin)),
         (args.list_tools, lambda: handle_list_tools(args)),
         (args.list_mcp, lambda: handle_list_mcp(args)),
         (args.list_plugins, lambda: handle_list_plugins(args)),
