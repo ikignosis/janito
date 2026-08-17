@@ -138,6 +138,22 @@ if pytest is not None:
         assert message["name"] == "NoSuchTool"
         assert message["tool_call_id"] == "call_err"
 
+    def test_execute_tool_call_propagates_keyboard_interrupt(monkeypatch):
+        """Ctrl+C inside a tool (e.g. AskUser) must NOT be swallowed by the
+        executor's error safety net: it propagates so the agent loop can be
+        interrupted (history rolled back), instead of continuing with an
+        empty answer."""
+        _register(monkeypatch, "MyTool", "r")
+
+        def fake(**kwargs):
+            raise KeyboardInterrupt
+
+        monkeypatch.setitem(tools_registry.AVAILABLE_TOOLS, "MyTool", fake)
+        ex = ToolExecutor()
+
+        with pytest.raises(KeyboardInterrupt):
+            ex.execute_tool_call(_tool_call("call_1", "MyTool"))
+
     def test_execute_tool_call_records_usage(monkeypatch):
         """Every invocation is recorded by the usage tracker (best-effort)."""
         _register(monkeypatch, "MyTool", "r")

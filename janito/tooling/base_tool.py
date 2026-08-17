@@ -186,6 +186,12 @@ class BaseTool(ABC):
         intended to be called by tools that need interactive input from the
         user (e.g. the AskUser tool).
 
+        When stdin ends (e.g. piped input / Ctrl+D), an empty answer is
+        returned so the tool can report "no answer". Pressing Ctrl+C,
+        however, lets the ``KeyboardInterrupt`` propagate: it interrupts the
+        in-flight LLM conversation turn (the agent loop rolls the history
+        back), instead of silently continuing with an empty answer.
+
         Args:
             question (str): The question to display to the user.
 
@@ -212,6 +218,7 @@ class BaseTool(ABC):
 
         try:
             answer = input("Your answer: ").strip()
-        except (EOFError, KeyboardInterrupt):
+        except EOFError:
+            # Piped input / Ctrl+D: no answer to read, report an empty one.
             answer = ""
         return answer

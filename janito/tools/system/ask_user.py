@@ -37,8 +37,15 @@ class AskUser(BaseTool):
             Dict[str, Any]: A dictionary containing:
                 - 'success': bool indicating the interaction completed
                 - 'question': the question that was asked
-                - 'answer': the user's response (empty string if interrupted)
+                - 'answer': the user's response (empty string if the input
+                  ended, e.g. piped input / Ctrl+D)
                 - 'error': error message (only present if success is False)
+
+        Note:
+            Pressing Ctrl+C while the question is awaiting an answer does
+            *not* produce a result: the ``KeyboardInterrupt`` propagates and
+            interrupts the in-flight LLM conversation turn (the agent loop
+            rolls the conversation history back).
         """
         try:
             answer = self.prompt_user(question)

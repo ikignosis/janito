@@ -16,6 +16,8 @@ from contextlib import redirect_stderr
 from io import StringIO
 from unittest.mock import patch
 
+import pytest
+
 from janito.tools.system.ask_user import AskUser
 
 
@@ -55,13 +57,12 @@ class TestAskUser:
         assert result["success"] is True
         assert result["answer"] == ""
 
-    def test_keyboard_interrupt_returns_empty_answer(self):
-        """KeyboardInterrupt results in an empty answer, not a crash."""
+    def test_keyboard_interrupt_propagates(self):
+        """Ctrl+C during the prompt interrupts the conversation loop instead
+        of returning an empty answer: KeyboardInterrupt is not swallowed."""
         with patch("builtins.input", side_effect=KeyboardInterrupt):
-            result = AskUser().run(question="Are you there?")
-
-        assert result["success"] is True
-        assert result["answer"] == ""
+            with pytest.raises(KeyboardInterrupt):
+                AskUser().run(question="Are you there?")
 
     def test_question_echoed_back(self):
         """The question is always echoed in the result."""

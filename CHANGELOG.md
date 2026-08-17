@@ -11,6 +11,13 @@ Changes since `v4.26.0` (2026-08-17).
 
 ### Changed
 
+- Pressing Ctrl+C while the `AskUser` tool is waiting for an answer now
+  interrupts the in-flight LLM conversation turn (the agent loop rolls the
+  conversation history back and returns to the prompt) instead of silently
+  continuing with an empty answer. The `KeyboardInterrupt` propagates through
+  the tool executor, so it is handled by the same cancel path as a Ctrl+C
+  during streaming. Piped input / Ctrl+D at the prompt still yields an empty
+  answer.
 - The `/prompt` shell command and `janito --show-system-prompt` now only
   advertise skills in their titles (e.g. "(with skills)" / "(with Skills)")
   when a `skills` section is actually present; with no skills available the
