@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Changes since `v4.26.0` (2026-08-17).
 
+### Fixed
+
+- The `/history` shell command now renders the actual conversation for
+  stateless Responses providers (e.g. DeepSeek), whose full history is kept
+  client-side as Responses input items in `conversation_items` instead of
+  `messages_history`. Previously it showed only the system prompt. Tool-call
+  rounds are shown as `function_call` / `function_call_output` rows, and for
+  server-side Responses providers (e.g. OpenAI) any pending Enter-cancelled
+  messages are shown after the system prompt.
+
 ### Changed
 
 - Pressing Ctrl+C while the `AskUser` tool is waiting for an answer now
