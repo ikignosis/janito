@@ -128,14 +128,13 @@ class ToolsRegistry:
         Plugin tools go through the same ``should_load()`` / privilege
         gating as built-in tools (applied by ``wrap_tool_class`` /
         ``discover_module_tools`` in the plugin manager), so only surviving
-        callables should be passed here.  Gated by ``_tools_loading_enabled``
-        (``--no-tools`` disables plugin tools like any other non-skill tool).
+        callables should be passed here.  Plugin tools are **not** gated by
+        ``_tools_loading_enabled`` (``--no-tools``): plugins are disabled
+        independently via ``--no-plugins``.
 
         Args:
             tools: Mapping of tool names to wrapped callables.
         """
-        if not _tools_loading_enabled:
-            return
         if not tools:
             return
         self.ensure_initialized()

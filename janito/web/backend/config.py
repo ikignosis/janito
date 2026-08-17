@@ -114,6 +114,7 @@ class WebServerConfig:
     system_prompt: str | None = None  # -S "custom prompt"
     no_system_prompt: bool = False  # -Z
     no_tools: bool = False  # implied by -Z
+    no_plugins: bool = False  # --no-plugins (do not autoload ~/.janito/plugins)
 
     # --- Security ---
     auth_token: str | None = None  # from JANITO_WEB_TOKEN env
@@ -135,6 +136,7 @@ class WebServerConfig:
             thinking=getattr(args, "thinking", False),
             verbose=getattr(args, "verbose", False),
             no_history=getattr(args, "no_history", False),
+            no_plugins=getattr(args, "no_plugins", False),
             gmail=getattr(args, "gmail", False),
             onedrive=getattr(args, "onedrive", False),
             auth_token=os.getenv("JANITO_WEB_TOKEN"),
@@ -158,6 +160,7 @@ class WebServerConfig:
                 "system_prompt",
                 "no_system_prompt",
                 "no_tools",
+                "no_plugins",
                 "log",
                 "web_host",
                 "web_port",

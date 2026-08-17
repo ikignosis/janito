@@ -56,6 +56,7 @@ async def get_config(request: Request):
         "gmail": config.gmail,
         "onedrive": config.onedrive,
         "no_tools": config.no_tools,
+        "no_plugins": getattr(config, "no_plugins", False),
         "no_system_prompt": config.no_system_prompt,
         "verbose": config.verbose,
         "no_history": config.no_history,

@@ -116,7 +116,8 @@ Legend: ✅ available · — not available
 
 The shared toolsets are auto-loaded in **both** interfaces: `files`, `system`,
 and `net` (web search / URL fetch / headless browse). Plugins loaded with
-`--plugin DIR` (e.g. `../plugins/janito-codesearch-plugin`)
+`--plugin DIR` (e.g. `../plugins/janito-codesearch-plugin`) or autoloaded
+from `~/.janito/plugins`
 contribute their tools in both
 interfaces too. `gmail` and `onedrive` load with their flags, and skills and
 MCP tools work everywhere.
@@ -141,6 +142,7 @@ MCP tools work everywhere.
 | Exit codes (`0`, `1`, `130`) | ✅ | — |
 | `--list-tools`, `--list-mcp`, `--list-plugins` | ✅ | — |
 | `--plugin DIR` (load plugins; plugin tools work in both interfaces) | ✅ | ✅ |
+| `--install-plugin`, `--list-plugins`, `--no-plugins` | ✅ | — |
 | `--install-skill`, `--list-skills`, `--uninstall-skill` | ✅ | — |
 | `--version`, `--help` | ✅ | — |
 

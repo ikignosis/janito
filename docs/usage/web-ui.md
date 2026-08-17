@@ -45,8 +45,8 @@ feature-by-feature breakdown is on [CLI vs Web UI](cli-vs-web.md); in short:
 - OneDrive authentication commands (`--onedrive-auth`, `--onedrive-status`,
   `--onedrive-logout`)
 - Skill management (`--install-skill`, `--list-skills`, `--uninstall-skill`)
-- `--plugin DIR` / `--list-plugins`, `--list-tools`, `--list-mcp`,
-  `--log=...`, exit codes
+- `--plugin DIR` / `--install-plugin` / `--no-plugins` / `--list-plugins`,
+  `--list-tools`, `--list-mcp`, `--log=...`, exit codes
 
 Everything else — the tools, privileges (`-r`/`-w`/`-x`), providers, models,
 Gmail/OneDrive toolsets, skills, MCP tools, and `--no-history` — works in both.

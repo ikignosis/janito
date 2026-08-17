@@ -15,9 +15,10 @@ the core package.
 4. [Directory Layout](#directory-layout)
 5. [Step-by-Step: A Minimal Plugin](#step-by-step-a-minimal-plugin)
 6. [Loading Plugins](#loading-plugins)
-7. [The codesearch Plugin (reference implementation)](#the-codesearch-plugin-reference-implementation)
-8. [Interacting with janito](#interacting-with-janito)
-9. [Checklist Before Submitting](#checklist-before-submitting)
+7. [Installing Plugins](#installing-plugins)
+8. [The codesearch Plugin (reference implementation)](#the-codesearch-plugin-reference-implementation)
+9. [Interacting with janito](#interacting-with-janito)
+10. [Checklist Before Submitting](#checklist-before-submitting)
 
 ---
 
@@ -136,17 +137,49 @@ The plugin's `SYSTEM_PROMPT` is appended to the default system prompt.
 janito --plugin DIR            # load one plugin
 janito --plugin DIR1 --plugin DIR2   # load several (repeatable)
 janito --list-plugins          # show loaded plugins and on_start errors
+janito --no-plugins            # do NOT autoload plugins from ~/.janito/plugins
 ```
 
-Plugins are loaded **after** CLI setup (privileges, `--no-tools`) and
+Plugins installed in `~/.janito/plugins` (see
+[Installing Plugins](#installing-plugins)) are **autoloaded** on every
+janito run.  `--no-plugins` disables this autoload; plugins explicitly
+requested with `--plugin DIR` are still loaded.
+
+Plugins are loaded **after** CLI setup (privileges) and
 **before** any registry/shell access, so plugin tools, commands and
 system-prompt sections are all live by the time a session starts.  This
 applies to single-prompt, interactive, and `--web` modes (web inherits
 plugin tools and prompt sections automatically).
 
-> **Note on `--no-tools`:** when `--no-tools` is passed, plugin tools are
-> **not** registered (consistent with built-in tools); plugin commands and
-> system-prompt sections are unaffected.
+> **Note on `--no-tools`:** plugin tools are **not** affected by
+> `--no-tools` (which only disables built-in tools).  Use `--no-plugins`
+> to skip autoloading installed plugins.
+
+---
+
+## Installing Plugins
+
+Plugins can be installed from a GitHub repository URL:
+
+```bash
+janito --install-plugin https://github.com/joaompinto/janito-codesearch-plugin
+```
+
+This downloads the repository's `master` branch as a zip archive and
+extracts it to `~/.janito/plugins/<repo-name>` (honoring `-c/--config-dir`).
+The plugin is then **autoloaded** on every subsequent janito run.
+
+To temporarily disable autoloading without uninstalling:
+
+```bash
+janito --no-plugins
+```
+
+To see which plugins are currently loaded:
+
+```bash
+janito --list-plugins
+```
 
 ---
 

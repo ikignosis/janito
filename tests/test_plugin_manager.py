@@ -152,6 +152,21 @@ def test_parser_exposes_plugin_flags():
     assert args.list_plugins is True
 
 
+def test_parser_exposes_install_plugin_and_no_plugins_flags():
+    from janito.cli.parser import create_parser
+
+    args = create_parser().parse_args(
+        ["--install-plugin", "https://github.com/user/plugin-repo"]
+    )
+    assert args.install_plugin == "https://github.com/user/plugin-repo"
+
+    args = create_parser().parse_args(["--no-plugins", "prompt"])
+    assert args.no_plugins is True
+
+    args = create_parser().parse_args(["prompt"])
+    assert args.no_plugins is False
+
+
 # ---------------------------------------------------------------------------
 # Loading and contract validation
 # ---------------------------------------------------------------------------
@@ -247,6 +262,133 @@ def test_load_plugins_appends_to_loaded(toy_plugin, monkeypatch):
 def test_load_plugins_empty():
     assert plugin_manager.load_plugins(None) == []
     assert plugin_manager.load_plugins([]) == []
+
+
+# ---------------------------------------------------------------------------
+# load_installed_plugins() autoload
+# ---------------------------------------------------------------------------
+
+
+def test_load_installed_plugins_autoloads_from_plugins_dir(tmp_path, monkeypatch):
+    """Plugins in ~/.janito/plugins are autoloaded."""
+    plugins_dir = tmp_path / "plugins"
+    plugin_dir = plugins_dir / "toyplugin"
+    plugin_dir.mkdir(parents=True)
+    (plugin_dir / "__init__.py").write_text(TOY_PLUGIN_SRC, encoding="utf-8")
+    _purge_module("toyplugin")
+
+    monkeypatch.setattr(plugin_manager, "LOADED_PLUGINS", [])
+    monkeypatch.setattr(plugin_manager, "get_default_plugins_dir", lambda: plugins_dir)
+
+    plugins = plugin_manager.load_installed_plugins()
+
+    assert len(plugins) == 1
+    assert plugins[0].name == "toyplugin"
+    assert plugins[0].loaded
+    assert plugin_manager.LOADED_PLUGINS == plugins
+    _purge_module("toyplugin")
+
+
+def test_load_installed_plugins_skips_non_packages(tmp_path, monkeypatch):
+    """Non-package dirs (no __init__.py) are skipped."""
+    plugins_dir = tmp_path / "plugins"
+    plugins_dir.mkdir(parents=True)
+    # A real plugin package.
+    (plugins_dir / "good").mkdir()
+    (plugins_dir / "good" / "__init__.py").write_text(
+        'name = "good"\n\ndef on_start():\n    return None\n',
+        encoding="utf-8",
+    )
+    # Not a package (no __init__.py).
+    (plugins_dir / "not_a_package").mkdir()
+    # Hidden dir.
+    (plugins_dir / ".hidden").mkdir()
+
+    monkeypatch.setattr(plugin_manager, "LOADED_PLUGINS", [])
+    monkeypatch.setattr(plugin_manager, "get_default_plugins_dir", lambda: plugins_dir)
+
+    plugins = plugin_manager.load_installed_plugins()
+
+    names = [p.name for p in plugins]
+    assert names == ["good"]
+    _purge_module("good")
+
+
+def test_load_installed_plugins_empty_dir(tmp_path, monkeypatch):
+    """Nonexistent or empty plugins dir returns []."""
+    monkeypatch.setattr(plugin_manager, "LOADED_PLUGINS", [])
+    monkeypatch.setattr(
+        plugin_manager, "get_default_plugins_dir", lambda: tmp_path / "nope"
+    )
+    assert plugin_manager.load_installed_plugins() == []
+
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    monkeypatch.setattr(plugin_manager, "get_default_plugins_dir", lambda: empty)
+    assert plugin_manager.load_installed_plugins() == []
+
+
+def test_get_default_plugins_dir_honors_config_dir(monkeypatch, tmp_path):
+    """get_default_plugins_dir follows get_config_dir()."""
+    monkeypatch.setattr(
+        plugin_manager,
+        "get_config_dir",
+        lambda: tmp_path / "custom" / ".janito",
+    )
+    assert plugin_manager.get_default_plugins_dir() == (
+        tmp_path / "custom" / ".janito" / "plugins"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Plugin tools independent of --no-tools
+# ---------------------------------------------------------------------------
+
+
+def test_plugin_tools_register_even_with_no_tools(toy_plugin, monkeypatch):
+    """--no-tools does NOT gate plugin tool registration."""
+    from janito.tooling import tools_registry
+
+    monkeypatch.setattr(plugin_manager, "LOADED_PLUGINS", [])
+    monkeypatch.setattr(tools_registry, "_tools_loading_enabled", False)
+    monkeypatch.setattr(tools_registry, "AVAILABLE_TOOLS", {})
+    monkeypatch.setattr(tools_registry, "_tools_initialized", False)
+
+    plugin = plugin_manager.load_plugin(toy_plugin)
+
+    assert plugin.loaded
+    schemas = get_all_tool_schemas()
+    names = {s["function"]["name"] for s in schemas}
+    assert "ToyTool" in names
+
+
+# ---------------------------------------------------------------------------
+# handle_install_plugin URL parsing
+# ---------------------------------------------------------------------------
+
+
+def test_parse_github_repo_url():
+    from janito.cli.handlers.plugins import _parse_github_repo_url
+
+    assert _parse_github_repo_url("https://github.com/user/repo") == ("user", "repo")
+    assert _parse_github_repo_url("https://github.com/user/repo/") == ("user", "repo")
+    assert _parse_github_repo_url("https://github.com/user/repo.git") == (
+        "user",
+        "repo",
+    )
+    assert _parse_github_repo_url("http://github.com/user/repo") == ("user", "repo")
+    assert _parse_github_repo_url("github.com/user/repo") == ("user", "repo")
+
+
+def test_parse_github_repo_url_rejects_invalid():
+    import pytest
+
+    from janito.cli.handlers.plugins import _parse_github_repo_url
+
+    with pytest.raises(ValueError):
+        _parse_github_repo_url("https://example.com/not-github")
+    with pytest.raises(ValueError):
+        _parse_github_repo_url("not a url")
 
 
 # ---------------------------------------------------------------------------

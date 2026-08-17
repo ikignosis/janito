@@ -8,7 +8,7 @@ from .config import (
     handle_unset_config,
 )
 from .info import handle_info, handle_show_config, handle_show_system_prompt
-from .plugins import handle_list_plugins
+from .plugins import handle_install_plugin, handle_list_plugins
 from .providers import handle_show_providers
 from .secrets import (
     handle_delete_secret,
@@ -28,6 +28,7 @@ __all__ = [
     "handle_get_config",
     "handle_get_secret",
     "handle_info",
+    "handle_install_plugin",
     "handle_install_skill",
     "handle_list_keys",
     "handle_list_mcp",

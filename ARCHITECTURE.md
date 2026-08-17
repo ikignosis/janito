@@ -61,11 +61,14 @@ the `janito` console script). Flow:
    the module-level `running_privileges` (used later by tool discovery).
 3. **Batch config ops** (`--set/--unset/--get/--set-secret/--delete-secret`)
    via `_handle_batch_config`.
-4. **Load plugins** (`--plugin DIR`, repeatable) via `janito/plugin_manager.py`:
-   each plugin's parent dir is temporarily added to `sys.path`, the package is
+4. **Load plugins** via `janito/plugin_manager.py`: plugins autoloaded from
+   `~/.janito/plugins` (`load_installed_plugins`, unless `--no-plugins`) plus
+   those requested with `--plugin DIR` (`load_plugins`, repeatable). For each
+   plugin, its parent dir is temporarily added to `sys.path`, the package is
    imported, the contract is validated, `on_start` is called, and its tools,
    `/`-commands and system-prompt sections are registered — all before any
-   registry/shell access.
+   registry/shell access. Plugin tools are **not** gated by `--no-tools`;
+   use `--no-plugins` to disable autoloading.
 5. **Flag-driven commands** (`--info`, `--config`, `--list-*`,
    `--set-api-key`, `--onedrive-*`, `--install-skill`, ...) via
    `_dispatch_flag_command` → handlers in `janito/cli/handlers/`.
@@ -195,7 +198,12 @@ plugin), validates the contract (`name`, `on_start`, `SYSTEM_PROMPT`,
 `TOOLS`, `CMD_HANDLERS`), calls `on_start`, and registers the contributed
 tools (`ToolsRegistry.register_plugin_tools`), commands
 (`shell/cmds/registry.register_command`) and system-prompt sections
-(`system_prompt.register_plugin_system_prompt`). See `docs/PLUGINS.md`.
+(`system_prompt.register_plugin_system_prompt`). `load_installed_plugins()`
+autoloads every package directory under `~/.janito/plugins` (installed with
+`janito --install-plugin <github_url>`); `--no-plugins` skips this autoload
+but still loads `--plugin DIR` requests. Plugin tool registration is
+**not** gated by `--no-tools` (the `--no-tools` flag only disables built-in
+tools). See `docs/PLUGINS.md`.
 
 ### Privileges
 

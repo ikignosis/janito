@@ -114,7 +114,9 @@ If none of `-r`, `-w`, `-x` are given, janito runs with full privileges and prin
 | Option | Description |
 |--------|-------------|
 | `--plugin <dir>` | Load a plugin package from `dir` (repeatable; its parent is temporarily added to `sys.path` so relative imports work). Plugin tools, commands and system-prompt sections are registered before the session starts |
-| `--list-plugins` | List loaded plugins (from `--plugin`) and their `on_start` errors, then exit |
+| `--install-plugin <url>` | Install a plugin from a GitHub repository URL. Downloads the `master` zip and extracts it to `~/.janito/plugins/<repo-name>` |
+| `--no-plugins` | Do not autoload plugins from `~/.janito/plugins` (plugins explicitly loaded with `--plugin DIR` are still loaded) |
+| `--list-plugins` | List loaded plugins (from `--plugin` and autoloaded from `~/.janito/plugins`) and their `on_start` errors, then exit |
 
 ## Logging & Output
 

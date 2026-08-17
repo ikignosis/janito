@@ -9,6 +9,10 @@ The index is stored at `./.janito/codesearch.db` and is built automatically
 when the plugin loads. Load the plugin and use it:
 
 ```bash
+janito --install-plugin https://github.com/joaompinto/janito-codesearch-plugin
+# or, if already installed in ~/.janito/plugins (autoloaded):
+janito
+# or load directly from a checkout:
 janito --plugin ../plugins/janito-codesearch-plugin
 ```
 

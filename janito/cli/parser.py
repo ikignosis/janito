@@ -85,9 +85,11 @@ Examples:
   janito -r -w -x                                                # Grant READ, WRITE, and EXEC privileges
   janito -S "You are a cow"                                   # Override system prompt (tools stay enabled)
   janito --no-tools "Your prompt"                             # No tools loaded (skill tools stay enabled)
+  janito --no-plugins "Your prompt"                           # Do not autoload plugins from ~/.janito/plugins
   janito --install-skill https://github.com/user/repo/tree/main/skills/git-commit  # Install a skill
   janito --list-skills                                        # List installed skills
   janito --uninstall-skill git-commit                         # Uninstall a skill
+  janito --install-plugin https://github.com/user/janito-codesearch-plugin  # Install a plugin
   janito --plugin ../plugins/janito-codesearch-plugin  # Load the codesearch plugin (tools, /codesearch)
   janito --list-plugins                                     # List loaded plugins and their on_start errors
   janito --create-variant alibaba-tokenplan                  # Register a provider variant (<provider>-<word>)
@@ -167,6 +169,13 @@ Note: --set and --set-api-key must be used in separate commands.
         "--no-tools",
         action="store_true",
         help="Do not load tools (skill tools stay enabled)",
+    )
+
+    parser.add_argument(
+        "--no-plugins",
+        action="store_true",
+        help="Do not autoload plugins from ~/.janito/plugins (plugins "
+        "explicitly loaded with --plugin DIR are still loaded)",
     )
 
     parser.add_argument(
@@ -424,10 +433,19 @@ Note: --set and --set-api-key must be used in separate commands.
     )
 
     parser.add_argument(
+        "--install-plugin",
+        metavar="URL",
+        help="Install a plugin from a GitHub URL (e.g., "
+        "https://github.com/joaompinto/janito-codesearch-plugin). "
+        "Downloads the repository's master zip and extracts it to "
+        "~/.janito/plugins/<repo-name>.",
+    )
+
+    parser.add_argument(
         "--list-plugins",
         action="store_true",
-        help="List loaded plugins (from --plugin) and their on_start errors, "
-        "then exit",
+        help="List loaded plugins (from --plugin and autoloaded from "
+        "~/.janito/plugins) and their on_start errors, then exit",
     )
 
     parser.add_argument(

@@ -32,6 +32,7 @@ from .cli.handlers import (
     handle_get_config,
     handle_get_secret,
     handle_info,
+    handle_install_plugin,
     handle_install_skill,
     handle_list_keys,
     handle_list_mcp,
@@ -190,6 +191,7 @@ def _dispatch_flag_command(args) -> int | None:
         (args.install_skill, lambda: handle_install_skill(args.install_skill)),
         (args.list_skills, lambda: handle_list_skills(args)),
         (args.uninstall_skill, lambda: handle_uninstall_skill(args.uninstall_skill)),
+        (args.install_plugin, lambda: handle_install_plugin(args.install_plugin)),
         (args.list_tools, lambda: handle_list_tools(args)),
         (args.list_mcp, lambda: handle_list_mcp(args)),
         (args.list_plugins, lambda: handle_list_plugins(args)),
@@ -241,14 +243,20 @@ def main():
     if exit_code is not None:
         return exit_code
 
-    # Load plugins (--plugin DIR, repeatable) before any registry/shell
-    # access so plugin tools, commands and system-prompt sections are
-    # registered for the session.  Runs after _setup_runtime so privileges
-    # and --no-tools are already applied.
-    if getattr(args, "plugin", None):
-        from .plugin_manager import load_plugins
+    # Load plugins before any registry/shell access so plugin tools,
+    # commands and system-prompt sections are registered for the session.
+    # Runs after _setup_runtime so privileges are already applied.
+    #
+    # - Plugins installed in ~/.janito/plugins are autoloaded unless
+    #   --no-plugins is passed (they are independent of --no-tools).
+    # - Plugins explicitly requested with --plugin DIR are always loaded.
+    if getattr(args, "plugin", None) or not getattr(args, "no_plugins", False):
+        from .plugin_manager import load_installed_plugins, load_plugins
 
-        load_plugins(args.plugin)
+        if not getattr(args, "no_plugins", False):
+            load_installed_plugins()
+        if getattr(args, "plugin", None):
+            load_plugins(args.plugin)
 
     # Handle single flag-driven commands (--info, --config, --list-*, ...)
     exit_code = _dispatch_flag_command(args)

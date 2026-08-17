@@ -30,6 +30,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from .config_dir import get_config_dir
 from .system_prompt import register_plugin_system_prompt
 from .tooling.tools_registry import register_plugin_tools
 from .tools import discover_module_tools, wrap_tool_class
@@ -43,6 +44,15 @@ LOADED_PLUGINS: list[Plugin] = []
 # Required contract symbols; the rest (SYSTEM_PROMPT/TOOLS/CMD_HANDLERS)
 # default to empty values when absent.
 REQUIRED_SYMBOLS = ("name", "on_start")
+
+
+def get_default_plugins_dir() -> Path:
+    """Get the default plugins directory (honors -c/--config-dir).
+
+    Returns:
+        Path: ``<config_dir>/plugins`` (default ``~/.janito/plugins``).
+    """
+    return get_config_dir() / "plugins"
 
 
 @dataclass
@@ -214,5 +224,30 @@ def load_plugins(plugin_dirs: list[str | Path] | None) -> list[Plugin]:
     if not plugin_dirs:
         return []
     plugins = [load_plugin(d) for d in plugin_dirs]
+    LOADED_PLUGINS.extend(plugins)
+    return plugins
+
+
+def load_installed_plugins() -> list[Plugin]:
+    """Autoload plugins from the default plugins directory.
+
+    Scans ``~/.janito/plugins`` (honoring ``-c/--config-dir``) and loads
+    every subdirectory that contains an ``__init__.py`` as a plugin.
+
+    Returns:
+        The list of autoloaded plugins (appended to :data:`LOADED_PLUGINS`).
+    """
+    plugins_dir = get_default_plugins_dir()
+    if not plugins_dir.is_dir():
+        return []
+
+    plugins = []
+    for entry in sorted(plugins_dir.iterdir()):
+        if not entry.is_dir() or entry.name.startswith("."):
+            continue
+        if not (entry / "__init__.py").is_file():
+            continue
+        plugins.append(load_plugin(entry))
+
     LOADED_PLUGINS.extend(plugins)
     return plugins

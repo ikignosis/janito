@@ -11,6 +11,23 @@ Changes since `v4.25.0` (2026-08-15).
 
 ### Added
 
+- `--install-plugin <github_url>` downloads a GitHub repository's `master`
+  zip archive and extracts it to `~/.janito/plugins/<repo-name>` (honoring
+  `-c/--config-dir`). Plugins installed there are **autoloaded** on every
+  janito run via the new `plugin_manager.load_installed_plugins()`.
+  `--no-plugins` disables the autoload (plugins explicitly loaded with
+  `--plugin DIR` are still loaded). Plugin tool registration is no longer
+  gated by `--no-tools` — `--no-tools` only disables built-in tools, so
+  plugin tools stay available unless `--no-plugins` is passed.
+  (`janito/cli/parser.py`, `janito/cli/handlers/plugins.py`,
+  `janito/cli/handlers/__init__.py`, `janito/__main__.py`,
+  `janito/plugin_manager.py`, `janito/tooling/tools_registry.py`,
+  `janito/web/backend/config.py`, `docs/PLUGINS.md`,
+  `docs/reference/cli-options.md`, `docs/usage/cli-vs-web.md`,
+  `docs/usage/web-ui.md`, `ARCHITECTURE.md`,
+  `tests/test_plugin_manager.py`, `tests/test_no_tools.py`,
+  `tests/test_tools_registry.py`)
+
 - Added `../plugins/janito-codesearch-plugin/README.md` (the sibling repo
   that now hosts the codesearch plugin) describing the plugin's capabilities:
   the trigram-based `CodeSearch` tool (whole-word AND/OR matching,

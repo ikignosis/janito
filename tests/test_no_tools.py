@@ -38,12 +38,22 @@ if pytest is not None:
         args = create_parser().parse_args(["prompt"])
         assert args.no_tools is False
 
-    def test_parser_help_documents_no_tools():
+    def test_parser_exposes_no_plugins_flag():
+        from janito.cli.parser import create_parser
+
+        args = create_parser().parse_args(["--no-plugins", "prompt"])
+        assert args.no_plugins is True
+        # Default stays disabled.
+        args = create_parser().parse_args(["prompt"])
+        assert args.no_plugins is False
+
+    def test_parser_help_documents_no_tools_and_no_plugins():
         from janito.cli.parser import create_parser
 
         help_text = create_parser().format_help()
         assert "--no-tools" in help_text
         assert "skill tools stay enabled" in help_text
+        assert "--no-plugins" in help_text
 
     def test_setup_runtime_applies_no_tools(monkeypatch):
         from janito import __main__
