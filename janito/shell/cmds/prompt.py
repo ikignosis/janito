@@ -52,6 +52,8 @@ class PromptCmdHandler(CmdHandler):
                 body = text.rstrip()
                 line_count = len(body.splitlines()) if body else 0
                 table.add_row(name, str(line_count), body)
+                # Empty row after each section for visual context split.
+                table.add_row("", "", "")
             Console(markup=False).print(table)
             return
 

@@ -312,6 +312,8 @@ def handle_show_system_prompt(args) -> int:
         body = text.rstrip()
         line_count = len(body.splitlines()) if body else 0
         table.add_row(name, str(line_count), body)
+        # Empty row after each section for visual context split.
+        table.add_row("", "", "")
     console.print(table)
 
     return 0

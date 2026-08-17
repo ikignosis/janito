@@ -11,6 +11,10 @@ Changes since `v4.26.0` (2026-08-17).
 
 ### Changed
 
+- The `/prompt` shell command and `janito --show-system-prompt` now insert an
+  empty row after each system-prompt section in the rendered table, providing
+  a visual context split between the `start`, `skills`, `agents.md` and
+  `plugins:<name>` sections.
 - The system prompt is now assembled through a new `SysPromptManager` class
   (`janito/system_prompt.py`) that owns an ordered list of
   `(section_name, section_text)` sections (`start`, `skills`, `agents.md`,
