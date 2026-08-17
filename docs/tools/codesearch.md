@@ -2,14 +2,14 @@
 
 The `CodeSearch` tool searches a **pre-built trigram index** of the current
 working directory instead of scanning files on every call. It is provided by
-the **codesearch plugin** (`../plugins/janito-codesearch-plugin/codesearch/`),
+the **codesearch plugin** (`../plugins/janito-codesearch-plugin/`),
 not the core package.
 
 The index is stored at `./.janito/codesearch.db` and is built automatically
 when the plugin loads. Load the plugin and use it:
 
 ```bash
-janito --plugin ../plugins/janito-codesearch-plugin/codesearch
+janito --plugin ../plugins/janito-codesearch-plugin
 ```
 
 !!! note "Automatic index creation"
@@ -77,5 +77,5 @@ exist on disk are skipped.
 
 The index uses the trigram algorithm described by Russ Cox in *Regular
 Expression Matching with a Trigram Index* (Google Code Search), with SQLite
-as the storage backend. See `../plugins/janito-codesearch-plugin/codesearch/`
+as the storage backend. See `../plugins/janito-codesearch-plugin/`
 for the implementation.

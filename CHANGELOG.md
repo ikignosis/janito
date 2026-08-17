@@ -19,6 +19,16 @@ Changes since `v4.25.0` (2026-08-15).
   1-day TTL, `.gitignore`/`.janitoignore` handling, what gets indexed, and
   the plugin structure. (`../plugins/janito-codesearch-plugin/README.md`)
 
+- The codesearch plugin's Python package now lives at the **root** of the
+  sibling `../plugins/janito-codesearch-plugin/` repo (the old
+  `codesearch/` subdirectory is gone), so it loads with
+  `janito --plugin ../plugins/janito-codesearch-plugin` (no trailing
+  `/codesearch`). CLI help, plugin docs and the plugin end-to-end tests now
+  reference the new path. (`janito/cli/parser.py`,
+  `janito/plugin_manager.py`, `docs/PLUGINS.md`,
+  `docs/tools/codesearch.md`, `docs/usage/cli-vs-web.md`,
+  `ARCHITECTURE.md`, `tests/test_plugin_manager.py`)
+
 - Every built-in model entry now declares its **default API type** via the
   new `default_api_type` model-config field (the value is the model's first
   `supported_api_types` entry, e.g. `"Responses"` for OpenAI's

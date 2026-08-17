@@ -25,7 +25,7 @@ the core package.
 
 A plugin is a **directory with a Python package structure** (a directory
 containing an `__init__.py`), for example
-`../plugins/janito-codesearch-plugin/codesearch/`.  When
+`../plugins/janito-codesearch-plugin/`.  When
 loaded, the plugin can contribute:
 
 - **`TOOLS`** — tool classes (per `docs/TOOL.md`) that are added to the
@@ -69,9 +69,10 @@ the front of `sys.path`:
 
 - The plugin directory itself is the package (it contains `__init__.py`),
   so its **parent** must be on `sys.path` for the package to import by its
-  directory name (e.g. `import codesearch`) and for **relative imports
-  inside the plugin code** to resolve (`from . import index`,
-  `from .tools.code_search import ...`, `from .cmd.codesearch_cmd import ...`).
+  directory name (e.g. `importlib.import_module("janito-codesearch-plugin")`)
+  and for **relative imports inside the plugin code** to resolve
+  (`from . import index`, `from .tools.code_search import ...`,
+  `from .cmd.codesearch_cmd import ...`).
 - The plugin package and the modules it imports are loaded **while the
   entry is active**.  After loading, the entry is removed and `sys.path`
   is restored to its original state.
@@ -152,11 +153,10 @@ plugin tools and prompt sections automatically).
 ## The codesearch Plugin (reference implementation)
 
 The `CodeSearch` tool, the trigram engine, and the `/codesearch` shell
-command live in the `codesearch/` package of the
-`../plugins/janito-codesearch-plugin/` plugin:
+command live in the `../plugins/janito-codesearch-plugin/` plugin:
 
 ```
-../plugins/janito-codesearch-plugin/codesearch/
+../plugins/janito-codesearch-plugin/
     __init__.py            # contract + on_start() that builds .janito/codesearch.db
     code_search.py         # CodeSearch engine
     index.py               # SQLite inverted trigram index
@@ -169,7 +169,7 @@ command live in the `codesearch/` package of the
 Load it with:
 
 ```bash
-janito --plugin ../plugins/janito-codesearch-plugin/codesearch
+janito --plugin ../plugins/janito-codesearch-plugin
 ```
 
 When the plugin loads, `on_start()` checks for `.janito/codesearch.db` in

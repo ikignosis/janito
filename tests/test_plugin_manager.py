@@ -3,7 +3,7 @@
 Covers the ``--plugin`` / ``--list-plugins`` CLI flags, contract validation,
 scoped ``sys.path`` handling, and registration of plugin tools, commands and
 system-prompt sections.  Also exercises loading the real codesearch plugin
-(``../plugins/janito-codesearch-plugin/codesearch``) end-to-end.
+(``../plugins/janito-codesearch-plugin``) end-to-end.
 """
 
 import sys
@@ -18,9 +18,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 # The real codesearch plugin, now maintained outside the repo as a sibling
 # of the janito checkout (a sibling "plugins" collection).
-CODESEARCH_PLUGIN_DIR = (
-    REPO_ROOT.parent / "plugins" / "janito-codesearch-plugin" / "codesearch"
-)
+CODESEARCH_PLUGIN_DIR = REPO_ROOT.parent / "plugins" / "janito-codesearch-plugin"
 
 # Toy plugin source implementing the full contract.
 TOY_PLUGIN_SRC = '''\
@@ -139,14 +137,14 @@ def test_parser_exposes_plugin_flags():
     args = create_parser().parse_args(
         [
             "--plugin",
-            "../plugins/janito-codesearch-plugin/codesearch",
+            "../plugins/janito-codesearch-plugin",
             "--plugin",
             "plugins/other",
             "prompt",
         ]
     )
     assert args.plugin == [
-        "../plugins/janito-codesearch-plugin/codesearch",
+        "../plugins/janito-codesearch-plugin",
         "plugins/other",
     ]
 
@@ -268,7 +266,7 @@ def test_codesearch_plugin_loads_and_creates_index(tmp_path, monkeypatch):
         "def hello_world():\n    print('hello world')\n", encoding="utf-8"
     )
     monkeypatch.chdir(tmp_path)
-    _purge_module("codesearch")
+    _purge_module("janito-codesearch-plugin")
 
     plugin = plugin_manager.load_plugin(CODESEARCH_PLUGIN_DIR)
 
@@ -313,4 +311,4 @@ def test_codesearch_plugin_loads_and_creates_index(tmp_path, monkeypatch):
         "other search tools" in plugin_text
     )
 
-    _purge_module("codesearch")
+    _purge_module("janito-codesearch-plugin")
