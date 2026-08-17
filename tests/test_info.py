@@ -8,12 +8,23 @@ The line is shown only when the effective API type resolves to ``Responses``:
 - stateless providers (e.g. DeepSeek) report
   ``stateless (client re-sends history)``
 - when the API type resolves to ``Completions`` the line is omitted.
+
+Also covers ``--show-system-prompt`` (``handle_show_system_prompt``), in
+particular that the "(with skills)" suffix is only shown when a ``skills``
+section is actually present in the default prompt.
 """
 
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from janito.cli.handlers.info import handle_info, handle_show_config
+import janito.tooling.tools_registry as tools_registry_mod
+from janito.cli.handlers.info import (
+    handle_info,
+    handle_show_config,
+    handle_show_system_prompt,
+)
+
+SKILLS_SECTION = "## Available Skills\n(fake skills section)"
 
 
 def _fake_resolve_api_type(cli_api_type, provider, model=None):
@@ -192,3 +203,62 @@ def test_show_config_no_default_model(capsys):
     """A provider without a default model still reports (not configured)."""
     out = _run_show_config(capsys, provider="custom", default_model=None)
     assert "(not configured)" in out
+
+
+# --- --show-system-prompt -------------------------------------------------
+
+
+def _run_show_system_prompt(capsys, monkeypatch, tmp_path, skills_section):
+    """Run handle_show_system_prompt and return its captured output.
+
+    ``skills_section`` is what ``get_skills_section`` should return; pass
+    ``None`` to leave it unpatched (uses the real tool registry).
+    """
+    monkeypatch.chdir(tmp_path)
+    if skills_section is not None:
+        monkeypatch.setattr(
+            tools_registry_mod, "get_skills_section", lambda: skills_section
+        )
+    args = SimpleNamespace(system_prompt=None, no_system_prompt=False)
+    handle_show_system_prompt(args)
+    return capsys.readouterr().out
+
+
+def test_show_system_prompt_title_with_skills(capsys, monkeypatch, tmp_path):
+    """A skills section present -> the title advertises (with skills)."""
+    out = _run_show_system_prompt(capsys, monkeypatch, tmp_path, SKILLS_SECTION)
+    assert "System prompt (default (with skills))" in out
+    assert "skills" in out
+    assert "(fake skills section)" in out
+
+
+def test_show_system_prompt_title_without_skills(capsys, monkeypatch, tmp_path):
+    """No skills section (no skills available) -> title omits (with skills)."""
+    out = _run_show_system_prompt(capsys, monkeypatch, tmp_path, "")
+    assert "System prompt (default)" in out
+    assert "(with skills)" not in out
+
+
+def test_show_system_prompt_no_skills_section_row(capsys, monkeypatch, tmp_path):
+    """With no skills, no skills section row is rendered."""
+    out = _run_show_system_prompt(capsys, monkeypatch, tmp_path, "")
+    assert "skills" not in out
+
+
+def test_show_system_prompt_override(capsys, monkeypatch, tmp_path):
+    """A custom -S prompt is shown as-is, without the default title."""
+    monkeypatch.chdir(tmp_path)
+    args = SimpleNamespace(system_prompt="custom system prompt", no_system_prompt=False)
+    handle_show_system_prompt(args)
+    out = capsys.readouterr().out
+    assert "custom system prompt" in out
+    assert "(with skills)" not in out
+
+
+def test_show_system_prompt_disabled(capsys, monkeypatch, tmp_path):
+    """-Z / --no-system-prompt is reported as disabled."""
+    monkeypatch.chdir(tmp_path)
+    args = SimpleNamespace(system_prompt=None, no_system_prompt=True)
+    handle_show_system_prompt(args)
+    out = capsys.readouterr().out
+    assert "disabled via -Z" in out

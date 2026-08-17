@@ -276,7 +276,7 @@ def handle_show_system_prompt(args) -> int:
     from rich.console import Console
     from rich.table import Table
 
-    from ...system_prompt import sync_default_sections
+    from ...system_prompt import SECTION_SKILLS, sync_default_sections
 
     console = Console(markup=False)
 
@@ -299,16 +299,26 @@ def handle_show_system_prompt(args) -> int:
         return 0
 
     # Default prompt: render each section as a rich table row (Section, Lines,
-    # Content), matching the shell /prompt command.
+    # Content), matching the shell /prompt command.  Only advertise skills in
+    # the title when a "skills" section is actually present (skills enabled and
+    # at least one skill advertised).
+    manager = sync_default_sections()
+    sections = list(manager.get_all_sections())
+    has_skills = any(name == SECTION_SKILLS for name, _ in sections)
+    title = (
+        "System prompt (default (with skills))"
+        if has_skills
+        else "System prompt (default)"
+    )
     table = Table(
-        title="System prompt (default (with skills))",
+        title=title,
         title_style="bold",
         header_style="bold cyan",
     )
     table.add_column("Section", style="green", no_wrap=True)
     table.add_column("Lines", justify="right")
     table.add_column("Content", overflow="fold")
-    for name, text in sync_default_sections().get_all_sections():
+    for name, text in sections:
         body = text.rstrip()
         line_count = len(body.splitlines()) if body else 0
         table.add_row(name, str(line_count), body)

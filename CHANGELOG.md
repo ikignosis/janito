@@ -11,6 +11,10 @@ Changes since `v4.26.0` (2026-08-17).
 
 ### Changed
 
+- The `/prompt` shell command and `janito --show-system-prompt` now only
+  advertise skills in their titles (e.g. "(with skills)" / "(with Skills)")
+  when a `skills` section is actually present; with no skills available the
+  title is shown without the skills suffix.
 - The `/prompt` shell command and `janito --show-system-prompt` now insert an
   empty row after each system-prompt section in the rendered table, providing
   a visual context split between the `start`, `skills`, `agents.md` and

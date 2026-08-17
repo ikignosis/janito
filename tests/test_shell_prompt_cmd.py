@@ -29,6 +29,11 @@ def _patch_skills_section(monkeypatch):
     )
 
 
+def _patch_no_skills(monkeypatch):
+    """Patch the skills section to advertise no skills at all."""
+    monkeypatch.setattr(tools_registry_mod, "get_skills_section", lambda: "")
+
+
 def test_prompt_cmd_shows_section_table(monkeypatch, tmp_path, capfd):
     """The default prompt is displayed as a rich table with per-section rows."""
     from janito.system_prompt import sync_default_sections
@@ -50,6 +55,26 @@ def test_prompt_cmd_shows_section_table(monkeypatch, tmp_path, capfd):
     assert "(fake skills section)" in out
     # No more plain-text ==== / ---- headers.
     assert "----" not in out
+
+
+def test_prompt_cmd_no_skills_title_omits_skills(monkeypatch, tmp_path, capfd):
+    """Without any skills the title omits the (with Skills) suffix."""
+    from janito.system_prompt import sync_default_sections
+
+    _patch_no_skills(monkeypatch)
+    monkeypatch.chdir(tmp_path)
+
+    shell = InteractiveShell(model="test-model", no_history=True)
+    shell.initialize_history(system_prompt=sync_default_sections().render())
+
+    handler = PromptCmdHandler()
+    assert handler.handle(shell, "/prompt") is True
+
+    out = capfd.readouterr().out
+    assert "System Prompt - Default" in out
+    assert "(with Skills)" not in out
+    # No skills row is rendered either.
+    assert "skills" not in out
 
 
 def test_prompt_cmd_includes_agents_md_section(monkeypatch, tmp_path, capfd):
