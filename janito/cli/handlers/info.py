@@ -276,7 +276,7 @@ def handle_show_system_prompt(args) -> int:
     from rich.console import Console
     from rich.table import Table
 
-    from ...system_prompt import get_system_prompt_sections
+    from ...system_prompt import sync_default_sections
 
     console = Console(markup=False)
 
@@ -308,7 +308,7 @@ def handle_show_system_prompt(args) -> int:
     table.add_column("Section", style="green", no_wrap=True)
     table.add_column("Lines", justify="right")
     table.add_column("Content", overflow="fold")
-    for name, text in get_system_prompt_sections():
+    for name, text in sync_default_sections().get_all_sections():
         body = text.rstrip()
         line_count = len(body.splitlines()) if body else 0
         table.add_row(name, str(line_count), body)

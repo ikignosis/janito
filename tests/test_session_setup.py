@@ -34,9 +34,9 @@ if pytest is not None:
 
     def test_default_uses_skills_prompt():
         setup = SessionSetup()
-        from janito.system_prompt import get_system_prompt_with_skills
+        from janito.system_prompt import sync_default_sections
 
-        assert setup.effective_system_prompt() == get_system_prompt_with_skills()
+        assert setup.effective_system_prompt() == sync_default_sections().render()
         assert setup.no_tools is False
 
     def test_custom_system_prompt_wins():

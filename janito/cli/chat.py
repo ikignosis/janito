@@ -9,9 +9,6 @@ from .. import __version__
 from ..general_config import resolve_api_type
 from ..openai_client import RequestCancelled, resolve_runtime_config, send_prompt
 from ..shell import InteractiveShell
-from ..system_prompt import (  # noqa: F401 (re-exported; tests patch chat_mod.get_system_prompt_with_skills)
-    get_system_prompt_with_skills,
-)
 from ..tooling.path_utils import display_path
 
 # Whether the version banner has already been printed for this process, so it

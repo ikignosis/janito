@@ -25,10 +25,7 @@ class PromptCmdHandler(CmdHandler):
         from rich.console import Console
         from rich.table import Table
 
-        from janito.system_prompt import (
-            get_system_prompt_sections,
-            get_system_prompt_with_skills,
-        )
+        from janito.system_prompt import sync_default_sections
 
         # Get the actual system prompt from the shell
         effective_prompt = shell.get_system_prompt()
@@ -39,7 +36,8 @@ class PromptCmdHandler(CmdHandler):
             )
             return
 
-        if effective_prompt == get_system_prompt_with_skills():
+        manager = sync_default_sections()
+        if effective_prompt == manager.render():
             # Default prompt: show each section as a rich table row with its
             # name, line count and content.
             table = Table(
@@ -50,7 +48,7 @@ class PromptCmdHandler(CmdHandler):
             table.add_column("Section", style="green", no_wrap=True)
             table.add_column("Lines", justify="right")
             table.add_column("Content", overflow="fold")
-            for name, text in get_system_prompt_sections():
+            for name, text in manager.get_all_sections():
                 body = text.rstrip()
                 line_count = len(body.splitlines()) if body else 0
                 table.add_row(name, str(line_count), body)

@@ -58,9 +58,9 @@ class SessionSetup:
             return self.system_prompt
         if self.no_system_prompt:
             return None
-        from janito.system_prompt import get_system_prompt_with_skills
+        from janito.system_prompt import sync_default_sections
 
-        return get_system_prompt_with_skills()
+        return sync_default_sections().render()
 
     def messages_context(self) -> list[dict]:
         """Build the seeded ``messages`` history for a single-prompt run.

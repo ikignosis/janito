@@ -31,7 +31,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from .config_dir import get_config_dir
-from .system_prompt import register_plugin_system_prompt
+from .system_prompt import SECTION_PLUGINS, SYSTEM_PROMPT_MANAGER
 from .tooling.tools_registry import register_plugin_tools
 from .tools import discover_module_tools, wrap_tool_class
 
@@ -198,7 +198,14 @@ def _load_plugin_contents(plugin: Plugin, plugin_name: str) -> None:
     _register_plugin_tools(plugin)
     _register_plugin_commands(plugin)
     if plugin.system_prompt:
-        register_plugin_system_prompt(plugin.name, plugin.system_prompt)
+        section_name = f"{SECTION_PLUGINS}:{plugin.name}"
+        try:
+            SYSTEM_PROMPT_MANAGER.add_section(section_name, plugin.system_prompt)
+        except ValueError:
+            # A plugin with this name is already registered (e.g. the same
+            # directory passed twice): replace its prompt text instead of
+            # crashing on the duplicate section name.
+            SYSTEM_PROMPT_MANAGER.update_section(section_name, plugin.system_prompt)
 
 
 def load_plugin(plugin_dir: str | Path) -> Plugin:

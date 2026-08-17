@@ -11,6 +11,16 @@ Changes since `v4.26.0` (2026-08-17).
 
 ### Changed
 
+- The system prompt is now assembled through a new `SysPromptManager` class
+  (`janito/system_prompt.py`) that owns an ordered list of
+  `(section_name, section_text)` sections (`start`, `skills`, `agents.md`,
+  `plugins:<name>`).  All system-prompt manipulation (plugins, `SessionSetup`,
+  the `/prompt` shell command and `janito --show-system-prompt`) now goes
+  through the shared `SYSTEM_PROMPT_MANAGER`; `render()` joins the sections
+  with a trailing newline per section for visual separation.  The previous
+  module-level `get_system_prompt_with_skills`, `get_system_prompt_sections`
+  and `register_plugin_system_prompt` helpers are removed, and the first
+  section is named `start` (was `base`).
 - The OneDrive functionality (tools, system prompt, authentication) was
   extracted from the core into the `janito-onedrive-plugin` plugin.  The
   `--onedrive`, `--onedrive-auth`, `--onedrive-logout` and `--onedrive-status`

@@ -69,18 +69,18 @@ def _restore_global_state():
     from janito.shell.cmds import registry as cmds_registry
     from janito.tooling import tools_registry
 
-    saved_sections = list(system_prompt_mod._PLUGIN_SECTIONS)
+    saved_sections = list(system_prompt_mod.SYSTEM_PROMPT_MANAGER._sections)
     saved_loaded = list(plugin_manager.LOADED_PLUGINS)
     saved_commands = list(cmds_registry._commands)
     saved_tools = set(tools_registry.AVAILABLE_TOOLS)
 
-    system_prompt_mod._PLUGIN_SECTIONS = list(saved_sections)
+    system_prompt_mod.SYSTEM_PROMPT_MANAGER._sections = list(saved_sections)
     plugin_manager.LOADED_PLUGINS = list(saved_loaded)
 
     yield
 
     # Restore prompt sections, loaded-plugins list and command registry.
-    system_prompt_mod._PLUGIN_SECTIONS = list(saved_sections)
+    system_prompt_mod.SYSTEM_PROMPT_MANAGER._sections = list(saved_sections)
     plugin_manager.LOADED_PLUGINS = list(saved_loaded)
     cmds_registry._commands = list(saved_commands)
     # Drop any tools a plugin registered (e.g. ToyTool / CodeSearch).
@@ -175,7 +175,7 @@ def test_parser_exposes_install_plugin_and_no_plugins_flags():
 def test_load_plugin_registers_content(toy_plugin, monkeypatch):
     """A valid plugin registers its tool, command and system-prompt text."""
     from janito.shell.cmds import get_registered_commands
-    from janito.system_prompt import get_system_prompt_with_skills
+    from janito.system_prompt import sync_default_sections
 
     monkeypatch.setattr(plugin_manager, "LOADED_PLUGINS", [])
     plugin = plugin_manager.load_plugin(toy_plugin)
@@ -193,8 +193,8 @@ def test_load_plugin_registers_content(toy_plugin, monkeypatch):
     command_names = [c.name for c in get_registered_commands()]
     assert "/toy" in command_names
 
-    # System prompt text appended.
-    assert "You have access to the toy plugin." in get_system_prompt_with_skills()
+    # System prompt text appended as a plugin section.
+    assert "You have access to the toy plugin." in sync_default_sections().render()
 
 
 def test_load_plugin_prints_loading_message(toy_plugin, capsys):
@@ -274,7 +274,7 @@ FAILING_CONTENT_PLUGIN_SRC = TOY_PLUGIN_SRC.replace(
 def test_load_plugin_failing_on_start_registers_no_content(tmp_path, monkeypatch):
     """A failing on_start prevents tools/commands/system-prompt registration."""
     from janito.shell.cmds import get_registered_commands
-    from janito.system_prompt import get_system_prompt_with_skills
+    from janito.system_prompt import sync_default_sections
 
     plugin_dir = tmp_path / "failing_content"
     plugin_dir.mkdir()
@@ -297,7 +297,7 @@ def test_load_plugin_failing_on_start_registers_no_content(tmp_path, monkeypatch
     assert "/toy" not in [c.name for c in get_registered_commands()]
 
     # No system-prompt section contributed.
-    assert "You have access to the toy plugin." not in get_system_prompt_with_skills()
+    assert "You have access to the toy plugin." not in sync_default_sections().render()
 
     _purge_module("failing_content")
 
@@ -514,28 +514,25 @@ def test_codesearch_plugin_loads_and_creates_index(tmp_path, monkeypatch):
     assert "/codesearch" in [c.name for c in get_registered_commands()]
 
     # System prompt section instructs to prefer CodeSearch for text search.
-    from janito.system_prompt import (
-        get_system_prompt_sections,
-        get_system_prompt_with_skills,
-    )
+    from janito.system_prompt import sync_default_sections
 
-    prompt = get_system_prompt_with_skills()
+    manager = sync_default_sections()
+    prompt = manager.render()
     assert "## Plugin:" not in prompt
     assert (
         "When searching text on files use the CodeSearch tool before the "
         "other search tools" in prompt
     )
 
-    # The plugin section keeps a leading newline so its text is separated
-    # from the previous section by a blank line in the final prompt.
+    # The plugin prompt is registered as its own ``plugins:codesearch``
+    # section; render() provides the newline separation between sections.
     plugin_sections = [
         (name, text)
-        for name, text in get_system_prompt_sections()
+        for name, text in manager.get_all_sections()
         if name == "plugins:codesearch"
     ]
     assert len(plugin_sections) == 1
     _, plugin_text = plugin_sections[0]
-    assert plugin_text.startswith("\n")
     assert (
         "When searching text on files use the CodeSearch tool before the "
         "other search tools" in plugin_text

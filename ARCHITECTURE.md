@@ -197,7 +197,7 @@ plugin), validates the contract (`name`, `on_start`, `SYSTEM_PROMPT`,
 `TOOLS`, `CMD_HANDLERS`), calls `on_start`, and registers the contributed
 tools (`ToolsRegistry.register_plugin_tools`), commands
 (`shell/cmds/registry.register_command`) and system-prompt sections
-(`system_prompt.register_plugin_system_prompt`). `load_installed_plugins()`
+(`system_prompt.SYSTEM_PROMPT_MANAGER.add_section`). `load_installed_plugins()`
 autoloads every package directory under `~/.janito/plugins` (installed with
 `janito --install-plugin <github_url>`); `--no-plugins` skips this autoload
 but still loads `--plugin DIR` requests. Plugin tool registration is
@@ -337,10 +337,12 @@ Key modules:
 The system prompt (`janito/system_prompt.py`) composes the base prompt, the
 skills advertisement section, the current project's `AGENTS.md` content, and
 any loaded plugins' `SYSTEM_PROMPT` sections. The composition is built from
-ordered sections (`base`, `skills`, `agents.md`, `plugins:<name>`) whose text
-and line counts are tracked (`get_system_prompt_sections`); the shell
-`/prompt` command and `janito --show-system-prompt` display each section as a
-row of a rich table (Section, Lines, Content).
+ordered sections (`start`, `skills`, `agents.md`, `plugins:<name>`) stored in
+a shared `SysPromptManager`; `sync_default_sections()` keeps the dynamic
+`skills`/`agents.md` sections in sync and `render()` joins every section with
+a trailing newline. The shell `/prompt` command and
+`janito --show-system-prompt` display each section as a row of a rich table
+(Section, Lines, Content) via `get_all_sections()`.
 
 ---
 

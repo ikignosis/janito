@@ -106,7 +106,15 @@ if pytest is not None:
             no_system_prompt = False
 
         monkeypatch.setattr(chat_mod, "send_prompt", lambda *a, **k: None)
-        monkeypatch.setattr(chat_mod, "get_system_prompt_with_skills", lambda: "system")
+        # Avoid a real system-prompt build: force the shared SessionSetup to
+        # resolve a fixed prompt so the test does not depend on skills/cwd.
+        import janito.cli.session_setup as session_setup_mod
+
+        monkeypatch.setattr(
+            session_setup_mod.SessionSetup,
+            "effective_system_prompt",
+            lambda self: "system",
+        )
 
         chat_mod.run_single_prompt(_Args())
 
