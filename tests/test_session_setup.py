@@ -24,8 +24,6 @@ def _args(**overrides):
     defaults = {
         "system_prompt": None,
         "no_system_prompt": False,
-        "gmail": False,
-        "onedrive": False,
     }
     defaults.update(overrides)
     return type("Args", (), defaults)()
@@ -51,30 +49,6 @@ if pytest is not None:
         assert setup.effective_system_prompt() is None
         assert setup.no_tools is True
 
-    def test_onedrive_prompt():
-        from janito.tools.onedrive import ONEDRIVE_SYSTEM_PROMPT
-
-        setup = SessionSetup(onedrive=True)
-        assert setup.effective_system_prompt() == ONEDRIVE_SYSTEM_PROMPT
-        assert setup.no_tools is False
-
-    def test_gmail_prompt():
-        from janito.tools.gmail import GMAIL_SYSTEM_PROMPT
-
-        setup = SessionSetup(gmail=True)
-        assert setup.effective_system_prompt() == GMAIL_SYSTEM_PROMPT
-        assert setup.no_tools is False
-
-    def test_onedrive_wins_over_gmail():
-        from janito.tools.onedrive import ONEDRIVE_SYSTEM_PROMPT
-
-        setup = SessionSetup(gmail=True, onedrive=True)
-        assert setup.effective_system_prompt() == ONEDRIVE_SYSTEM_PROMPT
-
-    def test_custom_prompt_wins_over_modes():
-        setup = SessionSetup(system_prompt="custom", gmail=True, onedrive=True)
-        assert setup.effective_system_prompt() == "custom"
-
     # ---- single-prompt context -----------------------------------------
 
     def test_messages_and_tools_context():
@@ -96,15 +70,15 @@ if pytest is not None:
 
     # ---- toolset enablement --------------------------------------------
 
-    def test_enable_toolsets_gmail_and_onedrive(monkeypatch):
+    def test_enable_toolsets_extra(monkeypatch):
         import janito.tooling.tools_registry as tools_registry
 
         added = []
         monkeypatch.setattr(
             tools_registry, "add_toolset", lambda name: added.append(name)
         )
-        SessionSetup(gmail=True, onedrive=True).enable_toolsets(extra=["janitoweb"])
-        assert added == ["janitoweb", "gmail", "onedrive"]
+        SessionSetup().enable_toolsets(extra=["janitoweb"])
+        assert added == ["janitoweb"]
 
     def test_enable_toolsets_nothing_when_not_requested(monkeypatch):
         import janito.tooling.tools_registry as tools_registry
@@ -127,16 +101,11 @@ if pytest is not None:
             {},
             {"system_prompt": "custom"},
             {"no_system_prompt": True},
-            {"gmail": True},
-            {"onedrive": True},
-            {"gmail": True, "onedrive": True},
         ):
             cli_prompt, _ = chat_mod._resolve_system_prompt(_args(**flags))
             config = WebServerConfig(
                 system_prompt=flags.get("system_prompt"),
                 no_system_prompt=flags.get("no_system_prompt", False),
-                gmail=flags.get("gmail", False),
-                onedrive=flags.get("onedrive", False),
             )
             assert config.get_effective_system_prompt() == cli_prompt
 
@@ -151,16 +120,16 @@ if pytest is not None:
             tools_registry, "add_toolset", lambda name: added.append(name)
         )
 
-        chat_mod._enable_requested_toolsets(_args(gmail=True, onedrive=True))
+        chat_mod._enable_requested_toolsets(_args())
         cli_added = list(added)
         added.clear()
 
-        WebServerConfig(gmail=True, onedrive=True).apply_toolsets()
+        WebServerConfig().apply_toolsets()
         web_added = list(added)
 
         # The web mode additionally loads the web-only toolset.
-        assert cli_added == ["gmail", "onedrive"]
-        assert web_added == ["janitoweb", "gmail", "onedrive"]
+        assert cli_added == []
+        assert web_added == ["janitoweb"]
 
 else:  # pragma: no cover - fallback runner without pytest
 

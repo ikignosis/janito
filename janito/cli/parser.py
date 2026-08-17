@@ -79,8 +79,6 @@ Examples:
   janito --provider custom --set endpoint=https://api.example.com/v1  # Use custom provider (set endpoint in config)
   janito --no-history                                          # Interactive chat without file history
   janito -t                                                    # Enable thinking mode
-  janito --gmail                                              # Enable Gmail tools and email system prompt
-  janito --onedrive                                           # Enable OneDrive tools and file system prompt
   janito -r -w                                                   # Grant READ and WRITE privileges
   janito -r -w -x                                                # Grant READ, WRITE, and EXEC privileges
   janito -S "You are a cow"                                   # Override system prompt (tools stay enabled)
@@ -355,36 +353,6 @@ Note: --set and --set-api-key must be used in separate commands.
         "--no-history",
         action="store_true",
         help="Don't persist input history to file (store only in memory)",
-    )
-
-    parser.add_argument(
-        "--gmail",
-        action="store_true",
-        help="Enable Gmail tools and use email-specific system prompt",
-    )
-
-    parser.add_argument(
-        "--onedrive",
-        action="store_true",
-        help="Enable OneDrive tools and use file-specific system prompt",
-    )
-
-    parser.add_argument(
-        "--onedrive-auth",
-        action="store_true",
-        help="Authenticate with Microsoft OneDrive using device code flow",
-    )
-
-    parser.add_argument(
-        "--onedrive-logout",
-        action="store_true",
-        help="Clear OneDrive authentication tokens",
-    )
-
-    parser.add_argument(
-        "--onedrive-status",
-        action="store_true",
-        help="Show OneDrive authentication status",
     )
 
     parser.add_argument(

@@ -6,7 +6,7 @@ janito stores sensitive configuration like API keys and credentials in a separat
 
 Secrets are stored in `~/.janito/secrets.json`.
 
-> **Note:** Provider API keys set with `--set-api-key` are stored separately in `~/.janito/auth.json`. The secrets file is for arbitrary credentials such as Gmail app passwords or Azure client IDs.
+> **Note:** Provider API keys set with `--set-api-key` are stored separately in `~/.janito/auth.json`. The secrets file is for arbitrary credentials such as app passwords or Azure client IDs.
 
 > **Note:** With `-l`/`--local`, secrets are stored in `./.janito/secrets.json`
 > (the current working directory) instead of `~/.janito/secrets.json`. Reads
@@ -14,23 +14,6 @@ Secrets are stored in `~/.janito/secrets.json`.
 > `--list-secrets` shows both.
 
 ## Setting Secrets
-
-### Gmail Credentials
-
-```bash
-# Set Gmail username
-janito --set-secret gmail_username=your-email@gmail.com
-
-# Set Gmail app password
-janito --set-secret gmail_password=your-app-password
-```
-
-### OneDrive Credentials
-
-```bash
-# Set Azure client ID
-janito --set-secret azure_client_id=your-client-id
-```
 
 ### Brave Search Credentials
 
@@ -52,7 +35,7 @@ janito --set-secret another_service=token123
 You can set multiple secrets in one command:
 
 ```bash
-janito --set-secret gmail_username=you@gmail.com gmail_password="xxxx xxxx xxxx xxxx"
+janito --set-secret my_api_key=your-key another_service=token123
 ```
 
 ## Listing Secrets
@@ -68,7 +51,7 @@ janito --list-secrets
 Print the value of a specific secret:
 
 ```bash
-janito --get-secret gmail_username
+janito --get-secret my_api_key
 ```
 
 ## Deleting Secrets
@@ -76,7 +59,7 @@ janito --get-secret gmail_username
 Remove a specific secret:
 
 ```bash
-janito --delete-secret gmail_username
+janito --delete-secret my_api_key
 ```
 
 ## Security Notes
@@ -92,8 +75,8 @@ The secrets file is a simple JSON dictionary:
 
 ```json
 {
-    "gmail_username": "your-email@gmail.com",
-    "gmail_password": "xxxx xxxx xxxx xxxx",
+    "my_api_key": "your-key",
+    "another_service": "token123",
     "azure_client_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 }
 ```
@@ -101,5 +84,4 @@ The secrets file is a simple JSON dictionary:
 ## Related
 
 - [Web Tools](../tools/web-search.md) - Full WebSearch / GetUrl guide
-- [Gmail Tools](../tools/gmail.md) - Full Gmail setup guide
-- [OneDrive Tools](../tools/onedrive.md) - Full OneDrive setup guide
+- [Plugins](../PLUGINS.md) - The janito plugin system

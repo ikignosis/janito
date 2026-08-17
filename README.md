@@ -9,8 +9,7 @@
 ## Features
 
 - 🔧 **Function Calling** - Built-in tools for file operations, web search, and more
-- 📧 **Gmail Integration** - Read, search, and manage emails
-- ☁️ **OneDrive Integration** - Browse, upload, download, and share files
+- 🔌 **Plugins** - Gmail, code search, OneDrive, and more via the plugin system
 - 🔌 **MCP Support** - Connect to Model Context Protocol servers
 - 🧩 **Skills** - Install and use task-specific skills from GitHub
 - 🌐 **Web UI (Alpha)** - Chat through a browser instead of the terminal with `--web`
@@ -146,7 +145,7 @@ Then start the server (opens your browser automatically):
 janito --web
 
 # All normal Janito flags still apply, plus web-specific ones:
-janito --web -r -w --gmail --web-port 9090      # privileges + gmail, custom port
+janito --web -r -w --web-port 9090    # privileges + web, custom port
 janito --web --no-web-open                      # don't auto-open the browser
 ```
 
@@ -178,9 +177,9 @@ janito --no-tools "Explain recursion"
 | `-S`, `--system-prompt` | Custom system prompt |
 | `--no-tools` | Do not load tools (skill tools stay enabled) |
 
-> **Note:** When using `-Z`, built-in tools (file operations, Gmail, OneDrive, MCP) are disabled. Use the default mode or `-S`/`--gmail`/`--onedrive` flags when you need tool access.
+> **Note:** When using `-Z`, built-in tools (file operations, MCP) are disabled. Use the default mode or `-S` flag when you need tool access.
 >
-> **Note:** `--no-tools` disables loading of all non-skill tools (file operations, Gmail, OneDrive, MCP) while keeping the skill tools (`load_skill`, `read_skill_resource`) available, so the model can still load installed skills on demand.
+> **Note:** `--no-tools` disables loading of all non-skill tools (file operations, MCP) while keeping the skill tools (`load_skill`, `read_skill_resource`) available, so the model can still load installed skills on demand.
 
 ### Logging
 
@@ -225,33 +224,6 @@ janito --set provider=custom --set base-url=http://localhost:8000/v1
 ## Built-in Tools
 
 janito includes tools for common tasks:
-
-### Email Integration (Gmail)
-
-```bash
-# Use Gmail in chat mode
-janito --gmail
-
-# Check emails
-janito --gmail "Show my unread emails from today"
-```
-
-For full Gmail documentation, see [README.gmail.md](README.gmail.md).
-
-### Cloud Storage (OneDrive)
-
-```bash
-# Authenticate with Microsoft OneDrive
-janito --onedrive-auth
-
-# Use OneDrive in chat mode
-janito --onedrive
-
-# List files
-janito --onedrive "List my files in Documents"
-```
-
-For full OneDrive documentation, see [README.onedrive.md](README.onedrive.md).
 
 ### File Operations
 

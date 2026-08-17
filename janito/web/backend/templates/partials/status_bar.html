@@ -24,8 +24,6 @@
                         @click="toggleThinking()"
                         :title="'Thinking ' + (config.thinking ? 'on' : 'off') + ' — click to toggle (runtime, not persisted)'"
                         :aria-pressed="config.thinking ? 'true' : 'false'">thinking</button>
-                <span class="flag-badge" :class="{ active: config.gmail }">gmail</span>
-                <span class="flag-badge" :class="{ active: config.onedrive }">onedrive</span>
                 <!-- Image generation availability: active for the alibaba
                      provider (CreateImage / Wan) and for openai when the
                      effective API type is Responses (native

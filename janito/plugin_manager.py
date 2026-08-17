@@ -163,6 +163,44 @@ def _register_plugin_commands(plugin: Plugin) -> None:
                 plugin.load_error += f"; failed to register command: {e}"
 
 
+def _load_plugin_contents(plugin: Plugin, plugin_name: str) -> None:
+    """Import a plugin package and register its tools, commands and prompt.
+
+    Runs inside the parent-on-``sys.path`` context.  On success all of the
+    plugin's content is registered; on failure (bad import, invalid contract,
+    failing ``on_start``, ...) ``plugin.load_error`` is set and nothing is
+    registered.
+    """
+    try:
+        module = importlib.import_module(plugin_name)
+    except Exception as e:  # noqa: BLE001 - never crash startup
+        plugin.load_error = f"failed to import plugin {plugin_name}: {e}"
+        return
+
+    error = _validate_plugin_module(plugin.path, module)
+    if error is not None:
+        plugin.load_error = error
+        return
+
+    plugin.module = module
+    plugin.name = getattr(module, "name", plugin_name)
+    plugin.system_prompt = getattr(module, "SYSTEM_PROMPT", "") or ""
+    plugin.tools = list(getattr(module, "TOOLS", []) or [])
+    plugin.cmd_handlers = list(getattr(module, "CMD_HANDLERS", []) or [])
+
+    _call_on_start(plugin)
+    # A failed on_start (e.g. required secrets missing) means the plugin
+    # does not load: none of its tools, commands or system-prompt text
+    # are registered.
+    if plugin.load_error is not None:
+        return
+
+    _register_plugin_tools(plugin)
+    _register_plugin_commands(plugin)
+    if plugin.system_prompt:
+        register_plugin_system_prompt(plugin.name, plugin.system_prompt)
+
+
 def load_plugin(plugin_dir: str | Path) -> Plugin:
     """Load a single plugin package from a directory.
 
@@ -182,39 +220,31 @@ def load_plugin(plugin_dir: str | Path) -> Plugin:
     """
     plugin_path = Path(plugin_dir).resolve()
     plugin_name = plugin_path.name
-    print(f"Loading plugin {plugin_name}")
+    print(f"Loading plugin {plugin_name}", end="")
     plugin = Plugin(name=plugin_name, path=plugin_path)
 
-    with _plugin_parent_on_sys_path(plugin_path):
-        try:
-            module = importlib.import_module(plugin_name)
-        except Exception as e:  # noqa: BLE001 - never crash startup
-            plugin.load_error = f"failed to import plugin {plugin_name}: {e}"
-            return plugin
+    # Validate the directory before attempting the import, so a wrong
+    # --plugin path produces a clear, actionable error instead of a
+    # confusing "No module named ..." from importlib.
+    if not plugin_path.is_dir():
+        plugin.load_error = (
+            f"plugin directory not found: {plugin_path} "
+            "(check the path passed to --plugin)"
+        )
+    elif not (plugin_path / "__init__.py").is_file():
+        plugin.load_error = (
+            f"plugin directory has no __init__.py: {plugin_path} "
+            "(a plugin must be a Python package)"
+        )
 
-        plugin.module = module
+    if plugin.load_error is None:
+        with _plugin_parent_on_sys_path(plugin_path):
+            _load_plugin_contents(plugin, plugin_name)
 
-        error = _validate_plugin_module(plugin_path, module)
-        if error is not None:
-            plugin.load_error = error
-            return plugin
-
-        plugin.name = getattr(module, "name", plugin_name)
-        plugin.system_prompt = getattr(module, "SYSTEM_PROMPT", "") or ""
-        plugin.tools = list(getattr(module, "TOOLS", []) or [])
-        plugin.cmd_handlers = list(getattr(module, "CMD_HANDLERS", []) or [])
-
-        _call_on_start(plugin)
-        # A failed on_start (e.g. required secrets missing) means the plugin
-        # does not load: none of its tools, commands or system-prompt text
-        # are registered.
-        if plugin.load_error is not None:
-            return plugin
-        _register_plugin_tools(plugin)
-        _register_plugin_commands(plugin)
-        if plugin.system_prompt:
-            register_plugin_system_prompt(plugin.name, plugin.system_prompt)
-
+    if plugin.loaded:
+        print(" OK")
+    else:
+        print(f" FAILED: {plugin.load_error}")
     return plugin
 
 

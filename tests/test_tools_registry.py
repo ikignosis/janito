@@ -102,17 +102,17 @@ if pytest is not None:
         def fake_discover(names):
             calls["n"] += 1
             return (
-                {"GmailTool": _fake_tool("GmailTool", "r")} if "gmail" in names else {}
+                {"ExtraTool": _fake_tool("ExtraTool", "r")} if "extra" in names else {}
             )
 
         monkeypatch.setattr(tools_registry, "discover_toolsets", fake_discover)
 
-        assert registry.add_toolset("gmail") is True
-        assert "GmailTool" in registry.all_tools()
-        # Discovery ran once for the autoload toolsets and once for "gmail".
+        assert registry.add_toolset("extra") is True
+        assert "ExtraTool" in registry.all_tools()
+        # Discovery ran once for the autoload toolsets and once for "extra".
         assert calls["n"] == 2
         # Already loaded: second call returns False without re-discovering.
-        assert registry.add_toolset("gmail") is False
+        assert registry.add_toolset("extra") is False
         assert calls["n"] == 2
 
     def test_add_toolset_no_tools_returns_false(monkeypatch):
@@ -173,18 +173,18 @@ if pytest is not None:
 
         def fake_discover(names):
             calls["n"] += 1
-            return {"GmailTool": _fake_tool("GmailTool", "r")}
+            return {"ExtraTool": _fake_tool("ExtraTool", "r")}
 
         monkeypatch.setattr(tools_registry, "discover_toolsets", fake_discover)
         monkeypatch.setattr(tools_registry, "get_skills_tools", lambda: {})
         monkeypatch.setattr(tools_registry, "_tools_loading_enabled", False)
 
         # add_toolset is a no-op when loading is disabled...
-        assert registry.add_toolset("gmail") is False
+        assert registry.add_toolset("extra") is False
         # ...and it must not have triggered discovery for the autoload
         # toolsets either (the early return skips ensure_initialized).
         assert calls["n"] == 0
-        assert "GmailTool" not in registry.all_tools()
+        assert "ExtraTool" not in registry.all_tools()
 
     def test_register_plugin_tools_not_gated_by_no_tools(monkeypatch):
         """Plugin tools are registered even with --no-tools."""

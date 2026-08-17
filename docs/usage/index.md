@@ -19,7 +19,7 @@ janito has **two interfaces** that share the same engine, tools, and configurati
 | **Terminal CLI/shell** | `janito "question"`, `janito`, `echo "text" \| janito` | Quick questions, scripting, configuration & secrets, terminal-first workflows |
 | **Web UI** | `janito --web` | Browser-based chat with sessions, tool-call cards, dashboards |
 
-Most features (tools, privileges, providers, Gmail/OneDrive, skills, MCP) are
+Most features (tools, privileges, providers, plugins, skills, MCP) are
 available in **both**; some conveniences exist on only one interface. See
 [CLI vs Web UI](cli-vs-web.md) for the full feature-by-feature comparison.
 

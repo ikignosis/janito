@@ -42,14 +42,13 @@ feature-by-feature breakdown is on [CLI vs Web UI](cli-vs-web.md); in short:
   `F2`/`F12`, ...)
 - Configuration & secrets maintenance (`--config`, `--set`, `--set-api-key`,
   `--set-secret`, `--list-keys`, ...)
-- OneDrive authentication commands (`--onedrive-auth`, `--onedrive-status`,
-  `--onedrive-logout`)
 - Skill management (`--install-skill`, `--list-skills`, `--uninstall-skill`)
 - `--plugin DIR` / `--install-plugin` / `--no-plugins` / `--list-plugins`,
   `--list-tools`, `--list-mcp`, `--log=...`, exit codes
 
 Everything else — the tools, privileges (`-r`/`-w`/`-x`), providers, models,
-Gmail/OneDrive toolsets, skills, MCP tools, and `--no-history` — works in both.
+plugins (Gmail, code search, OneDrive), skills, MCP tools, and
+`--no-history` — works in both.
 
 ---
 
@@ -83,8 +82,14 @@ Install them with:
 # Basic web server (opens your browser automatically)
 janito --web
 
-# Full-featured: read+write privileges, gmail tools, thinking mode, specific model
-janito --web -r -w --gmail -t --model gpt-4o
+# Full-featured: read+write privileges, thinking mode, specific model
+janito --web -r -w -t --model gpt-4o
+
+# With a plugin (e.g. Gmail)
+janito --web --plugin ../plugins/janito-gmail-plugin
+
+# With the OneDrive plugin
+janito --web --plugin ../plugins/janito-onedrive-plugin
 
 # Custom provider + endpoint
 janito --web --provider custom --set endpoint=https://api.example.com/v1
@@ -114,8 +119,7 @@ The server prints the URL it's listening on, then opens your default browser
 | `-r` / `-w` / `-x` | Privileges (READ / WRITE / EXEC), enforced exactly like the CLI |
 | `--provider` | Provider name (resolved into env before dispatch) |
 | `--model` | Model name (resolved into env before dispatch) |
-| `--gmail` | Enable Gmail toolset + email system prompt |
-| `--onedrive` | Enable OneDrive toolset + file system prompt |
+| `--plugin DIR` | Load a plugin (e.g. the Gmail plugin: `--plugin ../plugins/janito-gmail-plugin`) |
 | `-t, --thinking` | Enable thinking/reasoning mode for all sessions (DeepSeek, Alibaba/Qwen and MiniMax-M3 have it on by default) |
 | `-S "prompt"` | Override system prompt (tools stay enabled) |
 | `-Z, --no-system-prompt` | No system prompt, no tools |

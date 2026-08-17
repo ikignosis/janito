@@ -8,8 +8,6 @@ janito includes built-in tools for common tasks.
 |----------|-------|-------------|
 | **Files** | File operations | List, read, write, search files and directories |
 | **Code Search** | Code search | Search a pre-built trigram index (codesearch plugin, `/codesearch`) |
-| **Gmail** | Email management | Read, count, delete, move, and search emails |
-| **OneDrive** | Cloud storage | Browse, upload, download, search files |
 | **System** | Execution | Run Python code, execute PowerShell commands |
 | **Net** | Web access | Fetch URLs, search the web (Brave) |
 | **Skills** | Extensions | Install and use task-specific skills |
@@ -22,13 +20,10 @@ Tools are automatically available in chat mode. For single prompts:
 ```bash
 # File tools are always available
 janito "Read the README.md file"
-
-# Enable Gmail tools
-janito --gmail "Show my unread emails"
-
-# Enable OneDrive tools
-janito --onedrive "List my files"
 ```
+
+Tool integrations that are not built-in (Gmail, code search, OneDrive) are
+provided by plugins — see [Plugins](PLUGINS.md).
 
 ## Tool Progress
 
@@ -47,7 +42,5 @@ Progress messages go to stderr so they don't interfere with tool output.
 - [File Tools](files.md)
 - [Code Search](codesearch.md) - Search a pre-built trigram index (codesearch plugin)
 - [Web Tools](web-search.md) - Fetch URLs and search the web (Brave)
-- [Gmail Tools](gmail.md)
-- [OneDrive Tools](onedrive.md)
 - [Skills](skills.md)
 - [MCP Support](mcp.md)

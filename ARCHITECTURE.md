@@ -70,7 +70,7 @@ the `janito` console script). Flow:
    registry/shell access. Plugin tools are **not** gated by `--no-tools`;
    use `--no-plugins` to disable autoloading.
 5. **Flag-driven commands** (`--info`, `--config`, `--list-*`,
-   `--set-api-key`, `--onedrive-*`, `--install-skill`, ...) via
+   `--set-api-key`, `--install-skill`, ...) via
    `_dispatch_flag_command` → handlers in `janito/cli/handlers/`.
 6. **Validate runtime config** (`validate_runtime_config`) — API key, endpoint
    and model must resolve before any session starts.
@@ -84,8 +84,7 @@ the `janito` console script). Flow:
 `janito/cli/chat.py` builds a `send_prompt_func` bound to the resolved API
 type (Responses / Completions / Anthropic / DashScope) and drives either the
 interactive shell or a single prompt. `janito/cli/session_setup.py` decides
-the effective system prompt and which toolsets to enable (`--gmail`,
-`--onedrive`).
+the effective system prompt and which toolsets to enable.
 
 ---
 
@@ -151,7 +150,7 @@ history conversion are implemented once.
   - autoloads the `files`, `system`, `net` toolsets;
   - `get_function_schema()` generates OpenAI-compatible JSON schemas from a
     tool's type hints and docstring;
-  - `add_toolset()` enables on-demand toolsets (gmail, onedrive);
+  - `add_toolset()` enables on-demand toolsets (janitoweb);
   - `register_plugin_tools()` registers tool classes contributed by plugins
     (gated by `--no-tools` like any other non-skill tool);
   - `enable_skills()/disable_skills()` toggle skill tools.
@@ -181,8 +180,8 @@ history conversion are implemented once.
 
 ### Toolsets (`janito/tools/`)
 
-Tools are grouped in directories (`files/`, `system/`, `net/`, `gmail/`,
-`onedrive/`, `janitoweb/`). `discover_toolsets()` in
+Tools are grouped in directories (`files/`, `system/`, `net/`,
+`janitoweb/`). `discover_toolsets()` in
 `janito/tools/__init__.py` scans each toolset for `@tool`-marked classes,
 runs their `should_load()` gate (missing binaries, credentials, platform),
 checks `_tool_permissions` against `running_privileges`, and wraps each class

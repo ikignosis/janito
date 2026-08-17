@@ -106,10 +106,10 @@ You: Now create a similar file called backup.md
 Assistant: [File created successfully]
 ```
 
-### Using Tools
+### Using Plugins
 
 ```bash
-$ janito --onedrive
+$ janito --plugin ../plugins/janito-onedrive-plugin
 You: List my files in Documents
 Assistant: [Lists OneDrive files]
 You: Upload notes.txt to the Documents folder

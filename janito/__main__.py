@@ -49,11 +49,6 @@ from .cli.handlers import (
     handle_uninstall_skill,
     handle_unset_config,
 )
-from .cli.handlers.onedrive import (
-    handle_onedrive_auth,
-    handle_onedrive_logout,
-    handle_onedrive_status,
-)
 from .cli.handlers.variants import handle_create_variant, handle_delete_variant
 from .cli.input import read_stdin_prompt
 from .cli.logging_config import setup_logging
@@ -185,9 +180,6 @@ def _dispatch_flag_command(args) -> int | None:
         (args.set_api_key, lambda: handle_set_api_key(args)),
         (args.list_secrets, lambda: handle_list_secrets(args)),
         (args.get_secret is not None, lambda: handle_get_secret(args)),
-        (args.onedrive_auth, lambda: handle_onedrive_auth()),
-        (args.onedrive_logout, lambda: handle_onedrive_logout()),
-        (args.onedrive_status, lambda: handle_onedrive_status()),
         (args.install_skill, lambda: handle_install_skill(args.install_skill)),
         (args.list_skills, lambda: handle_list_skills(args)),
         (args.uninstall_skill, lambda: handle_uninstall_skill(args.uninstall_skill)),

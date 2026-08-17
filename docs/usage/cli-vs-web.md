@@ -11,7 +11,7 @@ configuration:
   management, and dashboards.
 
 Both interfaces are built on the **same core**: the agentic loop, the tools
-(files, code search, web, Gmail, OneDrive, skills, MCP), privilege enforcement
+(files, code search, web, plugins/Gmail/OneDrive, skills, MCP), privilege enforcement
 (`-r`/`-w`/`-x`), provider/model resolution, and the system-prompt logic are
 shared code paths. The differences are in *how you interact* — and which
 shell- or browser-specific conveniences each surface offers.
@@ -106,8 +106,6 @@ Legend: ✅ available · — not available
 
 | Feature | CLI/shell | Web UI |
 |---------|:---------:|:------:|
-| `--gmail` / `--onedrive` toolset flags | ✅ | ✅ |
-| `--onedrive-auth`, `--onedrive-status`, `--onedrive-logout` | ✅ | — |
 | `JANITO_WEB_TOKEN` bearer-token auth on `/api` endpoints | — | ✅ |
 | Localhost-only binding by default (`127.0.0.1`) | — | ✅ |
 | Privileges `-r` / `-w` / `-x` enforced on tools | ✅ | ✅ |
@@ -116,17 +114,18 @@ Legend: ✅ available · — not available
 
 The shared toolsets are auto-loaded in **both** interfaces: `files`, `system`,
 and `net` (web search / URL fetch / headless browse). Plugins loaded with
-`--plugin DIR` (e.g. `../plugins/janito-codesearch-plugin`) or autoloaded
+`--plugin DIR` (e.g. `../plugins/janito-gmail-plugin` or
+`../plugins/janito-onedrive-plugin`) or autoloaded
 from `~/.janito/plugins`
 contribute their tools in both
-interfaces too. `gmail` and `onedrive` load with their flags, and skills and
+interfaces too. Skills and
 MCP tools work everywhere.
 
 | Feature | CLI/shell | Web UI |
 |---------|:---------:|:------:|
 | File tools, system tools, web tools, code search | ✅ | ✅ |
-| Gmail tools (`--gmail`) | ✅ | ✅ |
-| OneDrive tools (`--onedrive`) | ✅ | ✅ |
+| Gmail tools (janito-gmail-plugin) | ✅ | ✅ |
+| OneDrive tools (janito-onedrive-plugin) | ✅ | ✅ |
 | Skills (`load_skill`, `read_skill_resource`) | ✅ | ✅ |
 | MCP tools | ✅ | ✅ |
 | `janitoweb` toolset (`CreateSVG`, `CreateImage`) | — | ✅ (always loaded) |
@@ -153,7 +152,7 @@ MCP tools work everywhere.
 - You want a quick single prompt or a scriptable pipeline (`janito "..."`, `| janito`).
 - You're working in a terminal-first workflow and want to stay in it.
 - You need to manage configuration, API keys, or secrets (`--set`, `--set-api-key`, `--set-secret`, ...).
-- You need OneDrive authentication or skill management from the command line.
+- You need skill management or to configure plugin secrets (e.g. the OneDrive `azure_client_id` with `--set-secret`) from the command line.
 - You want exit codes for scripting and automation.
 
 **Use the web UI when:**
@@ -164,8 +163,9 @@ MCP tools work everywhere.
 - You run a shared/headless server (`--no-web-open`) that others (or you, from another machine) reach through a browser.
 
 Both interfaces read the same configuration, so you can switch freely — for
-example, authenticate OneDrive from the CLI once, then use `--onedrive` in
-either interface.
+example, set the OneDrive `azure_client_id` secret from the CLI once
+(`janito --set-secret azure_client_id=your-client-id`); the plugin
+authenticates automatically on startup and works in either interface.
 
 ## See Also
 

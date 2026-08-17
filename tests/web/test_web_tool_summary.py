@@ -46,10 +46,9 @@ def test_tool_summary_mirrors_report_start_args():
     # FindFiles: path list + size/time criteria
     assert "case 'FindFiles':" in js
     assert "args.min_bytes" in js
-    # Gmail folders, OneDrive paths, net/system targets
+    # Gmail folders, net/system targets
     assert "case 'ReadEmails':" in js
     assert "args.folder" in js
-    assert "case 'CreateOneDriveFolder':" in js
     assert "case 'OpenBrowser':" in js
     assert "case 'WebSearch':" in js
 

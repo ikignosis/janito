@@ -265,7 +265,7 @@ def handle_show_system_prompt(args) -> int:
     """Handle --show-system-prompt command.
 
     Resolves and displays the effective system prompt based on the current
-    CLI flags (e.g., --gmail, --onedrive, -S, -Z) and exits.
+    CLI flags (-S, -Z) and exits.
 
     Args:
         args: Parsed command line arguments
@@ -277,8 +277,6 @@ def handle_show_system_prompt(args) -> int:
     from rich.table import Table
 
     from ...system_prompt import get_system_prompt_sections
-    from ...tools.gmail import GMAIL_SYSTEM_PROMPT
-    from ...tools.onedrive import ONEDRIVE_SYSTEM_PROMPT
 
     console = Console(markup=False)
 
@@ -298,34 +296,6 @@ def handle_show_system_prompt(args) -> int:
 
     if args.no_system_prompt:
         print("System prompt: (disabled via -Z / --no-system-prompt)")
-        return 0
-
-    if args.onedrive:
-        prompt = ONEDRIVE_SYSTEM_PROMPT
-        source = "OneDrive mode (--onedrive)"
-        table = Table(
-            title=f"System prompt ({source})",
-            title_style="bold",
-            header_style="bold cyan",
-            show_header=False,
-        )
-        table.add_column("Content", overflow="fold")
-        table.add_row(prompt.strip())
-        console.print(table)
-        return 0
-
-    if args.gmail:
-        prompt = GMAIL_SYSTEM_PROMPT
-        source = "Gmail mode (--gmail)"
-        table = Table(
-            title=f"System prompt ({source})",
-            title_style="bold",
-            header_style="bold cyan",
-            show_header=False,
-        )
-        table.add_column("Content", overflow="fold")
-        table.add_row(prompt.strip())
-        console.print(table)
         return 0
 
     # Default prompt: render each section as a rich table row (Section, Lines,

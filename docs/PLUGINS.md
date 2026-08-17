@@ -195,6 +195,8 @@ janito --install-plugin <url>
 | Name | Purpose | URL |
 |------|---------|-----|
 | codesearch | Index source code for faster lookups on large repos | https://github.com/joaompinto/janito-codesearch-plugin |
+| gmail | Gmail (IMAP) tools: read, count, delete, trash, move emails and list folders | https://github.com/joaompinto/janito-gmail-plugin |
+| onedrive | Microsoft OneDrive tools: list, read, upload, download, delete files, create folders and share links | https://github.com/joaompinto/janito-onedrive-plugin |
 
 ---
 

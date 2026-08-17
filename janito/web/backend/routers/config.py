@@ -53,8 +53,6 @@ async def get_config(request: Request):
         # effective value may be a provider-default dict (e.g. MiniMax-M3's
         # {'type': 'adaptive'}), which is truthy => thinking on.
         "thinking": bool(config.effective_thinking),
-        "gmail": config.gmail,
-        "onedrive": config.onedrive,
         "no_tools": config.no_tools,
         "no_plugins": getattr(config, "no_plugins", False),
         "no_system_prompt": config.no_system_prompt,

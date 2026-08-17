@@ -83,7 +83,7 @@ def test_prompt_cmd_custom_prompt_falls_back_to_plain(monkeypatch, tmp_path, cap
     assert handler.handle(shell, "/prompt") is True
 
     out = capfd.readouterr().out
-    assert "System Prompt - Default" in out
+    assert "System Prompt" in out
     assert "custom system prompt" in out
     assert "----" not in out
 

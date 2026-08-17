@@ -254,15 +254,10 @@ def _print_full_privileges_warning(args) -> None:
 
 
 def _enable_requested_toolsets(args) -> None:
-    """Enable Gmail/OneDrive toolsets when requested via CLI flags."""
+    """Enable web-only toolsets when requested via CLI flags."""
     from .session_setup import SessionSetup
 
-    SessionSetup(gmail=args.gmail, onedrive=args.onedrive).enable_toolsets()
-    if args.gmail:
-        print("\u2713 Gmail tools enabled")
-
-    if args.onedrive:
-        print("\u2713 OneDrive tools enabled")
+    SessionSetup().enable_toolsets()
 
 
 def _resolve_system_prompt(args) -> tuple[str | None, bool]:
@@ -272,8 +267,6 @@ def _resolve_system_prompt(args) -> tuple[str | None, bool]:
     setup = SessionSetup(
         system_prompt=args.system_prompt,
         no_system_prompt=args.no_system_prompt,
-        gmail=args.gmail,
-        onedrive=args.onedrive,
     )
     return setup.effective_system_prompt(), setup.no_tools
 
@@ -353,8 +346,6 @@ def _build_single_prompt_context(args):
     setup = SessionSetup(
         system_prompt=args.system_prompt,
         no_system_prompt=args.no_system_prompt,
-        gmail=args.gmail,
-        onedrive=args.onedrive,
     )
     return setup.messages_context(), setup.tools_arg()
 

@@ -2,11 +2,7 @@
 
 from ...mcp_config import get_mcp_config_path, list_services
 from ...mcp_manager import get_mcp_manager
-from ...tooling.tools_registry import (
-    add_toolset,
-    get_all_tool_permissions,
-    get_all_tool_schemas,
-)
+from ...tooling.tools_registry import get_all_tool_permissions, get_all_tool_schemas
 
 
 def _categorize_tools(schemas, permissions) -> dict[str, list[dict]]:
@@ -16,7 +12,6 @@ def _categorize_tools(schemas, permissions) -> dict[str, list[dict]]:
         "System Operations": [],
         "Code Search Operations": [],
         "Email Operations": [],
-        "OneDrive Operations": [],
         "Other": [],
     }
 
@@ -43,7 +38,6 @@ def _categorize_tools(schemas, permissions) -> dict[str, list[dict]]:
                 )
             )
             and "Email" not in name
-            and "OneDrive" not in name
         ):
             categories["File Operations"].append(tool_info)
         elif name.startswith(("Get", "Run")):
@@ -55,8 +49,6 @@ def _categorize_tools(schemas, permissions) -> dict[str, list[dict]]:
             or "Email" in name
         ):
             categories["Email Operations"].append(tool_info)
-        elif "OneDrive" in name:
-            categories["OneDrive Operations"].append(tool_info)
         else:
             categories["Other"].append(tool_info)
 
@@ -100,14 +92,6 @@ def handle_list_tools(args) -> int:
     """
     from rich.console import Console
     from rich.table import Table
-
-    # Add gmail toolset if --gmail flag is set
-    if getattr(args, "gmail", False):
-        add_toolset("gmail")
-
-    # Add onedrive toolset if --onedrive flag is set
-    if getattr(args, "onedrive", False):
-        add_toolset("onedrive")
 
     schemas = get_all_tool_schemas()
     permissions = get_all_tool_permissions()

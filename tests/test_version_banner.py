@@ -96,8 +96,6 @@ if pytest is not None:
 
         class _Args:
             full_privileges = True
-            gmail = False
-            onedrive = False
             prompt = "hi"
             verbose = False
             thinking = False

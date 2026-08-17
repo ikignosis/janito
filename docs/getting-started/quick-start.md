@@ -109,5 +109,5 @@ janito "Hello"
 
 - Learn about [interactive chat mode](../usage/interactive-mode.md)
 - Explore [built-in tools](../tools/index.md)
-- Set up [Gmail integration](../tools/gmail.md) or [OneDrive](../tools/onedrive.md)
+- Set up the [OneDrive plugin](../PLUGINS.md) or install the [Gmail plugin](../PLUGINS.md)
 - Connect to [MCP servers](../tools/mcp.md)

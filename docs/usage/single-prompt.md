@@ -40,16 +40,11 @@ janito "What is 2+2?"
 janito "List all Python files in the current directory"
 ```
 
-### With Gmail
+### With Plugins
 
 ```bash
-janito --gmail "Show my unread emails from today"
-```
-
-### With OneDrive
-
-```bash
-janito --onedrive "List my files in Documents"
+janito --plugin ../plugins/janito-gmail-plugin "Show my unread emails from today"
+janito --plugin ../plugins/janito-onedrive-plugin "List my files in Documents"
 ```
 
 ## Exit Codes

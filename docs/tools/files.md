@@ -206,7 +206,5 @@ Add `--json` for machine-readable output.
 ## Related Topics
 
 - [Tools Overview](index.md)
-- [Gmail Tools](gmail.md)
-- [OneDrive Tools](onedrive.md)
 - [Skills](skills.md)
 - [MCP Support](mcp.md)

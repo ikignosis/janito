@@ -51,7 +51,7 @@ async def list_skipped_tools(request: Request):
 
 @router.post("/toolsets/{name}")
 async def add_toolset(name: str, request: Request):
-    """Dynamically add a toolset (gmail, onedrive...)."""
+    """Dynamically add a toolset (janitoweb...)."""
     from janito.tooling.tools_registry import add_toolset as _add_toolset
 
     ok = _add_toolset(name)

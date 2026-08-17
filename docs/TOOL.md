@@ -49,9 +49,7 @@ janito/
 │   ├── net/                    # "net" toolset  (autoloaded)
 │   │   ├── get_url.py
 │   │   └── headless_browse.py
-│   ├── gmail/                  # "gmail" toolset  (loaded on demand)
-│   ├── onedrive/               # "onedrive" toolset (loaded on demand)
-│   └── janitoweb/              # "janitoweb" toolset (web-only, loaded on demand)
+│   │   └── janitoweb/              # "janitoweb" toolset (web-only, loaded on demand)
 │
 └── privileges.py               # Runtime privilege flags (-r / -w / -x)
 ```
@@ -281,9 +279,8 @@ from janito.tooling.tools_registry import add_toolset
 add_toolset("mytoolset")
 ```
 
-That is how `gmail`, `onedrive`, and `janitoweb` work — they are loaded on
-demand (`janitoweb` is web-only and enabled by the web backend via
-`extra=["janitoweb"]`).
+That is how `janitoweb` works — it is loaded on demand (it is web-only
+and enabled by the web backend via `extra=["janitoweb"]`).
 
 ---
 
@@ -520,8 +517,8 @@ janito/tools/<toolset_name>/
 - **Auto-loaded** toolsets are listed in `AUTOLOAD_TOOLSETS` in
   `janito/tooling/tools_registry.py` (currently `["files", "system", "net"]`).
   They are discovered lazily on first registry access.
-- **On-demand** toolsets (e.g. `gmail`, `onedrive`, `janitoweb`) are loaded
-  by calling `add_toolset("gmail")` at runtime (`janitoweb` is enabled only
+- **On-demand** toolsets (e.g. `janitoweb`) are loaded
+  by calling `add_toolset("janitoweb")` at runtime (`janitoweb` is enabled only
   in web mode via the backend's `extra=["janitoweb"]`).
 - **Plugin tools** are registered from a plugin's `TOOLS` list (or its
   `tools/` subpackage) via `wrap_tool_class()` / `discover_module_tools()`

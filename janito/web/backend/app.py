@@ -65,7 +65,7 @@ def create_app(config: WebServerConfig) -> FastAPI:
     # they survive a server restart. No-op with --no-history.
     app.state.sessions.load_from_disk()
 
-    # Enable toolsets from CLI flags (gmail, onedrive)
+    # Enable toolsets from CLI flags
     config.apply_toolsets()
 
     # Optional bearer-token auth (no-op when auth_token is None)

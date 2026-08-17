@@ -106,10 +106,6 @@ class WebServerConfig:
         provider = self.session_provider or self.provider or get_active_provider()
         return get_default_tools_from_provider(provider, self.model, api_type=api_type)
 
-    # --- Toolset enablement ---
-    gmail: bool = False  # --gmail
-    onedrive: bool = False  # --onedrive
-
     # --- System prompt ---
     system_prompt: str | None = None  # -S "custom prompt"
     no_system_prompt: bool = False  # -Z
@@ -137,8 +133,6 @@ class WebServerConfig:
             verbose=getattr(args, "verbose", False),
             no_history=getattr(args, "no_history", False),
             no_plugins=getattr(args, "no_plugins", False),
-            gmail=getattr(args, "gmail", False),
-            onedrive=getattr(args, "onedrive", False),
             auth_token=os.getenv("JANITO_WEB_TOKEN"),
         )
 
@@ -152,8 +146,6 @@ class WebServerConfig:
                 "thinking",
                 "verbose",
                 "no_history",
-                "gmail",
-                "onedrive",
                 "read",
                 "write",
                 "exec",
@@ -199,12 +191,10 @@ class WebServerConfig:
         return SessionSetup(
             system_prompt=self.system_prompt,
             no_system_prompt=self.no_system_prompt,
-            gmail=self.gmail,
-            onedrive=self.onedrive,
         ).effective_system_prompt()
 
     def apply_toolsets(self) -> None:
-        """Enable toolsets based on CLI flags (gmail, onedrive).
+        """Enable toolsets based on CLI flags.
 
         Shared with ``cli/chat.py`` via :class:`janito.cli.session_setup.SessionSetup`.
         Called once at server startup.
@@ -213,6 +203,4 @@ class WebServerConfig:
 
         # The janitoweb toolset (CreateSVG, ...) is web-only and always
         # loaded when the server runs in --web mode.  See issue #11.
-        SessionSetup(gmail=self.gmail, onedrive=self.onedrive).enable_toolsets(
-            extra=["janitoweb"]
-        )
+        SessionSetup().enable_toolsets(extra=["janitoweb"])

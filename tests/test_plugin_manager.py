@@ -198,11 +198,28 @@ def test_load_plugin_registers_content(toy_plugin, monkeypatch):
 
 
 def test_load_plugin_prints_loading_message(toy_plugin, capsys):
-    """load_plugin prints \"Loading plugin <name>\" before loading."""
+    """load_plugin prints \"Loading plugin <name>\" with end=\"\" then \"OK\"."""
     plugin_manager.load_plugin(toy_plugin)
 
     out = capsys.readouterr().out
-    assert "Loading plugin toyplugin" in out
+    # end="" means no newline after the loading message: whatever is printed
+    # next (here the toy plugin's own on_start output) is appended directly.
+    assert out.startswith("Loading plugin toyplugin")
+    assert " OK" in out
+    assert out.rstrip().endswith("OK")
+
+
+def test_load_plugin_prints_failed_message(tmp_path, capsys):
+    """A failing plugin prints \"Loading plugin <name> FAILED: <reason>\"."""
+    plugin_dir = tmp_path / "failing"
+    plugin_dir.mkdir()
+    (plugin_dir / "__init__.py").write_text(FAILING_PLUGIN_SRC, encoding="utf-8")
+    _purge_module("failing")
+
+    plugin_manager.load_plugin(plugin_dir)
+
+    out = capsys.readouterr().out
+    assert "Loading plugin failing FAILED: index build failed" in out
 
 
 def test_main_prints_version_banner_before_loading_plugins(
@@ -300,10 +317,21 @@ def test_load_plugin_missing_contract(tmp_path):
 
 
 def test_load_plugin_missing_dir(tmp_path):
-    """A nonexistent plugin dir records an import error."""
+    """A nonexistent plugin dir records a clear directory-not-found error."""
     plugin = plugin_manager.load_plugin(tmp_path / "does_not_exist")
     assert not plugin.loaded
-    assert "failed to import" in plugin.load_error
+    assert "plugin directory not found" in plugin.load_error
+    assert "check the path passed to --plugin" in plugin.load_error
+
+
+def test_load_plugin_dir_without_init(tmp_path):
+    """A directory without __init__.py records a not-a-package error."""
+    plugin_dir = tmp_path / "not_a_package"
+    plugin_dir.mkdir()
+    plugin = plugin_manager.load_plugin(plugin_dir)
+    assert not plugin.loaded
+    assert "no __init__.py" in plugin.load_error
+    assert "must be a Python package" in plugin.load_error
 
 
 # ---------------------------------------------------------------------------

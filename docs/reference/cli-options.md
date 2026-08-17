@@ -88,11 +88,6 @@ If none of `-r`, `-w`, `-x` are given, janito runs with full privileges and prin
 
 | Option | Description |
 |--------|-------------|
-| `--gmail` | Enable Gmail tools and the email-specific system prompt |
-| `--onedrive` | Enable OneDrive tools and the file-specific system prompt |
-| `--onedrive-auth` | Authenticate with Microsoft OneDrive (device code flow) |
-| `--onedrive-status` | Show OneDrive authentication status |
-| `--onedrive-logout` | Clear OneDrive authentication tokens |
 | `--list-tools` | List all available built-in tools and exit |
 
 ## Skills
@@ -168,9 +163,15 @@ janito --delete-secret gmail_password
 ### Enable Tools
 
 ```bash
-janito --gmail "Show my emails"
-janito --onedrive "List files"
 janito --list-tools
+```
+
+### Plugins
+
+```bash
+janito --plugin ../plugins/janito-gmail-plugin "Show my emails"
+janito --plugin ../plugins/janito-onedrive-plugin "List my files"
+janito --list-plugins
 ```
 
 ### System Prompt & Privileges

@@ -5,8 +5,7 @@
 ## Features
 
 - 🔧 **Function Calling** - Built-in tools for file operations, web search, and more
-- 📧 **Gmail Integration** - Read, search, and manage emails
-- ☁️ **OneDrive Integration** - Browse, upload, download, and share files
+- 🔌 **Extensible Plugins** - Gmail, code search, OneDrive, and more via the plugin system
 - 🔌 **MCP Support** - Connect to Model Context Protocol servers
 - 🖥️ **Two Interfaces** - Terminal CLI/shell for scripts and quick prompts, plus a browser-based Web UI (`janito --web`) with sessions and dashboards
 - 📊 **Real-time Progress** - Watch tool execution progress as it happens
@@ -53,8 +52,6 @@ janito comes with tools for common tasks:
 | Category | Tools |
 |----------|-------|
 | **Files** | List, read, write, search files and directories |
-| **Gmail** | Read, count, delete, move, and search emails |
-| **OneDrive** | Browse, upload, download, search files |
 | **System** | Run Python code, execute PowerShell commands |
 
 ### Extend with MCP

@@ -57,16 +57,9 @@ class PromptCmdHandler(CmdHandler):
             Console(markup=False).print(table)
             return
 
-        # Custom prompt (-S): detect which prompt type is active.
-        if "Gmail" in effective_prompt:
-            prompt_type = "Gmail Mode"
-        elif "OneDrive" in effective_prompt:
-            prompt_type = "OneDrive Mode"
-        else:
-            prompt_type = "Default"
-
+        # Custom prompt (-S): show it as-is.
         table = Table(
-            title=f"System Prompt - {prompt_type}",
+            title="System Prompt",
             title_style="bold",
             header_style="bold cyan",
             show_header=False,

@@ -142,19 +142,6 @@ window.ChatFormatMixin = {
             }
             case 'ListFolders':
                 return '';
-            // OneDrive tools
-            case 'CreateOneDriveFolder':
-            case 'DeleteOneDriveFile':
-            case 'DownloadOneDriveFile':
-            case 'GetOneDriveShareLink':
-            case 'UploadOneDriveFile':
-                return s(args.path);
-            case 'ListOneDriveFiles':
-                return s(args.path) || 'root';
-            case 'ReadOneDriveFile':
-                return s(args.path);
-            case 'SearchOneDriveFiles':
-                return s(args.query);
             // System / net tools
             case 'OpenBrowser':
             case 'GetUrl':

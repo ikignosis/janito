@@ -38,7 +38,7 @@ _loaded_toolsets = set(AUTOLOAD_TOOLSETS.copy())
 _skills_enabled = True
 
 # Whether non-skill tools (the autoload toolsets and any toolset added via
-# ``add_toolset``, e.g. gmail/onedrive/janitoweb) are loaded at all.
+# ``add_toolset``, e.g. janitoweb) are loaded at all.
 # ``--no-tools`` sets this to False; skill tools are never affected, so they
 # stay available even when every other tool is disabled.
 _tools_loading_enabled = True
@@ -96,7 +96,7 @@ class ToolsRegistry:
         Dynamically add a toolset to the available tools.
 
         Args:
-            toolset_name: Name of the toolset to add (e.g., "gmail", "files", "system")
+            toolset_name: Name of the toolset to add (e.g., "janitoweb", "files", "system")
 
         Returns:
             bool: True if the toolset was added, False if already loaded or invalid
@@ -303,7 +303,7 @@ def add_toolset(toolset_name: str) -> bool:
     Dynamically add a toolset to the available tools.
 
     Args:
-        toolset_name: Name of the toolset to add (e.g., "gmail", "files", "system")
+        toolset_name: Name of the toolset to add (e.g., "janitoweb", "files", "system")
 
     Returns:
         bool: True if the toolset was added, False if already loaded or invalid
