@@ -14,6 +14,11 @@ from ..system_prompt import (  # noqa: F401 (re-exported; tests patch chat_mod.g
 )
 from ..tooling.path_utils import display_path
 
+# Whether the version banner has already been printed for this process, so it
+# is shown only once (e.g. before plugin loading in main() and again by the
+# full-privileges warning).
+_banner_printed = False
+
 
 def _make_send_prompt_func(
     api_type: str,
@@ -222,6 +227,8 @@ def _make_send_factory(
 
 def print_version_banner(console=None):
     """Print a banner with the version and the current working directory."""
+    global _banner_printed
+
     from rich.console import Console
 
     if console is None:
@@ -230,6 +237,7 @@ def print_version_banner(console=None):
         f"Janito [cyan]{__version__}[/cyan] - Working at "
         f"[magenta]{display_path(os.getcwd())}[/magenta]"
     )
+    _banner_printed = True
 
 
 def _print_full_privileges_warning(args) -> None:
@@ -237,7 +245,8 @@ def _print_full_privileges_warning(args) -> None:
     if getattr(args, "full_privileges", False):
         from rich.console import Console
 
-        print_version_banner()
+        if not _banner_printed:
+            print_version_banner()
         Console().print(
             "WARNING: Running with full privileges, consider using -r, -w, -x",
             style="yellow",

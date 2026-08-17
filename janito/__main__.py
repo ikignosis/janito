@@ -25,7 +25,7 @@ import sys
 
 from . import privileges as _privileges_mod
 from .cli import create_parser
-from .cli.chat import run_interactive_chat, run_single_prompt
+from .cli.chat import print_version_banner, run_interactive_chat, run_single_prompt
 from .cli.handlers import (
     handle_config_interactive,
     handle_delete_secret,
@@ -252,6 +252,10 @@ def main():
     # - Plugins explicitly requested with --plugin DIR are always loaded.
     if getattr(args, "plugin", None) or not getattr(args, "no_plugins", False):
         from .plugin_manager import load_installed_plugins, load_plugins
+
+        # Show the version banner before any plugin loading messages so the
+        # session identity is visible first.
+        print_version_banner()
 
         if not getattr(args, "no_plugins", False):
             load_installed_plugins()

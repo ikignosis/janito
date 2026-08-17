@@ -90,6 +90,10 @@ if pytest is not None:
         """run_single_prompt prints the banner before the warning."""
         import janito.cli.chat as chat_mod
 
+        # The banner must not have been printed yet in this test process
+        # (other tests call print_version_banner directly).
+        monkeypatch.setattr(chat_mod, "_banner_printed", False)
+
         class _Args:
             full_privileges = True
             gmail = False

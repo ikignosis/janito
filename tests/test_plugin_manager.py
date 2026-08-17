@@ -205,6 +205,27 @@ def test_load_plugin_prints_loading_message(toy_plugin, capsys):
     assert "Loading plugin toyplugin" in out
 
 
+def test_main_prints_version_banner_before_loading_plugins(
+    toy_plugin, monkeypatch, capsys
+):
+    """main() shows the version banner before any plugin loading message."""
+    from janito.__main__ import main
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["janito", "--no-plugins", "--plugin", str(toy_plugin), "--list-plugins"],
+    )
+    rc = main()
+
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "Loading plugin toyplugin" in out
+    assert "Janito" in out
+    assert out.index("Janito") < out.index("Loading plugin")
+    _purge_module("toyplugin")
+
+
 def test_load_plugin_restores_sys_path(toy_plugin):
     """sys.path is byte-identical before and after loading a plugin."""
     before = list(sys.path)
