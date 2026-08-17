@@ -88,6 +88,41 @@ def test_prompt_cmd_custom_prompt_falls_back_to_plain(monkeypatch, tmp_path, cap
     assert "----" not in out
 
 
+def test_prompt_cmd_preserves_leading_whitespace_of_sections(
+    monkeypatch, tmp_path, capfd
+):
+    """Leading whitespace of a section is kept in the table display.
+
+    The base section starts with a newline and plugin sections are prefixed
+    with one; ``rstrip`` (not ``strip``) keeps that leading whitespace so the
+    rendered rows show the blank-line separation between sections.
+    """
+    from janito import system_prompt as system_prompt_mod
+    from janito.system_prompt import get_system_prompt_with_skills
+
+    _patch_skills_section(monkeypatch)
+    monkeypatch.chdir(tmp_path)
+
+    # Register a fake plugin section with a leading newline (as the plugin
+    # loader does) and restore state afterwards.
+    system_prompt_mod._PLUGIN_SECTIONS.append(("testplugin", "\nplugin section text"))
+    try:
+        shell = InteractiveShell(model="test-model", no_history=True)
+        shell.initialize_history(system_prompt=get_system_prompt_with_skills())
+
+        handler = PromptCmdHandler()
+        assert handler.handle(shell, "/prompt") is True
+
+        out = capfd.readouterr().out
+        assert "plugins:testplugin" in out
+        assert "plugin section text" in out
+        # The leading newline of the plugin section shows as a blank content
+        # row between the previous section and the plugin text.
+        assert "\u2502\n\u2502 plugins:testplugin" in out
+    finally:
+        system_prompt_mod._PLUGIN_SECTIONS.pop()
+
+
 if __name__ == "__main__":  # pragma: no cover
     if pytest is not None:
         raise SystemExit(pytest.main([__file__, "-v"]))

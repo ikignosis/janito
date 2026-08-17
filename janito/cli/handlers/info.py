@@ -339,7 +339,7 @@ def handle_show_system_prompt(args) -> int:
     table.add_column("Lines", justify="right")
     table.add_column("Content", overflow="fold")
     for name, text in get_system_prompt_sections():
-        body = text.strip()
+        body = text.rstrip()
         line_count = len(body.splitlines()) if body else 0
         table.add_row(name, str(line_count), body)
     console.print(table)

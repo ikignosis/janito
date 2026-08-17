@@ -44,7 +44,7 @@ configuration — exists to feed or present this loop.
 | `janito/mcp_client/` + `mcp_manager.py` | MCP server connections and tool routing |
 | `janito/web/` | FastAPI web backend + plain HTML/JS/CSS frontend |
 | `janito/plugin_manager.py` | Plugin loader: contract validation, scoped `sys.path`, registration |
-| `plugins/` | Optional plugins (e.g. `codesearch/`) loaded with `--plugin DIR` |
+| `../plugins/` (outside the repo) | Optional plugins (e.g. `janito-codesearch-plugin/codesearch/`) loaded with `--plugin DIR` |
 | `janito/*config*.py`, `provider_*.py` | Configuration storage, loaders, provider registry |
 | `docs/`, `mkdocs.yml` | MkDocs documentation site |
 
@@ -246,7 +246,8 @@ recorded reason (`get_skipped_tools()`).
 
 ## Code search
 
-`plugins/codesearch/` powers the `CodeSearch` tool with a **SQLite-based
+`../plugins/janito-codesearch-plugin/codesearch/` powers the `CodeSearch`
+tool with a **SQLite-based
 inverted trigram index**:
 
 - `index.py` — schema (files, trigrams posting lists) and the `Index` class;
@@ -257,7 +258,7 @@ inverted trigram index**:
 The plugin's `on_start()` creates the index at `.janito/codesearch.db`
 when it is missing; the `/codesearch` shell command maintains it
 (`/codesearch update` / `/codesearch recreate`). Load with
-`janito --plugin plugins/codesearch`.
+`janito --plugin ../plugins/janito-codesearch-plugin/codesearch`.
 
 ---
 
@@ -354,7 +355,8 @@ row of a rich table (Section, Lines, Content).
 
 - `tests/` — pytest suite covering clients, tooling, config, shell commands,
   skills, the plugin framework and web (`tests/web/`); the codesearch plugin
-  carries its own tests under `plugins/codesearch/tests/`.
+  carries its own tests under
+  `../plugins/janito-codesearch-plugin/tests/`.
 - `tox.ini` + `pyproject.toml` — tox environments, ruff linting/isort.
 - `.pre-commit-config.yaml` + `.secrets.baseline` — pre-commit hooks and
   detect-secrets baseline.

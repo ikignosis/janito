@@ -2,8 +2,8 @@
 
 Covers the ``--plugin`` / ``--list-plugins`` CLI flags, contract validation,
 scoped ``sys.path`` handling, and registration of plugin tools, commands and
-system-prompt sections.  Also exercises loading the real ``plugins/codesearch``
-plugin end-to-end.
+system-prompt sections.  Also exercises loading the real codesearch plugin
+(``../plugins/janito-codesearch-plugin/codesearch``) end-to-end.
 """
 
 import sys
@@ -15,6 +15,12 @@ import janito.plugin_manager as plugin_manager
 from janito.tooling.tools_registry import get_all_tool_schemas
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+
+# The real codesearch plugin, now maintained outside the repo as a sibling
+# of the janito checkout (a sibling "plugins" collection).
+CODESEARCH_PLUGIN_DIR = (
+    REPO_ROOT.parent / "plugins" / "janito-codesearch-plugin" / "codesearch"
+)
 
 # Toy plugin source implementing the full contract.
 TOY_PLUGIN_SRC = '''\
@@ -131,9 +137,18 @@ def test_parser_exposes_plugin_flags():
     from janito.cli.parser import create_parser
 
     args = create_parser().parse_args(
-        ["--plugin", "plugins/codesearch", "--plugin", "plugins/other", "prompt"]
+        [
+            "--plugin",
+            "../plugins/janito-codesearch-plugin/codesearch",
+            "--plugin",
+            "plugins/other",
+            "prompt",
+        ]
     )
-    assert args.plugin == ["plugins/codesearch", "plugins/other"]
+    assert args.plugin == [
+        "../plugins/janito-codesearch-plugin/codesearch",
+        "plugins/other",
+    ]
 
     args = create_parser().parse_args(["--list-plugins"])
     assert args.list_plugins is True
@@ -241,8 +256,12 @@ def test_load_plugins_empty():
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.skipif(
+    not CODESEARCH_PLUGIN_DIR.is_dir(),
+    reason="codesearch plugin not checked out at ../plugins/janito-codesearch-plugin",
+)
 def test_codesearch_plugin_loads_and_creates_index(tmp_path, monkeypatch):
-    """Loading plugins/codesearch auto-creates .janito/codesearch.db."""
+    """Loading the codesearch plugin auto-creates .janito/codesearch.db."""
     from janito.shell.cmds import get_registered_commands
 
     (tmp_path / "hello.py").write_text(
@@ -251,7 +270,7 @@ def test_codesearch_plugin_loads_and_creates_index(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     _purge_module("codesearch")
 
-    plugin = plugin_manager.load_plugin(REPO_ROOT / "plugins" / "codesearch")
+    plugin = plugin_manager.load_plugin(CODESEARCH_PLUGIN_DIR)
 
     assert plugin.loaded, plugin.load_error
     assert plugin.name == "codesearch"
@@ -267,13 +286,31 @@ def test_codesearch_plugin_loads_and_creates_index(tmp_path, monkeypatch):
     assert "/codesearch" in [c.name for c in get_registered_commands()]
 
     # System prompt section instructs to prefer CodeSearch for text search.
-    from janito.system_prompt import get_system_prompt_with_skills
+    from janito.system_prompt import (
+        get_system_prompt_sections,
+        get_system_prompt_with_skills,
+    )
 
     prompt = get_system_prompt_with_skills()
-    assert "## Plugin: codesearch" in prompt
+    assert "## Plugin:" not in prompt
     assert (
         "When searching text on files use the CodeSearch tool before the "
         "other search tools" in prompt
+    )
+
+    # The plugin section keeps a leading newline so its text is separated
+    # from the previous section by a blank line in the final prompt.
+    plugin_sections = [
+        (name, text)
+        for name, text in get_system_prompt_sections()
+        if name == "plugins:codesearch"
+    ]
+    assert len(plugin_sections) == 1
+    _, plugin_text = plugin_sections[0]
+    assert plugin_text.startswith("\n")
+    assert (
+        "When searching text on files use the CodeSearch tool before the "
+        "other search tools" in plugin_text
     )
 
     _purge_module("codesearch")

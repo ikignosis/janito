@@ -76,17 +76,12 @@ def get_system_prompt_sections() -> list[tuple[str, str]]:
         sections.append(
             (
                 SECTION_AGENTS_MD,
-                "\n\n## Project-Specific Instructions\n\n" + agents_content + "\n",
+                "\n" + agents_content + "\n",
             )
         )
 
     for plugin_name, plugin_text in _PLUGIN_SECTIONS:
-        sections.append(
-            (
-                f"{SECTION_PLUGINS}:{plugin_name}",
-                "\n\n## Plugin: " + plugin_name + "\n\n" + plugin_text,
-            )
-        )
+        sections.append((f"{SECTION_PLUGINS}:{plugin_name}", "\n" + plugin_text))
 
     return sections
 

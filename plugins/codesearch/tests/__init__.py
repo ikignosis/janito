@@ -1,1 +1,0 @@
-"""codesearch plugin - tests package."""

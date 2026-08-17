@@ -11,12 +11,13 @@ Changes since `v4.25.0` (2026-08-15).
 
 ### Added
 
-- Added `plugins/codesearch/README.md` describing the codesearch plugin's
-  capabilities: the trigram-based `CodeSearch` tool (whole-word AND/OR
-  matching, `path:lineno: content` results), the `/codesearch update |
-  recreate` shell command, automatic index creation on plugin load and
-  auto-refresh with the 1-day TTL, `.gitignore`/`.janitoignore` handling,
-  what gets indexed, and the plugin structure. (`plugins/codesearch/README.md`)
+- Added `../plugins/janito-codesearch-plugin/README.md` (the sibling repo
+  that now hosts the codesearch plugin) describing the plugin's capabilities:
+  the trigram-based `CodeSearch` tool (whole-word AND/OR matching,
+  `path:lineno: content` results), the `/codesearch update | recreate` shell
+  command, automatic index creation on plugin load and auto-refresh with the
+  1-day TTL, `.gitignore`/`.janitoignore` handling, what gets indexed, and
+  the plugin structure. (`../plugins/janito-codesearch-plugin/README.md`)
 
 - Every built-in model entry now declares its **default API type** via the
   new `default_api_type` model-config field (the value is the model's first
@@ -100,6 +101,21 @@ Changes since `v4.25.0` (2026-08-15).
 
 ### Changed
 
+- The `## Project-Specific Instructions` header is no longer prepended to the
+  `AGENTS.md` content in the system prompt; the section text is now preceded
+  by a single `\n` separator and followed by a trailing `\n`.  The `agents.md`
+  section label used by `/prompt` and `--show-system-prompt` is unchanged.
+  (`janito/system_prompt.py`, `tests/test_system_prompt.py`)
+- Plugin `SYSTEM_PROMPT` text is now appended to the system prompt as-is,
+  without the `## Plugin: <name>` header; a single `\n` separator is added
+  before the plugin text to split the context.  The `plugins:<name>` section
+  label used by `/prompt` and `--show-system-prompt` is unchanged.
+  (`janito/system_prompt.py`, `tests/test_plugin_manager.py`)
+- `/prompt` and `--show-system-prompt` now display each section with
+  `rstrip()` instead of `strip()`, preserving the leading whitespace (e.g.
+  the blank-line separator before plugin sections) in the table rows.
+  (`janito/shell/cmds/prompt.py`, `janito/cli/handlers/info.py`,
+  `tests/test_shell_prompt_cmd.py`)
 - `janito.plugin_manager.load_plugin()` now prints `Loading plugin <name>`
   (the plugin's directory name) before loading each plugin, so startup shows
   which plugins are being loaded. (`janito/plugin_manager.py`,
@@ -297,12 +313,22 @@ Changes since `v4.25.0` (2026-08-15).
 - `docs/TOOL.md` updated to match the current implementation: schema
   generation now documented as living in `janito/tooling/schema.py` (plus the
   `executor.py` try/except safety net), the `AUTOLOAD_TOOLSETS` list is now
-  `["files", "system", "net", "codesearch"]` with `net`, `codesearch` and the
-  web-only `janitoweb` toolsets added to the architecture tree, the
-  `report_output()` / `build_diff()` helpers are documented, and the
-  `Optional[T]`-requiredness note, the execute-colour claim (yellow, not
-  red-ish) and the "framework does not wrap `run()`" claim were corrected.
-  (`docs/TOOL.md`)
+  `["files", "system", "net"]` with `net` and the web-only `janitoweb`
+  toolsets added to the architecture tree, the `report_output()` /
+  `build_diff()` helpers are documented, and the `Optional[T]`-requiredness
+  note, the execute-colour claim (yellow, not red-ish) and the "framework
+  does not wrap `run()`" claim were corrected. (`docs/TOOL.md`)
+
+- **codesearch plugin moved out of the repo** — the codesearch plugin (the
+  `CodeSearch` tool, the trigram engine and the `/codesearch` shell command)
+  now lives in the sibling `../plugins/janito-codesearch-plugin/` directory
+  (its Python package is the `codesearch/` subdirectory), loaded with
+  `janito --plugin ../plugins/janito-codesearch-plugin/codesearch`.  The
+  repo's `plugins/codesearch/` directory is gone; the CLI help, docs and the
+  end-to-end plugin test were updated to point at the new location.
+  (`janito/cli/parser.py`, `tests/test_plugin_manager.py`, `ARCHITECTURE.md`,
+  `docs/PLUGINS.md`, `docs/tools/codesearch.md`,
+  `docs/usage/cli-vs-web.md`, `../plugins/janito-codesearch-plugin/*`)
 
 ### Added
 

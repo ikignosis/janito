@@ -54,9 +54,7 @@ def test_prompt_with_agents_md(monkeypatch, tmp_path):
 
     prompt = get_system_prompt_with_skills()
 
-    assert prompt.startswith(SYSTEM_PROMPT + SKILLS_SECTION)
-    assert agents_content in prompt
-    assert "Project-Specific Instructions" in prompt
+    assert prompt == SYSTEM_PROMPT + SKILLS_SECTION + "\n" + agents_content + "\n"
 
 
 def test_prompt_with_empty_agents_md(monkeypatch, tmp_path):

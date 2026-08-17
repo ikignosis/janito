@@ -88,7 +88,7 @@ Examples:
   janito --install-skill https://github.com/user/repo/tree/main/skills/git-commit  # Install a skill
   janito --list-skills                                        # List installed skills
   janito --uninstall-skill git-commit                         # Uninstall a skill
-  janito --plugin plugins/codesearch                        # Load the codesearch plugin (tools, /codesearch command)
+  janito --plugin ../plugins/janito-codesearch-plugin/codesearch  # Load the codesearch plugin (tools, /codesearch)
   janito --list-plugins                                     # List loaded plugins and their on_start errors
   janito --create-variant alibaba-tokenplan                  # Register a provider variant (<provider>-<word>)
   janito --provider alibaba-tokenplan --set model=qwen-plus  # Configure the variant (per-variant model)
@@ -416,7 +416,8 @@ Note: --set and --set-api-key must be used in separate commands.
         metavar="DIR",
         action="append",
         help="Load a plugin package from DIR (repeatable; e.g. "
-        "--plugin plugins/codesearch). DIR is a Python package directory; "
+        "--plugin ../plugins/janito-codesearch-plugin/codesearch). "
+        "DIR is a Python package directory; "
         "its parent is temporarily added to sys.path so relative imports "
         "inside the plugin work. Plugin tools, commands and system-prompt "
         "sections are registered before the session starts.",

@@ -1,7 +1,8 @@
 """Plugin loading framework.
 
 A plugin is a directory with a Python package structure (e.g.
-``plugins/codesearch/``).  Loading a plugin **temporarily** adds the
+``../plugins/janito-codesearch-plugin/codesearch/``).  Loading a plugin
+**temporarily** adds the
 plugin's **parent directory** to the front of ``sys.path`` so the package
 can be imported by its directory name and **relative imports inside the
 plugin code** resolve.  The package and the modules it imports are loaded

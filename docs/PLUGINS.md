@@ -24,7 +24,8 @@ the core package.
 ## What is a Plugin?
 
 A plugin is a **directory with a Python package structure** (a directory
-containing an `__init__.py`), for example `plugins/codesearch/`.  When
+containing an `__init__.py`), for example
+`../plugins/janito-codesearch-plugin/codesearch/`.  When
 loaded, the plugin can contribute:
 
 - **`TOOLS`** — tool classes (per `docs/TOOL.md`) that are added to the
@@ -151,10 +152,11 @@ plugin tools and prompt sections automatically).
 ## The codesearch Plugin (reference implementation)
 
 The `CodeSearch` tool, the trigram engine, and the `/codesearch` shell
-command live in `plugins/codesearch/`:
+command live in the `codesearch/` package of the
+`../plugins/janito-codesearch-plugin/` plugin:
 
 ```
-plugins/codesearch/
+../plugins/janito-codesearch-plugin/codesearch/
     __init__.py            # contract + on_start() that builds .janito/codesearch.db
     code_search.py         # CodeSearch engine
     index.py               # SQLite inverted trigram index
@@ -162,6 +164,12 @@ plugins/codesearch/
     candidates.py          # candidate selection / line scanning
     tools/code_search.py   # the CodeSearch tool (docs/TOOL.md)
     cmd/codesearch_cmd.py  # /codesearch update | recreate
+```
+
+Load it with:
+
+```bash
+janito --plugin ../plugins/janito-codesearch-plugin/codesearch
 ```
 
 When the plugin loads, `on_start()` checks for `.janito/codesearch.db` in
