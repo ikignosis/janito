@@ -16,9 +16,10 @@ the core package.
 5. [Step-by-Step: A Minimal Plugin](#step-by-step-a-minimal-plugin)
 6. [Loading Plugins](#loading-plugins)
 7. [Installing Plugins](#installing-plugins)
-8. [The codesearch Plugin (reference implementation)](#the-codesearch-plugin-reference-implementation)
-9. [Interacting with janito](#interacting-with-janito)
-10. [Checklist Before Submitting](#checklist-before-submitting)
+8. [Available Plugins](#available-plugins)
+9. [The codesearch Plugin (reference implementation)](#the-codesearch-plugin-reference-implementation)
+10. [Interacting with janito](#interacting-with-janito)
+11. [Checklist Before Submitting](#checklist-before-submitting)
 
 ---
 
@@ -180,6 +181,20 @@ To see which plugins are currently loaded:
 ```bash
 janito --list-plugins
 ```
+
+---
+
+## Available Plugins
+
+The following plugins are available for janito. Install any of them with:
+
+```bash
+janito --install-plugin <url>
+```
+
+| Name | Purpose | URL |
+|------|---------|-----|
+| codesearch | Index source code for faster lookups on large repos | https://github.com/joaompinto/janito-codesearch-plugin |
 
 ---
 

@@ -46,6 +46,11 @@ Changes since `v4.25.0` (2026-08-15).
   `docs/tools/codesearch.md`, `docs/usage/cli-vs-web.md`,
   `ARCHITECTURE.md`, `tests/test_plugin_manager.py`)
 
+- Added an **Available Plugins** section to `docs/PLUGINS.md` with a table
+  of installable plugins (name, purpose, URL) and the
+  `janito --install-plugin <url>` command to install them.
+  (`docs/PLUGINS.md`)
+
 - Every built-in model entry now declares its **default API type** via the
   new `default_api_type` model-config field (the value is the model's first
   `supported_api_types` entry, e.g. `"Responses"` for OpenAI's
