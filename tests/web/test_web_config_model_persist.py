@@ -185,8 +185,8 @@ def test_patch_model_for_other_provider_keeps_server_model(client):
 @requires_fastapi
 def test_patch_empty_model_clears_override(client):
     """An empty model removes the per-provider override from config.json."""
-    assert cs.set_config_value("xai.model", "grok-4") is None
-    assert cl.load_model_from_config("xai") == "grok-4"
+    assert cs.set_config_value("xai.model", "grok-4.6") is None
+    assert cl.load_model_from_config("xai") == "grok-4.6"
 
     resp = client.patch("/api/config", json={"model": "", "provider": "xai"})
     assert resp.status_code == 200

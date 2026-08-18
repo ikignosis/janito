@@ -192,6 +192,30 @@ if pytest is not None:
         assert get_default_max_input_tokens_from_provider("anthropic") == 200000
         assert get_default_max_output_tokens_from_provider("anthropic") == 64000
         assert get_default_api_type_from_provider("anthropic") == "Completions"
+        # claude-opus-5 and claude-fable-5 also ship built-in entries: both
+        # support the Completions and native Anthropic SDK API types (default
+        # Completions) and expose the 1M-token context window at standard
+        # pricing.
+        for name, max_input, max_output in (
+            ("claude-opus-5", 1000000, 128000),
+            ("claude-fable-5", 1000000, 128000),
+        ):
+            entry = info["models"][name]
+            assert entry["supported_api_types"] == ["Completions", "Anthropic"]
+            assert entry["default_api_type"] == "Completions"
+            assert entry["max_input_tokens"] == max_input
+            assert entry["max_output_tokens"] == max_output
+            assert (
+                get_provider_config("anthropic", name)["max_input_tokens"] == max_input
+            )
+            assert (
+                get_default_max_input_tokens_from_provider("anthropic", name)
+                == max_input
+            )
+            assert (
+                get_default_max_output_tokens_from_provider("anthropic", name)
+                == max_output
+            )
 
     def test_google_provider():
         info = get_provider_config("google")
@@ -272,7 +296,7 @@ if pytest is not None:
         for entry in supported:
             assert "effort" in entry
             assert "description" in entry
-        # Moonshot's default model (kimi-k3-256k) declares reasoning levels
+        # Moonshot's default model (kimi-k3) declares reasoning levels
         # too (low/high/max per the Moonshot API reference, default max).
         assert get_default_reasoning_level_from_provider("moonshot") == "max"
         supported = get_supported_reasoning_levels_from_provider("moonshot")

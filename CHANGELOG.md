@@ -35,8 +35,51 @@ Changes since `v4.26.0` (2026-08-17).
   server-side Responses providers (e.g. OpenAI) any pending Enter-cancelled
   messages are shown after the system prompt.
 
+### Changed
+
+- Renamed Moonshot's default model from `kimi-k3-256k` to `kimi-k3`.
+
 ### Added
 
+- The `moonshot` provider now ships a cost module (`janito/providers/moonshot/cost.py`)
+  so `/price` and the CLI usage line report a cost estimate for `kimi-k3`
+  instead of `N/A`.  Rates follow the official Moonshot pricing (¥20.00
+  input cache miss / ¥2.00 input cache hit / ¥100.00 output per 1M tokens,
+  ~$2.75 / $0.28 / $13.75), with cached input billed at the cache-hit rate.
+- The `xiaomi` provider now ships a cost module
+  (`janito/providers/xiaomi/cost.py`) so `/price` and the CLI usage line
+  report a cost estimate for `mimo-v2.5` instead of `N/A`.  Rates follow
+  the official Xiaomi MiMo-V2.5 international pricing ($0.14 input cache
+  miss / $0.0028 input cache hit / $0.28 output per 1M tokens), with
+  cached input billed at the cache-hit rate.
+- The `zai` provider now ships a cost module
+  (`janito/providers/zai/cost.py`) so `/price` and the CLI usage line
+  report a cost estimate for `glm-5.2` instead of `N/A`.  Rates follow the
+  official Z.ai pricing (https://docs.z.ai/guides/overview/pricing: $1.40
+  input cache miss / $0.26 input cache hit / $4.40 output per 1M tokens),
+  with cached input billed at the cache-hit rate and cached-input storage
+  ("Limited-time Free") not billed.
+- The `anthropic` provider now ships a cost module
+  (`janito/providers/anthropic/cost.py`) so `/price` and the CLI usage line
+  report a cost estimate for the Claude models instead of `N/A`.  Rates
+  follow the official Claude Platform pricing
+  (https://platform.claude.com/docs/en/about-claude/pricing: `claude-sonnet-5`
+  $2 / $0.20 cache hit / $10 output, `claude-opus-5` $5 / $0.50 cache hit /
+  $25 output, `claude-fable-5` $10 / $1 cache hit / $50 output per 1M
+  tokens), with cached input billed at the cache-hit rate (10% of base
+  input) and no high-context surcharge (Claude 4.6 and later include the
+  full 1M-token context window at standard pricing).
+- The `anthropic` provider now ships built-in entries for `claude-opus-5`
+  and `claude-fable-5` alongside `claude-sonnet-5`.  Both new models
+  support the `Completions` (default) and native `Anthropic` SDK API types
+  and expose the 1M-token context window (1M input / 128k output tokens).
+- New `/price` shell command renders a pricing table for every built-in
+  model with columns `provider | model | 1M in + 1M cache + 1M out`, sorted
+  by cost from highest to lowest.  The cost column is computed by the
+  provider's cost module (`cost_*` rate tables) via
+  `get_provider_cost(..., is_reference=True)`, so reference (e.g. peak)
+  rates apply and no rate-band suffix is attached; providers without a
+  cost module show `N/A`.
 - New `/thinking on|off` shell command to enable or disable runtime config
   thinking mode for the current session without altering the persisted
   configuration in `config.json`. Running `/thinking` alone displays the
@@ -63,6 +106,12 @@ Changes since `v4.26.0` (2026-08-17).
   mapping to the Gemini `thinking_level`). Set the Gemini API key from
   Google AI Studio with
   `janito --set-api-key="your-gemini-api-key" --provider google`.
+- Added `janito/providers/minimax/cost.py` with a `get_cost(model, input,
+  output, cached, is_reference=False)` helper estimating monetary cost for
+  `MiniMax-M3` using MiniMax Standard Tier pricing ($0.30 input / $0.06 prompt
+  cache read / $1.20 output per 1M tokens for requests <= 512k input tokens,
+  and 2x rates for high-context requests > 512k tokens), formatted as
+  `NN.DDDDDD$` (e.g. `"0.150000$"`); unknown models fall back to `"N/A"`.
 - Added `janito/providers/google/cost.py` with a `get_cost(model, input,
   output, cached)` helper that estimates the monetary cost of a request from
   the per-1M-token rates for `gemini-3.7-flash` ($0.75 / $0.1875 context cache
@@ -72,6 +121,17 @@ Changes since `v4.26.0` (2026-08-17).
   docstring documents the rates source (https://ai.google.dev/pricing).
   (`janito/providers/google/cost.py`, `tests/test_provider.py`,
   `tests/test_input_tokens_info.py`)
+- Added `janito/providers/openai/cost.py` with a `get_cost(model, input,
+  output, cached)` helper that estimates the monetary cost of a request from
+  the official OpenAI API pricing for `gpt-5.6-luna` ($0.20 input / $0.02
+  cache read / $1.20 output per 1M tokens), billing cached input tokens at
+  the cache-read rate.  Requests whose input exceeds 272K tokens are billed
+  as high-context prompts at 2x input ($0.40) and 1.5x output ($1.80) for
+  the **whole** request (cache reads scale with the input rate).  Results are
+  formatted as `NN.DDDDDD$` (e.g. `"1.220000$"`); unknown models fall back
+  to `"N/A"`.  There is no peak-hour surcharge.  The module docstring
+  documents the rates source.  (`janito/providers/openai/cost.py`,
+  `tests/test_provider.py`, `tests/test_input_tokens_info.py`)
 - `--verbose` (`-v`) now also dumps the actual API request parameters and a
   compact response summary for every streaming round (Chat Completions,
   Responses, Anthropic and DashScope). The request panel shows the scalar
@@ -141,3 +201,14 @@ Changes since `v4.26.0` (2026-08-17).
   (`plugin directory not found: <path> (check the path passed to --plugin)`
   / `plugin directory has no __init__.py: <path>`) instead of a confusing
   `No module named ...` from the import.
+- The provider cost helpers
+  (`janito.providers.<name>.cost.get_cost` and
+  `janito.provider_accessors.get_provider_cost`) now accept an
+  `is_reference: bool = False` parameter marking the request as a reference
+  request (e.g. tokens from attached reference documents).  DeepSeek bills
+  reference requests at the peak rates regardless of the request time and
+  returns the cost without the `(peak)`/`(off-peak)` suffix
+  (e.g. `"1.760000$"`); the Alibaba and Google estimates are unchanged.
+  (`janito/providers/alibaba/cost.py`,
+  `janito/providers/deepseek/cost.py`, `janito/providers/google/cost.py`,
+  `janito/provider_accessors.py`, `tests/test_provider.py`)

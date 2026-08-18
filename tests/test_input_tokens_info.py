@@ -176,12 +176,34 @@ if pytest is not None:
         )
         assert "Cost: 4.500000$" in text
 
-    def test_usage_line_cost_provider_without_cost_module_is_na():
-        """Providers without a cost module fall back to Cost: N/A."""
+    def test_usage_line_cost_minimax_provider():
+        """MiniMax usage calculates cost using minimax.cost module."""
+        text = _display_usage_text("minimax", "MiniMax-M3", _usage(100_000, 100_000, 0))
+        assert "Cost: 0.150000$" in text
+
+    def test_usage_line_cost_openai_provider():
+        """OpenAI GPT-5.6 Luna usage calculates cost using openai.cost module."""
+        # 100k input tokens (<= 272K threshold): standard rates
+        # (100k * $0.20 + 1M * $1.20) / 1M = 1.22.
         text = _display_usage_text(
-            "openai", "gpt-5.6-luna", _usage(1_000_000, 1_000_000, 0)
+            "openai", "gpt-5.6-luna", _usage(100_000, 1_000_000, 0)
         )
-        assert "Cost: N/A" in text
+        assert "Cost: 1.220000$" in text
+
+    def test_usage_line_cost_openai_high_context():
+        """High-context OpenAI requests (> 272K input tokens) bill at 2x/1.5x."""
+        text = _display_usage_text(
+            "openai", "gpt-5.6-luna", _usage(300_000, 1_000_000, 0)
+        )
+        assert "Cost: 1.920000$" in text
+
+    def test_usage_line_cost_anthropic_provider():
+        """Anthropic usage calculates cost using anthropic.cost module."""
+        # 1M input (cache miss) at $2 + 1M output at $10 per 1M tokens.
+        text = _display_usage_text(
+            "anthropic", "claude-sonnet-5", _usage(1_000_000, 1_000_000, 0)
+        )
+        assert "Cost: 12.000000$" in text
 
     def test_usage_line_cost_without_provider_model_is_na():
         """No provider/model falls back to Cost: N/A."""

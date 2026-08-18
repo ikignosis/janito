@@ -1020,7 +1020,7 @@ def test_send_factory_resolves_new_provider_model_and_api_type(monkeypatch):
     )
     send("hello", previous_messages=[])
     # The new provider's built-in default model is used, not the startup one.
-    assert captured["cli_model"] == "kimi-k3-256k"
+    assert captured["cli_model"] == "kimi-k3"
     assert captured["cli_provider"] == "moonshot"
 
 
@@ -1083,7 +1083,7 @@ def test_send_factory_resolves_api_type_per_new_provider(monkeypatch):
     )
     factory("moonshot")
     assert captured["api_type"] == "Completions"
-    assert captured["cli_model"] == "kimi-k3-256k"
+    assert captured["cli_model"] == "kimi-k3"
     assert captured["cli_provider"] == "moonshot"
 
     factory("openai")

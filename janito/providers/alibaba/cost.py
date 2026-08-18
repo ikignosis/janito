@@ -22,7 +22,13 @@ _MODEL_RATES: dict[str, tuple[float, float, float]] = {
 }
 
 
-def get_cost(model: str, input: int, output: int, cached: int) -> str:
+def get_cost(
+    model: str,
+    input: int,
+    output: int,
+    cached: int,
+    is_reference: bool = False,
+) -> str:
     """Estimate the monetary cost of a request in dollars.
 
     Args:
@@ -30,6 +36,9 @@ def get_cost(model: str, input: int, output: int, cached: int) -> str:
         input: The number of input tokens.
         output: The number of output tokens.
         cached: The number of cached input tokens.
+        is_reference: Marks the request as a reference request (e.g. tokens
+            from attached reference documents).  Passed through for future
+            reference-token billing; currently the estimate is unchanged.
 
     Returns:
         The estimated cost formatted as a dollar string with six decimal

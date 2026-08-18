@@ -569,17 +569,17 @@ def get_provider_cost(
     output: int,
     cached: int,
     now: datetime | None = None,
+    is_reference: bool = False,
 ) -> str:
     """
     Get the estimated monetary cost of a request for a provider's model.
 
     The cost is computed by the provider's ``cost.py`` module
     (``janito.providers.<name>.cost``), which exports a
-    ``get_cost(model, input, output, cached)`` function returning a
-    dollar-formatted string with six decimal digits (e.g. ``"0.880000$ (off-peak)"``
-    when the provider annotates the applied rate band).
-    Providers without a cost
-    module fall back to ``"N/A"``.
+    ``get_cost(model, input, output, cached, is_reference=False)`` function
+    returning a dollar-formatted string with six decimal digits (e.g.
+    ``"0.880000$ (off-peak)"`` when the provider annotates the applied rate
+    band).  Providers without a cost module fall back to ``"N/A"``.
 
     Args:
         provider: The provider name (case-insensitive).  Registered provider
@@ -592,6 +592,11 @@ def get_provider_cost(
         now: Optional request time forwarded to the provider's ``get_cost``
             (when it accepts it) to pick peak/off-peak rates (e.g. DeepSeek);
             when omitted the provider applies its default (current time).
+        is_reference: Marks the request as a reference request (e.g. tokens
+            from attached reference documents); forwarded to the provider's
+            ``get_cost``.  DeepSeek bills reference requests at the peak
+            rates regardless of the request time and omits the rate-band
+            suffix from the returned string; other providers ignore it.
 
     Returns:
         The estimated cost formatted as a dollar string with six decimal
@@ -609,7 +614,9 @@ def get_provider_cost(
         cost_module = import_module(f"janito.providers.{base}.cost")
         get_cost = getattr(cost_module, "get_cost")
         if now is None:
-            return get_cost(model, input, output, cached)
-        return get_cost(model, input, output, cached, now=now)
+            return get_cost(model, input, output, cached, is_reference=is_reference)
+        return get_cost(
+            model, input, output, cached, now=now, is_reference=is_reference
+        )
     except (ImportError, AttributeError, TypeError):
         return "N/A"

@@ -7,10 +7,10 @@ CONFIG option.
 
 #: The config entry for the ``moonshot`` provider.
 PROVIDER_CONFIG: dict = {
-    "default_model": "kimi-k3-256k",
+    "default_model": "kimi-k3",
     "endpoint": "https://api.moonshot.ai/v1",
     "models": {
-        "kimi-k3-256k": {
+        "kimi-k3": {
             "supported_api_types": ["Completions"],
             "default_api_type": "Completions",  # built-in default (the first supported type)
             "max_input_tokens": 128000,

@@ -116,7 +116,7 @@ if pytest is not None:
                                 "deepseek-v4-flash": {"responses-in-server": "FALSE"}
                             }
                         },
-                        "xai": {"models": {"grok-4": {"responses-in-server": True}}},
+                        "xai": {"models": {"grok-4.6": {"responses-in-server": True}}},
                         "zai": {"models": {"glm-5.2": {"responses-in-server": False}}},
                     }
                 }

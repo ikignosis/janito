@@ -545,7 +545,7 @@ janito --set-api-key="your-moonshot-api-key" --provider moonshot
 
 ### Reasoning Level
 
-The default model `kimi-k3-256k` supports configurable reasoning depth via the
+The default model `kimi-k3` supports configurable reasoning depth via the
 OpenAI-compatible `reasoning_effort` parameter. The supported levels are
 `low`, `high` and `max`, and the built-in default is `max` (the API's own
 default).
@@ -618,7 +618,7 @@ Use xAI to access Grok models.
 
 ```bash
 # Step 1: Set provider and model
-janito --set provider=xai --set model=grok-4
+janito --set provider=xai --set model=grok-4.6
 # Step 2: Store API key
 janito --set-api-key="your-xai-api-key" --provider xai
 ```
@@ -627,7 +627,7 @@ janito --set-api-key="your-xai-api-key" --provider xai
 
 | Model | Description |
 |-------|-------------|
-| `grok-4` | Latest flagship model |
+| `grok-4.6` | Latest flagship model |
 | `grok-3` | High-capability model |
 | `grok-2` | Balanced performance model |
 
@@ -635,7 +635,7 @@ janito --set-api-key="your-xai-api-key" --provider xai
 
 ```bash
 # Step 1: Set provider and model
-janito --set provider=xai --set model=grok-4
+janito --set provider=xai --set model=grok-4.6
 # Step 2: Store API key
 janito --set-api-key="your-xai-api-key" --provider xai
 # Step 3: Run prompt
@@ -661,6 +661,8 @@ janito --set-api-key="your-anthropic-api-key" --provider anthropic
 
 | Model | Description |
 |-------|-------------|
+| `claude-fable-5` | Newest frontier model (1M context) |
+| `claude-opus-5` | Highest capability model (1M context) |
 | `claude-sonnet-5` | Latest flagship model (200K context) |
 | `claude-opus-4-1` | Highest capability model (200K context) |
 | `claude-haiku-4-5` | Fast, cost-effective model (200K context) |

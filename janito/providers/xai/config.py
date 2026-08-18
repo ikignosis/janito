@@ -7,13 +7,13 @@ CONFIG option.
 
 #: The config entry for the ``xai`` provider.
 PROVIDER_CONFIG: dict = {
-    "default_model": "grok-4",
+    "default_model": "grok-4.6",
     "endpoint": "https://api.x.ai/v1",
     "models": {
-        "grok-4": {
+        "grok-4.6": {
             "supported_api_types": ["Completions"],
             "default_api_type": "Completions",  # built-in default (the first supported type)
-            "max_input_tokens": 128000,
+            "max_input_tokens": 500000,
             "max_output_tokens": 131072,
         },
     },

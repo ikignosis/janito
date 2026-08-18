@@ -13,6 +13,13 @@ DeepSeek bills requests made during peak hours at exactly double the
 off-peak rates.  Peak hours are 01:00-04:00 and 06:00-10:00 UTC (all
 other hours are off-peak), so the estimate applies the off-peak rates
 outside those windows and double rates inside them.
+
+Reference requests
+------------------
+Reference requests (``is_reference=True``, e.g. tokens from attached
+reference documents) are billed at the peak rates regardless of the request
+time, and the returned cost string does not carry the peak/off-peak
+suffix.
 """
 
 from datetime import datetime, time, timezone
@@ -49,7 +56,12 @@ def _is_peak_hour(now: datetime) -> bool:
 
 
 def get_cost(
-    model: str, input: int, output: int, cached: int, now: datetime | None = None
+    model: str,
+    input: int,
+    output: int,
+    cached: int,
+    now: datetime | None = None,
+    is_reference: bool = False,
 ) -> str:
     """Estimate the monetary cost of a request in dollars.
 
@@ -60,21 +72,29 @@ def get_cost(
         cached: The number of cached input tokens.
         now: The request time used to pick the peak/off-peak rates; when
             omitted the current UTC time is used.
+        is_reference: Marks the request as a reference request (e.g. tokens
+            from attached reference documents).  Reference requests are
+            billed at the peak rates regardless of the request time, and
+            the returned string does not carry the rate-band suffix.
 
     Returns:
         The estimated cost formatted as a dollar string with six decimal
-        digits followed by the applied rate band, e.g. ``"0.880000$ (off-peak)"``
-        or ``"1.760000$ (peak)"``; ``"N/A"`` for an unknown model.
+        digits followed by the applied rate band for regular requests, e.g.
+        ``"0.880000$ (off-peak)"`` or ``"1.760000$ (peak)"``.  Reference
+        requests omit the rate band, e.g. ``"1.760000$"``.  ``"N/A"`` for an
+        unknown model.
     """
     rates = _MODEL_RATES.get(model)
     if rates is None:
         return "N/A"
     input_miss, input_hit, output_rate = rates
-    peak = _is_peak_hour(_utcnow() if now is None else now)
+    peak = is_reference or _is_peak_hour(_utcnow() if now is None else now)
     multiplier = 2.0 if peak else 1.0
     cost = (
         ((input - cached) * input_miss + cached * input_hit + output * output_rate)
         / 1_000_000
         * multiplier
     )
+    if is_reference:
+        return f"{cost:.6f}$"
     return f"{cost:.6f}$ ({'peak' if peak else 'off-peak'})"
