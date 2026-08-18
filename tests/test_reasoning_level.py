@@ -196,11 +196,10 @@ if pytest is not None:
         )
         assert fake_run.captured_kwargs["extra_body"]["enable_thinking"] is True
 
-    def test_send_prompt_gemini_flavor_omits_enable_thinking(monkeypatch):
-        """Gemini-flavored providers (google) do not accept enable_thinking:
-        the flag is skipped even when -t / /thinking on is in effect, because
-        Gemini 3.x reasons by default and the OpenAI-compatibility layer
-        rejects the unknown field with a 400 error."""
+    def test_send_prompt_gemini_flavor_skips_enable_thinking(monkeypatch):
+        """Gemini-flavored providers (google) never send enable_thinking (the
+        field does not exist on their OpenAI-compatibility layer); no
+        thinking_config payload is sent either."""
         fake_run = _fake_run_returns("hi")
         monkeypatch.setattr(
             client_mod,
@@ -211,9 +210,31 @@ if pytest is not None:
         client_mod.send_prompt(
             "hello", use_mcp=False, cli_provider="google", thinking=True
         )
-        # enable_thinking must NOT be in extra_body for Gemini-flavored
-        # providers; no extra_body should be created at all.
-        assert "extra_body" not in fake_run.captured_kwargs
+        extra_body = fake_run.captured_kwargs.get("extra_body")
+        # enable_thinking must NOT be sent for Gemini-flavored providers.
+        assert not extra_body or "enable_thinking" not in extra_body
+        # No thinking_config payload either.
+        assert not extra_body or "extra_body" not in extra_body
+        # No reasoning_effort: no reasoning level resolves.
+        assert "reasoning_effort" not in fake_run.captured_kwargs
+
+    def test_send_prompt_gemini_flavor_forwards_reasoning_effort(monkeypatch):
+        """The resolved reasoning level is sent as reasoning_effort for
+        Gemini-flavored providers (e.g. --reasoning-level high)."""
+        fake_run = _fake_run_returns("hi")
+        monkeypatch.setattr(
+            client_mod,
+            "resolve_runtime_config",
+            lambda *a, **k: (None, "sk-test", "gemini-3.7-flash"),
+        )
+        monkeypatch.setattr(client_mod, "_run_with_progress_bar", fake_run)
+        client_mod.send_prompt(
+            "hello",
+            use_mcp=False,
+            cli_provider="google",
+            reasoning_level="high",
+        )
+        assert fake_run.captured_kwargs["reasoning_effort"] == "high"
 
     def test_build_call_kwargs_forwards_reasoning_effort():
         class _Cfg:
@@ -250,11 +271,10 @@ if pytest is not None:
         kwargs = build_call_kwargs("deepseek-v4-flash", _Cfg(), 1000, None, None)
         assert kwargs["extra_body"]["enable_thinking"] is True
 
-    def test_build_call_kwargs_gemini_flavor_omits_enable_thinking():
+    def test_build_call_kwargs_gemini_flavor_skips_enable_thinking():
         """Web agent skips enable_thinking for Gemini-flavored providers
         (google): the field does not exist on Google's OpenAI-compatibility
-        layer, so no extra_body is created even when the effective thinking
-        state is on."""
+        layer, and no thinking_config payload is sent."""
 
         class _Cfg:
             effective_thinking = True
@@ -264,7 +284,24 @@ if pytest is not None:
                 return None
 
         kwargs = build_call_kwargs("gemini-3.7-flash", _Cfg(), 1000, None, None)
-        assert "extra_body" not in kwargs
+        extra_body = kwargs.get("extra_body")
+        assert not extra_body or "enable_thinking" not in extra_body
+        assert not extra_body or "extra_body" not in extra_body
+        assert "reasoning_effort" not in kwargs
+
+    def test_build_call_kwargs_gemini_flavor_forwards_reasoning_effort():
+        """The web agent forwards the resolved reasoning level as
+        reasoning_effort for Gemini-flavored providers."""
+
+        class _Cfg:
+            effective_thinking = False
+            effective_provider = "google"
+
+            def effective_tools_for(self, api_type):
+                return None
+
+        kwargs = build_call_kwargs("gemini-3.7-flash", _Cfg(), 1000, None, "medium")
+        assert kwargs["reasoning_effort"] == "medium"
 
     def test_build_call_kwargs_omits_thinking_when_off():
         """Web agent omits enable_thinking when the effective state is off."""

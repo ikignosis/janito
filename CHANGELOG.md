@@ -17,8 +17,8 @@ Changes since `v4.26.0` (2026-08-17).
   field does not exist in the request schema, so using `/thinking on` or
   `-t`/`--thinking` previously failed with a 400
   "Unknown name \"enable_thinking\": Cannot find field" error.  Thinking
-  depth for Gemini is instead controlled through `--reasoning-level`
-  (mapped to the model's `thinking_level`).
+  depth is instead controlled through `--reasoning-level` (sent as
+  `reasoning_effort`, which the API maps to the model's `thinking_level`).
 - The `google` provider now works with tool/function calls: Gemini 3.x
   requires each replayed function call in the conversation history to carry
   the `extra_content.google.thought_signature` the model issued with it, and

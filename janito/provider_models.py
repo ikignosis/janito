@@ -190,9 +190,7 @@ class Provider:
         Gemini-flavored providers (e.g. Google's Gemini models accessed
         through the OpenAI-compatibility layer) have provider-specific API
         behaviours: notably, their ``enable_thinking`` extra-body flag is
-        **not** accepted (Gemini 3.x reasons by default), so thinking mode
-        is handled differently (see
-        :func:`janito.provider_accessors.apply_thinking_to_extra_body`).
+        **not** accepted (Gemini 3.x reasons by default).
         """
         return bool(self._get("gemini_flavor", False))
 

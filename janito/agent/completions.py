@@ -60,6 +60,9 @@ def build_call_kwargs(
         else:
             call_kwargs["max_tokens"] = max_output_tokens
 
+    # Reasoning effort: sent whenever a reasoning level resolves (None means
+    # the API's own default applies).
+    provider = getattr(config, "effective_provider", None)
     if reasoning_level:
         call_kwargs["reasoning_effort"] = reasoning_level
 
@@ -73,7 +76,6 @@ def build_call_kwargs(
     # parameter (e.g. MiniMax-M3's {"type": "adaptive"}).  Gemini-flavored
     # providers (google) skip enable_thinking -- the field does not exist on
     # their OpenAI-compatibility API.
-    provider = getattr(config, "effective_provider", None)
     apply_thinking_to_extra_body(
         call_kwargs, config.effective_thinking, provider=provider
     )

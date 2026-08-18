@@ -142,7 +142,8 @@ def _build_call_kwargs(
     if max_output_tokens is not None:
         call_kwargs["max_output_tokens"] = max_output_tokens
 
-    # Pass the reasoning level (reasoning_effort) when resolved.
+    # Reasoning effort: sent whenever a reasoning level resolves (None means
+    # the API's own default applies).
     if reasoning_level:
         call_kwargs["reasoning"] = {"effort": reasoning_level}
 

@@ -22,8 +22,9 @@ PROVIDER_CONFIG: dict = {
     # provider-specific behaviours that differ from the standard
     # OpenAI-compatible surface.  In particular, the ``enable_thinking``
     # extra-body flag is **not** accepted (Gemini 3.x models reason by
-    # default and the field does not exist), so thinking mode must be
-    # handled differently for this provider.
+    # default and the field does not exist); thinking depth is controlled
+    # through the resolved reasoning level (``reasoning_effort``), which
+    # the API maps to the model's ``thinking_level``.
     "gemini_flavor": True,
     "models": {
         "gemini-3.7-flash": {

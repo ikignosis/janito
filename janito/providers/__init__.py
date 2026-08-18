@@ -44,9 +44,11 @@ Provider-level fields:
     (Google) flavor of the OpenAI-compatible surface.  When ``True``, the
     ``enable_thinking`` extra-body flag is not sent (the field does not
     exist on Google's OpenAI-compatibility layer), because Gemini 3.x
-    models reason by default and thinking is controlled through
-    ``reasoning_effort`` instead.  Absent (or ``False``) means the provider
-    follows the standard OpenAI-compatible behaviour.
+    models reason by default; thinking depth is instead controlled through
+    the resolved reasoning level, which the API maps to the model's
+    ``thinking_level``.  Absent (or
+    ``False``) means the provider follows the standard OpenAI-compatible
+    behaviour.
 
 Model-level fields (each entry of the ``models`` dict):
 

@@ -143,16 +143,17 @@ janito --provider google --set reasoning-level=medium
 ```
 
 Resolution order: `--reasoning-level` > per-provider config value
-(`--set reasoning-level=...`) > the model's own default level.
+(`--set reasoning-level=...`) > the model's own default level (`low`).
 
 ### Thinking Mode
 
 The `google` provider is **Gemini-flavored**: the `enable_thinking`
 extra-body flag is **not** sent to Google's OpenAI-compatibility layer
 (because the field does not exist and Gemini 3.x models reason by default).
+Thinking depth is instead controlled through `--reasoning-level`, sent as
+`reasoning_effort` (the API maps it to the model's `thinking_level`).
 Using `/thinking on` or `-t`/`--thinking` is therefore a no-op for the
-request body -- the model's thinking depth is instead controlled through
-`--reasoning-level` (mapped to `thinking_level`).
+request body.
 
 ### Example
 

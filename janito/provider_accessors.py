@@ -420,7 +420,7 @@ def get_gemini_flavor_from_provider(provider: str) -> bool:
     layer) have provider-specific API behaviours that differ from the
     standard OpenAI-compatible surface: notably, their ``enable_thinking``
     extra-body flag is **not** accepted (Gemini 3.x models reason by default
-    and the field does not exist), so thinking mode is handled differently.
+    and the field does not exist).
 
     Args:
         provider: The provider name (case-insensitive).
