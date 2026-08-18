@@ -54,6 +54,14 @@ PROVIDER_CONFIG: dict = {
         # Native-SDK API types (e.g. "Anthropic", "DashScope") go here too.
         "Anthropic": "https://api.example.com/anthropic",
     },
+    #: Whether the provider's API uses a provider-specific "flavor" of the
+    #: OpenAI-compatible surface (optional).  When ``True`` (e.g. Google's
+    #: ``gemini_flavor``), API-call building applies provider-specific
+    #: adjustments: the ``enable_thinking`` extra-body flag is **not** sent
+    #: (the field does not exist on the provider's API), because thinking
+    #: mode is handled through other parameters.  Absent (or ``False``)
+    #: means the provider follows the standard OpenAI-compatible behaviour.
+    "gemini_flavor": False,
     # ------------------------------------------------------------------
     # Model-level fields (one entry per model, keyed by model name)
     # ------------------------------------------------------------------

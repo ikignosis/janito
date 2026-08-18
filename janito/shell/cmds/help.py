@@ -56,6 +56,7 @@ class HelpCmdHandler(CmdHandler):
         features.add_row("/prompt", "Show the system prompt")
         features.add_row("/skills", "List all available skills")
         features.add_row("/tools", "List all available tools")
+        features.add_row("/plugins", "List all installed plugins")
         features.add_row(
             "/read", "Ask the LLM using the main history but read-only tools"
         )
@@ -68,6 +69,10 @@ class HelpCmdHandler(CmdHandler):
         )
         features.add_row(
             "/multi", "Enable multiline input for next prompt (ESC ENTER to submit)"
+        )
+        features.add_row(
+            "/thinking on|off",
+            "Enable or disable thinking mode for the current session",
         )
         console.print(features)
 

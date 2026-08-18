@@ -42,6 +42,8 @@ from .client_support import (
     _display_reasoning,
     _display_usage,
     _load_mcp,
+    _print_verbose_api_call,
+    _print_verbose_api_response,
     _print_verbose_info,
 )
 
@@ -163,6 +165,11 @@ class Client:
                 thinking,
             )
 
+            # In verbose mode, show the request that is about to be sent
+            # (messages/input truncated to their tail, tools by name).
+            if verbose:
+                self._print_verbose_api_call(console, call_kwargs, tools_schemas)
+
             # Consume the full stream under a progress bar (the blocking work
             # runs in a worker thread via the module's _run_with_progress_bar
             # while the main thread drives the spinner).
@@ -171,6 +178,7 @@ class Client:
                 reasoning_content,
                 tool_calls,
                 usage_info,
+                raw_attrs,
             ) = self._run_stream_round(
                 client,
                 call_kwargs,
@@ -181,6 +189,18 @@ class Client:
                 model=model,
                 console=console,
             )
+
+            # In verbose mode, show a compact summary of the response.
+            if verbose:
+                self._print_verbose_api_response(
+                    console,
+                    full_content,
+                    reasoning_content,
+                    tool_calls,
+                    usage_info,
+                    state,
+                    raw_attrs=raw_attrs,
+                )
 
             logger.debug("API streaming response completed")
             _display_reasoning(reasoning_content, console)
@@ -226,6 +246,41 @@ class Client:
     def _print_verbose_info(self, console, base_url, model, mcp_manager) -> None:
         """Print model/backend/MCP info in verbose mode."""
         _print_verbose_info(console, base_url, model, mcp_manager, self.backend_default)
+
+    def _print_verbose_api_call(self, console, call_kwargs, tools_schemas) -> None:
+        """Print the API request parameters in verbose mode (messages tail)."""
+        _print_verbose_api_call(console, call_kwargs, tools_schemas)
+
+    def _print_verbose_api_response(
+        self,
+        console,
+        full_content,
+        reasoning_content,
+        tool_calls,
+        usage_info,
+        state,
+        raw_attrs=None,
+    ) -> None:
+        """Print a compact API response summary in verbose mode.
+
+        ``state`` is API-specific: for the Responses client it is a dict that
+        carries the server-side ``response_id`` (chained across rounds); the
+        other clients pass a ``messages`` list, from which nothing extra is
+        shown.  ``raw_attrs`` carries the raw top-level response metadata
+        captured by the stream consumer.
+        """
+        response_id = None
+        if isinstance(state, dict):
+            response_id = state.get("response_id")
+        _print_verbose_api_response(
+            console,
+            full_content,
+            reasoning_content,
+            tool_calls,
+            usage_info,
+            response_id,
+            raw_attrs=raw_attrs,
+        )
 
     # ------------------------------------------------------------------
     # Hooks every subclass must implement (forwarding to its module globals)

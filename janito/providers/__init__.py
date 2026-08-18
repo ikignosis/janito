@@ -40,6 +40,13 @@ Provider-level fields:
     ``CUSTOM_ENDPOINT`` marker means the endpoint must come from config.
   - "endpoint_by_api_type" (optional): per-API-type base URLs, e.g. the
     native-SDK URL next to the OpenAI-compatible one.
+  - "gemini_flavor" (optional): whether the provider's API uses the Gemini
+    (Google) flavor of the OpenAI-compatible surface.  When ``True``, the
+    ``enable_thinking`` extra-body flag is not sent (the field does not
+    exist on Google's OpenAI-compatibility layer), because Gemini 3.x
+    models reason by default and thinking is controlled through
+    ``reasoning_effort`` instead.  Absent (or ``False``) means the provider
+    follows the standard OpenAI-compatible behaviour.
 
 Model-level fields (each entry of the ``models`` dict):
 
@@ -113,6 +120,7 @@ from .anthropic.config import PROVIDER_CONFIG as _ANTHROPIC_CONFIG
 from .custom.config import CUSTOM_ENDPOINT_MARKER as CUSTOM_ENDPOINT_MARKER
 from .custom.config import PROVIDER_CONFIG as _CUSTOM_CONFIG
 from .deepseek.config import PROVIDER_CONFIG as _DEEPSEEK_CONFIG
+from .google.config import PROVIDER_CONFIG as _GOOGLE_CONFIG
 from .minimax.config import PROVIDER_CONFIG as _MINIMAX_CONFIG
 from .moonshot.config import PROVIDER_CONFIG as _MOONSHOT_CONFIG
 from .openai.config import PROVIDER_CONFIG as _OPENAI_CONFIG
@@ -126,6 +134,7 @@ from .zai.config import PROVIDER_CONFIG as _ZAI_CONFIG
 _PROVIDER_CONFIGS: dict[str, dict] = {
     # AI Providers with OpenAI-compatible APIs
     "openai": _OPENAI_CONFIG,
+    "google": _GOOGLE_CONFIG,
     "minimax": _MINIMAX_CONFIG,
     "xiaomi": _XIAOMI_CONFIG,
     "moonshot": _MOONSHOT_CONFIG,

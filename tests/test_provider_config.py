@@ -31,6 +31,7 @@ from janito.provider_accessors import (
     get_default_tools_from_provider,
     get_endpoint_by_api_type,
     get_endpoint_for_api_type,
+    get_gemini_flavor_from_provider,
     get_provider_config,
     get_required_package_for_api_type,
     get_responses_in_server_from_provider,
@@ -192,6 +193,53 @@ if pytest is not None:
         assert get_default_max_output_tokens_from_provider("anthropic") == 64000
         assert get_default_api_type_from_provider("anthropic") == "Completions"
 
+    def test_google_provider():
+        info = get_provider_config("google")
+        assert info is not None
+        assert info["default_model"] == "gemini-3.7-flash"
+        model_entry = info["models"]["gemini-3.7-flash"]
+        assert model_entry["max_input_tokens"] == 1048576  # 1M (2**20)
+        assert model_entry["max_output_tokens"] == 65536
+        assert (
+            info["endpoint"]
+            == "https://generativelanguage.googleapis.com/v1beta/openai/"
+        )
+        # The provider is Gemini-flavored: Google's OpenAI-compatibility layer
+        # does not accept the enable_thinking flag, so thinking is handled
+        # through reasoning_effort instead.
+        assert info["gemini_flavor"] is True
+        assert get_gemini_flavor_from_provider("google") is True
+        assert get_gemini_flavor_from_provider("Google") is True
+        # Non-Gemini providers (and unknown names) are not flavored.
+        assert get_gemini_flavor_from_provider("openai") is False
+        assert get_gemini_flavor_from_provider("alibaba") is False
+        assert get_gemini_flavor_from_provider("bogus") is False
+        # Google's OpenAI-compatibility layer documents the Chat Completions
+        # API only, so the provider is Completions-only.
+        assert model_entry["supported_api_types"] == ["Completions"]
+        # Case-insensitive lookup.
+        assert (
+            get_provider_config("Google")["endpoint"]
+            == "https://generativelanguage.googleapis.com/v1beta/openai/"
+        )
+        assert (
+            get_base_url_from_provider("google")
+            == "https://generativelanguage.googleapis.com/v1beta/openai/"
+        )
+        assert get_default_model_from_provider("google") == "gemini-3.7-flash"
+        assert get_default_max_input_tokens_from_provider("google") == 1048576
+        assert get_default_max_output_tokens_from_provider("google") == 65536
+        # Gemini 3.x models reason by default; reasoning_effort maps to the
+        # model's thinking_level (minimal/low/medium/high).
+        supported = get_supported_reasoning_levels_from_provider("google")
+        assert supported is not None
+        assert [entry["effort"] for entry in supported] == [
+            "minimal",
+            "low",
+            "medium",
+            "high",
+        ]
+
     def test_default_model_and_max_tokens():
         # Providers expose built-in default models / max tokens.
         assert get_default_model_from_provider("openai") == "gpt-5.6-luna"
@@ -268,6 +316,7 @@ if pytest is not None:
         # Everyone else defaults to False (explicit or absent).
         for name in (
             "openai",
+            "google",
             "xiaomi",
             "moonshot",
             "zai",
@@ -469,6 +518,7 @@ if pytest is not None:
             "moonshot",
             "zai",
             "xai",
+            "google",
         ):
             assert get_supported_api_types_from_provider(name) == ["Completions"]
             assert get_default_api_type_from_provider(name) == "Completions"

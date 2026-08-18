@@ -68,7 +68,9 @@ if pytest is not None:
                 ),
             ),
         ]
-        full, reasoning, tool_blocks, usage = dashscope_api._consume_stream(chunks)
+        full, reasoning, tool_blocks, usage, raw_attrs = dashscope_api._consume_stream(
+            chunks
+        )
         assert full == "Hello world"
         assert reasoning is None
         assert tool_blocks == []
@@ -83,7 +85,9 @@ if pytest is not None:
             _chunk(content="", reasoning=" more.", finish_reason=None),
             _chunk(content="Answer", finish_reason="stop"),
         ]
-        full, reasoning, tool_blocks, usage = dashscope_api._consume_stream(chunks)
+        full, reasoning, tool_blocks, usage, raw_attrs = dashscope_api._consume_stream(
+            chunks
+        )
         assert full == "Answer"
         assert reasoning == "Let me think... more."
         assert tool_blocks == []
@@ -103,7 +107,9 @@ if pytest is not None:
             _chunk(content="", tool_calls=tool_calls, finish_reason="tool_calls"),
             _chunk(content="Final answer", finish_reason="stop"),
         ]
-        full, reasoning, tool_blocks, usage = dashscope_api._consume_stream(chunks)
+        full, reasoning, tool_blocks, usage, raw_attrs = dashscope_api._consume_stream(
+            chunks
+        )
         assert full == "Final answer"
         assert tool_blocks == [
             {"id": "call_1", "name": "read_file", "arguments": '{"filepath": "a.txt"}'}
@@ -203,7 +209,9 @@ if pytest is not None:
             _chunk(content=[{"text": "Hello "}], finish_reason=None),
             _chunk(content=[{"text": "world"}], finish_reason="stop"),
         ]
-        full, reasoning, tool_blocks, usage = dashscope_api._consume_stream(chunks)
+        full, reasoning, tool_blocks, usage, raw_attrs = dashscope_api._consume_stream(
+            chunks
+        )
         assert full == "Hello world"
 
     def test_consume_stream_accumulates_tool_call_arguments():
@@ -235,7 +243,9 @@ if pytest is not None:
             ),
             _chunk(content="Final", finish_reason="stop"),
         ]
-        full, reasoning, tool_blocks, usage = dashscope_api._consume_stream(chunks)
+        full, reasoning, tool_blocks, usage, raw_attrs = dashscope_api._consume_stream(
+            chunks
+        )
         assert full == "Final"
         assert tool_blocks == [
             {"id": "call_1", "name": "get_weather", "arguments": '{"city": "Lisbon"}'}
@@ -324,7 +334,7 @@ if pytest is not None:
             "model": "qwen3.8-max",
             "messages": [{"role": "user", "content": "hi"}],
         }
-        full, reasoning, tool_blocks, usage = dashscope_api._stream_response(
+        full, reasoning, tool_blocks, usage, raw_attrs = dashscope_api._stream_response(
             client, call_kwargs, []
         )
         assert full == "hi"
@@ -345,7 +355,7 @@ if pytest is not None:
             "model": "qwen-plus",
             "messages": [{"role": "user", "content": "hi"}],
         }
-        full, reasoning, tool_blocks, usage = dashscope_api._stream_response(
+        full, reasoning, tool_blocks, usage, raw_attrs = dashscope_api._stream_response(
             client, call_kwargs, []
         )
         assert full == "hello"
@@ -371,7 +381,7 @@ if pytest is not None:
             "model": "qwen-plus",
             "messages": [{"role": "user", "content": "hi"}],
         }
-        full, reasoning, tool_blocks, usage = dashscope_api._stream_response(
+        full, reasoning, tool_blocks, usage, raw_attrs = dashscope_api._stream_response(
             client, call_kwargs, []
         )
         assert full == "recovered"

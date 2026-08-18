@@ -36,6 +36,13 @@ def _provider_arg_completer(prefix: str) -> list[str]:
     return list(available_provider_names(prefix, only_with_api_key=True))
 
 
+def _thinking_arg_completer(prefix: str) -> list[str]:
+    """Return 'on'/'off' options matching prefix for /thinking autocompletion."""
+    options = ["on", "off"]
+    lowered = prefix.lower()
+    return [opt for opt in options if opt.lower().startswith(lowered)]
+
+
 class _SessionMixin:
     """Mixin providing prompt_toolkit session and history management."""
 
@@ -149,6 +156,7 @@ class _SessionMixin:
                 arg_completers={
                     "/provider": _provider_arg_completer,
                     "/model": self._model_arg_completer,
+                    "/thinking": _thinking_arg_completer,
                 },
             ),
             complete_while_typing=True,

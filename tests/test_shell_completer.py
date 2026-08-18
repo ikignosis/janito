@@ -116,6 +116,7 @@ if pytest is not None:
         assert "/tools" in names
         assert "/exit" in names
         assert "/provider" in names
+        assert "/thinking" in names
 
     def test_session_has_completer_and_complete_while_typing():
         # Building an InteractiveShell wires the completer into its session.

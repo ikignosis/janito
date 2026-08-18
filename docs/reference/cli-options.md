@@ -71,7 +71,7 @@ See [Provider Variants](../configuration/variants.md) for the full guide.
 | `-S`, `--system-prompt <prompt>` | Override the system prompt (tools stay enabled) |
 | `--no-tools` | Do not load tools (skill tools stay enabled) |
 | `--show-system-prompt` | Display the resolved system prompt and exit |
-| `-t`, `--thinking` | Enable thinking mode (sends `extra_body={'enable_thinking': True}`). DeepSeek, Alibaba/Qwen and MiniMax-M3 have thinking enabled by default |
+| `-t`, `--thinking` | Enable thinking mode (sends `extra_body={'enable_thinking': True}`). DeepSeek, Alibaba/Qwen and MiniMax-M3 have thinking enabled by default. Gemini-flavored providers (google) do not accept this flag; use `--reasoning-level` to control their thinking depth. |
 | `--reasoning-level <level>` | Set the reasoning depth for the API call (sends `reasoning_effort=<level>`). Overrides the provider's configured value and built-in default. Values: `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`. |
 
 ## Privileges

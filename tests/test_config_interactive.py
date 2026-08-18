@@ -43,6 +43,7 @@ def test_prompt_provider_uses_questionary_select(monkeypatch, capsys):
         "anthropic",
         "custom",
         "deepseek",
+        "google",
         "minimax",
         "moonshot",
         "openai",

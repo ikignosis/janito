@@ -135,7 +135,8 @@ Note: --set and --set-api-key must be used in separate commands.
         "-v",
         "--verbose",
         action="store_true",
-        help="Enable verbose output (shows model and backend info)",
+        help="Enable verbose output: model/backend/MCP info plus the API call "
+        "parameters (messages shown as tail only) and a response summary",
     )
 
     parser.add_argument(
@@ -183,7 +184,8 @@ Note: --set and --set-api-key must be used in separate commands.
         action="store_true",
         help="Enable thinking mode (sends extra_body={'enable_thinking': True} "
         "to the API). DeepSeek, Alibaba/Qwen and MiniMax-M3 have thinking "
-        "enabled by default.",
+        "enabled by default. Gemini-flavored providers (google) do not accept "
+        "this flag; use --reasoning-level to control their thinking depth.",
     )
 
     parser.add_argument(

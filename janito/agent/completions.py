@@ -15,6 +15,7 @@ loop under a progress spinner).
 """
 
 from dataclasses import dataclass, field
+from typing import Any
 
 from janito.provider_accessors import (
     apply_builtin_tools_to_extra_body,
@@ -69,8 +70,13 @@ def build_call_kwargs(
 
     # Pass the thinking mode in extra_body: enable_thinking for flag-style
     # defaults, or the raw dict for providers with a structured thinking
-    # parameter (e.g. MiniMax-M3's {"type": "adaptive"}).
-    apply_thinking_to_extra_body(call_kwargs, config.effective_thinking)
+    # parameter (e.g. MiniMax-M3's {"type": "adaptive"}).  Gemini-flavored
+    # providers (google) skip enable_thinking -- the field does not exist on
+    # their OpenAI-compatibility API.
+    provider = getattr(config, "effective_provider", None)
+    apply_thinking_to_extra_body(
+        call_kwargs, config.effective_thinking, provider=provider
+    )
 
     # Pass the effective model's built-in tools (e.g. Alibaba/Qwen's
     # code_interpreter / web_search / web_extractor) as request-body
@@ -121,8 +127,12 @@ class CompletionsAccumulator:
 
     content: list[str] = field(default_factory=list)
     reasoning: list[str] = field(default_factory=list)
-    tool_calls: dict[int, dict[str, str]] = field(default_factory=dict)
+    tool_calls: dict[int, dict[str, Any]] = field(default_factory=dict)
     usage: object | None = None
+    #: Raw top-level response metadata (id, model, created, finish_reason, ...)
+    #: captured from the stream chunks.  Populated by the CLI stream consumer
+    #: for the verbose response dump; the web loop never reads it.
+    raw_attrs: dict[str, Any] = field(default_factory=dict)
 
     def _handle_reasoning_delta(self, delta) -> str | None:
         """Capture reasoning/thinking content; returns the delta or None."""
@@ -145,6 +155,15 @@ class CompletionsAccumulator:
                 self.tool_calls[idx]["name"] = tc_delta.function.name
             if tc_delta.function.arguments:
                 self.tool_calls[idx]["arguments"] += tc_delta.function.arguments
+        # Preserve provider-specific extras (e.g. Gemini's
+        # ``extra_content.google.thought_signature``) so they can be echoed
+        # back verbatim on the next turn.  The OpenAI SDK surfaces unknown
+        # fields via ``getattr`` because its models allow extra keys; dropping
+        # them makes Gemini 3.x reject the follow-up request with a 400
+        # "Function call is missing a thought_signature" error.
+        extra_content = getattr(tc_delta, "extra_content", None)
+        if extra_content:
+            self.tool_calls[idx]["extra_content"] = extra_content
 
     def _handle_tool_call_delta(self, delta) -> None:
         """Accumulate tool-call deltas (split across many chunks)."""
@@ -186,9 +205,17 @@ class CompletionsAccumulator:
         return "".join(self.reasoning) if self.reasoning else None
 
     def tool_calls_list(self) -> list[dict]:
-        """Assembled tool calls in original index order (OpenAI wire format)."""
-        return [
-            {
+        """Assembled tool calls in original index order (OpenAI wire format).
+
+        Provider-specific extras (e.g. Gemini's
+        ``extra_content.google.thought_signature``) captured while folding the
+        deltas are preserved on each call so they can be echoed back verbatim
+        in the assistant message of the next turn.
+        """
+        calls = []
+        for i in sorted(self.tool_calls):
+            tc = self.tool_calls[i]
+            call = {
                 "id": tc["id"],
                 "type": "function",
                 "function": {
@@ -196,8 +223,11 @@ class CompletionsAccumulator:
                     "arguments": tc["arguments"],
                 },
             }
-            for tc in (self.tool_calls[i] for i in sorted(self.tool_calls))
-        ]
+            extra_content = tc.get("extra_content")
+            if extra_content:
+                call["extra_content"] = extra_content
+            calls.append(call)
+        return calls
 
     def usage_event(self, max_tokens: int | None = None):
         """Build a UsageEvent from the streamed usage info (or ``None``).

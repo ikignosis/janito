@@ -115,6 +115,49 @@ if pytest is not None:
         )
         assert msg["content"] is None
 
+    def test_build_assistant_message_preserves_extra_content():
+        """Provider extras (Gemini thought_signature) are echoed back.
+
+        Gemini 3.x rejects the follow-up request unless the replayed function
+        call keeps the ``extra_content.google.thought_signature`` it was
+        issued with, so the assistant message must carry it verbatim.
+        """
+        ex = ToolExecutor()
+        extra = {"google": {"thought_signature": "SIG-12345"}}
+        msg = ex.build_assistant_message(
+            "",
+            {
+                0: {
+                    "id": "call_1",
+                    "name": "FindFiles",
+                    "arguments": "{}",
+                    "extra_content": extra,
+                }
+            },
+        )
+        assert msg["tool_calls"] == [
+            {
+                "id": "call_1",
+                "type": "function",
+                "function": {"name": "FindFiles", "arguments": "{}"},
+                "extra_content": extra,
+            }
+        ]
+
+    def test_build_assistant_message_omits_extra_content_when_absent():
+        """Calls without provider extras keep the plain OpenAI shape."""
+        ex = ToolExecutor()
+        msg = ex.build_assistant_message(
+            "", {0: {"id": "call_1", "name": "FindFiles", "arguments": "{}"}}
+        )
+        assert msg["tool_calls"] == [
+            {
+                "id": "call_1",
+                "type": "function",
+                "function": {"name": "FindFiles", "arguments": "{}"},
+            }
+        ]
+
     def test_execute_tool_call_runs_builtin_tool(monkeypatch):
         """A built-in call is routed to the registry and its result returned."""
         _register(monkeypatch, "MyTool", "r")

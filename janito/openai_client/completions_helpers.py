@@ -114,6 +114,7 @@ def _build_call_kwargs(
     preserve_thinking: Any,
     thinking,
     tools=None,
+    provider: str | None = None,
 ) -> dict[str, Any]:
     """Build the Chat Completions call parameters for one round.
 
@@ -122,6 +123,9 @@ def _build_call_kwargs(
     ...]``); when declared, each ``type`` is sent as a request-body
     ``enable_*`` flag in ``extra_body`` (see
     :func:`apply_builtin_tools_to_extra_body`).  ``None`` sends nothing.
+    ``provider`` enables the Gemini-flavor guard in
+    :func:`apply_thinking_to_extra_body` (Gemini-flavored providers do not
+    accept ``enable_thinking``).
     """
     call_kwargs = {
         "model": model,
@@ -145,8 +149,10 @@ def _build_call_kwargs(
 
     # Pass the thinking mode in extra_body: enable_thinking for flag-style
     # defaults, or the raw dict for providers with a structured thinking
-    # parameter (e.g. MiniMax-M3's {"type": "adaptive"}).
-    apply_thinking_to_extra_body(call_kwargs, thinking)
+    # parameter (e.g. MiniMax-M3's {"type": "adaptive"}).  Gemini-flavored
+    # providers (google) skip enable_thinking -- the field does not exist on
+    # their OpenAI-compatibility API.
+    apply_thinking_to_extra_body(call_kwargs, thinking, provider=provider)
 
     # Pass the effective model's built-in tools (e.g. Alibaba/Qwen's
     # code_interpreter / web_search / web_extractor) as request-body

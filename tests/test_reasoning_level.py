@@ -38,7 +38,7 @@ def _fake_run_returns(content, reasoning=None, tool_calls=None, usage=None):
 
     def fake_run(func, client, call_kwargs, tools_schemas):
         fake_run.captured_kwargs = call_kwargs
-        return content, reasoning, tool_calls or {}, usage
+        return content, reasoning, tool_calls or {}, usage, {}
 
     fake_run.captured_kwargs = None
     return fake_run
@@ -196,6 +196,25 @@ if pytest is not None:
         )
         assert fake_run.captured_kwargs["extra_body"]["enable_thinking"] is True
 
+    def test_send_prompt_gemini_flavor_omits_enable_thinking(monkeypatch):
+        """Gemini-flavored providers (google) do not accept enable_thinking:
+        the flag is skipped even when -t / /thinking on is in effect, because
+        Gemini 3.x reasons by default and the OpenAI-compatibility layer
+        rejects the unknown field with a 400 error."""
+        fake_run = _fake_run_returns("hi")
+        monkeypatch.setattr(
+            client_mod,
+            "resolve_runtime_config",
+            lambda *a, **k: (None, "sk-test", "gemini-3.7-flash"),
+        )
+        monkeypatch.setattr(client_mod, "_run_with_progress_bar", fake_run)
+        client_mod.send_prompt(
+            "hello", use_mcp=False, cli_provider="google", thinking=True
+        )
+        # enable_thinking must NOT be in extra_body for Gemini-flavored
+        # providers; no extra_body should be created at all.
+        assert "extra_body" not in fake_run.captured_kwargs
+
     def test_build_call_kwargs_forwards_reasoning_effort():
         class _Cfg:
             effective_thinking = False
@@ -230,6 +249,22 @@ if pytest is not None:
 
         kwargs = build_call_kwargs("deepseek-v4-flash", _Cfg(), 1000, None, None)
         assert kwargs["extra_body"]["enable_thinking"] is True
+
+    def test_build_call_kwargs_gemini_flavor_omits_enable_thinking():
+        """Web agent skips enable_thinking for Gemini-flavored providers
+        (google): the field does not exist on Google's OpenAI-compatibility
+        layer, so no extra_body is created even when the effective thinking
+        state is on."""
+
+        class _Cfg:
+            effective_thinking = True
+            effective_provider = "google"
+
+            def effective_tools_for(self, api_type):
+                return None
+
+        kwargs = build_call_kwargs("gemini-3.7-flash", _Cfg(), 1000, None, None)
+        assert "extra_body" not in kwargs
 
     def test_build_call_kwargs_omits_thinking_when_off():
         """Web agent omits enable_thinking when the effective state is off."""

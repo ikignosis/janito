@@ -195,6 +195,10 @@ To see which plugins are currently loaded:
 janito --list-plugins
 ```
 
+Inside the interactive shell, `/plugins` lists the **installed** plugins
+(scanned from `<config_dir>/plugins`, default `~/.janito/plugins`), their
+paths and whether each one loaded in the current session.
+
 ---
 
 ## Available Plugins

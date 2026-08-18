@@ -97,7 +97,14 @@ def test_consume_stream_assembles_text_and_usage():
             _Event("response.completed", response=_Response("resp_1", usage=_Usage())),
         ]
     )
-    content, reasoning, tools, usage, response_id = api._consume_response_stream(events)
+    (
+        content,
+        reasoning,
+        tools,
+        usage,
+        response_id,
+        raw_attrs,
+    ) = api._consume_response_stream(events)
     assert content == "Hello world"
     assert reasoning is None
     assert tools == []
@@ -129,7 +136,14 @@ def test_consume_stream_assembles_split_tool_call_arguments():
             _Event("response.completed", response=_Response("resp_2")),
         ]
     )
-    content, reasoning, tools, usage, response_id = api._consume_response_stream(events)
+    (
+        content,
+        reasoning,
+        tools,
+        usage,
+        response_id,
+        raw_attrs,
+    ) = api._consume_response_stream(events)
     assert content == "Let me check"
     assert reasoning == "thinking..."
     assert tools == [
@@ -154,7 +168,7 @@ def test_consume_stream_prefers_full_arguments_from_done_event():
             _Event("response.completed", response=_Response("resp_3")),
         ]
     )
-    _, _, tools, _, response_id = api._consume_response_stream(events)
+    _, _, tools, _, response_id, _ = api._consume_response_stream(events)
     assert tools == [{"call_id": "call_9", "name": "run_bash", "arguments": '{"x": 1}'}]
     assert response_id == "resp_3"
 

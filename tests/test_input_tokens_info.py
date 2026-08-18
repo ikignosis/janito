@@ -169,6 +169,13 @@ if pytest is not None:
         )
         assert "Cost: 0.773500$ (off-peak)" in text
 
+    def test_usage_line_cost_google_provider():
+        """Google Gemini usage calculates cost using google.cost module."""
+        text = _display_usage_text(
+            "google", "gemini-3.7-flash", _usage(1_000_000, 1_000_000, 0)
+        )
+        assert "Cost: 4.500000$" in text
+
     def test_usage_line_cost_provider_without_cost_module_is_na():
         """Providers without a cost module fall back to Cost: N/A."""
         text = _display_usage_text(

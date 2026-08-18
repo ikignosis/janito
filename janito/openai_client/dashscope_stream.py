@@ -19,6 +19,8 @@ import re
 from types import SimpleNamespace
 from typing import Any
 
+from .client_support import _extract_raw_attrs
+
 # Configure logger for this module
 logger = logging.getLogger(__name__)
 
@@ -116,6 +118,7 @@ class DashScopeStreamConsumer:
         self.output_tokens: int | None = None
         self.total_tokens: int | None = None
         self.finish: bool = False
+        self.raw_attrs: dict[str, Any] = {}
         self._chunks_seen = 0
 
     # ------------------------------------------------------------------
@@ -149,11 +152,12 @@ class DashScopeStreamConsumer:
         """Consume a streaming DashScope generation response.
 
         Returns ``(full_content, reasoning_content, tool_use_blocks,
-        usage_info)`` where ``tool_use_blocks`` is a list of
+        usage_info, raw_attrs)`` where ``tool_use_blocks`` is a list of
         ``{"id", "name", "arguments"}`` dicts (``arguments`` is the raw JSON
-        string from the model) and ``usage_info`` is a ``SimpleNamespace``
+        string from the model), ``usage_info`` is a ``SimpleNamespace``
         with ``total_tokens``/``input_tokens``/``output_tokens`` (``None``
-        when the API reported no usage).
+        when the API reported no usage) and ``raw_attrs`` holds the raw
+        top-level chunk metadata (request_id, status_code, finish_reason, ...).
 
         With ``incremental_output=True`` (set by the caller) each chunk
         carries only the newly generated text, so content / reasoning deltas
@@ -193,6 +197,7 @@ class DashScopeStreamConsumer:
             self.reasoning_content,
             tool_use_blocks,
             _build_usage_info(self.usage_state),
+            self.raw_attrs,
         )
 
     # ------------------------------------------------------------------
@@ -204,6 +209,11 @@ class DashScopeStreamConsumer:
         status_code = _get(chunk, "status_code")
         if status_code is not None and status_code != 200:
             _raise_dashscope_error(chunk, status_code)
+
+        # Raw top-level chunk metadata (request_id, status_code, ...) for the
+        # verbose dump; output (content/tool calls) and usage are surfaced
+        # elsewhere.
+        self.raw_attrs.update(_extract_raw_attrs(chunk, skip=("output", "usage")))
 
         output = _get(chunk, "output") or {}
         choices = _get(output, "choices") or []
@@ -217,7 +227,10 @@ class DashScopeStreamConsumer:
         self.handle_message(message)
         self.consume_usage(chunk)
 
-        if _get(choice, "finish_reason") == "stop":
+        finish_reason = _get(choice, "finish_reason")
+        if finish_reason:
+            self.raw_attrs["finish_reason"] = finish_reason
+        if finish_reason == "stop":
             self.finish = True
 
     def handle_message(self, message) -> None:
@@ -322,6 +335,7 @@ _STATE_KEYS = (
     "output_tokens",
     "total_tokens",
     "finish",
+    "raw_attrs",
 )
 
 
@@ -381,7 +395,8 @@ def _consume_usage(chunk, state: dict[str, Any]) -> None:
 def _stream_response(client, call_kwargs, tools_schemas, cancel_event=None):
     """Open a streaming DashScope generation call and fully consume it.
 
-    Returns ``(full_content, reasoning_content, tool_use_blocks, usage_info)``.
+    Returns ``(full_content, reasoning_content, tool_use_blocks, usage_info,
+    raw_attrs)``.
     Tool schemas are attached here (mirroring ``completions_api._stream_response``);
     the caller builds the remaining kwargs per round.
 

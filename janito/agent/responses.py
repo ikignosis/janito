@@ -179,8 +179,13 @@ def build_call_kwargs(
 
     # Pass the thinking mode in extra_body: enable_thinking for flag-style
     # defaults, or the raw dict for providers with a structured thinking
-    # parameter (e.g. MiniMax-M3's {"type": "adaptive"}).
-    apply_thinking_to_extra_body(call_kwargs, config.effective_thinking)
+    # parameter (e.g. MiniMax-M3's {"type": "adaptive"}).  Gemini-flavored
+    # providers (google) skip enable_thinking -- the field does not exist on
+    # their OpenAI-compatibility API.
+    provider = getattr(config, "effective_provider", None)
+    apply_thinking_to_extra_body(
+        call_kwargs, config.effective_thinking, provider=provider
+    )
 
     # Native model capabilities enabled through the Responses ``tools`` array:
     #

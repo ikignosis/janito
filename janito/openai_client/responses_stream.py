@@ -18,6 +18,8 @@ and drives the per-event handlers.  The module-level ``_consume_response_stream`
 import logging
 from typing import Any
 
+from .client_support import _extract_raw_attrs
+
 # Configure logger for this module
 logger = logging.getLogger(__name__)
 
@@ -27,9 +29,10 @@ class ResponsesStreamConsumer:
 
     The consumer owns the accumulated content / reasoning text, the tool-call
     list (with stable ``call_id`` per finished output item), the per-item
-    partial-arguments buffer, the usage info and the server-side response id.
-    :meth:`consume` drives the stream and returns the response parts; the
-    ``handle_*`` methods apply individual events.
+    partial-arguments buffer, the usage info, the server-side response id and
+    the raw top-level response metadata.  :meth:`consume` drives the stream
+    and returns the response parts; the ``handle_*`` methods apply individual
+    events.
     """
 
     def __init__(self) -> None:
@@ -39,6 +42,7 @@ class ResponsesStreamConsumer:
         self.partial_arguments: dict[str, str] = {}
         self.usage_info: Any = None
         self.response_id: str | None = None
+        self.raw_attrs: dict[str, Any] = {}
         self._events_seen = 0
 
     # ------------------------------------------------------------------
@@ -63,8 +67,9 @@ class ResponsesStreamConsumer:
         """Consume a streaming Responses API response and assemble its parts.
 
         Returns ``(full_content, reasoning_content, tool_calls, usage_info,
-        response_id)`` where ``tool_calls`` is a list of
-        ``{"call_id", "name", "arguments"}`` dicts.
+        response_id, raw_attrs)`` where ``tool_calls`` is a list of
+        ``{"call_id", "name", "arguments"}`` dicts and ``raw_attrs`` holds the
+        raw top-level response metadata (id, model, created_at, status, ...).
 
         When ``cancel_event`` is set (user pressed Enter while waiting), the
         stream is abandoned as soon as the next event arrives.
@@ -94,6 +99,7 @@ class ResponsesStreamConsumer:
             self.tool_calls,
             self.usage_info,
             self.response_id,
+            self.raw_attrs,
         )
 
     # ------------------------------------------------------------------
@@ -138,6 +144,11 @@ class ResponsesStreamConsumer:
         # The response id is the handle used to chain the next turn; it is
         # known as soon as the server creates (or completes) the response.
         self.response_id = event.response.id
+        # Keep the raw top-level response metadata for the verbose dump;
+        # output (content/function calls) and usage are surfaced elsewhere.
+        self.raw_attrs.update(
+            _extract_raw_attrs(event.response, skip=("output", "usage"))
+        )
         if event.type == "response.completed" and event.response.usage:
             # Usage is delivered on the final event by default (it is part of
             # the Response object; "usage" is no longer a valid include value).
@@ -208,6 +219,7 @@ _STATE_KEYS = (
     "partial_arguments",
     "usage_info",
     "response_id",
+    "raw_attrs",
 )
 
 
@@ -232,7 +244,7 @@ def _consume_response_stream(stream, cancel_event=None):
     """Consume a streaming Responses API response and assemble its parts.
 
     Returns ``(full_content, reasoning_content, tool_calls, usage_info,
-    response_id)`` where ``tool_calls`` is a list of
+    response_id, raw_attrs)`` where ``tool_calls`` is a list of
     ``{"call_id", "name", "arguments"}`` dicts.  See
     :meth:`ResponsesStreamConsumer.consume`.
     """
@@ -317,7 +329,7 @@ def _stream_response(client, call_kwargs, tools_schemas, cancel_event=None):
     """Open a streaming Responses API call and fully consume it.
 
     Returns ``(full_content, reasoning_content, tool_calls, usage_info,
-    response_id)``. Tool schemas are attached here (mirroring
+    response_id, raw_attrs)``. Tool schemas are attached here (mirroring
     ``completions_api._stream_response``); the caller builds the remaining
     kwargs per round.
 

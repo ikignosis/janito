@@ -60,6 +60,18 @@ class WebServerConfig:
     thinking_override: bool | None = None
 
     @property
+    def effective_provider(self) -> str | None:
+        """The provider in effect for the next prompt.
+
+        Resolution order mirrors :attr:`effective_thinking`: the session-only
+        combo override, then the CLI ``--provider``, then the persisted
+        default provider.
+        """
+        from janito.general_config import get_active_provider
+
+        return self.session_provider or self.provider or get_active_provider()
+
+    @property
     def effective_thinking(self):
         """The thinking mode in effect for the next prompt.
 
@@ -79,11 +91,9 @@ class WebServerConfig:
             return self.thinking_override
         if self.thinking:
             return True
-        from janito.general_config import get_active_provider
         from janito.provider_accessors import get_default_thinking_from_provider
 
-        provider = self.session_provider or self.provider or get_active_provider()
-        return get_default_thinking_from_provider(provider, self.model)
+        return get_default_thinking_from_provider(self.effective_provider, self.model)
 
     def effective_tools_for(self, api_type: str):
         """The effective model's built-in (native) tools for an API type.
@@ -100,11 +110,11 @@ class WebServerConfig:
         type.  These are not function tools: each ``type`` is enabled
         through request-body flags on the API call.
         """
-        from janito.general_config import get_active_provider
         from janito.provider_accessors import get_default_tools_from_provider
 
-        provider = self.session_provider or self.provider or get_active_provider()
-        return get_default_tools_from_provider(provider, self.model, api_type=api_type)
+        return get_default_tools_from_provider(
+            self.effective_provider, self.model, api_type=api_type
+        )
 
     # --- System prompt ---
     system_prompt: str | None = None  # -S "custom prompt"

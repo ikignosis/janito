@@ -12,6 +12,7 @@ from . import (
     mcp,
     model,
     multi,
+    plugins,
     priv,
     prompt,
     provider,
@@ -20,6 +21,7 @@ from . import (
     show_tools_stats,
     skills,
     status,
+    thinking,
     tools,
     write,
 )
@@ -37,6 +39,7 @@ __all__ = [
     "mcp",
     "model",
     "multi",
+    "plugins",
     "priv",
     "prompt",
     "provider",
@@ -46,6 +49,7 @@ __all__ = [
     "show_tools_stats",
     "skills",
     "status",
+    "thinking",
     "tools",
     "write",
 ]

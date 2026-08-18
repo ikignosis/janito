@@ -46,6 +46,7 @@ Additional commands available in the terminal shell:
 | `/help` | Show help information |
 | `/skills` | List all available skills (home + local) |
 | `/tools` | List all available tools |
+| `/plugins` | List the installed plugins (from `<config_dir>/plugins`, default `~/.janito/plugins`), their paths and whether they loaded in the current session |
 | `/read <question>` | Send the question to the LLM using the **main** conversation history, but with `tools=` filtered to the read-only (`"r"` permission) tools — the model can read/search/fetch but cannot write or execute. The exchange stays in the main history and rolls back like a normal prompt on cancel |
 | `/write <question>` | Send the question to the LLM using the **main** conversation history, but with `tools=` filtered to the write-only (`"w"` permission) tools — the model can create, modify or delete files/dirs but cannot read, search or execute. The exchange stays in the main history and rolls back like a normal prompt on cancel |
 | `/show_tools_stats` | Show tool usage statistics (from the SQLite `tools_use.db`) |
@@ -54,6 +55,8 @@ Additional commands available in the terminal shell:
 | `/provider <name>` | Switch the session's provider (and model) for this shell session only — the configured default in `config.json` is left unchanged (use `janito --set provider=<name>` to persist a new default; autocompleted). The LLM conversation history is cleared so the new provider/model starts fresh |
 | `/model` | Show the current model and the models available from the current provider |
 | `/model <name>` | Switch the session's model for this shell session only — the configured default in `config.json` is left unchanged (use `janito --set model=<name>` to persist a new default; autocompleted). Like `--model`, the name is open-ended; when it matches a model available from the current provider its canonical casing is used. The LLM conversation history is cleared so the new model starts fresh |
+| `/thinking` | Show the current session thinking mode status |
+| `/thinking on\|off` | Enable or disable runtime config thinking for the current session — the configured default in `config.json` is left unchanged (autocompleted) |
 | `/mcp add <name> stdio <cmd>` | Add MCP stdio service |
 | `/mcp add <name> http <url>` | Add MCP HTTP service |
 | `/mcp list` | List MCP services |
@@ -80,6 +83,8 @@ suggested as you type them, e.g. `/model gpt` suggests `gpt-5.6-luna`. The
 available set is the provider's built-in models plus any configured
 per-model entries in `config.json`; `/model` with no argument lists them
 all.
+
+After `/thinking `, `on` and `off` are suggested.
 
 ## Examples
 

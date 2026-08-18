@@ -412,7 +412,30 @@ def apply_builtin_tools_to_extra_body(call_kwargs: dict, tools) -> None:
         call_kwargs.setdefault("extra_body", {}).update(flags)
 
 
-def apply_thinking_to_extra_body(call_kwargs: dict, thinking) -> None:
+def get_gemini_flavor_from_provider(provider: str) -> bool:
+    """Whether a provider's API uses the Gemini (Google) flavor.
+
+    Providers with the ``gemini_flavor`` flag in their provider-config entry
+    (e.g. Google's Gemini models accessed through the OpenAI-compatibility
+    layer) have provider-specific API behaviours that differ from the
+    standard OpenAI-compatible surface: notably, their ``enable_thinking``
+    extra-body flag is **not** accepted (Gemini 3.x models reason by default
+    and the field does not exist), so thinking mode is handled differently.
+
+    Args:
+        provider: The provider name (case-insensitive).
+
+    Returns:
+        ``True`` when the provider's config declares ``gemini_flavor``,
+        ``False`` otherwise (unknown provider or no flag).
+    """
+    found = _registry.get(provider)
+    return found.gemini_flavor() if found is not None else False
+
+
+def apply_thinking_to_extra_body(
+    call_kwargs: dict, thinking, provider: str | None = None
+) -> None:
     """Add the resolved thinking mode to ``call_kwargs``' ``extra_body``.
 
     Thinking values may be:
@@ -424,10 +447,20 @@ def apply_thinking_to_extra_body(call_kwargs: dict, thinking) -> None:
       OpenAI-compatible API accepts with ``type`` ``disabled``/``adaptive``);
     - falsy (``False`` / ``None``) -- nothing is sent.
 
+    Gemini-flavored providers (``gemini_flavor`` in their provider config,
+    e.g. Google) never receive ``enable_thinking``: Gemini 3.x models reason
+    by default and the OpenAI-compatibility layer rejects the unknown field
+    with a 400 error.  Pass the ``provider`` name to enable this guard.
+
     The ``call_kwargs`` dict is mutated in place; ``extra_body`` is created
     when needed.
     """
     if thinking is True:
+        # Gemini-flavored APIs (e.g. Google's Gemini OpenAI-compatibility
+        # layer) do not accept an enable_thinking flag -- Gemini 3.x reasons
+        # by default and the field does not exist in the request schema.
+        if provider and get_gemini_flavor_from_provider(provider):
+            return
         call_kwargs.setdefault("extra_body", {})["enable_thinking"] = True
     elif isinstance(thinking, dict):
         call_kwargs.setdefault("extra_body", {})["thinking"] = dict(thinking)

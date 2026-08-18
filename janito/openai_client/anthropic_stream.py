@@ -20,6 +20,8 @@ import logging
 from types import SimpleNamespace
 from typing import Any
 
+from .client_support import _extract_raw_attrs
+
 # Configure logger for this module
 logger = logging.getLogger(__name__)
 
@@ -28,9 +30,10 @@ class AnthropicStreamConsumer:
     """Assemble Anthropic Messages stream events into a single response.
 
     The consumer owns the accumulated text / reasoning content, the finished
-    ``tool_use`` blocks, the per-index in-flight blocks and the input/output
-    token counts.  :meth:`consume` drives the stream and returns the response
-    parts; the ``handle_*`` methods apply individual events.
+    ``tool_use`` blocks, the per-index in-flight blocks, the input/output
+    token counts and the raw top-level response metadata.  :meth:`consume`
+    drives the stream and returns the response parts; the ``handle_*``
+    methods apply individual events.
     """
 
     def __init__(self) -> None:
@@ -41,6 +44,7 @@ class AnthropicStreamConsumer:
         self.blocks: dict[int, dict[str, Any]] = {}
         self.input_tokens: int | None = None
         self.output_tokens: int | None = None
+        self.raw_attrs: dict[str, Any] = {}
         self._events_seen = 0
 
     # ------------------------------------------------------------------
@@ -77,10 +81,12 @@ class AnthropicStreamConsumer:
         """Consume a streaming Anthropic Messages response and assemble its parts.
 
         Returns ``(full_content, reasoning_content, tool_use_blocks,
-        usage_info)`` where ``tool_use_blocks`` is a list of
+        usage_info, raw_attrs)`` where ``tool_use_blocks`` is a list of
         ``{"id", "name", "input"}`` dicts (``input`` is the parsed JSON
-        argument object) and ``usage_info`` is a ``SimpleNamespace`` with
-        ``total_tokens``/``input_tokens``/``output_tokens``.
+        argument object), ``usage_info`` is a ``SimpleNamespace`` with
+        ``total_tokens``/``input_tokens``/``output_tokens`` and ``raw_attrs``
+        holds the raw top-level response metadata (id, model, role,
+        stop_reason, ...).
 
         When ``cancel_event`` is set (user pressed Enter while waiting), the
         stream is abandoned as soon as the next event arrives.
@@ -109,6 +115,7 @@ class AnthropicStreamConsumer:
             self.reasoning_content,
             self.tool_use_blocks,
             self.usage_info,
+            self.raw_attrs,
         )
 
     # ------------------------------------------------------------------
@@ -136,9 +143,15 @@ class AnthropicStreamConsumer:
         return False
 
     def handle_message_start(self, event) -> None:
-        """Record the input tokens reported by the message_start event."""
+        """Record the input tokens and the raw message metadata."""
         message = getattr(event, "message", None)
         if message is not None:
+            # Raw top-level message metadata (id, model, role, stop_reason,
+            # ...) for the verbose dump; content and usage are surfaced
+            # elsewhere.
+            self.raw_attrs.update(
+                _extract_raw_attrs(message, skip=("content", "usage"))
+            )
             usage = getattr(message, "usage", None)
             if usage is not None:
                 self.input_tokens = getattr(usage, "input_tokens", None)
@@ -189,10 +202,15 @@ class AnthropicStreamConsumer:
             self.tool_use_blocks.append(_parse_tool_use_block(block))
 
     def handle_message_delta(self, event) -> None:
-        """Record the output tokens reported by the message_delta event."""
+        """Record the output tokens and the raw stop_reason."""
         usage = getattr(event, "usage", None)
         if usage is not None:
             self.output_tokens = getattr(usage, "output_tokens", None)
+        delta = getattr(event, "delta", None)
+        if delta is not None:
+            stop_reason = getattr(delta, "stop_reason", None)
+            if stop_reason:
+                self.raw_attrs["stop_reason"] = stop_reason
 
 
 def _parse_tool_use_block(block: dict[str, Any]) -> dict[str, Any]:
@@ -230,6 +248,7 @@ _STATE_KEYS = (
     "blocks",
     "input_tokens",
     "output_tokens",
+    "raw_attrs",
 )
 
 
@@ -253,8 +272,8 @@ def _state_from_consumer(
 def _consume_stream(stream, cancel_event=None):
     """Consume a streaming Anthropic Messages response and assemble its parts.
 
-    Returns ``(full_content, reasoning_content, tool_use_blocks, usage_info)``.
-    See :meth:`AnthropicStreamConsumer.consume`.
+    Returns ``(full_content, reasoning_content, tool_use_blocks, usage_info,
+    raw_attrs)``.  See :meth:`AnthropicStreamConsumer.consume`.
     """
     return AnthropicStreamConsumer().consume(stream, cancel_event=cancel_event)
 
@@ -344,8 +363,8 @@ def _convert_tools_to_anthropic_format(
 def _stream_response(client, call_kwargs, tools_schemas, cancel_event=None):
     """Open a streaming Anthropic Messages call and fully consume it.
 
-    Returns ``(full_content, reasoning_content, tool_use_blocks, usage_info)``.
-    Tool schemas are attached here (mirroring ``completions_api._stream_response``);
+    Returns ``(full_content, reasoning_content, tool_use_blocks, usage_info,
+    raw_attrs)``.  Tool schemas are attached here (mirroring ``completions_api._stream_response``);
     the caller builds the remaining kwargs per round.
 
     When ``cancel_event`` is set (user pressed Enter while waiting), the

@@ -117,6 +117,7 @@ def _build_call_kwargs(
     responses_in_server: bool,
     instructions: str | None,
     builtin_tools=None,
+    provider: str | None = None,
 ) -> dict[str, Any]:
     """Build the Responses API call parameters for one round.
 
@@ -127,6 +128,9 @@ def _build_call_kwargs(
     carried in ``call_kwargs`` under the reserved ``_builtin_tools`` key and
     merged into the final ``tools`` array by ``_stream_response`` (it must
     not go through the function-schema conversion).  ``None`` sends nothing.
+    ``provider`` enables the Gemini-flavor guard in
+    :func:`apply_thinking_to_extra_body` (Gemini-flavored providers do not
+    accept ``enable_thinking``).
     """
     call_kwargs: dict[str, Any] = {
         "model": model,
@@ -150,8 +154,10 @@ def _build_call_kwargs(
 
     # Pass the thinking mode in extra_body: enable_thinking for flag-style
     # defaults, or the raw dict for providers with a structured thinking
-    # parameter (e.g. MiniMax-M3's {"type": "adaptive"}).
-    apply_thinking_to_extra_body(call_kwargs, thinking)
+    # parameter (e.g. MiniMax-M3's {"type": "adaptive"}).  Gemini-flavored
+    # providers (google) skip enable_thinking -- the field does not exist on
+    # their OpenAI-compatibility API.
+    apply_thinking_to_extra_body(call_kwargs, thinking, provider=provider)
 
     # Stream the response. Token usage arrives on the final
     # response.completed event by default (part of the Response object);

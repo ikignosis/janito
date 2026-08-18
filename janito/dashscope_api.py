@@ -283,7 +283,13 @@ class DashScopeClient(Client):
         console,
     ):
         try:
-            return _run_with_progress_bar(
+            (
+                full_content,
+                reasoning_content,
+                tool_calls,
+                usage_info,
+                raw_attrs,
+            ) = _run_with_progress_bar(
                 _stream_response, client, call_kwargs, tools_schemas
             )
         except Exception as e:
@@ -292,6 +298,7 @@ class DashScopeClient(Client):
             # as the OpenAI clients (the exception is always re-raised).
             _handle_auth_error(e, self.cli_provider, api_key, base_url, model, console)
             raise
+        return full_content, reasoning_content, tool_calls, usage_info, raw_attrs
 
     def _handle_tool_calls(
         self, tool_calls, full_content, reasoning_content, state, tool_executor

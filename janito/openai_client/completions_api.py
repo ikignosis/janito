@@ -402,6 +402,7 @@ class CompletionsClient(Client):
             preserve_thinking,
             thinking,
             tools,
+            provider=self._active_provider(),
         )
 
     def _run_stream_round(
@@ -417,7 +418,13 @@ class CompletionsClient(Client):
         console,
     ):
         try:
-            return _run_with_progress_bar(
+            (
+                full_content,
+                reasoning_content,
+                tool_calls,
+                usage_info,
+                raw_attrs,
+            ) = _run_with_progress_bar(
                 _stream_response, client, call_kwargs, tools_schemas
             )
         except NotFoundError as e:
@@ -426,6 +433,7 @@ class CompletionsClient(Client):
         except AuthenticationError as e:
             _handle_auth_error(e, self.cli_provider, api_key, base_url, model, console)
             raise
+        return full_content, reasoning_content, tool_calls, usage_info, raw_attrs
 
     def _handle_tool_calls(
         self, tool_calls, full_content, reasoning_content, state, tool_executor

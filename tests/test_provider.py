@@ -211,9 +211,28 @@ if pytest is not None:
             )
             == "7.125000$"
         )
+        # Google ships a cost module: gemini-3.7-flash at $0.75 / $0.1875
+        # (context cache read) / $3.75 output per 1M tokens, formatted as NN.DDDDDD$.
+        assert (
+            pa.get_provider_cost("google", "gemini-3.7-flash", 1_000_000, 1_000_000, 0)
+            == "4.500000$"
+        )
+        # Cached input tokens are billed at the context cache read rate.
+        assert (
+            pa.get_provider_cost(
+                "google", "gemini-3.7-flash", 1_000_000, 1_000_000, 500_000
+            )
+            == "4.218750$"
+        )
+        # Case-insensitive provider lookup.
+        assert (
+            pa.get_provider_cost("Google", "gemini-3.7-flash", 1_000_000, 1_000_000, 0)
+            == "4.500000$"
+        )
         # Unknown models within the provider fall back to "N/A".
         assert pa.get_provider_cost("deepseek", "bogus-model", 1000, 500, 100) == "N/A"
         assert pa.get_provider_cost("alibaba", "bogus-model", 1000, 500, 100) == "N/A"
+        assert pa.get_provider_cost("google", "bogus-model", 1000, 500, 100) == "N/A"
         # Providers without a cost module fall back to "N/A".
         assert pa.get_provider_cost("openai", "gpt-5.6-luna", 1000, 500, 100) == "N/A"
         # Unknown providers fall back to "N/A".

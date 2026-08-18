@@ -22,6 +22,7 @@ The API type is selected per provider with `--set api-type=...` (see the
 | Provider | Description |
 |----------|-------------|
 | `openai` | OpenAI API |
+| `google` | Google Gemini (Gemini models) |
 | `custom` | Any OpenAI-compatible API (local servers, third-party) |
 | `alibaba` | Alibaba Cloud DashScope (Qwen models) |
 | `deepseek` | DeepSeek |
@@ -96,6 +97,73 @@ janito --config
 > API keys are stored in `~/.janito/auth.json`; the model is stored in
 > `~/.janito/config.json`. janito does not read `OPENAI_*` environment
 > variables. See [Configuration Priority](index.md#configuration-priority).
+
+## Google (Gemini)
+
+Use Google Gemini models through their OpenAI-compatible API.
+
+> **Get an API key:** Visit [Google AI Studio](https://aistudio.google.com/apikey) to create an account and generate a Gemini API key.
+
+### Configuration
+
+```bash
+# Step 1: Set provider and model
+janito --set provider=google --set model=gemini-3.7-flash
+# Step 2: Store API key
+janito --set-api-key="your-gemini-api-key" --provider google
+```
+
+The `google` provider talks to Gemini through Google's OpenAI-compatibility
+layer (`https://generativelanguage.googleapis.com/v1beta/openai/`, see the
+[Gemini API OpenAI compatibility docs](https://ai.google.dev/gemini-api/docs/openai)),
+so it uses the standard **Chat Completions** API out of the box.
+
+### Popular Models
+
+| Model | Description |
+|-------|-------------|
+| `gemini-3.7-flash` | Latest Gemini Flash model (default) |
+| `gemini-3.5-flash` | Fast, cost-effective Gemini model |
+| `gemini-2.5-flash` | Previous-generation Flash model |
+| `gemini-2.5-pro` | Highest capability Gemini model |
+
+### Reasoning Level
+
+Gemini models reason by default (thinking cannot be disabled for Gemini 3.x
+models). The OpenAI-compatible `reasoning_effort` parameter maps to the
+model's `thinking_level`, which accepts `minimal`, `low`, `medium` and
+`high`:
+
+```bash
+# Override the reasoning depth for a single call
+janito --reasoning-level high "Your prompt"
+
+# Set a per-provider default in the config
+janito --provider google --set reasoning-level=medium
+```
+
+Resolution order: `--reasoning-level` > per-provider config value
+(`--set reasoning-level=...`) > the model's own default level.
+
+### Thinking Mode
+
+The `google` provider is **Gemini-flavored**: the `enable_thinking`
+extra-body flag is **not** sent to Google's OpenAI-compatibility layer
+(because the field does not exist and Gemini 3.x models reason by default).
+Using `/thinking on` or `-t`/`--thinking` is therefore a no-op for the
+request body -- the model's thinking depth is instead controlled through
+`--reasoning-level` (mapped to `thinking_level`).
+
+### Example
+
+```bash
+# Step 1: Set provider and model
+janito --set provider=google --set model=gemini-3.7-flash
+# Step 2: Store API key
+janito --set-api-key="your-gemini-api-key" --provider google
+# Step 3: Run prompt
+janito "Explain quantum computing"
+```
 
 ## Custom Providers (OpenAI-Compatible)
 

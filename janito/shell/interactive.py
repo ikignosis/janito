@@ -31,6 +31,7 @@ class InteractiveShell(_SessionMixin):
         commands: list["CmdHandler"] | None = None,
         no_history: bool = False,
         provider: str | None = None,
+        thinking: bool = False,
     ):
         """
         Initialize the interactive shell.
@@ -43,9 +44,11 @@ class InteractiveShell(_SessionMixin):
                 ``--provider``, updated by ``/provider``). When set, the
                 status bar reports it; otherwise it falls back to the
                 configured default provider.
+            thinking: If True, enable thinking mode for the session.
         """
         self.model = model
         self.provider = provider
+        self.thinking = thinking
         # Set by /model for the current session: the explicit model override
         # that the send factory (re)built by /provider and /model consults so
         # the runtime model matches the displayed one.  Cleared when /provider

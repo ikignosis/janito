@@ -159,14 +159,17 @@ class ToolExecutor:
         return self._mcp_manager
 
     def build_assistant_message(
-        self, full_content: str, tool_calls_map: dict[int, dict[str, str]]
+        self, full_content: str, tool_calls_map: dict[int, dict[str, Any]]
     ) -> dict[str, Any]:
         """Build the assistant message carrying the model's tool calls.
 
         The model streams tool-call *deltas* split across many chunks; the
         stream consumer assembles them into ``tool_calls_map`` (index ->
-        ``{id, name, arguments}``). This method converts that map into the
-        assistant message the API expects in the conversation history.
+        ``{id, name, arguments}``, plus any provider-specific extras such as
+        Gemini's ``extra_content.google.thought_signature``). This method
+        converts that map into the assistant message the API expects in the
+        conversation history, preserving those extras so they can be echoed
+        back verbatim on the next turn.
 
         Args:
             full_content: The assistant text produced alongside the calls
@@ -181,16 +184,23 @@ class ToolExecutor:
         tool_calls_list = []
         for idx in sorted(tool_calls_map):
             tc = tool_calls_map[idx]
-            tool_calls_list.append(
-                {
-                    "id": tc["id"],
-                    "type": "function",
-                    "function": {
-                        "name": tc["name"],
-                        "arguments": tc["arguments"],
-                    },
-                }
-            )
+            tool_call = {
+                "id": tc["id"],
+                "type": "function",
+                "function": {
+                    "name": tc["name"],
+                    "arguments": tc["arguments"],
+                },
+            }
+            # Preserve provider-specific extras (e.g. Gemini's
+            # ``extra_content.google.thought_signature``) when echoing the
+            # call back in the conversation history; dropping them makes
+            # Gemini 3.x reject the next request with a 400 "Function call is
+            # missing a thought_signature in functionCall parts" error.
+            extra_content = tc.get("extra_content")
+            if extra_content:
+                tool_call["extra_content"] = extra_content
+            tool_calls_list.append(tool_call)
         return {
             "role": "assistant",
             "content": full_content or None,

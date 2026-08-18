@@ -20,6 +20,8 @@ import logging
 
 from janito.agent.completions import CompletionsAccumulator
 
+from .client_support import _extract_raw_attrs
+
 # Configure logger for this module
 logger = logging.getLogger(__name__)
 
@@ -37,6 +39,24 @@ class CompletionsStreamConsumer(CompletionsAccumulator):
     # The CLI historically exposed the single-delta folding under this name;
     # the shared base calls it ``_fold_tool_call_delta``.
     handle_tool_call_delta = CompletionsAccumulator._fold_tool_call_delta
+
+    def handle(self, chunk) -> tuple[str | None, str | None]:
+        """Process one chunk, also capturing the raw response metadata.
+
+        Besides folding content/reasoning/tool-call deltas (see the shared
+        base), the chunk's top-level scalar attributes (``id``, ``model``,
+        ``created``, ``system_fingerprint``, ...) and the terminal
+        ``finish_reason`` are kept in ``raw_attrs`` for the verbose response
+        dump.  ``content``/``usage``/``choices`` are surfaced elsewhere, so
+        they are skipped here.
+        """
+        result = super().handle(chunk)
+        self.raw_attrs.update(_extract_raw_attrs(chunk, skip=("choices", "usage")))
+        if chunk.choices:
+            finish = getattr(chunk.choices[0], "finish_reason", None)
+            if finish:
+                self.raw_attrs["finish_reason"] = finish
+        return result
 
     @property
     def full_content(self) -> str:
@@ -73,8 +93,9 @@ class CompletionsStreamConsumer(CompletionsAccumulator):
         """Consume a streaming completion and assemble the response parts.
 
         Returns ``(full_content, reasoning_content, tool_calls_map,
-        usage_info)`` where ``tool_calls_map`` maps call index ->
-        ``{id, name, arguments}``.
+        usage_info, raw_attrs)`` where ``tool_calls_map`` maps call index ->
+        ``{id, name, arguments}`` and ``raw_attrs`` holds the chunk's raw
+        top-level response metadata (id, model, created, finish_reason, ...).
 
         When ``cancel_event`` is set (user pressed Enter while waiting), the
         stream is abandoned as soon as the next chunk arrives.
@@ -91,6 +112,7 @@ class CompletionsStreamConsumer(CompletionsAccumulator):
             self.reasoning_content,
             self.tool_calls,
             self.usage_info,
+            self.raw_attrs,
         )
 
 
@@ -102,8 +124,8 @@ class CompletionsStreamConsumer(CompletionsAccumulator):
 def _consume_stream(stream, cancel_event=None):
     """Consume a streaming completion and assemble the response parts.
 
-    Returns ``(full_content, reasoning_content, tool_calls_map, usage_info)``.
-    See :meth:`CompletionsStreamConsumer.consume`.
+    Returns ``(full_content, reasoning_content, tool_calls_map, usage_info,
+    raw_attrs)``.  See :meth:`CompletionsStreamConsumer.consume`.
     """
     return CompletionsStreamConsumer().consume(stream, cancel_event=cancel_event)
 
@@ -131,7 +153,8 @@ def _consume_tool_call_delta(tc_delta, tool_calls_map):
 def _stream_response(client, call_kwargs, tools_schemas, cancel_event=None):
     """Open a streaming completion and fully consume it.
 
-    Returns ``(full_content, reasoning_content, tool_calls_map, usage_info)``.
+    Returns ``(full_content, reasoning_content, tool_calls_map, usage_info,
+    raw_attrs)``.
 
     When ``cancel_event`` is set (user pressed Enter while waiting), the
     stream is abandoned and the underlying connection is closed.

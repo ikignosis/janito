@@ -184,6 +184,18 @@ class Provider:
         """The built-in default model, or ``None`` (e.g. ``"custom"``)."""
         return self._get("default_model")
 
+    def gemini_flavor(self) -> bool:
+        """Whether the provider's API uses the Gemini (Google) flavor.
+
+        Gemini-flavored providers (e.g. Google's Gemini models accessed
+        through the OpenAI-compatibility layer) have provider-specific API
+        behaviours: notably, their ``enable_thinking`` extra-body flag is
+        **not** accepted (Gemini 3.x reasons by default), so thinking mode
+        is handled differently (see
+        :func:`janito.provider_accessors.apply_thinking_to_extra_body`).
+        """
+        return bool(self._get("gemini_flavor", False))
+
     def models(self) -> dict:
         """The raw ``models`` dict (model name -> model entry)."""
         models = self._get("models")

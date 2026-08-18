@@ -123,7 +123,9 @@ if pytest is not None:
             _event("message_stop"),
         ]
 
-        full, reasoning, tool_blocks, usage = anthropic_api._consume_stream(events)
+        full, reasoning, tool_blocks, usage, raw_attrs = anthropic_api._consume_stream(
+            events
+        )
         assert full == "Hello world"
         assert reasoning is None
         assert tool_blocks == [
@@ -167,7 +169,9 @@ if pytest is not None:
             _event("message_stop"),
         ]
 
-        full, reasoning, tool_blocks, usage = anthropic_api._consume_stream(events)
+        full, reasoning, tool_blocks, usage, raw_attrs = anthropic_api._consume_stream(
+            events
+        )
         assert full == "Answer"
         assert reasoning == "Let me think..."
         assert tool_blocks == []

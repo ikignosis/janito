@@ -320,6 +320,7 @@ class ResponsesClient(Client):
             state["responses_in_server"],
             state["instructions"],
             builtin_tools,
+            provider=self._active_provider(),
         )
 
     def _run_stream_round(
@@ -341,6 +342,7 @@ class ResponsesClient(Client):
                 tool_calls,
                 usage_info,
                 stream_response_id,
+                raw_attrs,
             ) = _run_with_progress_bar(
                 _stream_response, client, call_kwargs, tools_schemas
             )
@@ -384,7 +386,7 @@ class ResponsesClient(Client):
             else:
                 e.conversation_items = state["input_items"]
             raise
-        return full_content, reasoning_content, tool_calls, usage_info
+        return full_content, reasoning_content, tool_calls, usage_info, raw_attrs
 
     def _handle_tool_calls(
         self, tool_calls, full_content, reasoning_content, state, tool_executor
