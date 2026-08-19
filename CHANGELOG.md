@@ -34,6 +34,15 @@ Changes since `v4.26.0` (2026-08-17).
   rounds are shown as `function_call` / `function_call_output` rows, and for
   server-side Responses providers (e.g. OpenAI) any pending Enter-cancelled
   messages are shown after the system prompt.
+- The `/rollback` shell command now undoes just the last exchange on
+  server-side Responses providers (e.g. OpenAI) instead of resetting the
+  whole server-side conversation. The shell tracks the chain of completed
+  response ids and re-points `previous_response_id` at the response that
+  preceded the rolled-back turn, so the next prompt continues from there with
+  the earlier context intact (previously `previous_response_id` was cleared to
+  `None`, losing the entire conversation). Rolling back the only completed
+  turn still returns to a fresh conversation, and a second consecutive
+  `/rollback` reports nothing to undo.
 
 ### Changed
 

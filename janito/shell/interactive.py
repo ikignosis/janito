@@ -80,6 +80,18 @@ class InteractiveShell(_SessionMixin):
         # Index into conversation_items marking the last known-good state;
         # /rollback truncates back to here.
         self.conversation_checkpoint: int = 0
+        # Chain of completed server-side Responses response ids, in turn
+        # order. Every successful turn of a server-side Responses provider
+        # (e.g. OpenAI) appends its final response id; /rollback truncates
+        # back to the checkpoint and re-points previous_response_id at the
+        # response that preceded the rolled-back exchange, so the next turn
+        # continues from there instead of resetting the whole server-side
+        # conversation. Empty in Completions mode and for stateless
+        # Responses providers (which never chain with an id).
+        self.response_chain: list[str] = []
+        # Index into response_chain marking the last known-good state;
+        # /rollback truncates back to here.
+        self.response_checkpoint: int = 0
         # Set True by the F2 key binding; signals the run loop to clear
         # history and start a fresh conversation
         self.restart_requested = False
@@ -124,6 +136,8 @@ class InteractiveShell(_SessionMixin):
         self.previous_response_id = None
         self.conversation_items = None
         self.conversation_checkpoint = 0
+        self.response_chain = []
+        self.response_checkpoint = 0
 
     def get_system_prompt(self) -> str | None:
         """Get the current system prompt."""
@@ -306,6 +320,7 @@ class InteractiveShell(_SessionMixin):
         self.conversation_checkpoint = (
             len(self.conversation_items) if self.conversation_items else 0
         )
+        self.response_checkpoint = len(self.response_chain)
         try:
             result = self.send_prompt_func(
                 user_input,
@@ -329,6 +344,13 @@ class InteractiveShell(_SessionMixin):
                 self.conversation_items = result.input_items
                 if result.input_items is None:
                     self.previous_response_id = result.response_id
+                    # Server-side Responses: remember this turn's final
+                    # response id in the chain so /rollback can undo the
+                    # exchange by chaining the next turn (previous_response_id)
+                    # from the response that preceded it, instead of resetting
+                    # the whole server conversation.
+                    if result.response_id:
+                        self.response_chain.append(result.response_id)
                 else:
                     self.previous_response_id = None
             # On success, keep the checkpoint where it is (before this turn)

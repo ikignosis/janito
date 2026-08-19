@@ -1164,6 +1164,174 @@ def test_shell_rollback_truncates_stateless_conversation_items():
     ]
 
 
+def test_shell_rollback_server_side_repoints_previous_response_id():
+    """/rollback on a server-side Responses conversation (e.g. OpenAI) undoes
+    the last completed turn by chaining the next turn (previous_response_id)
+    from the response that preceded it, instead of resetting the whole
+    server-side conversation to None."""
+    from janito.shell.cmds.rollback import RollbackCmdHandler
+
+    shell = RollbackCmdHandler.__new__(RollbackCmdHandler)
+    # Two completed turns: r1 then r2 (chained from r1). The checkpoint is
+    # before the second turn.
+    shell.messages_history = [{"role": "system", "content": "sys"}]
+    shell.history_checkpoint = 1
+    shell.previous_response_id = "r2"
+    shell.conversation_items = None
+    shell.response_chain = ["r1", "r2"]
+    shell.response_checkpoint = 1
+
+    handler = RollbackCmdHandler()
+    handler._do_rollback(shell)
+
+    # The chain is truncated back to the checkpoint and the next turn chains
+    # from the response before the rolled-back exchange.
+    assert shell.response_chain == ["r1"]
+    assert shell.previous_response_id == "r1"
+
+
+def test_shell_rollback_server_side_single_turn_resets_to_fresh(capsys):
+    """/rollback on a server-side Responses conversation with a single
+    completed turn returns to a fresh server conversation (previous_response_id
+    None), the same end state as the previous full reset for that case."""
+    from janito.shell.cmds.rollback import RollbackCmdHandler
+
+    shell = RollbackCmdHandler.__new__(RollbackCmdHandler)
+    shell.messages_history = [{"role": "system", "content": "sys"}]
+    shell.history_checkpoint = 1
+    shell.previous_response_id = "r1"
+    shell.conversation_items = None
+    shell.response_chain = ["r1"]
+    shell.response_checkpoint = 0
+
+    handler = RollbackCmdHandler()
+    handler._do_rollback(shell)
+
+    assert shell.response_chain == []
+    assert shell.previous_response_id is None
+    assert "fresh conversation" in capsys.readouterr().out
+
+
+def test_shell_rollback_server_side_at_checkpoint_reports_nothing(capsys):
+    """A second consecutive /rollback on a server-side conversation (already at
+    the checkpoint) reports nothing to roll back and keeps the conversation
+    instead of resetting it."""
+    from janito.shell.cmds.rollback import RollbackCmdHandler
+
+    shell = RollbackCmdHandler.__new__(RollbackCmdHandler)
+    shell.messages_history = [{"role": "system", "content": "sys"}]
+    shell.history_checkpoint = 1
+    shell.previous_response_id = "r1"
+    shell.conversation_items = None
+    shell.response_chain = ["r1"]
+    shell.response_checkpoint = 1
+
+    handler = RollbackCmdHandler()
+    handler._do_rollback(shell)
+
+    # State is preserved: no truncation, no reset.
+    assert shell.response_chain == ["r1"]
+    assert shell.previous_response_id == "r1"
+    assert "Nothing to rollback" in capsys.readouterr().out
+
+
+def test_shell_rollback_server_side_without_chain_falls_back_to_reset(capsys):
+    """/rollback on a server-side conversation with no tracked chain (e.g. a
+    manually seeded previous_response_id) keeps the legacy full-reset
+    behaviour."""
+    from janito.shell.cmds.rollback import RollbackCmdHandler
+
+    shell = RollbackCmdHandler.__new__(RollbackCmdHandler)
+    shell.messages_history = [{"role": "system", "content": "sys"}]
+    shell.history_checkpoint = 1
+    shell.previous_response_id = "r1"
+    shell.conversation_items = None
+    shell.response_chain = []
+    shell.response_checkpoint = 0
+
+    handler = RollbackCmdHandler()
+    handler._do_rollback(shell)
+
+    assert shell.previous_response_id is None
+    assert "server-side conversation reset" in capsys.readouterr().out
+
+
+def test_shell_send_prompt_records_server_side_response_chain():
+    """Each completed server-side Responses turn appends its final response id
+    to the shell's response_chain, so /rollback has a rollback target (and a
+    second turn appends the next id, keeping the chain in turn order)."""
+    from janito.openai_client.conversations_api import ConversationResult
+    from janito.shell import InteractiveShell
+
+    shell = InteractiveShell(model="test-model", no_history=True)
+    shell.initialize_history(system_prompt="sys")
+    calls = {"n": 0}
+
+    def send_prompt_func(user_input, **kwargs):
+        calls["n"] += 1
+        return ConversationResult(
+            content="hi", response_id=f"r{calls['n']}", input_items=None
+        )
+
+    shell.send_prompt_func = send_prompt_func
+    shell.verbose = False
+    shell.no_tools = True
+    shell.thinking = False
+
+    shell._send_prompt("first")
+    assert shell.response_chain == ["r1"]
+    assert shell.previous_response_id == "r1"
+
+    # The second turn is chained from the first response and appends its own.
+    shell._send_prompt("second")
+    assert shell.response_chain == ["r1", "r2"]
+    assert shell.previous_response_id == "r2"
+
+
+def test_shell_send_prompt_keeps_chain_on_enter_cancel():
+    """An Enter-cancelled server-side turn (RequestCancelled) appends nothing
+    to the response_chain: the shell keeps chaining from the last completed
+    response."""
+    from janito.openai_client import RequestCancelled
+    from janito.shell import InteractiveShell
+
+    shell = InteractiveShell(model="test-model", no_history=True)
+    shell.initialize_history(system_prompt="sys")
+    shell.response_chain = ["r1"]
+    shell.response_checkpoint = 1
+    shell.previous_response_id = "r1"
+
+    def send_prompt_func(user_input, **kwargs):
+        raise RequestCancelled("cancelled by Enter")
+
+    shell.send_prompt_func = send_prompt_func
+    shell.verbose = False
+    shell.no_tools = True
+    shell.thinking = False
+
+    shell._send_prompt("hello")
+
+    # No completed turn: the chain and checkpoint are unchanged.
+    assert shell.response_chain == ["r1"]
+    assert shell.previous_response_id == "r1"
+
+
+def test_shell_initialize_history_resets_response_chain():
+    """A fresh conversation (F2 / restart / provider switch) also clears the
+    tracked server-side response chain so the next turn starts a new server
+    conversation."""
+    from janito.shell import InteractiveShell
+
+    shell = InteractiveShell(model="test-model", no_history=True)
+    shell.initialize_history(system_prompt="sys")
+    shell.response_chain = ["r1", "r2"]
+    shell.response_checkpoint = 1
+
+    shell.initialize_history(system_prompt="sys")
+    assert shell.response_chain == []
+    assert shell.response_checkpoint == 0
+
+
 def test_run_stream_round_recovers_response_id_on_cancel(monkeypatch):
     """Enter-cancel (RequestCancelled) carries the conversation state so the
     shell can continue without losing the user's message: server-side
