@@ -18,7 +18,6 @@ import pytest
 import janito.config_dir as config_dir_mod
 from janito.config_cli import set_config_from_cli
 from janito.config_loaders import ProviderConfigLoader
-from janito.config_store import set_config_value
 
 
 def _use_temp_config(monkeypatch, tmp_path):
@@ -148,37 +147,6 @@ if pytest is not None:
         assert loader.load_endpoint("openai") == "http://legacy/v1"
         # Unknown provider still falls back to the legacy key.
         assert loader.load_endpoint("bogus") == "http://legacy/v1"
-
-    def test_module_functions_delegate_to_class(monkeypatch, tmp_path):
-        """The module-level loaders behave identically to the class methods."""
-        _use_temp_config(monkeypatch, tmp_path)
-        from janito.config_loaders import (
-            load_api_type,
-            load_endpoint_from_config,
-            load_max_input_tokens,
-            load_max_output_tokens,
-            load_model_from_config,
-            load_reasoning_level,
-            load_responses_in_server_from_config,
-        )
-
-        loader = ProviderConfigLoader()
-        set_config_value("provider", "openai")
-        set_config_from_cli("model=gpt-4", "openai")
-        set_config_from_cli("max-output-tokens=4096", "openai")
-        set_config_from_cli("max-input-tokens=128000", "openai")
-
-        assert load_model_from_config("openai") == loader.load_model("openai")
-        assert load_max_output_tokens("openai") == loader.load_max_output_tokens(
-            "openai"
-        )
-        assert load_max_input_tokens("openai") == loader.load_max_input_tokens("openai")
-        assert load_reasoning_level("openai") == loader.load_reasoning_level("openai")
-        assert load_api_type("openai") == loader.load_api_type("openai")
-        assert load_responses_in_server_from_config(
-            "openai"
-        ) == loader.load_responses_in_server("openai")
-        assert load_endpoint_from_config("openai") == loader.load_endpoint("openai")
 
 else:  # pragma: no cover - fallback runner without pytest
 

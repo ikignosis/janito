@@ -32,7 +32,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import pytest
-from _frontend import render_index_html
 
 import janito.config_dir as config_dir_mod
 import janito.config_store as gc
@@ -50,8 +49,6 @@ except ModuleNotFoundError:
 requires_fastapi = pytest.mark.skipif(
     not _HAS_FASTAPI, reason="fastapi (web extra) is not installed"
 )
-
-FRONTEND = Path(__file__).parent.parent.parent / "janito" / "web" / "frontend"
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -209,41 +206,3 @@ def test_build_call_kwargs_passes_structured_thinking_dict(client):
     kwargs = build_call_kwargs("MiniMax-M3", cfg, 1000, None, None)
     assert kwargs["extra_body"]["thinking"] == {"type": "adaptive"}
     assert "enable_thinking" not in kwargs["extra_body"]
-
-
-# ---------------------------------------------------------------------------
-# Frontend wiring (static checks, no server needed)
-# ---------------------------------------------------------------------------
-
-
-def test_index_html_thinking_badge_is_toggle_button():
-    """The status-bar thinking element is a button that posts to the toggle."""
-    html = render_index_html()
-    assert 'class="flag-badge flag-toggle"' in html
-    assert '@click="toggleThinking()"' in html
-    assert ':class="{ active: config.thinking }"' in html
-    assert ":aria-pressed=\"config.thinking ? 'true' : 'false'\"" in html
-
-
-def test_status_bar_js_toggles_thinking():
-    """statusBar.js flips the effective value via Api.setThinking."""
-    js = (FRONTEND / "js" / "statusBar.js").read_text(encoding="utf-8")
-    assert "async toggleThinking()" in js
-    assert "Api.setThinking(next)" in js
-    # The badge mirrors what the next prompt actually uses.
-    assert "this.config.thinking = data.effective;" in js
-
-
-def test_api_js_exposes_set_thinking():
-    """api.js wraps POST /api/config/thinking."""
-    js = (FRONTEND / "js" / "api.js").read_text(encoding="utf-8")
-    assert "setThinking(thinking)" in js
-    assert "this.post('/api/config/thinking', { thinking })" in js
-
-
-def test_css_styles_toggle_affordance():
-    """The toggle badge gets an interactive cursor/hover/focus style."""
-    css = (FRONTEND / "css" / "ui-controls.css").read_text(encoding="utf-8")
-    assert ".flag-badge.flag-toggle" in css
-    assert "cursor: pointer" in css
-    assert ".flag-badge.flag-toggle:focus-visible" in css

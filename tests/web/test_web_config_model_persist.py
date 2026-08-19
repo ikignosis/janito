@@ -17,9 +17,7 @@ These tests pin down:
 3. the change is mirrored into the running server only when it affects the
    provider currently in use;
 4. an empty ``model`` clears the per-provider override;
-5. an unknown ``provider`` is rejected with ``400``;
-6. the frontend wiring (settings.js) sends the selected provider alongside
-   the model so it lands under the correct provider.
+5. an unknown ``provider`` is rejected with ``400``.
 """
 
 import sys
@@ -49,8 +47,6 @@ except ModuleNotFoundError:
 requires_fastapi = pytest.mark.skipif(
     not _HAS_FASTAPI, reason="fastapi (web extra) is not installed"
 )
-
-FRONTEND = Path(__file__).parent.parent.parent / "janito" / "web" / "frontend"
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -216,25 +212,3 @@ def test_patch_invalid_json_rejected(client):
         headers={"Content-Type": "application/json"},
     )
     assert resp.status_code == 400
-
-
-# ---------------------------------------------------------------------------
-# Frontend wiring (static checks, no server needed)
-# ---------------------------------------------------------------------------
-
-
-def test_settings_js_sends_provider_with_model():
-    """settings.js persists the model scoped to the selected provider so it
-    lands under the correct providers.<name>.model key."""
-    js = (FRONTEND / "js" / "settings.js").read_text(encoding="utf-8")
-    # The model edit is sent together with the provider it describes.
-    assert "Api.patchConfig({" in js
-    assert "model: this.model" in js
-    assert "provider: this.selectedProvider" in js
-
-
-def test_settings_js_prefers_selected_provider_model():
-    """The Model field is pre-filled from the SELECTED provider's own model
-    (configured or built-in default), not the running server's model."""
-    js = (FRONTEND / "js" / "settings.js").read_text(encoding="utf-8")
-    assert "this.model = this.defaultModel || this.config.model || '';" in js

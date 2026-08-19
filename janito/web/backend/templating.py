@@ -3,8 +3,8 @@
 The chat page (previously a single ~900-line ``frontend/index.html``) is
 composed server-side from ``templates/base.html`` plus the partials under
 ``templates/partials/``.  This module owns the environment so the backend
-(``app.py``) and the contract tests (``tests/web/_frontend.py``) render
-through exactly the same setup (loader, autoescaping, whitespace control).
+(``app.py``) renders through exactly the same setup (loader, autoescaping,
+whitespace control).
 """
 
 from pathlib import Path

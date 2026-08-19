@@ -26,8 +26,7 @@ These tests pin down:
    tool calls (OpenAI wire format) / usage;
 5. an end-to-end ``stream_prompt`` against a fake Responses client: the
    history stays OpenAI-format, tool-call rounds re-send the converted
-   history, and a final ``DoneEvent`` is produced;
-6. the status bar surfaces the effective API type for the selected provider.
+   history, and a final ``DoneEvent`` is produced.
 """
 
 import sys
@@ -39,7 +38,6 @@ from types import SimpleNamespace
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import pytest
-from _frontend import render_index_html
 
 import janito.config_dir as config_dir_mod
 
@@ -53,8 +51,6 @@ except ModuleNotFoundError:
 requires_dashscope = pytest.mark.skipif(
     not _HAS_DASHSCOPE, reason="dashscope package is not installed"
 )
-
-FRONTEND = Path(__file__).parent.parent.parent / "janito" / "web" / "frontend"
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -162,21 +158,3 @@ def test_usage_event_from_usage_handles_both_usage_shapes():
     )
 
     assert usage_event_from_usage(None) is None
-
-
-# ---------------------------------------------------------------------------
-# Frontend wiring (static checks)
-# ---------------------------------------------------------------------------
-
-
-def test_status_bar_shows_effective_api_type():
-    """The status bar renders an API badge resolved like the backend."""
-    js = (FRONTEND / "js" / "statusBar.js").read_text(encoding="utf-8")
-    assert "get apiType()" in js
-    # Resolution mirrors resolve_api_type: configured override, then default.
-    assert "p.api_type ||" in js
-    assert "p.default_api_type" in js
-
-    html = render_index_html()
-    assert "<strong>API:</strong>" in html
-    assert 'x-text="apiType"' in html

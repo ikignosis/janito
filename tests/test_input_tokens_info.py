@@ -12,7 +12,6 @@ These tests verify:
   - The web ``UsageEvent`` serialization includes ``max_tokens`` only when
     it is set.
   - The web ``StreamAccumulator.usage_event()`` passes ``max_tokens`` through.
-  - The frontend usage strip renders the ``output/max`` pattern.
 """
 
 import sys
@@ -21,11 +20,8 @@ from pathlib import Path
 
 # Add the repo root to sys.path to allow importing the package directly.
 sys.path.insert(0, str(Path(__file__).parent.parent))
-# The web frontend helpers live under tests/web.
-sys.path.insert(0, str(Path(__file__).parent / "web"))
 
 import pytest
-from _frontend import render_index_html
 
 if pytest is not None:
     from janito.openai_client.completions_api import format_tokens
@@ -264,34 +260,6 @@ if pytest is not None:
         assert ev is not None
         assert ev.max_tokens is None
         assert "max_tokens" not in ev.to_dict()
-
-    # ---- Frontend wiring (static checks) -----------------------------
-
-    def test_frontend_usage_strip_shows_output_max():
-        """The usage-strip template must render ``output/max`` in the out chip."""
-        html = render_index_html()
-        # The out-chip must append max_tokens when available
-        assert "msg.usage.max_tokens" in html
-        assert "formatTokens(msg.usage.output) + (msg.usage.max_tokens" in html
-
-    def test_frontend_status_bar_shows_output_max():
-        """The status bar must render ``output/max`` in the tokens area."""
-        html = render_index_html()
-        assert "lastUsage.max_tokens" in html
-        assert "formatTokens(lastUsage.output) + (lastUsage.max_tokens" in html
-
-    def test_frontend_event_handler_captures_max_tokens():
-        """chatEvents.js must store max_tokens from the usage event."""
-        js = (
-            Path(__file__).parent.parent
-            / "janito"
-            / "web"
-            / "frontend"
-            / "js"
-            / "chatEvents.js"
-        )
-        src = js.read_text(encoding="utf-8")
-        assert "max_tokens: c.event.max_tokens" in src
 
 else:  # pragma: no cover - fallback runner without pytest
 

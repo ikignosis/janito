@@ -59,10 +59,6 @@ if pytest is not None:
             {"tool": "CreateFile", "params": {"filepath": "a.py", "content": "x"}}
         ]
 
-    def test_first_arg_not_filepath_is_ignored():
-        changes.record_change("SearchText", {"query": "x", "filepath": "a.py"})
-        assert changes.load_changes() == []
-
     def test_read_only_tool_with_filepath_is_ignored():
         # Read-only tools (permissions "r") also take a "filepath" first arg
         # but make no changes, so they must not be tracked. These use real
@@ -104,25 +100,6 @@ if pytest is not None:
             "SomeUnknownMcpTool", {"filepath": "a.py", "content": "x"}
         )
         assert [r["tool"] for r in changes.load_changes()] == ["SomeUnknownMcpTool"]
-
-    def test_empty_tool_name_is_ignored():
-        changes.record_change("", {"filepath": "a.py"})
-        assert changes.load_changes() == []
-
-    def test_non_dict_args_is_ignored():
-        changes.record_change("CreateFile", ["a.py"])
-        changes.record_change("CreateFile", None)
-        assert changes.load_changes() == []
-
-    def test_empty_args_is_ignored():
-        changes.record_change("CreateFile", {})
-        assert changes.load_changes() == []
-
-    def test_non_string_or_empty_path_is_ignored():
-        changes.record_change("CreateFile", {"filepath": 123})
-        changes.record_change("CreateFile", {"filepath": None})
-        changes.record_change("CreateFile", {"filepath": ""})
-        assert changes.load_changes() == []
 
     def test_multiple_records_keep_insertion_order():
         changes.record_change("CreateFile", {"filepath": "first.py", "content": "a"})

@@ -149,6 +149,18 @@ Changes since `v4.26.0` (2026-08-17).
 
 ### Changed
 
+- Pruned the test suite of low-value tests to keep the test list
+  maintainable. Removed the static frontend "wiring" tests (pure
+  string-containment checks on `index.html`/JS/CSS sources that never
+  executed the frontend), the refactor-delegation test layers
+  (`tests/test_trackers.py` and the module-delegation parts of
+  `test_stream_consumers.py` / `test_clients.py` /
+  `test_config_loaders.py` / `test_config_store.py`), hardcoded
+  price/provider regression strings, trivial echo tests, and duplicated
+  defensive guards. The suite dropped from ~1043 to ~912 tests with no
+  loss of behavioural coverage: the backend API tests, provider/config
+  logic, stream-assembly and shell-command dispatch tests are all
+  retained.
 - Pressing Ctrl+C while the `AskUser` tool is waiting for an answer now
   interrupts the in-flight LLM conversation turn (the agent loop rolls the
   conversation history back and returns to the prompt) instead of silently

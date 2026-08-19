@@ -72,11 +72,6 @@ def test_lists_all_builtin_providers(monkeypatch, tmp_path, capsys):
     for name in list_supported_providers():
         assert name in out
 
-    # Spot-check fields of a built-in provider.
-    assert "gpt-5.6-luna (default)" in out  # openai
-    assert "Responses (default), Completions" in out  # openai
-    assert "enabled" in out  # deepseek / alibaba
-
 
 def test_alibaba_shows_builtin_tools_per_api_type(monkeypatch, tmp_path, capsys):
     """Alibaba's qwen3.8-max surfaces its built-in (native) tools, annotated

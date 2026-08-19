@@ -12,28 +12,6 @@ from pathlib import Path
 # Add the repo root to sys.path to allow importing the package directly.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from janito.tools.janitoweb.create_svg import CreateSVG
-
-SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40"/></svg>'
-
-
-def test_default_view_size_is_500x500():
-    """The tool defaults to a 500x500 display size when not specified."""
-    result = CreateSVG().run(svg_text=SVG)
-    assert result["success"] is True
-    assert result["content_type"] == "svg"
-    assert result["svg_text"] == SVG
-    assert result["view_width"] == 500
-    assert result["view_height"] == 500
-
-
-def test_custom_view_size_is_echoed():
-    """Explicit view_width/view_height are echoed back in the result."""
-    result = CreateSVG().run(svg_text=SVG, view_width=800, view_height=600)
-    assert result["success"] is True
-    assert result["view_width"] == 800
-    assert result["view_height"] == 600
-
 
 def test_schema_exposes_optional_integer_size_params():
     """The tool schema exposes view_width/view_height as optional integers.

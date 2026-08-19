@@ -13,8 +13,7 @@ These tests pin down:
 3. a fresh SessionManager restores the persisted sessions from disk;
 4. deleting a session removes its file;
 5. a restart (F2) rewrites the file with the cleared history;
-6. ``--no-history`` disables persistence entirely;
-7. the frontend wires the page-load prefetch of all sessions.
+6. ``--no-history`` disables persistence entirely.
 """
 
 import json
@@ -39,8 +38,6 @@ except ModuleNotFoundError:
 requires_fastapi = pytest.mark.skipif(
     not _HAS_FASTAPI, reason="fastapi (web extra) is not installed"
 )
-
-FRONTEND = Path(__file__).parent.parent.parent / "janito" / "web" / "frontend"
 
 
 @pytest.fixture()
@@ -263,88 +260,3 @@ def test_malformed_session_file_is_skipped(isolated_cwd):
         WebServerConfig(web_host="127.0.0.1", web_port=0, no_web_open=True)
     )
     assert manager.load_from_disk() == 0
-
-
-# ---------------------------------------------------------------------------
-# Frontend wiring (static checks, no server needed)
-# ---------------------------------------------------------------------------
-
-
-def test_sessions_js_prefetches_all_sessions_on_load():
-    """sessions.js bootstrap triggers the prefetch of every session."""
-    js = (FRONTEND / "js" / "sessions.js").read_text(encoding="utf-8")
-    assert "janito-prefetch-session" in js
-    # The prefetch runs after the list is loaded, before/around selection.
-    assert "await this.load()" in js
-
-
-def test_chat_js_handles_prefetch_event():
-    """chat.js listens for the prefetch and loads history without switching."""
-    js = (FRONTEND / "js" / "chat.js").read_text(encoding="utf-8")
-    assert "janito-prefetch-session" in js
-    assert "_prefetchSession" in js
-    assert "Api.getSession" in js
-
-
-def test_chat_js_auto_titles_new_empty_tab():
-    """chat.js names a new empty conversation from the start of its first message.
-
-    On sendPrompt, a session store that has never been titled and holds no
-    messages yet is renamed to the start of the message via the REST API
-    (Api.renameSession), and the sidebar is told to swap just that session's
-    label in place (janito-session-title) so the tab replaces the default
-    "New conversation" immediately, without a full-list reload. Existing
-    sessions keep their stored title (store.titled is set from the fetched
-    title).
-    """
-    js = (FRONTEND / "js" / "chat.js").read_text(encoding="utf-8")
-    assert "Api.renameSession" in js
-    assert "_autoTitle" in js
-    assert "janito-session-title" in js
-    assert "store.titled" in js
-    # Fires only for a fresh, still-empty conversation...
-    assert "!store.titled && store.messages.length === 0" in js
-    # ...and an already-named session loaded from the server is never re-named.
-    assert "store.titled = session.title !== 'New conversation'" in js
-
-
-def test_sessions_js_patches_title_in_place():
-    """sessions.js updates a renamed session's label without reloading the list.
-
-    A 'janito-session-title' event is applied by _applyTitle, which mutates
-    only that session's title reactively (the <span> alone re-renders) rather
-    than calling load() and rebuilding/re-sorting every tab - that full reload
-    is what made the sidebar flicker on auto-title.
-    """
-    js = (FRONTEND / "js" / "sessions.js").read_text(encoding="utf-8")
-    assert "janito-session-title" in js
-    assert "_applyTitle" in js
-    # In-place reactive update, with a full reload only as a fallback.
-    assert "session.title = title" in js
-    assert "this.load()" in js
-
-
-def test_history_reasoning_cards_start_expanded():
-    """Reasoning cards loaded from a stored session auto-expand (open=true).
-
-    Live-streamed reasoning cards are created expanded in chatEvents.js; the
-    history replay must do the same so a reloaded tab looks identical to the
-    session as it was being streamed.
-    """
-    js = (FRONTEND / "js" / "chatHistory.js").read_text(encoding="utf-8")
-    # The history replay appends reasoning with `open=true`.
-    assert "this._appendReasoningPart(current, msg.reasoning_content, true)" in js
-    assert "msg.reasoning_content, false" not in js
-
-
-def test_reasoning_card_grows_with_content():
-    """The reasoning card has no height cap (issue #33): it expands vertically.
-
-    .reasoning-body must not constrain the thinking text with a max-height or
-    internal scrollbar, so the card grows to accommodate the entire content
-    instead of clipping it.
-    """
-    css = (FRONTEND / "css" / "messages.css").read_text(encoding="utf-8")
-    body = css.split(".reasoning-body", 1)[1].split("}", 1)[0]
-    assert "max-height:" not in body
-    assert "overflow-y:" not in body

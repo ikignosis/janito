@@ -69,19 +69,6 @@ if pytest is not None:
             with pytest.raises(NotImplementedError):
                 getattr(c, hook)(*args)
 
-    def test_base_defaults():
-        c = Client()
-        assert c.api_type == "Completions"
-        assert c.backend_default == "api.openai.com"
-        assert c.cli_model is None
-        assert c.cli_provider is None
-        assert c.use_mcp is True
-
-    def test_base_send_requires_runtime_config():
-        """send() without a concrete subclass fails at the first hook."""
-        with pytest.raises(NotImplementedError):
-            Client().send("hello")
-
     # ---- concrete subclasses: identity ----------------------------------
 
     def test_subclass_identities():
@@ -255,52 +242,6 @@ if pytest is not None:
         assert reasoning is None
 
     # ---- pipeline wiring through module globals -------------------------
-
-    def test_completions_client_send_wires_module_globals(monkeypatch):
-        """CompletionsClient.send resolves the monkeypatched module globals
-        (resolve_runtime_config / _run_with_progress_bar), proving the
-        subclasses forward through their module namespace."""
-        import janito.openai_client.completions_api as ca
-
-        captured = {}
-
-        def fake_run(func, client, call_kwargs, tools_schemas):
-            captured["call_kwargs"] = call_kwargs
-            return "hi", None, {}, None, {}
-
-        monkeypatch.setattr(
-            ca,
-            "resolve_runtime_config",
-            lambda *a, **k: (None, "sk-test", "gpt-4"),
-        )
-        monkeypatch.setattr(ca, "_run_with_progress_bar", fake_run)
-        monkeypatch.setattr(ca, "_load_mcp", lambda use_mcp: (None, []))
-
-        result = ca.CompletionsClient(use_mcp=False).send(
-            "hello", tools=[], thinking=False
-        )
-        assert result == "hi"
-        assert captured["call_kwargs"]["model"] == "gpt-4"
-
-    def test_send_prompt_returns_shared_client_behaviour(monkeypatch):
-        """The module-level send_prompt now returns exactly what the client
-        class produces (regression guard for the delegation)."""
-        import janito.openai_client.completions_api as ca
-
-        monkeypatch.setattr(
-            ca,
-            "resolve_runtime_config",
-            lambda *a, **k: (None, "sk-test", "gpt-4"),
-        )
-        monkeypatch.setattr(
-            ca,
-            "_run_with_progress_bar",
-            lambda func, client, call_kwargs, tools_schemas: ("hi", None, {}, None, {}),
-        )
-
-        from janito.openai_client.completions_api import send_prompt
-
-        assert send_prompt("hello", use_mcp=False) == "hi"
 
     # ---- verbose API call/response output -------------------------------
 

@@ -10,16 +10,7 @@ the message was handed to the server, losing the typed text.
 
 These tests pin down:
 
-1. ``sendPrompt`` blocks a busy submission with a toast (keeps the text)
-   instead of silently returning;
-2. ``sendPrompt`` blocks a submission with no active session with a toast
-   instead of silently returning;
-3. the socket send is attempted BEFORE the input is cleared / the user
-   message is pushed, so a failed send keeps the typed text;
-4. the Send button is disabled for every non-idle status (including
-   ``tool_running``, which previously left it enabled while the server
-   silently discarded mid-turn prompts);
-5. ``_await_cancel`` (backend) queues prompts that arrive mid-turn instead
+1. ``_await_cancel`` (backend) queues prompts that arrive mid-turn instead
    of discarding them, so the main loop can process them afterwards.
 """
 
@@ -32,7 +23,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import pytest
-from _frontend import render_index_html
 
 # The web routes need the optional `web` extra (fastapi). Skip gracefully
 # when fastapi is not installed (e.g. minimal tox envs).
@@ -47,8 +37,6 @@ except ModuleNotFoundError:
 requires_fastapi = pytest.mark.skipif(
     not _HAS_FASTAPI, reason="fastapi (web extra) is not installed"
 )
-
-FRONTEND = Path(__file__).parent.parent.parent / "janito" / "web" / "frontend"
 
 
 # ---------------------------------------------------------------------------
@@ -134,107 +122,3 @@ def test_await_cancel_ignores_unknown_message_types():
 
     assert result is True
     assert pending == ["hello"]
-
-
-# ---------------------------------------------------------------------------
-# Frontend wiring (static checks, no server needed)
-# ---------------------------------------------------------------------------
-
-
-def test_send_prompt_blocks_busy_submission_with_feedback():
-    """A submission while a request is in flight shows a toast, keeps text."""
-    js = (FRONTEND / "js" / "chat.js").read_text(encoding="utf-8")
-    # The busy guard now covers every non-idle status (waiting, streaming,
-    # tool_running) and reports it instead of silently returning.
-    assert "if (this.status !== 'idle')" in js
-    assert "_notifySendBlocked(" in js
-    # The toast is dispatched through the root app component.
-    assert "janito-toast" in js
-
-
-def test_send_prompt_blocks_without_active_session():
-    """No active session -> toast telling the user, not a silent no-op."""
-    js = (FRONTEND / "js" / "chat.js").read_text(encoding="utf-8")
-    assert "const id = this.sessionId;" in js
-    assert "if (!id) {" in js
-    assert "No active conversation" in js
-
-
-def test_socket_send_happens_before_input_is_cleared():
-    """The socket handoff precedes clearing the input / pushing the message,
-    so a failed send keeps the typed text instead of losing it."""
-    js = (FRONTEND / "js" / "chat.js").read_text(encoding="utf-8")
-    # The sendPrompt body ends where the _notifySendBlocked *definition*
-    # starts (the method also *calls* _notifySendBlocked earlier).
-    send = js.split("sendPrompt() {", 1)[1].split("_notifySendBlocked(text) {", 1)[0]
-    socket_idx = send.index("const socket = this._socket(id);")
-    # The user message is only pushed after the socket accepted the send.
-    push_idx = send.index("store.messages.push(this._newMessage('user', content))")
-    assert socket_idx < push_idx
-    # And the input is only cleared after the push (main send path).
-    clear_idx = send.index("this.input = '';", push_idx)
-    assert socket_idx < clear_idx
-
-
-def test_send_button_disabled_for_all_busy_states():
-    """The Send button is disabled for every non-idle status, including
-    tool_running (previously enabled while the server dropped mid-turn
-    prompts)."""
-    html = render_index_html()
-    assert ":disabled=\"!input.trim() || status !== 'idle'\"" in html
-    # The old binding left tool_running enabled - make sure it is gone
-    # (the string below is the exact old :disabled expression; the same
-    # status list legitimately survives in the chat-spinner's x-show).
-    assert (
-        ":disabled=\"!input.trim() || status === 'waiting' || status === 'streaming'\""
-        not in html
-    )
-
-
-def test_notify_send_blocked_dispatches_toast_event():
-    """_notifySendBlocked renders feedback via the existing toast channel."""
-    js = (FRONTEND / "js" / "chat.js").read_text(encoding="utf-8")
-    assert "_notifySendBlocked(text)" in js
-    assert "CustomEvent('janito-toast'" in js
-    assert "kind: 'error'" in js
-
-
-def test_input_area_hidden_without_active_session():
-    """The input box + Send button are only visible with an active session.
-
-    When the last session is closed (zero sessions left, `sessionId` is
-    null), the message input and Send button must not be shown: there is
-    nothing to send a message to. They reappear as soon as the user selects
-    or creates a conversation (which sets `sessionId`).
-    """
-    html = render_index_html()
-    # The whole input area (textarea + Send button) is gated on sessionId.
-    assert '<div class="input-area" x-show="sessionId">' in html
-    # The textarea and button still exist inside that hidden container.
-    assert '<textarea x-ref="input"' in html
-    assert "Send" in html
-
-
-def test_empty_state_mentions_no_active_conversation():
-    """With zero sessions the empty state tells the user what to do instead
-    of pointing at the (hidden) input box.
-
-    The original \"Start a conversation below\" copy only applies while a
-    session is active; without one the banner says to pick/create a
-    conversation in the sidebar.
-    """
-    html = render_index_html()
-    assert '<p x-show="sessionId">Start a conversation below.' in html
-    assert '<p x-show="!sessionId">No active conversation' in html
-
-
-def test_clear_active_discards_stale_draft():
-    """Closing the active session clears the typed draft from the input box.
-
-    The draft belonged to the closed conversation; keeping it would make a
-    stale message resurface when a new session is opened.
-    """
-    js = (FRONTEND / "js" / "chatStore.js").read_text(encoding="utf-8")
-    clear = js.split("clearActive() {", 1)[1]
-    assert "this.sessionId = null" in clear
-    assert "this.input = ''" in clear

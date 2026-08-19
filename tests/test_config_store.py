@@ -135,19 +135,6 @@ if pytest is not None:
         with pytest.raises(json.JSONDecodeError):
             ConfigStore().load()
 
-    def test_module_functions_delegate(monkeypatch, tmp_path):
-        """Module-level config functions agree with the ConfigStore class."""
-        _point_at(monkeypatch, tmp_path)
-        import janito.config_store as gc
-
-        store = ConfigStore()
-        gc.set_config_value("theme", "dark")
-        assert gc.get_config_value("theme") == store.get("theme")
-        assert gc.load_config() == store.load()
-        # Unset once via the module function, then confirm both agree it is gone.
-        assert gc.unset_config_value("theme") is True
-        assert store.unset("theme") is False
-
 else:  # pragma: no cover - fallback runner without pytest
 
     def _main():

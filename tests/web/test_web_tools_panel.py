@@ -19,7 +19,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import pytest
-from _frontend import render_index_html
 
 import janito.tooling.tools_registry as tools_registry
 
@@ -161,46 +160,3 @@ def test_mcp_tools_endpoint_shape(client):
     for schema in data["tools"]:
         fn = schema.get("function", schema)
         assert "name" in fn
-
-
-@requires_fastapi
-def test_frontend_loads_tools_command_script():
-    """index.html references the chatCommands.js slash-command mixin."""
-    html = render_index_html()
-    assert "/js/chatCommands.js" in html
-    # The panel template block must be present.
-    assert "part.kind === 'tools'" in html
-
-
-@requires_fastapi
-def test_chat_commands_mixin_intercepts_tools():
-    """The chatCommands.js mixin defines the /tools dispatch + panel builder."""
-    js = (
-        Path(__file__).parent.parent.parent
-        / "janito"
-        / "web"
-        / "frontend"
-        / "js"
-        / "chatCommands.js"
-    )
-    src = js.read_text(encoding="utf-8")
-    assert "_handleSlashCommand" in src
-    assert "'/tools'" in src
-    assert "_runToolsCommand" in src
-    assert "getMcpTools" in src
-
-
-@requires_fastapi
-def test_chat_commands_mixin_reads_tools_enabled():
-    """The listing builder surfaces the API's tools_enabled flag for the banner."""
-    js = (
-        Path(__file__).parent.parent.parent
-        / "janito"
-        / "web"
-        / "frontend"
-        / "js"
-        / "chatCommands.js"
-    )
-    src = js.read_text(encoding="utf-8")
-    assert "data.tools_enabled" in src
-    assert "toolsEnabled" in src

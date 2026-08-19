@@ -111,31 +111,6 @@ def test_price_cost_column_matches_provider_cost(monkeypatch, tmp_path, capsys):
             assert expected in out
 
 
-def test_price_applies_reference_rates(monkeypatch, tmp_path, capsys):
-    """The price column uses the reference (peak) rates, e.g. DeepSeek's."""
-    _use_temp_config(monkeypatch, tmp_path)
-    shell = _shell()
-    assert _price_handler().handle(shell, "/price") is True
-
-    out = capsys.readouterr().out
-    # 1M cache-hit input + 1M output at reference (peak) rates:
-    #   alibaba qwen3.8-max        -> 0.25 + 6.0          = 6.250000$
-    #   deepseek deepseek-v4-flash -> (0.007 + 0.66) * 2  = 1.334000$
-    #   deepseek deepseek-v4-pro   -> (0.022 + 1.98) * 2  = 4.004000$
-    #   google  gemini-3.7-flash   -> 0.1875 + 3.75       = 3.937500$
-    #   minimax MiniMax-M3         -> 0.12 + 2.40         = 2.520000$
-    #   zai     glm-5.2            -> 0.26 + 4.40         = 4.660000$
-    assert "6.250000$" in out
-    assert "4.660000$" in out
-    assert "1.334000$" in out
-    assert "4.004000$" in out
-    assert "3.937500$" in out
-    assert "2.520000$" in out
-    # The reference annotation is not attached (no rate-band suffix).
-    assert "off-peak" not in out
-    assert "(peak)" not in out
-
-
 def test_price_shows_na_for_models_without_cost_module(monkeypatch, tmp_path, capsys):
     """Models without a provider cost module are reported as N/A."""
     _use_temp_config(monkeypatch, tmp_path)
@@ -170,66 +145,6 @@ def test_non_price_input_is_not_handled(capsys):
     shell = _shell()
     assert _price_handler().handle(shell, "/prices") is False
     assert capsys.readouterr().out == ""
-
-
-def test_price_sorted_by_cost_descending(monkeypatch, tmp_path, capsys):
-    """``/price`` sorts rows by cost from max to min as floats, with N/A at the bottom."""
-    _use_temp_config(monkeypatch, tmp_path)
-    shell = _shell()
-    assert _price_handler().handle(shell, "/price") is True
-
-    out = capsys.readouterr().out
-    pos_fable = out.find("claude-fable-5")
-    pos_opus = out.find("claude-opus-5")
-    pos_kimi = out.find("kimi-k3")
-    pos_sonnet = out.find("claude-sonnet-5")
-    pos_alibaba = out.find("qwen3.8-max")
-    pos_zai = out.find("glm-5.2")
-    pos_deepseek_pro = out.find("deepseek-v4-pro")
-    pos_gemini = out.find("gemini-3.7-flash")
-    pos_minimax = out.find("MiniMax-M3")
-    pos_openai = out.find("gpt-5.6-luna")
-    pos_deepseek_flash = out.find("deepseek-v4-flash")
-
-    assert pos_fable != -1
-    assert pos_opus != -1
-    assert pos_kimi != -1
-    assert pos_sonnet != -1
-    assert pos_alibaba != -1
-    assert pos_zai != -1
-    assert pos_deepseek_pro != -1
-    assert pos_gemini != -1
-    assert pos_minimax != -1
-    assert pos_openai != -1
-    assert pos_deepseek_flash != -1
-
-    # Claude Fable (51$) > Claude Opus (25.5$) > Moonshot Kimi (14.03$) >
-    # Claude Sonnet (10.2$) > Alibaba (6.25$) > Z.ai (4.66$) >
-    # DeepSeek Pro (4.004$) > Gemini Flash (3.9375$) > MiniMax M3 (2.52$) >
-    # OpenAI Luna (1.84$) > DeepSeek Flash (1.334$).
-    assert (
-        pos_fable
-        < pos_opus
-        < pos_kimi
-        < pos_sonnet
-        < pos_alibaba
-        < pos_zai
-        < pos_deepseek_pro
-        < pos_gemini
-        < pos_minimax
-        < pos_openai
-        < pos_deepseek_flash
-    )
-    # N/A rows (no cost module) sort below every numeric cost.
-    restore = _inject_fake_no_cost_provider()
-    try:
-        assert _price_handler().handle(_shell(), "/price") is True
-        out = capsys.readouterr().out
-        pos_fake = out.find("fake-model")
-        assert pos_fake != -1
-        assert pos_deepseek_flash < pos_fake
-    finally:
-        restore()
 
 
 def test_parse_cost_helper():

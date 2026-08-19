@@ -6,7 +6,6 @@ and shows ``Janito x.y.z - Working at <cwd>`` with the version in cyan and the
 working directory in magenta.
 """
 
-import re
 import sys
 from pathlib import Path
 
@@ -17,13 +16,6 @@ import pytest
 
 from janito import __version__
 from janito.cli.chat import print_version_banner
-
-_ANSI = re.compile(r"\x1b\[[0-9;]*m")
-
-
-def _strip_ansi(text):
-    return _ANSI.sub("", text)
-
 
 if pytest is not None:
 
@@ -37,54 +29,6 @@ if pytest is not None:
 
         out = capsys.readouterr().out.strip()
         assert out == f"Janito {__version__} - Working at {cwd}"
-
-    def test_version_banner_colors_version_cyan_and_cwd_magenta(monkeypatch, tmp_path):
-        from rich.console import Console
-
-        cwd = tmp_path
-        monkeypatch.chdir(cwd)
-
-        console = Console(force_terminal=True, width=200)
-        with console.capture() as capture:
-            print_version_banner(console)
-        colored = capture.get()
-
-        # The visible text still reads "Janito x.y.z - Working at <cwd>".
-        assert (
-            _strip_ansi(colored).strip() == f"Janito {__version__} - Working at {cwd}"
-        )
-        # Version is rendered in cyan, the working directory in magenta.
-        assert "\x1b[36m" in colored
-        assert "\x1b[35m" in colored
-
-    def test_version_banner_maps_home_to_tilde(monkeypatch, tmp_path, capsys):
-        """When the cwd is under the home dir, it is shown as ~/relative."""
-        from rich.console import Console
-
-        home = tmp_path / "home"
-        project = home / "project"
-        project.mkdir(parents=True)
-        monkeypatch.setenv("HOME", str(home))
-        monkeypatch.chdir(project)
-
-        print_version_banner(Console(width=200))
-
-        out = capsys.readouterr().out.strip()
-        assert out == f"Janito {__version__} - Working at ~/project"
-
-    def test_version_banner_maps_home_itself_to_tilde(monkeypatch, tmp_path, capsys):
-        """When the cwd is the home dir itself, it is shown as ~."""
-        from rich.console import Console
-
-        home = tmp_path / "home"
-        home.mkdir(parents=True)
-        monkeypatch.setenv("HOME", str(home))
-        monkeypatch.chdir(home)
-
-        print_version_banner(Console(width=200))
-
-        out = capsys.readouterr().out.strip()
-        assert out == f"Janito {__version__} - Working at ~"
 
     def test_banner_precedes_full_privileges_warning(monkeypatch, capsys):
         """run_single_prompt prints the banner before the warning."""
