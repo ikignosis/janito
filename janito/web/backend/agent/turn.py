@@ -20,8 +20,18 @@ async def run_tool_turn(
     full_content: str | None,
     messages: list[dict],
     use_mcp: bool,
+    thought_parts: list[dict] | None = None,
 ):
     """Execute one turn's tool calls, mutating ``messages`` and yielding events.
+
+    Args:
+        tool_calls_list: The assembled tool calls (OpenAI wire format).
+        full_content: The assistant text produced alongside the calls.
+        messages: The conversation history (mutated in place).
+        use_mcp: Whether MCP tools may be executed.
+        thought_parts: Native Gemini thought blocks (text + signature) to
+            keep on the assistant message so stateless follow-up turns resend
+            them verbatim.  ``None`` (other API types) omits the key.
 
     Yields:
         ToolCallEvent, ToolProgressEvent*, ToolResultEvent  (per tool)
@@ -34,6 +44,8 @@ async def run_tool_turn(
         "content": full_content or None,
         "tool_calls": tool_calls_list,
     }
+    if thought_parts:
+        assistant_msg["thought_parts"] = thought_parts
     messages.append(assistant_msg)
 
     for tc in tool_calls_list:

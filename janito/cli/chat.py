@@ -45,10 +45,13 @@ def _make_send_prompt_func(
       - DashScope mode: forwards ``previous_messages`` / ``instructions`` to
         ``dashscope_api.send_prompt`` (the native DashScope SDK) and returns
         the assistant text (the history list is mutated, like Completions).
+      - Gemini mode: forwards ``previous_messages`` / ``instructions`` to
+        ``gemini_api.send_prompt`` (the native Gemini SDK) and returns the
+        assistant text (the history list is mutated, like Completions).
 
     Args:
         api_type: The canonical API type: "Responses", "Completions",
-            "Anthropic" or "DashScope".
+            "Anthropic", "DashScope" or "Gemini".
         cli_model: Model passed via ``--model``.
         cli_provider: Provider passed via ``--provider``.
         reasoning_level: Reasoning depth passed via ``--reasoning-level``.
@@ -126,6 +129,35 @@ def _make_send_prompt_func(
             thinking=False,
         ):
             return send_dashscope(
+                prompt,
+                verbose=verbose,
+                previous_messages=previous_messages,
+                instructions=instructions,
+                tools=tools,
+                thinking=thinking,
+                cli_model=cli_model,
+                cli_provider=cli_provider,
+                reasoning_level=reasoning_level,
+            )
+
+        return send
+
+    if api_type == "Gemini":
+        # Native Gemini SDK client (the optional `google-genai` package; the
+        # API type is only settable when that package is installed).
+        from ..gemini_api import send_prompt as send_gemini
+
+        def send(
+            prompt,
+            verbose=False,
+            previous_messages=None,
+            previous_response_id=None,
+            previous_items=None,
+            instructions=None,
+            tools=None,
+            thinking=False,
+        ):
+            return send_gemini(
                 prompt,
                 verbose=verbose,
                 previous_messages=previous_messages,
@@ -320,6 +352,7 @@ def run_interactive_chat(args):
         model=model,
         no_history=args.no_history,
         provider=cli_provider,
+        api_type=cli_api_type,
     )
     # Factory to (re)build the send function per provider: ``/provider`` calls
     # it with the new provider so the switch takes effect in real time

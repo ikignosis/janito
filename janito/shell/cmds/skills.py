@@ -21,13 +21,6 @@ def _load_skills():
         return []
 
 
-def _truncate(description: str, length: int = 60) -> str:
-    """Truncate a skill description to ``length`` chars for display."""
-    if len(description) > length:
-        return description[: length - 3] + "..."
-    return description
-
-
 def _skills_table(title: str, skills: list[dict]) -> None:
     """Print a Name/Description table for a group of skills."""
     table = Table(
@@ -38,7 +31,8 @@ def _skills_table(title: str, skills: list[dict]) -> None:
     table.add_column("Name", style="green", no_wrap=True)
     table.add_column("Description", overflow="fold")
     for skill in skills:
-        table.add_row(skill["name"], _truncate(skill["description"]))
+        # Keep the complete description; Rich wraps it to fit the terminal.
+        table.add_row(skill["name"], skill["description"])
     Console(markup=False).print(table)
 
 
@@ -74,6 +68,7 @@ class SkillsCmdHandler(CmdHandler):
             table.add_column("Value", overflow="fold")
             table.add_row("Status", "No skills installed.")
             table.add_row("Home skills", "<config_dir>/skills")
+            table.add_row("Agent skills", ".agents/skills (in the current directory)")
             table.add_row("Local skills", ".janito/skills (in the current directory)")
             table.add_row(
                 "Install",
@@ -83,10 +78,16 @@ class SkillsCmdHandler(CmdHandler):
             return
 
         home_skills = [s for s in skills if s["source"] == "home"]
+        agent_skills = [s for s in skills if s["source"] == "agents"]
         local_skills = [s for s in skills if s["source"] == "local"]
 
         if home_skills:
             _skills_table("Home Skills", home_skills)
+
+        # Agent skills are a distinct discovery source (``.agents/skills``).
+        # They must not be silently omitted from the shell output or summary.
+        if agent_skills:
+            _skills_table("Agent Skills", agent_skills)
 
         if local_skills:
             _skills_table("Local Skills", local_skills)
@@ -103,10 +104,17 @@ class SkillsCmdHandler(CmdHandler):
         )
         summary.add_column("Key", style="green", no_wrap=True)
         summary.add_column("Value")
-        summary.add_row(
-            "Total",
-            f"{total} skill(s) ({len(home_skills)} home, {len(local_skills)} local)",
-        )
+        # Keep the compact two-source format when no agent skills are present
+        # for backwards compatibility, but report all three sources when they
+        # are in use.
+        if agent_skills:
+            source_summary = (
+                f"{len(home_skills)} home, {len(agent_skills)} agents, "
+                f"{len(local_skills)} local"
+            )
+        else:
+            source_summary = f"{len(home_skills)} home, {len(local_skills)} local"
+        summary.add_row("Total", f"{total} skill(s) ({source_summary})")
         Console(markup=False).print(summary)
 
 

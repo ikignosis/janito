@@ -239,8 +239,24 @@ if pytest is not None:
         assert get_gemini_flavor_from_provider("alibaba") is False
         assert get_gemini_flavor_from_provider("bogus") is False
         # Google's OpenAI-compatibility layer documents the Chat Completions
-        # API only, so the provider is Completions-only.
-        assert model_entry["supported_api_types"] == ["Completions"]
+        # API only, so Completions is the built-in default; the native Gemini
+        # API type (the optional google-genai package) is also supported.
+        assert model_entry["supported_api_types"] == ["Completions", "Gemini"]
+        assert model_entry["default_api_type"] == "Completions"
+        # Per-API-type endpoints: the OpenAI-compatible Chat Completions URL
+        # and the native Gemini SDK base URL.
+        assert info["endpoint_by_api_type"] == {
+            "Completions": "https://generativelanguage.googleapis.com/v1beta/openai/",
+            "Gemini": "https://generativelanguage.googleapis.com",
+        }
+        assert (
+            get_endpoint_for_api_type("google", "Completions")
+            == "https://generativelanguage.googleapis.com/v1beta/openai/"
+        )
+        assert (
+            get_endpoint_for_api_type("google", "Gemini")
+            == "https://generativelanguage.googleapis.com"
+        )
         # Case-insensitive lookup.
         assert (
             get_provider_config("Google")["endpoint"]
@@ -535,6 +551,13 @@ if pytest is not None:
             "Anthropic",
         ]
         assert get_default_api_type_from_provider("minimax") == "Completions"
+        # Google's default model supports the native Gemini SDK API type too
+        # (Completions stays the built-in default).
+        assert get_supported_api_types_from_provider("google") == [
+            "Completions",
+            "Gemini",
+        ]
+        assert get_default_api_type_from_provider("google") == "Completions"
         # Every other provider is Completions-only for now.  The "custom"
         # provider has no built-in models, so it exposes no defaults.
         for name in (
@@ -542,7 +565,6 @@ if pytest is not None:
             "moonshot",
             "zai",
             "xai",
-            "google",
         ):
             assert get_supported_api_types_from_provider(name) == ["Completions"]
             assert get_default_api_type_from_provider(name) == "Completions"
@@ -711,17 +733,21 @@ if pytest is not None:
     # ---- REQUIRES_BY_API_TYPE (optional packages per API type) -----------
 
     def test_requires_by_api_type_structure():
-        # The native Anthropic SDK API type requires the `anthropic` package
-        # and the native DashScope SDK API type requires the `dashscope`
+        # The native Anthropic SDK API type requires the `anthropic` package,
+        # the native DashScope SDK API type requires the `dashscope` package
+        # and the native Gemini SDK API type requires the `google-genai`
         # package.
         assert REQUIRES_BY_API_TYPE == {
             "Anthropic": "anthropic",
             "DashScope": "dashscope",
+            "Gemini": "google-genai",
         }
         assert get_required_package_for_api_type("Anthropic") == "anthropic"
         assert get_required_package_for_api_type("anthropic") == "anthropic"
         assert get_required_package_for_api_type("DashScope") == "dashscope"
         assert get_required_package_for_api_type("dashscope") == "dashscope"
+        assert get_required_package_for_api_type("Gemini") == "google-genai"
+        assert get_required_package_for_api_type("gemini") == "google-genai"
         # The OpenAI-SDK API types have no optional-package requirement.
         assert get_required_package_for_api_type("Responses") is None
         assert get_required_package_for_api_type("Completions") is None

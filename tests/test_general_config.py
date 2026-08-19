@@ -539,6 +539,25 @@ if pytest is not None:
         # Nothing should have been written
         assert _read_config(config_path) == {}
 
+    def test_set_api_type_gemini_aborts_without_package(monkeypatch, tmp_path):
+        """Setting the native Gemini SDK API type without the optional
+        `google-genai` package aborts the change (nothing is written) with a
+        message naming the package."""
+        import importlib.util
+
+        # Simulate a test environment without the optional package so the
+        # guard is exercised even when `google-genai` is installed locally.
+        monkeypatch.setattr(importlib.util, "find_spec", lambda name: None)
+        config_path = _use_temp_config(monkeypatch, tmp_path)
+        with pytest.raises(ValueError) as exc:
+            cc.set_config_from_cli("api-type=gemini", "google")
+        message = str(exc.value)
+        assert "Gemini" in message
+        assert "google-genai" in message
+        assert "pip install google-genai" in message
+        # Nothing should have been written
+        assert _read_config(config_path) == {}
+
     def test_normalize_api_type_accepts_native_sdk_types():
         assert ck.normalize_api_type("anthropic") == "Anthropic"
         assert ck.normalize_api_type("ANTHROPIC") == "Anthropic"
@@ -548,6 +567,10 @@ if pytest is not None:
         assert ck.normalize_api_type("dashscope") == "DashScope"
         assert ck.normalize_api_type("DASHSCOPE") == "DashScope"
         assert ck.normalize_api_type("DashScope") == "DashScope"
+        # "Gemini" keeps its canonical casing too.
+        assert ck.normalize_api_type("gemini") == "Gemini"
+        assert ck.normalize_api_type("GEMINI") == "Gemini"
+        assert ck.normalize_api_type("Gemini") == "Gemini"
 
     def test_load_api_type_unknown_provider_returns_none(monkeypatch, tmp_path):
         _use_temp_config(monkeypatch, tmp_path)

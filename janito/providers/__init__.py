@@ -54,7 +54,7 @@ Model-level fields (each entry of the ``models`` dict):
 
   - "supported_api_types": the API types the model supports
     ("Responses" and/or "Completions", plus native-SDK types such as
-    "Anthropic"/"DashScope"). The effective type can be overridden per
+    "Anthropic"/"DashScope"/"Gemini"). The effective type can be overridden per
     provider/model with ``--set api-type=...`` or per-call with
     ``--api-type``.
   - "default_api_type": the built-in default API type for the model
@@ -165,6 +165,7 @@ _PROVIDER_CONFIGS: dict[str, dict] = {
 REQUIRES_BY_API_TYPE: dict[str, str] = {
     "Anthropic": "anthropic",
     "DashScope": "dashscope",
+    "Gemini": "google-genai",
 }
 
 

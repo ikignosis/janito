@@ -9,13 +9,14 @@ janito talks to models through **two kinds of API**:
   provider or local server (LM Studio, Ollama, the `custom` provider) that
   exposes an OpenAI-compatible endpoint.
 - **Native APIs** — the providers' official SDKs, selectable through API
-  types such as `Anthropic` (native Anthropic SDK) and `DashScope` (native
-  DashScope SDK). These talk directly to the provider's native API instead of
-  its OpenAI-compatible gateway.
+  types such as `Anthropic` (native Anthropic SDK), `DashScope` (native
+  DashScope SDK) and `Gemini` (native Gemini SDK). These talk directly to the
+  provider's native API instead of its OpenAI-compatible gateway.
 
 The API type is selected per provider with `--set api-type=...` (see the
-[`Anthropic`](#native-anthropic-sdk-optional) and
-[`DashScope`](#native-dashscope-sdk-optional) sections below).
+[`Anthropic`](#native-anthropic-sdk-optional),
+[`DashScope`](#native-dashscope-sdk-optional) and
+[`Gemini`](#native-gemini-api-optional) sections below).
 
 ## Supported Providers
 
@@ -117,6 +118,30 @@ The `google` provider talks to Gemini through Google's OpenAI-compatibility
 layer (`https://generativelanguage.googleapis.com/v1beta/openai/`, see the
 [Gemini API OpenAI compatibility docs](https://ai.google.dev/gemini-api/docs/openai)),
 so it uses the standard **Chat Completions** API out of the box.
+
+### Native Gemini API (optional)
+
+Besides the OpenAI-compatibility layer (the `Completions` API type, the
+built-in default), the `google` provider also supports the **native Gemini
+API** through the `Gemini` API type. It talks to the Gemini API directly
+(`https://generativelanguage.googleapis.com`) using the official
+[`google-genai`](https://ai.google.dev/gemini-api/docs/libraries) package:
+
+```bash
+# Install the optional package
+pip install google-genai
+
+# Use the native Gemini API for a single call
+janito --api-type Gemini "Explain quantum computing"
+
+# ...or set it as the per-provider default
+janito --provider google --set api-type=Gemini
+```
+
+Gemini 3.x models reason by default on the native API too; reasoning depth is
+controlled through `--reasoning-level`, sent as `thinking_level`. Thought
+summaries stream into the reasoning panel, and function/tool calls work
+exactly like the other API types (MCP included).
 
 ### Popular Models
 

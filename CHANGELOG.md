@@ -9,8 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Changes since `v4.26.0` (2026-08-17).
 
+### Added
+
+- New native **`Gemini` API type** for the `google` provider: the
+  `gemini-3.7-flash` model now supports `["Completions", "Gemini"]` (with
+  `Completions` staying the built-in default) and the provider declares a
+  per-API-type endpoint map (`endpoint_by_api_type`) with the native Gemini
+  base URL.  The `Gemini` type talks to the Gemini API directly through the
+  official `google-genai` package (`client.models.generate_content_stream`,
+  the stable `generateContent` API) instead of Google's OpenAI-compatibility
+  layer, and is selectable with `--api-type Gemini` / `--set api-type=Gemini`
+  when the optional `google-genai` package is installed
+  (`REQUIRES_BY_API_TYPE`).  It is wired end to end in the CLI
+  (`janito.gemini_api` + shared wire-format helpers and stream consumer) and
+  in the web agent loop (`janito.agent.gemini` adapter +
+  `janito.web.backend.agent.gemini` runner): function/tool calls (MCP
+  included), reasoning panels and token-usage summaries work like the other
+  native API types.  Gemini 3.x thought blocks (text + signature) are kept
+  verbatim in the conversation history and resent on the next round, so
+  multi-turn tool calls keep reasoning continuity; reasoning depth maps to
+  the API's `thinking_level` via `--reasoning-level`.
+
 ### Fixed
 
+- The shell `/status` command now reports the API type actually in use: it
+  previously hard-coded `None` as the CLI `--api-type` when resolving the
+  effective API type, so a session started with `janito --provider google
+  --api-type=Gemini` displayed the provider's built-in default
+  (`Completions` for `google`) instead of `Gemini`. The session's
+  `--api-type` (e.g. `Gemini`, `Responses`, `Completions`, `Anthropic`,
+  `DashScope`) is now stored on the shell and forwarded to
+  `resolve_api_type` by `/status`, matching the API type the send factory
+  uses for actual requests (and the corresponding per-API-type base URL).
 - The `google` provider is now marked `gemini_flavor: True` and no longer
   sends the `enable_thinking` extra-body flag to Google's
   OpenAI-compatibility layer.  Gemini 3.x models reason by default and the

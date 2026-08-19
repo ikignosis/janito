@@ -77,6 +77,7 @@ def test_loop_dispatches_each_api_type_to_its_runner():
     assert loop._runner_for("Responses") is loop.responses_runner
     assert loop._runner_for("Anthropic") is loop.anthropic_runner
     assert loop._runner_for("DashScope") is loop.dashscope_runner
+    assert loop._runner_for("Gemini") is loop.gemini_runner
     # Completions is the built-in path (call.py) -- no runner module.
     assert loop._runner_for("Completions") is None
 

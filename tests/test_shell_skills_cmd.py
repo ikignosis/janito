@@ -111,7 +111,7 @@ if pytest is not None:
         assert "No skills installed." in output
         assert "--install-skill" in output
 
-    def test_description_truncated(tmp_path):
+    def test_description_shown_in_full(tmp_path):
         home = tmp_path / "home" / "skills"
         home.mkdir(parents=True)
         long_description = "x" * 200
@@ -120,8 +120,10 @@ if pytest is not None:
         provider = _provider_with(home)
         _, output = _run_handler(provider)
 
-        assert "x" * 60 not in output  # truncated, not the full 200 chars
-        assert "..." in output
+        # Rich wraps long cells across lines, but must preserve every
+        # character of the description.
+        assert output.count("x") == 200
+        assert "..." not in output
 
     def test_local_skill_shown_once_when_overriding(tmp_path):
         home = tmp_path / "home" / "skills"

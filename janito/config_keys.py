@@ -130,10 +130,10 @@ def normalize_api_type(value: str) -> str:
     """Normalize an API type value to its canonical form.
 
     Accepts ``responses``/``completions`` (and any native-SDK API type, e.g.
-    ``anthropic``, ``dashscope``) in any casing -- the values used with
+    ``anthropic``, ``dashscope``, ``gemini``) in any casing -- the values used with
     ``--set api-type=...`` -- and returns the canonical form
-    (``"Responses"`` / ``"Completions"`` / ``"Anthropic"`` / ``"DashScope"``,
-    ...). The accepted set is the OpenAI-SDK types plus the keys of
+    (``"Responses"`` / ``"Completions"`` / ``"Anthropic"`` /
+    ``"DashScope"`` / ``"Gemini"``, ...). The accepted set is the OpenAI-SDK types plus the keys of
     ``REQUIRES_BY_API_TYPE`` (see ``provider_accessors.get_all_api_types``).
 
     Args:

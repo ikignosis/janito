@@ -12,14 +12,15 @@ Skills follow a progressive disclosure pattern:
 
 ## Skill Discovery Locations
 
-Skills are discovered from two locations:
+Skills are discovered from three locations:
 
 | Location | Path | Purpose |
 |----------|------|---------|
 | **Home** | `~/.janito/skills/` (or `<config_dir>/skills/`) | Global, user-installed skills |
+| **Agent** | `.agents/skills/` (in the current working directory) | Project-specific agent skills |
 | **Local** | `.janito/skills/` (in the current working directory) | Project-specific skills |
 
-When a skill name exists in both locations, the **local** copy takes precedence, allowing project-specific skills to override globally installed ones.
+When a skill name exists in multiple locations, the project-local copy takes precedence: `.janito/skills/` overrides `.agents/skills/`, which overrides the home copy, allowing project-specific skills to override globally installed ones.
 
 Each skill tracks its own filesystem path, so resources are always loaded from the correct directory regardless of where the skill was discovered.
 
@@ -66,7 +67,7 @@ Skills are stored as directories containing:
 └── resource-file.md  # Optional supplementary files
 ```
 
-Where `<skills-dir>` is either `~/.janito/skills/` (home) or `.janito/skills/` (local).
+Where `<skills-dir>` is `~/.janito/skills/` (home), `.agents/skills/` (agent), or `.janito/skills/` (local).
 
 ### SKILL.md Format
 
@@ -89,4 +90,4 @@ janito --install-skill https://github.com/joaompinto/janito/tree/main/skills/git
 - Skills are automatically advertised based on your request
 - The AI decides when to load a skill's full content
 - Keep skill descriptions concise for efficient system prompts
-- Use local skills (`.janito/skills/`) for project-specific overrides
+- Use `.agents/skills/` or local skills (`.janito/skills/`) for project-specific overrides

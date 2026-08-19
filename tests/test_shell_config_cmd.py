@@ -17,6 +17,7 @@ class TestPrintConfigInfo:
         thinking=False,
         api_type="Responses",
         responses_in_server=True,
+        cli_api_type=None,
     ):
         """Helper: patch config lookups and capture printed output.
 
@@ -28,7 +29,20 @@ class TestPrintConfigInfo:
             responses_in_server: Value returned by
                 ``get_responses_in_server_from_provider`` (only meaningful when
                 ``api_type`` is ``Responses``).
+            cli_api_type: The ``--api-type`` CLI flag passed to
+                ``_print_config_info`` (``None`` when the flag was not given).
         """
+        # Captures the arguments ``_print_config_info`` forwards to
+        # ``resolve_api_type`` so tests can assert the session's ``--api-type``
+        # reaches the API-type resolution.
+        self._last_resolve_call = {}
+
+        def _fake_resolve_api_type(resolved_cli_api_type, resolved_provider, model):
+            self._last_resolve_call["cli_api_type"] = resolved_cli_api_type
+            self._last_resolve_call["provider"] = resolved_provider
+            self._last_resolve_call["model"] = model
+            return api_type
+
         with (
             patch(
                 "janito.shell.cmds.status.get_active_provider",
@@ -56,14 +70,14 @@ class TestPrintConfigInfo:
             ),
             patch(
                 "janito.shell.cmds.status.resolve_api_type",
-                return_value=api_type,
+                side_effect=_fake_resolve_api_type,
             ),
             patch(
                 "janito.shell.cmds.status.get_responses_in_server_from_provider",
                 return_value=responses_in_server,
             ),
         ):
-            _print_config_info(provider, thinking)
+            _print_config_info(provider, thinking, cli_api_type)
         return capsys.readouterr().out
 
     def test_explicit_max_output_tokens_shown_as_is(self, capsys):
@@ -128,3 +142,130 @@ class TestPrintConfigInfo:
         out = self._run(capsys, provider="openai", api_type="Completions")
         assert "Completions" in out
         assert "Responses In Server" not in out
+
+    def test_cli_api_type_forwarded_to_resolve_api_type(self, capsys):
+        """The session's --api-type (e.g. Gemini) reaches resolve_api_type.
+
+        Regression test: /status used to hard-code ``None`` as the CLI API
+        type, so a session started with ``--api-type=Gemini`` displayed the
+        provider's built-in default (``Completions`` for google) instead of
+        the API type actually in use.
+        """
+        out = self._run(
+            capsys, provider="google", cli_api_type="Gemini", api_type="Gemini"
+        )
+        assert self._last_resolve_call["cli_api_type"] == "Gemini"
+        assert self._last_resolve_call["provider"] == "google"
+        assert "Gemini" in out
+
+    def test_no_cli_api_type_keeps_none_forwarded(self, capsys):
+        """Without --api-type, None is forwarded so the config/default applies."""
+        self._run(capsys, provider="google")
+        assert self._last_resolve_call["cli_api_type"] is None
+
+
+class TestStatusCmdHandlerApiType:
+    """Tests for the /status handler forwarding the shell's api_type."""
+
+    def test_status_handler_forwards_shell_api_type(self, capsys):
+        """/status passes the shell's --api-type into the API type resolution."""
+        from janito.shell.cmds.status import StatusCmdHandler
+
+        calls = {}
+
+        def fake_resolve_api_type(cli_api_type, provider, model):
+            calls["cli_api_type"] = cli_api_type
+            calls["provider"] = provider
+            return "Gemini"
+
+        class FakeShell:
+            provider = "google"
+            thinking = False
+            api_type = "Gemini"
+
+        with (
+            patch(
+                "janito.shell.cmds.status.get_active_provider",
+                return_value="openai",
+            ),
+            patch("janito.shell.cmds.status.get_api_key", return_value=""),
+            patch(
+                "janito.shell.cmds.status.get_masked_api_key",
+                return_value="(not set)",
+            ),
+            patch(
+                "janito.shell.cmds.status.load_max_output_tokens",
+                return_value=None,
+            ),
+            patch(
+                "janito.shell.cmds.status.load_endpoint_from_config",
+                return_value=None,
+            ),
+            patch(
+                "janito.shell.cmds.status.get_default_max_output_tokens_from_provider",
+                return_value=None,
+            ),
+            patch(
+                "janito.shell.cmds.status.resolve_api_type",
+                side_effect=fake_resolve_api_type,
+            ),
+            patch(
+                "janito.shell.cmds.status.get_responses_in_server_from_provider",
+                return_value=True,
+            ),
+        ):
+            assert StatusCmdHandler().handle(FakeShell(), "/status") is True
+
+        assert calls["cli_api_type"] == "Gemini"
+        assert calls["provider"] == "google"
+        out = capsys.readouterr().out
+        assert "Gemini" in out
+
+    def test_status_handler_tolerates_missing_api_type(self, capsys):
+        """Shells without an api_type attribute (older sessions) still work."""
+        from janito.shell.cmds.status import StatusCmdHandler
+
+        calls = {}
+
+        def fake_resolve_api_type(cli_api_type, provider, model):
+            calls["cli_api_type"] = cli_api_type
+            return "Completions"
+
+        class FakeShell:
+            provider = "google"
+            thinking = False
+
+        with (
+            patch(
+                "janito.shell.cmds.status.get_active_provider",
+                return_value="openai",
+            ),
+            patch("janito.shell.cmds.status.get_api_key", return_value=""),
+            patch(
+                "janito.shell.cmds.status.get_masked_api_key",
+                return_value="(not set)",
+            ),
+            patch(
+                "janito.shell.cmds.status.load_max_output_tokens",
+                return_value=None,
+            ),
+            patch(
+                "janito.shell.cmds.status.load_endpoint_from_config",
+                return_value=None,
+            ),
+            patch(
+                "janito.shell.cmds.status.get_default_max_output_tokens_from_provider",
+                return_value=None,
+            ),
+            patch(
+                "janito.shell.cmds.status.resolve_api_type",
+                side_effect=fake_resolve_api_type,
+            ),
+            patch(
+                "janito.shell.cmds.status.get_responses_in_server_from_provider",
+                return_value=True,
+            ),
+        ):
+            assert StatusCmdHandler().handle(FakeShell(), "/status") is True
+
+        assert calls["cli_api_type"] is None

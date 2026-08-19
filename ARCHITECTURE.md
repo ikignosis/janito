@@ -172,8 +172,10 @@ history conversion are implemented once.
 
 - **`skills_provider.py`** — progressive-disclosure skills: advertise
   (~100 tokens) in the system prompt, load full `SKILL.md` when activated,
-  read resources on demand. Skills are discovered from `~/.janito/skills`
-  and `.janito/skills` (local wins).
+  read resources on demand. Skills are discovered from `~/.janito/skills`,
+  `.agents/skills`, and `.janito/skills` (project-local wins, with
+  `.janito/skills` taking precedence
+  over `.agents/skills`).
 
 - **`changes.py`, `used_files.py`, `tools_usage.py`** — per-prompt tracking
   feeding `/changes`, "Used files" reports and tool stats.

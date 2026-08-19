@@ -354,8 +354,8 @@ def get_default_tools_from_provider(
         provider: The provider name (case-insensitive)
         model: The model name. ``None`` means the provider's default model.
         api_type: The canonical API type (e.g. ``"Responses"``,
-            ``"Completions"``, ``"DashScope"``) whose tools to resolve.
-            ``None`` resolves the plain ``tools`` default.
+            ``"Completions"``, ``"DashScope"``, ``"Gemini"``) whose tools to
+            resolve. ``None`` resolves the plain ``tools`` default.
 
     Returns:
         The model's built-in tools list, or ``None`` for unknown providers,
@@ -488,7 +488,7 @@ def get_supported_api_types_from_provider(
     (the Responses API, ``client.responses.create``) and/or
     ``"Completions"`` (the Chat Completions API,
     ``client.chat.completions.create``), plus native-SDK types such as
-    ``"Anthropic"``/``"DashScope"``.
+    ``"Anthropic"``/``"DashScope"``/``"Gemini"``.
 
     Args:
         provider: The provider name (case-insensitive)

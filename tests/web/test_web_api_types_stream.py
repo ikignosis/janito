@@ -141,15 +141,18 @@ def test_stream_prompt_responses_round_trip(monkeypatch):
         lambda base_url, api_key: fake_client,
     )
 
-    async def _fake_run_tool_turn(tool_calls_list, full_content, messages, use_mcp):
+    async def _fake_run_tool_turn(
+        tool_calls_list, full_content, messages, use_mcp, thought_parts=None
+    ):
         # Mirror run_tool_turn's OpenAI-format appends without executing tools.
-        messages.append(
-            {
-                "role": "assistant",
-                "content": full_content or None,
-                "tool_calls": tool_calls_list,
-            }
-        )
+        assistant_msg = {
+            "role": "assistant",
+            "content": full_content or None,
+            "tool_calls": tool_calls_list,
+        }
+        if thought_parts:
+            assistant_msg["thought_parts"] = thought_parts
+        messages.append(assistant_msg)
         for tc in tool_calls_list:
             messages.append(
                 {

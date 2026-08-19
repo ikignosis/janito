@@ -26,7 +26,11 @@ from .base import CmdHandler
 from .registry import register_command
 
 
-def _print_config_info(provider: str | None = None, thinking: bool = False) -> None:
+def _print_config_info(
+    provider: str | None = None,
+    thinking: bool = False,
+    api_type: str | None = None,
+) -> None:
     """Print current configuration info (provider, base_url, masked API key, max output tokens).
 
     Model-level settings (max output tokens, reasoning level, thinking,
@@ -40,6 +44,12 @@ def _print_config_info(provider: str | None = None, thinking: bool = False) -> N
         thinking: The ``--thinking`` CLI flag for the session. The effective
             thinking mode also considers the effective model's built-in
             default (True for DeepSeek and Alibaba/Qwen).
+        api_type: The ``--api-type`` CLI flag for the session (e.g. ``Gemini``,
+            ``Responses``, ``Completions``), or None when it was not given.
+            Forwarded to ``resolve_api_type`` so the display reports the API
+            type the session actually uses: the CLI flag first, then the
+            model-scoped configured value (``--set api-type=...``), then the
+            effective model's built-in default.
     """
     if provider is None:
         provider = get_active_provider()
@@ -54,11 +64,12 @@ def _print_config_info(provider: str | None = None, thinking: bool = False) -> N
 
     max_output_tokens = load_max_output_tokens(provider, model)
 
-    # Resolve the effective API type first (--set api-type, otherwise the
+    # Resolve the effective API type first (--api-type, otherwise the
+    # model-scoped configured value --set api-type=..., otherwise the
     # effective model's built-in default -- its default_api_type entry) so
     # the built-in base URL can be resolved per API type
     # (endpoint_by_api_type, e.g. Anthropic's native-SDK URL).
-    api_type = resolve_api_type(None, provider, model)
+    api_type = resolve_api_type(api_type, provider, model)
 
     # Determine the actual base URL that will be used: a configured endpoint
     # override first, otherwise the provider's built-in default for the
@@ -164,6 +175,7 @@ class StatusCmdHandler(CmdHandler):
             _print_config_info(
                 getattr(shell, "provider", None),
                 getattr(shell, "thinking", False),
+                getattr(shell, "api_type", None),
             )
             return True
         return False

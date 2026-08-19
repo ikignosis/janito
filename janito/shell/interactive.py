@@ -32,6 +32,7 @@ class InteractiveShell(_SessionMixin):
         no_history: bool = False,
         provider: str | None = None,
         thinking: bool = False,
+        api_type: str | None = None,
     ):
         """
         Initialize the interactive shell.
@@ -45,10 +46,17 @@ class InteractiveShell(_SessionMixin):
                 status bar reports it; otherwise it falls back to the
                 configured default provider.
             thinking: If True, enable thinking mode for the session.
+            api_type: The API type passed via ``--api-type`` (e.g. ``Gemini``,
+                ``Responses``, ``Completions``). ``None`` when the CLI flag
+                was not given, in which case the effective API type resolves
+                from the provider/model configuration (see
+                :func:`janito.general_config.resolve_api_type`). Surfaced by
+                ``/status`` so it reports the API type actually in use.
         """
         self.model = model
         self.provider = provider
         self.thinking = thinking
+        self.api_type = api_type
         # Set by /model for the current session: the explicit model override
         # that the send factory (re)built by /provider and /model consults so
         # the runtime model matches the displayed one.  Cleared when /provider

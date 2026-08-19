@@ -8,12 +8,13 @@ Based on Agent Skills progressive disclosure pattern:
 
 Skills are discovered from multiple search paths:
 - **Home skills** – ``<config_dir>/skills`` (default ``~/.janito/skills``)
+- **Agent skills** – ``.agents/skills`` in the current working directory
 - **Local skills** – ``.janito/skills`` in the current working directory
 
 Each ``Skill`` tracks its own filesystem ``path``, so resources are always
 loaded from the correct directory regardless of whether the skill lives in the
-home or local ``.janito`` directory.  When a skill name exists in both
-locations the **local** copy takes precedence, making it easy to override a
+home, ``.agents`` or local ``.janito`` directory.  When a skill name exists in
+multiple locations the **local** copy takes precedence, making it easy to override a
 globally installed skill with a project-specific variant.
 """
 
@@ -27,6 +28,11 @@ from janito.tooling.reporter import report_error, report_result, report_start
 def get_default_skills_dir() -> Path:
     """Get the default (home) skills directory (honors -c/--config-dir)."""
     return get_config_dir() / "skills"
+
+
+def get_agents_skills_dir() -> Path:
+    """Get the project agent skills directory (``.agents/skills`` in CWD)."""
+    return Path.cwd() / ".agents" / "skills"
 
 
 def get_local_skills_dir() -> Path:
@@ -45,7 +51,8 @@ class Skill:
     Attributes:
         name: Skill name (directory name).
         path: Filesystem path to the skill directory.
-        source: Where the skill was found – ``"home"`` or ``"local"``.
+        source: Where the skill was found – ``"home"``, ``"agents"`` or
+            ``"local"``.
         description: Short description extracted from SKILL.md.
         content: Cached SKILL.md content (populated by :meth:`load_content`).
         resources: Mapping of resource file name → path.
@@ -112,13 +119,17 @@ class SkillsProvider:
     Searches configured paths recursively (up to two levels deep)
     for SKILL.md files.
 
-    By default two search roots are used:
+    By default three search roots are used:
 
     1. **Home** – ``<config_dir>/skills`` (global, user-installed skills).
-    2. **Local** – ``.janito/skills`` in the current working directory
+    2. **Agent** – ``.agents/skills`` in the current working directory
+       (project-specific agent skills).
+    3. **Local** – ``.janito/skills`` in the current working directory
        (project-specific skills).
 
-    Local skills take precedence over home skills with the same name.
+    Project-local skills take precedence over home skills with the same name;
+    ``.janito/skills`` takes precedence over ``.agents/skills`` when both
+    provide a skill with the same name.
     """
 
     def __init__(self, skill_paths: list[Path] | list[tuple[Path, str]] = None):
@@ -129,16 +140,18 @@ class SkillsProvider:
             skill_paths: Search paths for skills.  Each entry may be either a
                 bare :class:`~pathlib.Path` (defaults to source ``"home"``)
                 or a ``(path, source)`` tuple where *source* is a short label
-                such as ``"home"`` or ``"local"``.
+                such as ``"home"``, ``"agents"`` or ``"local"``.
 
                 When ``None`` the default search paths are used::
 
                     [(get_default_skills_dir(), "home"),
+                     (get_agents_skills_dir(),  "agents"),
                      (get_local_skills_dir(),   "local")]
         """
         if skill_paths is None:
             skill_paths = [
                 (get_default_skills_dir(), "home"),
+                (get_agents_skills_dir(), "agents"),
                 (get_local_skills_dir(), "local"),
             ]
 
@@ -230,12 +243,9 @@ class SkillsProvider:
             if len(description_lines) >= 2:
                 break
 
-        description = " ".join(description_lines)
-        # Truncate if too long
-        if len(description) > 200:
-            description = description[:197] + "..."
-
-        return description
+        # Keep the complete extracted description.  The shell/UI is
+        # responsible for wrapping it to fit the available display width.
+        return " ".join(description_lines)
 
     def get_skill(self, name: str) -> Skill | None:
         """Get a skill by name."""

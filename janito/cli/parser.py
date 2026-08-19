@@ -201,13 +201,15 @@ Note: --set and --set-api-key must be used in separate commands.
     parser.add_argument(
         "--api-type",
         metavar="TYPE",
-        choices=["Responses", "Completions", "Anthropic", "DashScope"],
+        choices=["Responses", "Completions", "Anthropic", "DashScope", "Gemini"],
         help="API type to use for the provider: 'Responses' (the Responses "
         "API, server-side conversation state), 'Completions' (the Chat "
         "Completions API), 'Anthropic' (the native Anthropic SDK, only for "
         "providers that declare it and when the optional 'anthropic' package "
-        "is installed) or 'DashScope' (the native DashScope SDK, only for "
+        "is installed), 'DashScope' (the native DashScope SDK, only for "
         "the alibaba provider and when the optional 'dashscope' package is "
+        "installed) or 'Gemini' (the native Gemini SDK, only for the google "
+        "provider and when the optional 'google-genai' package is "
         "installed). Overrides the provider's configured value "
         "(--set api-type=...) and built-in default (the model's "
         "default_api_type entry, e.g. 'Responses' for OpenAI).",

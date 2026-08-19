@@ -15,6 +15,7 @@ call-kwargs builder, accumulator, stream driver) exposing the same interface:
 - Responses    -> ``janito.web.backend.agent.responses``
 - Anthropic    -> ``janito.web.backend.agent.anthropic``
 - DashScope    -> ``janito.web.backend.agent.dashscope``
+- Gemini       -> ``janito.web.backend.agent.gemini``
 """
 
 import logging
@@ -42,6 +43,7 @@ from ..events import (
 )
 from . import anthropic as anthropic_runner
 from . import dashscope as dashscope_runner
+from . import gemini as gemini_runner
 from . import responses as responses_runner
 from .call import StreamAccumulator, build_call_kwargs
 from .tooling import reset_used_files, resolve_tools
@@ -90,6 +92,8 @@ def _runner_for(api_type: str):
         return anthropic_runner
     if api_type == "DashScope":
         return dashscope_runner
+    if api_type == "Gemini":
+        return gemini_runner
     return None
 
 
@@ -123,6 +127,13 @@ def _build_assistant_message(acc: StreamAccumulator, full_content: str) -> dict:
     reasoning_content = acc.reasoning_content()
     if reasoning_content:
         assistant_message["reasoning_content"] = reasoning_content
+    # Native Gemini turns: keep the model's raw thought blocks (text +
+    # signature) so stateless follow-up turns can resend them verbatim
+    # (Gemini 3.x requires this for reasoning continuity).  Only the Gemini
+    # accumulator exposes ``thought_parts``; other runners never set it.
+    thought_parts = getattr(acc, "thought_parts", None) or []
+    if thought_parts:
+        assistant_message["thought_parts"] = thought_parts
     # Native Responses-API image generation (image_generation tool): attach
     # the saved image paths so the frontend can rebuild the content cards
     # when the session history is reloaded.  Completions runners never set
@@ -294,7 +305,11 @@ async def stream_prompt(
         # --- Handle tool calls -> continue the loop for the final response ---
         if acc.tool_calls_list():
             async for ev in run_tool_turn(
-                acc.tool_calls_list(), full_content, messages, mcp_enabled
+                acc.tool_calls_list(),
+                full_content,
+                messages,
+                mcp_enabled,
+                thought_parts=getattr(acc, "thought_parts", None) or [],
             ):
                 yield ev
             continue

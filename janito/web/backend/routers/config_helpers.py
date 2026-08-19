@@ -142,9 +142,9 @@ def _patch_api_type(body, provider, effective, config, updated) -> JSONResponse 
     key = model_scoped_config_key(provider, model, "api-type")
 
     # Persist per provider/model, canonicalized to "Responses" /
-    # "Completions" / "Anthropic" / "DashScope" (rejects anything else
-    # with 400). An empty value clears the override so the model falls
-    # back to its built-in default. Native-SDK API types (e.g.
+    # "Completions" / "Anthropic" / "DashScope" / "Gemini" (rejects
+    # anything else with 400). An empty value clears the override so the
+    # model falls back to its built-in default. Native-SDK API types (e.g.
     # "Anthropic") also require their optional package to be installed:
     # when it is missing the change is aborted with 400 (nothing is
     # written) and a message naming the package.
