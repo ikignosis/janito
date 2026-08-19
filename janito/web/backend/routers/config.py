@@ -270,6 +270,7 @@ async def set_session_provider(request: Request):
     """
     from janito.auth_config import get_api_key
     from janito.config_loaders import load_model_from_config
+    from janito.provider_accessors import get_default_model_from_provider
     from janito.provider_validation import validate_provider_name
 
     try:
@@ -299,13 +300,33 @@ async def set_session_provider(request: Request):
             status_code=400,
         )
 
+    # A session id makes this a pre-conversation selection. The legacy
+    # no-session call retains the server-wide transient behavior.
+    session_id = str(body.get("session_id") or "").strip()
+    session = request.app.state.sessions.get(session_id) if session_id else None
+    if session_id and not session:
+        return JSONResponse({"detail": "Session not found"}, status_code=404)
+    if session and any(m.get("role") == "user" for m in session.messages):
+        return JSONResponse(
+            {"detail": "This conversation is already locked to its provider/model"},
+            status_code=409,
+        )
+
     # In-memory only: nothing is written to ~/.janito/config.json here.
     # Adopt the new provider's configured model too -- keeping a model that
     # belongs to the previous provider would make the next API call fail.
     config = _get_config(request)
-    config.session_provider = provider
     try:
-        config.model = load_model_from_config(provider)
+        selected_model = load_model_from_config(
+            provider
+        ) or get_default_model_from_provider(provider)
+        if session:
+            session.provider = provider
+            session.model = selected_model
+            request.app.state.sessions.persist(session)
+        else:
+            config.session_provider = provider
+            config.model = selected_model
     except Exception:  # noqa: BLE001 - provider may simply have no configured model
         logger.debug(
             "Could not load a configured model for provider '%s'",
@@ -314,10 +335,11 @@ async def set_session_provider(request: Request):
         )
         config.model = None
 
+    effective_model = session.model if session else config.model
     logger.info(
-        f"Session provider set to '{provider}' (model: {config.model}, not persisted)"
+        f"Session provider set to '{provider}' (model: {effective_model}, not persisted)"
     )
-    return {"provider": provider, "model": config.model, "persisted": False}
+    return {"provider": provider, "model": effective_model, "persisted": False}
 
 
 @router.post("/default-provider")

@@ -51,8 +51,13 @@ def get_sessions_dir() -> Path:
 
 
 def session_file_path(session_id: str) -> Path:
-    """Return the jsonl file path for a session id."""
+    """Return the legacy jsonl history file path for a session id."""
     return get_sessions_dir() / f"{session_id}.jsonl"
+
+
+def metadata_file_path(session_id: str) -> Path:
+    """Return the per-conversation metadata path."""
+    return get_sessions_dir() / session_id / "metadata.json"
 
 
 def _session_meta(session) -> dict[str, Any]:
@@ -63,6 +68,8 @@ def _session_meta(session) -> dict[str, Any]:
         "created_at": session.created_at,
         "last_active": session.last_active,
         "system_prompt": session.system_prompt,
+        "provider": session.provider,
+        "model": session.model,
     }
 
 
@@ -76,6 +83,15 @@ def save_session(session) -> None:
         path = session_file_path(session.session_id)
         with _lock:
             path.parent.mkdir(parents=True, exist_ok=True)
+            # Keep conversation metadata in the per-session directory. The
+            # jsonl remains the history format for backwards compatibility.
+            meta_path = metadata_file_path(session.session_id)
+            meta_path.parent.mkdir(parents=True, exist_ok=True)
+            with meta_path.open("w", encoding="utf-8") as meta_file:
+                json.dump(
+                    _session_meta(session), meta_file, ensure_ascii=False, indent=2
+                )
+                meta_file.write("\n")
             with path.open("w", encoding="utf-8") as f:
                 f.write(json.dumps(_session_meta(session), ensure_ascii=False) + "\n")
                 for msg in session.messages:
@@ -93,10 +109,19 @@ def delete_session_file(session_id: str) -> bool:
     try:
         path = session_file_path(session_id)
         with _lock:
-            if path.exists():
+            removed = path.exists()
+            if removed:
                 path.unlink()
-                return True
-            return False
+            meta_path = metadata_file_path(session_id)
+            if meta_path.exists():
+                removed = True
+                # Remove the directory only after its metadata is gone.
+                meta_path.unlink()
+                try:
+                    meta_path.parent.rmdir()
+                except OSError:
+                    pass
+            return removed
     except Exception as e:  # noqa: BLE001 - persistence must never break the server
         logger.debug(f"Failed to delete session file {session_id}: {e}")
         return False
@@ -137,6 +162,38 @@ def _read_session_file(path: Path) -> dict[str, Any] | None:
         return None
 
 
+def _merge_stored_provider_meta(parsed: dict[str, Any]) -> dict[str, Any]:
+    """Overlay provider/model metadata from the directory sidecar."""
+    meta_path = metadata_file_path(parsed["session_id"])
+    if not meta_path.exists():
+        return parsed
+    try:
+        with meta_path.open("r", encoding="utf-8") as f:
+            stored_meta = json.load(f)
+        if isinstance(stored_meta, dict):
+            parsed.update(
+                {k: stored_meta[k] for k in ("provider", "model") if k in stored_meta}
+            )
+    except Exception:
+        logger.debug(
+            "Failed to read metadata for %s", parsed["session_id"], exc_info=True
+        )
+    return parsed
+
+
+def _read_directory_session(meta_path: Path) -> dict[str, Any] | None:
+    """Read a session stored only in its metadata sidecar directory."""
+    try:
+        with meta_path.open("r", encoding="utf-8") as f:
+            parsed = json.load(f)
+        if isinstance(parsed, dict):
+            parsed.setdefault("messages", [])
+            return parsed
+    except Exception:
+        logger.debug("Failed to read session metadata %s", meta_path, exc_info=True)
+    return None
+
+
 def load_sessions() -> list[dict[str, Any]]:
     """Read every ``.janito/sessions/*.jsonl`` file.
 
@@ -154,6 +211,12 @@ def load_sessions() -> list[dict[str, Any]]:
         for path in sorted(directory.glob("*.jsonl")):
             parsed = _read_session_file(path)
             if parsed is not None:
+                sessions.append(_merge_stored_provider_meta(parsed))
+        # Also accept sessions written in the directory-only format.
+        known = {s["session_id"] for s in sessions}
+        for meta_path in sorted(directory.glob("*/metadata.json")):
+            parsed = _read_directory_session(meta_path)
+            if parsed is not None and parsed.get("session_id") not in known:
                 sessions.append(parsed)
     except Exception as e:  # noqa: BLE001 - persistence must never break the server
         logger.debug(f"Failed to load sessions from disk: {e}")
@@ -164,6 +227,7 @@ __all__ = [
     "SESSIONS_DIR",
     "get_sessions_dir",
     "session_file_path",
+    "metadata_file_path",
     "save_session",
     "delete_session_file",
     "load_sessions",

@@ -49,8 +49,11 @@ const Api = {
     },
     // Session-only switch used by the topbar combo: in-memory on the server,
     // never written to ~/.janito/config.json (unlike setDefaultProvider).
-    setSessionProvider(name) {
-        return this.post('/api/config/session-provider', { provider: name });
+    setSessionProvider(name, sessionId = null) {
+        return this.post('/api/config/session-provider', {
+            provider: name,
+            ...(sessionId ? { session_id: sessionId } : {}),
+        });
     },
     // Runtime-only thinking toggle (status bar): in-memory on the server,
     // never written to ~/.janito/config.json (unlike patchConfig).

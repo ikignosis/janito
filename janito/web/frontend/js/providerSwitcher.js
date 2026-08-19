@@ -25,10 +25,18 @@ function providerSwitcherComponent() {
         providers: [],          // full list from GET /api/config/providers
         selected: '',           // effective provider name (in use right now)
         busy: false,            // a switch request is in flight
+        locked: false,           // active conversation already has messages
+        sessionId: null,
 
         init() {
             this.load();
             window.addEventListener('config-updated', () => this.load());
+            window.addEventListener('janito-session-lock', (e) => {
+                const d = e.detail || {};
+                this.sessionId = d.sessionId || null;
+                this.locked = !!d.locked;
+                if (d.provider) this.selected = d.provider;
+            });
         },
 
         // Providers worth offering in the combo: the ones with an API key
@@ -74,7 +82,7 @@ function providerSwitcherComponent() {
 
         async applyProvider() {
             const name = this.selected;
-            if (!name || this.busy) return;
+            if (!name || this.busy || this.locked) return;
 
             // Re-selecting the provider already in use is a no-op.
             const detail = this.providers.find((p) => p.name === name);
@@ -85,7 +93,7 @@ function providerSwitcherComponent() {
                 (this.providers.find((p) => p.effective) ||
                     this.providers.find((p) => p.active) || {}).name || '';
             try {
-                const data = await Api.setSessionProvider(name);
+                const data = await Api.setSessionProvider(name, this.sessionId);
                 // Reflect the new effective provider locally, adopt its model.
                 this.providers.forEach((p) => {
                     p.effective = p.name === data.provider;

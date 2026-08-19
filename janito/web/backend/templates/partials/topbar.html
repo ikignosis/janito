@@ -16,7 +16,7 @@
                     <select class="provider-combo"
                             x-model="selected"
                             @change="applyProvider()"
-                            :disabled="busy"
+                            :disabled="busy || locked"
                             :class="{ swapping: busy }"
                             :title="'Active provider: ' + selected + (selectedModel ? ' · ' + selectedModel : '')">
                         <template x-for="p in available" :key="p.name">

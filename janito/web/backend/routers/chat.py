@@ -5,11 +5,15 @@ greeting, and the per-turn cancel/rollback machinery live in small helpers
 so the main loop reads top to bottom.
 """
 
+import copy
 import json
 import logging
 
 from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
+
+from janito.config_loaders import load_model_from_config
+from janito.provider_accessors import get_default_model_from_provider
 
 from ..agent import stream_prompt
 from ..events import event_to_dict
@@ -152,9 +156,29 @@ async def _process_prompt(
     processed once the current turn finishes, so a submission is never
     lost mid-stream.
     """
+    # Pin provider/model before the first user message. Use a shallow config
+    # copy so concurrent conversations cannot overwrite the global web config.
+    if session.provider is None:
+        session.provider = config.effective_provider
+        session.model = config.model or load_model_from_config(session.provider)
+        session.model = session.model or get_default_model_from_provider(
+            session.provider
+        )
+        sessions.persist(session)
+    turn_config = copy.copy(config)
+    turn_config.session_provider = session.provider
+    turn_config.provider = session.provider
+    turn_config.model = session.model
+
     _maybe_auto_title(sessions, session.session_id, session, content)
     await _run_prompt_turn(
-        session, websocket, content, config, pending_prompts, sessions, prompt_registry
+        session,
+        websocket,
+        content,
+        turn_config,
+        pending_prompts,
+        sessions,
+        prompt_registry,
     )
     for extra in pending_prompts:
         _maybe_auto_title(sessions, session.session_id, session, extra)
@@ -162,7 +186,7 @@ async def _process_prompt(
             session,
             websocket,
             extra,
-            config,
+            turn_config,
             pending_prompts,
             sessions,
             prompt_registry,
@@ -289,9 +313,21 @@ async def one_shot_prompt(request: Request):
     if not session:
         return JSONResponse({"detail": "Session not found"}, status_code=404)
 
+    if session.provider is None:
+        session.provider = config.effective_provider
+        session.model = config.model or load_model_from_config(session.provider)
+        session.model = session.model or get_default_model_from_provider(
+            session.provider
+        )
+        sessions.persist(session)
+    turn_config = copy.copy(config)
+    turn_config.provider = session.provider
+    turn_config.session_provider = session.provider
+    turn_config.model = session.model
+
     async def sse():
         try:
-            async for event in stream_prompt(content, session.messages, config):
+            async for event in stream_prompt(content, session.messages, turn_config):
                 payload = json.dumps(event_to_dict(event))
                 yield f"data: {payload}\n\n"
         except Exception as e:

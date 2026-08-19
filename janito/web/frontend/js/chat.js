@@ -134,6 +134,9 @@ function chatComponent() {
 
         async openSession(id) {
             this.sessionId = id;
+            window.dispatchEvent(new CustomEvent('janito-session-lock', {
+                detail: { sessionId: id, locked: false },
+            }));
             const store = this._store(id);
 
             // Project this session's store into the visible state.
@@ -143,6 +146,10 @@ function chatComponent() {
             this.connection = store.connection;
             this._current = store.current;
             this.toolsSummary = store.toolsSummary;
+            const existingUserMessages = store.messages.filter(m => m.role === 'user');
+            window.dispatchEvent(new CustomEvent('janito-session-lock', {
+                detail: { sessionId: id, locked: existingUserMessages.length > 0 },
+            }));
             this._broadcastConn();
             this._forceScrollToBottom();
 
@@ -216,7 +223,14 @@ function chatComponent() {
                     store.titled = session.title !== 'New conversation';
                 }
                 store.loaded = true;
-                if (this.sessionId === id) this._forceScrollToBottom();
+                if (this.sessionId === id) {
+                    const userMessages = store.messages.filter(m => m.role === 'user');
+                    window.dispatchEvent(new CustomEvent('janito-session-lock', {
+                        detail: { sessionId: id, locked: userMessages.length > 0,
+                            provider: session.provider, model: session.model },
+                    }));
+                    this._forceScrollToBottom();
+                }
             } catch (e) {
                 console.error('Failed to load session history:', e);
             } finally {
@@ -283,6 +297,9 @@ function chatComponent() {
             store.error = null;
             this.error = null;
             store.dirty = true;   // protect the pending _loadHistory from clobbering
+            window.dispatchEvent(new CustomEvent('janito-session-lock', {
+                detail: { sessionId: id, locked: true },
+            }));
 
             // A new empty conversation gets named from the start of its first
             // message: rename the session and refresh the sidebar so the tab

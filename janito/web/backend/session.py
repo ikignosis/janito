@@ -22,6 +22,11 @@ class ConversationSession:
     created_at: float = field(default_factory=time.time)
     last_active: float = field(default_factory=time.time)
     title: str = "New conversation"
+    # Provider/model selected for this conversation. Once the first user
+    # message is sent these values are immutable for the lifetime of the
+    # session, so switching tabs cannot silently change its context.
+    provider: str | None = None
+    model: str | None = None
     # Index into ``messages`` marking the last known-good state; cancel
     # (Ctrl+C) and error recovery truncate back to here.  Mirrors the
     # shell's ``history_checkpoint`` attribute.
@@ -52,6 +57,9 @@ class ConversationSession:
             "message_count": len(self.messages),
             "created_at": self.created_at,
             "last_active": self.last_active,
+            "provider": self.provider,
+            "model": self.model,
+            "has_messages": any(m.get("role") == "user" for m in self.messages),
         }
 
     def to_dict(self) -> dict:
@@ -59,6 +67,8 @@ class ConversationSession:
             **self.to_summary(),
             "messages": self.messages,
             "system_prompt": self.system_prompt,
+            "provider": self.provider,
+            "model": self.model,
         }
 
 
@@ -105,6 +115,8 @@ class SessionManager:
                 created_at=meta.get("created_at", time.time()),
                 last_active=meta.get("last_active", time.time()),
                 title=meta.get("title", "New conversation"),
+                provider=meta.get("provider"),
+                model=meta.get("model"),
             )
             # Checkpoint starts after the restored system prompt (if any), so
             # a cancel/error on the next turn rolls back only that turn.
