@@ -53,7 +53,13 @@ class ModelConfig:
 
     def reasoning_level(self) -> str | None:
         """The built-in default reasoning level, or ``None``."""
-        return self._data.get("reasoning_level")
+        return self._data.get("reasoning_level") or self._data.get(
+            "default_effort_level"
+        )
+
+    def default_effort_level(self) -> str | None:
+        """The built-in default reasoning/effort level, or ``None``."""
+        return self.reasoning_level()
 
     def supported_reasoning_levels(self) -> list | None:
         """The list of supported reasoning levels, or ``None``."""
@@ -234,6 +240,10 @@ class Provider:
     def reasoning_level(self, model: str | None = None) -> str | None:
         """The built-in default reasoning level, or ``None``."""
         return self.model_config(model).reasoning_level()
+
+    def default_effort_level(self, model: str | None = None) -> str | None:
+        """The built-in default reasoning/effort level, or ``None``."""
+        return self.model_config(model).default_effort_level()
 
     def supported_reasoning_levels(self, model: str | None = None) -> list | None:
         """The list of supported reasoning levels, or ``None``."""

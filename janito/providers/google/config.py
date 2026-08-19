@@ -57,14 +57,12 @@ PROVIDER_CONFIG: dict = {
             "max_input_tokens": 1048576,  # 1M
             "max_output_tokens": 65536,  # 64k
             # Gemini 3.x models reason by default and thinking cannot be
-            # disabled for them.  Per the Gemini API OpenAI-compatibility
-            # reference, reasoning_effort maps to the model's thinking_level,
-            # which accepts minimal/low/medium/high.
+            # disabled for them.  Per the Gemini 3.7 Flash reference,
+            # reasoning_effort maps to the model's thinking_level, which
+            # accepts low/medium/high (default medium).
+            "default_effort_level": "medium",
+            "reasoning_level": "medium",
             "supported_reasoning_levels": [
-                {
-                    "effort": "minimal",
-                    "description": "Minimal thinking for fast responses",
-                },
                 {
                     "effort": "low",
                     "description": "Lighter reasoning for fast responses",

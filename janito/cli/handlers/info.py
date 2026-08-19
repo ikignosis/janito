@@ -10,6 +10,7 @@ from ...provider_accessors import (
     get_default_model_from_provider,
     get_default_thinking_from_provider,
     get_endpoint_for_api_type,
+    get_gemini_flavor_from_provider,
     get_responses_in_server_from_provider,
 )
 from ...provider_validation import is_custom_provider
@@ -223,8 +224,12 @@ def handle_show_config(args=None) -> int:
     thinking = getattr(args, "thinking", False) or get_default_thinking_from_provider(
         provider, model
     )
-    thinking_display = format_thinking_display(thinking)
-    if thinking and not getattr(args, "thinking", False):
+    thinking_display = format_thinking_display(thinking, provider=provider)
+    if (
+        thinking
+        and not getattr(args, "thinking", False)
+        and not (provider and get_gemini_flavor_from_provider(provider))
+    ):
         thinking_display += " (model default)"
 
     from rich.console import Console

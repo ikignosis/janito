@@ -94,7 +94,9 @@ def _model_rows(
     rows.append((f"{label} API types", api_types_display))
 
     thinking = get_default_thinking_from_provider(provider, model)
-    rows.append((f"{label} thinking", format_thinking_display(thinking)))
+    rows.append(
+        (f"{label} thinking", format_thinking_display(thinking, provider=provider))
+    )
 
     # Built-in (native) tools are resolved per API type: each supported
     # API type that declares tools is shown as "type1, type2 (API Type)".

@@ -215,8 +215,8 @@ if pytest is not None:
         assert not extra_body or "enable_thinking" not in extra_body
         # No thinking_config payload either.
         assert not extra_body or "extra_body" not in extra_body
-        # No reasoning_effort: no reasoning level resolves.
-        assert "reasoning_effort" not in fake_run.captured_kwargs
+        # Reasoning effort defaults to medium for gemini-3.7-flash.
+        assert fake_run.captured_kwargs["reasoning_effort"] == "medium"
 
     def test_send_prompt_gemini_flavor_forwards_reasoning_effort(monkeypatch):
         """The resolved reasoning level is sent as reasoning_effort for

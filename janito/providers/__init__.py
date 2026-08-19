@@ -78,9 +78,9 @@ Model-level fields (each entry of the ``models`` dict):
     max_completion_tokens) used when the user has not configured one.
     Absent/``None`` means there is no built-in limit (the caller falls back
     to its own default).
-  - "reasoning_level": the reasoning level/effort used by default for the
-    model when it supports configurable reasoning depth. Absent means there
-    is no built-in default.
+  - "reasoning_level" / "default_effort_level": the reasoning level/effort
+    used by default for the model when it supports configurable reasoning
+    depth. Absent means there is no built-in default.
   - "supported_reasoning_levels": the list of reasoning levels supported by
     the model, each with an ``effort`` key and a human-readable
     ``description``. Absent when the model has no configurable reasoning.

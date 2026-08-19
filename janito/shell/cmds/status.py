@@ -19,6 +19,7 @@ from janito.provider_accessors import (
     get_default_model_from_provider,
     get_default_reasoning_level_from_provider,
     get_default_thinking_from_provider,
+    get_gemini_flavor_from_provider,
     get_responses_in_server_from_provider,
 )
 
@@ -122,8 +123,12 @@ def _print_config_info(
     # (True for DeepSeek/Alibaba-Qwen; a pass-through dict such as
     # {'type': 'adaptive'} for MiniMax-M3).
     effective_thinking = thinking or get_default_thinking_from_provider(provider, model)
-    thinking_display = format_thinking_display(effective_thinking)
-    if effective_thinking and not thinking:
+    thinking_display = format_thinking_display(effective_thinking, provider=provider)
+    if (
+        effective_thinking
+        and not thinking
+        and not (provider and get_gemini_flavor_from_provider(provider))
+    ):
         thinking_display += " (model default)"
 
     # When the effective API type is the Responses API, surface whether the

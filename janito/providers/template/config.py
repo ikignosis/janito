@@ -103,10 +103,12 @@ PROVIDER_CONFIG: dict = {
             #: caller falls back to its own default).
             "max_output_tokens": 32768,
             #: The reasoning level/effort used by default for the model
-            #: when it supports configurable reasoning depth.  Must be one
+            #: when it supports configurable reasoning depth (can also be
+            #: declared as ``default_effort_level``).  Must be one
             #: of the ``effort`` values declared in
             #: ``supported_reasoning_levels``.  Absent means there is no
             #: built-in default.
+            "default_effort_level": "high",
             "reasoning_level": "high",
             #: The list of reasoning levels supported by the model, each
             #: with an ``effort`` key and a human-readable ``description``.

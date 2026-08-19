@@ -282,6 +282,17 @@ def get_default_reasoning_level_from_provider(
     return found.reasoning_level(model) if found is not None else None
 
 
+def get_default_effort_level_from_provider(
+    provider: str, model: str | None = None
+) -> str | None:
+    """
+    Get the built-in default effort/reasoning level for a provider's model.
+
+    Alias for :func:`get_default_reasoning_level_from_provider`.
+    """
+    return get_default_reasoning_level_from_provider(provider, model)
+
+
 def get_supported_reasoning_levels_from_provider(
     provider: str, model: str | None = None
 ) -> list | None:
@@ -466,13 +477,21 @@ def apply_thinking_to_extra_body(
         call_kwargs.setdefault("extra_body", {})["thinking"] = dict(thinking)
 
 
-def format_thinking_display(thinking) -> str:
+def format_thinking_display(thinking, provider: str | None = None) -> str:
     """Render a thinking value for human-readable display.
 
+    When ``provider`` is given and uses the Gemini flavor (e.g. ``google``),
+    the boolean thinking flag is not applicable because Gemini models reason by
+    default and control reasoning depth through the reasoning level; in that
+    case returns ``"N/A (controlled via Reasoning Level)"``.
+
+    Otherwise:
     ``True`` (or any truthy non-dict) renders as ``"enabled"``; a structured
     dict (e.g. MiniMax-M3's ``{'type': 'adaptive'}``) renders as
     ``"enabled (<type>)"``; falsy values render as ``"disabled"``.
     """
+    if provider and get_gemini_flavor_from_provider(provider):
+        return "N/A (controlled via Reasoning Level)"
     if isinstance(thinking, dict) and thinking.get("type"):
         return f"enabled ({thinking['type']})"
     return "enabled" if thinking else "disabled"
