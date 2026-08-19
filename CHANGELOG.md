@@ -8,3 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased](https://github.com/joaompinto/janito/compare/v4.28.0...HEAD)
 
 Changes since `v4.28.0` (2026-08-19).
+
+### Fixed
+
+- Clean up system prompt formatting: remove the stray markdown bullet from the
+  directory-exploration instruction and the leading blank lines from the
+  "Available Skills" section header.

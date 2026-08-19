@@ -128,6 +128,15 @@ def test_get_all_sections_returns_iterator():
 # --- default prompt building -----------------------------------------------
 
 
+def test_system_prompt_content():
+    """SYSTEM_PROMPT contains directory exploration instructions."""
+    assert (
+        "Explore the current directory for potential content related to the question"
+    ) in SYSTEM_PROMPT
+    assert not SYSTEM_PROMPT.startswith("\n")
+    assert not SYSTEM_PROMPT.endswith("\n")
+
+
 def test_prompt_without_agents_md(monkeypatch, tmp_path):
     """No AGENTS.md -> prompt is base + skills, one newline-separated section each."""
     _patch_skills_section(monkeypatch)

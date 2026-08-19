@@ -22,7 +22,7 @@ from collections.abc import Iterator
 # leading/trailing newlines: :meth:`SysPromptManager.render` appends a newline
 # at the end of every section for visual separation.
 SYSTEM_PROMPT = (
-    "- Explore the current directory for potential content related to the question"
+    "Explore the current directory for potential content related to the question"
 )
 
 # Section names used when building the default prompt.

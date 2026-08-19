@@ -283,7 +283,7 @@ class SkillsProvider:
             return ""
 
         lines = [
-            "\n\n## Available Skills",
+            "## Available Skills",
             "Use these skills when the user's request matches their description:",
             "",
         ]

@@ -235,8 +235,10 @@ def test_show_system_prompt_title_with_skills(capsys, monkeypatch, tmp_path):
     """A skills section present -> the title advertises (with skills)."""
     out = _run_show_system_prompt(capsys, monkeypatch, tmp_path, SKILLS_SECTION)
     assert "System prompt (default (with skills))" in out
+    assert "start" in out
     assert "skills" in out
     assert "(fake skills section)" in out
+    assert "Explore the current directory" in out
 
 
 def test_show_system_prompt_title_without_skills(capsys, monkeypatch, tmp_path):

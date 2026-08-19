@@ -53,6 +53,7 @@ def test_prompt_cmd_shows_section_table(monkeypatch, tmp_path, capfd):
     assert "skills" in out
     assert "Available Skills" in out
     assert "(fake skills section)" in out
+    assert "Explore the current directory" in out
     # No more plain-text ==== / ---- headers.
     assert "----" not in out
 
