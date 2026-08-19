@@ -400,6 +400,72 @@ if pytest is not None:
             {"role": "model", "parts": [{"text": "done"}]},
         ]
 
+    def test_gemini_helpers_messages_to_contents_wraps_non_json_tool_results():
+        """Plain-text / non-object tool results are wrapped under a ``result``
+        key: Gemini's ``function_response.response`` must be a JSON object and
+        the google-genai SDK rejects raw strings (e.g. the ``extra_forbidden``
+        ``Part.role``/``Part.parts`` validation error)."""
+        from janito.gemini_helpers import _messages_to_contents
+
+        messages = [
+            {"role": "user", "content": "get details for library-skills"},
+            {
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [
+                    {
+                        "id": "c1",
+                        "type": "function",
+                        "function": {
+                            "name": "load_skill",
+                            "arguments": '{"skill_name": "library-skills"}',
+                        },
+                    }
+                ],
+            },
+            {
+                "role": "tool",
+                "tool_call_id": "c1",
+                "name": "load_skill",
+                "content": "# library-skills\n\n---\nsome markdown",
+            },
+            {"role": "tool", "tool_call_id": "c2", "name": "f", "content": "[1, 2, 3]"},
+            {"role": "tool", "tool_call_id": "c3", "name": "f", "content": "hello"},
+        ]
+        contents = _messages_to_contents(messages)
+        responses = [
+            p["function_response"]["response"]
+            for c in contents
+            if c["role"] == "user"
+            for p in c["parts"]
+            if "function_response" in p
+        ]
+        # Plain text (markdown / free-form) and JSON lists are wrapped so the
+        # SDK's FunctionResponse.response (a JSON object) validates.
+        assert responses == [
+            {"result": "# library-skills\n\n---\nsome markdown"},
+            {"result": [1, 2, 3]},
+            {"result": "hello"},
+        ]
+
+    def test_gemini_helpers_messages_to_contents_keeps_object_tool_results():
+        """JSON-object tool results stay structured (not wrapped)."""
+        from janito.gemini_helpers import _messages_to_contents
+
+        messages = [
+            {
+                "role": "tool",
+                "tool_call_id": "c1",
+                "name": "f",
+                "content": '{"ok": true, "value": 1}',
+            },
+        ]
+        contents = _messages_to_contents(messages)
+        assert contents[0]["parts"][0]["function_response"]["response"] == {
+            "ok": True,
+            "value": 1,
+        }
+
     def test_gemini_helpers_handle_tool_parts_records_history():
         """Tool calls are recorded with their signatures and the results are
         appended as tool-role messages."""
@@ -485,6 +551,143 @@ if pytest is not None:
         ) = gemini_api._stream_response(client, call_kwargs, [])
         assert full == "hello"
         assert calls == [call_kwargs]
+
+    def test_stream_response_attaches_function_tools(monkeypatch):
+        """_stream_response appends the resolved function-declaration tools to
+        config.tools: without them the Gemini API receives no function
+        declarations and the model emits MALFORMED_FUNCTION_CALL (empty
+        answer)."""
+        stop = _chunk(
+            [
+                _part(
+                    function_call=_function_call("c1", "ListFiles", {"directory": "."})
+                )
+            ],
+            finish_reason=SimpleNamespace(name="STOP"),
+        )
+        calls = []
+
+        class _FakeModels:
+            def generate_content_stream(self, **kwargs):
+                calls.append(kwargs)
+                return iter([stop])
+
+        class _FakeClient:
+            def __init__(self):
+                self.models = _FakeModels()
+
+        client = _FakeClient()
+        call_kwargs = {
+            "model": "gemini-3.7-flash",
+            "contents": [{"role": "user", "parts": [{"text": "list files"}]}],
+            "config": {"max_output_tokens": 1000},
+        }
+        tools_schemas = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "ListFiles",
+                    "description": "List files",
+                    "parameters": {"type": "object", "properties": {}},
+                },
+            }
+        ]
+        (
+            full,
+            reasoning,
+            tool_calls,
+            usage,
+            raw_attrs,
+            thought_parts,
+        ) = gemini_api._stream_response(client, call_kwargs, tools_schemas)
+        assert tool_calls[0]["name"] == "ListFiles"
+        assert len(calls) == 1
+        sent = calls[0]
+        assert sent["config"]["tools"] == [
+            {
+                "function_declarations": [
+                    {
+                        "name": "ListFiles",
+                        "description": "List files",
+                        "parameters": {"type": "object", "properties": {}},
+                    }
+                ]
+            }
+        ]
+        # The caller's dict is not mutated.
+        assert "tools" not in call_kwargs["config"]
+
+    def test_stream_response_does_not_duplicate_existing_tools(monkeypatch):
+        """When config.tools already declares function_declarations (the web
+        agent's build_call_kwargs converts them up front), _stream_response
+        does not append them a second time."""
+        stop = _chunk([_part(text="done")], finish_reason=SimpleNamespace(name="STOP"))
+        calls = []
+
+        class _FakeModels:
+            def generate_content_stream(self, **kwargs):
+                calls.append(kwargs)
+                return iter([stop])
+
+        class _FakeClient:
+            def __init__(self):
+                self.models = _FakeModels()
+
+        client = _FakeClient()
+        existing = [
+            {
+                "function_declarations": [
+                    {
+                        "name": "ReadFile",
+                        "description": "Read a file",
+                        "parameters": {"type": "object", "properties": {}},
+                    }
+                ]
+            }
+        ]
+        call_kwargs = {
+            "model": "gemini-3.7-flash",
+            "contents": [{"role": "user", "parts": [{"text": "hi"}]}],
+            "config": {"max_output_tokens": 1000, "tools": existing},
+        }
+        gemini_api._stream_response(client, call_kwargs, existing)
+        assert calls[0]["config"]["tools"] == existing
+
+    def test_stream_response_merges_native_and_function_tools(monkeypatch):
+        """Provider native tools (e.g. google_search) already in config.tools
+        are kept and the function declarations are appended alongside them."""
+        stop = _chunk([_part(text="done")], finish_reason=SimpleNamespace(name="STOP"))
+        calls = []
+
+        class _FakeModels:
+            def generate_content_stream(self, **kwargs):
+                calls.append(kwargs)
+                return iter([stop])
+
+        class _FakeClient:
+            def __init__(self):
+                self.models = _FakeModels()
+
+        client = _FakeClient()
+        call_kwargs = {
+            "model": "gemini-3.7-flash",
+            "contents": [{"role": "user", "parts": [{"text": "hi"}]}],
+            "config": {"max_output_tokens": 1000, "tools": [{"google_search": {}}]},
+        }
+        tools_schemas = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "ReadFile",
+                    "description": "Read a file",
+                    "parameters": {"type": "object", "properties": {}},
+                },
+            }
+        ]
+        gemini_api._stream_response(client, call_kwargs, tools_schemas)
+        sent = calls[0]["config"]["tools"]
+        assert sent[0] == {"google_search": {}}
+        assert sent[1]["function_declarations"][0]["name"] == "ReadFile"
 
     def test_stream_response_ignores_empty_candidate_chunks():
         """Chunks without candidates are folded without error."""

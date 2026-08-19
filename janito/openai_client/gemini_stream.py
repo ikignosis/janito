@@ -257,11 +257,35 @@ def _stream_response(client, call_kwargs, tools_schemas, cancel_event=None):
     Returns ``(full_content, reasoning_content, tool_calls_list, usage_info,
     raw_attrs, thought_parts)``.
 
+    Function-tool schemas are attached **here** (mirroring
+    ``completions_api._stream_response`` / ``anthropic_stream._stream_response``):
+    the caller's ``call_kwargs`` only carries the provider's native (built-in)
+    tools in ``config.tools`` (e.g. Google Search / code execution), so the
+    resolved function declarations are appended to ``config.tools`` -- unless
+    the config already declares them (the web agent's ``build_call_kwargs``
+    converts the schemas up front).  Without this, the Gemini API receives no
+    function declarations and the model hallucinates malformed tool calls
+    (``MALFORMED_FUNCTION_CALL``, empty answer).
+
     When ``cancel_event`` is set (user pressed Enter while waiting), the
     stream is abandoned as soon as the next chunk arrives.
     """
     if tools_schemas:
         logger.debug(f"Calling Gemini API (streaming) with {len(tools_schemas)} tools")
+        from janito.gemini_helpers import _convert_tools_to_gemini_format
+
+        function_tools = _convert_tools_to_gemini_format(tools_schemas)
+        if function_tools:
+            call_kwargs = dict(call_kwargs)
+            config = dict(call_kwargs.get("config") or {})
+            existing_tools = list(config.get("tools") or [])
+            has_function_declarations = any(
+                isinstance(tool, dict) and tool.get("function_declarations")
+                for tool in existing_tools
+            )
+            if not has_function_declarations:
+                config["tools"] = existing_tools + function_tools
+                call_kwargs["config"] = config
     else:
         logger.debug("Calling Gemini API (streaming) without tools")
     stream = client.models.generate_content_stream(**call_kwargs)

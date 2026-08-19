@@ -129,12 +129,21 @@ def _assistant_parts(msg: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _tool_result_part(msg: dict[str, Any]) -> dict[str, Any]:
-    """Build the Gemini ``user`` part carrying a ``function_response``."""
+    """Build the Gemini ``user`` part carrying a ``function_response``.
+
+    The Gemini ``function_response.response`` field must be a JSON object
+    (``dict``): the ``google-genai`` SDK rejects plain-text tool results
+    (markdown, logs, ...) and non-object JSON values (lists, scalars) with a
+    client-side pydantic error, so they are wrapped under a ``result`` key
+    (the documented convention for free-form tool output).
+    """
     response = msg.get("content")
     try:
         response = json.loads(response) if isinstance(response, str) else response
     except (ValueError, TypeError):
         pass
+    if response is not None and not isinstance(response, dict):
+        response = {"result": response}
     response_part: dict[str, Any] = {
         "function_response": {
             "id": msg.get("tool_call_id") or "",

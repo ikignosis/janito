@@ -237,11 +237,13 @@ class GeminiClient(Client):
         preserve_thinking,
         thinking,
     ):
-        # The effective model's built-in (native) tools would be resolved for
-        # the Gemini API type here (get_default_tools_from_provider with
+        # The effective model's built-in (native) tools are resolved for the
+        # Gemini API type here (get_default_tools_from_provider with
         # api_type="Gemini"); the google provider declares none, so no
-        # built-in tools are sent.  Function tools are converted to Gemini
-        # function_declarations inside gemini_helpers._build_call_kwargs.
+        # built-in tools are sent.  Function tools are NOT resolved here:
+        # they are attached to config.tools by gemini_stream._stream_response
+        # (mirroring the Completions / Anthropic / DashScope clients), which
+        # receives the resolved tools_schemas from the shared turn pipeline.
         from janito.provider_accessors import get_default_tools_from_provider
 
         tools = get_default_tools_from_provider(
