@@ -78,9 +78,11 @@ class HistoryCmdHandler(CmdHandler):
           (with the system prompt folded in on the first turn); ``messages_history``
           then only ever holds the system prompt, so prefer the items.
         - Server-side Responses (e.g. OpenAI): the history is stored on the
-          server; ``messages_history`` holds the system prompt and
-          ``conversation_items`` may hold pending (Enter-cancelled) messages
-          that are not yet part of a completed server response.
+          server; the shell keeps a display-only mirror of the completed
+          turns in ``shell.mirrored_history`` (Responses input items) purely
+          so /history can render the conversation, plus any pending
+          (Enter-cancelled) messages in ``conversation_items`` that are not
+          yet part of a completed server response.
         """
         conversation_items = getattr(shell, "conversation_items", None) or []
         if conversation_items and conversation_items[0].get("role") == "system":
@@ -93,10 +95,11 @@ class HistoryCmdHandler(CmdHandler):
                 rows.append((msg.get("role", "unknown"), msg.get("content") or ""))
             else:
                 rows.append((msg.role, msg.content or ""))
-        if conversation_items:
-            # Server-side Responses: pending user messages of an Enter-cancelled
-            # turn, appended after the system prompt.
-            rows.extend(_responses_item_to_row(item) for item in conversation_items)
+        # Server-side Responses: the display-only mirror of completed turns,
+        # then any pending (Enter-cancelled) messages.
+        mirrored = getattr(shell, "mirrored_history", None) or []
+        rows.extend(_responses_item_to_row(item) for item in mirrored)
+        rows.extend(_responses_item_to_row(item) for item in conversation_items)
         return rows
 
     def _print_history(self, shell) -> None:

@@ -61,6 +61,14 @@ class RollbackCmdHandler(CmdHandler):
                 shell.previous_response_id = (
                     response_chain[-1] if response_chain else None
                 )
+                # Also truncate the /history display mirror of completed
+                # server-side turns back to its checkpoint, so /history no
+                # longer shows the rolled-back exchange (the real conversation
+                # lives on the server; this mirror is display-only).
+                mirrored = getattr(shell, "mirrored_history", None)
+                if mirrored:
+                    mirrored_checkpoint = getattr(shell, "mirrored_checkpoint", 0)
+                    del mirrored[mirrored_checkpoint:]
                 if shell.previous_response_id:
                     print(
                         "Rolled back: server-side conversation rolled back to "

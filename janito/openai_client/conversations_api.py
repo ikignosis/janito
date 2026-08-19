@@ -131,12 +131,21 @@ class ConversationResult:
             for server-side providers, which chain with ``response_id``
             (``previous_items`` is then only used to carry the pending user
             messages of an Enter-cancelled turn).
+        turn_items: Display-only mirror of the completed turn as Responses
+            input items (the user prompt, the assistant text and
+            ``function_call`` / ``function_call_output`` items of any
+            tool-call rounds, and the final assistant text).  Kept so the
+            shell can render ``/history`` for server-side Responses
+            providers, whose real conversation lives on the server and is
+            never fetched back.  ``None`` only for turn results that did not
+            go through the standard client pipeline.
     """
 
     content: str
     response_id: str | None
     message_count: int = 1
     input_items: list[dict[str, Any]] | None = None
+    turn_items: list[dict[str, Any]] | None = None
 
 
 def get_env_config() -> tuple[str | None, str, str]:
@@ -286,6 +295,19 @@ class ResponsesClient(Client):
             "pending_items": pending_items,
             "instructions": kwargs.get("instructions"),
             "message_count": 1,
+            # Display-only mirror of this completed turn (Responses input
+            # items) for the shell's /history command: starts with the user
+            # prompt, then the assistant text / tool-call rounds are appended
+            # as the turn progresses. Server-side providers keep the real
+            # conversation on the server; this copy exists purely for
+            # /history rendering.
+            "turn_items": [
+                {
+                    "type": "message",
+                    "role": "user",
+                    "content": [{"type": "input_text", "text": prompt}],
+                }
+            ],
         }
 
     def _build_call_kwargs(
@@ -397,7 +419,11 @@ class ResponsesClient(Client):
         # produced the calls (server-side) or appended to the full history
         # (stateless). Then continue the loop.
         state["input_items"] = _handle_tool_calls(
-            tool_calls, full_content, state["conversation_items"], tool_executor
+            tool_calls,
+            full_content,
+            state["conversation_items"],
+            tool_executor,
+            turn_items=state["turn_items"],
         )
         state["message_count"] += 1
         return state
@@ -428,6 +454,7 @@ class ResponsesClient(Client):
             console,
             state["response_id"],
             state["responses_in_server"],
+            turn_items=state["turn_items"],
             provider=provider,
             model=model,
         )

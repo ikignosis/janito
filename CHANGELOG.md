@@ -31,9 +31,13 @@ Changes since `v4.26.0` (2026-08-17).
   stateless Responses providers (e.g. DeepSeek), whose full history is kept
   client-side as Responses input items in `conversation_items` instead of
   `messages_history`. Previously it showed only the system prompt. Tool-call
-  rounds are shown as `function_call` / `function_call_output` rows, and for
-  server-side Responses providers (e.g. OpenAI) any pending Enter-cancelled
-  messages are shown after the system prompt.
+  rounds are shown as `function_call` / `function_call_output` rows.  For
+  server-side Responses providers (e.g. OpenAI), whose real history lives on
+  the server and is never fetched back, the shell now mirrors each completed
+  turn client-side (a display-only `turn_items` list returned by the client
+  and accumulated in `shell.mirrored_history`) purely so `/history` can show
+  the conversation; any pending Enter-cancelled messages still appear after
+  it.
 - The `/rollback` shell command now undoes just the last exchange on
   server-side Responses providers (e.g. OpenAI) instead of resetting the
   whole server-side conversation. The shell tracks the chain of completed

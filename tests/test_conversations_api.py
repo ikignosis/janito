@@ -749,6 +749,110 @@ def test_send_prompt_chains_tool_calls_without_client_history(monkeypatch):
     assert caller_history == [{"role": "system", "content": "seed"}]
 
 
+def test_send_prompt_server_side_turn_items_mirror_tool_round(monkeypatch):
+    """Server-side Responses: the completed turn's display-only mirror
+    (``turn_items``) records the user prompt, the tool-call round
+    (function_call + function_call_output) and the final assistant text, so
+    the shell can render /history even though the real conversation lives on
+    the server (no client-side ``input_items`` are carried)."""
+    seen = []
+
+    def create(**kwargs):
+        seen.append(kwargs)
+        round_no = len(seen)
+        if round_no == 1:
+            return _stream(
+                [
+                    _Event("response.created", response=_Response("resp_a")),
+                    _Event(
+                        "response.output_item.done",
+                        item=_FunctionCallItem("it1", "call_1", "list_files", "{}"),
+                    ),
+                    _Event("response.completed", response=_Response("resp_a")),
+                ]
+            )
+        if round_no == 2:
+            return _stream(
+                [
+                    _Event("response.created", response=_Response("resp_b")),
+                    _Event("response.output_text.delta", delta="Here are the files"),
+                    _Event(
+                        "response.completed",
+                        response=_Response("resp_b", usage=_Usage()),
+                    ),
+                ]
+            )
+        raise AssertionError(f"unexpected round {round_no}")
+
+    _mock_send_prompt(monkeypatch, create)
+    result = api.send_prompt("List files", tools=None, use_mcp=False)
+
+    assert result.content == "Here are the files"
+    assert result.response_id == "resp_b"
+    assert result.message_count == 2
+    # Server-side conversation: no client-side items history to carry.
+    assert result.input_items is None
+    # The display-only mirror holds the full turn for /history.
+    assert result.turn_items == [
+        {
+            "type": "message",
+            "role": "user",
+            "content": [{"type": "input_text", "text": "List files"}],
+        },
+        {
+            "type": "function_call",
+            "call_id": "call_1",
+            "name": "list_files",
+            "arguments": "{}",
+        },
+        {
+            "type": "function_call_output",
+            "call_id": "call_1",
+            "output": json.dumps({"success": True}),
+        },
+        {
+            "type": "message",
+            "role": "assistant",
+            "content": [{"type": "output_text", "text": "Here are the files"}],
+        },
+    ]
+
+
+def test_send_prompt_server_side_turn_items_plain_response(monkeypatch):
+    """Server-side Responses: a plain (no-tool) turn's display-only mirror
+    holds just the user prompt and the assistant text."""
+    seen = []
+
+    def create(**kwargs):
+        seen.append(kwargs)
+        return _stream(
+            [
+                _Event("response.created", response=_Response("resp_1")),
+                _Event("response.output_text.delta", delta="Hi there"),
+                _Event(
+                    "response.completed", response=_Response("resp_1", usage=_Usage())
+                ),
+            ]
+        )
+
+    _mock_send_prompt(monkeypatch, create)
+    result = api.send_prompt("Hello", tools=None, use_mcp=False)
+
+    assert result.input_items is None
+    assert result.turn_items == [
+        {
+            "type": "message",
+            "role": "user",
+            "content": [{"type": "input_text", "text": "Hello"}],
+        },
+        {
+            "type": "message",
+            "role": "assistant",
+            "content": [{"type": "output_text", "text": "Hi there"}],
+        },
+    ]
+
+
 def test_send_prompt_appends_builtin_tools_without_function_tools(monkeypatch):
     """An empty function-tools list (the ``--no-tools`` case): the effective
     model's built-in (native) tools are still enabled on the CLI Responses
@@ -1286,6 +1390,150 @@ def test_shell_send_prompt_records_server_side_response_chain():
     shell._send_prompt("second")
     assert shell.response_chain == ["r1", "r2"]
     assert shell.previous_response_id == "r2"
+
+
+def test_shell_send_prompt_mirrors_server_side_turns_for_history():
+    """Each completed server-side Responses turn appends its display-only
+    mirror (user prompt + assistant text, Responses input items) to the
+    shell's mirrored_history, so /history can render the conversation even
+    though the real history lives on the server."""
+    from janito.openai_client.conversations_api import ConversationResult
+    from janito.shell import InteractiveShell
+
+    shell = InteractiveShell(model="test-model", no_history=True)
+    shell.initialize_history(system_prompt="sys")
+    calls = {"n": 0}
+
+    def send_prompt_func(user_input, **kwargs):
+        calls["n"] += 1
+        return ConversationResult(
+            content=f"reply {calls['n']}",
+            response_id=f"r{calls['n']}",
+            input_items=None,
+            turn_items=[
+                {
+                    "type": "message",
+                    "role": "user",
+                    "content": [{"type": "input_text", "text": user_input}],
+                },
+                {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [{"type": "output_text", "text": f"reply {calls['n']}"}],
+                },
+            ],
+        )
+
+    shell.send_prompt_func = send_prompt_func
+    shell.verbose = False
+    shell.no_tools = True
+    shell.thinking = False
+
+    shell._send_prompt("first")
+    assert len(shell.mirrored_history) == 2
+    assert shell.mirrored_history[0]["content"][0]["text"] == "first"
+    assert shell.mirrored_history[1]["content"][0]["text"] == "reply 1"
+
+    # A second turn appends its own mirror items, in turn order.
+    shell._send_prompt("second")
+    assert len(shell.mirrored_history) == 4
+    assert shell.mirrored_history[2]["content"][0]["text"] == "second"
+    assert shell.mirrored_history[3]["content"][0]["text"] == "reply 2"
+
+
+def test_shell_send_prompt_stateless_does_not_mirror():
+    """Stateless Responses (e.g. DeepSeek) mirrors through
+    conversation_items, so the /history display mirror stays empty."""
+    from janito.openai_client.conversations_api import ConversationResult
+    from janito.shell import InteractiveShell
+
+    shell = InteractiveShell(model="test-model", no_history=True)
+    shell.initialize_history(system_prompt="sys")
+
+    def send_prompt_func(user_input, **kwargs):
+        return ConversationResult(
+            content="ok",
+            response_id=None,
+            input_items=[
+                {
+                    "type": "message",
+                    "role": "user",
+                    "content": [{"type": "input_text", "text": user_input}],
+                },
+                {
+                    "type": "message",
+                    "role": "assistant",
+                    "content": [{"type": "output_text", "text": "ok"}],
+                },
+            ],
+            turn_items=[],
+        )
+
+    shell.send_prompt_func = send_prompt_func
+    shell.verbose = False
+    shell.no_tools = True
+    shell.thinking = False
+
+    shell._send_prompt("hello")
+    assert shell.mirrored_history == []
+    assert len(shell.conversation_items) == 2
+    assert shell.previous_response_id is None
+
+
+def test_shell_rollback_server_side_truncates_mirrored_history():
+    """/rollback on a server-side Responses conversation also truncates the
+    display-only /history mirror back to its checkpoint, so /history no
+    longer shows the rolled-back exchange."""
+    from janito.shell.cmds.rollback import RollbackCmdHandler
+
+    shell = RollbackCmdHandler.__new__(RollbackCmdHandler)
+    shell.messages_history = [{"role": "system", "content": "sys"}]
+    shell.history_checkpoint = 1
+    shell.previous_response_id = "r2"
+    shell.conversation_items = None
+    shell.response_chain = ["r1", "r2"]
+    shell.response_checkpoint = 1
+    shell.mirrored_history = [
+        {
+            "type": "message",
+            "role": "user",
+            "content": [{"type": "input_text", "text": "one"}],
+        },
+        {
+            "type": "message",
+            "role": "assistant",
+            "content": [{"type": "output_text", "text": "reply 1"}],
+        },
+        {
+            "type": "message",
+            "role": "user",
+            "content": [{"type": "input_text", "text": "two"}],
+        },
+        {
+            "type": "message",
+            "role": "assistant",
+            "content": [{"type": "output_text", "text": "reply 2"}],
+        },
+    ]
+    shell.mirrored_checkpoint = 2
+
+    handler = RollbackCmdHandler()
+    handler._do_rollback(shell)
+
+    assert shell.response_chain == ["r1"]
+    assert shell.previous_response_id == "r1"
+    assert shell.mirrored_history == [
+        {
+            "type": "message",
+            "role": "user",
+            "content": [{"type": "input_text", "text": "one"}],
+        },
+        {
+            "type": "message",
+            "role": "assistant",
+            "content": [{"type": "output_text", "text": "reply 1"}],
+        },
+    ]
 
 
 def test_shell_send_prompt_keeps_chain_on_enter_cancel():

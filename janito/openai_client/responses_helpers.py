@@ -200,30 +200,45 @@ def _handle_tool_calls(
     full_content: str,
     conversation_items: list[dict[str, Any]] | None,
     tool_executor: ToolExecutor,
+    turn_items: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]] | None:
-    """Record and execute tool calls, returning the updated input items."""
+    """Record and execute tool calls, returning the updated input items.
+
+    ``conversation_items`` is the stateless client-side history (appended so
+    the next request re-sends the complete story); ``turn_items`` is the
+    display-only mirror of the current turn kept so the shell can render
+    ``/history`` for server-side Responses providers (whose real history
+    lives on the server and is never fetched back).  Either target may be
+    ``None``; items are recorded wherever a target is provided.
+    """
     # Record the assistant's tool calls in the client-side history
-    # (stateless providers), so the next request re-sends the complete
-    # story. Server-side providers keep the history on the server, so
-    # nothing is appended client-side.
+    # (stateless providers) so the next request re-sends the complete story,
+    # and in the /history display mirror (all providers). Server-side
+    # providers keep the conversation on the server, so only the mirror is
+    # filled client-side.
+    targets: list[list[dict[str, Any]]] = []
     if conversation_items is not None:
-        if full_content:
-            conversation_items.append(
-                {
-                    "type": "message",
-                    "role": "assistant",
-                    "content": [{"type": "output_text", "text": full_content}],
-                }
-            )
-        for tc in tool_calls:
-            conversation_items.append(
-                {
-                    "type": "function_call",
-                    "call_id": tc["call_id"],
-                    "name": tc["name"],
-                    "arguments": tc["arguments"],
-                }
-            )
+        targets.append(conversation_items)
+    if turn_items is not None:
+        targets.append(turn_items)
+
+    if full_content:
+        assistant_item = {
+            "type": "message",
+            "role": "assistant",
+            "content": [{"type": "output_text", "text": full_content}],
+        }
+        for target in targets:
+            target.append(dict(assistant_item))
+    for tc in tool_calls:
+        call_item = {
+            "type": "function_call",
+            "call_id": tc["call_id"],
+            "name": tc["name"],
+            "arguments": tc["arguments"],
+        }
+        for target in targets:
+            target.append(dict(call_item))
 
     # Execute every call and send the results back as function_call_output
     # items chained to the response that produced the calls (server-side) or
@@ -247,8 +262,9 @@ def _handle_tool_calls(
                 "output": tool_message["content"],
             }
         )
+    for target in targets:
+        target.extend(dict(item) for item in tool_outputs)
     if conversation_items is not None:
-        conversation_items.extend(tool_outputs)
         return conversation_items
     return tool_outputs
 
@@ -263,6 +279,7 @@ def _finalize_conversation(
     console: Console,
     response_id: str | None,
     responses_in_server: bool,
+    turn_items: list[dict[str, Any]] | None = None,
     *,
     provider: str | None = None,
     model: str | None = None,
@@ -270,15 +287,18 @@ def _finalize_conversation(
     """Assemble the final ConversationResult and print the end-of-turn reports."""
     from .conversations_api import ConversationResult
 
-    # Record the final assistant text in the client-side history.
-    if conversation_items is not None and full_content:
-        conversation_items.append(
-            {
-                "type": "message",
-                "role": "assistant",
-                "content": [{"type": "output_text", "text": full_content}],
-            }
-        )
+    # Record the final assistant text in the client-side history (stateless
+    # providers) and in the /history display mirror (all providers).
+    if full_content:
+        assistant_item = {
+            "type": "message",
+            "role": "assistant",
+            "content": [{"type": "output_text", "text": full_content}],
+        }
+        if conversation_items is not None:
+            conversation_items.append(assistant_item)
+        if turn_items is not None:
+            turn_items.append(dict(assistant_item))
 
     # Display the tracked used files before the token usage summary.
     # Nothing is printed when no files were tracked (empty Text).
@@ -306,4 +326,5 @@ def _finalize_conversation(
         response_id=response_id if responses_in_server else None,
         message_count=message_count,
         input_items=conversation_items,
+        turn_items=turn_items,
     )

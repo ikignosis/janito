@@ -8,8 +8,10 @@ Responses API keeps it elsewhere -- stateless providers (e.g. DeepSeek) hold
 the full conversation client-side as Responses input items in
 ``shell.conversation_items`` (``messages_history`` then only ever holds the
 system prompt), and server-side providers (e.g. OpenAI) keep it on the server
-with ``conversation_items`` only carrying pending Enter-cancelled messages.
-These tests verify the command renders the right source in each mode.
+with a display-only mirror of the completed turns in
+``shell.mirrored_history`` (plus any pending Enter-cancelled messages in
+``conversation_items``).  These tests verify the command renders the right
+source in each mode.
 """
 
 import sys
@@ -206,4 +208,53 @@ def test_history_server_side_with_pending_items():
     assert rows == [
         ("system", "sys"),
         ("user", "hello"),
+    ]
+
+
+def test_history_server_side_renders_mirrored_turns():
+    """Server-side Responses (e.g. OpenAI) keeps the real conversation on the
+    server; /history renders the display-only client-side mirror of the
+    completed turns (user/assistant text + tool-call rounds), followed by any
+    pending (Enter-cancelled) messages."""
+    shell = _shell()
+    shell.messages_history = [{"role": "system", "content": "sys"}]
+    shell.previous_response_id = "resp_2"
+    shell.mirrored_history = [
+        {
+            "type": "message",
+            "role": "user",
+            "content": [{"type": "input_text", "text": "list files"}],
+        },
+        {
+            "type": "function_call",
+            "call_id": "call_1",
+            "name": "ListFiles",
+            "arguments": '{"directory": "."}',
+        },
+        {
+            "type": "function_call_output",
+            "call_id": "call_1",
+            "output": '{"files": ["a.py"]}',
+        },
+        {
+            "type": "message",
+            "role": "assistant",
+            "content": [{"type": "output_text", "text": "Here are the files."}],
+        },
+    ]
+    shell.conversation_items = [
+        {
+            "type": "message",
+            "role": "user",
+            "content": [{"type": "input_text", "text": "cancelled prompt"}],
+        },
+    ]
+    rows = _history_handler()._history_rows(shell)
+    assert rows == [
+        ("system", "sys"),
+        ("user", "list files"),
+        ("function_call", 'ListFiles({"directory": "."})'),
+        ("function_call_output", '{"files": ["a.py"]}'),
+        ("assistant", "Here are the files."),
+        ("user", "cancelled prompt"),
     ]

@@ -92,6 +92,18 @@ class InteractiveShell(_SessionMixin):
         # Index into response_chain marking the last known-good state;
         # /rollback truncates back to here.
         self.response_checkpoint: int = 0
+        # Display-only mirror of completed server-side Responses turns (e.g.
+        # OpenAI), kept client-side purely so /history can render the
+        # conversation: the real history lives on the server (chained via
+        # previous_response_id) and is never fetched back. Same Responses
+        # input-item format as conversation_items (message / function_call /
+        # function_call_output); the system prompt stays in messages_history.
+        # Empty in Completions mode and for stateless Responses providers
+        # (which mirror through conversation_items instead).
+        self.mirrored_history: list[dict[str, Any]] = []
+        # Index into mirrored_history marking the last known-good state;
+        # /rollback truncates back to here.
+        self.mirrored_checkpoint: int = 0
         # Set True by the F2 key binding; signals the run loop to clear
         # history and start a fresh conversation
         self.restart_requested = False
@@ -138,6 +150,10 @@ class InteractiveShell(_SessionMixin):
         self.conversation_checkpoint = 0
         self.response_chain = []
         self.response_checkpoint = 0
+        # A fresh conversation also clears the /history display mirror of
+        # completed server-side turns.
+        self.mirrored_history = []
+        self.mirrored_checkpoint = 0
 
     def get_system_prompt(self) -> str | None:
         """Get the current system prompt."""
@@ -321,6 +337,7 @@ class InteractiveShell(_SessionMixin):
             len(self.conversation_items) if self.conversation_items else 0
         )
         self.response_checkpoint = len(self.response_chain)
+        self.mirrored_checkpoint = len(self.mirrored_history)
         try:
             result = self.send_prompt_func(
                 user_input,
@@ -332,27 +349,12 @@ class InteractiveShell(_SessionMixin):
                 tools=tools_to_use,
                 thinking=self.thinking,
             )
-            # Responses API mode: keep the conversation state the provider
-            # uses. Server-side providers (e.g. OpenAI) keep the history on
-            # the server, so remember the returned response id to chain the
-            # next turn. Stateless providers (e.g. DeepSeek) return the full
-            # conversation as input items, which are re-sent on the next turn;
-            # never chain with an id for them. Completions mode returns plain
-            # text and updates previous_messages (self.messages_history) in
-            # place, so nothing else is needed here.
+            # Responses API mode keeps the conversation state the provider
+            # uses; Completions mode returns plain text and updates
+            # previous_messages (self.messages_history) in place, so nothing
+            # else is needed there.
             if hasattr(result, "input_items"):
-                self.conversation_items = result.input_items
-                if result.input_items is None:
-                    self.previous_response_id = result.response_id
-                    # Server-side Responses: remember this turn's final
-                    # response id in the chain so /rollback can undo the
-                    # exchange by chaining the next turn (previous_response_id)
-                    # from the response that preceded it, instead of resetting
-                    # the whole server conversation.
-                    if result.response_id:
-                        self.response_chain.append(result.response_id)
-                else:
-                    self.previous_response_id = None
+                self._record_responses_result(result)
             # On success, keep the checkpoint where it is (before this turn)
             # so /rollback can undo the last exchange. The next turn will
             # update it before its own send_prompt call.
@@ -404,6 +406,37 @@ class InteractiveShell(_SessionMixin):
         # Note: send_prompt_func already appends user and assistant messages
         # to previous_messages (which is self.messages_history), so we don't
         # need to append them here.
+
+    def _record_responses_result(self, result: Any) -> None:
+        """Record the conversation state a Responses turn returns.
+
+        Server-side providers (e.g. OpenAI) keep the history on the server:
+        remember the returned response id to chain the next turn, and mirror
+        the completed turn client-side (display-only) so /history can render
+        the conversation. Stateless providers (e.g. DeepSeek) return the full
+        conversation as input items (re-sent on the next turn); never chain
+        with an id for them, and no mirror is kept (conversation_items is the
+        mirror).
+        """
+        self.conversation_items = result.input_items
+        if result.input_items is None:
+            self.previous_response_id = result.response_id
+            # Server-side Responses: remember this turn's final response id
+            # in the chain so /rollback can undo the exchange by chaining the
+            # next turn (previous_response_id) from the response that
+            # preceded it, instead of resetting the whole server conversation.
+            if result.response_id:
+                self.response_chain.append(result.response_id)
+            # Mirror the completed turn client-side (display-only) so
+            # /history can render the conversation: the real history lives on
+            # the server and is never fetched back. Pending Enter-cancelled
+            # messages are not part of a completed turn and keep showing via
+            # conversation_items instead.
+            turn_items = getattr(result, "turn_items", None)
+            if turn_items:
+                self.mirrored_history.extend(turn_items)
+        else:
+            self.previous_response_id = None
 
     def run(
         self,
