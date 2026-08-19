@@ -30,7 +30,8 @@ def run_cli() -> None:
         "-t",
         dest="file_type",
         choices=["file", "dir", "symlink"],
-        help="Filter by entry type",
+        default="file",
+        help="Filter by entry type (default: file)",
     )
     parser.add_argument("--min-size", type=int, help="Minimum file size in bytes")
     parser.add_argument("--max-size", type=int, help="Maximum file size in bytes")

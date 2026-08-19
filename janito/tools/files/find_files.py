@@ -42,7 +42,7 @@ class FindFiles(_FindFilesWalker, BaseTool):
         exclude (str, optional): Space-separated glob patterns to exclude
             (e.g. "*/node_modules/* */__pycache__/*").
         file_type (str, optional): Filter by type: "file", "dir", or "symlink".
-            Default is None (all types).
+            Default is "file".
         min_size (int, optional): Minimum file size in bytes.
         max_size (int, optional): Maximum file size in bytes.
         modified_within_days (float, optional): Only include entries modified
@@ -63,7 +63,7 @@ class FindFiles(_FindFilesWalker, BaseTool):
         paths: str,
         pattern: str | None = None,
         exclude: str | None = None,
-        file_type: str | None = None,
+        file_type: str | None = "file",
         min_size: int | None = None,
         max_size: int | None = None,
         modified_within_days: float | None = None,
@@ -83,7 +83,7 @@ class FindFiles(_FindFilesWalker, BaseTool):
             exclude (str, optional): Space-separated glob patterns to exclude
                 (e.g. "*/node_modules/* */__pycache__/*").
             file_type (str, optional): Filter by type: "file", "dir", or "symlink".
-                Default is None (all types).
+                Default is "file".
             min_size (int, optional): Minimum file size in bytes.
             max_size (int, optional): Maximum file size in bytes.
             modified_within_days (float, optional): Only include entries modified
