@@ -3,9 +3,9 @@
 Rates source
 ------------
 The per-1M-token rates below were taken from the official OpenAI API
-pricing for GPT-5.6 Luna and apply as of the verification date.  OpenAI
-adjusts figures frequently, so cross-check the official rate card before
-relying on them.
+pricing for the GPT-5.6 family (Sol, Terra, Luna) and apply as of the
+verification date.  OpenAI adjusts figures frequently, so cross-check the
+official rate card before relying on them.
 
 High-context prompts
 --------------------
@@ -28,9 +28,11 @@ reads (cache miss + cache hit) and output only.
 #:
 #: OpenAI applies automatic prefix caching: repeated input tokens (a stable
 #: system prompt, a long document, few-shot examples) are billed at the much
-#: lower cache-read rate ($0.02/1M, 10% of the input rate) instead of the
-#: cache-miss rate.  There is no peak-hour surcharge.
+#: lower cache-read rate (10% of the input rate) instead of the cache-miss
+#: rate.  There is no peak-hour surcharge.
 _MODEL_RATES: dict[str, tuple[float, float, float]] = {
+    "gpt-5.6-sol": (5.00, 0.50, 30.00),
+    "gpt-5.6-terra": (2.00, 0.20, 12.00),
     "gpt-5.6-luna": (0.20, 0.02, 1.20),
 }
 

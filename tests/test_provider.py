@@ -296,6 +296,23 @@ if pytest is not None:
             pa.get_provider_cost("openai", "gpt-5.6-luna", 300_000, 1_000_000, 0)
             == "1.920000$"
         )
+        # The GPT-5.6 family also covers Sol and Terra:
+        # sol: 100k * $5.00 + 1M * $30.00 = 30.50.
+        assert (
+            pa.get_provider_cost("openai", "gpt-5.6-sol", 100_000, 1_000_000, 0)
+            == "30.500000$"
+        )
+        # terra: 100k * $2.00 + 1M * $12.00 = 12.20.
+        assert (
+            pa.get_provider_cost("openai", "gpt-5.6-terra", 100_000, 1_000_000, 0)
+            == "12.200000$"
+        )
+        # terra cached reads bill at the cache-read rate ($0.20):
+        # 60k * $2.00 + 40k * $0.20 + 1M * $12.00 = 12.128.
+        assert (
+            pa.get_provider_cost("openai", "gpt-5.6-terra", 100_000, 1_000_000, 40_000)
+            == "12.128000$"
+        )
         # xAI ships a cost module: grok-4.6 at $2.00 / $0.50 (cache hit) /
         # $6.00 output per 1M tokens, formatted as NN.DDDDDD$.
         # Standard request (input <= 200K): 100k * $2.00 + 1M * $6.00 = 6.20.

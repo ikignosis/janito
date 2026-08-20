@@ -5,7 +5,11 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/joaompinto/janito/compare/v4.28.0...HEAD)
+## [Unreleased](https://github.com/joaompinto/janito/compare/v4.29.0...HEAD)
+
+Changes since `v4.29.0` (2026-08-20).
+
+## [v4.29.0](https://github.com/joaompinto/janito/compare/v4.28.0...v4.29.0) - 2026-08-20
 
 Changes since `v4.28.0` (2026-08-19).
 
@@ -47,6 +51,13 @@ Changes since `v4.28.0` (2026-08-19).
   (`max_output_tokens`) -- and the cost module rates GLM-5.3 at
   $1.40 / $0.26 (cached input) / $4.40 output per 1M tokens (same as
   GLM-5.2, per https://docs.z.ai/guides/overview/pricing).
+- The `openai` provider's built-in model catalog now covers the full
+  GPT-5.6 family: `gpt-5.6-sol` (flagship, $5.00 / $0.50 cached / $30.00
+  output per 1M tokens), `gpt-5.6-terra` ($2.00 / $0.20 / $12.00) and
+  `gpt-5.6-luna` (the built-in default, $0.20 / $0.02 / $1.20).  All three
+  declare the same official limits -- a 1.05M-token context window
+  (`max_input_tokens`) and a 128K max output (`max_output_tokens`), per the
+  OpenAI model pages (platform.openai.com/docs/models).
 
 ### Fixed
 

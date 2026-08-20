@@ -139,7 +139,7 @@ def test_available_model_names_lists_builtin_and_configured(monkeypatch, tmp_pat
 def test_available_model_names_filters_by_prefix_case_insensitively():
     """available_model_names matches the typed prefix case-insensitively."""
     names = list(available_model_names("openai", "GPT"))
-    assert names == ["gpt-5.6-luna"]
+    assert names == ["gpt-5.6-luna", "gpt-5.6-sol", "gpt-5.6-terra"]
     assert available_model_names("openai", "zzz") == []
 
 

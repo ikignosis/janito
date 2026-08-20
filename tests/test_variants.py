@@ -229,7 +229,7 @@ def test_variant_inherits_base_models_dict(monkeypatch, tmp_path):
     provider = registry.get("openai-tokenplan")
     assert provider is not None
     # Same model_names as the base provider.
-    assert provider.model_names() == ["gpt-5.6-luna"]
+    assert provider.model_names() == ["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"]
     # Per-model accessors resolve through the inherited models dict.
     assert provider.default_model() == "gpt-5.6-luna"
     assert provider.max_input_tokens() == 1050000

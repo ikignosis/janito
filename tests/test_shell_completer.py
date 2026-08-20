@@ -261,11 +261,11 @@ if pytest is not None:
 
     def test_model_argument_completes_prefix():
         names = _arg_completer_completions_for("/model gpt", provider="openai")
-        assert names == ["gpt-5.6-luna"]
+        assert names == ["gpt-5.6-luna", "gpt-5.6-sol", "gpt-5.6-terra"]
 
     def test_model_argument_complete_prefix_case_insensitive():
         names = _arg_completer_completions_for("/model GPT", provider="openai")
-        assert names == ["gpt-5.6-luna"]
+        assert names == ["gpt-5.6-luna", "gpt-5.6-sol", "gpt-5.6-terra"]
 
     def test_model_argument_command_case_insensitive():
         names = _arg_completer_completions_for("/MODEL deep", provider="deepseek")
@@ -297,7 +297,7 @@ if pytest is not None:
 
     def test_model_argument_leading_whitespace_still_completes():
         names = _arg_completer_completions_for("  /model gpt", provider="openai")
-        assert names == ["gpt-5.6-luna"]
+        assert names == ["gpt-5.6-luna", "gpt-5.6-sol", "gpt-5.6-terra"]
 
     def test_model_argument_completion_meta():
         from janito.shell import InteractiveShell
@@ -307,7 +307,7 @@ if pytest is not None:
         completions = list(
             shell.session.completer.get_completions(doc, CompleteEvent())
         )
-        assert len(completions) == 1
+        assert len(completions) == 3
         assert completions[0].start_position == -len("gpt")
         meta = completions[0].display_meta
         assert "argument" in "".join(part[1] for part in meta)
