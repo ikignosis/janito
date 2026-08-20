@@ -97,7 +97,10 @@ class ProviderCmdHandler(CmdHandler):
         """Validate and apply the new provider for this shell session only."""
         from janito.config_loaders import load_model_from_config
         from janito.general_config import get_active_provider
-        from janito.provider_accessors import get_default_model_from_provider
+        from janito.provider_accessors import (
+            get_default_model_from_provider,
+            requires_explicit_model,
+        )
         from janito.provider_validation import validate_provider_name
 
         try:
@@ -119,9 +122,15 @@ class ProviderCmdHandler(CmdHandler):
 
         # Keep the toolbar's model display truthful: re-resolve the effective
         # model for the new provider (configured model, else built-in default).
-        model = load_model_from_config(canonical) or get_default_model_from_provider(
-            canonical
-        )
+        # A placeholder "custom" default (e.g. openrouter) is not a usable
+        # model, so providers without a configured model keep the previous
+        # model display (like "custom") -- a later turn reports the missing
+        # model via the runtime resolution.
+        model = load_model_from_config(canonical)
+        if not model:
+            default = get_default_model_from_provider(canonical)
+            if default and not requires_explicit_model(canonical):
+                model = default
         if model:
             shell.model = model
 

@@ -34,7 +34,13 @@ Provider-level fields:
   - "default_model": the model used when the user has not configured one.
     ``None`` means the provider has no sensible default and the user must
     set a model explicitly (e.g. the "custom" provider).  The name doubles
-    as the key of the model's entry in ``models``.
+    as the key of the model's entry in ``models``.  The special value
+    ``"custom"`` is the *placeholder* default used by aggregator providers
+    such as "openrouter": it is not a real model name, and its ``models``
+    entry only carries built-in defaults (e.g. the default API type), so
+    runtime model resolution treats it as "no model configured" and requires
+    the user to supply a model explicitly (see
+    ``janito.provider_accessors.requires_explicit_model``).
   - "endpoint": the OpenAI-compatible base URL. ``None`` means the standard
     OpenAI API endpoint (no custom base URL needed); the special
     ``CUSTOM_ENDPOINT`` marker means the endpoint must come from config.
@@ -126,6 +132,7 @@ from .google.config import PROVIDER_CONFIG as _GOOGLE_CONFIG
 from .minimax.config import PROVIDER_CONFIG as _MINIMAX_CONFIG
 from .moonshot.config import PROVIDER_CONFIG as _MOONSHOT_CONFIG
 from .openai.config import PROVIDER_CONFIG as _OPENAI_CONFIG
+from .openrouter.config import PROVIDER_CONFIG as _OPENROUTER_CONFIG
 from .xai.config import PROVIDER_CONFIG as _XAI_CONFIG
 from .xiaomi.config import PROVIDER_CONFIG as _XIAOMI_CONFIG
 from .zai.config import PROVIDER_CONFIG as _ZAI_CONFIG
@@ -145,6 +152,13 @@ _PROVIDER_CONFIGS: dict[str, dict] = {
     "deepseek": _DEEPSEEK_CONFIG,
     "xai": _XAI_CONFIG,
     "anthropic": _ANTHROPIC_CONFIG,
+    # Aggregator provider: proxies many models behind a single
+    # OpenAI-compatible endpoint.  Its built-in default model is the
+    # "custom" placeholder (no usable default) -- the user must supply a
+    # model explicitly (--model or <provider>.model in config.json); the
+    # placeholder "custom" model entry only carries built-in defaults (the
+    # default API type).  See ``janito/providers/openrouter/config.py``.
+    "openrouter": _OPENROUTER_CONFIG,
     # Special case: requires an endpoint from config (--set endpoint) and has
     # no built-in default model (and therefore no built-in model entries).
     "custom": _CUSTOM_CONFIG,

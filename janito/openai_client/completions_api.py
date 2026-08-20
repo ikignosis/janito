@@ -19,7 +19,10 @@ from janito.config_loaders import load_endpoint_from_config, load_model_from_con
 from janito.general_config import load_provider_from_config
 
 # Import provider configuration for base URLs and built-in defaults
-from ..provider_accessors import get_default_model_from_provider
+from ..provider_accessors import (
+    get_default_model_from_provider,
+    requires_explicit_model,
+)
 from ..provider_validation import is_custom_provider
 
 # Import the tool executor (routes tool calls to the MCP manager or the
@@ -85,7 +88,13 @@ def resolve_runtime_config(
                   standard OpenAI endpoint.
       - model:    ``--model`` (``cli_model``) when given, otherwise the model
                   configured for the active provider (``<provider>.model``),
-                  and finally the provider's built-in default model.
+                  and finally the provider's built-in default model.  A
+                  provider whose built-in default is the ``"custom"``
+                  placeholder (e.g. ``openrouter``) has no usable default --
+                  the placeholder only carries built-in defaults such as the
+                  default API type -- so the user must supply the model
+                  explicitly (``--model`` or ``<provider>.model``) and an
+                  unresolvable model is reported as an error.
 
     Args:
         cli_model: Model passed via ``--model`` (highest priority). May be None.
@@ -127,10 +136,18 @@ def resolve_runtime_config(
         )
 
     # Model: --model, then the provider's configured model, and finally the
-    # provider's built-in default model (from the provider config).
+    # provider's built-in default model (from the provider config).  A
+    # provider whose built-in default is the "custom" placeholder (e.g.
+    # "openrouter") has no usable default: the placeholder "custom" model
+    # entry only carries built-in defaults (the default API type), so the
+    # user must supply the model explicitly (--model or <provider>.model in
+    # config.json).  When it cannot be resolved, report it here instead of
+    # silently sending the placeholder to the API.
     model = cli_model or load_model_from_config(provider)
     if not model:
         model = get_default_model_from_provider(provider)
+        if model and requires_explicit_model(provider):
+            model = None
     if not model:
         logger.error(f"No model configured for provider '{provider}'")
         raise ValueError(

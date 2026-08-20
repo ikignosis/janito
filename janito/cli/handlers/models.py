@@ -4,7 +4,10 @@ from ...config_keys import normalize_provider
 from ...config_loaders import load_model_from_config
 from ...config_store import get_config_path, get_config_value
 from ...general_config import load_provider_from_config
-from ...provider_accessors import get_default_model_from_provider
+from ...provider_accessors import (
+    get_default_model_from_provider,
+    requires_explicit_model,
+)
 from ...provider_registry import _registry
 
 
@@ -73,6 +76,12 @@ def handle_list_models(args) -> int:
     provider, provider_source = _resolve_provider_source(args)
 
     default_model = get_default_model_from_provider(provider)
+    # A placeholder "custom" default (e.g. openrouter) is not a usable model:
+    # it only carries built-in defaults such as the default API type.  Without
+    # an explicit --model or configured model there is no default/current
+    # model to flag.
+    if default_model and requires_explicit_model(provider):
+        default_model = None
     configured_model = load_model_from_config(provider)
     cli_model = getattr(args, "model", None)
     current_model = cli_model or configured_model or default_model

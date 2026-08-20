@@ -288,14 +288,20 @@ def _build_provider_entry(
         get_supported_api_types_from_provider,
         get_supported_reasoning_levels_from_provider,
         is_api_type_available,
+        requires_explicit_model,
     )
     from janito.provider_registry import ProviderRegistry
     from janito.providers import CUSTOM_ENDPOINT_MARKER
 
     configured_model = load_model_from_config(name)
-    # The entry's model: the configured override, else the built-in default
-    # model. Every per-model default below is computed for this model.
-    entry_model = configured_model or info.get("default_model")
+    default_model = info.get("default_model")
+    # A placeholder "custom" default (e.g. openrouter) is not a usable model:
+    # it only carries built-in defaults such as the default API type, so it is
+    # not shown as the provider's default model.  The entry's model is the
+    # configured override, else the built-in default.
+    if default_model and requires_explicit_model(name):
+        default_model = None
+    entry_model = configured_model or default_model
 
     # Resolve the effective base URL: a configured endpoint override
     # takes priority, otherwise the provider's built-in default resolved
@@ -356,7 +362,7 @@ def _build_provider_entry(
         models_summary.append(
             {
                 "name": model_name,
-                "default": model_name == info.get("default_model"),
+                "default": model_name == default_model,
                 "supported_api_types": get_supported_api_types_from_provider(
                     name, model_name
                 ),
@@ -395,7 +401,7 @@ def _build_provider_entry(
         "name": name,
         "base_url": base_url,
         "model": configured_model,
-        "default_model": info.get("default_model"),
+        "default_model": default_model,
         "api_type": api_type_override,
         "default_api_type": get_default_api_type_from_provider(name, entry_model),
         "supported_api_types": get_supported_api_types_from_provider(name, entry_model),

@@ -1,0 +1,1 @@
+"""OpenRouter provider configuration package."""

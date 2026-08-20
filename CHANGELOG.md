@@ -15,6 +15,17 @@ Changes since `v4.28.0` (2026-08-19).
   provider (set via `--provider` or defined in `config.json`) -- the
   provider's built-in models plus any per-model config entries -- flagging
   the default, configured, and current models.
+- New `openrouter` provider: accesses models from many providers behind
+  OpenRouter's single OpenAI-compatible endpoint
+  (`https://openrouter.ai/api/v1`, Chat Completions API).  Like `custom` it
+  has no built-in default model -- its `default_model` is the `"custom"`
+  placeholder whose `models.custom` entry only carries built-in defaults
+  (the default API type) -- so the user must supply the model explicitly
+  (`--model` or `providers.openrouter.model` in `config.json`); when it
+  cannot be resolved, runtime configuration fails with an actionable message
+  instead of silently sending the placeholder to the API.  The
+  `--show-config`, `--list-models` and `--show-providers` displays no longer
+  present the placeholder as a usable default/current model.
 
 ### Fixed
 

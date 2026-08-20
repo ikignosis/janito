@@ -16,6 +16,7 @@ from ...provider_accessors import (
     get_default_tools_from_provider,
     get_endpoint_for_api_type,
     get_supported_api_types_from_provider,
+    requires_explicit_model,
 )
 from ...provider_registry import ProviderRegistry, parse_variant_name
 from ...provider_validation import list_variants
@@ -131,9 +132,14 @@ def _provider_rows(
     rows: list[tuple[str, str]] = []
 
     # Model: configured override first, otherwise the built-in default
-    # (resolved through the base provider for variants).
+    # (resolved through the base provider for variants).  A placeholder
+    # "custom" default (e.g. openrouter) is not a usable model -- it only
+    # carries built-in defaults such as the default API type -- so it is not
+    # shown as a default.
     configured_model = load_model_from_config(name)
     default_model = get_default_model_from_provider(name)
+    if default_model and requires_explicit_model(name):
+        default_model = None
     if configured_model:
         model_display = configured_model
         if default_model and default_model != configured_model:

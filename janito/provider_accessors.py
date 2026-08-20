@@ -221,6 +221,33 @@ def get_default_model_from_provider(provider: str) -> str | None:
     return found.default_model() if found is not None else None
 
 
+def requires_explicit_model(provider: str) -> bool:
+    """Whether a provider has no usable built-in default model.
+
+    Providers whose built-in ``default_model`` is the ``"custom"``
+    placeholder (e.g. ``openrouter``) have no real default: the placeholder
+    ``"custom"`` model entry only carries built-in defaults (the default API
+    type) and must never be sent to the API as a model name.  The user is
+    required to supply the model explicitly, either per call (``--model``) or
+    persistently (``providers.<provider>.model`` in config.json); when it
+    cannot be resolved, callers (e.g.
+    :func:`janito.openai_client.completions_api.resolve_runtime_config`) must
+    inform the user instead of falling back to the placeholder.
+
+    Args:
+        provider: The provider name (case-insensitive).
+
+    Returns:
+        ``True`` when the provider's built-in default model is the
+        ``"custom"`` placeholder (an explicit model is required), ``False``
+        otherwise (unknown provider, no default model, or a real default).
+    """
+    found = _registry.get(provider)
+    if found is None:
+        return False
+    return found.default_model() == "custom"
+
+
 def get_default_max_output_tokens_from_provider(
     provider: str, model: str | None = None
 ) -> int | None:

@@ -12,6 +12,7 @@ from ...provider_accessors import (
     get_endpoint_for_api_type,
     get_gemini_flavor_from_provider,
     get_responses_in_server_from_provider,
+    requires_explicit_model,
 )
 from ...provider_validation import is_custom_provider
 from ...providers import CUSTOM_ENDPOINT_MARKER
@@ -65,16 +66,23 @@ def _resolve_effective_model(
     """Resolve the effective model, mirroring ``resolve_runtime_config``.
 
     Priority: ``--model``, then the provider's configured model in
-    config.json, and finally the provider's built-in default model.
+    config.json, and finally the provider's built-in default model.  A
+    provider whose built-in default is the ``"custom"`` placeholder (e.g.
+    ``openrouter``) has no usable default, so ``None`` is returned unless a
+    model was supplied explicitly.
 
     Returns:
         Tuple of (model, source). ``model`` is ``None`` when neither the
-        provider nor its built-in defaults define one (e.g. ``custom``).
+        provider nor its built-in defaults define a usable one (e.g.
+        ``custom`` or an ``openrouter`` without a configured model).
     """
     model = cli_model or load_model_from_config(provider)
     if model:
         return model, "CLI argument" if cli_model else f"{provider}.model"
-    return get_default_model_from_provider(provider), f"{provider} default"
+    default = get_default_model_from_provider(provider)
+    if default and requires_explicit_model(provider):
+        return None, "not set"
+    return default, f"{provider} default"
 
 
 def handle_info(args) -> int:

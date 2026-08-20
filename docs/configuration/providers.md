@@ -33,6 +33,7 @@ The API type is selected per provider with `--set api-type=...` (see the
 | `zai` | Z.AI (GLM models) |
 | `xai` | xAI (Grok models) |
 | `anthropic` | Anthropic (Claude models) |
+| `openrouter` | OpenRouter (aggregator of many models) |
 
 !!! note
     The provider name is always validated against this list. Whenever you pass
@@ -54,7 +55,7 @@ janito --show-providers
 ```
 
 ```
-Supported Providers (10):
+Supported Providers (11):
 ============================================================
   openai [active]
     Model:         gpt-5.6-luna (default)
@@ -726,6 +727,56 @@ janito --set-api-key="your-anthropic-api-key" --provider anthropic
 # Step 3: Run prompt
 janito "Explain quantum computing"
 ```
+
+## OpenRouter
+
+Use [OpenRouter](https://openrouter.ai) to access models from many providers
+(OpenAI, Anthropic, Google, Meta, DeepSeek, ...) behind a single
+OpenAI-compatible endpoint.
+
+> **Get an API key:** Visit [OpenRouter Keys](https://openrouter.ai/keys) to
+> create an account and generate an API key.
+
+### Configuration
+
+Unlike most providers, OpenRouter has **no built-in default model** -- it
+aggregates thousands of models, so janito cannot pick one for you. Its
+provider config uses the `custom` placeholder as the default model, which is
+**not** a real model name: you must supply the model explicitly, either per
+call with `--model` or persistently in the config:
+
+```bash
+# Step 1: Set provider and store the API key
+janito --set provider=openrouter
+janito --set-api-key="your-openrouter-api-key" --provider openrouter
+# Step 2: Set a model (required -- no default)
+janito --provider openrouter --set model=openrouter/auto
+# Step 3: Run prompt
+janito "Explain quantum computing"
+```
+
+If you try to start a session without a model, janito stops with an
+actionable message instead of silently sending the placeholder to the API:
+
+```
+Error: No model configured for provider 'openrouter'. Pass --model <name> or set it with: janito --provider openrouter --set model=<name>
+```
+
+You can also pass a model per call without configuring one:
+
+```bash
+janito --provider openrouter --model anthropic/claude-3.5-sonnet "Hello"
+```
+
+OpenRouter model IDs use the `vendor/model` form (e.g.
+`openrouter/auto`, `anthropic/claude-3.5-sonnet`, `openai/gpt-4o`); the
+`openrouter/auto` route picks the cheapest available model for your prompt.
+
+### API Type
+
+The `openrouter` provider talks to OpenRouter's OpenAI-compatible endpoint
+(`https://openrouter.ai/api/v1`) through the standard **Chat Completions**
+API, so its built-in API type is `Completions`.
 
 ## Provider Comparison
 

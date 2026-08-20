@@ -34,7 +34,7 @@ These keys are stored in `~/.janito/config.json` (set them with `--set`):
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `provider` | Provider name (`openai`, `google`, `custom`, `alibaba`, `minimax`, `xiaomi`, `moonshot`, `zai`, `xai`, `deepseek`, `anthropic`) | `openai` |
+| `provider` | Provider name (`openai`, `google`, `custom`, `alibaba`, `minimax`, `xiaomi`, `moonshot`, `zai`, `xai`, `deepseek`, `anthropic`, `openrouter`) | `openai` |
 | `model` | Model name | - |
 | `max-input-tokens` | Maximum input tokens (context window) | model built-in / `128000` |
 | `max-output-tokens` | Maximum output tokens | model built-in / `100000` |
