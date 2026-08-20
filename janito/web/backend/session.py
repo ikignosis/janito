@@ -38,7 +38,7 @@ class ConversationSession:
     def restart(self) -> None:
         """Clear conversation history, preserving the system prompt.
 
-        Mirrors the shell's F2 / ``restart`` behaviour: the system prompt
+        Mirrors the shell's F2 / ``clear`` behaviour: the system prompt
         is kept (so the AI retains its instructions) while all user/assistant
         messages are discarded.
         """

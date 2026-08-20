@@ -1,26 +1,26 @@
 """
-/rollback command handler - truncates message_history back to the last checkpoint.
+/rewind command handler - Rewind conversation to a previous message.
 """
 
 from .base import CmdHandler
 from .registry import register_command
 
 
-class RollbackCmdHandler(CmdHandler):
-    """Command handler for /rollback command."""
+class RewindCmdHandler(CmdHandler):
+    """Command handler for /rewind command."""
 
     @property
     def name(self) -> str:
-        return "/rollback"
+        return "/rewind"
 
     def handle(self, shell, user_input: str) -> bool:
-        """Handle the /rollback command."""
+        """Handle the /rewind command."""
         if user_input.lower().strip() == self.name:
-            self._do_rollback(shell)
+            self._do_rewind(shell)
             return True
         return False
 
-    def _do_rollback(self, shell) -> None:
+    def _do_rewind(self, shell) -> None:
         """Truncate messages_history back to the last checkpoint."""
         checkpoint = getattr(shell, "history_checkpoint", 0)
         current_len = len(shell.messages_history)
@@ -29,7 +29,7 @@ class RollbackCmdHandler(CmdHandler):
             removed = current_len - checkpoint
             del shell.messages_history[checkpoint:]
             print(
-                f"Rolled back {removed} message(s). History now has {len(shell.messages_history)} message(s)."
+                f"Rewound {removed} message(s). History now has {len(shell.messages_history)} message(s)."
             )
             return
 
@@ -43,7 +43,7 @@ class RollbackCmdHandler(CmdHandler):
             if conversation_checkpoint < len(conversation_items):
                 del conversation_items[conversation_checkpoint:]
                 print(
-                    "Rolled back: conversation history truncated "
+                    "Rewound: conversation history truncated "
                     "(stateless Responses API / pending items)."
                 )
                 return
@@ -63,7 +63,7 @@ class RollbackCmdHandler(CmdHandler):
                 )
                 # Also truncate the /history display mirror of completed
                 # server-side turns back to its checkpoint, so /history no
-                # longer shows the rolled-back exchange (the real conversation
+                # longer shows the rewound exchange (the real conversation
                 # lives on the server; this mirror is display-only).
                 mirrored = getattr(shell, "mirrored_history", None)
                 if mirrored:
@@ -71,31 +71,31 @@ class RollbackCmdHandler(CmdHandler):
                     del mirrored[mirrored_checkpoint:]
                 if shell.previous_response_id:
                     print(
-                        "Rolled back: server-side conversation rolled back to "
+                        "Rewound: server-side conversation rewound to "
                         "the previous response (Responses API)."
                     )
                 else:
                     print(
-                        "Rolled back: server-side conversation reset to a "
+                        "Rewound: server-side conversation reset to a "
                         "fresh conversation (Responses API)."
                     )
                 return
             if response_chain and getattr(shell, "previous_response_id", None):
                 # Already at the checkpoint: nothing to undo (mirrors the
-                # Completions-mode message for a second consecutive /rollback).
-                print("Nothing to rollback. History is already at the checkpoint.")
+                # Completions-mode message for a second consecutive /rewind).
+                print("Nothing to rewind. History is already at the checkpoint.")
                 return
             # No chain tracked (e.g. a server-side conversation started
             # before the chain was kept, or a manually seeded shell state):
             # fall back to resetting the server conversation.
             if getattr(shell, "previous_response_id", None) is not None:
                 shell.previous_response_id = None
-                print("Rolled back: server-side conversation reset (Responses API).")
+                print("Rewound: server-side conversation reset (Responses API).")
                 return
 
-        print("Nothing to rollback. History is already at the checkpoint.")
+        print("Nothing to rewind. History is already at the checkpoint.")
 
 
 # Register this handler
-_handler = RollbackCmdHandler()
+_handler = RewindCmdHandler()
 register_command(_handler)

@@ -57,7 +57,7 @@ Type your messages and press Enter. Commands:
 | Command | Description |
 |---------|-------------|
 | `exit` / `quit` | End the session |
-| `restart` | Clear conversation history |
+| `clear` | Clear conversation and start a new one |
 | `Ctrl+D` / `Ctrl+Z` | Exit the shell |
 
 ### Pipe Input

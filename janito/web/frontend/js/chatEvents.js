@@ -206,7 +206,7 @@ window.ChatEventsMixin = {
             return;
         }
 
-        // Server confirmed the restart — history cleared, system prompt
+        // Server confirmed the clear — history cleared, system prompt
         // preserved. Local UI was already reset in restartSession(); this
         // just serves as an acknowledgement.
         if (event.type === 'restarted') {

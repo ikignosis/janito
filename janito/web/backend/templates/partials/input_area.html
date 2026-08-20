@@ -9,7 +9,7 @@
                           @keydown="onKeydown($event)"
                           @input="_autoResize()"
                           rows="1"
-                          placeholder="Send a message… (Enter to send, Shift+Enter for newline, Ctrl+C to stop, F2 to restart)"></textarea>
+                          placeholder="Send a message… (Enter to send, Shift+Enter for newline, Ctrl+C to stop, F2 to clear)"></textarea>
                 <button class="btn btn-primary"
                         @click="sendPrompt()"
                         :disabled="!input.trim() || status !== 'idle'">

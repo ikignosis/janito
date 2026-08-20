@@ -2,7 +2,7 @@
 // Folded into the Alpine component via Object.assign in chat.js.
 
 window.ChatScrollMixin = {
-    // Keyboard: Enter to send, Shift+Enter for newline, F2 to restart,
+    // Keyboard: Enter to send, Shift+Enter for newline, F2 to clear,
     // Ctrl+C to cancel the current request.
     onKeydown(e) {
         if (e.key === 'F2') {

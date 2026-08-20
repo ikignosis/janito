@@ -121,7 +121,7 @@ janito
 
 Commands in chat mode:
 - `exit` / `quit` - End session
-- `restart` - Clear conversation history
+- `clear` - Clear conversation and start a new one
 - `Ctrl+D` / `Ctrl+Z` - Exit
 
 ### Web UI (Alpha)

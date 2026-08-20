@@ -95,8 +95,8 @@ the effective system prompt and which toolsets to enable.
 - **Single prompt**: one turn, exit. `echo ... | janito` and `janito "..."`.
 - **Interactive chat** (`janito/shell/interactive.py`): prompt_toolkit-based
   shell with file-backed history, a bottom toolbar (model/provider), key
-  bindings (restart, "do it", cancel), a command completer, and `/`-commands
-  (`janito/shell/cmds/`): `/rollback`, `/history`, `/priv`, `/mcp`, `/skills`,
+  bindings (clear, "do it", cancel), a command completer, and `/`-commands
+  (`janito/shell/cmds/`): `/rewind`, `/history`, `/priv`, `/mcp`, `/skills`,
   `/tools`, `/changes`, `/ask`, `/multi`, ... Commands are registered through
   a small registry (`cmds/registry.py`).
 

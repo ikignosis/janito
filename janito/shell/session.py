@@ -83,7 +83,7 @@ class _SessionMixin:
 
         # Keyboard shortcuts
         tokens.append(("", " \u2502 "))
-        tokens.append(("class:key-label", "[F2] restart "))
+        tokens.append(("class:key-label", "[F2] clear "))
         tokens.append(("class:key-label", "[F12] do-it "))
         tokens.append(("class:key-label", "[/exit] end "))
         tokens.append(("class:key-label", "[!cmd] shell "))
@@ -100,7 +100,7 @@ class _SessionMixin:
 
         @kb.add("f2")
         def restart_chat(event: KeyPressEvent) -> None:
-            """Handle F2 key to restart conversation."""
+            """Handle F2 key to clear the conversation."""
             self.restart_requested = True
             event.app.exit(result=None)
 

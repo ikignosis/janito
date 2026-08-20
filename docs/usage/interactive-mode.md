@@ -16,7 +16,7 @@ janito
 Without arguments, janito starts an interactive shell:
 
 ```
-Welcome to janito! Type 'exit' to quit, 'restart' to clear history.
+Welcome to janito! Type 'exit' to quit, 'clear' to start a new conversation.
 You:
 ```
 
@@ -27,7 +27,7 @@ In interactive mode, these commands are available:
 | Command | Description |
 |---------|-------------|
 | `exit` / `quit` | End the session |
-| `restart` | Clear conversation history and start fresh |
+| `clear` | Clear conversation and start a new one |
 | `Ctrl+D` / `Ctrl+Z` | Exit (EOF) |
 | `Ctrl+C` | Cancel current input (rolls the last prompt/answer back out of the history) |
 | `Enter` | While a prompt is pending ("Waiting for response from the API server..."), cancels the request and keeps the prompt in the conversation history |
@@ -93,7 +93,7 @@ After `/thinking `, `on` and `off` are suggested.
 
 ```bash
 $ janito
-Welcome to janito! Type 'exit' to quit, 'restart' to clear history.
+Welcome to janito! Type 'exit' to quit, 'clear' to start a new conversation.
 You: What is Python?
 Assistant: Python is a high-level programming language...
 You: Tell me more about it
@@ -125,7 +125,7 @@ Assistant: [File uploaded]
 ## Tips
 
 - **Conversation History**: Messages are kept in context during the session
-- **Use `restart`**: Clear history if you want a fresh start
+- **Use `clear`**: Clear the conversation and start a new one
 - **Exit gracefully**: Use `exit` or `quit` for clean exit
 
 ## Tracking Changes (`/changes`)

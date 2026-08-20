@@ -33,6 +33,10 @@ Changes since `v4.28.0` (2026-08-19).
 
 ### Changed
 
+- The `restart` shell command is renamed to `clear` (Clear conversation and
+  start a new one); the old `restart` name is no longer available.
+- The `/rollback` shell command is renamed to `/rewind` (Rewind conversation
+  to a previous message); the old `/rollback` name is no longer available.
 - The `alibaba` provider's built-in default model (`qwen3.8-max`) now
   defaults to the Responses API instead of Chat Completions. The Completions
   API remains fully supported and can be selected with

@@ -54,16 +54,16 @@ Legend: ✅ available · — not available
 | Feature | CLI/shell | Web UI |
 |---------|:---------:|:------:|
 | `exit` / `quit` | ✅ | — |
-| `restart` (clear history) | ✅ | — |
+| `clear` | ✅ | — |
 | `Ctrl+D` / `Ctrl+Z` (EOF), `Ctrl+C` (cancel + rollback), Enter (cancel, keep prompt) | ✅ | — |
-| `F2` (restart conversation), `F12` (Do It / continue existing plan) | ✅ | — |
+| `F2` (clear conversation), `F12` (Do It / continue existing plan) | ✅ | — |
 | `/help` | ✅ | — |
 | `/skills` | ✅ | — |
 | `/tools` | ✅ | ✅ (client-side card panel) |
 | `/show_tools_stats` | ✅ | — |
 | `/changes` (replay file-changing tool executions) | ✅ | — |
 | `/mcp add` / `/mcp list` / `/mcp remove` | ✅ | — (use the MCP dashboard) |
-| `/ask`, `/history`, `/multi`, `/priv`, `/prompt`, `/provider`, `/model`, `/api_types`, `/read`, `/rollback`, `/status`, `/write` | ✅ | — |
+| `/ask`, `/history`, `/multi`, `/priv`, `/prompt`, `/provider`, `/model`, `/api_types`, `/read`, `/rewind`, `/status`, `/write` | ✅ | — |
 | `!<shell command>` (run a command directly) | ✅ | — |
 | Command autocomplete for `/`-commands | ✅ | — |
 | Enter to send, `Shift+Enter` for newline | — | ✅ |

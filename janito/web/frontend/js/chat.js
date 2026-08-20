@@ -453,7 +453,7 @@ function chatComponent() {
         },
 
         // ---------------------------------------------------------------
-        // Restart (F2)
+        // Clear conversation (F2)
         // ---------------------------------------------------------------
 
         // Clear the conversation on both server and client, preserving the
@@ -488,7 +488,7 @@ function chatComponent() {
             store.current = null;
             store.dirty = false;
             store.loaded = true;   // no need to re-fetch empty history
-            store.titled = false;  // a restarted conversation gets re-named from its next message
+            store.titled = false;  // a cleared conversation gets re-named from its next message
             this._current = null;
             this.error = null;
             store.error = null;

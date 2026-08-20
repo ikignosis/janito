@@ -68,7 +68,7 @@ class InteractiveShell(_SessionMixin):
         # context
         self.messages_history: list[dict[str, Any]] = []
         # Index into messages_history marking the last known-good state;
-        # /rollback and error recovery truncate back to here
+        # /rewind and error recovery truncate back to here
         self.history_checkpoint: int = 0
         # Server-side conversation handle for the Responses API: the id of the
         # last response, passed as `previous_response_id` on the next turn.
@@ -86,11 +86,11 @@ class InteractiveShell(_SessionMixin):
         # for server-side Responses providers with no pending messages.
         self.conversation_items: list[dict[str, Any]] | None = None
         # Index into conversation_items marking the last known-good state;
-        # /rollback truncates back to here.
+        # /rewind truncates back to here.
         self.conversation_checkpoint: int = 0
         # Chain of completed server-side Responses response ids, in turn
         # order. Every successful turn of a server-side Responses provider
-        # (e.g. OpenAI) appends its final response id; /rollback truncates
+        # (e.g. OpenAI) appends its final response id; /rewind truncates
         # back to the checkpoint and re-points previous_response_id at the
         # response that preceded the rolled-back exchange, so the next turn
         # continues from there instead of resetting the whole server-side
@@ -98,7 +98,7 @@ class InteractiveShell(_SessionMixin):
         # Responses providers (which never chain with an id).
         self.response_chain: list[str] = []
         # Index into response_chain marking the last known-good state;
-        # /rollback truncates back to here.
+        # /rewind truncates back to here.
         self.response_checkpoint: int = 0
         # Display-only mirror of completed server-side Responses turns (e.g.
         # OpenAI), kept client-side purely so /history can render the
@@ -110,7 +110,7 @@ class InteractiveShell(_SessionMixin):
         # (which mirror through conversation_items instead).
         self.mirrored_history: list[dict[str, Any]] = []
         # Index into mirrored_history marking the last known-good state;
-        # /rollback truncates back to here.
+        # /rewind truncates back to here.
         self.mirrored_checkpoint: int = 0
         # Set True by the F2 key binding; signals the run loop to clear
         # history and start a fresh conversation
@@ -143,7 +143,7 @@ class InteractiveShell(_SessionMixin):
         Args:
             system_prompt: Optional system prompt to prepend
         """
-        self._system_prompt = system_prompt  # stored so it can be restored on F2/restart without re-reading config
+        self._system_prompt = system_prompt  # stored so it can be restored on F2/clear without re-reading config
         if system_prompt:
             self.messages_history = [{"role": "system", "content": system_prompt}]
         else:
@@ -297,8 +297,8 @@ class InteractiveShell(_SessionMixin):
             print(f"[Shell] Error: {e}", file=sys.stderr)
 
     def _dispatch_input(self, user_input: str) -> bool:
-        """Handle restart/command/unknown/shell input; True when consumed."""
-        if user_input.lower() == "restart":
+        """Handle clear/command/unknown/shell input; True when consumed."""
+        if user_input.lower() == "clear":
             # Reset to a fresh conversation while preserving the system
             # prompt (matches startup behaviour). A plain .clear() would
             # drop the system prompt and leave an empty history.
@@ -364,7 +364,7 @@ class InteractiveShell(_SessionMixin):
             if hasattr(result, "input_items"):
                 self._record_responses_result(result)
             # On success, keep the checkpoint where it is (before this turn)
-            # so /rollback can undo the last exchange. The next turn will
+            # so /rewind can undo the last exchange. The next turn will
             # update it before its own send_prompt call.
         except RequestCancelled as e:
             # Enter was pressed while waiting for the API: interrupt the
@@ -430,7 +430,7 @@ class InteractiveShell(_SessionMixin):
         if result.input_items is None:
             self.previous_response_id = result.response_id
             # Server-side Responses: remember this turn's final response id
-            # in the chain so /rollback can undo the exchange by chaining the
+            # in the chain so /rewind can undo the exchange by chaining the
             # next turn (previous_response_id) from the response that
             # preceded it, instead of resetting the whole server conversation.
             if result.response_id:
@@ -491,7 +491,7 @@ class InteractiveShell(_SessionMixin):
             if self._handle_restart_request():
                 continue
 
-            # Handle restart text, registered commands, unknown commands and
+            # Handle clear text, registered commands, unknown commands and
             # !cmd shell execution.
             if self._dispatch_input(user_input):
                 # Check if exit was requested via a command

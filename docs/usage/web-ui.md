@@ -37,7 +37,7 @@ feature-by-feature breakdown is on [CLI vs Web UI](cli-vs-web.md); in short:
 **CLI-only features**
 
 - Single-prompt and pipe input (`janito "..."`, `echo ... | janito`)
-- The interactive shell (`exit`, `restart`, `/changes`, `/skills`,
+- The interactive shell (`exit`, `clear`, `/changes`, `/skills`,
   `/show_tools_stats`, `/mcp add|list|remove`, `!<command>`, `Ctrl+D`/`Ctrl+C`,
   `F2`/`F12`, ...)
 - Configuration & secrets maintenance (`--config`, `--set`, `--set-api-key`,
