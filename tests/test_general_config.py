@@ -594,8 +594,9 @@ if pytest is not None:
         assert gc.resolve_api_type(None, "openai") == "Responses"
         # DeepSeek now ships Responses first too, so it resolves to Responses.
         assert gc.resolve_api_type(None, "deepseek") == "Responses"
-        # Completions-first providers resolve to Completions.
-        assert gc.resolve_api_type(None, "alibaba") == "Completions"
+        # Alibaba's default model qwen3.8-max declares Responses as its
+        # built-in default API type too.
+        assert gc.resolve_api_type(None, "alibaba") == "Responses"
         # Explicit CLI flag wins over the provider default.
         assert gc.resolve_api_type("Completions", "openai") == "Completions"
         assert gc.resolve_api_type("Responses", "deepseek") == "Responses"

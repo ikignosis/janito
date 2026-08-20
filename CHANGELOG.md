@@ -31,6 +31,13 @@ Changes since `v4.28.0` (2026-08-19).
   `--show-config`, `--list-models` and `--show-providers` displays no longer
   present the placeholder as a usable default/current model.
 
+### Changed
+
+- The `alibaba` provider's built-in default model (`qwen3.8-max`) now
+  defaults to the Responses API instead of Chat Completions. The Completions
+  API remains fully supported and can be selected with
+  `--set api-type=Completions` / `--api-type completions`.
+
 ### Fixed
 
 - Clean up system prompt formatting: remove the stray markdown bullet from the

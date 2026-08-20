@@ -94,8 +94,9 @@ def test_api_types_default_marker(monkeypatch, tmp_path, capsys):
     # OpenAI's default model defaults to the Responses API type.
     assert "Responses (default)" in out
     assert "Completions" in out
-    # Alibaba defaults to Completions (qwen3.8-max is not on /responses).
-    assert "Completions (default)" in out
+    # Alibaba defaults to the Responses API type.
+    assert "Responses (default)" in out
+    assert "Completions" in out
     assert "DashScope" in out
 
 

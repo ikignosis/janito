@@ -25,20 +25,15 @@ PROVIDER_CONFIG: dict = {
     },
     "models": {
         "qwen3.8-max": {
-            # Completions is the built-in default: DashScope's /responses
-            # endpoint does not (yet) support qwen3.8-max (it rejects it
-            # with "Unsupported model: 'qwen3.8-max'."), so the
-            # out-of-the-box provider must use the Completions API where
-            # the default model works. The Responses API is still
-            # supported for models that expose it (e.g. qwen3.7-max,
-            # qwen3.6-plus, qwen3.5-plus, qwen-plus, qwen-flash) and can
-            # be selected with --set api-type=Responses or --api-type
-            # responses. The native DashScope SDK API type is selectable
-            # with --set api-type=DashScope or --api-type DashScope (it
+            # Responses is the built-in default API type. The Completions
+            # API remains fully supported and can be selected with
+            # --set api-type=Completions or --api-type completions. The
+            # native DashScope SDK API type is selectable with
+            # --set api-type=DashScope or --api-type DashScope (it
             # requires the optional `dashscope` package; see
             # REQUIRES_BY_API_TYPE).
             "supported_api_types": ["Completions", "Responses", "DashScope"],
-            "default_api_type": "Completions",  # built-in default (the first supported type)
+            "default_api_type": "Responses",  # built-in default
             "max_input_tokens": 1000000,  # 1M
             "max_output_tokens": 131072,
             "reasoning_level": "xhigh",

@@ -32,7 +32,7 @@ if pytest is not None:
         assert p.reasoning_level() == "xhigh"
         assert p.default_thinking() is True
         assert p.supported_api_types() == ["Completions", "Responses", "DashScope"]
-        assert p.default_api_type() == "Completions"
+        assert p.default_api_type() == "Responses"
         assert p.is_custom is False
 
     def test_provider_custom():

@@ -121,7 +121,7 @@ def test_lists_registered_variants(monkeypatch, tmp_path, capsys):
 
     # The variant inherits the base provider's built-in defaults.
     assert "qwen3.8-max (default)" in out  # alibaba default
-    assert "Completions (default), Responses, DashScope" in out
+    assert "Completions, Responses (default), DashScope" in out
 
 
 # ---------------------------------------------------------------------------

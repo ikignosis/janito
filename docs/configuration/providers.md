@@ -67,7 +67,7 @@ Supported Providers (11):
   ...
   alibaba
     Model:         qwen3.8-max (default)
-    API types:     Completions (default), Responses, DashScope
+    API types:     Completions, Responses (default), DashScope
     Tools:         code_interpreter, web_search, web_extractor (Responses)
     ...
   alibaba-tokenplan (variant of alibaba)
@@ -276,18 +276,16 @@ on for any provider.
 
 ### API Type
 
-The `alibaba` provider defaults to the Chat Completions API: its built-in
-default model `qwen3.8-max` is not yet supported by DashScope's `/responses`
-endpoint, which rejects it with `Unsupported model: 'qwen3.8-max'.`. The
-Responses API is available for models the endpoint supports (e.g. `qwen3.7-max`,
-`qwen3.6-plus`, `qwen3.5-plus`, `qwen-plus`, `qwen-flash`); select it with:
+The `alibaba` provider defaults to the Responses API for its built-in default
+model `qwen3.8-max`. The Chat Completions API remains fully supported and can
+be selected per provider or per call with:
 
 ```bash
 # Per provider (persisted)
-janito --provider alibaba --set api-type=Responses
+janito --provider alibaba --set api-type=Completions
 
 # Per call
-janito --provider alibaba --api-type responses --model qwen3.7-max "Your prompt"
+janito --provider alibaba --api-type completions "Your prompt"
 ```
 
 ### Built-in Tools

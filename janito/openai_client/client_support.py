@@ -197,6 +197,20 @@ def _object_items(obj: Any):
         method = getattr(obj, attr, None)
         if callable(method):
             try:
+                if attr == "model_dump":
+                    # Pydantic v2's model_dump accepts warnings=False; older
+                    # pydantic v2 releases raise TypeError for the kwarg, so
+                    # fall back to the plain call.  Suppressing serializer
+                    # warnings keeps response metadata the SDK parsed with
+                    # construct() (e.g. a provider echoing back a built-in
+                    # tool type the SDK does not know, like Alibaba/Qwen's
+                    # ``web_extractor``) from flooding the console during the
+                    # raw-attribute dump: the echoed ``tools`` array is never
+                    # surfaced anyway (only scalar top-level attributes are).
+                    try:
+                        return method(warnings=False).items()
+                    except TypeError:
+                        pass
                 return method().items()
             except Exception:
                 continue
