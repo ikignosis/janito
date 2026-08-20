@@ -416,7 +416,7 @@ def _display_usage(
     parts.append(f"Cost: {cost}")
 
     token_text = Text(f"=== {' | '.join(parts)} ===")
-    token_text.stylize("white on magenta")
+    token_text.stylize("bright_white on magenta")
     console.print(token_text, highlight=False)
     logger.info(
         f"Request completed: total={total_tokens} tokens "

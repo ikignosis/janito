@@ -217,7 +217,7 @@ class InteractiveShell(_SessionMixin):
     def _reset_conversation(self, message: str) -> None:
         """Reset to a fresh conversation while preserving the system prompt."""
         self.initialize_history(system_prompt=self._system_prompt)
-        _rich_console.print(message, style="bold white on green")
+        _rich_console.print(message, style="bold bright_white on green")
 
     def _handle_command(self, user_input: str) -> bool:
         """Dispatch to registered command handlers; True when handled."""
