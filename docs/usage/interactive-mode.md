@@ -55,6 +55,7 @@ Additional commands available in the terminal shell:
 | `/provider <name>` | Switch the session's provider (and model) for this shell session only — the configured default in `config.json` is left unchanged (use `janito --set provider=<name>` to persist a new default; autocompleted). The LLM conversation history is cleared so the new provider/model starts fresh |
 | `/model` | Show the current model and the models available from the current provider |
 | `/model <name>` | Switch the session's model for this shell session only — the configured default in `config.json` is left unchanged (use `janito --set model=<name>` to persist a new default; autocompleted). Like `--model`, the name is open-ended; when it matches a model available from the current provider its canonical casing is used. The LLM conversation history is cleared so the new model starts fresh |
+| `/api_types` | List the API types supported by each built-in provider/model (e.g. `Responses` / `Completions`, plus native-SDK types such as `Anthropic` / `DashScope` / `Gemini`), marking each model's built-in default API type |
 | `/thinking` | Show the current session thinking mode status |
 | `/thinking on\|off` | Enable or disable runtime config thinking for the current session — the configured default in `config.json` is left unchanged (autocompleted) |
 | `/mcp add <name> stdio <cmd>` | Add MCP stdio service |

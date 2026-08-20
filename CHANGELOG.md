@@ -11,6 +11,10 @@ Changes since `v4.28.0` (2026-08-19).
 
 ### Added
 
+- New `/api_types` shell command: lists the API types supported by each
+  built-in provider/model (e.g. `Responses` / `Completions`, plus native-SDK
+  types such as `Anthropic` / `DashScope` / `Gemini`), marking each model's
+  built-in default API type.
 - New `--list-models` CLI flag: lists every model config-available from the
   provider (set via `--provider` or defined in `config.json`) -- the
   provider's built-in models plus any per-model config entries -- flagging
