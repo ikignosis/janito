@@ -39,6 +39,8 @@ Options:
   --log LEVELS       Enable logging (e.g., --log=info,debug or --log=warning)
   --list-keys        List configured providers and keys
   --show-providers   List all supported providers and variants
+  --list-models      List all config-available models for the provider
+                     (--provider, or the provider defined in config.json)
   --list-tools       List all available built-in tools
   --list-mcp         List all MCP services and their tools
   -Z, --no-system-prompt  Do not set a system prompt or pass any tools to the CLI
@@ -52,6 +54,8 @@ Examples:
   janito --set-api-key sk-xxx                               # Store key for the configured provider
   janito --list-keys                                        # Show configured providers
   janito --show-providers                                   # List all providers and variants
+  janito --list-models                                      # List models for the configured provider
+  janito --list-models --provider openai                    # List models for a specific provider
   janito --list-tools                                       # List available built-in tools
   janito --list-mcp                                         # List MCP services and tools
   janito --info                                             # Show resolved config info
@@ -231,6 +235,13 @@ Note: --set and --set-api-key must be used in separate commands.
         "--list-tools",
         action="store_true",
         help="List all available built-in tools and exit",
+    )
+
+    parser.add_argument(
+        "--list-models",
+        action="store_true",
+        help="List all config-available models for the active provider "
+        "(--provider, or the provider defined in config.json) and exit",
     )
 
     parser.add_argument(
