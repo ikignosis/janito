@@ -116,7 +116,7 @@ if pytest is not None:
                             }
                         },
                         "xai": {"models": {"grok-4.6": {"responses-in-server": True}}},
-                        "zai": {"models": {"glm-5.2": {"responses-in-server": False}}},
+                        "zai": {"models": {"glm-5.3": {"responses-in-server": False}}},
                     }
                 }
             )

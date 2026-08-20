@@ -139,7 +139,7 @@ def test_build_result_ok_sums_multi_round():
 
 def test_build_result_ok_falls_back_to_display():
     stdout = (
-        "----- Model: glm-5.2 | Backend: https://api.z.ai\n"
+        "----- Model: glm-5.3 | Backend: https://api.z.ai\n"
         "=== Total: 1.5k | Out: 1.5k | Messages: 1 | Cost: N/A ===\n"
     )
     result = pbm.build_result("zai", 0, stdout, "")
@@ -213,7 +213,7 @@ def test_discover_providers_failure(tmp_path):
 
 def test_sort_results_and_chart_entries():
     results = [
-        {"provider": "zai", "model": "glm-5.2", "out_tokens": 100},
+        {"provider": "zai", "model": "glm-5.3", "out_tokens": 100},
         {"provider": "openai", "model": "gpt-5.6-luna", "out_tokens": 500},
         {"provider": "deepseek", "model": "gpt-5.6-luna", "out_tokens": 300},
         {"provider": "broken", "model": None, "out_tokens": None},
@@ -228,7 +228,7 @@ def test_sort_results_and_chart_entries():
         ("gpt-5.6-luna (openai)", 500),
         ("claude-sonnet-5", 400),
         ("gpt-5.6-luna (deepseek)", 300),
-        ("glm-5.2", 100),
+        ("glm-5.3", 100),
     ]
 
 
@@ -283,7 +283,7 @@ def test_render_chart_writes_valid_png(tmp_path):
     entries = [
         ("gpt-5.6-luna", 18432),
         ("deepseek-v4-flash", 8932),
-        ("glm-5.2", 512),
+        ("glm-5.3", 512),
     ]
     out = tmp_path / "chart.png"
     pbm.render_chart(

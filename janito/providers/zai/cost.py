@@ -25,7 +25,7 @@ contribute to the estimate.  There is no peak-hour surcharge.
 #: storage is "Limited-time Free" per the official pricing page, so it does
 #: not contribute to the estimate.
 _MODEL_RATES: dict[str, tuple[float, float, float]] = {
-    "glm-5.2": (1.40, 0.26, 4.40),
+    "glm-5.3": (1.40, 0.26, 4.40),
 }
 
 

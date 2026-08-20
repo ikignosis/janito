@@ -41,6 +41,12 @@ Changes since `v4.28.0` (2026-08-19).
   defaults to the Responses API instead of Chat Completions. The Completions
   API remains fully supported and can be selected with
   `--set api-type=Completions` / `--api-type completions`.
+- The `zai` provider's built-in default model is now `glm-5.3` (GLM-5.2 was
+  removed).  The model entry declares the official limits -- a 1M-token
+  context window (`max_input_tokens`) and a 128K max output
+  (`max_output_tokens`) -- and the cost module rates GLM-5.3 at
+  $1.40 / $0.26 (cached input) / $4.40 output per 1M tokens (same as
+  GLM-5.2, per https://docs.z.ai/guides/overview/pricing).
 
 ### Fixed
 

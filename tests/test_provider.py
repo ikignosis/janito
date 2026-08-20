@@ -245,20 +245,20 @@ if pytest is not None:
             pa.get_provider_cost("Google", "gemini-3.7-flash", 1_000_000, 1_000_000, 0)
             == "4.500000$"
         )
-        # Z.ai ships a cost module: glm-5.2 at $1.40 / $0.26 (cache hit) /
+        # Z.ai ships a cost module: glm-5.3 at $1.40 / $0.26 (cache hit) /
         # $4.40 output per 1M tokens, formatted as NN.DDDDDD$.
         assert (
-            pa.get_provider_cost("zai", "glm-5.2", 1_000_000, 1_000_000, 0)
+            pa.get_provider_cost("zai", "glm-5.3", 1_000_000, 1_000_000, 0)
             == "5.800000$"
         )
         # Cached input tokens are billed at the cache-hit rate.
         assert (
-            pa.get_provider_cost("zai", "glm-5.2", 1_000_000, 1_000_000, 500_000)
+            pa.get_provider_cost("zai", "glm-5.3", 1_000_000, 1_000_000, 500_000)
             == "5.230000$"
         )
         # Case-insensitive provider lookup.
         assert (
-            pa.get_provider_cost("Zai", "glm-5.2", 1_000_000, 1_000_000, 0)
+            pa.get_provider_cost("Zai", "glm-5.3", 1_000_000, 1_000_000, 0)
             == "5.800000$"
         )
         # Xiaomi ships a cost module: mimo-v2.5 at $0.14 / $0.0028 (cache
@@ -425,7 +425,7 @@ if pytest is not None:
         # Z.ai also ignores is_reference (estimate unchanged).
         # 1M * $1.40 + 1M * $4.40 = 5.80.
         assert (
-            zai_get_cost("glm-5.2", 1_000_000, 1_000_000, 0, is_reference=True)
+            zai_get_cost("glm-5.3", 1_000_000, 1_000_000, 0, is_reference=True)
             == "5.800000$"
         )
         # DeepSeek bills reference requests at the peak rates (double the
