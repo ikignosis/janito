@@ -1249,7 +1249,7 @@ def test_shell_rewind_truncates_stateless_conversation_items():
     shell = RewindCmdHandler.__new__(RewindCmdHandler)
     # Fresh conversation: system + user + assistant.
     shell.messages_history = [{"role": "system", "content": "sys"}]
-    shell.history_checkpoint = 1
+    shell.history_checkpoints = [1]
     shell.previous_response_id = None
     shell.conversation_checkpoint = 2
     shell.conversation_items = [
@@ -1279,7 +1279,7 @@ def test_shell_rewind_server_side_repoints_previous_response_id():
     # Two completed turns: r1 then r2 (chained from r1). The checkpoint is
     # before the second turn.
     shell.messages_history = [{"role": "system", "content": "sys"}]
-    shell.history_checkpoint = 1
+    shell.history_checkpoints = [1]
     shell.previous_response_id = "r2"
     shell.conversation_items = None
     shell.response_chain = ["r1", "r2"]
@@ -1302,7 +1302,7 @@ def test_shell_rewind_server_side_single_turn_resets_to_fresh(capsys):
 
     shell = RewindCmdHandler.__new__(RewindCmdHandler)
     shell.messages_history = [{"role": "system", "content": "sys"}]
-    shell.history_checkpoint = 1
+    shell.history_checkpoints = [1]
     shell.previous_response_id = "r1"
     shell.conversation_items = None
     shell.response_chain = ["r1"]
@@ -1324,7 +1324,7 @@ def test_shell_rewind_server_side_at_checkpoint_reports_nothing(capsys):
 
     shell = RewindCmdHandler.__new__(RewindCmdHandler)
     shell.messages_history = [{"role": "system", "content": "sys"}]
-    shell.history_checkpoint = 1
+    shell.history_checkpoints = [1]
     shell.previous_response_id = "r1"
     shell.conversation_items = None
     shell.response_chain = ["r1"]
@@ -1347,7 +1347,7 @@ def test_shell_rewind_server_side_without_chain_falls_back_to_reset(capsys):
 
     shell = RewindCmdHandler.__new__(RewindCmdHandler)
     shell.messages_history = [{"role": "system", "content": "sys"}]
-    shell.history_checkpoint = 1
+    shell.history_checkpoints = [1]
     shell.previous_response_id = "r1"
     shell.conversation_items = None
     shell.response_chain = []
@@ -1488,7 +1488,7 @@ def test_shell_rewind_server_side_truncates_mirrored_history():
 
     shell = RewindCmdHandler.__new__(RewindCmdHandler)
     shell.messages_history = [{"role": "system", "content": "sys"}]
-    shell.history_checkpoint = 1
+    shell.history_checkpoints = [1]
     shell.previous_response_id = "r2"
     shell.conversation_items = None
     shell.response_chain = ["r1", "r2"]
@@ -1686,3 +1686,201 @@ def test_run_stream_round_recovers_response_id_on_cancel(monkeypatch):
         )
     assert getattr(excinfo2.value, "response_id", None) is None
     assert excinfo2.value.conversation_items == items
+
+
+def test_shell_send_prompt_records_history_checkpoints():
+    """Every _send_prompt records a checkpoint (the history length before the
+    turn) in shell.history_checkpoints, so /history can mark where each turn
+    started and /rewind can step back one turn at a time."""
+    from janito.shell import InteractiveShell
+
+    shell = InteractiveShell(model="test-model", no_history=True)
+    shell.initialize_history(system_prompt="sys")
+    assert shell.history_checkpoints == []
+
+    seen = []
+
+    def send_prompt_func(user_input, **kwargs):
+        seen.append(len(kwargs["previous_messages"]))
+        kwargs["previous_messages"].append({"role": "user", "content": user_input})
+        kwargs["previous_messages"].append({"role": "assistant", "content": "ok"})
+        return "ok"
+
+    shell.send_prompt_func = send_prompt_func
+    shell.verbose = False
+    shell.no_tools = True
+    shell.thinking = False
+
+    shell._send_prompt("one")
+    shell._send_prompt("two")
+
+    # History: [sys] -> turn one -> [sys, one, ok] -> turn two -> [sys, one, ok, two, ok]
+    assert shell.history_checkpoints == [1, 3]
+    assert seen == [1, 3]
+
+
+def test_shell_send_prompt_error_rolls_back_and_pops_checkpoint(capsys):
+    """An error during a turn rolls the history back to the last checkpoint
+    and drops that checkpoint, since the turn it marked is gone."""
+    from janito.shell import InteractiveShell
+
+    shell = InteractiveShell(model="test-model", no_history=True)
+    shell.initialize_history(system_prompt="sys")
+
+    def send_prompt_func(user_input, **kwargs):
+        kwargs["previous_messages"].append({"role": "user", "content": user_input})
+        kwargs["previous_messages"].append({"role": "assistant", "content": "partial"})
+        raise RuntimeError("boom")
+
+    shell.send_prompt_func = send_prompt_func
+    shell.verbose = False
+    shell.no_tools = True
+    shell.thinking = False
+
+    shell._send_prompt("hello")
+
+    # Back to the system prompt only, and the aborted turn's checkpoint is gone.
+    assert len(shell.messages_history) == 1
+    assert shell.history_checkpoints == []
+    assert "Error: boom" in capsys.readouterr().out
+
+
+def test_shell_rewind_steps_back_one_turn_at_a_time(capsys):
+    """/rewind undoes the most recent turn (truncating back to the last
+    checkpoint and dropping it), so consecutive rewinds step back one turn
+    at a time through the checkpoint list."""
+    from janito.shell.cmds.rewind import RewindCmdHandler
+
+    shell = RewindCmdHandler.__new__(RewindCmdHandler)
+    shell.messages_history = [
+        {"role": "system", "content": "sys"},
+        {"role": "user", "content": "one"},
+        {"role": "assistant", "content": "r1"},
+        {"role": "user", "content": "two"},
+        {"role": "assistant", "content": "r2"},
+    ]
+    shell.history_checkpoints = [1, 3]
+
+    handler = RewindCmdHandler()
+    handler._do_rewind(shell)
+    assert [m["content"] for m in shell.messages_history] == ["sys", "one", "r1"]
+    assert shell.history_checkpoints == [1]
+
+    handler._do_rewind(shell)
+    assert [m["content"] for m in shell.messages_history] == ["sys"]
+    assert shell.history_checkpoints == []
+
+    # Nothing left to rewind via the messages history.
+    handler._do_rewind(shell)
+    assert [m["content"] for m in shell.messages_history] == ["sys"]
+    assert "Nothing to rewind" in capsys.readouterr().out
+
+
+def test_shell_send_prompt_records_stateless_checkpoint_position():
+    """Stateless Responses: the checkpoint is the number of rows /history
+    would render (the conversation_items length), not len(messages_history)
+    -- messages_history only ever holds the system prompt, so using its
+    length would pile every marker at the same position."""
+    from janito.shell import InteractiveShell
+
+    shell = InteractiveShell(model="test-model", no_history=True)
+    shell.initialize_history(system_prompt="sys")
+    # One completed stateless turn lives in conversation_items (system +
+    # user + assistant), while messages_history still only holds the prompt.
+    shell.messages_history = [{"role": "system", "content": "sys"}]
+    shell.conversation_items = [
+        {
+            "type": "message",
+            "role": "system",
+            "content": [{"type": "input_text", "text": "sys"}],
+        },
+        {
+            "type": "message",
+            "role": "user",
+            "content": [{"type": "input_text", "text": "one"}],
+        },
+        {
+            "type": "message",
+            "role": "assistant",
+            "content": [{"type": "output_text", "text": "r1"}],
+        },
+    ]
+
+    def send_prompt_func(user_input, **kwargs):
+        return "ok"
+
+    shell.send_prompt_func = send_prompt_func
+    shell.verbose = False
+    shell.no_tools = True
+    shell.thinking = False
+
+    shell._send_prompt("two")
+
+    # The checkpoint marks the row the next user message will occupy (3),
+    # so /history shows the marker before "two", not after the system row.
+    assert shell.history_checkpoints == [3]
+
+
+def test_shell_send_prompt_records_server_side_checkpoint_position():
+    """Server-side Responses: the checkpoint is the sum of the rows /history
+    renders (messages_history + mirrored_history + pending items), so each
+    marker lands before its own user message."""
+    from janito.shell import InteractiveShell
+
+    shell = InteractiveShell(model="test-model", no_history=True)
+    shell.initialize_history(system_prompt="sys")
+    shell.messages_history = [{"role": "system", "content": "sys"}]
+    shell.previous_response_id = "r1"
+    shell.response_chain = ["r1"]
+    # One completed server-side turn mirrored client-side (user + assistant).
+    shell.mirrored_history = [
+        {
+            "type": "message",
+            "role": "user",
+            "content": [{"type": "input_text", "text": "one"}],
+        },
+        {
+            "type": "message",
+            "role": "assistant",
+            "content": [{"type": "output_text", "text": "r1"}],
+        },
+    ]
+
+    def send_prompt_func(user_input, **kwargs):
+        return "ok"
+
+    shell.send_prompt_func = send_prompt_func
+    shell.verbose = False
+    shell.no_tools = True
+    shell.thinking = False
+
+    shell._send_prompt("two")
+
+    # rows = system(1) + mirrored(2) = 3 -> marker before "two".
+    assert shell.history_checkpoints == [3]
+
+
+def test_shell_rewind_stateless_pops_checkpoint_for_marker_sync():
+    """/rewind on a stateless Responses conversation also drops the last
+    history checkpoint, so /history markers stay in sync with the truncated
+    rows (no stale marker at the rewound turn's old position)."""
+    from janito.shell.cmds.rewind import RewindCmdHandler
+
+    shell = RewindCmdHandler.__new__(RewindCmdHandler)
+    shell.messages_history = [{"role": "system", "content": "sys"}]
+    shell.previous_response_id = None
+    shell.history_checkpoints = [1, 3]
+    shell.conversation_checkpoint = 3
+    shell.conversation_items = [
+        {"type": "message", "role": "system", "content": []},
+        {"type": "message", "role": "user", "content": []},
+        {"type": "message", "role": "assistant", "content": []},
+        {"type": "message", "role": "user", "content": []},
+        {"type": "message", "role": "assistant", "content": []},
+    ]
+
+    handler = RewindCmdHandler()
+    handler._do_rewind(shell)
+
+    assert len(shell.conversation_items) == 3
+    assert shell.history_checkpoints == [1]

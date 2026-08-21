@@ -15,3 +15,14 @@ Changes since `v4.29.0` (2026-08-20).
   (colorized) before starting the session, annotated with `(server-side)` or
   `(client-side)` depending on the `responses-in-server` ("keep in server")
   config.
+
+### Changed
+
+- Conversation history checkpoints are now kept as a list instead of a
+  single value: a checkpoint is recorded every time a new user prompt is
+  about to be sent, holding the number of rows `/history` would render at
+  that moment (so the value indexes directly into the displayed history in
+  every API mode). `/history` shows a numbered marker (`◉ checkpoint N`) on
+  the position where each checkpoint was added, and `/rewind` steps back
+  one turn at a time through the checkpoint list. The web backend mirrors
+  the same list-based checkpoint behaviour for Ctrl+C / error rollback.

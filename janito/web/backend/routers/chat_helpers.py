@@ -99,9 +99,14 @@ def _rollback(session: ConversationSession) -> None:
 
     Removes the user message and any partial assistant/tool messages
     appended during the aborted turn, mirroring the shell's Ctrl+C /
-    error behaviour.
+    error behaviour.  The rolled-back turn's checkpoint is dropped too,
+    since the turn it marked is gone.
     """
-    del session.messages[session.history_checkpoint :]
+    if not session.history_checkpoints:
+        return
+    checkpoint = session.history_checkpoints[-1]
+    del session.messages[checkpoint:]
+    session.history_checkpoints.pop()
 
 
 async def _stream_to_websocket(
@@ -158,8 +163,9 @@ async def _run_turn(
     running are collected into ``pending_prompts`` (see
     :func:`_await_cancel`).
     """
-    # Checkpoint before the turn begins (before this turn's user message).
-    session.history_checkpoint = len(session.messages)
+    # Record a checkpoint (the current history length) before the turn
+    # begins (before this turn's user message).
+    session.history_checkpoints.append(len(session.messages))
 
     stream_task = asyncio.ensure_future(
         _stream_to_websocket(

@@ -27,10 +27,11 @@ class ConversationSession:
     # session, so switching tabs cannot silently change its context.
     provider: str | None = None
     model: str | None = None
-    # Index into ``messages`` marking the last known-good state; cancel
-    # (Ctrl+C) and error recovery truncate back to here.  Mirrors the
-    # shell's ``history_checkpoint`` attribute.
-    history_checkpoint: int = 0
+    # History lengths recorded each time a new user prompt is about to be
+    # sent (the length of ``messages`` before that turn); cancel (Ctrl+C)
+    # and error recovery roll back to the most recent one.  Mirrors the
+    # shell's ``history_checkpoints`` attribute.
+    history_checkpoints: list[int] = field(default_factory=list)
 
     def touch(self) -> None:
         self.last_active = time.time()
@@ -46,8 +47,9 @@ class ConversationSession:
             self.messages = [{"role": "system", "content": self.system_prompt}]
         else:
             self.messages = []
-        # Checkpoint starts after the system prompt (if any)
-        self.history_checkpoint = len(self.messages)
+        # A fresh conversation has no checkpoints yet: they are recorded
+        # each time a user prompt is about to be sent (see _run_turn).
+        self.history_checkpoints = []
         self.touch()
 
     def to_summary(self) -> dict:
@@ -118,9 +120,9 @@ class SessionManager:
                 provider=meta.get("provider"),
                 model=meta.get("model"),
             )
-            # Checkpoint starts after the restored system prompt (if any), so
-            # a cancel/error on the next turn rolls back only that turn.
-            session.history_checkpoint = len(session.messages)
+            # A fresh conversation has no checkpoints yet: they are recorded
+            # each time a user prompt is about to be sent (see _run_turn).
+            session.history_checkpoints = []
             with self._lock:
                 self._sessions[session.session_id] = session
             loaded += 1
@@ -142,8 +144,9 @@ class SessionManager:
             messages=messages,
             system_prompt=system_prompt,
         )
-        # Checkpoint starts after the system prompt (if any)
-        session.history_checkpoint = len(messages)
+        # A fresh conversation has no checkpoints yet: they are recorded
+        # each time a user prompt is about to be sent (see _run_turn).
+        session.history_checkpoints = []
         with self._lock:
             self._sessions[session_id] = session
         self._persist(session)

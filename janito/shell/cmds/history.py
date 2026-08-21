@@ -102,6 +102,24 @@ class HistoryCmdHandler(CmdHandler):
         rows.extend(_responses_item_to_row(item) for item in conversation_items)
         return rows
 
+    def _checkpoint_markers(self, shell, num_rows: int) -> dict[int, list[int]]:
+        """Map checkpoint values to their ordinal numbers per display position.
+
+        ``shell.history_checkpoints`` holds the number of rows /history
+        would render each time a user prompt was about to be sent (see
+        ``InteractiveShell._history_row_count``), so each checkpoint value
+        directly names the displayed row its turn started at.  Returns
+        ``{row_index: [ordinals]}`` for each position that needs a marker
+        (checkpoints out of range are ignored); each checkpoint keeps its
+        own ordinal (1-based position in the list).
+        """
+        checkpoints = getattr(shell, "history_checkpoints", None) or []
+        markers: dict[int, list[int]] = {}
+        for ordinal, c in enumerate(checkpoints, start=1):
+            if 0 <= c <= num_rows:
+                markers.setdefault(c, []).append(ordinal)
+        return dict(sorted(markers.items()))
+
     def _print_history(self, shell) -> None:
         """Print the contents of the message history as a rich table."""
         from rich.console import Console
@@ -111,6 +129,8 @@ class HistoryCmdHandler(CmdHandler):
         if not rows:
             Console(markup=False).print("(empty)")
             return
+
+        markers = self._checkpoint_markers(shell, len(rows))
 
         table = Table(
             title="Message History",
@@ -122,6 +142,11 @@ class HistoryCmdHandler(CmdHandler):
         table.add_column("Content", overflow="fold")
 
         for i, (role, content) in enumerate(rows):
+            # Show one marker line per checkpoint, before the item it
+            # precedes, numbered by its order in the checkpoint list.
+            for ordinal in markers.get(i, []):
+                table.add_row("", f"◉ checkpoint {ordinal}", "", style="bold yellow")
+
             # Truncate long content for display
             if len(content) > 200:
                 content_preview = content[:200] + "..."

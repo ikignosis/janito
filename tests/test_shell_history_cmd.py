@@ -258,3 +258,77 @@ def test_history_server_side_renders_mirrored_turns():
         ("assistant", "Here are the files."),
         ("user", "cancelled prompt"),
     ]
+
+
+# ---------------------------------------------------------------------------
+# Checkpoint markers
+# ---------------------------------------------------------------------------
+
+
+def test_history_checkpoint_markers_positions():
+    """Checkpoint values map to the row they precede (Completions mode),
+    numbered by their order in the checkpoint list."""
+    shell = _shell()
+    shell.messages_history = [
+        {"role": "system", "content": "sys"},
+        {"role": "user", "content": "hello"},
+        {"role": "assistant", "content": "hi"},
+        {"role": "user", "content": "again"},
+        {"role": "assistant", "content": "ok"},
+    ]
+    shell.history_checkpoints = [1, 3]
+    handler = _history_handler()
+    markers = handler._checkpoint_markers(shell, len(shell.messages_history))
+    assert markers == {1: [1], 3: [2]}
+
+
+def test_history_checkpoint_markers_keep_individual_ordinals():
+    """The marker mapping keeps each checkpoint's own ordinal even when
+    several checkpoints sit at the same display position (defensive: the
+    normal flow records strictly increasing positions, but a manually
+    seeded list may contain duplicates)."""
+    shell = _shell()
+    shell.messages_history = [
+        {"role": "system", "content": "sys"},
+        {"role": "user", "content": "hello"},
+        {"role": "assistant", "content": "hi"},
+    ]
+    shell.history_checkpoints = [1, 1, 1]
+    handler = _history_handler()
+    markers = handler._checkpoint_markers(shell, len(shell.messages_history))
+    assert markers == {1: [1, 2, 3]}
+
+
+def test_history_checkpoint_markers_ignore_out_of_range():
+    """Checkpoints beyond the current history (e.g. after a rollback that
+    kept stale values) are ignored by the display."""
+    shell = _shell()
+    shell.messages_history = [
+        {"role": "system", "content": "sys"},
+        {"role": "user", "content": "hello"},
+    ]
+    shell.history_checkpoints = [1, 5]
+    markers = _history_handler()._checkpoint_markers(shell, len(shell.messages_history))
+    assert markers == {1: [1]}
+
+
+def test_history_prints_checkpoint_marker_before_item(capsys):
+    """A numbered marker line is rendered before the item each checkpoint
+    precedes."""
+    shell = _shell()
+    shell.messages_history = [
+        {"role": "system", "content": "sys"},
+        {"role": "user", "content": "hello"},
+        {"role": "assistant", "content": "hi"},
+        {"role": "user", "content": "again"},
+        {"role": "assistant", "content": "ok"},
+    ]
+    shell.history_checkpoints = [1, 3]
+    _history_handler()._print_history(shell)
+    out = capsys.readouterr().out
+    assert "◉ checkpoint 1" in out
+    assert "◉ checkpoint 2" in out
+    # The marker for the first turn appears before the first user message.
+    assert out.index("◉ checkpoint 1") < out.index("hello")
+    # The marker for the second turn appears before the second user message.
+    assert out.rindex("◉ checkpoint 2") < out.rindex("again")

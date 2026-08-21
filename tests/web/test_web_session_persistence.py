@@ -231,14 +231,15 @@ def test_rollback_is_persisted(client, isolated_cwd):
     session = sessions.get(session_id)
 
     checkpoint = len(session.messages)
-    session.history_checkpoint = checkpoint
+    session.history_checkpoints = [checkpoint]
     # A turn starts: user message + partial assistant content appended.
     session.messages.append({"role": "user", "content": "hello"})
     session.messages.append({"role": "assistant", "content": "partial"})
     sessions.persist(session)
 
     # Server-side rollback mirrors _rollback() in routers/chat.py.
-    del session.messages[session.history_checkpoint :]
+    del session.messages[session.history_checkpoints[-1] :]
+    session.history_checkpoints.pop()
     sessions.persist(session)
 
     lines = _read_lines(_session_path(isolated_cwd, session_id))

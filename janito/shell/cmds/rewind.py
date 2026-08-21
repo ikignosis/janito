@@ -6,6 +6,13 @@ from .base import CmdHandler
 from .registry import register_command
 
 
+def _pop_checkpoint(checkpoints) -> None:
+    """Drop the most recent history checkpoint, if any (used by the
+    Responses-mode rewind branches so /history markers stay in sync)."""
+    if checkpoints:
+        checkpoints.pop()
+
+
 class RewindCmdHandler(CmdHandler):
     """Command handler for /rewind command."""
 
@@ -21,13 +28,22 @@ class RewindCmdHandler(CmdHandler):
         return False
 
     def _do_rewind(self, shell) -> None:
-        """Truncate messages_history back to the last checkpoint."""
-        checkpoint = getattr(shell, "history_checkpoint", 0)
-        current_len = len(shell.messages_history)
+        """Undo the most recent turn, stepping back one turn at a time.
 
-        if current_len > checkpoint:
-            removed = current_len - checkpoint
+        Each successful turn leaves a checkpoint (the number of rows
+        /history would render before that turn) in
+        ``shell.history_checkpoints``; /rewind undoes the most recent
+        exchange by truncating the history back to the last checkpoint and
+        dropping it, so a second /rewind steps back one further turn.  The
+        Responses-mode branches below (which live outside messages_history)
+        drop the same checkpoint so /history markers stay in sync.
+        """
+        checkpoints = getattr(shell, "history_checkpoints", None)
+        if checkpoints and len(shell.messages_history) > checkpoints[-1]:
+            checkpoint = checkpoints[-1]
+            removed = len(shell.messages_history) - checkpoint
             del shell.messages_history[checkpoint:]
+            checkpoints.pop()
             print(
                 f"Rewound {removed} message(s). History now has {len(shell.messages_history)} message(s)."
             )
@@ -42,6 +58,7 @@ class RewindCmdHandler(CmdHandler):
             conversation_checkpoint = getattr(shell, "conversation_checkpoint", 0)
             if conversation_checkpoint < len(conversation_items):
                 del conversation_items[conversation_checkpoint:]
+                _pop_checkpoint(checkpoints)
                 print(
                     "Rewound: conversation history truncated "
                     "(stateless Responses API / pending items)."
@@ -69,6 +86,7 @@ class RewindCmdHandler(CmdHandler):
                 if mirrored:
                     mirrored_checkpoint = getattr(shell, "mirrored_checkpoint", 0)
                     del mirrored[mirrored_checkpoint:]
+                _pop_checkpoint(checkpoints)
                 if shell.previous_response_id:
                     print(
                         "Rewound: server-side conversation rewound to "
@@ -90,6 +108,7 @@ class RewindCmdHandler(CmdHandler):
             # fall back to resetting the server conversation.
             if getattr(shell, "previous_response_id", None) is not None:
                 shell.previous_response_id = None
+                _pop_checkpoint(checkpoints)
                 print("Rewound: server-side conversation reset (Responses API).")
                 return
 
