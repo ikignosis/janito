@@ -6,8 +6,9 @@ import os
 from collections.abc import Callable
 
 from .. import __version__
-from ..general_config import resolve_api_type
+from ..general_config import load_provider_from_config, resolve_api_type
 from ..openai_client import RequestCancelled, resolve_runtime_config, send_prompt
+from ..provider_accessors import get_responses_in_server_from_provider
 from ..shell import InteractiveShell
 from ..tooling.path_utils import display_path
 
@@ -341,6 +342,27 @@ def run_interactive_chat(args):
         _, _, model = resolve_runtime_config(cli_model, cli_provider)
     except ValueError:
         model = cli_model or "(not configured)"
+    provider = cli_provider or load_provider_from_config() or "(not configured)"
+    try:
+        api_type = resolve_api_type(cli_api_type, provider, cli_model)
+    except ValueError:
+        api_type = cli_api_type or "(not configured)"
+    from rich.console import Console
+
+    # Annotate where the conversation state lives: the Responses API keeps
+    # it server-side (chained via previous_response_id) unless the
+    # responses-in-server ("keep in server") config flips it to stateless,
+    # in which case the client re-sends the full history; Completions and
+    # other API types always keep history client-side.
+    if api_type == "Responses" and provider != "(not configured)":
+        responses_in_server = get_responses_in_server_from_provider(provider, model)
+        state = "server-side" if responses_in_server else "client-side"
+    else:
+        state = "client-side"
+    Console().print(
+        f"Using [cyan]{provider}[/cyan], model [magenta]{model}[/magenta], "
+        f"API: [yellow]{api_type}[/yellow] [green]({state})[/green]"
+    )
     print(
         "Starting interactive chat session. Type '/exit' or CTRL-D to end the session"
     )
